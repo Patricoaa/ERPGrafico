@@ -229,7 +229,7 @@ export default function AuditHubPage() {
                 columns={columns}
                 data={logs}
                 isLoading={loading}
-                cardMode
+                variant="embedded"
                 globalFilterFields={["entity_type", "action", "change_summary", "entity_label"]}
                 searchPlaceholder="Buscar en la bitácora..."
                 useAdvancedFilter={true}

@@ -14,7 +14,7 @@ export default function SalesOrdersPage() {
     const searchParams = useSearchParams()
     const router = useRouter()
     const pathname = usePathname()
-    const viewMode = (searchParams.get('view') as 'orders' | 'notes') || 'orders'
+    const viewMode = (searchParams.get('tab') as 'orders' | 'notes') || 'orders'
     const legacyId = searchParams.get('id')
     const selectedId = searchParams.get('selected')
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)

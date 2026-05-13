@@ -691,7 +691,8 @@ class Product(models.Model):
 
         # BOM Requirement for Express Products
         # Express products (mfg_auto_finalize=True) without variants MUST have a BOM
-        if self.mfg_auto_finalize and not self.has_variants and not self.parent_template:
+        auto_finalize = self.mfg_profile.mfg_auto_finalize if self.mfg_profile else self.mfg_auto_finalize
+        if auto_finalize and not self.has_variants and not self.parent_template:
             self.has_bom = True
 
         super().save(*args, **kwargs)
@@ -711,7 +712,8 @@ class Product(models.Model):
     @property
     def is_express_variant(self):
         """Check if this is an Express variant (has parent and is Express)."""
-        return self.parent_template is not None and self.mfg_auto_finalize
+        auto_finalize = self.mfg_profile.mfg_auto_finalize if self.mfg_profile else self.mfg_auto_finalize
+        return self.parent_template is not None and auto_finalize
 
 
     def has_active_bom(self):
@@ -726,8 +728,9 @@ class Product(models.Model):
         Express products/variants require a BOM.
         Returns True if this product should have a BOM but doesn't.
         """
+        auto_finalize = self.mfg_profile.mfg_auto_finalize if self.mfg_profile else self.mfg_auto_finalize
         # Only Express products (auto-finalize) require BOM validation
-        if not self.mfg_auto_finalize:
+        if not auto_finalize:
             return False
         
         # Templates with variants don't need their own BOM
@@ -1007,7 +1010,6 @@ class Product(models.Model):
             component=self,
             work_order__status__in=[
                 WorkOrder.Status.DRAFT,
-                WorkOrder.Status.PLANNED,
                 WorkOrder.Status.IN_PROGRESS
             ]
         )

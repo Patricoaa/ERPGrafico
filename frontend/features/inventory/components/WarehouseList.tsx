@@ -26,7 +26,7 @@ interface WarehouseListProps {
 }
 
 export function WarehouseList({ externalOpen, onExternalOpenChange, createAction }: WarehouseListProps) {
-    const { warehouses, refetch, deleteWarehouse } = useWarehouses()
+    const { warehouses, isLoading, refetch, deleteWarehouse } = useWarehouses()
     
     const [editingWarehouse, setEditingWarehouse] = useState<Warehouse | null>(null)
     const [isFormOpen, setIsFormOpen] = useState(false)
@@ -163,7 +163,8 @@ export function WarehouseList({ externalOpen, onExternalOpenChange, createAction
             <DataTable
                 columns={columns}
                 data={warehouses}
-                cardMode
+                isLoading={isLoading}
+                variant="embedded"
                 
                 useAdvancedFilter={true}
                 filterColumn="name"

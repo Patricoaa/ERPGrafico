@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useTrialBalance } from '../../hooks/useTrialBalance';
 import { TableSkeleton } from '@/components/shared';
 import { EmptyState } from '@/components/shared/EmptyState';
@@ -8,11 +8,9 @@ import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Calculator, Calendar, CheckCircle2, AlertCircle } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
-import { LabeledInput, PeriodValidationDateInput } from '@/components/shared';
+import { PeriodValidationDateInput } from '@/components/shared';
 
 export function TrialBalanceView() {
-    const { data, isLoading, fetchTrialBalance } = useTrialBalance();
-
     // Default dates: current year start to now
     const now = new Date();
     const currentYear = now.getFullYear();
@@ -22,9 +20,7 @@ export function TrialBalanceView() {
     const [startDate, setStartDate] = useState(defaultStart);
     const [endDate, setEndDate] = useState(defaultEnd);
 
-    useEffect(() => {
-        fetchTrialBalance(startDate, endDate);
-    }, [fetchTrialBalance, startDate, endDate]);
+    const { data, isLoading } = useTrialBalance(startDate, endDate);
 
     const formatNum = (val: number) => {
         return val === 0 ? '—' : formatCurrency(val);
@@ -70,8 +66,8 @@ export function TrialBalanceView() {
 
                 {data && (
                     <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border ${data.is_balanced
-                            ? 'bg-success/10 text-success border-success/20'
-                            : 'bg-warning/10 text-warning border-warning/20'
+                        ? 'bg-success/10 text-success border-success/20'
+                        : 'bg-warning/10 text-warning border-warning/20'
                         }`}>
                         {data.is_balanced ? (
                             <><CheckCircle2 className="w-3.5 h-3.5" /> Partida Doble Cuadrada</>

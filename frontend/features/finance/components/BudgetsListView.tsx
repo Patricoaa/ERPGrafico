@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 
-import { Plus, Pencil, FileText, Calendar, Wallet } from "lucide-react"
+import { Pencil, FileText, Calendar, Wallet } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { LabeledInput } from "@/components/shared"
 import { toast } from "sonner"
@@ -32,7 +32,7 @@ export function BudgetsListView({ externalOpen, onExternalOpenChange, createActi
     const pathname = usePathname()
     const searchParams = useSearchParams()
 
-    const { budgets, refetch, createBudget } = useBudgets()
+    const { budgets, isLoading, refetch, createBudget } = useBudgets()
 
     const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<Budget>({
         endpoint: '/accounting/budgets'
@@ -157,7 +157,8 @@ export function BudgetsListView({ externalOpen, onExternalOpenChange, createActi
             <DataTable
                 columns={columns}
                 data={budgets}
-                cardMode
+                variant="embedded"
+                isLoading={isLoading}
                 globalFilterFields={["name"]}
                 searchPlaceholder="Buscar presupuestos..."
                 useAdvancedFilter={true}

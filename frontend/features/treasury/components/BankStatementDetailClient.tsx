@@ -1,6 +1,7 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React from "react"
+import { useQuery } from "@tanstack/react-query"
 import { notFound } from "next/navigation"
 import api from "@/lib/api"
 import { EntityDetailPage, FormSkeleton } from "@/components/shared"
@@ -61,16 +62,15 @@ function ProgressBar({ value }: { value: number }) {
 }
 
 export function BankStatementDetailClient({ statementId }: BankStatementDetailClientProps) {
-    const [data, setData] = useState<BankStatementData | null>(null)
-    const [loading, setLoading] = useState(true)
-    const [error, setError] = useState<number | null>(null)
+    const { data: data, isLoading: loading, error: queryError } = useQuery({
+        queryKey: ['bankStatement', statementId],
+        queryFn: async () => {
+            const res = await api.get(`/treasury/statements/${statementId}/`)
+            return res.data
+        }
+    })
 
-    useEffect(() => {
-        api.get(`/treasury/statements/${statementId}/`)
-            .then(res => setData(res.data))
-            .catch(err => setError(err.response?.status || 500))
-            .finally(() => setLoading(false))
-    }, [statementId])
+    const error = queryError ? (queryError as any).response?.status || 500 : null
 
     if (error === 404) return notFound()
     if (error) return (

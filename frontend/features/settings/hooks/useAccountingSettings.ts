@@ -1,4 +1,4 @@
-import { useSuspenseQuery } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import api from '@/lib/api'
 import { accountingSchema, defaultsSchema, taxSchema, type AccountingFormValues, type DefaultsFormValues, type TaxFormValues } from "@/features/settings/components/AccountingSettingsView.schema"
 import { purchasingSchema, type PurchasingFormValues } from "@/features/settings/components/PurchasingSettingsView.schema"
@@ -6,12 +6,13 @@ import { purchasingSchema, type PurchasingFormValues } from "@/features/settings
 export const ACCOUNTING_SETTINGS_QUERY_KEY = ['accountingSettings']
 
 export function useAccountingSettings() {
-    const { data: rawSettings, refetch } = useSuspenseQuery({
+    const { data: rawSettings = {}, isLoading, refetch } = useQuery({
         queryKey: ACCOUNTING_SETTINGS_QUERY_KEY,
         queryFn: async () => {
             const response = await api.get('/accounting/settings/current/')
             return response.data
         },
+        staleTime: 10 * 60 * 1000, // 10 min — settings cambian raramente
     })
 
     const structure = (() => {
@@ -74,5 +75,6 @@ export function useAccountingSettings() {
         tax,
         purchasing,
         refetch,
+        isLoading,
     }
 }

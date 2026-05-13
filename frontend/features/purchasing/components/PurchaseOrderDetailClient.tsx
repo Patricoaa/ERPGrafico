@@ -1,6 +1,7 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React, { useState } from "react"
+import { useQuery } from "@tanstack/react-query"
 import { notFound, useRouter } from "next/navigation"
 import api from "@/lib/api"
 import { EntityDetailPage, FormFooter, SubmitButton, CancelButton, FormSkeleton } from "@/components/shared"
@@ -11,18 +12,15 @@ interface PurchaseOrderDetailClientProps {
 }
 
 export function PurchaseOrderDetailClient({ orderId }: PurchaseOrderDetailClientProps) {
-    const [order, setOrder] = useState<any>(null)
-    const [loading, setLoading] = useState(true)
-    const [error, setError] = useState<number | null>(null)
-    const [isSaving, setIsSaving] = useState(false)
-    const router = useRouter()
+    const { data: order, isLoading: loading, error: queryError } = useQuery({
+        queryKey: ['purchaseOrder', orderId],
+        queryFn: async () => {
+            const res = await api.get(`/purchasing/orders/${orderId}/`)
+            return res.data
+        }
+    })
 
-    useEffect(() => {
-        api.get(`/purchasing/orders/${orderId}/`)
-            .then(res => setOrder(res.data))
-            .catch(err => setError(err.response?.status || 500))
-            .finally(() => setLoading(false))
-    }, [orderId])
+    const error = queryError ? (queryError as any).response?.status || 500 : null
 
     if (error === 404) return notFound()
     if (error) return <div className="p-8 text-destructive">Error al cargar la orden de compra</div>

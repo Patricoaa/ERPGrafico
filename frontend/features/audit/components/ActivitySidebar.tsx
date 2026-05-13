@@ -146,7 +146,7 @@ export function ActivitySidebar({ entityId, entityType, className = "", title = 
 
                                         {/* Changed details */}
                                         {changedFields.length > 0 && record.history_type === '~' && (
-                                            <div className="mt-3 rounded-md border bg-card text-card-foreground shadow-sm">
+                                            <div className="mt-3 rounded-md border bg-muted/5 text-card-foreground shadow-sm">
                                                 <div className="p-3">
                                                     <ul className="space-y-2">
                                                         {changedFields.map(field => {

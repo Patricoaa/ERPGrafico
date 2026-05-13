@@ -104,7 +104,19 @@ MIDDLEWARE = [
     'core.middleware.AuditMiddleware',
 ]
 
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_ALL_ORIGINS = False
+
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^https://erpgrafico\.vercel\.app$",
+    r"^https://[a-z0-9-]+\.vercel\.app$",  # Preview Deployments automáticos
+    r"^http://localhost:3000$",
+    r"^http://127\.0\.0\.1:3000$",
+]
+
+# Dominios de producción propios (Docker / servidor propio)
+_CORS_EXTRA = os.environ.get('CORS_ALLOWED_ORIGINS', '')
+CORS_ALLOWED_ORIGINS = [o.strip() for o in _CORS_EXTRA.split(',') if o.strip()]
+
 CORS_ALLOW_CREDENTIALS = True
 
 ROOT_URLCONF = 'config.urls'

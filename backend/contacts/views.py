@@ -43,6 +43,19 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     def get_queryset(self):
         return list_contacts(params=self.request.query_params)
     
+    @action(detail=False, methods=['get'], url_path='filter-suggestions')
+    def filter_suggestions(self, request):
+        q = request.query_params.get('q', '').strip()
+        if len(q) < 2:
+            return Response([])
+        names = (
+            Contact.objects.filter(name__icontains=q)
+            .values_list('name', flat=True)
+            .distinct()
+            .order_by('name')[:10]
+        )
+        return Response(list(names))
+
     @action(detail=False, methods=['get'])
     def customers(self, request):
         """Get all contacts that are customers (have sale orders)"""

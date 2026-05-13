@@ -1,4 +1,4 @@
-import { useSuspenseQuery } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import api from '@/lib/api'
 
 export interface Bank {
@@ -9,19 +9,23 @@ export interface Bank {
     is_active: boolean
 }
 
-export const BANKS_QUERY_KEY = ['banks']
+import { BANKS_QUERY_KEY, PAYMENT_METHODS_QUERY_KEY } from './queryKeys'
+
+export { BANKS_QUERY_KEY }
 
 export function useBanks() {
-    const { data: banks, refetch } = useSuspenseQuery({
+    const { data: banks, isLoading, refetch } = useQuery({
         queryKey: BANKS_QUERY_KEY,
         queryFn: async (): Promise<Bank[]> => {
             const response = await api.get('/treasury/banks/')
             return response.data
         },
+        staleTime: 15 * 60 * 1000, // 15 min — datos casi estáticos
     })
 
     return {
-        banks,
+        banks: banks ?? [],
+        isLoading,
         refetch,
     }
 }
@@ -40,19 +44,21 @@ export interface PaymentMethod {
     is_terminal_integration?: boolean
 }
 
-export const PAYMENT_METHODS_QUERY_KEY = ['paymentMethods']
+export { PAYMENT_METHODS_QUERY_KEY }
 
 export function usePaymentMethods() {
-    const { data: methods, refetch } = useSuspenseQuery({
+    const { data: methods, isLoading, refetch } = useQuery({
         queryKey: PAYMENT_METHODS_QUERY_KEY,
         queryFn: async (): Promise<PaymentMethod[]> => {
             const response = await api.get('/treasury/payment-methods/')
             return response.data
         },
+        staleTime: 15 * 60 * 1000, // 15 min — datos casi estáticos
     })
 
     return {
-        methods,
+        methods: methods ?? [],
+        isLoading,
         refetch,
     }
 }

@@ -1,4 +1,4 @@
-import { useSuspenseQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
 
 export interface Attribute {
@@ -8,6 +8,15 @@ export interface Attribute {
     value_type: 'text' | 'number' | 'date' | 'boolean'
     is_required: boolean
     active: boolean
+    values?: AttributeValue[]
+}
+
+export interface AttributeValue {
+    id: number
+    attribute: number
+    name: string
+    code: string
+    extra_price: number | string
 }
 
 export const ATTRIBUTES_QUERY_KEY = ['inventoryAttributes']
@@ -15,7 +24,7 @@ export const ATTRIBUTES_QUERY_KEY = ['inventoryAttributes']
 export function useAttributes() {
     const queryClient = useQueryClient()
 
-    const { data: attributes, refetch } = useSuspenseQuery({
+    const { data: attributes, isLoading, refetch } = useQuery({
         queryKey: ATTRIBUTES_QUERY_KEY,
         queryFn: async (): Promise<Attribute[]> => {
             const [attrRes, valRes] = await Promise.all([
@@ -26,11 +35,12 @@ export function useAttributes() {
             const attrs = attrRes.data.results || attrRes.data
             const vals = valRes.data.results || valRes.data
 
-            return attrs.map((attr: any) => ({
+            return attrs.map((attr: Attribute) => ({
                 ...attr,
-                values: vals.filter((v: any) => v.attribute === attr.id)
+                values: vals.filter((v: AttributeValue) => v.attribute === attr.id)
             }))
         },
+        staleTime: 15 * 60 * 1000, // 15 min — datos de configuración
     })
 
     const deleteMutation = useMutation({
@@ -43,7 +53,8 @@ export function useAttributes() {
     })
 
     return {
-        attributes,
+        attributes: attributes ?? [],
+        isLoading,
         refetch,
         deleteAttribute: deleteMutation.mutateAsync,
         isDeleting: deleteMutation.isPending

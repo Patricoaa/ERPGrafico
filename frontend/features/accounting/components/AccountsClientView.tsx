@@ -29,7 +29,7 @@ interface AccountsClientViewProps {
 }
 
 export function AccountsClientView({ externalOpen, onExternalOpenChange, createAction }: AccountsClientViewProps) {
-    const { accounts: flatAccounts, refetch, deleteAccount } = useAccounts()
+    const { accounts: flatAccounts, isLoading, refetch, deleteAccount } = useAccounts()
     const [deleteTarget, setDeleteTarget] = useState<number | null>(null)
     const [isFormOpen, setIsFormOpen] = useState(false)
     const [editingAccount, setEditingAccount] = useState<Account | null>(null)
@@ -253,7 +253,8 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
             <DataTable
                 columns={columns}
                 data={accounts}
-                cardMode
+                isLoading={isLoading}
+                variant="embedded"
                 globalFilterFields={["code", "name"]}
                 searchPlaceholder="Buscar por código o nombre..."
                 facetedFilters={[

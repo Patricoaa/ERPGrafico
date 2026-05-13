@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Check, ChevronDown, Search, Loader2, AlertCircle } from "lucide-react"
-import { cn, translateProductType } from "@/lib/utils"
+import { cn } from "@/lib/utils"
 import { getEntityIcon } from "@/lib/entity-registry"
 import { PricingUtils } from '@/features/inventory/utils/pricing'
 import { Button } from "@/components/ui/button"
@@ -20,7 +20,7 @@ import {
 import { BaseModal } from "@/components/shared/BaseModal"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { useProductSearch } from "@/features/inventory/hooks/useProductSearch"
+import { useProductSearch, useSingleProduct } from "@/features/inventory/hooks/useProductSearch"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { Product } from "@/types/entities"
 import { CardSkeleton } from "@/components/shared"
@@ -72,45 +72,35 @@ export function ProductSelector({
     required = false,
     variant = 'standalone'
 }: ProductSelectorProps) {
-    const { products: fetchedProducts, singleProduct, loading: searchLoading, fetchProducts, fetchSingleProduct } = useProductSearch()
     const [open, setOpen] = useState(false)
     const [filteredProducts, setFilteredProducts] = useState<Product[]>([])
     const [searchTerm, setSearchTerm] = useState("")
-    const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
     const [displayLimit, setDisplayLimit] = useState(20)
+
+    const shouldFetchProducts = open || searchTerm.length > 0
+    const { products: fetchedProducts, loading: searchLoading } = useProductSearch({
+        search: searchTerm,
+        productType,
+        limit: 200, // Preload more to allow local filtering
+        context,
+        excludeVariantTemplates
+    }, shouldFetchProducts)
+
+    const { product: singleProduct } = useSingleProduct(value || null)
+    const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
 
     // Variant Selection state
     const [isVariantDialogOpen, setIsVariantDialogOpen] = useState(false)
     const [templateToResolve, setTemplateToResolve] = useState<Product | null>(null)
 
-    // Effect to fetch the selected product if it's missing but we have a value
-    useEffect(() => {
-        if (value && (!selectedProduct || selectedProduct.id.toString() !== value.toString())) {
-            fetchSingleProduct(value.toString())
-        } else if (!value) {
-            requestAnimationFrame(() => setSelectedProduct(null))
-        }
-    }, [value, selectedProduct, fetchSingleProduct])
-
     // Sync fetched single product to local state
     useEffect(() => {
         if (singleProduct && singleProduct.id.toString() === value?.toString()) {
             requestAnimationFrame(() => setSelectedProduct(singleProduct))
+        } else if (!value) {
+            requestAnimationFrame(() => setSelectedProduct(null))
         }
     }, [singleProduct, value])
-
-    // Effect to fetch full list only when open or searching
-    useEffect(() => {
-        if (!open && !searchTerm) return
-
-        fetchProducts({
-            search: searchTerm,
-            productType,
-            limit: 200, // Preload more to allow local filtering
-            context,
-            excludeVariantTemplates
-        })
-    }, [open, searchTerm, productType, context, excludeVariantTemplates, fetchProducts])
 
     // Effect to apply local filters
     useEffect(() => {
@@ -213,15 +203,16 @@ export function ProductSelector({
         <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
                 <Button
+                    type="button"
                     variant="ghost"
                     role="combobox"
                     aria-expanded={open}
                     disabled={disabled}
                     className={cn(
-                        "w-full justify-between overflow-hidden py-0 shadow-none focus-visible:ring-0 transition-all",
-                        variant === 'standalone' 
-                            ? "h-[1.5rem] px-3 border-none bg-transparent hover:bg-primary/[0.03]" 
-                            : cn("h-9 text-xs px-2 border border-border/80 rounded-md bg-background hover:bg-primary/[0.02]", className)
+                        "w-full justify-between overflow-hidden shadow-none focus-visible:ring-0 transition-all",
+                        variant === 'standalone'
+                            ? "h-[1.5rem] px-0 border-none bg-transparent hover:bg-transparent"
+                            : cn("h-9 text-xs px-2 bg-background hover:bg-primary/[0.02]", className)
                     )}
                 >
                     {selectedProduct ? (() => {
@@ -370,33 +361,17 @@ export function ProductSelector({
     return (
         <>
             {variant === 'standalone' ? (
-                <div className={cn("relative w-full group", className)}>
-                    <fieldset 
-                        className={cn(
-                            "notched-field w-full group transition-all",
-                            open && "focused",
-                            error && "error",
-                            disabled && "opacity-50 cursor-not-allowed bg-muted/10"
-                        )}
-                    >
-                        {label && (
-                            <legend className={cn("notched-legend", error && "text-destructive", disabled && "text-muted-foreground/50")}>
-                                {label}
-                                {required && <span className="text-destructive ml-0.5">*</span>}
-                            </legend>
-                        )}
-                        {selectButton}
-                    </fieldset>
-                    {error && (
-                        <p className="mt-1.5 text-[11px] font-medium text-destructive animate-in fade-in slide-in-from-top-1 w-full text-left px-1">
-                            {error}
-                        </p>
-                    )}
-                </div>
-            ) : (
-                <div className={cn("w-full", className)}>
+                <LabeledContainer
+                    label={label}
+                    required={required}
+                    error={error}
+                    disabled={disabled}
+                    className={className}
+                >
                     {selectButton}
-                </div>
+                </LabeledContainer>
+            ) : (
+                selectButton
             )}
 
             <BaseModal

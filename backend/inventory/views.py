@@ -19,6 +19,12 @@ from django_filters.rest_framework import DjangoFilterBackend
 from decimal import Decimal
 
 from core.mixins import BulkImportMixin, AuditHistoryMixin as AuditHistory
+from rest_framework import pagination
+
+class StandardResultsSetPagination(pagination.PageNumberPagination):
+    page_size = 50
+    page_size_query_param = 'page_size'
+    max_page_size = 1000
 
 from .filters import ProductFilter, StockMoveFilter
 
@@ -34,6 +40,19 @@ class ProductViewSet(BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
         if self.kwargs.get('pk') or self.action in ['retrieve', 'update', 'partial_update', 'destroy']:
             return get_product_base_queryset(user=user)
         return list_products(user=user, params=self.request.query_params)
+
+    @action(detail=False, methods=['get'], url_path='filter-suggestions')
+    def filter_suggestions(self, request):
+        q = request.query_params.get('q', '').strip()
+        if len(q) < 2:
+            return Response([])
+        names = (
+            Product.objects.filter(active=True, name__icontains=q)
+            .values_list('name', flat=True)
+            .distinct()
+            .order_by('name')[:10]
+        )
+        return Response(list(names))
 
     @action(detail=True, methods=['post'])
     def toggle_favorite(self, request, pk=None):
@@ -564,6 +583,7 @@ class UoMCategoryViewSet(viewsets.ModelViewSet, AuditHistory):
 class StockMoveViewSet(viewsets.ReadOnlyModelViewSet, AuditHistory):
     queryset = StockMove.objects.all()
     serializer_class = StockMoveSerializer
+    pagination_class = StandardResultsSetPagination
     filter_backends = [DjangoFilterBackend]
     filterset_class = StockMoveFilter
 

@@ -1,6 +1,7 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React, { useState } from "react"
+import { useQuery } from "@tanstack/react-query"
 import { notFound, useRouter } from "next/navigation"
 import api from "@/lib/api"
 import { EntityDetailPage, FormFooter, SubmitButton, CancelButton, FormSkeleton } from "@/components/shared"
@@ -14,20 +15,15 @@ interface AccountDetailClientProps {
 }
 
 export function AccountDetailClient({ accountId }: AccountDetailClientProps) {
-    const [account, setAccount] = useState<any>(null)
-    const [loading, setLoading] = useState(true)
-    const [error, setError] = useState<number | null>(null)
-    const [isSaving, setIsSaving] = useState(false)
-    const router = useRouter()
+    const { data: account, isLoading: loading, error: queryError } = useQuery({
+        queryKey: ['account', accountId],
+        queryFn: async () => {
+            const res = await api.get(`/accounting/accounts/${accountId}/`)
+            return res.data
+        }
+    })
 
-    const { accounts: flatAccounts } = useAccounts()
-
-    useEffect(() => {
-        api.get(`/accounting/accounts/${accountId}/`)
-            .then(res => setAccount(res.data))
-            .catch(err => setError(err.response?.status || 500))
-            .finally(() => setLoading(false))
-    }, [accountId])
+    const error = queryError ? (queryError as any).response?.status || 500 : null
 
     if (error === 404) return notFound()
     if (error) return <div className="p-8 text-destructive">Error al cargar la cuenta</div>

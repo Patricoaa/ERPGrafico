@@ -9,7 +9,7 @@ export function useMatchMutation(statementId: number, treasuryAccountId: number)
     const queryClient = useQueryClient()
 
     return useMutation({
-        mutationFn: async ({ lineId, paymentId, isBatch, confirmData }: { lineId: number; paymentId: number; isBatch?: boolean; confirmData?: any }) => {
+        mutationFn: async ({ lineId, paymentId, isBatch, confirmData }: { lineId: number; paymentId: number; isBatch?: boolean; confirmData?: Record<string, unknown> }) => {
             if (isBatch) {
                 await api.post(`/treasury/statement-lines/match_group/`, {
                     line_ids: [lineId],
@@ -34,18 +34,19 @@ export function useMatchMutation(statementId: number, treasuryAccountId: number)
             const previousLines = queryClient.getQueryData(linesKey)
             const previousPayments = queryClient.getQueryData(paymentsKey)
 
-            queryClient.setQueryData(linesKey, (old: any) => old?.filter((l: any) => l.id !== lineId))
-            queryClient.setQueryData(paymentsKey, (old: any) => old?.filter((p: any) => p.id !== paymentId))
+            queryClient.setQueryData(linesKey, (old: unknown) => (old as {id: number}[] | undefined)?.filter(l => l.id !== lineId))
+            queryClient.setQueryData(paymentsKey, (old: unknown) => (old as {id: number}[] | undefined)?.filter(p => p.id !== paymentId))
 
             return { previousLines, previousPayments, linesKey, paymentsKey }
         },
-        onError: (err, variables, context: any) => {
+        onError: (err: Error, variables, context: unknown) => {
             showApiError(err, 'Error al realizar match')
-            if (context?.previousLines) {
-                queryClient.setQueryData(context.linesKey, context.previousLines)
+            const ctx = context as { previousLines?: unknown; previousPayments?: unknown; linesKey: readonly unknown[]; paymentsKey: readonly unknown[] } | undefined
+            if (ctx?.previousLines) {
+                queryClient.setQueryData(ctx.linesKey, ctx.previousLines)
             }
-            if (context?.previousPayments) {
-                queryClient.setQueryData(context.paymentsKey, context.previousPayments)
+            if (ctx?.previousPayments) {
+                queryClient.setQueryData(ctx.paymentsKey, ctx.previousPayments)
             }
         },
         onSettled: () => {
@@ -60,7 +61,7 @@ export function useGroupMatchMutation(statementId: number, treasuryAccountId: nu
     const queryClient = useQueryClient()
 
     return useMutation({
-        mutationFn: async ({ payload, confirmPayload, lineId }: { payload: any, confirmPayload: any, lineId: number }) => {
+        mutationFn: async ({ payload, confirmPayload, lineId }: { payload: { line_ids?: number[], payment_ids?: number[], batch_ids?: number[] }, confirmPayload?: Record<string, unknown>, lineId: number }) => {
             await api.post('/treasury/statement-lines/match_group/', payload)
             if (confirmPayload && Object.keys(confirmPayload).length > 0) {
                 await api.post(`/treasury/statement-lines/${lineId}/confirm/`, confirmPayload)
@@ -80,18 +81,19 @@ export function useGroupMatchMutation(statementId: number, treasuryAccountId: nu
             const lineIds = payload.line_ids || []
             const paymentIds = [...(payload.payment_ids || []), ...(payload.batch_ids || [])]
 
-            queryClient.setQueryData(linesKey, (old: any) => old?.filter((l: any) => !lineIds.includes(l.id)))
-            queryClient.setQueryData(paymentsKey, (old: any) => old?.filter((p: any) => !paymentIds.includes(p.id)))
+            queryClient.setQueryData(linesKey, (old: unknown) => (old as {id: number}[] | undefined)?.filter(l => !lineIds.includes(l.id)))
+            queryClient.setQueryData(paymentsKey, (old: unknown) => (old as {id: number}[] | undefined)?.filter(p => !paymentIds.includes(p.id)))
 
             return { previousLines, previousPayments, linesKey, paymentsKey }
         },
-        onError: (err, variables, context: any) => {
+        onError: (err: Error, variables, context: unknown) => {
             showApiError(err, 'Error creando grupo')
-            if (context?.previousLines) {
-                queryClient.setQueryData(context.linesKey, context.previousLines)
+            const ctx = context as { previousLines?: unknown; previousPayments?: unknown; linesKey: readonly unknown[]; paymentsKey: readonly unknown[] } | undefined
+            if (ctx?.previousLines) {
+                queryClient.setQueryData(ctx.linesKey, ctx.previousLines)
             }
-            if (context?.previousPayments) {
-                queryClient.setQueryData(context.paymentsKey, context.previousPayments)
+            if (ctx?.previousPayments) {
+                queryClient.setQueryData(ctx.paymentsKey, ctx.previousPayments)
             }
         },
         onSettled: () => {
@@ -192,8 +194,10 @@ export function useAutoMatchMutation(statementId: number) {
         },
         onSettled: () => {
             queryClient.invalidateQueries({ queryKey: [...reconciliationKeys.all, 'unreconciled-lines', statementId] })
-            // Auto match could have matched payments, we should invalidate across accounts to be safe
-            queryClient.invalidateQueries({ queryKey: reconciliationKeys.all }) 
+            // Auto match could have matched payments across accounts — invalidate all unreconciled-payments
+            // but scoped to reconciliation domain, not everything
+            queryClient.invalidateQueries({ queryKey: [...reconciliationKeys.all, 'unreconciled-payments'] })
+            queryClient.invalidateQueries({ queryKey: reconciliationKeys.statement(statementId) })
         }
     })
 }
@@ -202,7 +206,7 @@ export function useUpdateReconciliationSettingsMutation(accountId?: number | str
     const queryClient = useQueryClient()
 
     return useMutation({
-        mutationFn: async (settings: any) => {
+        mutationFn: async (settings: Record<string, unknown> & { id: number }) => {
             const res = await api.patch(`/treasury/reconciliation-settings/${settings.id}/`, settings)
             return res.data
         },
@@ -227,7 +231,7 @@ export function useCreateAndMatchMutation(statementId: number, treasuryAccountId
     const queryClient = useQueryClient()
 
     return useMutation({
-        mutationFn: async ({ lineId, movementData }: { lineId: number, movementData: any }) => {
+        mutationFn: async ({ lineId, movementData }: { lineId: number, movementData: Record<string, unknown> }) => {
             // 1. Crear el movimiento
             const movementRes = await api.post('/treasury/movements/', movementData)
             const paymentId = movementRes.data.id
@@ -282,7 +286,7 @@ export function useAllocateMutation(movementId: number, treasuryAccountId?: numb
     const queryClient = useQueryClient()
 
     return useMutation({
-        mutationFn: async ({ allocations, validateSum = false }: { allocations: any[], validateSum?: boolean }) => {
+        mutationFn: async ({ allocations, validateSum = false }: { allocations: Record<string, unknown>[], validateSum?: boolean }) => {
             return api.post(`/treasury/movements/${movementId}/allocate/?validate_sum=${validateSum}`, { allocations })
         },
         onSuccess: () => {
@@ -307,7 +311,7 @@ export function useCreateMovementMutation(treasuryAccountId: number) {
     const queryClient = useQueryClient()
 
     return useMutation({
-        mutationFn: async (movementData: any) => {
+        mutationFn: async (movementData: Record<string, unknown>) => {
             return api.post('/treasury/movements/', movementData)
         },
         onSuccess: () => {

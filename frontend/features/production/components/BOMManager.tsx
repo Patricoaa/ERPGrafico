@@ -40,8 +40,8 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
         ? { product_id: selectedVariantId }
         : { parent_id: product?.id }
 
-    const { boms, refetch, deleteBom, toggleActive } = useBOMs(bomParams)
-    const { variants } = useProductionVariants(product?.id)
+    const { boms, isBOMsLoading, refetch, deleteBom, toggleActive } = useBOMs(bomParams)
+    const { variants, isVariantsLoading } = useProductionVariants(product?.id)
 
     // Sync external boms if needed
     useEffect(() => {
@@ -159,6 +159,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
             cell: ({ row }) => (
                 <div className="flex justify-center">
                     <button
+                        type="button"
                         onClick={() => !row.original.active && handleToggleActive(row.original)}
                         className={cn(!row.original.active && "hover:scale-105 transition-transform")}
                     >
@@ -218,102 +219,107 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
     ]
 
     return (
-        <div className={cn("w-full space-y-4", variantMode && "bg-transparent")}>
-            {!variantMode && (
-                <div className="pb-4 px-4 pt-4 border-b-2">
-                    <div className="flex items-center justify-between mb-4">
-                        <div>
-                            <h3 className="text-sm font-black uppercase text-primary tracking-widest flex items-center gap-2 leading-none">
-                                <Workflow className="h-4 w-4 text-primary opacity-50" />
-                                Estructuras Técnicas (BOM)
-                            </h3>
-                            <p className="text-[10px] font-bold uppercase text-muted-foreground mt-1.5 opacity-60">
-                                Gestión de fórmulas y procesos de fabricación
-                            </p>
-                        </div>
-                    </div>
+        <>
+            <div className={cn("w-full space-y-0 rounded-l border bg-muted/5 overflow-hidden", variantMode && "bg-transparent")}>
+                {!variantMode && (
+                    <div className="pb-6 px-6 pt-6 border-b bg-background/50">
+                        <div className="flex items-center justify-between gap-4">
+                            <div className="flex-1">
+                                <h3 className="text-sm font-black uppercase text-primary tracking-widest flex items-center gap-2 leading-none">
+                                    <Workflow className="h-4 w-4 text-primary opacity-50" />
+                                    Estructuras Técnicas (BOM)
+                                </h3>
+                                <p className="text-[10px] font-bold uppercase text-muted-foreground mt-1.5 opacity-60">
+                                    Gestión de fórmulas y procesos de fabricación
+                                </p>
+                            </div>
 
-                    {product?.has_variants && (
-                        <div className="mt-4 bg-primary/5 p-5 rounded-md border-2 border-primary/20 shadow-sm transition-all hover:shadow-md animate-in fade-in slide-in-from-top-2 duration-500">
-                            <div className="flex-1 flex flex-col md:flex-row items-center gap-4">
-                                <LabeledSelect
-                                    label="Contexto de Manufactura"
-                                    icon={<Layers className="h-4 w-4 opacity-50" />}
-                                    containerClassName="flex-1"
-                                    value={selectedVariantId}
-                                    onChange={setSelectedVariantId}
-                                    placeholder="Seleccione variante..."
-                                    className="font-mono"
-                                    options={[
-                                        { value: "all", label: "-- Ver Todas las Recetas --" },
-                                        ...variants.map(v => ({
-                                            value: v.id.toString(),
-                                            label: (
-                                                <div className="flex items-center gap-3 font-bold uppercase">
-                                                    <span className="font-mono bg-muted text-[9px] px-1.5 py-0.5 rounded-sm border">{v.internal_code || v.code}</span>
-                                                    <span className="opacity-80">{v.variant_display_name || v.name}</span>
-                                                </div>
-                                            )
-                                        }))
-                                    ]}
-                                />
+                            {!product?.has_variants && (
                                 <Button
                                     type="button"
                                     onClick={(e) => {
                                         e.stopPropagation()
                                         handleCreate()
                                     }}
-                                    className="w-full md:w-auto h-10 px-6 gap-2 rounded-sm font-black uppercase tracking-widest text-[11px] shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5"
-                                    disabled={selectedVariantId === "all"}
+                                    className="h-9 px-5 gap-2 rounded-lg font-black uppercase tracking-widest text-[10px] shadow-sm transition-all hover:-translate-y-0.5"
                                 >
                                     <Plus className="h-4 w-4" />
-                                    Configurar Receta
+                                    Nueva Lista
                                 </Button>
-                            </div>
+                            )}
                         </div>
-                    )}
-                </div>
-            )}
 
-            {variantMode && (
-                <div className="flex justify-between items-center mb-4 px-2">
-                    <div className="flex items-center gap-2">
-                        <Workflow className="h-4 w-4 text-primary opacity-50" />
-                        <span className="font-black uppercase text-[10px] tracking-widest text-primary">Recetas de esta variante</span>
+                        {product?.has_variants && (
+                            <div className="mt-6 bg-primary/5 p-5 rounded-xl border border-primary/20 animate-in fade-in slide-in-from-top-2 duration-500">
+                                <div className="flex-1 flex flex-col md:flex-row items-center gap-4">
+                                    <LabeledSelect
+                                        label="Contexto de Manufactura"
+                                        icon={<Layers className="h-4 w-4 opacity-50" />}
+                                        containerClassName="flex-1"
+                                        value={selectedVariantId}
+                                        onChange={setSelectedVariantId}
+                                        placeholder="Seleccione variante..."
+                                        className="font-mono h-10"
+                                        options={[
+                                            { value: "all", label: "-- Ver Todas las Recetas --" },
+                                            ...variants.map(v => ({
+                                                value: v.id.toString(),
+                                                label: (
+                                                    <div className="flex items-center gap-3 font-bold uppercase">
+                                                        <span className="font-mono bg-muted text-[9px] px-1.5 py-0.5 rounded-sm border">{v.internal_code || v.code}</span>
+                                                        <span className="opacity-80">{v.variant_display_name || v.name}</span>
+                                                    </div>
+                                                )
+                                            }))
+                                        ]}
+                                    />
+                                    <Button
+                                        type="button"
+                                        onClick={(e) => {
+                                            e.stopPropagation()
+                                            handleCreate()
+                                        }}
+                                        className="w-full md:w-auto h-10 px-6 gap-2 rounded-lg font-black uppercase tracking-widest text-[11px] shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5"
+                                        disabled={selectedVariantId === "all"}
+                                    >
+                                        <Plus className="h-4 w-4" />
+                                        Configurar Receta
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
                     </div>
-                    <Button
-                        type="button"
-                        onClick={(e) => {
-                            e.stopPropagation()
-                            handleCreate()
-                        }}
-                        className="h-8 gap-2 rounded-sm text-[10px] font-black uppercase tracking-widest border-2 border-primary/20 hover:bg-primary/5 text-primary"
-                        variant="outline"
-                    >
-                        <Plus className="h-3.5 w-3.5" />
-                        Añadir Receta
-                    </Button>
-                </div>
-            )}
+                )}
 
-            <div className="p-0">
-                <DataTable
-                    columns={columns}
-                    data={boms}
-                    cardMode={true}
-                    toolbarAction={!product?.has_variants ? (
-                        <DropdownMenuItem
+                {variantMode && (
+                    <div className="flex justify-between items-center py-4 px-6 border-b bg-background/50">
+                        <div className="flex items-center gap-2">
+                            <Workflow className="h-4 w-4 text-primary opacity-50" />
+                            <span className="font-black uppercase text-[10px] tracking-widest text-primary">Recetas de esta variante</span>
+                        </div>
+                        <Button
+                            type="button"
                             onClick={(e) => {
                                 e.stopPropagation()
                                 handleCreate()
                             }}
-                            className="flex items-center px-3 py-2 text-[10px] font-black uppercase tracking-widest text-primary focus:bg-primary/10 focus:text-primary cursor-pointer transition-colors"
+                            className="h-8 gap-2 rounded-lg text-[10px] font-black uppercase tracking-widest border-2 border-primary/20 hover:bg-primary/5 text-primary"
+                            variant="outline"
                         >
-                            <Plus className="h-4 w-4 mr-2 opacity-70" />
-                            Nueva Lista
-                        </DropdownMenuItem>
-                    ) : undefined}
-                />
+                            <Plus className="h-3.5 w-3.5" />
+                            Añadir Receta
+                        </Button>
+                    </div>
+                )}
+
+                <div className="p-0 overflow-hidden">
+                    <DataTable
+                        columns={columns}
+                        data={boms}
+                        variant="embedded"
+                        isLoading={isBOMsLoading}
+                    />
+                </div>
             </div>
 
             <BOMFormModal
@@ -348,6 +354,6 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
                     </div>
                 }
             />
-        </div>
+        </>
     )
 }

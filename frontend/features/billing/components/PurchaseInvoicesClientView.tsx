@@ -1,9 +1,11 @@
 "use client"
 
 import { showApiError, getErrorMessage } from "@/lib/errors"
-import { useState } from "react"
+import React, { useState } from "react"
+import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { ColumnDef } from "@tanstack/react-table"
 import { IconButton } from "@/components/shared"
+import { EntityCard } from "@/components/shared/EntityCard"
 import { List, FileBadge, LayoutDashboard, ArrowRight, ArrowLeft } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
@@ -30,12 +32,37 @@ const statusMap: Record<string, { label: string, variant: "default" | "secondary
 }
 
 export function PurchaseInvoicesClientView() {
-    const { invoices: documents, refetch: fetchDocuments } = usePurchaseInvoices()
+    const { invoices: documents, isLoading, refetch: fetchDocuments } = usePurchaseInvoices()
     const [payingDoc, setPayingDoc] = useState<any | null>(null)
     const [receivingDoc, setReceivingDoc] = useState<any | null>(null)
     const [notingDoc, setNotingDoc] = useState<any | null>(null)
     const [completingDoc, setCompletingDoc] = useState<any | null>(null)
-    const [currentView, setCurrentView] = useState<'card' | 'list'>('card')
+    const router = useRouter()
+    const searchParams = useSearchParams()
+    const pathname = usePathname()
+
+    const [currentView, setCurrentView] = React.useState<'card' | 'list'>(
+        (searchParams.get('view') as 'card' | 'list') ?? 'card'
+    )
+
+    const handleViewChange = (v: string) => {
+        const params = new URLSearchParams(searchParams.toString())
+        params.set('view', v)
+        router.push(`${pathname}?${params.toString()}`, { scroll: false })
+        setCurrentView(v as 'card' | 'list')
+    }
+
+    useEffect(() => {
+        const viewParam = searchParams.get('view')
+        if (!viewParam) {
+            const params = new URLSearchParams(searchParams.toString())
+            params.set('view', 'card')
+            router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+            setCurrentView('card')
+        } else if (viewParam !== currentView) {
+            setCurrentView(viewParam as 'card' | 'list')
+        }
+    }, [searchParams, pathname, router, currentView])
 
     const viewOptions = [
         { label: "Lista", value: "list", icon: List },
@@ -231,6 +258,7 @@ export function PurchaseInvoicesClientView() {
             <DataTable
                 columns={columns}
                 data={documents}
+                isLoading={isLoading}
                 onRowClick={(row: Invoice) => {
                     const isSelected = hubConfig?.invoiceId === row.id
                     if (isSelected && isHubOpen) {
@@ -244,9 +272,9 @@ export function PurchaseInvoicesClientView() {
                         })
                     }
                 }}
-                cardMode={true}
+                variant="embedded"
                 currentView={currentView}
-                onViewChange={(v: any) => setCurrentView(v as 'card' | 'list')}
+                onViewChange={handleViewChange}
                 viewOptions={viewOptions}
                 filterColumn="partner_name"
                 searchPlaceholder="Buscar por proveedor..."
@@ -299,6 +327,13 @@ export function PurchaseInvoicesClientView() {
                         </div>
                     )
                 } : undefined}
+                renderLoadingView={currentView === 'card' ? () => (
+                    <div className="grid gap-3 pt-2">
+                        {Array.from({ length: 8 }).map((_, i) => (
+                            <EntityCard.Skeleton key={i} />
+                        ))}
+                    </div>
+                ) : undefined}
             />
             {payingDoc && <PaymentModal open={!!payingDoc} onOpenChange={(open) => !open && setPayingDoc(null)} onConfirm={handlePayment} isPurchase={true} total={parseFloat(payingDoc.total)} pendingAmount={payingDoc.pending_amount ?? parseFloat(payingDoc.total)} hideDteFields={true} isRefund={payingDoc.dte_type === 'NOTA_CREDITO'} existingInvoice={{ dte_type: payingDoc.dte_type, number: payingDoc.number, document_attachment: null }} />}
             {receivingDoc && receivingDoc.purchase_order && <ReceiptModal open={!!receivingDoc} onOpenChange={(open) => !open && setReceivingDoc(null)} orderId={receivingDoc.purchase_order} onSuccess={fetchDocuments} isRefund={receivingDoc.dte_type === 'NOTA_CREDITO'} />}

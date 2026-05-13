@@ -2,6 +2,7 @@
 
 import { showApiError, getErrorMessage } from "@/lib/errors"
 import { useState, useEffect, useMemo, useRef, useCallback } from "react"
+import { useQuery } from "@tanstack/react-query"
 import { PricingUtils } from '@/features/inventory/utils/pricing'
 import { Button } from "@/components/ui/button"
 import { Step1_CustomerDTE } from "./Step1_CustomerDTE"
@@ -225,33 +226,20 @@ export function SalesCheckoutWizardContent({
     const [creditApprovalReason, setCreditApprovalReason] = useState<string | null>(null)
     const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
-    const [salesSettings, setSalesSettings] = useState<AccountingSettings | null>(null)
-    const [pendingDebts, setPendingDebts] = useState<PendingDebt[] | null>(null)
-    const [loadingDebts, setLoadingDebts] = useState(false)
     const [manualTerminalReason, setManualTerminalReason] = useState<ManualTerminalReason | null>(null)
     const [manualTerminalFailureReason, setManualTerminalFailureReason] = useState<string | null>(null)
     const [showInvoiceReminder, setShowInvoiceReminder] = useState(false)
     const [checkoutResponse, setCheckoutResponse] = useState<CheckoutResponse | null>(null)
 
 
-    const refreshDebts = useCallback(() => {
-        if (selectedCustomer && (Number(selectedCustomer.credit_balance_used || 0) > 0)) {
-            setLoadingDebts(true)
-            api.get<PendingDebt[]>(`/contacts/${selectedCustomer.id}/credit_ledger/`)
-                .then(res => {
-                    const pending = res.data.filter((d: PendingDebt) => Number(d.balance) > 0)
-                    setPendingDebts(pending)
-                })
-                .catch(err => console.error("Error fetching credit ledger:", err))
-                .finally(() => setLoadingDebts(false))
-        } else {
-            setPendingDebts(null)
-        }
-    }, [selectedCustomer])
-
-    useEffect(() => {
-        refreshDebts()
-    }, [refreshDebts])
+    const { data: pendingDebts = null, isLoading: loadingDebts, refetch: refreshDebts } = useQuery({
+        queryKey: ['pendingDebts', selectedCustomer?.id],
+        queryFn: async () => {
+            const res = await api.get<PendingDebt[]>(`/contacts/${selectedCustomer?.id}/credit_ledger/`)
+            return res.data.filter((d: PendingDebt) => Number(d.balance) > 0)
+        },
+        enabled: !!selectedCustomer && Number(selectedCustomer.credit_balance_used || 0) > 0
+    })
 
     // Sync debts when Hub closes (after potential payments)
     const prevHubOpenRef = useRef(isHubOpen)
@@ -262,24 +250,31 @@ export function SalesCheckoutWizardContent({
         prevHubOpenRef.current = isHubOpen
     }, [isHubOpen, refreshDebts])
 
-    useEffect(() => {
-            api.get('/accounting/settings/current/')
-                .then(res => setSalesSettings(res.data))
-                .catch(err => console.error("Error fetching sales settings:", err))
-    }, [])
+    const { data: salesSettings = null } = useQuery({
+        queryKey: ['salesSettings'],
+        queryFn: async () => {
+            const res = await api.get('/accounting/settings/current/')
+            return res.data
+        }
+    })
+
+    const { data: customerDetails } = useQuery({
+        queryKey: ['contact', selectedCustomerId],
+        queryFn: async () => {
+            const res = await api.get(`/contacts/${selectedCustomerId}/`)
+            return res.data
+        },
+        enabled: !!selectedCustomerId
+    })
 
     useEffect(() => {
-        if (selectedCustomerId) {
-            api.get(`/contacts/${selectedCustomerId}/`)
-                .then(res => {
-                    setSelectedCustomer(res.data)
-                    setSelectedCustomerName(res.data.name)
-                })
-                .catch(err => console.error("Error fetching full customer details:", err))
-        } else {
+        if (customerDetails) {
+            setSelectedCustomer(customerDetails)
+            setSelectedCustomerName(customerDetails.name)
+        } else if (!selectedCustomerId) {
             setSelectedCustomer(null)
         }
-    }, [selectedCustomerId])
+    }, [customerDetails, selectedCustomerId])
 
     useEffect(() => {
         if (onStateChange) {

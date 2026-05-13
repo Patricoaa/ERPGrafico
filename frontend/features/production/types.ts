@@ -1,4 +1,5 @@
 import { LucideIcon } from "lucide-react"
+import type { WorkOrderStageData } from './schemas'
 
 export interface WorkOrderMaterial {
     id: number
@@ -91,31 +92,7 @@ export interface WorkOrder {
     warehouse_name?: string
     materials?: WorkOrderMaterial[]
     workflow_tasks?: WorkOrderTask[]
-    stage_data?: { 
-        product_description?: string
-        internal_notes?: string
-        contact_id?: string | number
-        contact_name?: string
-        contact_tax_id?: string
-        phases?: {
-            prepress?: boolean
-            press?: boolean
-            postpress?: boolean
-        }
-        prepress_specs?: string
-        press_specs?: string
-        postpress_specs?: string
-        design_needed?: boolean
-        folio_enabled?: boolean
-        folio_start?: string
-        print_type?: string
-        design_attachments?: string[]
-        quantity?: number | string
-        uom_id?: string | number
-        uom_name?: string
-        comments?: ProductionComment[]
-        approval_attachment?: string
-    }
+    stage_data?: WorkOrderStageData
     product?: {
         id: string | number
         name: string
@@ -145,6 +122,11 @@ export interface WorkOrder {
     is_cancellable?: boolean
     checkout_files?: ProductionAttachment[]
     attachments?: ProductionAttachment[]
+    production_discrepancy?: {
+        produced: number
+        sold: number
+        delta: number
+    } | null
 }
 
 export interface BOMLine {

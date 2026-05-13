@@ -115,7 +115,7 @@ function LedgerContent({
     setDateRange: (range: { from: Date; to: Date } | undefined) => void;
 }) {
     const { serverDate } = useServerDate()
-    const { data, refetch } = useLedger(accountId, startDate, endDate)
+    const { data, isLoading, refetch } = useLedger(accountId, startDate, endDate)
     
     const router = useRouter()
     const pathname = usePathname()
@@ -297,7 +297,8 @@ function LedgerContent({
             <DataTable
                 columns={columns}
                 data={data?.movements || []}
-                cardMode
+                isLoading={isLoading}
+                variant="embedded"
                 useAdvancedFilter={true}
                 globalFilterFields={["description", "partner", "reference"]}
                 searchPlaceholder="Filtrar movimientos..."

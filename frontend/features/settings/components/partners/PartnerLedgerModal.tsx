@@ -184,7 +184,7 @@ export function PartnerLedgerModal({
                         columns={columns}
                         data={transactionsWithBalance}
                         isLoading={loading}
-                        cardMode={false}
+                        variant="standalone"
                         searchPlaceholder="Filtrar por concepto (ej: aporte, retiro)..."
                         filterColumn="description"
                         toolbarAction={

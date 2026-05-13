@@ -20,7 +20,7 @@ import { cn, formatCurrency } from "@/lib/utils"
 import { useStockReport } from "@/features/inventory/hooks/useStockReport"
 
 export function StockReport() {
-    const { report, refetch } = useStockReport()
+    const { report, isLoading, refetch } = useStockReport()
     const [adjustingProduct, setAdjustingProduct] = useState<any | null>(null)
     const [insightsProduct, setInsightsProduct] = useState<any | null>(null)
     const [isFormLoading, setIsFormLoading] = useState(false)
@@ -135,7 +135,8 @@ export function StockReport() {
             <DataTable
                 columns={columns}
                 data={report}
-                cardMode
+                isLoading={isLoading}
+                variant="embedded"
                 searchPlaceholder="Filtrar producto, SKU o código..."
                 globalFilterFields={globalFilterFields}
                 useAdvancedFilter={true}

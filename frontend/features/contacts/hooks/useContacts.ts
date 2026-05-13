@@ -1,28 +1,27 @@
 import { showApiError } from "@/lib/errors"
-import { useQueryClient, useMutation, useSuspenseQuery, useQuery } from '@tanstack/react-query'
+import { useQueryClient, useMutation, useQuery } from '@tanstack/react-query'
 import { contactsApi } from '../api/contactsApi'
 import { toast } from 'sonner'
 import { ContactFilters, ContactPayload } from '../types'
+import { SALES_KEYS } from '@/features/sales/hooks/useSalesOrders'
+import { PURCHASING_KEYS } from '@/features/purchasing/hooks/usePurchasing'
 
-const CONTACTS_KEYS = {
-    all: ['contacts'] as const,
-    lists: () => [...CONTACTS_KEYS.all, 'list'] as const,
-    list: (filters: ContactFilters) => [...CONTACTS_KEYS.lists(), { filters }] as const,
-    details: () => [...CONTACTS_KEYS.all, 'detail'] as const,
-    detail: (id: number) => [...CONTACTS_KEYS.details(), id] as const,
-    insights: (id: number) => [...CONTACTS_KEYS.detail(id), 'insights'] as const,
-}
+import { CONTACTS_KEYS } from './queryKeys'
+
+export { CONTACTS_KEYS }
 
 export function useContacts({ filters }: { filters?: ContactFilters } = {}) {
     const queryClient = useQueryClient()
 
-    const { data: contacts, refetch } = useSuspenseQuery({
+    const { data: contacts, isLoading, refetch } = useQuery({
         queryKey: CONTACTS_KEYS.list(filters || {}),
         queryFn: () => contactsApi.getContacts(filters),
+        staleTime: 5 * 60 * 1000, // 5 min
     })
 
     return {
-        contacts,
+        contacts: contacts ?? [],
+        isLoading,
         refetch,
         ...useContactMutations()
     }
@@ -36,6 +35,9 @@ export function useContactMutations() {
         onSuccess: () => {
             toast.success('Contacto creado exitosamente')
             queryClient.invalidateQueries({ queryKey: CONTACTS_KEYS.lists() })
+            // A new contact might appear in order/purchase contact filter dropdowns
+            queryClient.invalidateQueries({ queryKey: [...SALES_KEYS.all, 'orders'] })
+            queryClient.invalidateQueries({ queryKey: PURCHASING_KEYS.orders() })
         },
         onError: (error: Error) => {
             showApiError(error, 'Error al crear el contacto')
@@ -49,6 +51,9 @@ export function useContactMutations() {
             toast.success('Contacto actualizado exitosamente')
             queryClient.invalidateQueries({ queryKey: CONTACTS_KEYS.lists() })
             queryClient.invalidateQueries({ queryKey: CONTACTS_KEYS.detail(data.id) })
+            // Contact name change propagates to order/purchase contact display
+            queryClient.invalidateQueries({ queryKey: [...SALES_KEYS.all, 'orders'] })
+            queryClient.invalidateQueries({ queryKey: PURCHASING_KEYS.orders() })
         },
         onError: (error: Error) => {
             showApiError(error, 'Error al actualizar el contacto')
@@ -82,5 +87,6 @@ export function useContactInsights(id: number | undefined) {
         queryKey: CONTACTS_KEYS.insights(id!),
         queryFn: () => contactsApi.getInsights(id!),
         enabled: !!id,
+        staleTime: 5 * 60 * 1000, // 5 min
     })
 }

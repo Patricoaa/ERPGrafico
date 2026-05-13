@@ -4,14 +4,15 @@ import React, { useState, useEffect, lazy, Suspense } from "react"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
-import { Plus, ArrowDown, Eye } from "lucide-react"
+import { ArrowDown, Eye } from "lucide-react"
 
 import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 import { StatusBadge } from "@/components/shared/StatusBadge"
-import { FormSkeleton } from "@/components/shared"
+import { FormSkeleton, SmartSearchBar, useSmartSearch } from "@/components/shared"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
-import { useTreasuryMovements } from "@/features/treasury/hooks/useTreasuryMovements"
+import { useTreasuryMovementsList, type TreasuryMovementFilters } from "@/features/treasury/hooks/useTreasuryMovements"
+import { treasuryMovementsSearchDef } from "@/features/treasury/searchDef"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 
 // Lazy load heavy components
@@ -62,7 +63,8 @@ interface TreasuryMovementsClientViewProps {
 
 export function TreasuryMovementsClientView({ externalOpen, createAction }: TreasuryMovementsClientViewProps) {
     const { openContact, openTreasuryAccount } = useGlobalModalActions()
-    const { movements, refetch } = useTreasuryMovements()
+    const { filters } = useSmartSearch(treasuryMovementsSearchDef)
+    const { movements, isLoading, refetch } = useTreasuryMovementsList(filters as TreasuryMovementFilters)
     const searchParams = useSearchParams()
     const router = useRouter()
     const pathname = usePathname()
@@ -307,22 +309,9 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
             <DataTable
                 columns={columns}
                 data={movements}
-                cardMode
-                globalFilterFields={["notes", "reference", "partner_name", "from_account_name", "to_account_name"]}
-                searchPlaceholder="Buscar movimientos..."
-                useAdvancedFilter={true}
-                facetedFilters={[
-                    {
-                        column: "movement_type",
-                        title: "Tipo",
-                        options: [
-                            { label: "Depósito", value: "INBOUND" },
-                            { label: "Retiro", value: "OUTBOUND" },
-                            { label: "Traspaso", value: "TRANSFER" },
-                            { label: "Ajuste", value: "ADJUSTMENT" },
-                        ],
-                    },
-                ]}
+                isLoading={isLoading}
+                variant="embedded"
+                leftAction={<SmartSearchBar searchDef={treasuryMovementsSearchDef} placeholder="Filtrar movimientos..." />}
                 createAction={createAction}
                 emptyState={{
                     context: "finance",

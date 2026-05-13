@@ -64,7 +64,7 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
         showComparison
     }
 
-    const { balanceSheet: bsData, incomeStatement: plData, cashFlow: cfData, refetch } = useStatements(statementParams)
+    const { balanceSheet: bsData, incomeStatement: plData, cashFlow: cfData, refetch, isLoading } = useStatements(statementParams)
 
 
     const getPeriodLabel = (range: DateRange | undefined) => {
@@ -233,7 +233,9 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
                                         </div>
                                     </div>
                                 ) : (
-                                    <ReportTable data={null} showComparison={showComparison} />
+                                    <div className="p-8">
+                                        <TableSkeleton rows={8} columns={4} />
+                                    </div>
                                 )}
                             </CardContent>
                         </Card>
@@ -293,7 +295,9 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
                                         })()}
                                     </div>
                                 ) : (
-                                    <ReportTable data={null} showComparison={showComparison} />
+                                    <div className="p-8">
+                                        <TableSkeleton rows={8} columns={4} />
+                                    </div>
                                 )}
                             </CardContent>
                         </Card>

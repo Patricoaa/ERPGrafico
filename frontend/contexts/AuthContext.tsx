@@ -45,7 +45,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
             if (res.status === 200) {
                 const userData = res.data;
-                console.log("=== AuthContext Loaded User ===", userData);
                 setUser(userData);
                 setIsAuthenticated(true);
             } else {

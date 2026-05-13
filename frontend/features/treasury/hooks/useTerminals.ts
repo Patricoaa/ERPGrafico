@@ -1,15 +1,18 @@
-import { useSuspenseQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { treasuryApi } from '../api/treasuryApi'
 import type { Terminal, TerminalUpdatePayload } from '../types'
 
-export const TERMINALS_QUERY_KEY = ['terminals']
+import { TERMINALS_QUERY_KEY } from './queryKeys'
+
+export { TERMINALS_QUERY_KEY }
 
 interface UseTerminalsReturn {
     terminals: Terminal[]
-    refetch: () => Promise<any>
+    refetch: () => Promise<unknown>
     toggleActive: (terminal: Terminal) => Promise<void>
     deleteTerminal: (terminal: Terminal) => Promise<void>
+    isLoading: boolean
 }
 
 /**
@@ -18,9 +21,10 @@ interface UseTerminalsReturn {
 export function useTerminals(): UseTerminalsReturn {
     const queryClient = useQueryClient()
 
-    const { data: terminals = [], refetch } = useSuspenseQuery({
+    const { data: terminals, isLoading, refetch } = useQuery({
         queryKey: TERMINALS_QUERY_KEY,
         queryFn: treasuryApi.getTerminals,
+        staleTime: 5 * 60 * 1000, // 5 min
     })
 
     const toggleActiveMutation = useMutation({
@@ -47,24 +51,17 @@ export function useTerminals(): UseTerminalsReturn {
             toast.success('Terminal eliminado correctamente')
             queryClient.invalidateQueries({ queryKey: TERMINALS_QUERY_KEY })
         },
-        onError: (err: any) => {
+        onError: (err: Error & { response?: { data?: { error?: string } } }) => {
             const errorMsg = err.response?.data?.error || 'Error al eliminar terminal'
             toast.error(errorMsg)
         }
     })
 
-    const toggleActive = async (terminal: Terminal) => {
-        await toggleActiveMutation.mutateAsync(terminal)
-    }
-
-    const deleteTerminal = async (terminal: Terminal) => {
-        await deleteMutation.mutateAsync(terminal)
-    }
-
     return {
-        terminals,
+        terminals: terminals ?? [],
         refetch,
-        toggleActive,
-        deleteTerminal,
+        toggleActive: toggleActiveMutation.mutateAsync,
+        deleteTerminal: deleteMutation.mutateAsync,
+        isLoading,
     }
 }

@@ -28,7 +28,7 @@ import { DataTable } from "@/components/ui/data-table"
 import type { Product } from "@/types/entities"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
-import { PageHeader, PageHeaderButton, TableSkeleton } from "@/components/shared"
+import { PageHeader, PageHeaderButton } from "@/components/shared"
 import { Restriction } from "@/features/inventory/types"
 import { PageContainer } from "@/components/shared"
 import { cn } from "@/lib/utils"
@@ -466,59 +466,54 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false, cr
 
             <div className="space-y-4">
 
-                {loading ? (
-                    <div className="rounded-md border shadow-sm overflow-hidden bg-card p-4">
-                        <TableSkeleton rows={5} columns={8} />
-                    </div>
-                ) : (
-                    <div className="space-y-6">
-                        {/* Industrial Stats Panel */}
-                        {stats && (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                                <div className="p-4 rounded-md border bg-card/50 shadow-sm flex flex-col gap-1 items-center md:items-start">
-                                    <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Suscripciones Activas</span>
-                                    <span className="text-2xl font-black text-foreground tabular-nums">{stats.active_subscriptions}</span>
-                                </div>
-                                <div className="p-4 rounded-md border bg-card/50 shadow-sm flex flex-col gap-1 items-center md:items-start">
-                                    <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Costo Mensual Total</span>
-                                    <div className="text-2xl font-black text-foreground tabular-nums">
-                                        <DataCell.Currency value={stats.total_monthly_cost} />
-                                    </div>
-                                </div>
-                                <div className="p-4 rounded-md border bg-card/50 shadow-sm flex flex-col gap-1 items-center md:items-start">
-                                    <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Próximas Renovaciones</span>
-                                    <span className="text-2xl font-black text-warning tabular-nums">{stats.upcoming_renewals_30_days}</span>
-                                </div>
-                                <div className="p-4 rounded-md border bg-card/50 shadow-sm flex flex-col gap-1 items-center md:items-start">
-                                    <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Estado Pausadas</span>
-                                    <span className="text-2xl font-black text-muted-foreground tabular-nums">{stats.paused_subscriptions}</span>
-                                </div>
+                <div className="space-y-6">
+                {/* Industrial Stats Panel */}
+                {stats && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div className="p-4 rounded-md border bg-card/50 shadow-sm flex flex-col gap-1 items-center md:items-start">
+                            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Suscripciones Activas</span>
+                            <span className="text-2xl font-black text-foreground tabular-nums">{stats.active_subscriptions}</span>
+                        </div>
+                        <div className="p-4 rounded-md border bg-card/50 shadow-sm flex flex-col gap-1 items-center md:items-start">
+                            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Costo Mensual Total</span>
+                            <div className="text-2xl font-black text-foreground tabular-nums">
+                                <DataCell.Currency value={stats.total_monthly_cost} />
                             </div>
-                        )}
-                        <DataTable
-                            columns={columns}
-                            data={subscriptions}
-                            cardMode
-                            filterColumn="product"
-                            searchPlaceholder="Buscar por producto..."
-                            facetedFilters={[
-                                {
-                                    column: "status",
-                                    title: "Estado",
-                                    options: [
-                                        { label: "Activo", value: "ACTIVE" },
-                                        { label: "Pausado", value: "PAUSED" },
-                                        { label: "Cancelado", value: "CANCELLED" },
-                                    ],
-                                },
-                            ]}
-                            useAdvancedFilter={true}
-                            defaultPageSize={20}
-                            bulkActions={bulkActions}
-                            createAction={createAction}
-                        />
+                        </div>
+                        <div className="p-4 rounded-md border bg-card/50 shadow-sm flex flex-col gap-1 items-center md:items-start">
+                            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Próximas Renovaciones</span>
+                            <span className="text-2xl font-black text-warning tabular-nums">{stats.upcoming_renewals_30_days}</span>
+                        </div>
+                        <div className="p-4 rounded-md border bg-card/50 shadow-sm flex flex-col gap-1 items-center md:items-start">
+                            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Estado Pausadas</span>
+                            <span className="text-2xl font-black text-muted-foreground tabular-nums">{stats.paused_subscriptions}</span>
+                        </div>
                     </div>
                 )}
+                <DataTable
+                    columns={columns}
+                    data={subscriptions}
+                    isLoading={loading}
+                    variant="embedded"
+                    filterColumn="product"
+                    searchPlaceholder="Buscar por producto..."
+                    facetedFilters={[
+                        {
+                            column: "status",
+                            title: "Estado",
+                            options: [
+                                { label: "Activo", value: "ACTIVE" },
+                                { label: "Pausado", value: "PAUSED" },
+                                { label: "Cancelado", value: "CANCELLED" },
+                            ],
+                        },
+                    ]}
+                    useAdvancedFilter={true}
+                    defaultPageSize={20}
+                    bulkActions={bulkActions}
+                    createAction={createAction}
+                />
+            </div>
             </div>
 
             <ProductForm

@@ -2,6 +2,7 @@
 
 import { getErrorMessage } from "@/lib/errors"
 import React, { useState, useEffect, useRef } from "react"
+import { useQuery } from "@tanstack/react-query"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Plus, FileText } from "lucide-react"
@@ -41,9 +42,7 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
 
     const [otType, setOtType] = useState<"LINKED" | "NONE" | null>(null)
     const [loading, setLoading] = useState(false)
-    const [saleLines, setSaleLines] = useState<SaleOrderLine[]>([])
-    const [uoms, setUoms] = useState<UoM[]>([])
-    const [loadingLines, setLoadingLines] = useState(false)
+    
 
     // Advanced Manufacturing States
     const [enablePrepress, setEnablePrepress] = useState(false)
@@ -81,14 +80,14 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
         },
     })
 
-    const fetchUoMs = async () => {
-        try {
+    const { data: uoms = [] } = useQuery({
+        queryKey: ['uoms'],
+        queryFn: async () => {
             const response = await api.get('/inventory/uoms/')
-            setUoms(response.data.results || response.data)
-        } catch (error) {
-            console.error("Error fetching UoMs:", error)
-        }
-    }
+            return response.data.results || response.data
+        },
+        enabled: open
+    })
 
     const lastResetId = useRef<string | number | undefined>(undefined)
     const wasOpen = useRef(false)
@@ -104,7 +103,6 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
         const isNewData = currentId !== lastResetId.current
 
         if (isNewOpen || isNewData) {
-            fetchUoMs()
             if (initialData) {
                 form.reset({
                     description: initialData.description || "",
@@ -165,7 +163,6 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
             } else {
                 setExistingDesignFiles([])
                 setSelectedContact(null)
-                setSaleLines([])
                 setOtType(null)
             }
             lastResetId.current = currentId
@@ -176,22 +173,19 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
     // Watch for Sale Order changes to fetch lines
     const watchedSaleOrder = form.watch('sale_order')
 
-    useEffect(() => {
-        if (watchedSaleOrder && watchedSaleOrder !== "__none__" && !initialData?.id) {
-            setLoadingLines(true)
-            api.get(`/sales/orders/${watchedSaleOrder}/`).then(res => {
-                const lines: SaleOrderLine[] = res.data.lines || []
-                const filtered = lines.filter((l: SaleOrderLine) =>
-                    l.product_type === 'MANUFACTURABLE' &&
-                    l.requires_advanced_manufacturing &&
-                    (!l.work_order_summary)
-                )
-                setSaleLines(filtered)
-            }).finally(() => setLoadingLines(false))
-        } else {
-            setSaleLines([])
-        }
-    }, [watchedSaleOrder, initialData])
+    const { data: saleLines = [], isLoading: loadingLines } = useQuery({
+        queryKey: ['saleOrderLines', watchedSaleOrder],
+        queryFn: async () => {
+            const res = await api.get(`/sales/orders/${watchedSaleOrder}/`)
+            const lines: SaleOrderLine[] = res.data.lines || []
+            return lines.filter((l: SaleOrderLine) =>
+                l.product_type === 'MANUFACTURABLE' &&
+                l.requires_advanced_manufacturing &&
+                (!l.work_order_summary)
+            )
+        },
+        enabled: !!watchedSaleOrder && watchedSaleOrder !== "__none__" && !initialData?.id
+    })
 
     // When a sale line is selected, auto-fill details
     const watchedSaleLineId = form.watch('sale_line')

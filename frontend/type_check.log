@@ -1,0 +1,5 @@
+
+> frontend@0.1.18 type-check
+> tsc --noEmit
+
+features/accounting/components/closures/FiscalYearCard.tsx(67,5): error TS1109: Expression expected.

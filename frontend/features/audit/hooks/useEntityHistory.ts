@@ -1,7 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import api from '@/lib/api'
 import { HistoricalRecord } from '@/types/audit'
-import { getErrorMessage } from '@/lib/errors'
 
 const ENDPOINT_MAP: Record<string, string> = {
     product: '/inventory/products',
@@ -34,31 +33,28 @@ const ENDPOINT_MAP: Record<string, string> = {
     salaryadvance: '/hr/salary-advances',
 }
 
+export const ENTITY_HISTORY_KEYS = {
+    all: ['entity_history'] as const,
+    detail: (type: string, id: string | number) => [...ENTITY_HISTORY_KEYS.all, type, id] as const,
+}
+
 export function useEntityHistory(entityType: string, entityId: number | string) {
-    const [history, setHistory] = useState<HistoricalRecord[]>([])
-    const [loading, setLoading] = useState(false)
-    const [error, setError] = useState<string | null>(null)
+    const endpoint = ENDPOINT_MAP[entityType]
 
-    useEffect(() => {
-        if (!entityId) return
+    const query = useQuery({
+        queryKey: ENTITY_HISTORY_KEYS.detail(entityType, entityId),
+        queryFn: async ({ signal }) => {
+            const res = await api.get(`${endpoint}/${entityId}/history/`, { signal })
+            return res.data as HistoricalRecord[]
+        },
+        enabled: !!entityId && !!endpoint,
+        staleTime: 60 * 1000, // 1 min (history can update often)
+    })
 
-        const endpoint = ENDPOINT_MAP[entityType]
-        if (!endpoint) {
-            setError(`Unknown entity type: ${entityType}`)
-            return
-        }
-
-        let cancelled = false
-        setLoading(true)
-        setError(null)
-
-        api.get(`${endpoint}/${entityId}/history/`)
-            .then(res => { if (!cancelled) setHistory(res.data) })
-            .catch(err => { if (!cancelled) setError(getErrorMessage(err)) })
-            .finally(() => { if (!cancelled) setLoading(false) })
-
-        return () => { cancelled = true }
-    }, [entityType, entityId])
-
-    return { history, loading, error }
+    return {
+        history: query.data ?? [],
+        loading: query.isLoading,
+        error: !endpoint && entityType ? `Unknown entity type: ${entityType}` : query.error ? (query.error as Error).message : null,
+        refetch: query.refetch,
+    }
 }

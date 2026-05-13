@@ -615,7 +615,7 @@ class ProductService:
         from production.models import WorkOrder
         pending_ots = WorkOrder.objects.filter(
             models.Q(product=product) | models.Q(sale_line__product=product) | models.Q(materials__component=product),
-            status__in=[WorkOrder.Status.DRAFT, WorkOrder.Status.PLANNED, WorkOrder.Status.IN_PROGRESS]
+            status__in=[WorkOrder.Status.DRAFT, WorkOrder.Status.IN_PROGRESS]
         ).distinct()
         if pending_ots.exists():
             restrictions.append({

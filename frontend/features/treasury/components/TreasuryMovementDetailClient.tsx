@@ -1,6 +1,7 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React from "react"
+import { useQuery } from "@tanstack/react-query"
 import { notFound } from "next/navigation"
 import api from "@/lib/api"
 import { EntityDetailPage, FormSkeleton } from "@/components/shared"
@@ -12,16 +13,15 @@ interface TreasuryMovementDetailClientProps {
 }
 
 export function TreasuryMovementDetailClient({ movementId }: TreasuryMovementDetailClientProps) {
-    const [data, setData] = useState<any>(null)
-    const [loading, setLoading] = useState(true)
-    const [error, setError] = useState<number | null>(null)
+    const { data: data, isLoading: loading, error: queryError } = useQuery({
+        queryKey: ['treasuryMovement', movementId],
+        queryFn: async () => {
+            const res = await api.get(`/treasury/payments/${movementId}/`)
+            return res.data
+        }
+    })
 
-    useEffect(() => {
-        api.get(`/treasury/payments/${movementId}/`)
-            .then(res => setData(res.data))
-            .catch(err => setError(err.response?.status || 500))
-            .finally(() => setLoading(false))
-    }, [movementId])
+    const error = queryError ? (queryError as any).response?.status || 500 : null
 
     if (error === 404) return notFound()
     if (error) return (

@@ -57,8 +57,8 @@ interface DataTableProps<TData, TValue> {
     rightAction?: React.ReactNode
     showToolbarSort?: boolean
     onRowClick?: (row: TData) => void
-    // Card mode
-    cardMode?: boolean
+    /** Layout variant. Use 'embedded' when the table lives inside a card/panel (no outer border, compact toolbar). Use 'standalone' for full-page tables with border. */
+    variant?: 'standalone' | 'embedded'
     isLoading?: boolean
     skeletonRows?: number
     renderSubComponent?: (row: Row<TData>) => React.ReactNode
@@ -103,6 +103,7 @@ interface DataTableProps<TData, TValue> {
     pagination?: { pageIndex: number; pageSize: number }
     onPaginationChange?: (updater: any) => void
     rowSelection?: RowSelectionState
+    renderLoadingView?: () => React.ReactNode
 }
 
 const DEFAULT_COLUMN_VISIBILITY: VisibilityState = {}
@@ -129,7 +130,7 @@ export function DataTable<TData, TValue>({
     rightAction,
     showToolbarSort,
     onRowClick,
-    cardMode = false,
+    variant,
     isLoading = false,
     skeletonRows = 5,
     renderSubComponent,
@@ -157,7 +158,10 @@ export function DataTable<TData, TValue>({
     pagination,
     onPaginationChange,
     rowSelection,
+    renderLoadingView,
 }: DataTableProps<TData, TValue>) {
+    const isEmbedded = variant === 'embedded'
+
     // Uncontrolled mode: let TanStack Table manage sorting/filters/visibility/
     // expansion/selection state internally. Previous controlled-state wiring
     // triggered React 19's "state update on a component that hasn't mounted
@@ -239,7 +243,7 @@ export function DataTable<TData, TValue>({
         }
     }, [internalRowSelection, onRowSelectionChange])
 
-    const showToolbar = filterColumn || globalFilterFields || (facetedFilters && facetedFilters.length > 0) || toolbarAction || rightAction || leftAction || createAction
+    const showToolbar = filterColumn || globalFilterFields || (facetedFilters && facetedFilters.length > 0) || toolbarAction || rightAction || leftAction || createAction || (viewOptions && viewOptions.length > 0) || showToolbarSort
     const selectedRows = table.getSelectedRowModel().rows
     const selectedItems = React.useMemo(() => selectedRows.map(r => r.original), [selectedRows])
     const clearSelection = React.useCallback(() => table.resetRowSelection(), [table])
@@ -257,14 +261,14 @@ export function DataTable<TData, TValue>({
         return null
     })()
 
-    if (cardMode) {
+    if (isEmbedded) {
         const tableBody = isLoading ? (
             <TableRow className="hover:bg-transparent border-none">
                 <TableCell
                     colSpan={columns.length}
                     className="p-6 pt-0 text-center"
                 >
-                    <SharedTableSkeleton rows={skeletonRows} columns={columns.length} className="pt-4" />
+                    {renderLoadingView && !renderCustomView ? renderLoadingView() : <SharedTableSkeleton rows={skeletonRows} columns={columns.length} className="pt-4" />}
                 </TableCell>
             </TableRow>
         ) : renderCustomView ? null : (
@@ -371,7 +375,11 @@ export function DataTable<TData, TValue>({
 
                 <div className="overflow-x-auto">
                     {renderCustomView ? (
-                        <div className="py-0">{renderCustomView(table)}</div>
+                        <div className="py-0">
+                            {isLoading 
+                                ? (renderLoadingView ? renderLoadingView() : <SharedTableSkeleton rows={skeletonRows} columns={columns.length} className="pt-4" />)
+                                : renderCustomView(table)}
+                        </div>
                     ) : (
                         <Table>
                             <TableHeader className="bg-transparent">
@@ -449,7 +457,9 @@ export function DataTable<TData, TValue>({
                 </div>
             )}
             {renderCustomView ? (
-                renderCustomView(table)
+                isLoading 
+                    ? (renderLoadingView ? renderLoadingView() : <SharedTableSkeleton rows={skeletonRows} columns={columns.length} className="pt-4" />)
+                    : renderCustomView(table)
             ) : (
                 <div className={cn(!noBorder && "rounded-md border")}>
                     <Table>

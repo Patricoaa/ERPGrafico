@@ -1,13 +1,15 @@
 "use client"
 
 import { showApiError, getErrorMessage } from "@/lib/errors"
-import { useState, useEffect } from "react"
+import React, { useState, useEffect } from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { DataTable } from "@/components/ui/data-table"
 import { DataCell } from "@/components/ui/data-table-cells"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
-import { IconButton } from "@/components/shared"
+import { IconButton, SmartSearchBar, useSmartSearch } from "@/components/shared"
+import { EntityCard } from "@/components/shared/EntityCard"
+import { invoiceSearchDef } from "@/features/billing/searchDef"
 import { LayoutDashboard, ArrowRight, ArrowLeft, List } from "lucide-react"
 import { treasuryApi } from "@/features/treasury/api/treasuryApi"
 import { useInvoices } from "@/features/billing/hooks/useInvoices"
@@ -22,15 +24,37 @@ import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 
 export function SalesInvoicesClientView() {
-    const { invoices, refetch, annulInvoice } = useInvoices()
+    const { filters } = useSmartSearch(invoiceSearchDef)
+    const { invoices, isLoading, refetch, annulInvoice } = useInvoices({ filters: { ...filters, mode: 'sale' } })
     const { openHub, closeHub, hubConfig, isHubOpen } = useHubPanel()
     const [notingInvoice, setNotingInvoice] = useState<Invoice | null>(null)
     const [payingInv, setPayingInv] = useState<Invoice | null>(null)
-    const [currentView, setCurrentView] = useState<'card' | 'list'>('card')
-
     const router = useRouter()
     const searchParams = useSearchParams()
     const pathname = usePathname()
+
+    const [currentView, setCurrentView] = React.useState<'card' | 'list'>(
+        (searchParams.get('view') as 'card' | 'list') ?? 'card'
+    )
+
+    const handleViewChange = (v: string) => {
+        const params = new URLSearchParams(searchParams.toString())
+        params.set('view', v)
+        router.push(`${pathname}?${params.toString()}`, { scroll: false })
+        setCurrentView(v as 'card' | 'list')
+    }
+
+    useEffect(() => {
+        const viewParam = searchParams.get('view')
+        if (!viewParam) {
+            const params = new URLSearchParams(searchParams.toString())
+            params.set('view', 'card')
+            router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+            setCurrentView('card')
+        } else if (viewParam !== currentView) {
+            setCurrentView(viewParam as 'card' | 'list')
+        }
+    }, [searchParams, pathname, router, currentView])
 
     const toggleSelection = (inv: Invoice) => {
         const isSelected = hubConfig?.invoiceId === inv.id
@@ -134,12 +158,6 @@ export function SalesInvoicesClientView() {
             cell: ({ row }) => <DataCell.Currency value={row.getValue("total")} />
         },
         {
-            accessorKey: "status",
-            header: () => null,
-            cell: () => null,
-            filterFn: (row, id, value) => value.includes(row.getValue(id)),
-        },
-        {
             id: "hub_trigger",
             header: () => null,
             cell: ({ row }) => {
@@ -170,26 +188,13 @@ export function SalesInvoicesClientView() {
             <DataTable
                 columns={columns}
                 data={invoices}
+                isLoading={isLoading}
                 onRowClick={(row: Invoice) => toggleSelection(row)}
-                cardMode={true}
+                variant="embedded"
                 currentView={currentView}
-                onViewChange={(v: any) => setCurrentView(v as 'card' | 'list')}
+                onViewChange={handleViewChange}
                 viewOptions={viewOptions}
-                filterColumn="partner_name"
-                searchPlaceholder="Buscar por cliente..."
-                facetedFilters={[
-                    {
-                        column: "status",
-                        title: "Estado",
-                        options: [
-                            { label: "Borrador", value: "DRAFT" },
-                            { label: "Publicado", value: "POSTED" },
-                            { label: "Pagado", value: "PAID" },
-                            { label: "Anulado", value: "CANCELLED" },
-                        ],
-                    },
-                ]}
-                useAdvancedFilter={true}
+                leftAction={<SmartSearchBar searchDef={invoiceSearchDef} placeholder="Buscar facturas..." />}
                 defaultPageSize={20}
                 renderCustomView={currentView === 'card' ? (table) => {
                     const rows = table.getRowModel().rows
@@ -223,6 +228,13 @@ export function SalesInvoicesClientView() {
                         </div>
                     )
                 } : undefined}
+                renderLoadingView={currentView === 'card' ? () => (
+                    <div className="grid gap-3 pt-2">
+                        {Array.from({ length: 8 }).map((_, i) => (
+                            <EntityCard.Skeleton key={i} />
+                        ))}
+                    </div>
+                ) : undefined}
             />
 
             {notingInvoice && (

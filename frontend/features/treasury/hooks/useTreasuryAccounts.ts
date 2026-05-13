@@ -1,51 +1,55 @@
 import { showApiError } from "@/lib/errors"
-import { useSuspenseQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { treasuryApi } from '../api/treasuryApi'
-import type { TreasuryAccount } from '../types'
+import type { TreasuryAccount, TreasuryAccountCreatePayload, TreasuryAccountUpdatePayload } from '../types'
 
-export const ACCOUNTS_QUERY_KEY = ['treasury-accounts']
+import { ACCOUNTS_QUERY_KEY } from './queryKeys'
+
+export { ACCOUNTS_QUERY_KEY }
 
 interface UseTreasuryAccountsReturn {
     accounts: TreasuryAccount[]
     refetch: () => Promise<any>
-    createAccount: (payload: any) => Promise<TreasuryAccount>
-    updateAccount: (params: { id: number, payload: any }) => Promise<TreasuryAccount>
+    createAccount: (payload: TreasuryAccountCreatePayload) => Promise<TreasuryAccount>
+    updateAccount: (params: { id: number, payload: TreasuryAccountUpdatePayload }) => Promise<TreasuryAccount>
     deleteAccount: (id: number) => Promise<void>
     isCreating: boolean
     isUpdating: boolean
+    isLoading: boolean
 }
 
 export function useTreasuryAccounts(): UseTreasuryAccountsReturn {
     const queryClient = useQueryClient()
 
-    const { data: accounts, refetch } = useSuspenseQuery({
+    const { data: accounts, isLoading, refetch } = useQuery({
         queryKey: ACCOUNTS_QUERY_KEY,
         queryFn: treasuryApi.getAccounts,
+        staleTime: 5 * 60 * 1000, // 5 min
     })
 
     const createMutation = useMutation({
-        mutationFn: async (payload: any) => {
+        mutationFn: async (payload: TreasuryAccountCreatePayload) => {
             return treasuryApi.createAccount(payload)
         },
         onSuccess: () => {
             toast.success('Cuenta creada')
             queryClient.invalidateQueries({ queryKey: ACCOUNTS_QUERY_KEY })
         },
-        onError: (error: any) => {
+        onError: (error: Error) => {
             showApiError(error, 'Error al crear la cuenta')
         }
     })
 
     const updateMutation = useMutation({
-        mutationFn: async ({ id, payload }: { id: number, payload: any }) => {
+        mutationFn: async ({ id, payload }: { id: number, payload: TreasuryAccountUpdatePayload }) => {
             return treasuryApi.updateAccount(id, payload)
         },
         onSuccess: () => {
             toast.success('Cuenta actualizada')
             queryClient.invalidateQueries({ queryKey: ACCOUNTS_QUERY_KEY })
         },
-        onError: (error: any) => {
+        onError: (error: Error) => {
             showApiError(error, 'Error al actualizar la cuenta')
         }
     })
@@ -63,17 +67,14 @@ export function useTreasuryAccounts(): UseTreasuryAccountsReturn {
         }
     })
 
-    const deleteAccount = async (id: number) => {
-        await deleteMutation.mutateAsync(id)
-    }
-
     return {
-        accounts: accounts as TreasuryAccount[],
+        accounts: (accounts as TreasuryAccount[]) ?? [],
         refetch,
         createAccount: createMutation.mutateAsync,
         updateAccount: updateMutation.mutateAsync,
-        deleteAccount,
+        deleteAccount: deleteMutation.mutateAsync,
         isCreating: createMutation.isPending,
-        isUpdating: updateMutation.isPending
+        isUpdating: updateMutation.isPending,
+        isLoading
     }
 }

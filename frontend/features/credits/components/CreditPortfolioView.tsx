@@ -118,7 +118,7 @@ export function CreditPortfolioView({
                     <DataTable
                         columns={historyColumns}
                         data={history || EMPTY_HISTORY}
-                        cardMode
+                        variant="embedded"
                         isLoading={loadingHistory}
                         useAdvancedFilter
                         globalFilterFields={["customer_name", "number"]}

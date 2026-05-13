@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
 import { AbsenceFormModal } from "@/features/hr"
 import { getAbsences, deleteAbsence, getEmployees } from '@/features/hr/api/hrApi'
-import { TableSkeleton } from "@/components/shared/TableSkeleton"
 import type { Absence, Employee } from "@/types/hr"
 import { ColumnDef } from "@tanstack/react-table"
 import { DataTable } from "@/components/ui/data-table"
@@ -133,33 +132,30 @@ export default function AbsencesPage() {
                 onSaved={() => { setDialogOpen(false); fetchAll() }}
             />
 
-            {loading ? (
-                <TableSkeleton columns={5} rows={8} />
-            ) : (
-                <DataTable
-                    columns={columns}
-                    data={absences}
-                    cardMode
-                    globalFilterFields={["employee_name", "absence_type_display"]}
-                    searchPlaceholder="Buscar por empleado o tipo..."
-                    facetedFilters={[
-                        {
-                            column: "absence_type_display",
-                            title: "Tipo",
-                            options: [
-                                { label: "Ausentismo", value: "Ausentismo Injustificado" },
-                                { label: "Licencia", value: "Licencia Médica" },
-                                { label: "Permiso Sin Goce", value: "Permiso sin Goce de Sueldo" },
-                                { label: "Ausencia de Horas", value: "Ausencia de Horas" },
-                            ],
-                        },
-                    ]}
-                    useAdvancedFilter={true}
-                    defaultPageSize={20}
-                    onRowClick={(row: Absence) => { setEditingAbsence(row); setDialogOpen(true) }}
-                    createAction={createAction}
-                />
-            )}
+            <DataTable
+                columns={columns}
+                data={absences}
+                isLoading={loading}
+                variant="embedded"
+                globalFilterFields={["employee_name", "absence_type_display"]}
+                searchPlaceholder="Buscar por empleado o tipo..."
+                facetedFilters={[
+                    {
+                        column: "absence_type_display",
+                        title: "Tipo",
+                        options: [
+                            { label: "Ausentismo", value: "Ausentismo Injustificado" },
+                            { label: "Licencia", value: "Licencia Médica" },
+                            { label: "Permiso Sin Goce", value: "Permiso sin Goce de Sueldo" },
+                            { label: "Ausencia de Horas", value: "Ausencia de Horas" },
+                        ],
+                    },
+                ]}
+                useAdvancedFilter={true}
+                defaultPageSize={20}
+                onRowClick={(row: Absence) => { setEditingAbsence(row); setDialogOpen(true) }}
+                createAction={createAction}
+            />
         </div>
     )
 }

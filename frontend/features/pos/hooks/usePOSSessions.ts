@@ -1,4 +1,4 @@
-import { useSuspenseQuery } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import api from '@/lib/api'
 
 export interface POSSession {
@@ -27,16 +27,18 @@ export interface POSSession {
 export const POS_SESSIONS_QUERY_KEY = ['posSessions']
 
 export function usePOSSessions() {
-    const { data: sessions, refetch } = useSuspenseQuery({
+    const { data: sessions, isLoading, refetch } = useQuery({
         queryKey: POS_SESSIONS_QUERY_KEY,
         queryFn: async (): Promise<POSSession[]> => {
             const response = await api.get('/treasury/pos-sessions/')
             return response.data
         },
+        staleTime: 60 * 1000, // 1 min — datos operativos activos
     })
 
     return {
-        sessions,
+        sessions: sessions ?? [],
+        isLoading,
         refetch,
     }
 }

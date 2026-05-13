@@ -1,4 +1,4 @@
-import { useSuspenseQuery } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import api, { pollTask } from '@/lib/api'
 
 export const STATEMENTS_QUERY_KEY = ['statements']
@@ -28,19 +28,22 @@ async function fetchStatement(endpoint: string, params: StatementParams) {
 }
 
 export function useStatements(params: StatementParams) {
-    const { data: balanceSheet, refetch: refetchBS } = useSuspenseQuery({
+    const { data: balanceSheet, isLoading: isLoadingBS, refetch: refetchBS } = useQuery({
         queryKey: [...STATEMENTS_QUERY_KEY, 'balance-sheet', params],
         queryFn: () => fetchStatement('finances/api/balance-sheet/', params),
+        staleTime: 5 * 60 * 1000, // 5 min — reporte costoso
     })
 
-    const { data: incomeStatement, refetch: refetchPL } = useSuspenseQuery({
+    const { data: incomeStatement, isLoading: isLoadingPL, refetch: refetchPL } = useQuery({
         queryKey: [...STATEMENTS_QUERY_KEY, 'income-statement', params],
         queryFn: () => fetchStatement('finances/api/income-statement/', params),
+        staleTime: 5 * 60 * 1000, // 5 min
     })
 
-    const { data: cashFlow, refetch: refetchCF } = useSuspenseQuery({
+    const { data: cashFlow, isLoading: isLoadingCF, refetch: refetchCF } = useQuery({
         queryKey: [...STATEMENTS_QUERY_KEY, 'cash-flow', params],
         queryFn: () => fetchStatement('finances/api/cash-flow/', params),
+        staleTime: 5 * 60 * 1000, // 5 min
     })
 
     const refetch = async () => {
@@ -51,6 +54,7 @@ export function useStatements(params: StatementParams) {
         balanceSheet,
         incomeStatement,
         cashFlow,
-        refetch
+        refetch,
+        isLoading: isLoadingBS || isLoadingPL || isLoadingCF
     }
 }

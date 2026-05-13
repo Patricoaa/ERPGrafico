@@ -1,4 +1,4 @@
-import { useSuspenseQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { settingsApi } from '../api/settingsApi'
 import type { PartnerSettings, PartnerSettingsUpdatePayload } from '../types'
@@ -18,9 +18,10 @@ interface UsePartnerSettingsReturn {
 export function usePartnerSettings(): UsePartnerSettingsReturn {
     const queryClient = useQueryClient()
 
-    const { data: settings, refetch } = useSuspenseQuery({
+    const { data: settings, isLoading, refetch } = useQuery({
         queryKey: PARTNER_SETTINGS_QUERY_KEY,
         queryFn: settingsApi.getPartnerSettings,
+        staleTime: 10 * 60 * 1000, // 10 min
     })
 
     const updateMutation = useMutation({
@@ -41,7 +42,8 @@ export function usePartnerSettings(): UsePartnerSettingsReturn {
     }
 
     return {
-        settings,
+        settings: settings as PartnerSettings,
+        isLoading,
         saving: updateMutation.isPending,
         updateSettings,
         refetch,

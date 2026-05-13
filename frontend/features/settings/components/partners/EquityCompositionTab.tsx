@@ -319,7 +319,7 @@ export function EquityCompositionTab({
                 columns={columns}
                 data={partners}
                 isLoading={loading}
-                cardMode={true}
+                variant="embedded"
                 createAction={createAction}
                 toolbarAction={
                     <>

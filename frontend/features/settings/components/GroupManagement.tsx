@@ -11,7 +11,6 @@ import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 import { Plus, Edit, Trash2, Loader2, Users } from "lucide-react"
 import { GroupForm } from "@/features/users/components/GroupForm"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
-import { CardSkeleton } from "@/components/shared"
 
 interface GroupManagementProps {
     externalOpen?: boolean
@@ -100,19 +99,16 @@ export function GroupManagement({ externalOpen, onExternalOpenChange, createActi
 
     return (
         <div className="space-y-4">
-            {loading ? (
-                <CardSkeleton count={5} />
-            ) : (
-                <DataTable
-                    columns={columns}
-                    data={groups}
-                    cardMode
-                    filterColumn="name"
-                    searchPlaceholder="Buscar grupo..."
-                    useAdvancedFilter={true}
-                    createAction={createAction}
-                />
-            )}
+            <DataTable
+                columns={columns}
+                data={groups}
+                isLoading={loading}
+                variant="embedded"
+                filterColumn="name"
+                searchPlaceholder="Buscar grupo..."
+                useAdvancedFilter={true}
+                createAction={createAction}
+            />
 
             <GroupForm
                 open={showCreateModal}

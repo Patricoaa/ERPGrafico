@@ -1,9 +1,8 @@
-import { useState, useCallback } from "react"
-import api from "@/lib/api"
-import { showApiError } from "@/lib/errors"
-import { Contact } from "@/types/entities"
+import { useQuery } from '@tanstack/react-query'
+import api from '@/lib/api'
+import type { Contact } from '@/types/entities'
 
-interface ContactSearchParams {
+export interface ContactSearchParams {
     search?: string
     contactType?: 'CUSTOMER' | 'SUPPLIER' | 'BOTH' | 'NONE'
     isPartnerOnly?: boolean
@@ -13,60 +12,52 @@ interface ContactSearchParams {
     fetchSingleId?: string | number | null
 }
 
-interface UseContactSearchReturn {
-    contacts: Contact[]
-    singleContact: Contact | null
-    loading: boolean
-    fetchContacts: (params?: ContactSearchParams) => Promise<void>
-    fetchSingleContact: (id: string | number) => Promise<void>
+export const CONTACT_KEYS = {
+    all: ['contacts'] as const,
+    search: (params: ContactSearchParams) => [...CONTACT_KEYS.all, 'search', params] as const,
+    detail: (id: string | number) => [...CONTACT_KEYS.all, 'detail', id] as const,
 }
 
-const globalCache: Record<string, Contact[]> = {}
+export function useContactSearch(params: ContactSearchParams = {}, enabled: boolean = true) {
+    const { search = "", contactType, isCustomer, isVendor, isPartnerOnly, limit = 50 } = params
 
-export function useContactSearch(): UseContactSearchReturn {
-    const [contacts, setContacts] = useState<Contact[]>([])
-    const [singleContact, setSingleContact] = useState<Contact | null>(null)
-    const [loading, setLoading] = useState(false)
-
-    const fetchSingleContact = useCallback(async (id: string | number) => {
-        try {
-            const res = await api.get(`/contacts/${id}/`)
-            setSingleContact(res.data)
-        } catch (e) {
-            console.error("Error fetching single contact", e)
-        }
-    }, [])
-
-    const fetchContacts = useCallback(async (params: ContactSearchParams = {}) => {
-        const { search = "", contactType, isCustomer, isVendor, limit = 50 } = params
-        const cacheKey = JSON.stringify(params)
-        
-        if (globalCache[cacheKey]) {
-            setContacts(globalCache[cacheKey])
-            return
-        }
-
-        try {
-            setLoading(true)
+    const query = useQuery({
+        queryKey: CONTACT_KEYS.search({ search, contactType, isCustomer, isVendor, isPartnerOnly, limit }),
+        queryFn: async ({ signal }) => {
             const q = new URLSearchParams()
             if (search) q.append("search", search)
-            if (params.contactType) q.append("type", params.contactType)
+            if (contactType) q.append("type", contactType)
             if (isCustomer !== undefined && isCustomer) q.append("is_customer", "true")
             if (isVendor !== undefined && isVendor) q.append("is_vendor", "true")
-            if (params.isPartnerOnly) q.append("is_partner", "true")
+            if (isPartnerOnly) q.append("is_partner", "true")
             
-            const res = await api.get(`/contacts/?${q.toString()}`)
-            const data = res.data.results || res.data
-            
-            globalCache[cacheKey] = data
-            setContacts(data)
-        } catch (err) {
-            showApiError(err, "Error al buscar contactos")
-            setContacts([])
-        } finally {
-            setLoading(false)
-        }
-    }, [])
+            const res = await api.get(`/contacts/?${q.toString()}`, { signal })
+            return (res.data.results || res.data) as Contact[]
+        },
+        enabled,
+        staleTime: 5 * 60 * 1000, // 5 min
+    })
 
-    return { contacts, singleContact, loading, fetchContacts, fetchSingleContact }
+    return {
+        contacts: query.data ?? [],
+        loading: query.isLoading,
+        isFetching: query.isFetching,
+    }
+}
+
+export function useSingleContact(id: string | number | null) {
+    const query = useQuery({
+        queryKey: CONTACT_KEYS.detail(id!),
+        queryFn: async ({ signal }) => {
+            const res = await api.get(`/contacts/${id}/`, { signal })
+            return res.data as Contact
+        },
+        enabled: !!id,
+        staleTime: 5 * 60 * 1000, // 5 min
+    })
+
+    return {
+        contact: query.data ?? null,
+        loading: query.isLoading,
+    }
 }
