@@ -297,7 +297,7 @@ export function PurchaseNoteModal({
                         <Button
                             onClick={handleNext}
                             disabled={step === 1 && (!isPeriodValid || !documentNumber || !attachment || !isFolioValid)}
-                            className="w-40 h-12 font-bold bg-primary text-primary-foreground shadow-lg hover:shadow-xl transition-all"
+                            className="w-40 h-12 font-bold bg-primary text-primary-foreground shadow-sm hover:shadow transition-all"
                         >
                             Siguiente
                             <ChevronRight className="ml-2 h-4 w-4" />
@@ -305,7 +305,7 @@ export function PurchaseNoteModal({
                     ) : (
                         <Button
                             onClick={handleSubmit}
-                            className={`w-48 h-12 font-bold shadow-lg hover:shadow-xl transition-all ${noteType === 'NOTA_CREDITO'
+                            className={`w-48 h-12 font-bold shadow-sm hover:shadow transition-all ${noteType === 'NOTA_CREDITO'
                                 ? 'bg-warning hover:bg-warning'
                                 : 'bg-primary hover:bg-primary'
                                 }`}

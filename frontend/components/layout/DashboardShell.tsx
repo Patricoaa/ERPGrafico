@@ -69,13 +69,12 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
         "accounting": "/accounting/ledger",
         "contacts": "/contacts",
         "sales": "/sales/orders?tab=orders",
-        "billing": "/billing/invoices",
+        "billing": "/billing/sales?view=card",
         "inventory": "/inventory/products?tab=products",
-        "production": "/production",
+        "production": "/production/orders",
         "treasury": "/treasury/movements",
         "purchasing": "/purchasing/orders?tab=orders",
         "finances": "/finances",
-        "tax": "/tax",
         "hr": "/hr/employees",
     }
 
@@ -95,8 +94,8 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
             {/* ── TOP BAR ────────────────────────────────────────────── */}
             <div className="absolute top-0 left-14 right-0 h-16 flex items-center bg-background z-30 px-6">
 
-                {/* Center: page title & meta — takes remaining space */}
-                <div className="flex-1 flex items-center gap-4 min-w-0 pointer-events-none">
+                {/* Left: page title & meta — shrinks to content */}
+                <div className="flex-none flex items-center gap-4 min-w-0 pointer-events-none">
                     <AnimatePresence mode="wait">
                         {config ? (
                             <motion.div
@@ -172,13 +171,13 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                     </AnimatePresence>
                 </div>
 
-                {/* Center-right: Universal Search */}
-                <div className="shrink-0 mr-3">
+                {/* Center: Universal Search — takes all available space and centers the search bar */}
+                <div className="flex-1 flex items-center justify-center px-8">
                     <UniversalSearch />
                 </div>
 
                 {/* Right: UserActions */}
-                <div className="shrink-0">
+                <div className="flex-none">
                     <UserActions isInboxOpen={isInboxOpen} onInboxToggle={handleInboxToggle} />
                 </div>
             </div>

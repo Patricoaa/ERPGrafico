@@ -226,6 +226,7 @@ export function detectEntityLabel(text: string): string | null {
   if (t.includes('CAR_') || t.includes('CAR-')) return 'treasury.bankstatement';
   if (t.includes('TRX_') || t.includes('TRX-')) return 'treasury.treasurymovement';
   if (t.includes('MOV_') || t.includes('MOV-')) return 'inventory.stockmove';
+  if (t.includes('AS_') || t.includes('AS-')) return 'accounting.journalentry';
   
   return null;
 }

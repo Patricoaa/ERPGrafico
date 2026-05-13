@@ -668,7 +668,7 @@ class SubscriptionViewSet(viewsets.ModelViewSet):
     serializer_class = SubscriptionSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_fields = ['status', 'product', 'supplier']
-    search_fields = ['product__name']
+    search_fields = ['product__name', 'supplier__name', 'supplier__tax_id']
 
     def get_queryset(self):
         """

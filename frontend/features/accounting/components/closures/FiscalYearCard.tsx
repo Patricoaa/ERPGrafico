@@ -64,7 +64,7 @@ export function FiscalYearCard({
     };
 
     return (
-        <EntityCard className="mb-6 shadow-md border-2 hover:border-border cursor-default">
+        <EntityCard className="mb-6 cursor-default">
             <EntityCard.Header
                 title={
                     <div className="flex items-center gap-3">

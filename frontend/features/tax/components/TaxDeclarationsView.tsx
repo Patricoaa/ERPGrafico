@@ -408,7 +408,7 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange, create
                                         variant="compact"
                                         className={cn(
                                             "flex flex-row items-center justify-between",
-                                            canOpenChecklist ? "hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 cursor-pointer" : "cursor-default"
+                                            canOpenChecklist ? "cursor-pointer" : "cursor-default"
                                         )}
                                         onClick={() => canOpenChecklist ? handleOpenWizard(period) : null}
                                     >
@@ -449,7 +449,7 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange, create
                                                 <Button
                                                     variant="ghost"
                                                     size="icon"
-                                                    className="h-8 w-8 rounded-sm group-hover:translate-x-1 transition-transform"
+                                                    className="h-8 w-8 rounded-sm"
                                                     onClick={(e) => {
                                                         e.stopPropagation();
                                                         handleOpenWizard(period);

@@ -14,7 +14,11 @@ class InvoiceViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = Invoice.objects.all().order_by('-date', '-id')
     serializer_class = InvoiceSerializer
     filter_backends = [DjangoFilterBackend, drf_filters.SearchFilter]
-    search_fields = ['contact__name', 'contact__rut']
+    search_fields = [
+        'contact__name', 'contact__tax_id',
+        'purchase_order__supplier__name', 'purchase_order__supplier__tax_id',
+        'sale_order__customer__name', 'sale_order__customer__tax_id',
+    ]
     filterset_fields = {
         'dte_type': ['exact', 'in'],
         'sale_order': ['exact', 'isnull'],

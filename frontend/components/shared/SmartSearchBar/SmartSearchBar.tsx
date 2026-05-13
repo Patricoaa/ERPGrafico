@@ -208,8 +208,8 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
       {/* Input row */}
       <div
         className={cn(
-          'flex items-center gap-1.5 flex-wrap min-h-9 px-3 rounded-md',
-          'bg-muted/20 border border-border/40 transition-all',
+          'flex items-center gap-1.5 h-9 px-3 rounded-md overflow-x-auto scrollbar-hide',
+          'bg-muted/20 border border-border/50 shadow-sm transition-all',
           'focus-within:bg-background focus-within:border-border',
           isOpen && 'bg-background border-border rounded-b-none',
         )}
@@ -261,7 +261,7 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
           onFocus={() => { if (stage.type === 'closed') openFieldList() }}
           onKeyDown={handleKeyDown}
           placeholder={hasActiveFilters ? '' : placeholder}
-          className="flex-1 min-w-[80px] bg-transparent border-none outline-none text-[11px] uppercase font-bold tracking-widest placeholder:text-muted-foreground/40 py-1.5"
+          className="flex-1 h-9 min-w-[80px] bg-transparent border-none outline-none text-[11px] uppercase font-bold tracking-widest placeholder:text-muted-foreground/40 py-0"
           role="combobox"
           aria-expanded={isOpen}
           aria-haspopup="listbox"
@@ -271,7 +271,7 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
 
         {/* Enter hint — visible when actively typing a text filter */}
         {showEnterHint && (
-          <span className="inline-flex items-center gap-0.5 text-[9px] text-muted-foreground/40 shrink-0 select-none">
+          <span className="inline-flex items-center text-[8px] text-muted-foreground/40 shrink-0 select-none">
             <CornerDownLeft className="h-2.5 w-2.5" />
           </span>
         )}
@@ -330,18 +330,16 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
           {/* Stage: enum options */}
           {stage.type === 'enum-options' && (
             <div className="py-1">
-              <div className="flex items-center gap-2 px-3 py-1.5 border-b border-border/40">
-                <button
-                  type="button"
-                  onClick={(e) => { e.stopPropagation(); handleBack() }}
-                  className="p-1 -ml-1 rounded-sm hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
-                >
-                  <ChevronLeft className="h-3.5 w-3.5" />
-                </button>
-                <span className="text-[9px] text-muted-foreground uppercase tracking-widest font-bold">
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); handleBack() }}
+                className="w-full flex items-center gap-2 px-3 py-1.5 border-b border-border/40 hover:bg-muted/40 transition-colors group text-left"
+              >
+                <ChevronLeft className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
+                <span className="text-[9px] text-muted-foreground uppercase tracking-widest font-bold group-hover:text-foreground transition-colors">
                   {stage.field.label}
                 </span>
-              </div>
+              </button>
               {stage.field.options.map((opt, i) => (
                 <button
                   key={opt.value}
@@ -366,19 +364,17 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
           {stage.type === 'text-input' && (
             <div>
               {/* Header */}
-              <div className="flex items-center gap-2 px-3 py-1.5 border-b border-border/40">
-                <button
-                  type="button"
-                  onClick={(e) => { e.stopPropagation(); handleBack() }}
-                  className="p-1 -ml-1 rounded-sm hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
-                >
-                  <ChevronLeft className="h-3.5 w-3.5" />
-                </button>
-                <span className="text-[9px] text-muted-foreground uppercase tracking-widest font-bold">
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); handleBack() }}
+                className="w-full flex items-center gap-2 px-3 py-1.5 border-b border-border/40 hover:bg-muted/40 transition-colors group text-left"
+              >
+                <ChevronLeft className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
+                <span className="text-[9px] text-muted-foreground uppercase tracking-widest font-bold group-hover:text-foreground transition-colors">
                   {stage.field.label}
                 </span>
                 {isSuggestionsLoading && <Loader2 className="h-2.5 w-2.5 animate-spin text-muted-foreground/50 ml-auto" />}
-              </div>
+              </button>
 
               {/* Real input in dropdown */}
               <div className="px-3 pt-3 pb-2">
@@ -463,18 +459,16 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
           {/* Stage: daterange picker */}
           {stage.type === 'daterange' && (
             <div className="p-3 flex flex-col gap-3">
-              <div className="flex items-center gap-2 -mt-1 -ml-1 mb-1">
-                <button
-                  type="button"
-                  onClick={(e) => { e.stopPropagation(); handleBack() }}
-                  className="p-1 rounded-sm hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
-                >
-                  <ChevronLeft className="h-3.5 w-3.5" />
-                </button>
-                <span className="text-[9px] text-muted-foreground uppercase tracking-widest font-bold">
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); handleBack() }}
+                className="w-full flex items-center gap-2 px-3 py-1.5 border-b border-border/40 hover:bg-muted/40 transition-colors group text-left -mt-1 -ml-1 mb-1 rounded-t-md"
+              >
+                <ChevronLeft className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
+                <span className="text-[9px] text-muted-foreground uppercase tracking-widest font-bold group-hover:text-foreground transition-colors">
                   {stage.field.label}
                 </span>
-              </div>
+              </button>
               <Calendar
                 mode="range"
                 selected={dateRange}
