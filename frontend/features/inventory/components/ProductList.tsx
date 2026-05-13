@@ -295,11 +295,6 @@ export function ProductList({ externalOpen, onExternalOpenChange, createAction }
             id: "active",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" className="justify-center" />,
             enableHiding: true,
-            filterFn: (row, id, value: string[]) => {
-                if (!value || value.length === 0) return true
-                const rowValue = !!row.getValue(id)
-                return value.includes(String(rowValue))
-            },
             cell: ({ row }) => (
                 <DataCell.Status
                     status={row.original.active ? "active" : "inactive"}
@@ -452,7 +447,7 @@ export function ProductList({ externalOpen, onExternalOpenChange, createAction }
                     data={displayProducts}
                     isLoading={isLoading}
                     variant="embedded"
-                    leftAction={<SmartSearchBar searchDef={productSearchDef} placeholder="Buscar por nombre, SKU o tipo..." className="w-80" />}
+                    leftAction={<SmartSearchBar searchDef={productSearchDef} placeholder="Buscar por nombre, SKU o tipo..." />}
                     initialColumnVisibility={initialColumnVisibility}
                     viewOptions={[
                         { label: "Lista", value: "table", icon: List },
@@ -516,21 +511,6 @@ export function ProductList({ externalOpen, onExternalOpenChange, createAction }
                         </div>
                     ) : undefined}
                     bulkActions={bulkActions}
-                    facetedFilters={[
-                        {
-                            column: "category_name",
-                            title: "Categoría",
-                        },
-                        {
-                            column: "active",
-                            title: "Estado",
-                            options: [
-                                { label: "Activos", value: "true" },
-                                { label: "Archivados", value: "false" },
-                            ],
-                        }
-                    ]}
-                    useAdvancedFilter={true}
                     defaultPageSize={500}
                     createAction={createAction}
                 />

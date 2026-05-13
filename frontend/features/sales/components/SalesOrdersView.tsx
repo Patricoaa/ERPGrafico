@@ -4,17 +4,14 @@ import React, { useEffect, useState } from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
-import { ColumnDef, Row } from "@tanstack/react-table"
+import { ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
 import { LayoutDashboard, List, ArrowRight, ArrowLeft } from "lucide-react"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { EntityCard } from "@/components/shared/EntityCard"
 
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
-import { DateRangeFilter } from "@/components/shared/DateRangeFilter"
-import { isWithinInterval, parseISO, startOfDay, endOfDay, format } from "date-fns"
 import { OrderHubStatus } from "@/features/orders/components/OrderHubStatus"
-import { getHubStatuses } from '@/features/orders/utils/status'
 import { OrderCard } from "@/features/orders/components/OrderCard"
 import { DataCell } from "@/components/ui/data-table-cells"
 import { NoteHubStatus } from "@/features/orders/components/NoteHubStatus"
@@ -36,7 +33,6 @@ interface SalesOrdersViewProps {
 
 export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideStatusInCards }: SalesOrdersViewProps) {
     const { openHub, closeHub, hubConfig, isHubOpen } = useHubPanel()
-    const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date } | undefined>()
     const router = useRouter()
     const searchParams = useSearchParams()
     const pathname = usePathname()
@@ -101,26 +97,9 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
         if (onActionSuccess) onActionSuccess()
     }
 
-    const filteredOrders = orders.filter(order => {
-        if (!dateRange || !dateRange.from) return true
-        const orderDate = parseISO(order.date)
-        const start = startOfDay(dateRange.from)
-        const end = dateRange.to ? endOfDay(dateRange.to) : endOfDay(dateRange.from)
-        return isWithinInterval(orderDate, { start, end })
-    })
-
-    const filteredNotes = (notes || []).filter(note => {
-        // Only show Credit and Debit notes
-        if (!['NOTA_CREDITO', 'NOTA_DEBITO'].includes(note.dte_type)) return false
-        // Only show documents linked to a Sale Order (Emitted)
-        if (!note.sale_order) return false
-
-        if (!dateRange || !dateRange.from) return true
-        const noteDate = parseISO(note.date)
-        const start = startOfDay(dateRange.from)
-        const end = dateRange.to ? endOfDay(dateRange.to) : endOfDay(dateRange.from)
-        return isWithinInterval(noteDate, { start, end })
-    })
+    const filteredNotes = (notes || []).filter(note =>
+        ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(note.dte_type) && !!note.sale_order
+    )
 
     const columns: ColumnDef<SaleOrder>[] = [
         {
@@ -152,39 +131,6 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
             header: ({ column }) => <DataTableColumnHeader column={column} title="Estados" className="justify-center" />,
             cell: ({ row }) => <div className="flex justify-center items-center"><OrderHubStatus order={row.original as any} /></div>,
             meta: { title: "Estado" },
-        },
-        // Hidden filter columns
-        {
-            id: "production_status",
-            accessorFn: (row) => getHubStatuses(row as any).production,
-            header: () => null,
-            cell: () => null,
-            filterFn: (row, id, value) => value.includes(row.getValue(id)),
-            enableHiding: false,
-        },
-        {
-            id: "logistics_status",
-            accessorFn: (row) => getHubStatuses(row as any).logistics,
-            header: () => null,
-            cell: () => null,
-            filterFn: (row, id, value) => value.includes(row.getValue(id)),
-            enableHiding: false,
-        },
-        {
-            id: "billing_status",
-            accessorFn: (row) => getHubStatuses(row as any).billing,
-            header: () => null,
-            cell: () => null,
-            filterFn: (row, id, value) => value.includes(row.getValue(id)),
-            enableHiding: false,
-        },
-        {
-            id: "treasury_status",
-            accessorFn: (row) => getHubStatuses(row as any).treasury,
-            header: () => null,
-            cell: () => null,
-            filterFn: (row, id, value) => value.includes(row.getValue(id)),
-            enableHiding: false,
         },
         {
             id: "hub_trigger",
@@ -283,76 +229,11 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
                     currentView={currentView}
                     onViewChange={handleViewChange}
                     viewOptions={viewOptions}
-                    // orders: SmartSearchBar server-side + badge facets client-side
-                    // notes: input client-side + status facets + date range
                     leftAction={viewMode === 'orders'
-                        ? <SmartSearchBar searchDef={salesOrderSearchDef} placeholder="Buscar órdenes..." className="w-80" />
+                        ? <SmartSearchBar searchDef={salesOrderSearchDef} placeholder="Buscar órdenes..." />
                         : undefined
                     }
-                    filterColumn={viewMode === 'notes' ? "number" : undefined}
-                    searchPlaceholder={viewMode === 'notes' ? "Buscar por número..." : undefined}
-                    facetedFilters={viewMode === 'orders' ? [
-                        {
-                            column: "production_status",
-                            title: "Producción",
-                            options: [
-                                { label: "En Proceso", value: "active" },
-                                { label: "Completado", value: "success" },
-                                { label: "Pendiente", value: "neutral" },
-                            ]
-                        },
-                        {
-                            column: "logistics_status",
-                            title: "Logística",
-                            options: [
-                                { label: "En Proceso", value: "active" },
-                                { label: "Completado", value: "success" },
-                                { label: "Pendiente", value: "neutral" },
-                            ]
-                        },
-                        {
-                            column: "billing_status",
-                            title: "Facturación",
-                            options: [
-                                { label: "En Proceso", value: "active" },
-                                { label: "Completado", value: "success" },
-                                { label: "Pendiente", value: "neutral" },
-                            ]
-                        },
-                        {
-                            column: "treasury_status",
-                            title: "Tesorería",
-                            options: [
-                                { label: "En Proceso", value: "active" },
-                                { label: "Completado", value: "success" },
-                                { label: "Pendiente", value: "neutral" },
-                            ]
-                        }
-                    ] : [
-                        {
-                            column: "status",
-                            title: "Estado",
-                            options: [
-                                { label: "Borrador", value: "DRAFT" },
-                                { label: "Publicado", value: "POSTED" },
-                                { label: "Pagado", value: "PAID" },
-                                { label: "Anulado", value: "CANCELLED" },
-                            ],
-                        },
-                    ]}
-                    useAdvancedFilter={viewMode === 'notes'}
                     showToolbarSort={true}
-                    onReset={viewMode === 'notes' ? () => setDateRange(undefined) : undefined}
-                    customFilters={viewMode === 'notes'
-                        ? <DateRangeFilter
-                            onDateChange={setDateRange}
-                            label="Fecha de Emisión"
-                            className="bg-transparent border-none w-full"
-                          />
-                        : undefined
-                    }
-                    isCustomFiltered={viewMode === 'notes' ? !!dateRange : undefined}
-                    customFilterCount={dateRange ? 1 : 0}
 
                     defaultPageSize={20}
                     renderCustomView={currentView === 'card' ? (table) => {

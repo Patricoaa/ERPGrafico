@@ -194,7 +194,7 @@ export function SalesInvoicesClientView() {
                 currentView={currentView}
                 onViewChange={handleViewChange}
                 viewOptions={viewOptions}
-                leftAction={<SmartSearchBar searchDef={invoiceSearchDef} placeholder="Buscar facturas..." className="w-80" />}
+                leftAction={<SmartSearchBar searchDef={invoiceSearchDef} placeholder="Buscar facturas..." />}
                 defaultPageSize={20}
                 renderCustomView={currentView === 'card' ? (table) => {
                     const rows = table.getRowModel().rows
