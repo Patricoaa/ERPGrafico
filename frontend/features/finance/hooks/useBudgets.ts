@@ -1,4 +1,4 @@
-import { useSuspenseQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
 import { toast } from 'sonner'
 
@@ -15,12 +15,13 @@ export interface Budget {
 export function useBudgets() {
     const queryClient = useQueryClient()
 
-    const { data: budgets, refetch } = useSuspenseQuery({
+    const { data: budgets, isLoading, refetch } = useQuery({
         queryKey: BUDGETS_QUERY_KEY,
         queryFn: async () => {
             const response = await api.get('/accounting/budgets/')
             return response.data
         },
+        staleTime: 5 * 60 * 1000, // 5 min
     })
 
     const createMutation = useMutation({
@@ -49,7 +50,8 @@ export function useBudgets() {
     })
 
     return {
-        budgets,
+        budgets: budgets ?? [],
+        isLoading,
         refetch,
         createBudget: createMutation.mutateAsync,
         updateBudget: updateMutation.mutateAsync,

@@ -3,13 +3,11 @@
 import React, { useState, useEffect } from "react"
 import { useTerminalProviders, useTerminalDevices, type PaymentTerminalProvider, type PaymentTerminalDevice } from "../hooks/useTerminalProviders"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { BaseModal, EmptyState, StatusBadge, SubmitButton, CancelButton, IconButton, LabeledInput, LabeledSelect, FormSection, MultiSelectTagInput } from "@/components/shared"
+import { BaseModal, StatusBadge, SubmitButton, CancelButton, IconButton, LabeledInput, LabeledSelect, FormSection, MultiSelectTagInput } from "@/components/shared"
 import { toast } from "sonner"
 import {
     Settings,
     Trash2,
-    Loader2,
     Building2,
 
     Smartphone,
@@ -19,9 +17,15 @@ import {
 } from "lucide-react"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
-import { cn } from "@/lib/utils"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
+import { DataTable } from "@/components/ui/data-table"
+import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { createActionsColumn, DataCell } from "@/components/ui/data-table-cells"
+import { ColumnDef } from "@tanstack/react-table"
+import { List, LayoutGrid } from "lucide-react"
+import { EntityCard } from "@/components/shared/EntityCard"
+import { useSearchParams, useRouter, usePathname } from "next/navigation"
 
 interface PaymentHardwareManagementProps {
     externalDeviceOpen?: boolean
@@ -48,8 +52,8 @@ export function PaymentHardwareManagement({
         }
     }, [externalActiveTab])
 
-    const { providers, refetch: refetchProviders, deleteProvider } = useTerminalProviders()
-    const { devices, refetch: refetchDevices, deleteDevice } = useTerminalDevices()
+    const { providers, isLoading: isLoadingProviders, refetch: refetchProviders, deleteProvider } = useTerminalProviders()
+    const { devices, isLoading: isLoadingDevices, refetch: refetchDevices, deleteDevice } = useTerminalDevices()
 
     const [providerDialogOpen, setProviderDialogOpen] = useState(false)
     const [editingProvider, setEditingProvider] = useState<PaymentTerminalProvider | null>(null)
@@ -106,6 +110,110 @@ export function PaymentHardwareManagement({
         } catch (error) { }
     })
 
+    const searchParams = useSearchParams()
+    const router = useRouter()
+    const pathname = usePathname()
+    const [viewMode, setViewMode] = useState<string>(searchParams.get("view") ?? "card")
+
+    const handleViewChange = (v: string) => {
+        const params = new URLSearchParams(searchParams.toString())
+        params.set('view', v)
+        router.push(`${pathname}?${params.toString()}`, { scroll: false })
+        setViewMode(v)
+    }
+
+    const providerColumns: ColumnDef<PaymentTerminalProvider>[] = [
+        {
+            accessorKey: "name",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Nombre" />,
+            cell: ({ row }) => <div className="font-semibold text-sm">{row.getValue("name")}</div>,
+        },
+        {
+            accessorKey: "supplier_name",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Contacto" />,
+            cell: ({ row }) => <div className="text-muted-foreground">{row.getValue("supplier_name") || "-"}</div>,
+        },
+        {
+            accessorKey: "receivable_account_name",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Cuenta Recaudación" />,
+            cell: ({ row }) => <div className="text-muted-foreground">{row.getValue("receivable_account_name") || "-"}</div>,
+        },
+        {
+            accessorKey: "is_active",
+            id: "status",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" className="justify-center" />,
+            cell: ({ row }) => (
+                <div className="flex justify-center">
+                    <StatusBadge status={row.original.is_active ? "active" : "inactive"} size="sm" />
+                </div>
+            ),
+            filterFn: (row, id, value) => value.includes(row.getValue(id) ? "ACTIVE" : "INACTIVE")
+        },
+        createActionsColumn<PaymentTerminalProvider>({
+            renderActions: (provider) => (
+                <>
+                    <DataCell.Action
+                        icon={Settings}
+                        title="Editar"
+                        onClick={() => handleEditProvider(provider)}
+                    />
+                    <DataCell.Action
+                        icon={Trash2}
+                        title="Eliminar"
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => deleteProviderConfirm.requestConfirm(provider)}
+                    />
+                </>
+            )
+        })
+    ]
+
+    const deviceColumns: ColumnDef<PaymentTerminalDevice>[] = [
+        {
+            accessorKey: "name",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Nombre" />,
+            cell: ({ row }) => <div className="font-semibold text-sm">{row.getValue("name")}</div>,
+        },
+        {
+            accessorKey: "provider_name",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Proveedor" />,
+            cell: ({ row }) => <div className="text-muted-foreground">{row.getValue("provider_name")}</div>,
+        },
+        {
+            accessorKey: "serial_number",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="N° Serie" />,
+            cell: ({ row }) => <div className="font-mono text-muted-foreground">{row.getValue("serial_number")}</div>,
+        },
+        {
+            accessorKey: "is_active",
+            id: "status",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" className="justify-center" />,
+            cell: ({ row }) => (
+                <div className="flex justify-center">
+                    <StatusBadge status={row.original.is_active ? "active" : "inactive"} size="sm" />
+                </div>
+            ),
+            filterFn: (row, id, value) => value.includes(row.getValue(id) ? "ACTIVE" : "INACTIVE")
+        },
+        createActionsColumn<PaymentTerminalDevice>({
+            renderActions: (device) => (
+                <>
+                    <DataCell.Action
+                        icon={Settings}
+                        title="Editar"
+                        onClick={() => handleEditDevice(device)}
+                    />
+                    <DataCell.Action
+                        icon={Trash2}
+                        title="Eliminar"
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => deleteDeviceConfirm.requestConfirm(device)}
+                    />
+                </>
+            )
+        })
+    ]
+
 
     return (
         <div className="space-y-6">
@@ -115,49 +223,177 @@ export function PaymentHardwareManagement({
                 </div>
             )}
             {activeTab === "providers" ? (
-                <div className="m-0 outline-none">
-                    {providers.length === 0 ? (
-                        <EmptyState
-                            context="finance"
-                            title="No hay proveedores configurados"
-                            description="Configure los proveedores de pago (TUU, Transbank, etc.) para procesar transacciones."
-                            action={<Button onClick={handleCreateProvider} variant="outline" size="sm">Configurar primer proveedor</Button>}
-                        />
-                    ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {providers.map(provider => (
-                                <ProviderCard
-                                    key={provider.id}
-                                    provider={provider}
-                                    onEdit={() => handleEditProvider(provider)}
-                                    onDelete={() => deleteProviderConfirm.requestConfirm(provider)}
-                                />
+                <DataTable
+                    columns={providerColumns}
+                    data={providers}
+                    isLoading={isLoadingProviders}
+                    variant="embedded"
+                    filterColumn="name"
+                    searchPlaceholder="Buscar proveedor..."
+                    defaultPageSize={20}
+                    currentView={viewMode}
+                    onViewChange={handleViewChange}
+                    viewOptions={[
+                        { label: "Lista", value: "list", icon: List },
+                        { label: "Tarjeta", value: "card", icon: LayoutGrid }
+                    ]}
+                    facetedFilters={[
+                        {
+                            column: "status",
+                            title: "Estado",
+                            options: [
+                                { label: "Activos", value: "ACTIVE" },
+                                { label: "Inactivos", value: "INACTIVE" }
+                            ]
+                        }
+                    ]}
+                    createAction={createAction || (
+                        <Button onClick={handleCreateProvider} className="h-9">
+                            Configurar proveedor
+                        </Button>
+                    )}
+                    renderLoadingView={viewMode === 'card' ? () => (
+                        <div className="flex flex-col gap-4 pt-2">
+                            {Array.from({ length: 3 }).map((_, i) => (
+                                <EntityCard.Skeleton key={i} />
                             ))}
                         </div>
-                    )}
-                </div>
+                    ) : undefined}
+                    renderCustomView={viewMode === 'card' ? (table) => (
+                        <div className="flex flex-col gap-4 pt-2">
+                            {table.getRowModel().rows.map(row => {
+                                const provider = row.original
+                                return (
+                                    <EntityCard key={provider.id}>
+                                        <EntityCard.Header
+                                            title={
+                                                <div className="flex items-center gap-2">
+                                                    <Building2 className="h-4 w-4 text-primary" />
+                                                    {provider.name}
+                                                </div>
+                                            }
+                                            trailing={
+                                                <div className="flex flex-col items-end gap-2">
+                                                    <StatusBadge status={provider.is_active ? "active" : "inactive"} size="sm" />
+                                                    <div className="flex items-center gap-1">
+                                                        <IconButton onClick={() => handleEditProvider(provider)} className="h-7 w-7"><Settings className="h-3 w-3" /></IconButton>
+                                                        <IconButton onClick={() => deleteProviderConfirm.requestConfirm(provider)} className="h-7 w-7 text-destructive hover:bg-destructive/10 hover:text-destructive"><Trash2 className="h-3 w-3" /></IconButton>
+                                                    </div>
+                                                </div>
+                                            }
+                                        />
+                                        <EntityCard.Body>
+                                            <EntityCard.Field
+                                                label="Recaudación"
+                                                value={provider.receivable_account_name || "No configurada"}
+                                                icon={Building2}
+                                            />
+                                            {provider.supplier_name && (
+                                                <EntityCard.Field
+                                                    label="Contacto"
+                                                    value={provider.supplier_name}
+                                                    icon={UserIcon}
+                                                />
+                                            )}
+                                        </EntityCard.Body>
+                                    </EntityCard>
+                                )
+                            })}
+                        </div>
+                    ) : undefined}
+                />
             ) : (
-                <div className="m-0 outline-none">
-                    {devices.length === 0 ? (
-                        <EmptyState
-                            context="production"
-                            title="No hay dispositivos registrados"
-                            description="Registre las terminales físicas (maquinitas) y vincúlelas a un proveedor de pago."
-                            action={<Button onClick={handleCreateDevice} variant="outline" size="sm">Registrar dispositivo</Button>}
-                        />
-                    ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {devices.map(device => (
-                                <DeviceCard
-                                    key={device.id}
-                                    device={device}
-                                    onEdit={() => handleEditDevice(device)}
-                                    onDelete={() => deleteDeviceConfirm.requestConfirm(device)}
-                                />
+                <DataTable
+                    columns={deviceColumns}
+                    data={devices}
+                    isLoading={isLoadingDevices}
+                    variant="embedded"
+                    filterColumn="name"
+                    searchPlaceholder="Buscar dispositivo..."
+                    defaultPageSize={20}
+                    currentView={viewMode}
+                    onViewChange={handleViewChange}
+                    viewOptions={[
+                        { label: "Lista", value: "list", icon: List },
+                        { label: "Tarjeta", value: "card", icon: LayoutGrid }
+                    ]}
+                    facetedFilters={[
+                        {
+                            column: "status",
+                            title: "Estado",
+                            options: [
+                                { label: "Activos", value: "ACTIVE" },
+                                { label: "Inactivos", value: "INACTIVE" }
+                            ]
+                        }
+                    ]}
+                    createAction={createAction || (
+                        <Button onClick={handleCreateDevice} className="h-9">
+                            Registrar dispositivo
+                        </Button>
+                    )}
+                    renderLoadingView={viewMode === 'card' ? () => (
+                        <div className="flex flex-col gap-4 pt-2">
+                            {Array.from({ length: 3 }).map((_, i) => (
+                                <EntityCard.Skeleton key={i} />
                             ))}
                         </div>
-                    )}
-                </div>
+                    ) : undefined}
+                    renderCustomView={viewMode === 'card' ? (table) => (
+                        <div className="flex flex-col gap-4 pt-2">
+                            {table.getRowModel().rows.map(row => {
+                                const device = row.original
+                                return (
+                                    <EntityCard key={device.id}>
+                                        <EntityCard.Header
+                                            title={
+                                                <div className="flex items-center gap-2">
+                                                    <Smartphone className="h-4 w-4 text-info" />
+                                                    {device.name}
+                                                </div>
+                                            }
+                                            trailing={
+                                                <div className="flex flex-col items-end gap-2">
+                                                    <StatusBadge status={device.is_active ? "active" : "inactive"} size="sm" />
+                                                    <div className="flex items-center gap-1">
+                                                        <IconButton onClick={() => handleEditDevice(device)} className="h-7 w-7"><Settings className="h-3 w-3" /></IconButton>
+                                                        <IconButton onClick={() => deleteDeviceConfirm.requestConfirm(device)} className="h-7 w-7 text-destructive hover:bg-destructive/10 hover:text-destructive"><Trash2 className="h-3 w-3" /></IconButton>
+                                                    </div>
+                                                </div>
+                                            }
+                                        />
+                                        <EntityCard.Body>
+                                            <EntityCard.Field
+                                                label="Proveedor"
+                                                value={device.provider_name || "Sin proveedor"}
+                                                icon={Building2}
+                                            />
+                                            <EntityCard.Field
+                                                label="N° Serie"
+                                                value={<span className="font-mono">{device.serial_number}</span>}
+                                                icon={CreditCard}
+                                            />
+                                        </EntityCard.Body>
+                                        <EntityCard.Footer className="justify-between items-center bg-muted/10 px-4 py-2 border-t">
+                                            <div className="flex items-center gap-1.5 w-full">
+                                                <span className="text-[10px] font-bold text-muted-foreground uppercase mr-2">Soporta:</span>
+                                                {device.supported_payment_methods?.includes(2) && (
+                                                    <span className="px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest bg-primary/10 text-primary border border-primary/20 rounded-sm">DÉBITO</span>
+                                                )}
+                                                {device.supported_payment_methods?.includes(1) && (
+                                                    <span className="px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest bg-primary/10 text-primary border border-primary/20 rounded-sm">CRÉDITO</span>
+                                                )}
+                                                {(!device.supported_payment_methods || device.supported_payment_methods.length === 0) && (
+                                                    <span className="text-[10px] italic opacity-50">SIN CONFIG</span>
+                                                )}
+                                            </div>
+                                        </EntityCard.Footer>
+                                    </EntityCard>
+                                )
+                            })}
+                        </div>
+                    ) : undefined}
+                />
             )}
 
             {/* Dialogs */}
@@ -204,89 +440,7 @@ export function PaymentHardwareManagement({
     )
 }
 
-function ProviderCard({ provider, onEdit, onDelete }: { provider: PaymentTerminalProvider, onEdit: () => void, onDelete: () => void }) {
-    return (
-        <Card className="bg-background hover:shadow-md transition-all border-2">
-            <CardHeader className="p-4 pb-2">
-                <div className="flex justify-between items-start">
-                    <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                            <Building2 className="h-4 w-4 text-primary" />
-                            <CardTitle className="text-sm">{provider.name}</CardTitle>
-                        </div>
-                        <div className="flex flex-col gap-1.5 p-3 rounded-sm bg-muted/30 border border-muted/50">
-                            <div className="flex items-center gap-2">
-                                <Building2 className="w-3.5 h-3.5 text-muted-foreground" />
-                                <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-tight"> {/* intentional: badge density */} Recaudación:</span>
-                                <span className="text-[11px] font-medium ml-auto"> {/* intentional: badge density */} {provider.receivable_account_name}</span>
-                            </div>
-                            {provider.supplier_name && (
-                                <div className="flex items-center gap-2 pt-1.5 border-t border-muted/30">
-                                    <UserIcon className="w-3.5 h-3.5 text-primary/60" />
-                                    <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-tight"> {/* intentional: badge density */} Contacto:</span>
-                                    <span className="text-[11px] font-medium ml-auto text-primary/80"> {/* intentional: badge density */} {provider.supplier_name}</span>
-                                </div>
-                            )}
-                        </div>
-                        <StatusBadge status={provider.is_active ? "active" : "inactive"} size="sm" />
-                    </div>
-                    <div className="flex gap-1">
-                        <IconButton onClick={onEdit} className="h-7 w-7"><Settings className="h-3.5 w-3.5" /></IconButton>
-                        <IconButton onClick={onDelete} className="h-7 w-7 text-destructive hover:bg-destructive/10 hover:text-destructive"><Trash2 className="h-3.5 w-3.5" /></IconButton>
-                    </div>
-                </div>
-            </CardHeader>
-        </Card>
-    )
-}
 
-function DeviceCard({ device, onEdit, onDelete }: { device: PaymentTerminalDevice, onEdit: () => void, onDelete: () => void }) {
-    return (
-        <Card className="bg-background hover:shadow-md transition-all border-2">
-            <CardHeader className="p-4 pb-2">
-                <div className="flex justify-between items-start">
-                    <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                            <Smartphone className="h-4 w-4 text-info" />
-                            <CardTitle className="text-sm">{device.name}</CardTitle>
-                        </div>
-                        <StatusBadge status={device.is_active ? "active" : "inactive"} size="sm" />
-                    </div>
-                    <div className="flex gap-1">
-                        <IconButton onClick={onEdit} className="h-7 w-7"><Settings className="h-3.5 w-3.5" /></IconButton>
-                        <IconButton onClick={onDelete} className="h-7 w-7 text-destructive hover:bg-destructive/10 hover:text-destructive"><Trash2 className="h-3.5 w-3.5" /></IconButton>
-                    </div>
-                </div>
-            </CardHeader>
-            <CardContent className="p-4 pt-2 space-y-3">
-                <div className="grid grid-cols-1 gap-2 text-[10px] uppercase font-bold text-muted-foreground tracking-wider"> {/* intentional: badge density */}
-                    <div className="flex justify-between">
-                        <span>Proveedor:</span>
-                        <span className="text-foreground">{device.provider_name}</span>
-                    </div>
-                    <div className="flex justify-between">
-                        <span>N° Serie:</span>
-                        <span className="text-foreground font-mono">{device.serial_number}</span>
-                    </div>
-                    <div className="flex justify-between items-center pt-1">
-                        <span>Soporta:</span>
-                        <div className="flex gap-1">
-                            {device.supported_payment_methods?.includes(2) && (
-                                <span className="px-1.5 py-0.5 bg-primary/10 text-primary border border-primary/20 rounded-sm">DÉBITO</span>
-                            )}
-                            {device.supported_payment_methods?.includes(1) && (
-                                <span className="px-1.5 py-0.5 bg-primary/10 text-primary border border-primary/20 rounded-sm">CRÉDITO</span>
-                            )}
-                            {(!device.supported_payment_methods || device.supported_payment_methods.length === 0) && (
-                                <span className="text-[10px] italic opacity-50"> {/* intentional: badge density */} SIN CONFIG</span>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            </CardContent>
-        </Card>
-    )
-}
 
 /**
  * Modal for creating/editing Providers

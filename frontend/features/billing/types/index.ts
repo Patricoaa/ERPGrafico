@@ -50,6 +50,8 @@ export interface InvoiceFilters {
     status?: string
     dte_type?: string
     mode?: 'sale' | 'purchase'
+    date_from?: string
+    date_to?: string
 }
 
 export interface AnnulInvoicePayload {

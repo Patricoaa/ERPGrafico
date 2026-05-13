@@ -1,4 +1,4 @@
-import { useSuspenseQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
 
 export interface Warehouse {
@@ -13,12 +13,13 @@ export const WAREHOUSES_QUERY_KEY = ['warehouses']
 export function useWarehouses() {
     const queryClient = useQueryClient()
 
-    const { data: warehouses, refetch } = useSuspenseQuery({
+    const { data: warehouses, isLoading, refetch } = useQuery({
         queryKey: WAREHOUSES_QUERY_KEY,
         queryFn: async (): Promise<Warehouse[]> => {
             const response = await api.get('/inventory/warehouses/')
             return response.data.results || response.data
         },
+        staleTime: 15 * 60 * 1000, // 15 min — datos de configuración
     })
 
     const deleteWarehouseMutation = useMutation({
@@ -31,7 +32,8 @@ export function useWarehouses() {
     })
 
     return {
-        warehouses,
+        warehouses: warehouses ?? [],
+        isLoading,
         refetch,
         deleteWarehouse: deleteWarehouseMutation.mutateAsync,
         isDeleting: deleteWarehouseMutation.isPending

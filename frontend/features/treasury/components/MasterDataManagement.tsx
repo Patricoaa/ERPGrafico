@@ -139,7 +139,7 @@ export function BankManagement({ externalOpen, onOpenChange, createAction }: Ban
             <DataTable
                 columns={columns}
                 data={banks}
-                cardMode
+                variant="embedded"
                 searchPlaceholder="Buscar bancos..."
                 filterColumn="name"
                 useAdvancedFilter={true}
@@ -471,7 +471,7 @@ export function PaymentMethodManagement({ externalOpen, onOpenChange, createActi
             <DataTable
                 columns={columns}
                 data={methods}
-                cardMode
+                variant="embedded"
                 searchPlaceholder="Buscar por nombre o cuenta..."
                 filterColumn="name"
                 useAdvancedFilter={true}

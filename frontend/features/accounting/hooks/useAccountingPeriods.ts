@@ -1,20 +1,23 @@
-import { useSuspenseQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { toast } from 'sonner';
 import { AccountingPeriod } from '../types';
 import { showApiError } from '@/lib/errors';
 
-export const ACCOUNTING_PERIODS_QUERY_KEY = ['accounting-periods'];
+import { ACCOUNTING_PERIODS_QUERY_KEY } from './queryKeys'
+
+export { ACCOUNTING_PERIODS_QUERY_KEY }
 
 export function useAccountingPeriods() {
     const queryClient = useQueryClient();
 
-    const { data, refetch } = useSuspenseQuery({
+    const { data, isLoading, refetch } = useQuery({
         queryKey: ACCOUNTING_PERIODS_QUERY_KEY,
         queryFn: async () => {
             const response = await api.get('/tax/accounting-periods/?ordering=-year,-month');
             return response.data.results || response.data;
         },
+        staleTime: 10 * 60 * 1000, // 10 min
     });
 
     const closeMutation = useMutation({
@@ -45,19 +48,13 @@ export function useAccountingPeriods() {
     });
 
     return {
-        data: data as AccountingPeriod[],
+        data: (data as AccountingPeriod[]) ?? [],
+        isLoading,
         refetch,
         isActionLoading: closeMutation.isPending || reopenMutation.isPending || createMutation.isPending,
         closePeriod: closeMutation.mutateAsync,
         reopenPeriod: reopenMutation.mutateAsync,
-        createPeriod: async (year: number, month: number) => {
-            try {
-                await createMutation.mutateAsync({ year, month });
-                return true;
-            } catch {
-                return false;
-            }
-        },
+        createPeriod: createMutation.mutateAsync,
         isCreating: createMutation.isPending,
         isClosing: closeMutation.isPending,
         isReopening: reopenMutation.isPending,

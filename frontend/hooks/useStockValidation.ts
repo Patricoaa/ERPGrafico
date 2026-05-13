@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import api from '@/lib/api'
+import type { Product } from '@/types/entities'
 
 export interface LineItem {
     product_id: number
@@ -47,7 +48,7 @@ export function useStockValidation() {
         }
     }
 
-    const validateLine = (product: any, requestedQty: number): boolean => {
+    const validateLine = (product: Partial<Product>, requestedQty: number): boolean => {
         // Quick local validation before calling backend
         if (!product) return false
 
@@ -63,7 +64,7 @@ export function useStockValidation() {
         return true
     }
 
-    const getStockMessage = (product: any, requestedQty: number): string | null => {
+    const getStockMessage = (product: Partial<Product>, requestedQty: number): string | null => {
         if (!product) return null
 
         if (product.product_type === 'STORABLE') {

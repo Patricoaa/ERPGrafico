@@ -1,6 +1,7 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React from "react"
+import { useQuery } from "@tanstack/react-query"
 import { notFound } from "next/navigation"
 import api from "@/lib/api"
 import { EntityDetailPage, FormSkeleton } from "@/components/shared"
@@ -13,16 +14,15 @@ interface InvoiceDetailClientProps {
 }
 
 export function InvoiceDetailClient({ invoiceId, type }: InvoiceDetailClientProps) {
-    const [invoice, setInvoice] = useState<Invoice | null>(null)
-    const [loading, setLoading] = useState(true)
-    const [error, setError] = useState<number | null>(null)
+    const { data: invoice, isLoading: loading, error: queryError } = useQuery({
+        queryKey: ['invoice', invoiceId],
+        queryFn: async () => {
+            const res = await api.get(`/billing/invoices/${invoiceId}/`)
+            return res.data
+        }
+    })
 
-    useEffect(() => {
-        api.get(`/billing/invoices/${invoiceId}/`)
-            .then(res => setInvoice(res.data))
-            .catch(err => setError(err.response?.status || 500))
-            .finally(() => setLoading(false))
-    }, [invoiceId])
+    const error = queryError ? (queryError as any).response?.status || 500 : null
 
     if (error === 404) return notFound()
     if (error) return <div className="p-8 text-destructive">Error al cargar la factura</div>

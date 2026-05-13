@@ -9,6 +9,7 @@ import {
     TableRow,
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
+import { SkeletonShell } from "@/components/shared/SkeletonShell"
 import { cn } from "@/lib/utils"
 
 // ─────────────────────────────────────────────────────────
@@ -71,6 +72,8 @@ export interface FormLineItemsTableProps {
 
     // ── Misc ─────────────────────────────────────────────
     className?: string
+    /** When true, renders placeholder rows and applies shimmer effect */
+    isLoading?: boolean
 }
 
 // ─────────────────────────────────────────────────────────
@@ -135,6 +138,7 @@ export function FormLineItemsTable({
     hideAddButton = false,
     footer,
     className,
+    isLoading = false,
 }: FormLineItemsTableProps) {
     const showFooter = !hideAddButton || footer
 
@@ -160,30 +164,46 @@ export function FormLineItemsTable({
             )}
 
             {/* ── Table shell — always rendered ── */}
-            <div className="border rounded-md">
-                <Table>
-                    <TableHeader>
-                        <TableRow className="hover:bg-transparent border-b">
-                            {columns.map((col, i) => (
-                                <TableHead
-                                    key={i}
-                                    className={cn(
-                                        "text-[10px] font-bold uppercase tracking-widest text-muted-foreground py-3",
-                                        col.width,
-                                        /* default: center — override per column with align prop */
-                                        col.align ? alignClass[col.align] : "text-center",
-                                        col.className,
-                                    )}
-                                >
-                                    {col.header}
-                                </TableHead>
-                            ))}
-                        </TableRow>
-                    </TableHeader>
+            <div className="border rounded-xl overflow-hidden bg-card/30">
+                <SkeletonShell isLoading={isLoading} ariaLabel="Cargando tabla de líneas" className="w-full">
+                    <Table>
+                        <TableHeader>
+                            <TableRow className="hover:bg-transparent border-b">
+                                {columns.map((col, i) => (
+                                    <TableHead
+                                        key={i}
+                                        className={cn(
+                                            "text-[10px] font-bold uppercase tracking-widest text-muted-foreground py-3",
+                                            col.width,
+                                            /* default: center — override per column with align prop */
+                                            col.align ? alignClass[col.align] : "text-center",
+                                            col.className,
+                                        )}
+                                    >
+                                        {col.header}
+                                    </TableHead>
+                                ))}
+                            </TableRow>
+                        </TableHeader>
 
-                    {/* Rows injected by the caller */}
-                    {children}
-                </Table>
+                        {/* Rows injected by the caller or placeholders */}
+                        {isLoading ? (
+                            <tbody>
+                                {Array.from({ length: 3 }).map((_, i) => (
+                                    <TableRow key={i}>
+                                        {columns.map((_, j) => (
+                                            <td key={j} className="p-3">
+                                                <div className="h-6 w-full rounded bg-muted/20" />
+                                            </td>
+                                        ))}
+                                    </TableRow>
+                                ))}
+                            </tbody>
+                        ) : (
+                            children
+                        )}
+                    </Table>
+                </SkeletonShell>
 
                 {/* ── Footer: add button + optional right slot ── */}
                 {showFooter && (
@@ -195,6 +215,7 @@ export function FormLineItemsTable({
                                 size="sm"
                                 className="text-[10px] font-bold uppercase tracking-widest text-primary hover:bg-primary/5 h-7 px-2"
                                 onClick={onAdd}
+                                disabled={isLoading}
                             >
                                 <Plus className="mr-1.5 h-3.5 w-3.5" />
                                 {addButtonText}

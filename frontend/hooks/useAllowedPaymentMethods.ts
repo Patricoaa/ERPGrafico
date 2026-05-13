@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import api from '@/lib/api'
 
 export interface PaymentMethod {
@@ -21,56 +21,46 @@ export interface UseAllowedPaymentMethodsOptions {
     enabled?: boolean
 }
 
+export const ALLOWED_PAYMENT_METHODS_KEYS = {
+    all: ['allowed_payment_methods'] as const,
+    list: (opts: Omit<UseAllowedPaymentMethodsOptions, 'enabled'>) => [...ALLOWED_PAYMENT_METHODS_KEYS.all, opts] as const,
+}
+
 export function useAllowedPaymentMethods({ terminalId, operation = 'sales', enabled = true }: UseAllowedPaymentMethodsOptions) {
-    const [methods, setMethods] = useState<PaymentMethod[]>([])
-    const [loading, setLoading] = useState(false)
-    const [error, setError] = useState<string | null>(null)
+    const query = useQuery({
+        queryKey: ALLOWED_PAYMENT_METHODS_KEYS.list({ terminalId, operation }),
+        queryFn: async ({ signal }) => {
+            let fetchedMethods: PaymentMethod[] = []
 
-    useEffect(() => {
-        const fetchMethods = async () => {
-            if (!enabled) return
+            if (terminalId) {
+                const response = await api.get(`/treasury/pos-terminals/${terminalId}/allowed_payment_methods/`, {
+                    params: { operation },
+                    signal
+                })
+                fetchedMethods = response.data
+            } else {
+                const response = await api.get('/treasury/payment-methods/', {
+                    params: { is_active: true },
+                    signal
+                })
+                fetchedMethods = response.data.results || response.data
 
-            setLoading(true)
-            setError(null)
-            try {
-                let fetchedMethods: PaymentMethod[] = []
-
-                if (terminalId) {
-                    // Fetch allowed methods for this terminal
-                    const response = await api.get(`/treasury/pos-terminals/${terminalId}/allowed_payment_methods/`, {
-                        params: { operation }
-                    })
-                    fetchedMethods = response.data
-                } else {
-                    // Fallback for non-POS contexts (e.g. general sales)
-                    // Fetch all active payment methods allowed for the operation
-                    // Note: This endpoint might need to be adjusted if there isn't a general 'all methods' endpoint handy
-                    // For now we assume we list all active ones
-                    const response = await api.get('/treasury/payment-methods/', {
-                        params: {
-                            is_active: true,
-                            // We might need to filter by operation client-side if the API doesn't support it directly on list
-                        }
-                    })
-                    fetchedMethods = response.data.results || response.data
-
-                    if (operation === 'sales') {
-                        fetchedMethods = fetchedMethods.filter(m => m.allow_for_sales)
-                    } else if (operation === 'purchases') {
-                        fetchedMethods = fetchedMethods.filter(m => m.allow_for_purchases)
-                    }
+                if (operation === 'sales') {
+                    fetchedMethods = fetchedMethods.filter((m: PaymentMethod) => m.allow_for_sales)
+                } else if (operation === 'purchases') {
+                    fetchedMethods = fetchedMethods.filter((m: PaymentMethod) => m.allow_for_purchases)
                 }
-                setMethods(fetchedMethods)
-            } catch (err: any) {
-                console.error("Error fetching allowed payment methods:", err)
-                setError(err.message || "Error al cargar métodos de pago")
-            } finally {
-                setLoading(false)
             }
-        }
+            return fetchedMethods
+        },
+        enabled: enabled,
+        staleTime: 5 * 60 * 1000, // 5 min
+    })
 
-        fetchMethods()
-    }, [terminalId, operation, enabled])
-
-    return { methods, loading, error }
+    return {
+        methods: query.data ?? [],
+        loading: query.isLoading,
+        error: query.error ? (query.error as Error).message : null,
+        refetch: query.refetch,
+    }
 }

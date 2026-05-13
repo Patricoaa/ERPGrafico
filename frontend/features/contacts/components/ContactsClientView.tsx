@@ -1,17 +1,17 @@
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import React, { useState, useEffect, lazy, Suspense } from "react"
 import { ColumnDef } from "@tanstack/react-table"
-import { Button } from "@/components/ui/button"
-import { Edit, Trash2, Plus, Building2, User as UserIcon, Banknote } from "lucide-react"
-import api from "@/lib/api"
-import { toast } from "sonner"
+import { Edit, Trash2, Building2, User as UserIcon, Banknote } from "lucide-react"
+
 import { formatRUT } from "@/lib/utils/format"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 import { useContacts, type Contact } from "@/features/contacts"
-import { LoadingFallback, StatusBadge } from "@/components/shared"
+import { LoadingFallback, SmartSearchBar, StatusBadge, useSmartSearch } from "@/components/shared"
+import { contactSearchDef } from "@/features/contacts/searchDef"
+import type { ContactFilters } from "@/features/contacts/types"
 import { cn } from "@/lib/utils"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { formatEntityDisplay } from "@/lib/entity-registry"
@@ -28,7 +28,8 @@ interface ContactsClientViewProps {
 }
 
 export function ContactsClientView({ isNewModalOpen = false, createAction }: ContactsClientViewProps) {
-    const { contacts, deleteContact } = useContacts()
+    const { filters: smartFilters } = useSmartSearch(contactSearchDef)
+    const { contacts, isLoading, deleteContact } = useContacts({ filters: smartFilters as ContactFilters })
     const [selectedContact, setSelectedContact] = useState<Contact | null>(null)
     const [modalOpen, setModalOpen] = useState(false)
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
@@ -213,21 +214,9 @@ export function ContactsClientView({ isNewModalOpen = false, createAction }: Con
             <DataTable
                 columns={columns}
                 data={contacts}
-                cardMode
-                globalFilterFields={["name", "tax_id", "code"]}
-                searchPlaceholder="Buscar por nombre, RUT o código..."
-                facetedFilters={[
-                    {
-                        column: "contact_type",
-                        title: "Tipo",
-                        options: [
-                            { label: "Cliente", value: "CUSTOMER" },
-                            { label: "Proveedor", value: "SUPPLIER" },
-                            { label: "Ambos", value: "BOTH" },
-                        ],
-                    },
-                ]}
-                useAdvancedFilter={true}
+                isLoading={isLoading}
+                variant="embedded"
+                leftAction={<SmartSearchBar searchDef={contactSearchDef} placeholder="Buscar por nombre, RUT o tipo..." />}
                 defaultPageSize={20}
                 createAction={createAction}
             />

@@ -1,4 +1,4 @@
-import { useSuspenseQuery, useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { settingsApi } from '../api/settingsApi'
 import type { BillingSettings, BillingSettingsUpdatePayload } from '../types'
@@ -28,7 +28,7 @@ export function useBillingSettingsQuery() {
 export function useBillingSettings(): UseBillingSettingsReturn {
     const queryClient = useQueryClient()
 
-    const { data: settings, refetch } = useSuspenseQuery({
+    const { data: settings, isLoading, refetch } = useQuery({
         queryKey: BILLING_SETTINGS_QUERY_KEY,
         queryFn: settingsApi.getBillingSettings,
     })
@@ -51,7 +51,8 @@ export function useBillingSettings(): UseBillingSettingsReturn {
     }
 
     return {
-        settings,
+        settings: settings as BillingSettings,
+        isLoading,
         saving: updateMutation.isPending,
         updateSettings,
         refetch,

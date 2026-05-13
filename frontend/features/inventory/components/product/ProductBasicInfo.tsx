@@ -34,7 +34,7 @@ export function ProductBasicInfo({ form, isEditing, imagePreview, setImagePrevie
             {/* Identification and Classification Section - 4-Column Refined Layout */}
             <div className="space-y-4">
                 <FormSection title="Identificación y Clasificación" icon={Fingerprint} />
-                <div className="grid grid-cols-4 gap-4 items-start">
+                <div className="grid grid-cols-4 gap-4 items-stretch">
                     {/* Fila 1: Nombre (3) / Imagen (1) */}
                     <div className="col-span-3">
                         <FormField<ProductFormValues>
@@ -52,7 +52,7 @@ export function ProductBasicInfo({ form, isEditing, imagePreview, setImagePrevie
                             )}
                         />
                     </div>
-                    <div className="col-span-1 row-span-3">
+                    <div className="col-span-1 row-span-3 h-full">
                         <ProductImageUpload
                             form={form}
                             imagePreview={imagePreview}
@@ -62,9 +62,9 @@ export function ProductBasicInfo({ form, isEditing, imagePreview, setImagePrevie
 
                     <div className="col-span-1">
                         <LabeledContainer
-                            label="ID Sistema"
+                            label="ID"
                             disabled
-                            className="w-full opacity-80 bg-muted/30 border-dashed"
+                            className="w-full opacity-80 bg-muted/30"
                         >
                             <div className="flex items-center gap-2 h-full px-3">
                                 <span className="text-muted-foreground text-[10px] font-mono">#</span>
@@ -87,10 +87,19 @@ export function ProductBasicInfo({ form, isEditing, imagePreview, setImagePrevie
                                 <LabeledSwitch
                                     label="Venta"
                                     checked={field.value}
-                                    onCheckedChange={field.onChange}
+                                    onCheckedChange={(val) => {
+                                        requestAnimationFrame(() => {
+                                            form.setValue("can_be_sold", val, { shouldDirty: true, shouldValidate: false })
+                                        })
+                                    }}
                                     disabled={['CONSUMABLE', 'SUBSCRIPTION'].includes(productType)}
-                                    icon={<ShoppingCart className={cn("h-3.5 w-3.5", field.value ? "text-emerald-500" : "text-muted-foreground/30")} />}
-                                    className={cn("h-full", field.value ? "bg-emerald-500/5 border-emerald-500/20 shadow-sm" : "border-dashed")}
+                                    icon={<ShoppingCart className={cn("h-3.5 w-3.5 transition-colors", field.value ? "text-emerald-600" : "text-muted-foreground/60")} />}
+                                    className={cn(
+                                        "h-full transition-all duration-300", 
+                                        field.value 
+                                            ? "bg-emerald-500/10 border-emerald-500/30 shadow-sm ring-1 ring-emerald-500/10" 
+                                            : "bg-background border-border hover:border-muted-foreground/30 hover:bg-muted/10 shadow-[inset_0_1px_2px_rgba(0,0,0,0.1)] dark:shadow-[inset_0_1px_2px_rgba(255,255,255,0.02)]"
+                                    )}
                                 />
                             )}
                         />
@@ -104,10 +113,19 @@ export function ProductBasicInfo({ form, isEditing, imagePreview, setImagePrevie
                                 <LabeledSwitch
                                     label="Compra"
                                     checked={field.value}
-                                    onCheckedChange={field.onChange}
+                                    onCheckedChange={(val) => {
+                                        requestAnimationFrame(() => {
+                                            form.setValue("can_be_purchased", val, { shouldDirty: true, shouldValidate: false })
+                                        })
+                                    }}
                                     disabled={productType === 'MANUFACTURABLE'}
-                                    icon={<Truck className={cn("h-3.5 w-3.5", field.value ? "text-amber-500" : "text-muted-foreground/30")} />}
-                                    className={cn("h-full", field.value ? "bg-amber-500/5 border-amber-500/20 shadow-sm" : "border-dashed")}
+                                    icon={<Truck className={cn("h-3.5 w-3.5 transition-colors", field.value ? "text-amber-600" : "text-muted-foreground/40")} />}
+                                    className={cn(
+                                        "h-full transition-all duration-300", 
+                                        field.value 
+                                            ? "bg-amber-500/10 border-amber-500/30 shadow-sm ring-1 ring-amber-500/10" 
+                                            : "bg-background border-border hover:border-muted-foreground/30 hover:bg-muted/10 shadow-[inset_0_1px_2px_rgba(0,0,0,0.1)] dark:shadow-[inset_0_1px_2px_rgba(255,255,255,0.02)]"
+                                    )}
                                 />
                             )}
                         />
@@ -122,18 +140,21 @@ export function ProductBasicInfo({ form, isEditing, imagePreview, setImagePrevie
                                 <ProductTypeSelector
                                     value={field.value}
                                     onChange={(val) => {
-                                        field.onChange(val);
-                                        if (val === 'STORABLE') {
-                                            form.setValue('track_inventory', true);
-                                            form.setValue('can_be_purchased', true);
-                                        } else if (val === 'MANUFACTURABLE') {
-                                            form.setValue('track_inventory', true);
-                                            form.setValue('can_be_purchased', false);
-                                            form.setValue('is_dynamic_pricing', false);
-                                        } else {
-                                            form.setValue('track_inventory', false);
-                                            form.setValue('is_dynamic_pricing', false);
-                                        }
+                                        requestAnimationFrame(() => {
+                                            field.onChange(val);
+                                            const opts = { shouldDirty: true, shouldValidate: false };
+                                            if (val === 'STORABLE') {
+                                                form.setValue('track_inventory', true, opts);
+                                                form.setValue('can_be_purchased', true, opts);
+                                            } else if (val === 'MANUFACTURABLE') {
+                                                form.setValue('track_inventory', true, opts);
+                                                form.setValue('can_be_purchased', false, opts);
+                                                form.setValue('is_dynamic_pricing', false, opts);
+                                            } else {
+                                                form.setValue('track_inventory', false, opts);
+                                                form.setValue('is_dynamic_pricing', false, opts);
+                                            }
+                                        });
                                     }}
                                     disabled={isEditing} 
                                     lockedType={lockedType} 

@@ -1,1 +1,0 @@
-sed -i "s/export { default as SaleOrderForm } from '.\/components\/forms\/SaleOrderForm'/export { default as SaleOrderModal, SaleOrderForm } from '.\/components\/forms\/SaleOrderForm'/g" frontend/features/sales/index.ts

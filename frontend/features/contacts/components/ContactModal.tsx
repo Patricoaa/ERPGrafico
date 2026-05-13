@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState, useMemo } from "react"
+import { useQuery } from "@tanstack/react-query"
 import { useWindowWidth } from "@/hooks/useWindowWidth"
 import { useFormWithToast } from "@/hooks/use-form-with-toast"
 import * as z from "zod"
@@ -59,15 +60,11 @@ interface ContactModalProps {
 }
 
 export default function ContactModal({ open, onOpenChange, contact, onSuccess }: ContactModalProps) {
-    const [defaultCustomer, setDefaultCustomer] = useState<Contact | null>(null)
-    const [defaultVendor, setDefaultVendor] = useState<Contact | null>(null)
     const [confirmReplacement, setConfirmReplacement] = useState<{ type: 'customer' | 'vendor' | null, name: string }>({ type: null, name: "" })
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false)
     const [pendingValues, setPendingValues] = useState<z.infer<typeof contactSchema> | null>(null)
 
     const [activeTab, setActiveTab] = useState("profile")
-    const [ledgerData, setLedgerData] = useState<Order[]>([])
-    const [loadingLedger, setLoadingLedger] = useState(false)
     const c = contact
     const { createContact, updateContact } = useContactMutations()
     const { data: insightsData, isLoading: loadingInsights, refetch: refetchInsights } = useContactInsights(c?.id)
@@ -97,70 +94,57 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
         },
     })
 
-    const fetchDefaults = async () => {
-        try {
-            const [custRes, vendRes] = await Promise.all([
-                api.get("/contacts/?is_default_customer=true"),
-                api.get("/contacts/?is_default_vendor=true")
-            ])
+    const { data: defaultCustomer } = useQuery({
+        queryKey: ['defaultCustomer'],
+        queryFn: async () => {
+            const res = await api.get("/contacts/?is_default_customer=true")
+            return res.data.results?.[0] || res.data?.[0] || null
+        },
+        enabled: open
+    })
 
-            const cust = custRes.data.results?.[0] || custRes.data?.[0]
-            const vend = vendRes.data.results?.[0] || vendRes.data?.[0]
+    const { data: defaultVendor } = useQuery({
+        queryKey: ['defaultVendor'],
+        queryFn: async () => {
+            const res = await api.get("/contacts/?is_default_vendor=true")
+            return res.data.results?.[0] || res.data?.[0] || null
+        },
+        enabled: open
+    })
 
-            if (cust && cust.id !== c?.id) setDefaultCustomer(cust)
-            else setDefaultCustomer(null)
-
-            if (vend && vend.id !== c?.id) setDefaultVendor(vend)
-            else setDefaultVendor(null)
-
-        } catch (error) {
-            console.error("Error fetching default contacts", error)
-        }
-    }
+    const { data: contactDetails } = useQuery({
+        queryKey: ['contactDetails', c?.id],
+        queryFn: async () => {
+            const res = await api.get(`/contacts/${c?.id}/`)
+            return res.data
+        },
+        enabled: open && !!c?.id && !c.name
+    })
 
     useEffect(() => {
-        if (open && c?.id && !c.name) {
-            api.get(`/contacts/${c.id}/`)
-                .then(res => {
-                    form.reset({
-                        name: res.data.name || "",
-                        tax_id: res.data.tax_id || "",
-                        email: res.data.email || "",
-                        phone: res.data.phone || "",
-                        address: res.data.address || "",
-                        city: res.data.city || "",
-                        payment_terms: res.data.payment_terms || "CONTADO",
-                        is_default_customer: !!res.data.is_default_customer,
-                        is_default_vendor: !!res.data.is_default_vendor,
-                    })
-                })
-                .catch(err => {
-                    console.error("Error fetching contact details:", err)
-                    toast.error("Error al cargar detalles del contacto")
-                })
-        }
-    }, [open, c?.id, c?.name])
-
-    const fetchLedger = () => {
-        if (!c?.id) return
-        setLoadingLedger(true)
-        api.get(`/contacts/${c.id}/credit_ledger/`)
-            .then(res => setLedgerData(res.data))
-            .catch(err => {
-                console.error("Error fetching credit ledger:", err)
-                toast.error("Error al cargar el historial crediticio")
+        if (contactDetails) {
+            form.reset({
+                name: contactDetails.name || "",
+                tax_id: contactDetails.tax_id || "",
+                email: contactDetails.email || "",
+                phone: contactDetails.phone || "",
+                address: contactDetails.address || "",
+                city: contactDetails.city || "",
+                payment_terms: contactDetails.payment_terms || "CONTADO",
+                is_default_customer: !!contactDetails.is_default_customer,
+                is_default_vendor: !!contactDetails.is_default_vendor,
             })
-            .finally(() => setLoadingLedger(false))
-    }
-
-    useEffect(() => {
-        if (open && c?.id && activeTab === "credit") {
-            const init = async () => {
-                await fetchLedger()
-            }
-            init()
         }
-    }, [open, c?.id, activeTab])
+    }, [contactDetails, form])
+
+    const { data: ledgerData = [], isLoading: loadingLedger, refetch: fetchLedger } = useQuery({
+        queryKey: ['contactLedger', c?.id],
+        queryFn: async () => {
+            const res = await api.get(`/contacts/${c?.id}/credit_ledger/`)
+            return res.data
+        },
+        enabled: open && !!c?.id && activeTab === "credit"
+    })
 
     const handleActionSuccess = () => {
         refetchInsights()
@@ -171,13 +155,10 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
         if (!open) {
             requestAnimationFrame(() => {
                 setActiveTab("profile")
-                setLedgerData([])
             })
             return
         }
         requestAnimationFrame(() => {
-            fetchDefaults()
-
             if (c && c.name) {
                 form.reset({
                     name: c.name as string,

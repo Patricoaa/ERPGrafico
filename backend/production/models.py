@@ -11,7 +11,6 @@ from inventory.models import Product, Warehouse, UoM
 class WorkOrder(models.Model):
     class Status(models.TextChoices):
         DRAFT = 'DRAFT', _('Borrador')
-        PLANNED = 'PLANNED', _('Planificada')
         IN_PROGRESS = 'IN_PROGRESS', _('En Proceso')
         FINISHED = 'FINISHED', _('Terminada')
         CANCELLED = 'CANCELLED', _('Anulada')
@@ -232,11 +231,13 @@ class WorkOrder(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.number:
-            last_order = WorkOrder.objects.all().order_by('id').last()
-            if last_order and last_order.number.isdigit():
-                self.number = str(int(last_order.number) + 1)
-            else:
-                self.number = '000001'
+            from django.db import transaction
+            with transaction.atomic():
+                last_order = WorkOrder.objects.select_for_update().order_by('-id').first()
+                if last_order and last_order.number and last_order.number.isdigit():
+                    self.number = str(int(last_order.number) + 1).zfill(6)
+                else:
+                    self.number = '000001'
         
         # Sync related_contact from stage_data['contact_id'] if present
         # This ensures OTs created via the checkout flow or manual wizard are correctly linked

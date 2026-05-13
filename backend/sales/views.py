@@ -1,6 +1,8 @@
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, filters as drf_filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from django_filters.rest_framework import DjangoFilterBackend
+import django_filters
 from .models import SaleOrder, SalesSettings, SaleDelivery, SaleReturn
 from .serializers import (
     SaleOrderSerializer, 
@@ -139,9 +141,23 @@ class SalesSettingsViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
 from core.api.permissions import StandardizedModelPermissions
 
+
+class SaleOrderFilterSet(django_filters.FilterSet):
+    customer_name = django_filters.CharFilter(field_name='customer__name', lookup_expr='icontains')
+    date_after = django_filters.DateFilter(field_name='date', lookup_expr='gte')
+    date_before = django_filters.DateFilter(field_name='date', lookup_expr='lte')
+
+    class Meta:
+        model = SaleOrder
+        fields = ['status']
+
+
 class SaleOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
-    queryset = SaleOrder.objects.all()
+    queryset = SaleOrder.objects.all().order_by('-date', '-id')
     permission_classes = [StandardizedModelPermissions]
+    filter_backends = [DjangoFilterBackend, drf_filters.SearchFilter]
+    filterset_class = SaleOrderFilterSet
+    search_fields = ['customer__name', 'number']
     
     def get_serializer_class(self):
         if self.action == 'create':
@@ -402,6 +418,19 @@ class SaleOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             import traceback
             traceback.print_exc()
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=False, methods=['get'], url_path='filter-suggestions')
+    def filter_suggestions(self, request):
+        q = request.query_params.get('q', '').strip()
+        if len(q) < 2:
+            return Response([])
+        names = (
+            SaleOrder.objects.filter(customer__name__icontains=q)
+            .values_list('customer__name', flat=True)
+            .distinct()
+            .order_by('customer__name')[:10]
+        )
+        return Response(list(names))
 
     @action(detail=False, methods=['get'])
     def credit_history(self, request):

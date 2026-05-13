@@ -2,6 +2,8 @@
 
 import { showApiError } from "@/lib/errors"
 import React, { useState, useEffect, useMemo } from "react"
+import { useQuery } from "@tanstack/react-query"
+import api from "@/lib/api"
 import { GenericWizard, WizardStep } from "@/components/shared/GenericWizard"
 import { Input } from "@/components/ui/input"
 import { LabeledSelect } from "@/components/shared"
@@ -21,7 +23,6 @@ interface MassPaymentModalProps {
 
 export function MassPaymentModal({ open, onOpenChange, resolution, onSuccess }: MassPaymentModalProps) {
     const [loading, setLoading] = useState(false)
-    const [treasuryAccounts, setTreasuryAccounts] = useState<TreasuryAccount[]>([])
     const [selectedAccountId, setSelectedAccountId] = useState<string>("")
     const [payments, setPayments] = useState<Record<number, number>>({})
 
@@ -40,6 +41,15 @@ export function MassPaymentModal({ open, onOpenChange, resolution, onSuccess }: 
         }).filter(l => l.pendingAmount > 0)
     }, [resolution])
 
+    const { data: treasuryAccounts = [] } = useQuery({
+        queryKey: ['treasuryAccounts'],
+        queryFn: async () => {
+            const res = await api.get('/treasury/accounts/')
+            return res.data
+        },
+        enabled: open
+    })
+
     useEffect(() => {
         if (open) {
             setSelectedAccountId("")
@@ -48,10 +58,6 @@ export function MassPaymentModal({ open, onOpenChange, resolution, onSuccess }: 
                 initialPayments[l.partner] = l.pendingAmount
             })
             setPayments(initialPayments)
-
-            import("@/lib/api").then(m => m.default).then(api => {
-                api.get('/treasury/accounts/').then(res => setTreasuryAccounts(res.data)).catch(console.error)
-            })
         }
     }, [open, pendingLines])
 

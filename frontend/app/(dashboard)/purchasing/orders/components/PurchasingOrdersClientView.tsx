@@ -8,15 +8,13 @@ import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
 import { DataCell } from "@/components/ui/data-table-cells"
 import { Button } from "@/components/ui/button"
-import { List, Eye, Pencil, Trash2, ShoppingCart, Info, FileEdit, CheckCircle, Package, FileText, History, Banknote, X, FileBadge, MoreVertical, LayoutDashboard, Plus, ArrowRight, ArrowLeft, Calendar, Search, Filter, Monitor } from "lucide-react"
+import { List, LayoutDashboard, Plus, ArrowRight, ArrowLeft, Filter, Monitor } from "lucide-react"
 import api from "@/lib/api"
 import { PurchaseOrderForm } from "@/features/purchasing/components/PurchaseOrderForm"
 import { toast } from "sonner"
-import { Badge } from "@/components/ui/badge"
 import { DocumentRegistrationModal } from "@/features/purchasing/components/DocumentRegistrationModal"
 import { DocumentCompletionModal } from "@/components/shared/DocumentCompletionModal"
 import { PurchaseCheckoutWizard } from "@/features/purchasing/components/PurchaseCheckoutWizard"
-import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { DateRangeFilter } from "@/components/shared/DateRangeFilter"
 import { isWithinInterval, parseISO, startOfDay, endOfDay, format } from "date-fns"
@@ -30,6 +28,7 @@ import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { LoadingFallback } from "@/components/shared/LoadingFallback"
 import { EmptyState } from "@/components/shared/EmptyState"
+import { EntityCard } from "@/components/shared/EntityCard"
 
 
 import type { Order } from "@/features/orders/types"
@@ -62,8 +61,12 @@ interface PurchasingOrdersClientViewProps {
 import { usePurchasingOrders, usePurchasingNotes } from "@/features/purchasing/hooks/usePurchasing"
 
 export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, createAction }: PurchasingOrdersClientViewProps) {
-    const { orders, refetch: fetchOrders, deleteOrder } = usePurchasingOrders()
-    const { notes, refetch: fetchNotes } = usePurchasingNotes()
+    const { orders, isLoading: isLoadingOrders, refetch: fetchOrders, deleteOrder } = usePurchasingOrders()
+    const { notes, isLoading: isLoadingNotes, refetch: fetchNotes } = usePurchasingNotes()
+
+    const searchParams = useSearchParams()
+    const router = useRouter()
+    const pathname = usePathname()
 
     const [editingOrder, setEditingOrder] = useState<PurchaseOrder | null>(null)
     const [invoicingOrder, setInvoicingOrder] = useState<PurchaseOrder | null>(null)
@@ -73,7 +76,28 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
     const [selectedInvoice, setSelectedInvoice] = useState<{ id: number, type: string } | null>(null)
     const [checkoutOrderId, setCheckoutOrderId] = useState<number | null>(null)
     const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date } | undefined>()
-    const [currentView, setCurrentView] = useState<'card' | 'list'>('card')
+    const [currentView, setCurrentView] = React.useState<'card' | 'list'>(
+        (searchParams.get('view') as 'card' | 'list') ?? 'card'
+    )
+
+    const handleViewChange = (v: string) => {
+        const params = new URLSearchParams(searchParams.toString())
+        params.set('view', v)
+        router.push(`${pathname}?${params.toString()}`, { scroll: false })
+        setCurrentView(v as 'card' | 'list')
+    }
+
+    useEffect(() => {
+        const viewParam = searchParams.get('view')
+        if (!viewParam) {
+            const params = new URLSearchParams(searchParams.toString())
+            params.set('view', 'card')
+            router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+            setCurrentView('card')
+        } else if (viewParam !== currentView) {
+            setCurrentView(viewParam as 'card' | 'list')
+        }
+    }, [searchParams, pathname, router, currentView])
 
     const viewOptions = [
         { label: "Lista", value: "list", icon: List },
@@ -83,20 +107,16 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
 
     const { openHub, closeHub, hubConfig, isHubOpen } = useHubPanel()
 
-    const searchParams = useSearchParams()
-    const router = useRouter()
-    const pathname = usePathname()
-
     const toggleSelection = (id: number) => {
         const isSelected = viewMode === "orders" ? hubConfig?.orderId === id : hubConfig?.invoiceId === id
         const params = new URLSearchParams(searchParams.toString())
-        
+
         if (isSelected && isHubOpen) {
             params.delete('selected')
         } else {
             params.set('selected', String(id))
         }
-        
+
         const query = params.toString()
         router.push(query ? `${pathname}?${query}` : pathname, { scroll: false })
     }
@@ -428,113 +448,121 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
             )}
 
             <Tabs value={viewMode} className="w-full">
-                    <DataTable
+                <DataTable
                     columns={(viewMode === 'orders' ? columns : noteColumns) as any}
                     data={(viewMode === 'orders' ? filteredOrders : filteredNotes) as any}
                     onRowClick={(row: any) => toggleSelection(row.id)}
-                        cardMode={true}
-                        currentView={currentView}
-                        onViewChange={(v: string) => setCurrentView(v as 'card' | 'list')}
-                        viewOptions={viewOptions}
-                        filterColumn={viewMode === 'orders' ? "supplier_name" : "number"}
-                        searchPlaceholder={viewMode === 'orders' ? "Buscar por proveedor..." : "Buscar por folio..."}
-                        facetedFilters={[
+                    variant="embedded"
+                    isLoading={viewMode === 'orders' ? isLoadingOrders : isLoadingNotes}
+                    currentView={currentView}
+                    onViewChange={handleViewChange}
+                    viewOptions={viewOptions}
+                    filterColumn={viewMode === 'orders' ? "supplier_name" : "number"}
+                    searchPlaceholder={viewMode === 'orders' ? "Buscar por proveedor..." : "Buscar por folio..."}
+                    facetedFilters={[
+                        {
+                            column: "status",
+                            title: "Origen",
+                            options: viewMode === 'orders' ? [
+                                { label: "Borrador", value: "DRAFT" },
+                                { label: "Confirmado", value: "CONFIRMED" },
+                            ] : [
+                                { label: "Borrador", value: "DRAFT" },
+                                { label: "Publicado", value: "POSTED" },
+                                { label: "Pagado", value: "PAID" },
+                                { label: "Anulado", value: "CANCELLED" },
+                            ],
+                        },
+                        ...(viewMode === 'orders' ? [
                             {
-                                column: "status",
-                                title: "Origen",
-                                options: viewMode === 'orders' ? [
-                                    { label: "Borrador", value: "DRAFT" },
-                                    { label: "Confirmado", value: "CONFIRMED" },
-                                ] : [
-                                    { label: "Borrador", value: "DRAFT" },
-                                    { label: "Publicado", value: "POSTED" },
-                                    { label: "Pagado", value: "PAID" },
-                                    { label: "Anulado", value: "CANCELLED" },
-                                ],
+                                column: "reception_status",
+                                title: "Recepción",
+                                options: [
+                                    { label: "En Proceso", value: "active" },
+                                    { label: "Completado", value: "success" },
+                                    { label: "Pendiente", value: "neutral" },
+                                ]
                             },
-                            ...(viewMode === 'orders' ? [
-                                {
-                                    column: "reception_status",
-                                    title: "Recepción",
-                                    options: [
-                                        { label: "En Proceso", value: "active" },
-                                        { label: "Completado", value: "success" },
-                                        { label: "Pendiente", value: "neutral" },
-                                    ]
-                                },
-                                {
-                                    column: "billing_status",
-                                    title: "Facturación",
-                                    options: [
-                                        { label: "En Proceso", value: "active" },
-                                        { label: "Completado", value: "success" },
-                                        { label: "Pendiente", value: "neutral" },
-                                    ]
-                                },
-                                {
-                                    column: "treasury_status",
-                                    title: "Tesorería",
-                                    options: [
-                                        { label: "En Proceso", value: "active" },
-                                        { label: "Completado", value: "success" },
-                                        { label: "Pendiente", value: "neutral" },
-                                    ]
-                                }
-                            ] : [])
-                        ]}
-                        useAdvancedFilter={true}
-                        showToolbarSort={true}
-                        onReset={() => setDateRange(undefined)}
-                        globalFilterFields={["number"]}
-                        isCustomFiltered={!!dateRange}
-                        customFilterCount={dateRange ? 1 : 0}
-                        customFilters={
-                            <DateRangeFilter
-                                onDateChange={setDateRange}
-                                label={viewMode === 'orders' ? "Fecha de Orden" : "Fecha de Emisión"}
-                                className="bg-transparent border-none w-full"
-                            />
-                        }
-                        renderCustomView={currentView === 'card' ? (table) => {
-                            const rows = table.getRowModel().rows
-                            if (rows.length === 0) {
-                                return (
-                                    <EmptyState
-                                        context="inventory"
-                                        title={viewMode === 'orders' ? "Sin Órdenes de Compra" : "Sin Notas Registradas"}
-                                        description={viewMode === 'orders'
-                                            ? "No se han encontrado órdenes de compra en este periodo."
-                                            : "No hay notas de crédito ni débito asociadas a tus compras."
-                                        }
-
-                                        className="py-24"
-                                    />
-                                )
+                            {
+                                column: "billing_status",
+                                title: "Facturación",
+                                options: [
+                                    { label: "En Proceso", value: "active" },
+                                    { label: "Completado", value: "success" },
+                                    { label: "Pendiente", value: "neutral" },
+                                ]
+                            },
+                            {
+                                column: "treasury_status",
+                                title: "Tesorería",
+                                options: [
+                                    { label: "En Proceso", value: "active" },
+                                    { label: "Completado", value: "success" },
+                                    { label: "Pendiente", value: "neutral" },
+                                ]
                             }
+                        ] : [])
+                    ]}
+                    useAdvancedFilter={true}
+                    showToolbarSort={true}
+                    onReset={() => setDateRange(undefined)}
+                    globalFilterFields={["number"]}
+                    isCustomFiltered={!!dateRange}
+                    customFilterCount={dateRange ? 1 : 0}
+                    customFilters={
+                        <DateRangeFilter
+                            onDateChange={setDateRange}
+                            label={viewMode === 'orders' ? "Fecha de Orden" : "Fecha de Emisión"}
+                            className="bg-transparent border-none w-full"
+                        />
+                    }
+                    renderCustomView={currentView === 'card' ? (table) => {
+                        const rows = table.getRowModel().rows
+                        if (rows.length === 0) {
                             return (
-                                <div className="grid gap-3 pt-2">
-                                    {rows.map((row: import("@tanstack/react-table").Row<any>) => {
-                                        const item = row.original
-                                        const isSelected = viewMode === 'orders'
-                                            ? hubConfig?.orderId === item.id
-                                            : hubConfig?.invoiceId === item.id
+                                <EmptyState
+                                    context="inventory"
+                                    title={viewMode === 'orders' ? "Sin Órdenes de Compra" : "Sin Notas Registradas"}
+                                    description={viewMode === 'orders'
+                                        ? "No se han encontrado órdenes de compra en este periodo."
+                                        : "No hay notas de crédito ni débito asociadas a tus compras."
+                                    }
 
-                                        return (
-                                            <OrderCard
-                                                key={item.id}
-                                                item={item}
-                                                isSelected={isSelected}
-                                                type={viewMode === 'orders' ? 'purchase' : 'note'}
-                                                onClick={() => toggleSelection(item.id)}
-                                            />
-                                        )
-                                    })}
-                                </div>
+                                    className="py-24"
+                                />
                             )
-                        } : undefined}
-                        createAction={createAction}
-                    />
-                </Tabs>
+                        }
+                        return (
+                            <div className="grid gap-3 pt-2">
+                                {rows.map((row: import("@tanstack/react-table").Row<any>) => {
+                                    const item = row.original
+                                    const isSelected = viewMode === 'orders'
+                                        ? hubConfig?.orderId === item.id
+                                        : hubConfig?.invoiceId === item.id
+
+                                    return (
+                                        <OrderCard
+                                            key={item.id}
+                                            item={item}
+                                            isSelected={isSelected}
+                                            type={viewMode === 'orders' ? 'purchase' : 'note'}
+                                            onClick={() => toggleSelection(item.id)}
+                                        />
+                                    )
+                                })}
+                            </div>
+                        )
+                    } : undefined}
+                    renderLoadingView={currentView === 'card' ? () => (
+                        <div className="grid gap-3 pt-2">
+                            {Array.from({ length: 8 }).map((_, i) => (
+                                <EntityCard.Skeleton key={i} />
+                            ))}
+                        </div>
+                    ) : undefined}
+                    createAction={createAction}
+                />
+            </Tabs>
 
             {
                 invoicingOrder && (

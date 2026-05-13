@@ -1,4 +1,5 @@
 "use client"
+import { useState, useEffect } from "react"
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
@@ -48,7 +49,7 @@ export const POSSessionsView = ({ hideHeader = false }: POSSessionsViewProps) =>
     const router = useRouter()
     const pathname = usePathname()
     const searchParams = useSearchParams()
-    const { sessions, refetch } = usePOSSessions()
+    const { sessions, isLoading, refetch } = usePOSSessions()
 
     const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<POSSession>({
         endpoint: '/treasury/pos-sessions'
@@ -183,7 +184,8 @@ export const POSSessionsView = ({ hideHeader = false }: POSSessionsViewProps) =>
                 <DataTable
                     columns={columns}
                     data={sessions}
-                    cardMode
+                    variant="embedded"
+                    isLoading={isLoading}
                     globalFilterFields={["user_name", "status_display", "id"]}
                     searchPlaceholder="Buscar por cajero..."
                     facetedFilters={[{ column: "status", title: "Estado", options: [{ label: "Abierta", value: "OPEN" }, { label: "Cerrada", value: "CLOSED" }, { label: "Cerrando", value: "CLOSING" }] }]}

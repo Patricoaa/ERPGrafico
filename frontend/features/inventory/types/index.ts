@@ -58,6 +58,7 @@ export interface ProductFilters {
     can_be_purchased?: boolean
     parent_template__isnull?: boolean
     search?: string
+    product_type?: string
     category?: number
     page_size?: number
     fields?: string

@@ -1,4 +1,4 @@
-import { useSuspenseQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { showApiError } from "@/lib/errors"
@@ -11,12 +11,13 @@ export type { PaymentTerminalProvider, PaymentTerminalDevice }
 export function useTerminalProviders() {
     const queryClient = useQueryClient()
 
-    const { data: providers = [], error, refetch } = useSuspenseQuery<PaymentTerminalProvider[]>({
+    const { data: providers, isLoading, error, refetch } = useQuery<PaymentTerminalProvider[]>({
         queryKey: ['terminal-providers'],
         queryFn: async () => {
             const res = await api.get('/treasury/terminal-providers/')
             return res.data.results || res.data
-        }
+        },
+        staleTime: 5 * 60 * 1000, // 5 min
     })
 
     const createProvider = useMutation({
@@ -48,7 +49,8 @@ export function useTerminalProviders() {
     })
 
     return {
-        providers,
+        providers: providers ?? [],
+        isLoading,
         error,
         refetch,
         createProvider,
@@ -63,7 +65,7 @@ export function useTerminalProviders() {
 export function useTerminalDevices() {
     const queryClient = useQueryClient()
 
-    const { data: devices = [], error, refetch } = useSuspenseQuery<PaymentTerminalDevice[]>({
+    const { data: devices, isLoading, error, refetch } = useQuery<PaymentTerminalDevice[]>({
         queryKey: ['terminal-devices'],
         queryFn: async () => {
             const res = await api.get('/treasury/terminal-devices/')
@@ -100,7 +102,8 @@ export function useTerminalDevices() {
     })
 
     return {
-        devices,
+        devices: devices ?? [],
+        isLoading,
         error,
         refetch,
         createDevice,

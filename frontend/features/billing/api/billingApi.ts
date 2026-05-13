@@ -6,29 +6,36 @@ import type { Invoice, InvoiceFilters, AnnulInvoicePayload } from '../types'
  */
 export const billingApi = {
     /**
-     * Fetch invoices with optional filtering
+     * Fetch invoices with optional filtering.
+     *
+     * The `mode` field is resolved server-side:
+     *  - 'sale'     → sale_order__isnull=false   (documentos de venta)
+     *  - 'purchase' → purchase_order__isnull=false (documentos de compra)
+     *
+     * Elimina el .filter() client-side que descartaba la mitad de un dataset
+     * completo después de haberlo descargado. El backend ya soporta estos
+     * filtros vía filterset_fields: { sale_order: ['isnull'], purchase_order: ['isnull'] }.
      */
     getInvoices: async (filters?: InvoiceFilters): Promise<Invoice[]> => {
         const params = new URLSearchParams()
-        if (filters?.partner_name) params.append('partner_name', filters.partner_name)
-        if (filters?.status) params.append('status', filters.status)
-        if (filters?.dte_type) params.append('dte_type', filters.dte_type)
 
-        const { data } = await api.get<{ results: Invoice[] }>('/billing/invoices/', { params })
-        let invoices = data.results || data
+        // Mode → server-side filter (era client-side anteriormente)
+        if (filters?.mode === 'purchase') {
+            params.append('purchase_order__isnull', 'false')
+        } else if (filters?.mode === 'sale' || !filters?.mode) {
+            // Por defecto: documentos de venta
+            params.append('sale_order__isnull', 'false')
+        }
 
-        // Client-side filtering if needed (mirroring previous logic for safety, though API should handle most)
-        // Previous logic filtered by sale_order OR dte_type in ['FACTURA', 'BOLETA']
-        // We might want to move this to the backend or keep it here if the endpoint returns mixed types
-        invoices = (invoices as any[]).filter((i: any) => {
-            if (filters?.mode === 'purchase') {
-                return i.purchase_order || i.service_obligation || i.dte_type === 'PURCHASE_INV'
-            }
-            // Default to sale filtering for backward compatibility or if mode is 'sale'
-            return i.sale_order || ['FACTURA', 'BOLETA'].includes(i.dte_type)
-        })
+        if (filters?.status)       params.append('status', filters.status)
+        if (filters?.dte_type)     params.append('dte_type', filters.dte_type)
+        if (filters?.date_from)    params.append('date_from', filters.date_from)
+        if (filters?.date_to)      params.append('date_to', filters.date_to)
+        // partner_name no tiene campo directo en filterset → usar search=
+        if (filters?.partner_name) params.append('search', filters.partner_name)
 
-        return invoices as Invoice[]
+        const { data } = await api.get<{ results: Invoice[]; count: number }>('/billing/invoices/', { params })
+        return (data.results ?? (data as unknown as Invoice[])) as Invoice[]
     },
 
     /**

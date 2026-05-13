@@ -14,7 +14,7 @@ import { BaseModal } from "@/components/shared/BaseModal"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { useAccountSearch } from "@/features/accounting/hooks/useAccountSearch"
+import { useAccountSearch, useSingleAccount } from "@/features/accounting/hooks/useAccountSearch"
 import { Account } from "@/types/entities"
 
 interface AccountSelectorProps {
@@ -33,12 +33,13 @@ interface AccountSelectorProps {
 export function AccountSelector({ value, onChange, placeholder = "Seleccionar cuenta...", accountType, showAll = false, isReconcilable, disabled = false, label, error, className }: AccountSelectorProps) {
     const [open, setOpen] = useState(false)
     const [modalOpen, setModalOpen] = useState(false)
-    const { accounts: allAccounts, loading: accountsLoading, fetchAccounts } = useAccountSearch()
     const [searchTerm, setSearchTerm] = useState("")
 
-    useEffect(() => {
-        fetchAccounts("", !showAll)
-    }, [fetchAccounts, showAll])
+    // We fetch all accounts once (or all leaves), and then filter client-side
+    const { accounts: allAccounts, loading: accountsLoading } = useAccountSearch("", !showAll)
+    
+    // We also fetch the single selected account to ensure it's displayed properly even if not in the list
+    const { account: singleAccount } = useSingleAccount(value || null)
 
     // 1. Filter base accounts (leaf vs parent)
     const selectableAccounts = useMemo(() => {
@@ -76,9 +77,15 @@ export function AccountSelector({ value, onChange, placeholder = "Seleccionar cu
 
     // 4. Find selected account
     const selectedAccount = useMemo(() => {
-        if (!value || !allAccounts) return null
-        return allAccounts.find((a: Account) => a.id.toString() === value.toString()) || null
-    }, [allAccounts, value])
+        if (!value) return null
+        if (singleAccount && singleAccount.id.toString() === value.toString()) {
+            return singleAccount
+        }
+        if (allAccounts) {
+            return allAccounts.find((a: Account) => a.id.toString() === value.toString()) || null
+        }
+        return null
+    }, [allAccounts, value, singleAccount])
 
     const handleSelect = (account: Account | null) => {
         onChange(account ? account.id.toString() : null)

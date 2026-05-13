@@ -8,7 +8,7 @@ import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Eye, FileBadge, Banknote, Package, Trash2, Pencil, History, FileEdit, X, MoreVertical } from "lucide-react"
+import { Eye, FileBadge, Banknote, Package, Trash2, History, FileEdit, X, MoreVertical } from "lucide-react"
 import api from "@/lib/api"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { toast } from "sonner"
@@ -486,63 +486,63 @@ export default function PurchaseInvoicesPage() {
                 </div>
             ) : (
                 <div className="">
-            <DataTable
-                    columns={columns}
-                    data={documents}
-                    cardMode
-                    isLoading={loading}
-                    filterColumn="partner_name"
-                    searchPlaceholder="Buscar por proveedor..."
-                    facetedFilters={[
-                        {
-                            column: "status",
-                            title: "Estado",
-                            options: [
-                                { label: "Folio Pendiente", value: "DRAFT" },
-                                { label: "Publicado", value: "POSTED" },
-                                { label: "Pagado", value: "PAID" },
-                                { label: "Anulado", value: "CANCELLED" },
-                            ],
-                        },
-                    ]}
-                    useAdvancedFilter={true}
-                    defaultPageSize={20}
-                    renderCustomView={(table) => {
-                        const rows = table.getRowModel().rows
-                        if (rows.length === 0) {
+                    <DataTable
+                        columns={columns}
+                        data={documents}
+                        variant="embedded"
+                        isLoading={loading}
+                        filterColumn="partner_name"
+                        searchPlaceholder="Buscar por proveedor..."
+                        facetedFilters={[
+                            {
+                                column: "status",
+                                title: "Estado",
+                                options: [
+                                    { label: "Folio Pendiente", value: "DRAFT" },
+                                    { label: "Publicado", value: "POSTED" },
+                                    { label: "Pagado", value: "PAID" },
+                                    { label: "Anulado", value: "CANCELLED" },
+                                ],
+                            },
+                        ]}
+                        useAdvancedFilter={true}
+                        defaultPageSize={20}
+                        renderCustomView={(table) => {
+                            const rows = table.getRowModel().rows
+                            if (rows.length === 0) {
+                                return (
+                                    <EmptyState
+                                        context="inventory"
+                                        variant="full"
+                                        title="No se encontraron documentos"
+                                        className="bg-muted/30 rounded-lg border-2 border-dashed"
+                                    />
+                                )
+                            }
                             return (
-                                <EmptyState
-                                    context="inventory"
-                                    variant="full"
-                                    title="No se encontraron documentos"
-                                    className="bg-muted/30 rounded-lg border-2 border-dashed"
-                                />
+                                <div className="grid gap-3 pt-2">
+                                    {rows.map((row: { original: PurchaseDocument }) => {
+                                        const doc: PurchaseDocument = row.original
+                                        return (
+                                            <InvoiceCard
+                                                key={doc.id}
+                                                item={doc as any}
+                                                type="purchase_invoice"
+                                                onClick={() => {
+                                                    openHub({
+                                                        orderId: doc.purchase_order || null,
+                                                        invoiceId: doc.id,
+                                                        type: 'purchase',
+                                                        onActionSuccess: fetchDocuments
+                                                    })
+                                                }}
+                                            />
+                                        )
+                                    })}
+                                </div>
                             )
-                        }
-                        return (
-                            <div className="grid gap-3 pt-2">
-                                {rows.map((row: { original: PurchaseDocument }) => {
-                                    const doc: PurchaseDocument = row.original
-                                    return (
-                                        <InvoiceCard
-                                            key={doc.id}
-                                            item={doc as any}
-                                            type="purchase_invoice"
-                                            onClick={() => {
-                                                openHub({
-                                                    orderId: doc.purchase_order || null,
-                                                    invoiceId: doc.id,
-                                                    type: 'purchase',
-                                                    onActionSuccess: fetchDocuments
-                                                })
-                                            }}
-                                        />
-                                    )
-                                })}
-                            </div>
-                        )
-                    }}
-                />
+                        }}
+                    />
                 </div>
             )}
 

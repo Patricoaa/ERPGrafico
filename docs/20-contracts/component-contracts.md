@@ -119,6 +119,20 @@ Regla clave: usar wrappers estáticos para first-load, `SkeletonShell` para refe
 
 ---
 
+## DataTable & ExpandableTableRow 🟢
+
+> 📄 Documentación completa de arquitectura y vistas en **[component-datatable-views.md](./component-datatable-views.md)**.
+
+Sistema central de tablas de datos y sus primitivas de vista.
+
+| componente | uso principal | variant / prop clave |
+|---|---|---|
+| `DataTable` | Tabla principal, maneja paginación y skeleton automático | `variant="embedded" | "standalone"` |
+| `EntityCard` | Shell estandarizado para vistas de tarjeta/grilla | `variant="default" | "compact"` |
+| `ExpandableTableRow` | Fila con panel de detalle desplegable (lazy fetch) | `onExpand`, `cellClassName` |
+
+---
+
 ## ActionDock 🟡
 
 Floating taskbar for multi-selection actions and summary statistics. Automatically adjusts its horizontal position when Hub or Inbox panels are open.

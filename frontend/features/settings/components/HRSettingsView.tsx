@@ -335,7 +335,7 @@ export function HRSettingsView({ activeTab = "global" }: { activeTab?: string })
                         filterColumn="name"
                         searchPlaceholder="Buscar concepto..."
                         isLoading={loading}
-                        cardMode={true}
+                        variant="embedded"
                     />
                 </div>
             )}
