@@ -216,7 +216,7 @@ export function ContactsClientView({ isNewModalOpen = false, createAction }: Con
                 data={contacts}
                 isLoading={isLoading}
                 variant="embedded"
-                leftAction={<SmartSearchBar searchDef={contactSearchDef} placeholder="Buscar por nombre, RUT o tipo..." className="w-80" />}
+                leftAction={<SmartSearchBar searchDef={contactSearchDef} placeholder="Buscar por nombre, RUT o tipo..." />}
                 defaultPageSize={20}
                 createAction={createAction}
             />

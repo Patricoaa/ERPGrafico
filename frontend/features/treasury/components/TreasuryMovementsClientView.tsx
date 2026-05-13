@@ -311,7 +311,7 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                 data={movements}
                 isLoading={isLoading}
                 variant="embedded"
-                leftAction={<SmartSearchBar searchDef={treasuryMovementsSearchDef} placeholder="Filtrar movimientos..." className="w-80" />}
+                leftAction={<SmartSearchBar searchDef={treasuryMovementsSearchDef} placeholder="Filtrar movimientos..." />}
                 createAction={createAction}
                 emptyState={{
                     context: "finance",

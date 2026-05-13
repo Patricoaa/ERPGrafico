@@ -30,7 +30,7 @@ export function SalesHeader() {
     // Determine subActiveValue
     const subActiveValue = (() => {
         if (activeValue === 'config') return tabParam || 'income'
-        if (activeValue === 'orders') return viewParam || 'orders'
+        if (activeValue === 'orders') return tabParam || 'orders'
         if (activeValue === 'hardware') return tabParam || 'batches'
         if (activeValue === 'pos') {
             if (currentSegment === 'sessions') return 'sessions'
@@ -47,8 +47,8 @@ export function SalesHeader() {
             iconName: "shopping-cart",
             href: "/sales/orders",
             subTabs: [
-                { value: "orders", label: ENTITY_REGISTRY['sales.saleorder']?.titlePlural || "Notas de Venta", href: "/sales/orders?view=orders" },
-                { value: "notes", label: "Ajustes (N/C N/D)", href: "/sales/orders?view=notes" },
+                { value: "orders", label: ENTITY_REGISTRY['sales.saleorder']?.titlePlural || "Notas de Venta", href: "/sales/orders?tab=orders" },
+                { value: "notes", label: "Ajustes (N/C N/D)", href: "/sales/orders?tab=notes" },
             ]
         },
         {
