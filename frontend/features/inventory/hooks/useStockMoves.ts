@@ -19,22 +19,52 @@ export interface StockMove {
     }>
 }
 
-export const STOCK_MOVES_QUERY_KEY = ['stockMoves']
+export interface StockMoveFilters {
+    page?: number
+    page_size?: number
+    product?: string | number
+    warehouse?: string | number
+    move_type?: string
+    date_from?: string
+    date_to?: string
+}
 
-export function useStockMoves() {
-    const queryClient = useQueryClient()
+export interface PaginatedStockMoves {
+    count: number
+    next: string | null
+    previous: string | null
+    results: StockMove[]
+}
 
-    const { data: moves, isLoading, refetch } = useQuery({
-        queryKey: STOCK_MOVES_QUERY_KEY,
-        queryFn: async (): Promise<StockMove[]> => {
-            const response = await api.get('/inventory/moves/')
-            return response.data.results || response.data
+export const STOCK_MOVES_QUERY_KEY = ['inventory', 'stockMoves'] as const
+
+export function useStockMoves(filters: StockMoveFilters = {}) {
+    const { page = 1, page_size = 50, ...rest } = filters
+
+    const queryInfo = useQuery<PaginatedStockMoves>({
+        queryKey: [...STOCK_MOVES_QUERY_KEY, { page, page_size, ...rest }],
+        queryFn: async ({ signal }): Promise<PaginatedStockMoves> => {
+            const params: Record<string, any> = { page, page_size, ...rest }
+            const response = await api.get('/inventory/moves/', { params, signal })
+            return response.data
         },
+        staleTime: 2 * 60 * 1000, // 2 min
     })
 
+    return queryInfo
+}
+
+/**
+ * @deprecated Usa `useStockMoves(filters)` directamente.
+ * Este wrapper mantiene la forma de retorno `{ moves, isLoading, refetch }`
+ * para no romper consumidores en esta iteración.
+ */
+export function useStockMovesList(filters: StockMoveFilters = {}) {
+    const query = useStockMoves(filters)
     return {
-        moves: moves ?? [],
-        isLoading,
-        refetch,
+        moves: query.data?.results ?? [],
+        totalCount: query.data?.count ?? 0,
+        isLoading: query.isLoading,
+        refetch: query.refetch,
     }
 }

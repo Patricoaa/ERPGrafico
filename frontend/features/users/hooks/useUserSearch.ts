@@ -1,57 +1,48 @@
-import { useState, useCallback } from "react"
-import api from "@/lib/api"
-import { showApiError } from "@/lib/errors"
-import { AppUser } from "@/types/entities"
+import { useQuery } from '@tanstack/react-query'
+import api from '@/lib/api'
+import type { AppUser } from '@/types/entities'
 
-interface UseUserSearchReturn {
-    users: AppUser[]
-    singleUser: AppUser | null
-    loading: boolean
-    fetchUsers: (search?: string) => Promise<void>
-    fetchSingleUser: (id: string | number) => Promise<void>
+export const USER_KEYS = {
+    all: ['users'] as const,
+    search: (term: string) => [...USER_KEYS.all, 'search', term] as const,
+    detail: (id: string | number) => [...USER_KEYS.all, 'detail', id] as const,
 }
 
-const globalCache: Record<string, AppUser[]> = {}
-
-export function useUserSearch(): UseUserSearchReturn {
-    const [users, setUsers] = useState<AppUser[]>([])
-    const [singleUser, setSingleUser] = useState<AppUser | null>(null)
-    const [loading, setLoading] = useState(false)
-
-    const fetchSingleUser = useCallback(async (id: string | number) => {
-        try {
-            const res = await api.get(`/core/users/${id}/`)
-            setSingleUser(res.data)
-        } catch (e) {
-            console.error("Error fetching single user", e)
-        }
-    }, [])
-
-    const fetchUsers = useCallback(async (search: string = "") => {
-        const cacheKey = search
-        if (globalCache[cacheKey]) {
-            setUsers(globalCache[cacheKey])
-            return
-        }
-
-        try {
-            setLoading(true)
+export function useUserSearch(search: string = "", enabled: boolean = true) {
+    const query = useQuery({
+        queryKey: USER_KEYS.search(search),
+        queryFn: async ({ signal }) => {
             const params = new URLSearchParams()
             if (search) params.append("search", search)
             params.append("limit", "50")
 
-            const res = await api.get(`/core/users/?${params.toString()}`)
-            const data = res.data.results || res.data
-            
-            globalCache[cacheKey] = data
-            setUsers(data)
-        } catch (err) {
-            showApiError(err, "Error al buscar usuarios")
-            setUsers([])
-        } finally {
-            setLoading(false)
-        }
-    }, [])
+            const res = await api.get(`/core/users/?${params.toString()}`, { signal })
+            return (res.data.results || res.data) as AppUser[]
+        },
+        enabled,
+        staleTime: 5 * 60 * 1000, // 5 min
+    })
 
-    return { users, singleUser, loading, fetchUsers, fetchSingleUser }
+    return {
+        users: query.data ?? [],
+        loading: query.isLoading,
+        isFetching: query.isFetching,
+    }
+}
+
+export function useSingleUser(id: string | number | null) {
+    const query = useQuery({
+        queryKey: USER_KEYS.detail(id!),
+        queryFn: async ({ signal }) => {
+            const res = await api.get(`/core/users/${id}/`, { signal })
+            return res.data as AppUser
+        },
+        enabled: !!id,
+        staleTime: 5 * 60 * 1000, // 5 min
+    })
+
+    return {
+        user: query.data ?? null,
+        loading: query.isLoading,
+    }
 }

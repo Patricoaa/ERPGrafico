@@ -12,6 +12,7 @@ export function useAccountingSettings() {
             const response = await api.get('/accounting/settings/current/')
             return response.data
         },
+        staleTime: 10 * 60 * 1000, // 10 min — settings cambian raramente
     })
 
     const structure = (() => {

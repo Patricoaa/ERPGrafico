@@ -16,7 +16,8 @@ export function useTerminalProviders() {
         queryFn: async () => {
             const res = await api.get('/treasury/terminal-providers/')
             return res.data.results || res.data
-        }
+        },
+        staleTime: 5 * 60 * 1000, // 5 min
     })
 
     const createProvider = useMutation({

@@ -23,6 +23,7 @@ export function useWorkflowRulesQuery() {
             const res = await api.get("/workflow/assignment-rules/")
             return (res.data.results ?? res.data) as WorkflowRule[]
         },
+        staleTime: 10 * 60 * 1000, // 10 min — datos de configuración
     })
 }
 
@@ -33,6 +34,7 @@ export function useNotificationRulesQuery() {
             const res = await api.get("/workflow/notification-rules/")
             return (res.data.results ?? res.data) as NotificationRule[]
         },
+        staleTime: 10 * 60 * 1000, // 10 min — datos de configuración
     })
 }
 
@@ -43,5 +45,6 @@ export function useWorkflowRecurrentSettingsQuery() {
             const res = await api.get("/workflow/settings/current/")
             return res.data as WorkflowRecurrentSettings
         },
+        staleTime: 10 * 60 * 1000, // 10 min — datos de configuración
     })
 }

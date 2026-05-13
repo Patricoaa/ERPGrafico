@@ -29,6 +29,7 @@ export function useUoMs() {
             const response = await api.get('/inventory/uoms/')
             return response.data.results || response.data
         },
+        staleTime: 60 * 60 * 1000, // 1 hora — datos estáticos
     })
 
     const { data: categories, isLoading: isCategoriesLoading } = useQuery({
@@ -37,6 +38,7 @@ export function useUoMs() {
             const response = await api.get('/inventory/uom-categories/')
             return response.data.results || response.data
         },
+        staleTime: 60 * 60 * 1000, // 1 hora — datos estáticos
     })
 
     const deleteMutation = useMutation({

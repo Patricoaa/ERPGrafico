@@ -21,6 +21,7 @@ export function useInventorySettings(): UseInventorySettingsReturn {
     const { data: settings, isLoading, refetch } = useQuery({
         queryKey: INVENTORY_SETTINGS_QUERY_KEY,
         queryFn: settingsApi.getInventorySettings,
+        staleTime: 10 * 60 * 1000, // 10 min
     })
 
     const updateMutation = useMutation({

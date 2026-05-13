@@ -3,13 +3,11 @@
 import React, { useState, useEffect } from "react"
 import { useTerminalProviders, useTerminalDevices, type PaymentTerminalProvider, type PaymentTerminalDevice } from "../hooks/useTerminalProviders"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { BaseModal, EmptyState, StatusBadge, SubmitButton, CancelButton, IconButton, LabeledInput, LabeledSelect, FormSection, MultiSelectTagInput, CardSkeleton } from "@/components/shared"
+import { BaseModal, StatusBadge, SubmitButton, CancelButton, IconButton, LabeledInput, LabeledSelect, FormSection, MultiSelectTagInput } from "@/components/shared"
 import { toast } from "sonner"
 import {
     Settings,
     Trash2,
-    Loader2,
     Building2,
 
     Smartphone,
@@ -19,7 +17,6 @@ import {
 } from "lucide-react"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
-import { cn } from "@/lib/utils"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { DataTable } from "@/components/ui/data-table"
@@ -220,6 +217,11 @@ export function PaymentHardwareManagement({
 
     return (
         <div className="space-y-6">
+            {createAction && (
+                <div className="flex items-center justify-end">
+                    {createAction}
+                </div>
+            )}
             {activeTab === "providers" ? (
                 <DataTable
                     columns={providerColumns}
@@ -281,14 +283,14 @@ export function PaymentHardwareManagement({
                                             }
                                         />
                                         <EntityCard.Body>
-                                            <EntityCard.Field 
-                                                label="Recaudación" 
+                                            <EntityCard.Field
+                                                label="Recaudación"
                                                 value={provider.receivable_account_name || "No configurada"}
                                                 icon={Building2}
                                             />
                                             {provider.supplier_name && (
-                                                <EntityCard.Field 
-                                                    label="Contacto" 
+                                                <EntityCard.Field
+                                                    label="Contacto"
                                                     value={provider.supplier_name}
                                                     icon={UserIcon}
                                                 />
@@ -361,13 +363,13 @@ export function PaymentHardwareManagement({
                                             }
                                         />
                                         <EntityCard.Body>
-                                            <EntityCard.Field 
-                                                label="Proveedor" 
+                                            <EntityCard.Field
+                                                label="Proveedor"
                                                 value={device.provider_name || "Sin proveedor"}
                                                 icon={Building2}
                                             />
-                                            <EntityCard.Field 
-                                                label="N° Serie" 
+                                            <EntityCard.Field
+                                                label="N° Serie"
                                                 value={<span className="font-mono">{device.serial_number}</span>}
                                                 icon={CreditCard}
                                             />

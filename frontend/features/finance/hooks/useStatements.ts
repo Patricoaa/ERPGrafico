@@ -31,16 +31,19 @@ export function useStatements(params: StatementParams) {
     const { data: balanceSheet, isLoading: isLoadingBS, refetch: refetchBS } = useQuery({
         queryKey: [...STATEMENTS_QUERY_KEY, 'balance-sheet', params],
         queryFn: () => fetchStatement('finances/api/balance-sheet/', params),
+        staleTime: 5 * 60 * 1000, // 5 min — reporte costoso
     })
 
     const { data: incomeStatement, isLoading: isLoadingPL, refetch: refetchPL } = useQuery({
         queryKey: [...STATEMENTS_QUERY_KEY, 'income-statement', params],
         queryFn: () => fetchStatement('finances/api/income-statement/', params),
+        staleTime: 5 * 60 * 1000, // 5 min
     })
 
     const { data: cashFlow, isLoading: isLoadingCF, refetch: refetchCF } = useQuery({
         queryKey: [...STATEMENTS_QUERY_KEY, 'cash-flow', params],
         queryFn: () => fetchStatement('finances/api/cash-flow/', params),
+        staleTime: 5 * 60 * 1000, // 5 min
     })
 
     const refetch = async () => {

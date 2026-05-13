@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useEffect, useMemo, useRef } from "react"
-import { Check, ChevronDown, Search, Loader2, User, Building2, Plus } from "lucide-react"
+import { useState, useEffect } from "react"
+import { Check, ChevronDown, Search, User, Building2, Plus } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -12,7 +12,7 @@ import {
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip"
 import { useDebounce } from "@/hooks/use-debounce"
 import { formatRUT } from "@/lib/utils/format"
-import { useContactSearch } from "@/features/contacts/hooks/useContactSearch"
+import { useContactSearch, useSingleContact } from "@/features/contacts/hooks/useContactSearch"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { Contact } from "@/types/entities"
 import { CardSkeleton } from "@/components/shared"
@@ -50,52 +50,31 @@ export function AdvancedContactSelector({
     icon,
     variant = 'standalone'
 }: AdvancedContactSelectorProps) {
-    const { contacts, singleContact, loading: searchLoading, fetchContacts, fetchSingleContact } = useContactSearch()
+    const [searchTerm, setSearchTerm] = useState("")
+    const debouncedSearch = useDebounce(searchTerm, 500)
     const [selectedContact, setSelectedContact] = useState<Contact | null>(null)
     const [open, setOpen] = useState(false)
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
-    const [searchTerm, setSearchTerm] = useState("")
-    const debouncedSearch = useDebounce(searchTerm, 500)
-    const lastFetchedId = useRef<string | null>(null)
 
-    // Fetch initial selected contact if value exists
+    const shouldFetchSearch = open || searchTerm.length > 0
+    const { contacts, loading: searchLoading } = useContactSearch({
+        search: debouncedSearch,
+        contactType: contactType === 'BOTH' ? undefined : contactType as any,
+        isCustomer: contactType === 'CUSTOMER' ? true : undefined,
+        isVendor: contactType === 'SUPPLIER' ? true : undefined,
+        isPartnerOnly
+    }, shouldFetchSearch)
+
+    const { contact: singleContact } = useSingleContact(value || null)
+
+    // Sync fetched single contact to local state
     useEffect(() => {
-        const valStr = value?.toString()
-        
-        // Guard: If no value or "0", clear selection and return
-        if (!valStr || valStr === "0" || valStr === "null" || valStr === "undefined") {
-            if (selectedContact) setSelectedContact(null)
-            return
+        if (singleContact && singleContact.id.toString() === value?.toString()) {
+            requestAnimationFrame(() => setSelectedContact(singleContact))
+        } else if (!value) {
+            requestAnimationFrame(() => setSelectedContact(null))
         }
-
-        // If we already have the correct contact selected, nothing to do
-        if (selectedContact?.id.toString() === valStr) return
-
-        // If we just fetched the contact but haven't synced it yet
-        if (singleContact && singleContact.id.toString() === valStr) {
-            setSelectedContact(singleContact)
-            return
-        }
-
-        // Avoid re-fetching the same ID if it failed or is in progress
-        if (lastFetchedId.current === valStr) return
-
-        lastFetchedId.current = valStr
-        fetchSingleContact(valStr)
-    }, [value, selectedContact, singleContact, fetchSingleContact])
-
-    // Fetch contacts on search
-    useEffect(() => {
-        if (open) {
-            fetchContacts({
-                search: debouncedSearch,
-                contactType: contactType === 'BOTH' ? undefined : contactType as any,
-                isCustomer: contactType === 'CUSTOMER' ? true : undefined,
-                isVendor: contactType === 'SUPPLIER' ? true : undefined,
-                isPartnerOnly
-            })
-        }
-    }, [debouncedSearch, open, contactType, isPartnerOnly, fetchContacts])
+    }, [singleContact, value])
 
     const handleSelect = (contact: Contact) => {
         setSelectedContact(contact)

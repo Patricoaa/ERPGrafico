@@ -4,7 +4,9 @@ import { toast } from 'sonner';
 import { AccountingPeriod } from '../types';
 import { showApiError } from '@/lib/errors';
 
-export const ACCOUNTING_PERIODS_QUERY_KEY = ['accounting-periods'];
+import { ACCOUNTING_PERIODS_QUERY_KEY } from './queryKeys'
+
+export { ACCOUNTING_PERIODS_QUERY_KEY }
 
 export function useAccountingPeriods() {
     const queryClient = useQueryClient();
@@ -15,6 +17,7 @@ export function useAccountingPeriods() {
             const response = await api.get('/tax/accounting-periods/?ordering=-year,-month');
             return response.data.results || response.data;
         },
+        staleTime: 10 * 60 * 1000, // 10 min
     });
 
     const closeMutation = useMutation({
@@ -51,14 +54,7 @@ export function useAccountingPeriods() {
         isActionLoading: closeMutation.isPending || reopenMutation.isPending || createMutation.isPending,
         closePeriod: closeMutation.mutateAsync,
         reopenPeriod: reopenMutation.mutateAsync,
-        createPeriod: async (year: number, month: number) => {
-            try {
-                await createMutation.mutateAsync({ year, month });
-                return true;
-            } catch {
-                return false;
-            }
-        },
+        createPeriod: createMutation.mutateAsync,
         isCreating: createMutation.isPending,
         isClosing: closeMutation.isPending,
         isReopening: reopenMutation.isPending,

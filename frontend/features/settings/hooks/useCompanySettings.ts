@@ -22,6 +22,7 @@ export function useCompanySettings(): UseCompanySettingsReturn {
     const { data: settings, refetch, isLoading } = useQuery({
         queryKey: COMPANY_SETTINGS_QUERY_KEY,
         queryFn: settingsApi.getCompanySettings,
+        staleTime: 10 * 60 * 1000, // 10 min
     })
 
     const updateMutation = useMutation({

@@ -4,12 +4,9 @@ import { salesApi } from '../api/salesApi'
 import { toast } from 'sonner'
 import { SaleOrderFilters, SaleOrderPayload } from '../types'
 
-const SALES_KEYS = {
-    all: ['sales'] as const,
-    orders: (filters: SaleOrderFilters) => [...SALES_KEYS.all, 'orders', { filters }] as const,
-    notes: (filters: SaleOrderFilters) => [...SALES_KEYS.all, 'notes', { filters }] as const,
-    order: (id: number) => [...SALES_KEYS.all, 'order', id] as const,
-}
+import { SALES_KEYS } from './queryKeys'
+
+export { SALES_KEYS }
 
 export function useSalesOrders({ filters }: { filters?: SaleOrderFilters } = {}) {
     const queryClient = useQueryClient()
@@ -17,13 +14,15 @@ export function useSalesOrders({ filters }: { filters?: SaleOrderFilters } = {})
     const { data: orders, isLoading, refetch } = useQuery({
         queryKey: SALES_KEYS.orders(filters || {}),
         queryFn: () => salesApi.getOrders(filters),
+        staleTime: 2 * 60 * 1000, // 2 min
     })
 
     const createMutation = useMutation({
         mutationFn: salesApi.createOrder,
         onSuccess: () => {
             toast.success('Nota de venta creada')
-            queryClient.invalidateQueries({ queryKey: SALES_KEYS.all })
+            // Narrow: only orders list is stale after creating an order (not notes)
+            queryClient.invalidateQueries({ queryKey: [...SALES_KEYS.all, 'orders'] })
         },
         onError: (error: Error) => {
             showApiError(error, 'Error al crear la nota de venta')
@@ -35,7 +34,8 @@ export function useSalesOrders({ filters }: { filters?: SaleOrderFilters } = {})
             salesApi.updateOrder(id, payload),
         onSuccess: () => {
             toast.success('Nota de venta actualizada')
-            queryClient.invalidateQueries({ queryKey: SALES_KEYS.all })
+            // Narrow: only orders list + invoices (order status may affect billing badge)
+            queryClient.invalidateQueries({ queryKey: [...SALES_KEYS.all, 'orders'] })
         },
         onError: (error: Error) => {
             showApiError(error, 'Error al actualizar la nota de venta')
@@ -46,7 +46,8 @@ export function useSalesOrders({ filters }: { filters?: SaleOrderFilters } = {})
         mutationFn: salesApi.deleteOrder,
         onSuccess: () => {
             toast.success('Nota de venta eliminada')
-            queryClient.invalidateQueries({ queryKey: SALES_KEYS.all })
+            // Narrow: only orders list is stale on delete
+            queryClient.invalidateQueries({ queryKey: [...SALES_KEYS.all, 'orders'] })
         },
         onError: (error: Error) => {
             toast.error('Error al eliminar')

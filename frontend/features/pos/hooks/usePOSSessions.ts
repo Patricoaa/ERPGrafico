@@ -33,6 +33,7 @@ export function usePOSSessions() {
             const response = await api.get('/treasury/pos-sessions/')
             return response.data
         },
+        staleTime: 60 * 1000, // 1 min — datos operativos activos
     })
 
     return {

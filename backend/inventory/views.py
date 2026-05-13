@@ -19,6 +19,12 @@ from django_filters.rest_framework import DjangoFilterBackend
 from decimal import Decimal
 
 from core.mixins import BulkImportMixin, AuditHistoryMixin as AuditHistory
+from rest_framework import pagination
+
+class StandardResultsSetPagination(pagination.PageNumberPagination):
+    page_size = 50
+    page_size_query_param = 'page_size'
+    max_page_size = 1000
 
 from .filters import ProductFilter, StockMoveFilter
 
@@ -564,6 +570,7 @@ class UoMCategoryViewSet(viewsets.ModelViewSet, AuditHistory):
 class StockMoveViewSet(viewsets.ReadOnlyModelViewSet, AuditHistory):
     queryset = StockMove.objects.all()
     serializer_class = StockMoveSerializer
+    pagination_class = StandardResultsSetPagination
     filter_backends = [DjangoFilterBackend]
     filterset_class = StockMoveFilter
 

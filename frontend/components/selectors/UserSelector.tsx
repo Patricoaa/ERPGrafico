@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/popover"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { useDebounce } from "@/hooks/use-debounce"
-import { useUserSearch } from "@/features/users/hooks/useUserSearch"
+import { useUserSearch, useSingleUser } from "@/features/users/hooks/useUserSearch"
 import { CardSkeleton } from "@/components/shared"
 import type { AppUser } from "@/types/entities"
 
@@ -27,33 +27,22 @@ interface UserSelectorProps {
 
 export function UserSelector({ value, onChange, placeholder = "Seleccionar usuario...", disabled = false, label, error }: UserSelectorProps) {
     const [open, setOpen] = useState(false)
-    const { users, singleUser, loading: searchLoading, fetchUsers, fetchSingleUser } = useUserSearch()
     const [searchTerm, setSearchTerm] = useState("")
     const debouncedSearch = useDebounce(searchTerm, 500)
+    
+    const { users, loading: searchLoading } = useUserSearch(debouncedSearch, open)
+    const { user: singleUser } = useSingleUser(value || null)
+    
     const [selectedUser, setSelectedUser] = useState<AppUser | null>(null)
-
-    // Fetch initial selected user if missing
-    useEffect(() => {
-        if (value && !selectedUser && value.toString() !== singleUser?.id.toString()) {
-            fetchSingleUser(value.toString())
-        } else if (!value) {
-            requestAnimationFrame(() => setSelectedUser(null))
-        }
-    }, [value, selectedUser, singleUser, fetchSingleUser])
 
     // Sync fetched single user to local state
     useEffect(() => {
         if (singleUser && singleUser.id === value) {
             requestAnimationFrame(() => setSelectedUser(singleUser))
+        } else if (!value) {
+            requestAnimationFrame(() => setSelectedUser(null))
         }
     }, [singleUser, value])
-
-    // Fetch users on search
-    useEffect(() => {
-        if (open) {
-            fetchUsers(debouncedSearch)
-        }
-    }, [debouncedSearch, open, fetchUsers])
 
     const handleSelect = (user: AppUser) => {
         setSelectedUser(user)

@@ -21,6 +21,7 @@ export function usePartnerSettings(): UsePartnerSettingsReturn {
     const { data: settings, isLoading, refetch } = useQuery({
         queryKey: PARTNER_SETTINGS_QUERY_KEY,
         queryFn: settingsApi.getPartnerSettings,
+        staleTime: 10 * 60 * 1000, // 10 min
     })
 
     const updateMutation = useMutation({

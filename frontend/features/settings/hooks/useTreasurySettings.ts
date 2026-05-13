@@ -21,6 +21,7 @@ export function useTreasurySettings() {
 
             return formattedSettings as TreasuryFormValues
         },
+        staleTime: 10 * 60 * 1000, // 10 min
     })
 
     return {

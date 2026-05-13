@@ -1,4 +1,5 @@
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, filters as drf_filters
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from .models import Invoice
@@ -12,6 +13,8 @@ from core.mixins import AuditHistoryMixin
 class InvoiceViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = Invoice.objects.all().order_by('-date', '-id')
     serializer_class = InvoiceSerializer
+    filter_backends = [DjangoFilterBackend, drf_filters.SearchFilter]
+    search_fields = ['contact__name', 'contact__rut']
     filterset_fields = {
         'dte_type': ['exact', 'in'],
         'sale_order': ['exact', 'isnull'],

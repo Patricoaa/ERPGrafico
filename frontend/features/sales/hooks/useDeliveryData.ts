@@ -8,6 +8,7 @@ export function useDeliveryData(orderId: number) {
             const response = await api.get(`/sales/orders/${orderId}/`)
             return response.data
         },
+        staleTime: 2 * 60 * 1000, // 2 min
     })
 
     const warehousesQuery = useQuery({
@@ -16,6 +17,7 @@ export function useDeliveryData(orderId: number) {
             const response = await api.get('/inventory/warehouses/')
             return response.data.results || response.data
         },
+        staleTime: 15 * 60 * 1000, // 15 min — estáticos
     })
 
     return {

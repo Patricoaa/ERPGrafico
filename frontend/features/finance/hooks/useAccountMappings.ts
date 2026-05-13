@@ -16,7 +16,8 @@ export function useAccountMappings(mappingType: MappingType) {
     const { data: accounts = [], isLoading, error } = useQuery<Account[]>({
         queryKey: ['accounts', 'mappings'], 
         queryFn: () => accountingApi.getAccounts(),
-        refetchOnWindowFocus: false
+        refetchOnWindowFocus: false,
+        staleTime: 15 * 60 * 1000, // 15 min — cuentas son quasi-estáticas
     })
 
     // Filter relevant accounts based on mapping type

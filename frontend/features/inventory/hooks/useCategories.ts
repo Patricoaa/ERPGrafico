@@ -23,6 +23,7 @@ export function useCategories() {
             const response = await api.get('/inventory/categories/')
             return response.data.results || response.data
         },
+        staleTime: 15 * 60 * 1000, // 15 min — datos quasi-estáticos
     })
 
     const deleteMutation = useMutation({

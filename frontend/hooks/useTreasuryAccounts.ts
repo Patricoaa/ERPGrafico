@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import api from '@/lib/api'
 
 export interface TreasuryAccount {
@@ -17,104 +17,46 @@ export interface TreasuryAccount {
 export type PaymentContext = 'POS' | 'GENERAL'
 
 export interface UseTreasuryAccountsOptions {
-    /**
-     * Context determines which accounts to fetch:
-     * - 'POS': Fetch accounts allowed for a specific terminal
-     * - 'GENERAL': Fetch all accounts with at least one payment method enabled
-     */
     context: PaymentContext
-
-    /**
-     * Terminal ID (required when context is 'POS')
-     */
     terminalId?: number
-
-    /**
-     * Optional payment method filter
-     * When provided, only accounts that support this method are returned
-     */
     paymentMethod?: 'CASH' | 'CARD' | 'TRANSFER' | 'CHECK'
-
-    /**
-     * Whether to fetch immediately on mount
-     */
     enabled?: boolean
-
-    /**
-     * ID of account to exclude from results
-     */
     excludeId?: number
 }
 
-export interface UseTreasuryAccountsReturn {
-    accounts: TreasuryAccount[]
-    loading: boolean
-    error: string | null
-    refetch: () => void
+export const TREASURY_ACCOUNT_KEYS = {
+    all: ['treasury_accounts'] as const,
+    list: (opts: UseTreasuryAccountsOptions) => [...TREASURY_ACCOUNT_KEYS.all, 'list', opts] as const,
 }
 
-/**
- * Hook to fetch treasury accounts based on context (POS or GENERAL)
- * 
- * @example
- * // POS Flow: Get accounts for a specific terminal
- * const { accounts } = useTreasuryAccounts({
- *   context: 'POS',
- *   terminalId: 1,
- *   paymentMethod: 'CASH'
- * })
- * 
- * @example
- * // General Flow: Get all accounts with enabled payment methods
- * const { accounts } = useTreasuryAccounts({
- *   context: 'GENERAL',
- *   paymentMethod: 'CARD'
- * })
- */
-export function useTreasuryAccounts(options: UseTreasuryAccountsOptions): UseTreasuryAccountsReturn {
+export function useTreasuryAccounts(options: UseTreasuryAccountsOptions) {
     const { context, terminalId, paymentMethod, enabled = true, excludeId } = options
 
-    const [accounts, setAccounts] = useState<TreasuryAccount[]>([])
-    const [loading, setLoading] = useState(false)
-    const [error, setError] = useState<string | null>(null)
+    const isValid = context === 'GENERAL' || (context === 'POS' && !!terminalId)
 
-    const fetchAccounts = async () => {
-        if (!enabled) return
-
-        // Validate POS context requires terminalId
-        if (context === 'POS' && !terminalId) {
-            setError('Terminal ID is required for POS context')
-            return
-        }
-
-        try {
-            setLoading(true)
-            setError(null)
-
+    const query = useQuery({
+        queryKey: TREASURY_ACCOUNT_KEYS.list({ context, terminalId, paymentMethod, excludeId }),
+        queryFn: async ({ signal }) => {
             let fetchedAccounts: TreasuryAccount[]
 
             if (context === 'POS') {
-                // POS Flow: Get accounts from terminal's allowed list
                 const endpoint = `/treasury/pos-terminals/${terminalId}/available_accounts/`
                 const params: any = paymentMethod ? { payment_method: paymentMethod } : {}
                 if (excludeId) params.exclude_id = excludeId
 
-                const res = await api.get(endpoint, { params })
+                const res = await api.get(endpoint, { params, signal })
                 fetchedAccounts = res.data
             } else {
-                // GENERAL Flow: Get all accounts with enabled payment methods
                 const params: any = {}
                 if (excludeId) params.exclude_id = excludeId
 
-                const res = await api.get('/treasury/accounts/', { params })
+                const res = await api.get('/treasury/accounts/', { params, signal })
                 const allAccounts = res.data.results || res.data
 
-                // Filter: accounts with at least one payment method enabled
                 fetchedAccounts = allAccounts.filter((acc: TreasuryAccount & { allows_check: boolean }) =>
                     acc.allows_cash || acc.allows_card || acc.allows_transfer || acc.allows_check
                 )
 
-                // Further filter by payment method if specified
                 if (paymentMethod) {
                     fetchedAccounts = fetchedAccounts.filter((acc: TreasuryAccount & { allows_check: boolean }) => {
                         if (paymentMethod === 'CASH') return acc.allows_cash
@@ -126,24 +68,16 @@ export function useTreasuryAccounts(options: UseTreasuryAccountsOptions): UseTre
                 }
             }
 
-            setAccounts(fetchedAccounts)
-        } catch (err: any) {
-            console.error('Error fetching treasury accounts:', err)
-            setError(err.message || 'Error al cargar cuentas de tesorería')
-            setAccounts([])
-        } finally {
-            setLoading(false)
-        }
-    }
-
-    useEffect(() => {
-        fetchAccounts()
-    }, [context, terminalId, paymentMethod, enabled])
+            return fetchedAccounts
+        },
+        enabled: enabled && isValid,
+        staleTime: 5 * 60 * 1000, // 5 min
+    })
 
     return {
-        accounts,
-        loading,
-        error,
-        refetch: fetchAccounts
+        accounts: query.data ?? [],
+        loading: query.isLoading,
+        error: query.error ? (query.error as any).message || 'Error al cargar cuentas de tesorería' : null,
+        refetch: query.refetch,
     }
 }
