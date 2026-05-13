@@ -16,7 +16,8 @@ import { DataTableColumnHeader } from '@/components/ui/data-table-column-header'
 import { createActionsColumn, DataCell } from '@/components/ui/data-table-cells';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { LayoutGrid, List, PlayCircle, ShieldAlert, Lock, LockOpen } from 'lucide-react';
-import { PageHeaderButton, SmartSearchBar, useClientSearch } from '@/components/shared';
+import { ToolbarCreateButton, SmartSearchBar, useClientSearch } from '@/components/shared';
+import { ClosuresSkeleton } from './ClosuresSkeleton';
 import { fiscalYearSearchDef } from '../../searchDef';
 
 interface AccountingClosuresViewProps {
@@ -31,6 +32,7 @@ export function AccountingClosuresView({ externalOpen, onExternalOpenChange }: A
 
     const {
         data: fiscalYears,
+        isLoading: isLoadingYr,
         isActionLoading: actionLoadingYr,
         refetch: fetchFiscalYears,
         previewClosing,
@@ -45,6 +47,7 @@ export function AccountingClosuresView({ externalOpen, onExternalOpenChange }: A
 
     const {
         data: periods,
+        isLoading: isLoadingPeriods,
         isActionLoading: actionLoadingPeriod,
         refetch: fetchPeriods,
         closePeriod,
@@ -169,6 +172,10 @@ export function AccountingClosuresView({ externalOpen, onExternalOpenChange }: A
         setViewMode(v);
     };
 
+    if (isLoadingYr || isLoadingPeriods) {
+        return <ClosuresSkeleton />;
+    }
+
     if (groupedData.length === 0) {
         return (
             <div className="pt-8">
@@ -266,10 +273,9 @@ export function AccountingClosuresView({ externalOpen, onExternalOpenChange }: A
                     { label: "Tarjeta", value: "card", icon: LayoutGrid }
                 ]}
                 createAction={
-                    <PageHeaderButton 
+                    <ToolbarCreateButton 
                         href="/accounting/closures?modal=fy" 
-                        iconName="plus" 
-                        title="Nuevo Año Fiscal" 
+                        label="Nuevo Año Fiscal" 
                     />
                 }
                 renderCustomView={viewMode === 'card' ? (table) => (

@@ -139,7 +139,7 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
             ),
             cell: ({ row }) => (
                 <div className="flex justify-center w-full">
-                    <DataCell.DocumentId type="JOURNAL_ENTRY" number={row.getValue("number")} />
+                    <DataCell.DocumentId entityLabel="accounting.journalentry" data={row.original} />
                 </div>
             ),
         },
@@ -228,7 +228,7 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
                     data={entries}
                     isLoading={isLoading}
                     variant="embedded"
-                    leftAction={<SmartSearchBar searchDef={journalEntrySearchDef} placeholder="Buscar asientos..." className="w-80" />}
+                    leftAction={<SmartSearchBar searchDef={journalEntrySearchDef} placeholder="Buscar asientos..." className="w-full" />}
                     defaultPageSize={20}
                     createAction={createAction}
                 />

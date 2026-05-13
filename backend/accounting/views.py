@@ -115,7 +115,7 @@ class JournalEntryViewSet(viewsets.ModelViewSet, AuditHistory):
     serializer_class = JournalEntrySerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_class = JournalEntryFilterSet
-    search_fields = ['description', 'reference', 'display_id']
+    search_fields = ['description', 'reference', 'display_id', 'items__partner__name', 'items__partner__tax_id']
 
     @action(detail=True, methods=['post'])
     def post_entry(self, request, pk=None):

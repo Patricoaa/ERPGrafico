@@ -120,12 +120,12 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
     const currentSortColumn = currentSort ? table.getColumn(currentSort.id) : null
 
     return (
-        <div className="w-full px-1 mb-0">
+        <div className="w-full mb-0">
             <div className="flex items-center gap-3 h-9 w-full">
 
                 {/* Search — fills all available space */}
                 {leftAction && (
-                    <div className="flex-1 min-w-0">
+                    <div className="flex-1 min-w-0 h-9">
                         {leftAction}
                     </div>
                 )}
@@ -138,13 +138,13 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                         </div>
                     )}
 
-                    <div className="flex h-9 items-center rounded-md border border-border/50 bg-background shadow-sm overflow-hidden">
+                    <div className="flex h-10 items-center rounded-md border border-border/50 bg-background shadow-sm overflow-hidden">
 
                         {showToolbarSort && sortableColumns.length > 0 && (
                             <div className="border-r border-border/50 last:border-r-0 flex items-center h-full">
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" className="h-9 px-3 rounded-none text-[10px] font-bold uppercase tracking-widest hover:bg-muted/50 transition-all border-0 ring-0 focus-visible:ring-0">
+                                        <Button variant="ghost" className="h-full px-3 rounded-none text-[10px] font-bold uppercase tracking-widest hover:bg-muted/50 transition-all border-0 ring-0 focus-visible:ring-0">
                                             {currentSortColumn ? (
                                                 currentSort?.desc ? <ArrowDown className="h-3.5 w-3.5 mr-2 text-primary" /> : <ArrowUp className="h-3.5 w-3.5 mr-2 text-primary" />
                                             ) : (
@@ -180,7 +180,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                             <div className="border-r border-border/50 last:border-r-0 flex items-center h-full">
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" className="h-9 px-3 rounded-none text-[10px] font-bold uppercase tracking-widest hover:bg-muted/50 transition-all border-0 ring-0 focus-visible:ring-0">
+                                        <Button variant="ghost" className="h-full px-3 rounded-none text-[10px] font-bold uppercase tracking-widest hover:bg-muted/50 transition-all border-0 ring-0 focus-visible:ring-0">
                                             <Settings2 className="h-3.5 w-3.5 mr-2 opacity-50" />
                                             Columnas
                                         </Button>
@@ -214,7 +214,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                                     <DropdownMenuTrigger asChild>
                                         <Button
                                             variant="ghost"
-                                            className="h-9 px-3 rounded-none text-[10px] font-bold uppercase tracking-widest hover:bg-muted/50 transition-all border-0 ring-0 focus-visible:ring-0"
+                                            className="h-full px-3 rounded-none text-[10px] font-bold uppercase tracking-widest hover:bg-muted/50 transition-all border-0 ring-0 focus-visible:ring-0"
                                         >
                                             {(() => {
                                                 const activeOption = viewOptions.find(opt => opt.value === currentView) || viewOptions[0];
@@ -258,7 +258,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                             <div className="border-r border-border/50 last:border-r-0 flex items-center h-full">
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" className="h-9 px-3 rounded-none text-[10px] font-bold uppercase tracking-widest hover:bg-muted/50 transition-all border-0 ring-0 focus-visible:ring-0">
+                                        <Button variant="ghost" className="h-full px-3 rounded-none text-[10px] font-bold uppercase tracking-widest hover:bg-muted/50 transition-all border-0 ring-0 focus-visible:ring-0">
                                             <MoreHorizontal className="h-4 w-4 mr-2 opacity-50" />
                                             Acciones
                                         </Button>
@@ -272,7 +272,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                     </div>
 
                     {createAction && (
-                        <div className="flex items-center shrink-0">
+                        <div className="flex items-center shrink-0 h-10">
                             {createAction}
                         </div>
                     )}

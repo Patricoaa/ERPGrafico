@@ -157,7 +157,7 @@ class SaleOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     permission_classes = [StandardizedModelPermissions]
     filter_backends = [DjangoFilterBackend, drf_filters.SearchFilter]
     filterset_class = SaleOrderFilterSet
-    search_fields = ['customer__name', 'number']
+    search_fields = ['customer__name', 'customer__tax_id', 'number']
     
     def get_serializer_class(self):
         if self.action == 'create':

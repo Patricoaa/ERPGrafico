@@ -33,7 +33,12 @@ from core.models import Attachment
 class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_class = WorkOrderFilterSet
-    search_fields = ['description', 'number']
+    search_fields = [
+        'description', 'number',
+        'product__name', 'product__code',
+        'sale_order__customer__name', 'sale_order__customer__tax_id',
+        'related_contact__name', 'related_contact__tax_id',
+    ]
     queryset = WorkOrder.objects.select_related(
         'sale_order', 'sale_order__customer', 'related_contact', 'product', 'sale_line', 'warehouse'
     ).prefetch_related(

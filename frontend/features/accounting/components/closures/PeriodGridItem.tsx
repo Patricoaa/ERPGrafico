@@ -34,7 +34,7 @@ const StatusIcon = ({ status }: { status: string }) => {
     const taxClosed = !!(period.tax_period_id && period.tax_period_status === 'CLOSED');
 
     return (
-        <EntityCard className="h-full hover:border-primary/30 hover:shadow-xl hover:shadow-primary/10">
+        <EntityCard className="h-full">
             <EntityCard.Header
                 title={
                     <div className="flex items-center gap-2">

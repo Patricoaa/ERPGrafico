@@ -242,6 +242,8 @@ class TreasuryMovementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = TreasuryMovement.objects.all().order_by('-date', '-created_at')
     serializer_class = TreasuryMovementSerializer
     pagination_class = StandardResultsSetPagination
+    filter_backends = [DjangoFilterBackend, drf_filters.SearchFilter]
+    search_fields = ['contact__name', 'contact__tax_id', 'reference', 'description']
 
     def get_queryset(self):
         qs = self.queryset

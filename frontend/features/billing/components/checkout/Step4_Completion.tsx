@@ -95,7 +95,7 @@ export function Step4_Completion({
                 <Button
                     onClick={handleComplete}
                     disabled={loading}
-                    className="group w-full py-8 rounded-sm font-black text-lg transition-all hover:scale-[1.01] active:scale-[0.99] shadow-md hover:shadow-primary/30"
+                    className="group w-full py-8 rounded-sm font-black text-lg transition-all hover:scale-[1.01] active:scale-[0.99] shadow-md"
                 >
                     {loading ? (
                         <>

@@ -320,7 +320,7 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
  
                                 <div className="shrink-0 mt-10 pt-8 border-t border-dashed">
                                     <Button
-                                        className="w-full h-16 rounded-2xl font-black uppercase tracking-widest text-sm shadow-xl shadow-primary/20 bg-primary hover:bg-primary/90 text-primary-foreground transition-all hover:scale-[1.01] active:scale-[0.98]"
+                                        className="w-full h-16 rounded-2xl font-black uppercase tracking-widest text-sm shadow-lg bg-primary hover:bg-primary/90 text-primary-foreground transition-all hover:scale-[1.01] active:scale-[0.98]"
                                         onClick={handleGenerateVariants}
                                         disabled={isGenerating || availableAttributes.length === 0}
                                     >
