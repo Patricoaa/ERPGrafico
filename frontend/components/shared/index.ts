@@ -77,6 +77,10 @@ export * from './FormSection';
 // Loading States
 export * from './LoadingFallback';
 
+// Smart Search
+export { SmartSearchBar, useSmartSearch } from './SmartSearchBar';
+export type { FilterState } from './SmartSearchBar';
+
 // Filters & Inputs
 export * from './DatePicker';
 export * from './DateRangeFilter';

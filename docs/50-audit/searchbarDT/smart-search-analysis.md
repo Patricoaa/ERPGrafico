@@ -1,14 +1,31 @@
-# Análisis: Smart Search Bar para DataTable (estilo GitHub)
-
-## TL;DR
-
-El proyecto está **bien posicionado** para implementar esto. Ya existe la infraestructura más difícil (GlobalSearchIndex con Postgres FTS + stemming en español). El gap principal está en el **frontend del DataTable** — pasar de filtros de tabla client-side a una barra de búsqueda expresiva. La complejidad real es de UX, no de infraestructura.
+# Smart Search Bar para DataTable — Análisis y Decisión de Implementación
 
 ---
 
-## 1. ¿Qué tienes hoy?
+## Decisión
 
-### Lo que YA existe (ventaja enorme)
+**Opción elegida: B — Server-Side Smart Search.**
+
+Justificación: el refactoring de hooks (Fases 1-5, completado 2026-05-13) dejó la infraestructura hook-side en un estado que hace la Opción B directamente ejecutable. Los hooks ya aceptan `filters` tipados, incluyen los filtros en `queryKey`, y tienen `staleTime` configurado. El trabajo restante es frontend (parser + UI de chips + sync URL) y normalización puntual de `filterset_fields` en Django. La Opción A (client-side) no escala y la Opción C (hybrid) introduce complejidad de contrato innecesaria cuando B ya es alcanzable.
+
+---
+
+## TL;DR
+
+El proyecto está **listo para implementar la Opción B**. La infraestructura más difícil ya existe y ya fue migrada:
+
+- Backend: `DjangoFilterBackend` + `filterset_class` en la mayoría de endpoints ✅
+- Hooks: todos declarativos (`useQuery`), aceptan `filters`, incluyen filtros en `queryKey` ✅
+- Cache: `staleTime` en los 41 hooks, invalidación cross-module granular ✅
+- Transport: `?search=&status=&ordering=` como contrato establecido ✅
+
+El gap real es en **Capa 1 (UX/Parsing)** y en la sincronización URL ↔ filterState.
+
+---
+
+## 1. ¿Qué existe hoy?
+
+### Lo que YA existe
 
 | Capa | Qué hay | Calidad |
 |---|---|---|
@@ -18,25 +35,46 @@ El proyecto está **bien posicionado** para implementar esto. Ya existe la infra
 | **Filter backends** | `DjangoFilterBackend` + `filterset_class` en la mayoría de vistas | ✅ Producción |
 | **Client filters** | `DataTableFilters` + `DataTableFacetedFilter` + `customFilters` (DateRange) | ✅ Producción |
 | **Ordering** | `?ordering=field,-other` en API contracts | ✅ Contrato |
+| **Hooks con `filters`** | Todos los hooks de lista aceptan `filters?: TypedFilters` en queryKey + queryFn | ✅ Post-audit |
+| **staleTime universal** | 41 hooks con staleTime según tier (1–60 min) | ✅ Post-audit |
+| **queryKeys centralizadas** | `queryKeys.ts` por dominio, Variante A/B según complejidad | ✅ Post-audit |
+| **Invalidación cross-module** | Grafo completo: facturas → órdenes, BOMs → productos, etc. | ✅ Post-audit |
 
-### Lo que NO existe
+### Lo que NO existe (gap real)
 
-| Qué falta | Impacto |
-|---|---|
-| Parser de sintaxis `campo:valor` en frontend | Alto |
-| Endpoint de "filter suggestions" por entidad | Alto |
-| Persistencia de filtros en URL (algunos módulos ya lo hacen, pero inconsistente) | Medio |
-| Token visual de filtros aplicados (chips/badges) | Medio |
-| Autocompletado contextual de valores por campo | Medio |
+| Qué falta | Impacto | Quién lo cierra |
+|---|---|---|
+| Parser de tokens `campo:valor` en frontend | Alto | Frontend |
+| **`nuqs` para sync URL ↔ filterState** | Alto | Frontend (nueva dep) |
+| UI de chips editables en el input | Alto | Frontend |
+| Normalización de `filterset_fields` en endpoints faltantes | Medio | Backend, por módulo |
+| Reset de cursor al cambiar filtros | Medio | Frontend (ver §5) |
+| Sugerencias de valores por campo (enum estático o endpoint) | Bajo | Backend opcional |
 
 ---
 
-## 2. El problema en tres capas
+## 2. Separación de sistemas — No mezclar
+
+```
+UniversalSearch (Ctrl+K)          DataTable Smart Search Bar
+──────────────────────────        ──────────────────────────
+Navega a un registro              Filtra la lista actual
+Entre todas las entidades         Dentro de una sola entidad
+Usa GlobalSearchIndex (FTS)       Usa DjangoFilterBackend + queryParams
+Resultado: router.push(/entity/)  Resultado: TanStack Query refetch
+```
+
+**Regla:** No refactorizar `GlobalSearchIndex` para los filtros de lista. Son sistemas complementarios con responsabilidades distintas.
+
+---
+
+## 3. El problema en tres capas
 
 ```
 ┌─────────────────────────────────────────────┐
 │  CAPA 1: UX/Parsing (Frontend)              │
 │  Tokenizar "estado:pagado cliente:Acme"     │
+│  → nuqs sincroniza filterState ↔ URL        │
 │  → mostrar chips editables en el input      │
 └─────────────────────────────────────────────┘
             ↓ construye query params
@@ -49,7 +87,7 @@ El proyecto está **bien posicionado** para implementar esto. Ya existe la infra
 ┌─────────────────────────────────────────────┐
 │  CAPA 3: Backend Filtering (Django)         │
 │  DjangoFilterBackend + filterset_class      │
-│  (ya existe, con cobertura desigual)        │
+│  (ya existe, cobertura ~85%)                │
 └─────────────────────────────────────────────┘
 ```
 
@@ -57,291 +95,276 @@ El proyecto está **bien posicionado** para implementar esto. Ya existe la infra
 
 ---
 
-## 3. Los tres enfoques posibles
-
-### Opción A — Client-Side Filter Bar (sin server changes)
-
-Convierte los filtros actuales en una barra de texto con chips visuales. El filtrado sigue siendo client-side con TanStack Table.
-
-```
-[  🔍 buscar... | estado: Pagado ✕ | tipo: Factura ✕  ]
-```
-
-**Cómo funciona:**
-1. Input + dropdown de sugerencias de campos disponibles
-2. Al seleccionar un campo → muestra opciones (enum/facets del dataset actual)
-3. Al confirmar → añade un chip al input y aplica `column.setFilterValue()`
-4. Los datos siguen siendo los mismos (cargados en memoria)
-
-**Pros:** Sin cambios en backend. Funciona hoy.  
-**Contras:** Solo filtra datos ya descargados. Incompatible con paginación server-side real. No escala a datasets grandes.  
-**Esfuerzo:** ~3-4 días de trabajo en frontend.
-
----
-
-### Opción B — Server-Side Smart Search (el "verdadero" GitHub approach)
-
-Cada keystroke construye una URL con query params y dispara un refetch al backend.
+## 4. Cómo funciona la Opción B con la arquitectura actual
 
 ```
 usuario escribe:    "estado:pagado cliente:Acme fecha:2026-01"
-                          ↓ parser
-query params:       ?status=PAID&search=Acme&date_from=2026-01-01&date_to=2026-01-31
-                          ↓ Django
-                    filterset_class aplica los filtros
-                          ↓ respuesta paginada
+                          ↓ parser (Zod schema)
+filterState:        { status: 'PAID', search: 'Acme', date_from: '2026-01-01', date_to: '2026-01-31' }
+                          ↓ nuqs
+URL:                ?status=PAID&search=Acme&date_from=2026-01-01&date_to=2026-01-31
+                          ↓ hook recibe filters desde URL
+useProducts({ filters })  →  queryKey: [...PRODUCTS_QUERY_KEY, filters]
+                          ↓ TanStack detecta queryKey distinta → refetch
+                          ↓ queryFn construye ?status=PAID&search=Acme&...
+                          ↓ Django DjangoFilterBackend aplica filtros
+                          ↓ respuesta paginada (page_size: 50)
 ```
 
-**Cómo funciona:**
-1. Parser tokeniza la query (regex simple o lib como `search-query-parser`)
-2. Tokens se mapean a `QueryParam` definitions declaradas por módulo
-3. TanStack Query hace refetch con los nuevos params
-4. Backend ya tiene `DjangoFilterBackend` en la mayoría de endpoints
-
-**Pros:** Escala a millones de registros. Paginación real. Filtros persistidos en URL.  
-**Contras:** Requiere que cada endpoint tenga los `filterset_fields` correctos (algunos faltan). Requiere endpoint de "sugerencias" para autocompletado de valores.  
-**Esfuerzo:** ~8-12 días (frontend 4-5 + backend 4-6 para normalizar filtros por módulo).
+El hook ya incluye `filters` en `queryKey` — TanStack cachea automáticamente por combinación de filtros. Cada combinación distinta es una entrada de cache independiente.
 
 ---
 
-### Opción C — Hybrid (recomendado)
+## 5. Problema crítico: cursor-pagination al cambiar filtros
 
-Capa de presentación unificada que decide internamente si filtrar client-side o server-side según capacidad del endpoint.
+**El contrato de API usa cursor-based pagination** (`?cursor=…&page_size=N`). Cuando el usuario cambia un filtro, el cursor activo es inválido para el nuevo dataset.
 
-```tsx
-// Declaración por módulo
-const searchDef: SearchDefinition = {
+**Solución requerida:** al cambiar cualquier filtro, eliminar el cursor del state URL antes del refetch.
+
+```ts
+// Con nuqs — patrón obligatorio
+const [filters, setFilters] = useQueryState('filters', parseAsJson<FilterState>())
+const [cursor, setCursor] = useQueryState('cursor')
+
+function applyFilter(newFilter: Partial<FilterState>) {
+  setCursor(null)          // reset cursor ANTES de cambiar filtros
+  setFilters({ ...filters, ...newFilter })
+}
+```
+
+**No implementar esto causa:** el usuario filtra por "estado:pagado", TanStack envía el cursor de la página anterior al nuevo filtro, el backend devuelve 404 o resultados incorrectos.
+
+---
+
+## 6. URL como fuente de verdad — `nuqs`
+
+`nuqs` es la librería estándar para sync URL ↔ state en Next.js App Router, type-safe, con SSR support. Es la pieza central de esta implementación, no un nice-to-have.
+
+```ts
+import { useQueryState, parseAsJson } from 'nuqs'
+
+const FilterSchema = z.object({
+  status: z.enum(['PAID', 'DRAFT', 'CANCELLED']).optional(),
+  date_from: z.string().date().optional(),
+  date_to: z.string().date().optional(),
+  search: z.string().optional(),
+})
+type FilterState = z.infer<typeof FilterSchema>
+
+// En el SmartSearchBar
+const [filters, setFilters] = useQueryState(
+  'q',
+  parseAsJson<FilterState>().withDefault({})
+)
+```
+
+**Por qué no `useState` + `router.push` manual:**
+- Cada módulo lo reimplementaría distinto (violación del contrato de consistencia ya documentado)
+- No es SSR-safe (Next.js App Router requiere manejo explícito de searchParams)
+- `nuqs` elimina el boilerplate de `searchParams.get()` que se repite en cada módulo
+
+**Coordinación con `?selected=<id>`:** `useSelectedEntity` usa el param `selected` para el patrón deeplink → modal. Los filtros deben usar un param distinto (`q` u otros params planos). Verificar que `setFilters` preserve el param `selected` si está presente al componer la URL.
+
+---
+
+## 7. Declaración de filtros por módulo — `SearchDefinition`
+
+Cada módulo declara sus filtros disponibles. Este objeto es la única configuración que varía entre módulos.
+
+```ts
+// Tipo central — vive en @/components/shared o features/[x]/components/
+type FieldDef =
+  | { key: string; label: string; type: 'text';      serverParam: string }
+  | { key: string; label: string; type: 'enum';      serverParam: string; options: { label: string; value: string }[] }
+  | { key: string; label: string; type: 'daterange'; serverParamStart: string; serverParamEnd: string }
+
+type SearchDefinition = {
+  fields: FieldDef[]
+}
+
+// Uso en módulo de facturas
+const invoiceSearchDef: SearchDefinition = {
   fields: [
-    { key: 'search', label: 'Texto', type: 'text', serverParam: 'search' },
-    { key: 'status', label: 'Estado', type: 'enum', 
-      options: STATUS_OPTIONS, serverParam: 'status', clientColumn: 'status' },
-    { key: 'date', label: 'Fecha', type: 'daterange', 
-      serverParam: 'date_from', serverParamEnd: 'date_to' },
+    { key: 'search',     label: 'Texto',  type: 'text',      serverParam: 'search' },
+    { key: 'status',     label: 'Estado', type: 'enum',      serverParam: 'status',
+      options: [{ label: 'Pagada', value: 'PAID' }, { label: 'Borrador', value: 'DRAFT' }] },
+    { key: 'date',       label: 'Fecha',  type: 'daterange', serverParamStart: 'date_from', serverParamEnd: 'date_to' },
   ]
 }
 ```
 
-Si el endpoint tiene el `serverParam` → filtra server-side. Si no → filtra client-side como hoy.
-
-**Esfuerzo:** ~6-8 días + rollout gradual por módulo.
+El `SmartSearchBar` recibe `searchDef` como prop y construye el parser, el dropdown de sugerencias y los chips automáticamente.
 
 ---
 
-## 4. ¿Qué hacen los mejores?
+## 8. Parser de tokens — Zod como validador
 
-| Producto | Técnica | Lección |
+No usar regex custom. Usar Zod para parsear y validar la query string, consistente con el resto del frontend.
+
+```ts
+// Zod schema derivado de SearchDefinition (generado dinámicamente)
+function buildFilterSchema(def: SearchDefinition) {
+  const shape: Record<string, z.ZodTypeAny> = {}
+  for (const field of def.fields) {
+    if (field.type === 'text')      shape[field.key] = z.string().optional()
+    if (field.type === 'enum')      shape[field.key] = z.enum(field.options.map(o => o.value) as [string, ...string[]]).optional()
+    if (field.type === 'daterange') {
+      shape[field.serverParamStart] = z.string().date().optional()
+      shape[field.serverParamEnd]   = z.string().date().optional()
+    }
+  }
+  return z.object(shape)
+}
+```
+
+Ventaja: los filtros inválidos son ignorados silenciosamente (`.safeParse`), no crashean la UI.
+
+---
+
+## 9. Sugerencias de valores — facets vs enum estático
+
+**Para campos de tipo `enum`:** las opciones son estáticas, declaradas en `SearchDefinition`. No requieren endpoint adicional. Funciona correctamente incluso con paginación server-side porque los valores posibles no dependen del dataset actual.
+
+**Para campos de tipo `text` (autocompletado):** los facets del dataset actual solo cubren la página actual (`page_size: 50`), no el universo total. Opciones:
+- **Endpoint ligero:** `GET /api/[entity]/filter-suggestions/?field=contact_name&q=Acme` → array de strings. Recomendado para campos de alta cardinalidad (nombres de cliente, producto).
+- **Sin autocompletado:** el campo de texto funciona sin sugerencias, el backend filtra con `?search=`. Válido como punto de partida.
+
+**No usar** los facets de la página actual para autocompletar campos de texto — el resultado sería inconsistente y confuso.
+
+---
+
+## 10. Prerequisitos por módulo
+
+Antes de activar la search bar server-side en un módulo, verificar:
+
+| Prerequisito | Cómo verificar |
+|---|---|
+| El hook acepta `filters?: TypedFilters` | Leer el hook — post-audit todos lo hacen |
+| `filterset_fields` o `filterset_class` en el ViewSet | `grep -n filterset backend/[app]/views.py` |
+| `search_fields` si se usa `?search=` | `grep -n search_fields backend/[app]/views.py` |
+| `page_size` no es ∞ (P2 resuelto) | El hooks audit marcó 6 pendientes — verificar antes de activar |
+| Cursor reset implementado al cambiar filtros | Test manual: filtrar → cambiar filtro → no debe haber 404 |
+
+**P2 pendientes (6 hooks):** si un módulo tiene un hook que todavía trae todos los registros sin `page_size`, la search bar mostrará chips correctos pero sin mejora de performance. Resolver P2 antes de marcar el módulo como "server-side activo".
+
+---
+
+## 11. ¿Qué hacen los mejores ERPs y productos?
+
+| Producto | Técnica | Lección aplicable |
 |---|---|---|
-| **GitHub** | Sintaxis `is:issue state:open author:me` — tokens pre-definidos, no free-form | Vocabulario cerrado = parseable + predecible |
-| **Linear** | Chips visuales por campo + keyboard shortcuts — `F` para filtros | UX > poder expresivo |
+| **GitHub** | Tokens pre-definidos `is:issue state:open author:me` — vocabulario cerrado | Vocabulario cerrado = parseable + predecible + testeable |
+| **Linear** | Chips visuales por campo + `F` para filtros | UX > poder expresivo |
 | **Notion** | Filter builder visual (no texto libre) | El parsing de lenguaje natural es un anti-pattern |
-| **Retool** | Filtros declarados en config JSON del widget | La declaración de filtros vive cerca del dato |
-| **Algolia** | Index externo, facets pre-computados | Overkill para ERP interno con Postgres FTS |
+| **Odoo** | Filtros declarados en `arch` XML del componente | La declaración de filtros vive cerca del dato — igual que `SearchDefinition` |
+| **Retool** | Filtros declarados en config JSON del widget | Mismo patrón |
+| **Algolia** | Index externo, facets pre-computados | Overkill para ERP interno con Postgres FTS existente |
 
-**El patrón ganador para ERP interno:** vocabulario cerrado de tokens (`campo:valor`) con chips visuales, persistido en URL. No lenguaje natural. No AI. Simple, predecible, testeable.
+**El patrón ganador para ERP interno:** vocabulario cerrado de tokens con chips visuales, persistido en URL. No lenguaje natural. No AI. Simple, predecible, testeable.
 
 ---
 
-## 5. Restricciones desde tu documentación
+## 12. Plan de implementación
 
-### `api-contracts.md` — **Contrato firmado**
+### Prerequisito global (antes de Fase 1)
+
+Instalar `nuqs`:
+```bash
+cd frontend && npm install nuqs
+```
+
+---
+
+### Fase 1 — Componente `SmartSearchBar` (3-4 días)
+
+**Objetivo:** reemplazar `<Input>` de search + botones `FacetedFilter` con un único componente declarativo.
+
+Entregables:
+- `components/shared/SmartSearchBar.tsx` — acepta `searchDef: SearchDefinition`
+- Chips visuales por filtro activo (removibles con ✕)
+- Dropdown de sugerencias: primero muestra campos disponibles, luego opciones de valor
+- `nuqs` como fuente de verdad del filterState ↔ URL
+- Cursor reset al aplicar/remover cualquier filtro (ver §5)
+- Sin cambios en backend — el hook recibe los filtros desde URL
+
+**Componentes auxiliares:**
+- `cmdk` (ya disponible via shadcn) para el dropdown de sugerencias con keyboard nav
+- Zod schema generado dinámicamente desde `searchDef` (ver §8)
+
+---
+
+### Fase 2 — Rollout por módulo (4-5 días, gradual)
+
+Orden recomendado (por impacto de dataset + P2 ya resuelto):
+
+| Módulo | Dataset | P2 resuelto | `filterset_class` | Prioridad |
+|---|---|---|---|---|
+| Facturas (`useInvoices`) | Crece indefinidamente | ✅ (migrado Fase 2 audit) | ✅ | 1 |
+| Movimientos Tesorería | Crece indefinidamente | ✅ (migrado Fase 2 audit) | Verificar | 2 |
+| Órdenes de Venta | Crece indefinidamente | Verificar | Verificar | 3 |
+| Productos | ~200-2000, estático | ⚠️ page_size:1000 → fix primero | ✅ | 4 |
+| Contactos | ~100-1000 | Verificar | Verificar | 5 |
+
+Para cada módulo:
+1. Verificar prerequisitos (§10)
+2. Definir `searchDef` con los campos que el filterset ya soporta
+3. Reemplazar los `DataTableFilters` + `FacetedFilter` buttons con `<SmartSearchBar searchDef={invoiceSearchDef} />`
+4. El hook ya acepta `filters` — pasar los filtros leídos desde URL
+
+---
+
+### Fase 3 — Sugerencias de valores para campos text (2 días, opcional)
+
+Solo si se quiere autocompletado en campos de alta cardinalidad (cliente, producto):
+
+```python
+# backend/[app]/views.py
+@action(detail=False, methods=['get'])
+def filter_suggestions(self, request):
+    field = request.query_params.get('field')
+    q     = request.query_params.get('q', '')
+    # ...query al modelo filtrando por q, devuelve los primeros 10 valores únicos
+    return Response(values[:10])
+```
+
+Sin esto la feature funciona igual — el campo texto filtra sin autocompletar. Implementar solo cuando el UX lo justifique.
+
+---
+
+## 13. Estimado de esfuerzo (actualizado)
+
+| Fase | Esfuerzo | Bloqueante |
+|---|---|---|
+| Fase 1 — SmartSearchBar + nuqs | 3-4 días | Ninguno |
+| Fase 2 — Rollout módulos prioritarios (3-4) | 3-4 días | P2 resuelto en módulos seleccionados |
+| Fase 3 — Sugerencias de valores | 2 días | Opcional, no bloquea las fases anteriores |
+| **Total** | **8-10 días** | |
+
+**Comparado con el estimado original (8-12 días para la Opción B):** la diferencia es que el hooks audit completado elimina todo el trabajo de migración hook-side que el estimado original incluía. El backend sigue requiriendo normalización puntual de `filterset_fields` pero es incremental y no bloquea el rollout.
+
+---
+
+## 14. Restricciones del contrato activo
+
+### `api-contracts.md`
 > "Filtering: `django_filter` query params"
 
-✅ Indica que el mecanismo canónico es query params. Cualquier implementación debe usar ese contrato.
+✅ La Opción B usa exactamente este mecanismo.
 
 > "Pagination: DRF cursor — `?cursor=…&page_size=N` (max 100)"
 
-⚠️ **Restricción importante:** Si migras a server-side filtering, la paginación es cursor-based. Esto significa que no puedes saltar a "página 5" — solo next/previous. El DataTablePagination actual usa offset pagination en modo cliente, cursor en modo servidor. Hay que unificar.
+⚠️ **Requiere cursor reset al cambiar filtros** — implementado en §5. No opcional.
 
-### `component-datatable-views.md` — **Contrato activo**
-> "Nunca usar `useState` local para la vista activa. El estado efímero provoca que la vista se pierda."
+### `hook-contracts.md`
+> Los hooks de features reciben `filters` como parámetros.
 
-✅ Esto ya indica la dirección correcta: los filtros también deben ir a URL, no solo la vista.
+✅ Este es el punto de inyección de los filtros generados por `SmartSearchBar`.
 
-> "`isLoading` obligatorio con skeleton"
+> `useSelectedEntity` usa `?selected=<id>`.
 
-✅ Si los filtros disparan refetch, el `isLoading` skeleton ya está implementado.
+⚠️ Los params de filtro no deben sobreescribir `selected`. Usar `nuqs` con `shallow: true` y preservar params existentes al aplicar filtros.
 
-### `unified-search-index.md` — **Arquitectura existente**
-El `GlobalSearchIndex` fue diseñado para el **search global** (Ctrl+K), no para los filtros de lista. Son sistemas complementarios:
-- `UniversalSearch` → navega a un registro específico entre todas las entidades
-- `DataTable search bar` → filtra la lista actual dentro de una entidad
+### `component-datatable-views.md`
+> "Nunca usar `useState` local para la vista activa."
 
-No mezclar. No refactorizar el `GlobalSearchIndex` para los filtros de lista.
-
-### `hook-contracts.md` — **Patrón de datos**
-Los hooks de features (`useProducts`, `useSalesOrders`, etc.) reciben `filters` como parámetros. Este es el punto de inyección natural para los filtros generados por la nueva search bar.
-
----
-
-## 6. ¿Qué tan lejos están?
-
-```
-Infraestructura Backend   ████████████░░  85% — Solo faltan algunos filterset_fields
-Infraestructura Frontend  ████████░░░░░░  60% — DataTableFilters funciona pero no tiene UX de "smart search"  
-UX / Parsing              ██░░░░░░░░░░░░  15% — El parser de tokens no existe
-Persistencia en URL       ████░░░░░░░░░░  30% — Algunos módulos sí, la mayoría no
-```
-
-**Distancia total:** 6-10 días de trabajo enfocado para Opción C (Hybrid).
-
----
-
-## 7. Plan de implementación recomendado
-
-### Fase 0 — Diseño (1 día)
-- Definir el vocabulario de tokens: `estado:`, `fecha:`, `tipo:`, `cliente:`, `texto:`
-- Decidir la API declarativa de `SearchDefinition` por módulo
-- Mockup de la UI (chip input + dropdown de sugerencias)
-
-### Fase 1 — Componente `SmartSearchBar` (3 días)
-- Reemplaza el `<Input>` de search y los `FacetedFilter` buttons con un único input
-- Chips visuales por filtro activo (removibles con ✕)
-- Dropdown de autocompletado: primero muestra campos disponibles, luego valores
-- Persistencia de estado en URL (`?q=status:PAID+search:Acme`)
-- Sin cambios en backend — funciona client-side sobre los datos ya descargados
-
-### Fase 2 — Server-side por módulo (4-6 días, rollout gradual)
-- Normalizar `filterset_fields` en endpoints prioritarios (SalesOrders, Invoices, Products)
-- Hooks actualizados para aceptar `filters` estructurados desde la URL
-- El `SmartSearchBar` detecta si el módulo tiene `serverSearchDef` y dispara refetch
-
-### Fase 3 — Sugerencias de valores (2 días)
-- Endpoint ligero `GET /api/[entity]/filter-options/?field=status` → `["PAID", "DRAFT", ...]`
-- O simplemente usar los facets del dataset actual (sin nuevo endpoint)
-
----
-
-## 8. Soluciones que no habías considerado
-
-### `cmdk` — Command Menu primitivo
-Ya usas un Dialog custom en `UniversalSearch`. La librería **cmdk** (usada por shadcn) ofrece primitivos de command palette con keyboard nav, grupos, y búsqueda integrada. Podría simplificar la implementación del dropdown de sugerencias.
-
-### URL como fuente de verdad con `nuqs`
-La librería **nuqs** (Next.js URL Query State) maneja la sincronización URL ↔ state de forma type-safe, con SSR support. Eliminaría el boilerplate de `searchParams.get()` / `router.push()` que se repite en cada módulo.
-
-```ts
-// Con nuqs — type-safe, SSR-friendly
-const [filters, setFilters] = useQueryState('q', parseAsJson<FilterState>())
-```
-
-### Postgres `ts_headline` para highlight
-Tu `GlobalSearchIndex` ya usa `SearchRank`. Si expandes esto a los endpoints de lista, puedes usar `ts_headline()` para marcar qué parte del texto hizo match — como hace Notion al buscar en documentos.
-
-### Zod para el parser de tokens
-En lugar de regex custom, usar Zod para parsear y validar la query string de filtros:
-```ts
-const FilterTokenSchema = z.object({
-  status: z.enum(['PAID','DRAFT','CANCELLED']).optional(),
-  date_from: z.string().date().optional(),
-  search: z.string().optional(),
-})
-```
-Esto es consistente con el uso de Zod en el resto del frontend.
-
----
-
----
-
-## 9. Uso de recursos por opción — Análisis con datos reales del codebase
-
-### El problema preexistente (independiente de qué opción elijas)
-
-El audit del código actual revela algo crítico: **varios módulos ya tienen un problema de recursos más grave que cualquier decisión de toolbar**.
-
-| Hook / API | Qué hace hoy | Tamaño real |
-|---|---|---|
-| `useTreasuryMovements` | `GET /treasury/movements/` sin parámetros | Todos los movimientos |
-| `useProducts` (ProductList) | `page_size: 1000` | 1000 objetos Product completos |
-| `inventoryApi.getCategories` | `page_size: 9999` | Todas las categorías |
-| `billingApi.getInvoices` | Sin page_size + filter client-side en JS | Todas las facturas |
-| `useSalesOrders` | Sin page_size explícito | Default del backend |
-| POS `useProducts` | `page_size: 2000` | 2000 productos para búsqueda instantánea |
-
-Además: **ninguno de los hooks principales tiene `staleTime`** configurado (excepto POS y universal search). Esto significa que cada `window focus` o `mount` del componente puede disparar un refetch de 1000+ registros.
-
----
-
-### Comparativa de recursos por opción
-
-#### Opción A — Client-Side Filter Bar
-
-```
-Carga inicial: IGUAL que hoy (1 fetch, todos los registros)
-Filtrado:      CPU del browser (TanStack Table, O(n) por filtro)
-Por keystroke: 0 requests adicionales
-Memoria RAM:   IGUAL — todos los objetos viven en el QueryCache
-Concurrencia:  1 request por mount (sin cambios)
-```
-
-**Para el toolbar en sí mismo: neutro en recursos.** El problema de datos que ya existe no cambia.
-
-#### Opción B — Server-Side Smart Search
-
-```
-Carga inicial: Solo la primera página (20-50 registros)
-Filtrado:      0 CPU en browser, 1 query Django por cambio de filtro
-Por keystroke: 1 request cada ~300ms (con debounce)
-Memoria RAM:   Mínima — solo la página actual en QueryCache
-Concurrencia:  N requests paralelas si el usuario filtra rápido
-```
-
-**Mejor en todo para datasets grandes. Pero introduce latencia perceptible por filtro.**
-
-#### Opción C — Hybrid (declarativa)
-
-```
-Carga inicial: Igual que hoy si el módulo no migra a server-side
-Filtrado:      Client-side por defecto, server-side si se declara
-Por keystroke: 0 o 1 request según configuración del módulo
-Memoria RAM:   Igual que hoy hasta que se migre el módulo
-Concurrencia:  Controlable por módulo
-```
-
-**Es la opción que permite mejorar recursos gradualmante, módulo a módulo, sin big-bang.**
-
----
-
-### La verdad: la pregunta correcta NO es «qué opción de toolbar es más eficiente»
-
-La respuesta honesta es: **el toolbar es irrelevante para el consumo de recursos. Lo que lo determina es cuántos datos trae el hook.**
-
-```
-Opción A + hook que trae 1000 registros  = 1000 registros en memoria
-Opción B + hook que trae 1000 registros  = 1000 registros en memoria (sin cambio)
-Opción C + hook que trae 1000 registros  = 1000 registros en memoria (sin cambio)
-
-Opción B + hook que trae 20 registros    = 20 registros en memoria ← esto sí cambia todo
-```
-
-La Opción B solo mejora los recursos si **también se migra el hook** a paginación real server-side. No es una propiedad de la UI — es una propiedad del data fetching.
-
----
-
-### Cuándo cada opción es la correcta
-
-| Escenario | Recomendación |
-|---|---|
-| Dataset pequeño (≤500 registros, crecimiento lento) | **A o C client-side** — instantáneo, sin latencia, sin complejidad |
-| Dataset mediano (500-5000 registros) | **C hybrid** — client-side hoy, migración progresiva |
-| Dataset grande (>5000 registros, crece con el uso) | **B o C server-side** — obligatorio para performance |
-| Módulo con datos en memoria necesarios de todos modos (POS) | **A** — ya tienes los datos, filtrar client-side es gratis |
-| Módulo de reportes / análisis temporal | **B** — los filtros definen QUÉ datos traer, no cómo filtrarlos |
-
-### Para tu ERP específicamente
-
-| Módulo | Dataset esperado | Recomendación |
-|---|---|---|
-| Productos | ~200-2000 (catálogo estático) | C client-side (pero fix `page_size: 1000` → paginar) |
-| Contactos | ~100-1000 | C client-side |
-| Movimientos Tesoreros | Crece indefinidamente | **C/B server-side urgente** — hoy trae TODO sin límite |
-| Facturas | Crece indefinidamente | **C/B server-side** — ya trae todo sin page_size |
-| Órdenes de Venta | Crece indefinidamente | **C/B server-side** |
-| POS Sesiones | Pocas activas a la vez | A — datos pequeños, complejidad baja |
-
----
-
-## Veredicto final
-
-**La implementación es completamente factible y no requiere dependencias externas nuevas.** El mayor trabajo está en diseñar bien la **declaración de filtros por módulo** (la `SearchDefinition`) y el **componente de UI**. Una vez que ese contrato exista, el rollout módulo a módulo es mecánico.
-
-La Opción C (Hybrid) es la más pragmática porque permite lanzar la nueva UX sin bloquear en la normalización de backends, y el rollout puede hacerse módulo a módulo en paralelo con otras features.
+✅ `nuqs` en URL es la implementación correcta de este principio extendido a filtros.

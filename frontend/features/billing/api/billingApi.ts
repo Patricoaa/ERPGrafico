@@ -29,6 +29,8 @@ export const billingApi = {
 
         if (filters?.status)       params.append('status', filters.status)
         if (filters?.dte_type)     params.append('dte_type', filters.dte_type)
+        if (filters?.date_from)    params.append('date_from', filters.date_from)
+        if (filters?.date_to)      params.append('date_to', filters.date_to)
         // partner_name no tiene campo directo en filterset → usar search=
         if (filters?.partner_name) params.append('search', filters.partner_name)
 

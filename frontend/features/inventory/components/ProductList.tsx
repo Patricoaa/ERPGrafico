@@ -24,8 +24,10 @@ import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 import { EntityCard } from "@/components/shared"
 import { useProducts } from "@/features/inventory/hooks/useProducts"
-import { Product, Restriction } from "@/features/inventory/types"
+import { Product, Restriction, ProductFilters } from "@/features/inventory/types"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
+import { SmartSearchBar, useSmartSearch } from "@/components/shared"
+import { productSearchDef } from "@/features/inventory/searchDef"
 
 
 
@@ -36,11 +38,13 @@ interface ProductListProps {
 }
 
 export function ProductList({ externalOpen, onExternalOpenChange, createAction }: ProductListProps) {
-    const filters = useMemo(() => ({ 
-        active: 'all' as const, 
-        parent_template__isnull: true, 
-        page_size: 1000 
-    }), [])
+    const { filters: smartFilters } = useSmartSearch(productSearchDef)
+    const filters = useMemo<ProductFilters>(() => ({
+        active: 'all',
+        parent_template__isnull: true,
+        page_size: 1000,
+        ...(smartFilters as Partial<ProductFilters>),
+    }), [smartFilters])
 
     const { products, isLoading, refetch, updateProduct } = useProducts({ filters })
     const [editingProduct, setEditingProduct] = useState<Product | null>(null)
@@ -402,7 +406,6 @@ export function ProductList({ externalOpen, onExternalOpenChange, createAction }
         }),
     ], [expandedTemplates])
 
-    const globalFilterFields = useMemo(() => ["name", "code", "internal_code"], [])
     const initialColumnVisibility = useMemo(() => ({ active: false }), [])
 
     const bulkActions = useMemo<BulkAction<Product>[]>(() => [
@@ -449,8 +452,7 @@ export function ProductList({ externalOpen, onExternalOpenChange, createAction }
                     data={displayProducts}
                     isLoading={isLoading}
                     variant="embedded"
-                    globalFilterFields={globalFilterFields}
-                    searchPlaceholder="Buscar por nombre, SKU o código..."
+                    leftAction={<SmartSearchBar searchDef={productSearchDef} placeholder="Buscar por nombre, SKU o tipo..." className="w-80" />}
                     initialColumnVisibility={initialColumnVisibility}
                     viewOptions={[
                         { label: "Lista", value: "table", icon: List },
@@ -518,17 +520,6 @@ export function ProductList({ externalOpen, onExternalOpenChange, createAction }
                         {
                             column: "category_name",
                             title: "Categoría",
-                        },
-                        {
-                            column: "product_type",
-                            title: "Tipo",
-                            options: [
-                                { label: "Almacenable", value: "STORABLE" },
-                                { label: "Consumible", value: "CONSUMABLE" },
-                                { label: "Servicio", value: "SERVICE" },
-                                { label: "Fabricable", value: "MANUFACTURABLE" },
-                                { label: "Suscripción", value: "SUBSCRIPTION" },
-                            ],
                         },
                         {
                             column: "active",
