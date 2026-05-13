@@ -1,6 +1,7 @@
 "use client"
 
-import React, { useState, useEffect, useCallback } from "react"
+import React, { useState, useEffect } from "react"
+import { useQuery } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { showApiError } from "@/lib/errors"
@@ -66,55 +67,45 @@ interface PayrollDetailContentProps {
 export function PayrollDetailContent({ payrollId, onClose, onUpdate, isSheet = false, viewMode = 'admin', employee }: PayrollDetailContentProps) {
     const router = useRouter()
     
-    const [payroll, setPayroll] = useState<Payroll | null>(null)
-    const [concepts, setConcepts] = useState<PayrollConcept[]>([])
-    const [payments, setPayments] = useState<PayrollPayment[]>([])
-    const [loading, setLoading] = useState(true)
     const [posting, setPosting] = useState(false)
     const [generating, setGenerating] = useState(false)
     const [editingItem, setEditingItem] = useState<PayrollItem | null>(null)
     const [previredDialog, setPreviredDialog] = useState(false)
     const [salaryDialog, setSalaryDialog] = useState(false)
 
-    const fetchPayroll = useCallback(async () => {
-        try {
+    const { data: payrollData, isLoading: loading, refetch: fetchPayroll } = useQuery({
+        queryKey: ['payroll', payrollId, viewMode],
+        queryFn: async () => {
             if (viewMode === 'employee') {
-                const payrollData = await getEmployeePayrollPreview(payrollId)
-                if (employee && payrollData) {
-                    payrollData.employee_detail = payrollData.employee_detail || {
+                const pData = await getEmployeePayrollPreview(payrollId)
+                if (employee && pData) {
+                    pData.employee_detail = pData.employee_detail || {
                         contact_detail: employee.contact_detail,
                         position: employee.position,
                         department: employee.department
                     }
                 }
-                setPayroll(payrollData)
-                setPayments(payrollData.payments || [])
-                // Concepts are not needed for employee view
-                setConcepts([])
+                return { payroll: pData, concepts: [] as PayrollConcept[], payments: pData.payments || [] }
             } else {
-                const [payrollData, conceptsData, paymentsData] = await Promise.all([
+                const [pData, cData, pmtData] = await Promise.all([
                     getPayroll(payrollId),
                     getPayrollConcepts(),
                     getPayrollPayments({ payroll: String(payrollId) })
                 ])
-                setPayroll(payrollData)
-                setConcepts(conceptsData)
-                setPayments(paymentsData)
+                return { payroll: pData, concepts: cData, payments: pmtData }
             }
-        } catch (error) {
-            showApiError(error, "Error al cargar liquidación")
-        } finally {
-            setLoading(false)
         }
-    }, [payrollId, viewMode])
+    })
 
-    useEffect(() => { fetchPayroll() }, [fetchPayroll])
+    const payroll = payrollData?.payroll || null
+    const concepts = payrollData?.concepts || []
+    const payments = payrollData?.payments || []
 
     const handlePost = async () => {
         setPosting(true)
         try {
-            const updated = await postPayroll(payrollId)
-            setPayroll(updated)
+            await postPayroll(payrollId)
+            fetchPayroll()
             toast.success("Liquidación contabilizada")
             onUpdate?.()
         } catch (e: unknown) {
@@ -128,12 +119,12 @@ export function PayrollDetailContent({ payrollId, onClose, onUpdate, isSheet = f
         if (!payroll) return
         setGenerating(true)
         try {
-            const updated = await generateProformaPayroll({
+            await generateProformaPayroll({
                 employee: payroll.employee,
                 period_year: payroll.period_year,
                 period_month: payroll.period_month
             })
-            setPayroll(updated)
+            fetchPayroll()
             toast.success("Propuesta generada exitosamente")
             onUpdate?.()
         } catch (e: unknown) {

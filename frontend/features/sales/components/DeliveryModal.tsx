@@ -63,39 +63,42 @@ interface StockLevel {
 
 export interface DeliveryFormProps {
     orderId: number
+    order: SaleOrder
+    warehouses: Warehouse[]
     onSuccess?: () => void
     id?: string
     onLoadingChange?: (loading: boolean) => void
     onCancel?: () => void
 }
 
-export interface DeliveryModalProps extends Omit<DeliveryFormProps, "id" | "onLoadingChange" | "onCancel"> {
+export interface DeliveryModalProps extends Omit<DeliveryFormProps, "id" | "onLoadingChange" | "onCancel" | "order" | "warehouses"> {
     open: boolean
     onOpenChange: (open: boolean) => void
 }
 
 import { useDeliveryData } from "@/features/sales/hooks/useDeliveryData"
-import { Suspense } from "react"
-
 export function DeliveryModal({ open, onOpenChange, orderId, onSuccess }: DeliveryModalProps) {
     if (!open || !orderId) return null
 
     return (
-        <Suspense fallback={
-            <BaseModal open={open} onOpenChange={onOpenChange} size="xl" title="Cargando despacho...">
-                <div className="flex items-center justify-center py-12">
-                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                </div>
-            </BaseModal>
-        }>
-            <DeliveryModalInner open={open} onOpenChange={onOpenChange} orderId={orderId} onSuccess={onSuccess} />
-        </Suspense>
+        <DeliveryModalInner open={open} onOpenChange={onOpenChange} orderId={orderId} onSuccess={onSuccess} />
     )
 }
 
 function DeliveryModalInner({ open, onOpenChange, orderId, onSuccess }: DeliveryModalProps) {
     const [loading, setLoading] = useState(false)
     const formId = "modal-delivery-form"
+    const { order, warehouses, isLoading } = useDeliveryData(orderId)
+
+    if (isLoading || !order) {
+        return (
+            <BaseModal open={open} onOpenChange={onOpenChange} size="xl" title="Cargando despacho...">
+                <div className="flex items-center justify-center py-12">
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+            </BaseModal>
+        )
+    }
 
     return (
         <BaseModal
@@ -120,14 +123,13 @@ function DeliveryModalInner({ open, onOpenChange, orderId, onSuccess }: Delivery
                 />
             }
         >
-            <DeliveryForm id={formId} orderId={orderId} onSuccess={() => { onOpenChange(false); if(onSuccess) onSuccess(); }} onLoadingChange={setLoading} onCancel={() => onOpenChange(false)} />
+            <DeliveryForm id={formId} orderId={orderId} order={order} warehouses={warehouses} onSuccess={() => { onOpenChange(false); if(onSuccess) onSuccess(); }} onLoadingChange={setLoading} onCancel={() => onOpenChange(false)} />
         </BaseModal>
     )
 }
 
-export function DeliveryForm({ orderId, onSuccess, id = "delivery-form", onLoadingChange, onCancel }: DeliveryFormProps) {
+export function DeliveryForm({ orderId, order, warehouses, onSuccess, id = "delivery-form", onLoadingChange, onCancel }: DeliveryFormProps) {
     const { dateString } = useServerDate()
-    const { order, warehouses } = useDeliveryData(orderId)
 
     const [selectedWarehouse, setSelectedWarehouse] = useState<number | null>(
         warehouses.length > 0 ? warehouses[0].id : null

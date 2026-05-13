@@ -1,4 +1,4 @@
-import { useSuspenseQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { toast } from 'sonner';
 import { FiscalYear, FiscalYearPreviewResult } from '../types';
@@ -9,7 +9,7 @@ export const FISCAL_YEARS_QUERY_KEY = ['fiscal-years'];
 export function useFiscalYears() {
     const queryClient = useQueryClient();
 
-    const { data, refetch } = useSuspenseQuery({
+    const { data, isLoading, refetch } = useQuery({
         queryKey: FISCAL_YEARS_QUERY_KEY,
         queryFn: async () => {
             const response = await api.get('/accounting/fiscal-years/?ordering=-year');
@@ -55,7 +55,8 @@ export function useFiscalYears() {
     };
 
     return {
-        data: data as FiscalYear[],
+        data: (data as FiscalYear[]) ?? [],
+        isLoading,
         refetch,
         isActionLoading: closeMutation.isPending || reopenMutation.isPending || generateOpeningMutation.isPending,
         previewClosing,

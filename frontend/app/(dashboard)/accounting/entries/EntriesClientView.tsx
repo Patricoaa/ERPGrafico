@@ -22,7 +22,7 @@ import { useAccountingAccounts } from "@/features/accounting/hooks/useAccounts"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 
 export default function EntriesPage({ externalOpen, onExternalOpenChange, createAction }: EntriesPageProps) {
-    const { entries, refetch } = useJournalEntries()
+    const { entries, isLoading, refetch } = useJournalEntries()
     const { accounts } = useAccountingAccounts({ filters: { is_leaf: true } })
     const [viewingTransaction, setViewingTransaction] = useState<{ type: 'journal_entry', id: number | string } | null>(null)
     const [isFormOpen, setIsFormOpen] = useState(false)
@@ -217,7 +217,8 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
                 <DataTable
                     columns={columns}
                     data={entries}
-                    cardMode
+                    isLoading={isLoading}
+                    variant="embedded"
                     filterColumn="description"
                     searchPlaceholder="Buscar por descripción..."
                     facetedFilters={[

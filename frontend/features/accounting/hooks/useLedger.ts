@@ -1,4 +1,4 @@
-import { useSuspenseQuery } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { accountingApi } from '../api/accountingApi'
 import type { LedgerData } from '../types'
 
@@ -9,7 +9,7 @@ export function useLedger(
     startDate: string,
     endDate: string
 ) {
-    return useSuspenseQuery<LedgerData>({
+    return useQuery<LedgerData>({
         queryKey: [LEDGER_QUERY_KEY, accountId, startDate, endDate],
         queryFn: () => accountingApi.getLedger(accountId, startDate, endDate),
     })

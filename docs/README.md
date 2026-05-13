@@ -61,6 +61,7 @@
 | "entity identity", "entity prefix", "registry", "display id", "centralized icons" | [entity-identity.md](20-contracts/entity-identity.md) | 20 |
 | "searchable entity", "global search", "index", "rebuild search" | [add-searchable-entity.md](30-playbooks/add-searchable-entity.md) | 30 |
 | "generic form", "universal registry", "metadata schema", "data-driven UI", "Django architecture refactor" | [50-audit/Arquitectura Django/README.md](50-audit/Arquitectura%20Django/README.md) | 50 |
+| "DataTable", "view mode", "card view", "kanban view", "view switching", "cardMode", "isLoading skeleton", "EntityCard", "variant embedded" | [component-datatable-views.md](20-contracts/component-datatable-views.md) | 20 |
 
 ## Global invariants (violate = PR rejected)
 

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useQuery } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { showApiError } from "@/lib/errors"
 import { useForm } from "react-hook-form"
@@ -55,7 +56,7 @@ export interface EmployeeFormModalProps {
 
 export function EmployeeFormModal({ open, onOpenChange, employee, onSaved, trigger }: EmployeeFormModalProps) {
     const [saving, setSaving] = useState(false)
-    const [afps, setAfps] = useState<AFP[]>([])
+    
     const [activeTab, setActiveTab] = useState("contratacion")
 
     const form = useForm<EmployeeFormValues>({
@@ -83,19 +84,23 @@ export function EmployeeFormModal({ open, onOpenChange, employee, onSaved, trigg
         }
     })
 
-    const [availableConcepts, setAvailableConcepts] = useState<PayrollConcept[]>([])
-
-    useEffect(() => {
-        if (open) {
-            Promise.all([
+    const { data: hrData } = useQuery({
+        queryKey: ['employee-form-deps'],
+        queryFn: async () => {
+            const [afpsData, conceptsData] = await Promise.all([
                 getAFPs(),
                 getPayrollConcepts({ formula_type: 'EMPLOYEE_SPECIFIC' })
-            ]).then(([afpsData, conceptsData]) => {
-                setAfps(afpsData)
-                setAvailableConcepts(conceptsData.filter((c: PayrollConcept) => c.formula_type === 'EMPLOYEE_SPECIFIC'))
-            })
-        }
-    }, [open])
+            ])
+            return { 
+                afps: afpsData, 
+                concepts: conceptsData.filter((c: PayrollConcept) => c.formula_type === 'EMPLOYEE_SPECIFIC') 
+            }
+        },
+        enabled: open
+    })
+
+    const afps = hrData?.afps || []
+    const availableConcepts = hrData?.concepts || []
 
     useEffect(() => {
         if (employee) {

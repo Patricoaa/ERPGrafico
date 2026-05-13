@@ -5,7 +5,6 @@ import { useParams, useRouter } from "next/navigation"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft } from "lucide-react"
 import api from "@/lib/api"
@@ -133,7 +132,7 @@ export default function AccountLedgerPage() {
             <DataTable
                 columns={columns}
                 data={movements}
-                cardMode
+                variant="embedded"
                 useAdvancedFilter={true}
                 globalFilterFields={["date", "description", "partner"]}
                 searchPlaceholder="Buscar por fecha, descripción o tercero..."

@@ -11,17 +11,18 @@ import { ColumnDef } from "@tanstack/react-table"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import type { BulkAction } from "@/components/shared"
 import { ProductForm } from "./ProductForm"
-import { Pencil, Archive, ChevronRight, ChevronDown, Plus, AlertTriangle } from "lucide-react"
+import { Pencil, Archive, ChevronRight, ChevronDown, Plus, AlertTriangle, LayoutGrid } from "lucide-react"
 import { toast } from "sonner"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { cn, translateProductType } from "@/lib/utils"
 import { resolveMediaUrl } from "@/lib/api"
 import { PricingUtils } from '@/features/inventory/utils/pricing'
 import { Checkbox } from "@/components/ui/checkbox"
-import { LayoutGrid, List, Archive as ArchiveIcon } from "lucide-react"
+import { List, Archive as ArchiveIcon } from "lucide-react"
 import { ArchivingRestrictionsModal } from "./ArchivingRestrictionsModal"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
+import { EntityCard } from "@/components/shared"
 import { useProducts } from "@/features/inventory/hooks/useProducts"
 import { Product, Restriction } from "@/features/inventory/types"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
@@ -41,7 +42,7 @@ export function ProductList({ externalOpen, onExternalOpenChange, createAction }
         page_size: 1000 
     }), [])
 
-    const { products, refetch, updateProduct } = useProducts({ filters })
+    const { products, isLoading, refetch, updateProduct } = useProducts({ filters })
     const [editingProduct, setEditingProduct] = useState<Product | null>(null)
     const [isFormOpen, setIsFormOpen] = useState(false)
 
@@ -53,12 +54,31 @@ export function ProductList({ externalOpen, onExternalOpenChange, createAction }
     const [currentArchivingProduct, setCurrentArchivingProduct] = useState<Product | null>(null)
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false)
     const [expandedTemplates, setExpandedTemplates] = useState<Set<number>>(new Set())
-    const [view, setView] = useState("table")
-
 
     const router = useRouter()
     const pathname = usePathname()
     const searchParams = useSearchParams()
+
+    const [view, setView] = useState<string>(searchParams.get('view') ?? "table")
+
+    const handleViewChange = (v: string) => {
+        const params = new URLSearchParams(searchParams.toString())
+        params.set('view', v)
+        router.push(`${pathname}?${params.toString()}`, { scroll: false })
+        setView(v)
+    }
+
+    useEffect(() => {
+        const viewParam = searchParams.get('view')
+        if (!viewParam) {
+            const params = new URLSearchParams(searchParams.toString())
+            params.set('view', 'table')
+            router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+            setView('table')
+        } else if (viewParam !== view) {
+            setView(viewParam)
+        }
+    }, [searchParams, pathname, router, view])
 
     const { entity: selectedFromUrl, clearSelection: clearUrlSelection } = useSelectedEntity<Product>({
         endpoint: '/inventory/products'
@@ -427,7 +447,8 @@ export function ProductList({ externalOpen, onExternalOpenChange, createAction }
                 <DataTable
                     columns={columns}
                     data={displayProducts}
-                    cardMode
+                    isLoading={isLoading}
+                    variant="embedded"
                     globalFilterFields={globalFilterFields}
                     searchPlaceholder="Buscar por nombre, SKU o código..."
                     initialColumnVisibility={initialColumnVisibility}
@@ -436,7 +457,62 @@ export function ProductList({ externalOpen, onExternalOpenChange, createAction }
                         { label: "Grilla", value: "grid", icon: LayoutGrid },
                     ]}
                     currentView={view}
-                    onViewChange={setView}
+                    onViewChange={handleViewChange}
+                    renderLoadingView={view === 'grid' ? () => (
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 pt-2">
+                            {Array.from({ length: 15 }).map((_, i) => (
+                                <EntityCard.Skeleton key={i} variant="compact" />
+                            ))}
+                        </div>
+                    ) : undefined}
+                    renderCustomView={view === 'grid' ? (table) => (
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 pt-2">
+                            {table.getRowModel().rows.map(row => {
+                                const product = row.original;
+                                const isChild = product.is_child_variant;
+                                // In grid mode, we might want to hide child variants if they clutter, 
+                                // but for now we follow the exact data provided to the table
+                                return (
+                                    <EntityCard key={row.id} variant="compact" onClick={() => {
+                                        const params = new URLSearchParams(searchParams.toString())
+                                        params.set('selected', String(product.id))
+                                        router.push(`${pathname}?${params.toString()}`, { scroll: false })
+                                    }}>
+                                        <EntityCard.Header
+                                            title={product.name}
+                                            subtitle={<span className="font-mono text-xs">{product.code}</span>}
+                                            trailing={
+                                                product.active ? 
+                                                    <EntityCard.Badge label="ACTIVO" variant="default" className="bg-success/20 text-success hover:bg-success/30" /> : 
+                                                    <EntityCard.Badge label="ARCHIVADO" variant="secondary" />
+                                            }
+                                        />
+                                        <EntityCard.Body>
+                                            <EntityCard.Field label="Tipo" value={translateProductType(product.product_type)} />
+                                            <EntityCard.Field label="Categoría" value={product.category_name} />
+                                            <EntityCard.Field 
+                                                label="Neto" 
+                                                value={
+                                                    product.is_dynamic_pricing 
+                                                        ? <span className="text-warning">Dinámico</span>
+                                                        : PricingUtils.formatCurrency(Number(product.sale_price))
+                                                } 
+                                            />
+                                            <EntityCard.Field 
+                                                label="Total" 
+                                                value={
+                                                    product.is_dynamic_pricing 
+                                                        ? <span className="text-warning">Dinámico</span>
+                                                        : PricingUtils.formatCurrency(Number(product.sale_price_gross || PricingUtils.netToGross(Number(product.sale_price))))
+                                                } 
+                                                className="font-bold text-primary"
+                                            />
+                                        </EntityCard.Body>
+                                    </EntityCard>
+                                )
+                            })}
+                        </div>
+                    ) : undefined}
                     bulkActions={bulkActions}
                     facetedFilters={[
                         {

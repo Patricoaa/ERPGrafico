@@ -1,4 +1,4 @@
-import { useSuspenseQuery } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import api from '@/lib/api'
 
 export interface TreasuryMovement {
@@ -39,7 +39,7 @@ export interface TreasuryMovement {
 export const TREASURY_MOVEMENTS_QUERY_KEY = ['treasuryMovements']
 
 export function useTreasuryMovements() {
-    const { data: movements, refetch } = useSuspenseQuery({
+    const { data: movements, isLoading, refetch } = useQuery({
         queryKey: TREASURY_MOVEMENTS_QUERY_KEY,
         queryFn: async (): Promise<TreasuryMovement[]> => {
             const response = await api.get('/treasury/movements/')
@@ -48,7 +48,8 @@ export function useTreasuryMovements() {
     })
 
     return {
-        movements,
+        movements: movements ?? [],
+        isLoading,
         refetch,
     }
 }

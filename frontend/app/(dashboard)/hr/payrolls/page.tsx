@@ -5,18 +5,13 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
 import { CreatePayrollModal, PayrollDetailSheet } from "@/features/hr"
 import { getPayrolls, deletePayroll, paySalary, payPrevired, createAdvance } from '@/features/hr/api/hrApi'
-import { TableSkeleton } from "@/components/shared/TableSkeleton"
 import type { Payroll } from "@/types/hr"
-import { PageHeader, PageHeaderButton } from "@/components/shared/PageHeader"
 import { ColumnDef } from "@tanstack/react-table"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { createActionsColumn, DataCell } from "@/components/ui/data-table-cells"
 import { StatusBadge } from "@/components/shared/StatusBadge"
-import { Button } from "@/components/ui/button"
-import { Loader2, Eye, Trash2, Coins, CreditCard, Wallet } from "lucide-react"
-import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
-import { cn } from "@/lib/utils"
+import { Eye, Trash2, Coins, CreditCard, Wallet } from "lucide-react"
 import { PaymentModal } from "@/features/treasury"
 
 
@@ -319,66 +314,61 @@ export default function PayrollsPage() {
                 onSaved={(id) => { handleOpenChange(false); openDetail(id) }}
             />
 
-            {loading ? (
-                <TableSkeleton columns={10} rows={12} />
-            ) : (
-                <>
-                <DataTable
-                    columns={columns}
-                    data={payrolls}
-                    cardMode
-                    filterColumn="employee"
-                    globalFilterFields={["display_id", "employee"]}
-                    searchPlaceholder="Buscar liquidación o empleado..."
-                    facetedFilters={[
-                        {
-                            column: "status",
-                            title: "Estado",
-                            options: [
-                                { label: "Borrador", value: "DRAFT" },
-                                { label: "Contabilizado", value: "POSTED" },
-                            ],
-                        },
-                    ]}
-                    useAdvancedFilter={true}
-                    defaultPageSize={20}
-                    onRowClick={(row: Payroll) => openDetail(row.id)}
-                    createAction={createAction}
-                />
+            <DataTable
+                columns={columns}
+                data={payrolls}
+                isLoading={loading}
+                variant="embedded"
+                filterColumn="employee"
+                globalFilterFields={["display_id", "employee"]}
+                searchPlaceholder="Buscar liquidación o empleado..."
+                facetedFilters={[
+                    {
+                        column: "status",
+                        title: "Estado",
+                        options: [
+                            { label: "Borrador", value: "DRAFT" },
+                            { label: "Contabilizado", value: "POSTED" },
+                        ],
+                    },
+                ]}
+                useAdvancedFilter={true}
+                defaultPageSize={20}
+                onRowClick={(row: Payroll) => openDetail(row.id)}
+                createAction={createAction}
+            />
 
-                <PayrollDetailSheet 
-                    payrollId={activePayrollId}
-                    open={detailSheetOpen}
-                    onOpenChange={(open) => {
-                        setDetailSheetOpen(open)
-                        if (!open) clearSelection()
-                    }}
-                    onUpdate={fetchPayrolls}
-                />
+            <PayrollDetailSheet
+                payrollId={activePayrollId}
+                open={detailSheetOpen}
+                onOpenChange={(open) => {
+                    setDetailSheetOpen(open)
+                    if (!open) clearSelection()
+                }}
+                onUpdate={fetchPayrolls}
+            />
 
-                <PaymentModal
-                    open={!!paymentMode}
-                    onOpenChange={(o) => !o && setPaymentMode(null)}
-                    isPurchase={true}
-                    title={
-                        paymentMode === 'SALARY' ? `Pagar Remuneración: ${selectedPayroll?.employee_name}` :
+            <PaymentModal
+                open={!!paymentMode}
+                onOpenChange={(o) => !o && setPaymentMode(null)}
+                isPurchase={true}
+                title={
+                    paymentMode === 'SALARY' ? `Pagar Remuneración: ${selectedPayroll?.employee_name}` :
                         paymentMode === 'PREVIRED' ? `Pagar Previred: ${selectedPayroll?.employee_name}` :
-                        `Registrar Anticipo: ${selectedPayroll?.employee_name}`
-                    }
-                    total={
-                        paymentMode === 'SALARY' ? (selectedPayroll ? (Number((selectedPayroll as Payroll & Record<string, string>).net_salary) - Number((selectedPayroll as Payroll & Record<string, string>).advances_total || 0)) : 0) :
+                            `Registrar Anticipo: ${selectedPayroll?.employee_name}`
+                }
+                total={
+                    paymentMode === 'SALARY' ? (selectedPayroll ? (Number((selectedPayroll as Payroll & Record<string, string>).net_salary) - Number((selectedPayroll as Payroll & Record<string, string>).advances_total || 0)) : 0) :
                         paymentMode === 'PREVIRED' ? Number((selectedPayroll as Payroll & Record<string, string>)?.total_previred || 0) :
-                        Number((selectedPayroll as Payroll & Record<string, string>)?.net_salary || 0)
-                    }
-                    pendingAmount={
-                        paymentMode === 'SALARY' ? (selectedPayroll ? (Number((selectedPayroll as Payroll & Record<string, string>).net_salary) - Number((selectedPayroll as Payroll & Record<string, string>).advances_total || 0)) : 0) :
+                            Number((selectedPayroll as Payroll & Record<string, string>)?.net_salary || 0)
+                }
+                pendingAmount={
+                    paymentMode === 'SALARY' ? (selectedPayroll ? (Number((selectedPayroll as Payroll & Record<string, string>).net_salary) - Number((selectedPayroll as Payroll & Record<string, string>).advances_total || 0)) : 0) :
                         paymentMode === 'PREVIRED' ? Number((selectedPayroll as Payroll & Record<string, string>)?.total_previred || 0) :
-                        Number((selectedPayroll as Payroll & Record<string, string>)?.net_salary || 0)
-                    }
-                    onConfirm={handleConfirmPayment}
-                />
-                </>
-            )}
+                            Number((selectedPayroll as Payroll & Record<string, string>)?.net_salary || 0)
+                }
+                onConfirm={handleConfirmPayment}
+            />
         </div>
     )
 }

@@ -1,4 +1,4 @@
-import { useSuspenseQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { billingApi } from '../api/billingApi'
 import { toast } from 'sonner'
 import type { InvoiceFilters } from '../types'
@@ -12,7 +12,7 @@ interface UsePurchaseInvoicesProps {
 export function usePurchaseInvoices({ filters }: UsePurchaseInvoicesProps = {}) {
     const queryClient = useQueryClient()
 
-    const { data: invoices, refetch } = useSuspenseQuery({
+    const { data: invoices, isLoading, refetch } = useQuery({
         queryKey: [...PURCHASE_INVOICES_QUERY_KEY, filters],
         queryFn: () => billingApi.getInvoices({ ...filters, mode: 'purchase' }),
     })
@@ -31,7 +31,8 @@ export function usePurchaseInvoices({ filters }: UsePurchaseInvoicesProps = {}) 
     })
 
     return {
-        invoices,
+        invoices: invoices ?? [],
+        isLoading,
         refetch,
         annulInvoice: annulMutation.mutateAsync,
         isAnnulling: annulMutation.isPending

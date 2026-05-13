@@ -200,7 +200,7 @@ export function PartnerLedgerTab() {
                 columns={columns}
                 data={txsWithBalance}
                 isLoading={loading}
-                cardMode={true}
+                variant="embedded"
                 useAdvancedFilter={true}
                 searchPlaceholder="Buscar por descripción..."
                 filterColumn="description"

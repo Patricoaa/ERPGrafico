@@ -1,10 +1,8 @@
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import React, { useState, useEffect, lazy, Suspense } from "react"
 import { ColumnDef } from "@tanstack/react-table"
-import { Button } from "@/components/ui/button"
-import { Edit, Trash2, Plus, Building2, User as UserIcon, Banknote } from "lucide-react"
-import api from "@/lib/api"
-import { toast } from "sonner"
+import { Edit, Trash2, Building2, User as UserIcon, Banknote } from "lucide-react"
+
 import { formatRUT } from "@/lib/utils/format"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
@@ -28,7 +26,7 @@ interface ContactsClientViewProps {
 }
 
 export function ContactsClientView({ isNewModalOpen = false, createAction }: ContactsClientViewProps) {
-    const { contacts, deleteContact } = useContacts()
+    const { contacts, isLoading, deleteContact } = useContacts()
     const [selectedContact, setSelectedContact] = useState<Contact | null>(null)
     const [modalOpen, setModalOpen] = useState(false)
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
@@ -213,7 +211,8 @@ export function ContactsClientView({ isNewModalOpen = false, createAction }: Con
             <DataTable
                 columns={columns}
                 data={contacts}
-                cardMode
+                isLoading={isLoading}
+                variant="embedded"
                 globalFilterFields={["name", "tax_id", "code"]}
                 searchPlaceholder="Buscar por nombre, RUT o código..."
                 facetedFilters={[

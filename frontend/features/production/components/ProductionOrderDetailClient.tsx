@@ -1,6 +1,7 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React, { useState } from "react"
+import { useQuery } from "@tanstack/react-query"
 import { notFound, useRouter } from "next/navigation"
 import { EntityDetailPage, FormSkeleton, FormFooter, CancelButton, ActionSlideButton } from "@/components/shared"
 import api from "@/lib/api"
@@ -17,26 +18,18 @@ interface ProductionOrderDetailClientProps {
 
 export function ProductionOrderDetailClient({ orderId }: ProductionOrderDetailClientProps) {
     const router = useRouter()
-    const [order, setOrder] = useState<WorkOrder | null>(null)
-    const [loading, setLoading] = useState(true)
-    const [error, setError] = useState<number | null>(null)
     const [formOpen, setFormOpen] = useState(false)
     const [wizardOpen, setWizardOpen] = useState(false)
 
-    const fetchOrder = async () => {
-        try {
+    const { data: order, isLoading: loading, error: queryError, refetch: fetchOrder } = useQuery({
+        queryKey: ['workOrder', orderId],
+        queryFn: async () => {
             const response = await api.get(`/production/orders/${orderId}/`)
-            setOrder(response.data)
-        } catch (err: any) {
-            setError(err.response?.status || 500)
-        } finally {
-            setLoading(false)
+            return response.data as WorkOrder
         }
-    }
+    })
 
-    useEffect(() => {
-        fetchOrder()
-    }, [orderId])
+    const error = queryError ? (queryError as any).response?.status || 500 : null
 
     if (error === 404) return notFound()
     if (error) return (

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import React, { useEffect, useState } from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
@@ -8,6 +8,7 @@ import { ColumnDef, Row } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
 import { LayoutDashboard, List, ArrowRight, ArrowLeft } from "lucide-react"
 import { EmptyState } from "@/components/shared/EmptyState"
+import { EntityCard } from "@/components/shared/EntityCard"
 
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { DateRangeFilter } from "@/components/shared/DateRangeFilter"
@@ -33,10 +34,32 @@ interface SalesOrdersViewProps {
 export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideStatusInCards }: SalesOrdersViewProps) {
     const { openHub, closeHub, hubConfig, isHubOpen } = useHubPanel()
     const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date } | undefined>()
-    const [currentView, setCurrentView] = useState<'card' | 'list'>('card')
     const router = useRouter()
     const searchParams = useSearchParams()
     const pathname = usePathname()
+
+    const [currentView, setCurrentView] = React.useState<'card' | 'list'>(
+        (searchParams.get('view') as 'card' | 'list') ?? 'card'
+    )
+
+    const handleViewChange = (v: string) => {
+        const params = new URLSearchParams(searchParams.toString())
+        params.set('view', v)
+        router.push(`${pathname}?${params.toString()}`, { scroll: false })
+        setCurrentView(v as 'card' | 'list')
+    }
+
+    useEffect(() => {
+        const viewParam = searchParams.get('view')
+        if (!viewParam) {
+            const params = new URLSearchParams(searchParams.toString())
+            params.set('view', 'card')
+            router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+            setCurrentView('card')
+        } else if (viewParam !== currentView) {
+            setCurrentView(viewParam as 'card' | 'list')
+        }
+    }, [searchParams, pathname, router, currentView])
 
     const toggleSelection = (id: number) => {
         const isSelected = viewMode === "orders" ? hubConfig?.orderId === id : hubConfig?.invoiceId === id
@@ -58,12 +81,12 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
 
     ]
 
-    const { orders, refetch: refetchOrders } = useSalesOrders({
+    const { orders, isLoading: isLoadingOrders, refetch: refetchOrders } = useSalesOrders({
         filters: {
             pos_session: posSessionId || undefined
         }
     })
-    const { data: notes, refetch: refetchNotes } = useSalesNotes()
+    const { data: notes, isLoading: isLoadingNotes, refetch: refetchNotes } = useSalesNotes()
 
     const handleActionSuccess = () => {
         // Refetch both to ensure cards background update
@@ -250,9 +273,10 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
                 columns={(viewMode === 'orders' ? columns : noteColumns) as any}
                 data={(viewMode === 'orders' ? filteredOrders : filteredNotes) as any}
                 onRowClick={(row: any) => toggleSelection(row.original.id)}
-                cardMode={true}
+                variant="embedded"
+                isLoading={viewMode === 'orders' ? isLoadingOrders : isLoadingNotes}
                     currentView={currentView}
-                    onViewChange={(v) => setCurrentView(v as 'list' | 'card')}
+                    onViewChange={handleViewChange}
                     viewOptions={viewOptions}
                     filterColumn={viewMode === 'orders' ? "customer_name" : "number"}
                     searchPlaceholder={viewMode === 'orders' ? "Buscar por cliente..." : "Buscar por número..."}
@@ -362,6 +386,13 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
                             </div>
                         )
                     } : undefined}
+                    renderLoadingView={currentView === 'card' ? () => (
+                        <div className="grid gap-3 pt-1">
+                            {Array.from({ length: 8 }).map((_, i) => (
+                                <EntityCard.Skeleton key={i} />
+                            ))}
+                        </div>
+                    ) : undefined}
                 />
             
         </Tabs>

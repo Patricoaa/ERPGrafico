@@ -30,6 +30,7 @@ import { TaxPeriod, TaxDeclaration, TaxPaymentData } from "../types"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { Row } from "@tanstack/react-table"
 import { CardSkeleton, TableSkeleton } from "@/components/shared"
+import { EntityCard } from "@/components/shared/EntityCard"
 
 interface TaxDeclarationsViewProps {
     externalOpen?: boolean
@@ -366,7 +367,7 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange, create
                 columns={columns}
                 data={periods}
                 isLoading={isLoading}
-                cardMode
+                variant="embedded"
                 filterColumn="period_display"
                 searchPlaceholder="Buscar período..."
                 useAdvancedFilter={true}
@@ -383,17 +384,16 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange, create
                         ]
                     }
                 ]}
+                renderLoadingView={() => (
+                    <div className="grid gap-3 pt-2">
+                        {Array.from({ length: 6 }).map((_, i) => (
+                            <EntityCard.Skeleton key={i} variant="compact" />
+                        ))}
+                    </div>
+                )}
                 renderCustomView={(table) => {
                     const rows = table.getRowModel().rows
                     
-                    if (isLoading) {
-                        return (
-                            <div className="pt-2">
-                                <TableSkeleton rows={5} columns={4} />
-                            </div>
-                        )
-                    }
-
                     if (rows.length === 0) {
                         return (
                             <div className="flex flex-col items-center justify-center py-12 bg-muted/30 rounded-md border-2 border-dashed">
@@ -412,104 +412,64 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange, create
                                 const canOpenChecklist = period.status === 'OPEN'
 
                                 return (
-                                    <div
+                                    <EntityCard
                                         key={period.id}
+                                        variant="compact"
                                         className={cn(
-                                            "group flex items-center justify-between p-4 bg-card border border-border/50 rounded-md transition-all",
+                                            "flex flex-row items-center justify-between",
                                             canOpenChecklist ? "hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 cursor-pointer" : "cursor-default"
                                         )}
                                         onClick={() => canOpenChecklist ? handleOpenWizard(period) : null}
                                     >
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-12 h-12 rounded-sm bg-primary/5 flex flex-col items-center justify-center border border-primary/10">
-                                                <span className="text-[10px] font-bold text-primary/60">{period.year}</span>
-                                                <span className="text-sm font-bold text-primary">{period.month_display?.substring(0, 3).toUpperCase() || ''}</span>
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-sm bg-primary/5 flex flex-col items-center justify-center border border-primary/10 shrink-0">
+                                                <span className="text-[9px] font-bold text-primary/60">{period.year}</span>
+                                                <span className="text-xs font-bold text-primary">{period.month_display?.substring(0, 3).toUpperCase() || ''}</span>
                                             </div>
-                                            <div>
-                                                <div className="flex items-center gap-2">
-                                                    <h4 className="font-bold text-lg text-foreground">
-                                                        {period.month_display} {period.year}
-                                                    </h4>
-                                                    <StatusBadge status={period.status} />
-                                                </div>
-                                                <div className="flex items-center gap-2 mt-1">
-                                                    {summary ? (
-                                                        <>
-                                                            {summary.is_fully_paid ? (
-                                                                <StatusBadge status="PAID" label="Pagado" size="sm" />
-                                                            ) : (
-                                                                summary.vat_to_pay > 0 && period.status === 'CLOSED' && (
-                                                                    <StatusBadge status="VOIDED" label="Pago Pendiente" size="sm" />
-                                                                )
-                                                            )}
-                                                            <div className="sm:hidden flex items-center gap-1 text-xs text-muted-foreground font-mono">
-                                                                <DollarSign className="h-3 w-3" />
-                                                                {new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(summary.vat_to_pay)}
-                                                            </div>
-                                                        </>
-                                                    ) : (
-                                                        <span className="text-xs text-muted-foreground">Sin declaración registrada</span>
+                                            <div className="flex flex-col">
+                                                <span className="text-sm font-semibold">{period.month_display} {period.year}</span>
+                                                <div className="flex items-center gap-2 mt-0.5">
+                                                    <StatusBadge status={period.status} size="sm" />
+                                                    {summary && (
+                                                        <span className="text-[10px] text-muted-foreground font-medium">
+                                                            {new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(summary.vat_to_pay)}
+                                                        </span>
                                                     )}
                                                 </div>
                                             </div>
                                         </div>
-
-                                        <div className="flex items-center gap-6">
-                                            {summary && (
-                                                <div className="text-right min-w-[120px] hidden sm:block">
-                                                    <div className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">Impuesto Det.</div>
-                                                    <div className="text-sm font-bold text-primary">
-                                                        {new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(summary.vat_to_pay)}
-                                                    </div>
-                                                </div>
+                                        
+                                        <div className="flex items-center gap-2">
+                                            {showPaymentButton && (
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className={cn("h-8 w-8 rounded-sm", isFullyPaid ? "text-success hover:bg-success/10 hover:text-success" : "text-success hover:bg-success/10")}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleOpenPayment(period);
+                                                    }}
+                                                    title={isFullyPaid ? "Ver Pagos" : "Pagar"}
+                                                >
+                                                    {isFullyPaid ? <HistoryIcon className="h-4 w-4" /> : <DollarSign className="h-4 w-4" />}
+                                                </Button>
                                             )}
-
-                                            <div className="flex items-center gap-2">
-                                                {showPaymentButton && (
-                                                    <Button
-                                                        variant="outline"
-                                                        size="sm"
-                                                        className={cn(
-                                                            "h-9 rounded-sm border-success/30 text-success hover:bg-success/5",
-                                                            isFullyPaid
-                                                                ? "border-success/20 text-success"
-                                                                : "border-success/30 text-success"
-                                                        )}
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            handleOpenPayment(period);
-                                                        }}
-                                                    >
-                                                        {isFullyPaid ? (
-                                                            <>
-                                                                <HistoryIcon className="h-4 w-4 mr-2" />
-                                                                Ver Pagos
-                                                            </>
-                                                        ) : (
-                                                            <>
-                                                                <DollarSign className="h-4 w-4 mr-2" />
-                                                                Pagar
-                                                            </>
-                                                        )}
-                                                    </Button>
-                                                )}
-                                                {canOpenChecklist && (
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="h-10 w-10 rounded-sm group-hover:translate-x-1 transition-transform"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            handleOpenWizard(period);
-                                                        }}
-                                                        title="Iniciar declaración/cierre F29"
-                                                    >
-                                                        <ArrowRight className="h-5 w-5 text-primary" />
-                                                    </Button>
-                                                )}
-                                            </div>
+                                            {canOpenChecklist && (
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-8 w-8 rounded-sm group-hover:translate-x-1 transition-transform"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleOpenWizard(period);
+                                                    }}
+                                                    title="Iniciar declaración/cierre F29"
+                                                >
+                                                    <ArrowRight className="h-4 w-4 text-primary" />
+                                                </Button>
+                                            )}
                                         </div>
-                                    </div>
+                                    </EntityCard>
                                 )
                             })}
                         </div>

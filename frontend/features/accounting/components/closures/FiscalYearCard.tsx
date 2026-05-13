@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card } from '@/components/ui/card';
+import { EntityCard } from '@/components/shared/EntityCard';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { SubmitButton, IconButton } from '@/components/shared';
 import {
@@ -64,79 +64,80 @@ export function FiscalYearCard({
     };
 
     return (
-        <Card className="rounded-none shadow-2xl ring-1 ring-border bg-card overflow-hidden mb-8">
-            {/* Header / Annual Status */}
-            <div className="bg-muted/20 border-b border-border/50 p-5 md:p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                <div className="flex items-center gap-4">
-                    <CalendarRange className="w-6 h-6 text-muted-foreground" />
-                    <div>
-                        <h3 className="font-heading font-extrabold text-2xl uppercase tracking-tighter flex items-center gap-3">
+        <EntityCard className="mb-6 shadow-md border-2 hover:border-border cursor-default">
+            <EntityCard.Header
+                title={
+                    <div className="flex items-center gap-3">
+                        <CalendarRange className="w-5 h-5 text-muted-foreground" />
+                        <span className="font-heading font-extrabold text-xl uppercase tracking-tighter">
                             Ejercicio {year}
+                        </span>
+                    </div>
+                }
+                subtitle={
+                    <div className="flex flex-col gap-1 mt-1">
+                        <div className="flex items-center gap-2">
                             <StatusBadge status={getStatusToken(status)} label={getStatusLabel(status)} />
-                        </h3>
-                        {isClosed && fiscalYear?.closed_at && (
-                            <p className="text-sm text-muted-foreground mt-1 flex items-center gap-2">
+                        </div>
+                        {isClosed && fiscalYear?.closed_at ? (
+                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                                 <Lock className="w-3 h-3" />
-                                Cerrado definitivamente el {formatPlainDate(fiscalYear.closed_at)}
+                                Cerrado: {formatPlainDate(fiscalYear.closed_at)}
                                 {fiscalYear.closed_by_name && ` por ${fiscalYear.closed_by_name}`}
-                            </p>
-                        )}
-                        {!isClosed && (
-                            <p className="text-sm text-muted-foreground mt-1">
+                            </div>
+                        ) : (
+                            <span className="text-xs text-muted-foreground">
                                 {periods.length} periodos mensuales registrados.
-                            </p>
+                            </span>
                         )}
                     </div>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-2">
-                    {/* Primary Action */}
-                    {!isClosed ? (
-                        <SubmitButton
-                            onClick={() => onPreviewClosing(year)}
-                            disabled={periods.length === 0 || periods.some(p => p.status !== 'CLOSED')}
-                            loading={isFiscalYearLoading}
-                            className="bg-primary text-primary-foreground hover:bg-primary/90 font-bold uppercase tracking-widest text-[11px] h-10"
-                            icon={<ShieldAlert className="w-4 h-4 mr-2" />}
-                        >
-                            Ejecutar cierre del ejercicio
-                        </SubmitButton>
-                    ) : null}
-
-                    {/* Three dots menu */}
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <IconButton circular className="h-10 w-10 border border-border/50 bg-background hover:bg-muted/50">
-                                <Settings2 className="w-4 h-4 text-muted-foreground" />
-                            </IconButton>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-56">
-                            {isClosed ? (
-                                <>
-                                    <DropdownMenuItem onClick={() => onReopenFiscalYear(year)} disabled={isFiscalYearLoading}>
-                                        <Lock className="w-4 h-4 mr-2 text-warning" />
-                                        Reabrir Ejercicio
+                }
+                trailing={
+                    <div className="flex items-center gap-2">
+                        {!isClosed && (
+                            <SubmitButton
+                                onClick={() => onPreviewClosing(year)}
+                                disabled={periods.length === 0 || periods.some(p => p.status !== 'CLOSED')}
+                                loading={isFiscalYearLoading}
+                                className="bg-primary text-primary-foreground hover:bg-primary/90 font-bold uppercase tracking-widest text-[10px] h-8 px-3"
+                                icon={<ShieldAlert className="w-3.5 h-3.5 mr-1.5" />}
+                            >
+                                Cerrar Ejercicio
+                            </SubmitButton>
+                        )}
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <IconButton className="h-8 w-8">
+                                    <Settings2 className="w-4 h-4 text-muted-foreground" />
+                                </IconButton>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-56">
+                                {isClosed ? (
+                                    <>
+                                        <DropdownMenuItem onClick={() => onReopenFiscalYear(year)} disabled={isFiscalYearLoading}>
+                                            <Lock className="w-4 h-4 mr-2 text-warning" />
+                                            Reabrir Ejercicio
+                                        </DropdownMenuItem>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem onClick={() => onGenerateOpening(year)} disabled={isFiscalYearLoading}>
+                                            <PlayCircle className="w-4 h-4 mr-2 text-success" />
+                                            Generar Asiento Apertura
+                                        </DropdownMenuItem>
+                                    </>
+                                ) : (
+                                    <DropdownMenuItem disabled>
+                                        <MoreVertical className="w-4 h-4 mr-2 text-muted-foreground" />
+                                        Acciones bloqueadas (Año abierto)
                                     </DropdownMenuItem>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem onClick={() => onGenerateOpening(year)} disabled={isFiscalYearLoading}>
-                                        <PlayCircle className="w-4 h-4 mr-2 text-success" />
-                                        Generar Asiento Apertura
-                                    </DropdownMenuItem>
-                                </>
-                            ) : (
-                                <DropdownMenuItem disabled>
-                                    <MoreVertical className="w-4 h-4 mr-2 text-muted-foreground" />
-                                    Acciones bloqueadas (Año abierto)
-                                </DropdownMenuItem>
-                            )}
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                </div>
-            </div>
+                                )}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </div>
+                }
+            />
 
-            {/* Monthly Periods Grid */}
-            <div className="p-5 md:p-6 bg-card">
-                <h4 className="font-heading font-bold text-sm text-muted-foreground uppercase tracking-widest mb-4">
+            <div className="p-4 bg-muted/5 border-t border-border/50">
+                <h4 className="font-heading font-bold text-[10px] text-muted-foreground uppercase tracking-widest mb-3">
                     Periodos Mensuales
                 </h4>
                 
@@ -148,7 +149,7 @@ export function FiscalYearCard({
                         description={`No existen asientios contables o periodos habilitados para el año ${year}.`}
                     />
                 ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                         {periods.map(period => (
                             <PeriodGridItem
                                 key={period.id}
@@ -161,6 +162,6 @@ export function FiscalYearCard({
                     </div>
                 )}
             </div>
-        </Card>
+        </EntityCard>
     );
 }

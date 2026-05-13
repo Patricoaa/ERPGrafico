@@ -2,6 +2,7 @@
 
 import { showApiError } from "@/lib/errors"
 import { useState, useEffect, useRef } from "react"
+import { useQuery } from "@tanstack/react-query"
 import { useForm, useFieldArray, Resolver, FieldValues } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -87,9 +88,7 @@ export function BOMFormModal({
     const [loading, setLoading] = useState(false)
     const [selectedProduct, setSelectedProduct] = useState<ProductMinimal | null>(initialProduct || null)
     const [selectedVariant, setSelectedVariant] = useState<ProductMinimal | null>(null)
-    const [variants, setVariants] = useState<ProductMinimal[]>([])
     const [lineVariantsCache, setLineVariantsCache] = useState<Record<string, ProductMinimal[]>>({})
-    const [allowedDteTypes, setAllowedDteTypes] = useState<string[]>([])
 
     const fetchLineVariants = async (productId: string | number, index: number, isService: boolean = false) => {
         if (!productId) return
@@ -101,8 +100,7 @@ export function BOMFormModal({
             console.error("Error fetching line variants:", error)
         }
     }
-    const [loadingVariants, setLoadingVariants] = useState(false)
-    const [uoms, setUoms] = useState<UoM[]>([])
+    
 
     const getEffectiveCost = (baseCost: number, productUomId: string | number, targetUomId: string | number) => {
         const productUom = uoms.find(u => u.id.toString() === productUomId.toString())
@@ -120,61 +118,43 @@ export function BOMFormModal({
     useEffect(() => {
         setSelectedProduct(initialProduct ?? null)
         setSelectedVariant(null)
-        setVariants([])
     }, [initialProduct])
 
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const [uRes, sRes] = await Promise.all([
-                    api.get('/inventory/uoms/'),
-                    api.get('/accounting/settings/current/')
-                ])
-                setUoms(uRes.data.results || uRes.data)
-                setAllowedDteTypes(sRes.data.allowed_dte_types_receive || ["FACTURA", "BOLETA"])
-            } catch (error) {
-                console.error("Error fetching dependencies for BOMForm:", error)
-            }
+    const { data: uoms = [] } = useQuery({
+        queryKey: ['uoms'],
+        queryFn: async () => {
+            const res = await api.get('/inventory/uoms/')
+            return res.data.results || res.data
         }
-        fetchData()
-    }, [])
+    })
 
-    // Fetch variants when product has_variants is true
-    useEffect(() => {
-        let isMounted = true
-        const fetchVariants = async () => {
-            if (!selectedProduct?.id || !selectedProduct?.has_variants) {
-                if (isMounted) {
-                    setVariants([])
-                    if (!bomToEdit) setSelectedVariant(null)
-                }
-                return
-            }
-
-            if (isMounted) setLoadingVariants(true)
-            try {
-                const res = await api.get(`/inventory/products/?parent_template=${selectedProduct.id}&show_technical_variants=true`)
-                const loadedVariants = res.data.results || res.data
-                if (isMounted) {
-                    setVariants(loadedVariants)
-
-                    if (bomToEdit && bomToEdit.product) {
-                        const activeVariant = loadedVariants.find((v: ProductMinimal) => v.id.toString() === bomToEdit.product?.toString())
-                        if (activeVariant) {
-                            setSelectedVariant(activeVariant ?? null)
-                        }
-                    }
-                }
-            } catch (error) {
-                console.error("Error fetching variants:", error)
-                if (isMounted) toast.error("Error al cargar variantes")
-            } finally {
-                if (isMounted) setLoadingVariants(false)
-            }
+    const { data: allowedDteTypes = ["FACTURA", "BOLETA"] } = useQuery({
+        queryKey: ['accountingSettings'],
+        queryFn: async () => {
+            const res = await api.get('/accounting/settings/current/')
+            return res.data.allowed_dte_types_receive || ["FACTURA", "BOLETA"]
         }
-        fetchVariants()
-        return () => { isMounted = false }
-    }, [selectedProduct?.id, bomToEdit?.id])
+    })
+
+    const { data: variants = [], isLoading: loadingVariants } = useQuery({
+        queryKey: ['productVariants', selectedProduct?.id],
+        queryFn: async () => {
+            const res = await api.get(`/inventory/products/?parent_template=${selectedProduct?.id}&show_technical_variants=true`)
+            return res.data.results || res.data
+        },
+        enabled: !!selectedProduct?.id && !!selectedProduct?.has_variants
+    })
+
+    useEffect(() => {
+        if (variants.length > 0 && bomToEdit?.product) {
+            const activeVariant = variants.find((v: ProductMinimal) => v.id.toString() === bomToEdit.product?.toString())
+            if (activeVariant) {
+                setSelectedVariant(activeVariant)
+            }
+        } else if (!bomToEdit) {
+            setSelectedVariant(null)
+        }
+    }, [variants, bomToEdit])
 
     const form = useForm<BOMFormValues>({
         resolver: zodResolver(bomSchema) as any,

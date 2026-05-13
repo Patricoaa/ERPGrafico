@@ -1,6 +1,7 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React, { useState } from "react"
+import { useQuery } from "@tanstack/react-query"
 import { notFound, useRouter } from "next/navigation"
 import { EntityDetailPage, FormSkeleton, FormFooter, CancelButton, ActionSlideButton } from "@/components/shared"
 import { formatEntityDisplay } from "@/lib/entity-registry"
@@ -16,25 +17,14 @@ interface EmployeeDetailClientProps {
 
 export function EmployeeDetailClient({ employeeId }: EmployeeDetailClientProps) {
     const router = useRouter()
-    const [employee, setEmployee] = useState<Employee | null>(null)
-    const [loading, setLoading] = useState(true)
-    const [error, setError] = useState<number | null>(null)
     const [modalOpen, setModalOpen] = useState(false)
 
-    const fetchEmployee = async () => {
-        try {
-            const data = await getEmployee(parseInt(employeeId))
-            setEmployee(data)
-        } catch (err: any) {
-            setError(err.response?.status || 500)
-        } finally {
-            setLoading(false)
-        }
-    }
+    const { data: employee, isLoading: loading, error: queryError, refetch: fetchEmployee } = useQuery({
+        queryKey: ['employee', employeeId],
+        queryFn: () => getEmployee(parseInt(employeeId)),
+    })
 
-    useEffect(() => {
-        fetchEmployee()
-    }, [employeeId])
+    const error = queryError ? (queryError as any).response?.status || 500 : null
 
     if (error === 404) return notFound()
     if (error) return (

@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { showApiError } from '@/lib/errors'
 import { accountingApi } from '../api/accountingApi'
@@ -22,7 +22,7 @@ export interface JournalEntry {
 }
 
 export function useJournalEntries() {
-    const { data: entries, refetch } = useSuspenseQuery({
+    const { data: entries, isLoading, refetch } = useQuery({
         queryKey: JOURNAL_ENTRIES_QUERY_KEY,
         queryFn: async () => {
             const data = await accountingApi.getEntries()
@@ -31,7 +31,8 @@ export function useJournalEntries() {
     })
 
     return {
-        entries,
+        entries: entries ?? [],
+        isLoading,
         refetch,
     }
 }

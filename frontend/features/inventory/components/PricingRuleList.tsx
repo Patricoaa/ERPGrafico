@@ -52,7 +52,7 @@ interface PricingRuleListProps {
 import { usePricingRules } from "@/features/inventory/hooks/usePricingRules"
 
 export function PricingRuleList({ externalOpen, onExternalOpenChange, createAction }: PricingRuleListProps) {
-    const { rules, refetch } = usePricingRules()
+    const { rules, isLoading, refetch } = usePricingRules()
     const [editingRule, setEditingRule] = useState<PricingRule | null>(null)
     const [isFormOpen, setIsFormOpen] = useState(false)
 
@@ -229,7 +229,8 @@ export function PricingRuleList({ externalOpen, onExternalOpenChange, createActi
                 <DataTable
                     columns={columns}
                     data={rules}
-                    cardMode
+                    isLoading={isLoading}
+                    variant="embedded"
                     globalFilterFields={["name"]}
                     searchPlaceholder="Buscar por nombre o producto..."
                     facetedFilters={[

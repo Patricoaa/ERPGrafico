@@ -1,4 +1,4 @@
-import { useSuspenseQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { settingsApi } from '../api/settingsApi'
 import type { SalesSettings, SalesSettingsUpdatePayload } from '../types'
@@ -22,7 +22,7 @@ interface UseSalesSettingsReturn {
 export function useSalesSettings(): UseSalesSettingsReturn {
     const queryClient = useQueryClient()
 
-    const { data: settings, refetch } = useSuspenseQuery({
+    const { data: settings, isLoading, refetch } = useQuery({
         queryKey: SALES_SETTINGS_QUERY_KEY,
         queryFn: settingsApi.getSalesSettings,
     })
@@ -71,7 +71,8 @@ export function useSalesSettings(): UseSalesSettingsReturn {
     }
 
     return {
-        settings,
+        settings: settings as SalesSettings,
+        isLoading,
         saving: updateMutation.isPending,
         updateSettings,
         refetch,

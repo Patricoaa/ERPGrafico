@@ -1,4 +1,4 @@
-import { useSuspenseQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
 import { toast } from 'sonner'
 import { BOM, ProductMinimal } from '../types'
@@ -9,7 +9,7 @@ export const VARIANTS_QUERY_KEY = ['product-variants']
 export function useBOMs(params: { product_id?: string | number, parent_id?: string | number }) {
     const queryClient = useQueryClient()
 
-    const { data: boms, refetch } = useSuspenseQuery({
+    const { data: boms, isLoading: isBOMsLoading, refetch } = useQuery({
         queryKey: [...BOMS_QUERY_KEY, params],
         queryFn: async (): Promise<BOM[]> => {
             const res = await api.get('/production/boms/', { params })
@@ -36,7 +36,8 @@ export function useBOMs(params: { product_id?: string | number, parent_id?: stri
     })
 
     return {
-        boms,
+        boms: boms ?? [],
+        isBOMsLoading,
         refetch,
         deleteBom: deleteMutation.mutateAsync,
         toggleActive: toggleActiveMutation.mutateAsync,
@@ -44,7 +45,7 @@ export function useBOMs(params: { product_id?: string | number, parent_id?: stri
 }
 
 export function useProductionVariants(parentId: number | string | undefined) {
-    const { data: variants } = useSuspenseQuery({
+    const { data: variants, isLoading: isVariantsLoading } = useQuery({
         queryKey: [...VARIANTS_QUERY_KEY, parentId],
         queryFn: async (): Promise<ProductMinimal[]> => {
             if (!parentId) return []
@@ -53,5 +54,5 @@ export function useProductionVariants(parentId: number | string | undefined) {
         },
     })
 
-    return { variants }
+    return { variants: variants ?? [], isVariantsLoading }
 }

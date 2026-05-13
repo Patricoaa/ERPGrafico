@@ -1,39 +1,24 @@
 "use client"
 
 import React, { useState, useEffect, useCallback } from "react"
-import { 
-    getBlacklistedPortfolio, 
-    getContactCreditLedger, 
-    unblockContact, 
-    recoverDebt 
+import {
+    getBlacklistedPortfolio,
+    getContactCreditLedger,
+    unblockContact,
+    recoverDebt
 } from '@/features/credits/api/creditsApi'
 import { CreditContact, CreditLedgerEntry } from '@/features/credits/api/creditsApi'
 import { formatCurrency } from "@/lib/utils"
 import { DataTable } from "@/components/ui/data-table"
 import { type Table as ReactTable, type Row, type HeaderGroup, type Header, type Cell, ColumnDef, flexRender } from "@tanstack/react-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
-import { Badge } from "@/components/ui/badge"
+
 import { Button } from "@/components/ui/button"
-import { 
-    ChevronDown, 
-    ChevronRight, 
-    UserCheck, 
-    DollarSign, 
-    AlertCircle,
-    CheckCircle2,
-    Clock,
-    AlertTriangle
-} from "lucide-react"
+import { UserCheck, DollarSign, AlertCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { 
-    Tooltip, 
-    TooltipContent, 
-    TooltipProvider, 
-    TooltipTrigger 
-} from "@/components/ui/tooltip"
+
 import { toast } from "sonner"
-import { motion, AnimatePresence } from "framer-motion"
-import { TableSkeleton } from "@/components/shared"
+import { ExpandableTableRow, TableSkeleton } from "@/components/shared"
 import {
     AlertDialog,
     AlertDialogAction,
@@ -45,7 +30,6 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Input } from "@/components/ui/input"
-import { TableCell, TableRow } from "@/components/ui/table"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { DataCell } from "@/components/ui/data-table-cells"
 import { StatusBadge } from "@/components/shared/StatusBadge"
@@ -64,28 +48,12 @@ const agingBg: Record<string, string> = {
 
 function ExpandableBlacklistRow({ row, onRefresh }: { row: Row<CreditContact>, onRefresh: () => void }) {
     const contact = row.original as CreditContact
-    const [expanded, setExpanded] = useState(false)
     const [ledger, setLedger] = useState<CreditLedgerEntry[] | null>(null)
     const [loadingLedger, setLoadingLedger] = useState(false)
     const [unblocking, setUnblocking] = useState(false)
     const [recoveryAmount, setRecoveryAmount] = useState("")
     const [showRecoveryDialog, setShowRecoveryDialog] = useState(false)
 
-    const handleExpand = useCallback(async () => {
-        const next = !expanded
-        setExpanded(next)
-        if (next && !ledger) {
-            setLoadingLedger(true)
-            try {
-                const data = await getContactCreditLedger(contact.id, true)
-                setLedger(data)
-            } catch (error) {
-                console.error("Error fetching credit ledger:", error)
-            } finally {
-                setLoadingLedger(false)
-            }
-        }
-    }, [expanded, ledger, contact.id])
 
     const handleUnblock = async () => {
         setUnblocking(true)
@@ -118,153 +86,134 @@ function ExpandableBlacklistRow({ row, onRefresh }: { row: Row<CreditContact>, o
     }
 
     return (
-        <>
-            <TableRow
-                className={cn(
-                    "cursor-pointer hover:bg-muted/30 transition-colors text-sm",
-                    expanded && "bg-muted/20"
-                )}
-                onClick={handleExpand}
-            >
-                {row.getVisibleCells().map((cell: Cell<CreditContact, unknown>) => (
-                    <TableCell key={cell.id} className="py-3 px-4">
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </TableCell>
-                ))}
-                <TableCell className="px-3 py-3 text-muted-foreground w-12 cursor-pointer text-center">
-                    {expanded ? <ChevronDown className="h-4 w-4 mx-auto" /> : <ChevronRight className="h-4 w-4 mx-auto" />}
-                </TableCell>
-            </TableRow>
+        <ExpandableTableRow
+            row={row}
+            cellClassName="py-3 px-4"
+            onExpand={async (isExpanding) => {
+                if (isExpanding && !ledger) {
+                    setLoadingLedger(true)
+                    try {
+                        const data = await getContactCreditLedger(contact.id, true)
+                        setLedger(data)
+                    } catch (error) {
+                        console.error("Error fetching credit ledger:", error)
+                    } finally {
+                        setLoadingLedger(false)
+                    }
+                }
+            }}
+        >
+            <div className="mb-6 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-2">
+                    <AlertCircle className="h-4 w-4 text-destructive" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Historial de Castigos</span>
+                </div>
+                <div className="flex items-center gap-2">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 gap-2 border-destructive/20 text-destructive hover:bg-destructive/5"
+                        onClick={(e) => {
+                            e.stopPropagation()
+                            setShowRecoveryDialog(true)
+                        }}
+                    >
+                        <DollarSign className="h-3.5 w-3.5" />
+                        Registrar Pago
+                    </Button>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 gap-2 border-success/20 text-success hover:bg-success/5"
+                        disabled={unblocking}
+                        onClick={(e) => {
+                            e.stopPropagation()
+                            handleUnblock()
+                        }}
+                    >
+                        <UserCheck className="h-3.5 w-3.5" />
+                        Rehabilitar Crédito
+                    </Button>
+                </div>
+            </div>
 
-            <AnimatePresence>
-                {expanded && (
-                    <TableRow className="hover:bg-transparent">
-                        <TableCell colSpan={row.getVisibleCells().length + 1} className="p-0 border-b">
-                            <motion.div
-                                initial={{ height: 0, opacity: 0 }}
-                                animate={{ height: "auto", opacity: 1 }}
-                                exit={{ height: 0, opacity: 0 }}
-                                transition={{ duration: 0.2 }}
-                                className="overflow-hidden bg-background border-b border-border/50"
-                            >
-                                <div className="px-8 py-4 bg-background">
-                                    <div className="mb-6 flex items-center justify-between gap-4">
-                                        <div className="flex items-center gap-2">
-                                            <AlertCircle className="h-4 w-4 text-destructive" />
-                                            <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Historial de Castigos</span>
+            {loadingLedger ? (
+                <TableSkeleton rows={2} />
+            ) : ledger && ledger.length > 0 ? (
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left">
+                        <thead>
+                            <tr className="text-[10px] font-black uppercase tracking-widest text-muted-foreground border-b border-border/50">
+                                <th className="pb-2 text-center">N° Documento</th>
+                                <th className="pb-2 text-center">Fecha</th>
+                                <th className="pb-2 text-center">Total</th>
+                                <th className="pb-2 text-center">Pagado</th>
+                                <th className="pb-2 text-center">Saldo</th>
+                                <th className="pb-2 text-center">Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-border/20">
+                            {ledger.map((entry) => (
+                                <tr key={entry.id} className="text-[12px] group">
+                                    <td className="py-2 pr-4 text-center">
+                                        <DataCell.Code className="font-bold">{formatEntityDisplay('sales.saleorder', entry)}</DataCell.Code>
+                                    </td>
+                                    <td className="py-2 pr-4 text-center">
+                                        <DataCell.Date value={entry.date} className="text-muted-foreground" />
+                                    </td>
+                                    <td className="py-2 pr-4 text-center">
+                                        <DataCell.Currency value={entry.effective_total} />
+                                    </td>
+                                    <td className="py-2 pr-4 text-center">
+                                        <DataCell.Currency value={entry.paid_amount} className="text-success" />
+                                    </td>
+                                    <td className="py-2 pr-4 text-center">
+                                        <DataCell.Currency value={entry.balance} className="font-bold" />
+                                    </td>
+                                    <td className="py-2 text-center">
+                                        <div className="flex justify-center">
+                                            <StatusBadge status={String(entry.aging_bucket).toUpperCase()} />
                                         </div>
-                                        <div className="flex items-center gap-2">
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                className="h-8 gap-2 border-destructive/20 text-destructive hover:bg-destructive/5"
-                                                onClick={(e) => {
-                                                    e.stopPropagation()
-                                                    setShowRecoveryDialog(true)
-                                                }}
-                                            >
-                                                <DollarSign className="h-3.5 w-3.5" />
-                                                Registrar Pago
-                                            </Button>
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                className="h-8 gap-2 border-success/20 text-success hover:bg-success/5"
-                                                disabled={unblocking}
-                                                onClick={(e) => {
-                                                    e.stopPropagation()
-                                                    handleUnblock()
-                                                }}
-                                            >
-                                                <UserCheck className="h-3.5 w-3.5" />
-                                                Rehabilitar Crédito
-                                            </Button>
-                                        </div>
-                                    </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            ) : (
+                <p className="text-[12px] text-muted-foreground italic text-center py-4">Sin registros de deudas castigadas.</p>
+            )}
 
-                                    {loadingLedger ? (
-                                        <TableSkeleton rows={2} />
-                                    ) : ledger && ledger.length > 0 ? (
-                                        <div className="overflow-x-auto">
-                                            <table className="w-full text-left">
-                                                <thead>
-                                                    <tr className="text-[10px] font-black uppercase tracking-widest text-muted-foreground border-b border-border/50">
-                                                        <th className="pb-2 text-center">N° Documento</th>
-                                                        <th className="pb-2 text-center">Fecha</th>
-                                                        <th className="pb-2 text-center">Total</th>
-                                                        <th className="pb-2 text-center">Pagado</th>
-                                                        <th className="pb-2 text-center">Saldo</th>
-                                                        <th className="pb-2 text-center">Estado</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody className="divide-y divide-border/20">
-                                                    {ledger.map((entry) => (
-                                                        <tr key={entry.id} className="text-[12px] group">
-                                                            <td className="py-2 pr-4 text-center">
-                                                                <DataCell.Code className="font-bold">{formatEntityDisplay('sales.saleorder', entry)}</DataCell.Code>
-                                                            </td>
-                                                            <td className="py-2 pr-4 text-center">
-                                                                <DataCell.Date value={entry.date} className="text-muted-foreground" />
-                                                            </td>
-                                                            <td className="py-2 pr-4 text-center">
-                                                                <DataCell.Currency value={entry.effective_total} />
-                                                            </td>
-                                                            <td className="py-2 pr-4 text-center">
-                                                                <DataCell.Currency value={entry.paid_amount} className="text-success" />
-                                                            </td>
-                                                            <td className="py-2 pr-4 text-center">
-                                                                <DataCell.Currency value={entry.balance} className="font-bold" />
-                                                            </td>
-                                                            <td className="py-2 text-center">
-                                                                <div className="flex justify-center">
-                                                                    <StatusBadge status={String(entry.aging_bucket).toUpperCase()} />
-                                                                </div>
-                                                            </td>
-                                                        </tr>
-                                                    ))}
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    ) : (
-                                        <p className="text-[12px] text-muted-foreground italic text-center py-4">Sin registros de deudas castigadas.</p>
-                                    )}
-
-                                    <AlertDialog open={showRecoveryDialog} onOpenChange={setShowRecoveryDialog}>
-                                        <AlertDialogContent>
-                                            <AlertDialogHeader>
-                                                <AlertDialogTitle className="font-black">Recuperación de Deuda</AlertDialogTitle>
-                                                <AlertDialogDescription>
-                                                    Ingrese el monto recaudado para este cliente incobrable.
-                                                </AlertDialogDescription>
-                                            </AlertDialogHeader>
-                                            <div className="py-4">
-                                                <Input 
-                                                    type="number" 
-                                                    placeholder="Ingrese monto..." 
-                                                    value={recoveryAmount}
-                                                    onChange={(e) => setRecoveryAmount(e.target.value)}
-                                                    className="font-mono text-lg"
-                                                />
-                                            </div>
-                                            <AlertDialogFooter>
-                                                <AlertDialogCancel className="font-bold">Cancelar</AlertDialogCancel>
-                                                <AlertDialogAction
-                                                    className="bg-primary font-bold"
-                                                    onClick={handleRecover}
-                                                    disabled={!recoveryAmount}
-                                                >
-                                                    Registrar Pago
-                                                </AlertDialogAction>
-                                            </AlertDialogFooter>
-                                        </AlertDialogContent>
-                                    </AlertDialog>
-                                </div>
-                            </motion.div>
-                        </TableCell>
-                    </TableRow>
-                )}
-            </AnimatePresence>
-        </>
+            <AlertDialog open={showRecoveryDialog} onOpenChange={setShowRecoveryDialog}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className="font-black">Recuperación de Deuda</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Ingrese el monto recaudado para este cliente incobrable.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <div className="py-4">
+                        <Input
+                            type="number"
+                            placeholder="Ingrese monto..."
+                            value={recoveryAmount}
+                            onChange={(e) => setRecoveryAmount(e.target.value)}
+                            className="font-mono text-lg"
+                        />
+                    </div>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel className="font-bold">Cancelar</AlertDialogCancel>
+                        <AlertDialogAction
+                            className="bg-primary font-bold"
+                            onClick={handleRecover}
+                            disabled={!recoveryAmount}
+                        >
+                            Registrar Pago
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+        </ExpandableTableRow>
     )
 }
 
@@ -328,7 +277,7 @@ export function BlacklistView() {
                 useAdvancedFilter
                 searchPlaceholder="Buscar por cliente o RUT..."
                 globalFilterFields={["name", "tax_id"]}
-                cardMode
+                variant="embedded"
                 isLoading={loading}
                 renderCustomView={(table: ReactTable<CreditContact>) => {
                     const rows = table.getRowModel().rows

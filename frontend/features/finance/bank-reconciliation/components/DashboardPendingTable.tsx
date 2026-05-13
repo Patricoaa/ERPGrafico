@@ -96,7 +96,7 @@ export function DashboardPendingTable({ data, loading }: DashboardPendingTablePr
                 columns={columns}
                 data={data}
                 isLoading={loading}
-                cardMode
+                variant="embedded"
                 searchPlaceholder="Filtrar sin conciliar..."
                 globalFilterFields={["description", "account"]}
                 rightAction={

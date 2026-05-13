@@ -2,20 +2,16 @@
 
 import { useEffect, useState, useMemo, useCallback } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
-import * as React from "react"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { createActionsColumn, DataCell } from "@/components/ui/data-table-cells"
 import { ColumnDef } from "@tanstack/react-table"
-import { Button } from "@/components/ui/button"
 import api from "@/lib/api"
-import { Badge } from "@/components/ui/badge"
 import { Pencil, Trash2, Ban, Settings, LayoutGrid, List, Columns, X, Factory } from "lucide-react"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { WorkOrderForm } from "@/features/production/components/forms/WorkOrderForm"
 import { WorkOrderWizard } from "@/features/production/components/WorkOrderWizard"
 import { WorkOrderKanban } from "@/features/production/components/WorkOrderKanban"
-import { TabsContent } from "@/components/ui/tabs"
 import { toast } from "sonner"
 import { DateRangeFilter } from "@/components/shared/DateRangeFilter"
 import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
@@ -48,7 +44,7 @@ export default function WorkOrdersPage() {
     const [isFormOpen, setIsFormOpen] = useState(false)
     const [activeWizardId, setActiveWizardId] = useState<number | null>(null)
     const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date } | undefined>()
-    const [viewMode, setViewMode] = useState<string>("kanban")
+    const [viewMode, setViewMode] = useState<string>("list")
     const searchParams = useSearchParams()
     const router = useRouter()
     const pathname = usePathname()
@@ -200,8 +196,8 @@ export default function WorkOrdersPage() {
             ),
             cell: ({ row }) => (
                 <div className="flex justify-center">
-                    <DataCell.Badge 
-                        variant="outline" 
+                    <DataCell.Badge
+                        variant="outline"
                         className="text-[9px] uppercase tracking-tighter"
                     >
                         {translateProductionStage(row.original.current_stage)}
@@ -307,14 +303,13 @@ export default function WorkOrdersPage() {
                     columns={columns}
                     data={orders}
                     isLoading={loading}
-                    cardMode={viewMode === "list" || viewMode === "grid"}
+                    variant="embedded"
                     filterColumn="description"
                     defaultPageSize={50}
                     globalFilterFields={["number", "description", "sale_customer_name"]}
                     searchPlaceholder="Buscar por folio, descripción o cliente..."
                     viewOptions={[
                         { label: "Lista", value: "list", icon: List },
-                        { label: "Grilla", value: "grid", icon: LayoutGrid },
                         { label: "Tablero", value: "kanban", icon: Columns },
                     ]}
                     currentView={viewMode}
@@ -330,9 +325,9 @@ export default function WorkOrdersPage() {
                     isCustomFiltered={!!dateRange}
                     customFilterCount={dateRange ? 1 : 0}
                     customFilters={
-                        <DateRangeFilter 
-                            onDateChange={setDateRange} 
-                            label="Fecha de Entrega" 
+                        <DateRangeFilter
+                            onDateChange={setDateRange}
+                            label="Fecha de Entrega"
                             className="bg-transparent border-none w-full"
                         />
                     }

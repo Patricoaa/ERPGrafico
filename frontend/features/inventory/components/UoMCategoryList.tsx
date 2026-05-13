@@ -33,7 +33,7 @@ interface UoMCategoryListProps {
 import { useUoMs } from "@/features/inventory/hooks/useUoMs"
 
 export function UoMCategoryList({ externalOpen, onExternalOpenChange, createAction }: UoMCategoryListProps) {
-    const { categories, refetch } = useUoMs()
+    const { categories, isLoading, refetch } = useUoMs()
 
     // Modal State
     const [isModalOpen, setIsModalOpen] = useState(false)
@@ -139,7 +139,8 @@ export function UoMCategoryList({ externalOpen, onExternalOpenChange, createActi
             <DataTable
                 columns={columns}
                 data={categories}
-                cardMode
+                isLoading={isLoading}
+                variant="embedded"
                 filterColumn="name"
                 pageSizeOptions={[10, 20]}
                 useAdvancedFilter={true}

@@ -40,8 +40,8 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
         ? { product_id: selectedVariantId }
         : { parent_id: product?.id }
 
-    const { boms, refetch, deleteBom, toggleActive } = useBOMs(bomParams)
-    const { variants } = useProductionVariants(product?.id)
+    const { boms, isBOMsLoading, refetch, deleteBom, toggleActive } = useBOMs(bomParams)
+    const { variants, isVariantsLoading } = useProductionVariants(product?.id)
 
     // Sync external boms if needed
     useEffect(() => {
@@ -316,7 +316,8 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
                     <DataTable
                         columns={columns}
                         data={boms}
-                        cardMode={true}
+                        variant="embedded"
+                        isLoading={isBOMsLoading}
                     />
                 </div>
             </div>

@@ -1,4 +1,4 @@
-import { useSuspenseQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
 
 export interface StockMove {
@@ -24,7 +24,7 @@ export const STOCK_MOVES_QUERY_KEY = ['stockMoves']
 export function useStockMoves() {
     const queryClient = useQueryClient()
 
-    const { data: moves, refetch } = useSuspenseQuery({
+    const { data: moves, isLoading, refetch } = useQuery({
         queryKey: STOCK_MOVES_QUERY_KEY,
         queryFn: async (): Promise<StockMove[]> => {
             const response = await api.get('/inventory/moves/')
@@ -33,7 +33,8 @@ export function useStockMoves() {
     })
 
     return {
-        moves,
+        moves: moves ?? [],
+        isLoading,
         refetch,
     }
 }

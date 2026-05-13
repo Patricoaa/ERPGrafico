@@ -1,6 +1,7 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React from "react"
+import { useQuery } from "@tanstack/react-query"
 import { notFound } from "next/navigation"
 import api from "@/lib/api"
 import { EntityDetailPage, FormSkeleton } from "@/components/shared"
@@ -52,16 +53,15 @@ function SectionTitle({ icon: Icon, title }: { icon: React.ElementType; title: s
 }
 
 export function POSSessionDetailClient({ sessionId }: POSSessionDetailClientProps) {
-    const [data, setData] = useState<POSSessionData | null>(null)
-    const [loading, setLoading] = useState(true)
-    const [error, setError] = useState<number | null>(null)
+    const { data: data, isLoading: loading, error: queryError } = useQuery({
+        queryKey: ['posSession', sessionId],
+        queryFn: async () => {
+            const res = await api.get(`/treasury/pos-sessions/${sessionId}/`)
+            return res.data
+        }
+    })
 
-    useEffect(() => {
-        api.get(`/treasury/pos-sessions/${sessionId}/`)
-            .then(res => setData(res.data))
-            .catch(err => setError(err.response?.status || 500))
-            .finally(() => setLoading(false))
-    }, [sessionId])
+    const error = queryError ? (queryError as any).response?.status || 500 : null
 
     if (error === 404) return notFound()
     if (error) return (

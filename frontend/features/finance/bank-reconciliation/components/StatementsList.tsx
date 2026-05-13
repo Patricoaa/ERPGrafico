@@ -182,7 +182,7 @@ export function StatementsList({ externalOpen = false, createAction }: Statement
             <DataTable
                 columns={columns}
                 data={statements}
-                cardMode
+                variant="embedded"
                 isLoading={isLoading}
                 globalFilterFields={["treasury_account_name", "display_id"]}
                 searchPlaceholder="Buscar por ID..."
