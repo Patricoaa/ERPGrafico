@@ -12,7 +12,8 @@ const backendHostname =
     : "erpgrafico-production.up.railway.app";
 
 const nextConfig: NextConfig = {
-  output: "standalone",
+  // standalone solo para Docker/self-hosted — Vercel gestiona el output por su cuenta
+  output: process.env.VERCEL ? undefined : "standalone",
   allowedDevOrigins: ["erp.servidor.click"],
   env: {
     NEXT_PUBLIC_APP_VERSION: packageJson.version,
