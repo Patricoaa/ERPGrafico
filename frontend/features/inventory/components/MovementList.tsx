@@ -40,9 +40,12 @@ interface MovementListProps {
 }
 
 import { useStockMovesList } from "@/features/inventory/hooks/useStockMoves"
+import { SmartSearchBar, useSmartSearch } from "@/components/shared"
+import { stockMoveSearchDef } from "@/features/inventory/searchDef"
 
 export function MovementList({ externalOpen, onExternalOpenChange, createAction }: MovementListProps) {
-    const { moves, isLoading, refetch } = useStockMovesList()
+    const { filters } = useSmartSearch(stockMoveSearchDef)
+    const { moves, isLoading, refetch } = useStockMovesList(filters)
     const [viewingTransaction, setViewingTransaction] = useState<{ type: TransactionType, id: number | string, view?: 'details' | 'history' | 'all' } | null>(null)
     const [showAdjustmentModal, setShowAdjustmentModal] = useState(false)
     const [isFormLoading, setIsFormLoading] = useState(false)
@@ -171,20 +174,7 @@ export function MovementList({ externalOpen, onExternalOpenChange, createAction 
                 data={moves}
                 isLoading={isLoading}
                 variant="embedded"
-                filterColumn="product_name"
-                searchPlaceholder="Filtrar por producto o almacén..."
-                useAdvancedFilter={true}
-                facetedFilters={[
-                    {
-                        column: "move_type",
-                        title: "Tipo",
-                        options: [
-                            { label: "Entrada", value: "IN" },
-                            { label: "Salida", value: "OUT" },
-                            { label: "Ajuste", value: "ADJ" },
-                        ],
-                    },
-                ]}
+                leftAction={<SmartSearchBar searchDef={stockMoveSearchDef} placeholder="Filtrar movimientos..." className="w-80" />}
                 createAction={createAction}
             />
 

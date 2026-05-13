@@ -5,12 +5,10 @@ import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { Button } from "@/components/ui/button"
 import {
-    Plus, Edit, Trash2, Loader2, CreditCard, Landmark, List, History, Tag, Pencil, Lock
+    Plus, Trash2, CreditCard, Landmark, Pencil, Lock
 } from "lucide-react"
-import { StatusBadge } from "@/components/shared/StatusBadge"
 import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import api from "@/lib/api"
 import { toast } from "sonner"
@@ -20,8 +18,10 @@ import * as z from "zod"
 import { Form, FormField } from "@/components/ui/form"
 import {
     CancelButton, LabeledInput, LabeledSelect, FormSection, MultiSelectTagInput,
-    BaseModal, FormFooter, FormSplitLayout, ActionSlideButton, ActionConfirmModal
+    BaseModal, FormFooter, FormSplitLayout, ActionSlideButton, ActionConfirmModal,
+    SmartSearchBar, useClientSearch
 } from "@/components/shared"
+import { bankSearchDef, paymentMethodSearchDef } from "@/features/treasury/searchDef"
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
 import { Column } from "@tanstack/react-table";
 import { useBanks, usePaymentMethods, Bank, PaymentMethod } from "@/features/treasury/hooks/useMasterData"
@@ -57,6 +57,7 @@ interface BankManagementProps {
 
 export function BankManagement({ externalOpen, onOpenChange, createAction }: BankManagementProps) {
     const { banks, refetch } = useBanks()
+    const { filterFn: filterBanks } = useClientSearch<Bank>(bankSearchDef)
     const [dialogOpen, setDialogOpen] = useState(false)
     const [selectedBank, setSelectedBank] = useState<Bank | null>(null)
 
@@ -138,11 +139,9 @@ export function BankManagement({ externalOpen, onOpenChange, createAction }: Ban
 
             <DataTable
                 columns={columns}
-                data={banks}
+                data={filterBanks(banks)}
                 variant="embedded"
-                searchPlaceholder="Buscar bancos..."
-                filterColumn="name"
-                useAdvancedFilter={true}
+                leftAction={<SmartSearchBar searchDef={bankSearchDef} placeholder="Buscar banco..." />}
                 createAction={createAction}
             />
 
@@ -338,6 +337,7 @@ interface PaymentMethodManagementProps {
 
 export function PaymentMethodManagement({ externalOpen, onOpenChange, createAction }: PaymentMethodManagementProps) {
     const { methods, refetch } = usePaymentMethods()
+    const { filterFn: filterMethods } = useClientSearch<PaymentMethod>(paymentMethodSearchDef)
     const [dialogOpen, setDialogOpen] = useState(false)
     const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(null)
 
@@ -470,11 +470,9 @@ export function PaymentMethodManagement({ externalOpen, onOpenChange, createActi
 
             <DataTable
                 columns={columns}
-                data={methods}
+                data={filterMethods(methods)}
                 variant="embedded"
-                searchPlaceholder="Buscar por nombre o cuenta..."
-                filterColumn="name"
-                useAdvancedFilter={true}
+                leftAction={<SmartSearchBar searchDef={paymentMethodSearchDef} placeholder="Buscar método de pago..." />}
                 createAction={createAction}
             />
 

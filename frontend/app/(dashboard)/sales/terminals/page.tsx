@@ -1,9 +1,9 @@
 import { lazy, Suspense } from "react"
+import { redirect } from "next/navigation"
 import { LoadingFallback } from "@/components/shared/LoadingFallback"
 import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
-import Link from "next/link"
-import { Receipt, Store } from "lucide-react"
-import { Button } from "@/components/ui/button"
+
+
 
 const SalesTerminalsView = lazy(() => import("@/features/sales").then(m => ({ default: m.SalesTerminalsView })))
 
@@ -18,6 +18,10 @@ export default async function TerminalsPage({ searchParams }: PageProps) {
     const params = await searchParams
     const activeTab = params.tab || "pos-terminals"
     const modal = params.modal
+
+    if (!params.tab) {
+        redirect('/sales/terminals?tab=pos-terminals')
+    }
 
     const getCreateAction = () => {
         switch (activeTab) {

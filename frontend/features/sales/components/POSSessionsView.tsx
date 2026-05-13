@@ -44,12 +44,15 @@ interface POSSessionsViewProps {
 }
 
 import { usePOSSessions } from "@/features/pos/hooks/usePOSSessions"
+import { SmartSearchBar, useSmartSearch } from "@/components/shared"
+import { posSessionSearchDef } from "@/features/pos/searchDef"
 
 export const POSSessionsView = ({ hideHeader = false }: POSSessionsViewProps) => {
     const router = useRouter()
     const pathname = usePathname()
     const searchParams = useSearchParams()
-    const { sessions, isLoading, refetch } = usePOSSessions()
+    const { filters } = useSmartSearch(posSessionSearchDef)
+    const { sessions, isLoading, refetch } = usePOSSessions(filters)
 
     const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<POSSession>({
         endpoint: '/treasury/pos-sessions'
@@ -186,10 +189,7 @@ export const POSSessionsView = ({ hideHeader = false }: POSSessionsViewProps) =>
                     data={sessions}
                     variant="embedded"
                     isLoading={isLoading}
-                    globalFilterFields={["user_name", "status_display", "id"]}
-                    searchPlaceholder="Buscar por cajero..."
-                    facetedFilters={[{ column: "status", title: "Estado", options: [{ label: "Abierta", value: "OPEN" }, { label: "Cerrada", value: "CLOSED" }, { label: "Cerrando", value: "CLOSING" }] }]}
-                    useAdvancedFilter={true}
+                    leftAction={<SmartSearchBar searchDef={posSessionSearchDef} placeholder="Buscar sesiones..." className="w-80" />}
                     defaultPageSize={10}
                 />
             </div>

@@ -4,6 +4,8 @@ export type TextFieldDef = {
   type: 'text'
   serverParam: string
   suggestionsUrl?: string
+  /** useClientSearch only: row field(s) to match against. Falls back to `key` if omitted. */
+  clientKey?: string | string[]
 }
 
 export type EnumFieldDef = {

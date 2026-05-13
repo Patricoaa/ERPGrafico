@@ -2,18 +2,19 @@
 
 import React, { useState, useEffect } from "react"
 import { useTreasuryAccounts, type TreasuryAccount } from "@/features/treasury"
+import { SmartSearchBar, useSmartSearch } from "@/components/shared"
+import { treasuryAccountSearchDef } from "../searchDef"
 import { Button } from "@/components/ui/button"
 import {
     ColumnDef
 } from "@tanstack/react-table"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
-import { Badge } from "@/components/ui/badge"
+
 import { Landmark, Pencil, Trash2, Lock } from "lucide-react"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { BankManagement, PaymentMethodManagement, TerminalManagement } from "@/features/treasury"
-import { StatusBadge } from "@/components/shared/StatusBadge"
-import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
+
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 
@@ -28,7 +29,8 @@ interface TreasuryAccountsViewProps {
 
 export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ activeTab, externalOpen, createAction }) => {
     const { openTreasuryAccount } = useGlobalModalActions()
-    const { accounts, isLoading, deleteAccount } = useTreasuryAccounts()
+    const { filters } = useSmartSearch(treasuryAccountSearchDef)
+    const { accounts, isLoading, deleteAccount } = useTreasuryAccounts({ filters })
     const [isBankModalOpen, setIsBankModalOpen] = useState(false)
     const [isMethodModalOpen, setIsMethodModalOpen] = useState(false)
     const [isLocalAccountModalOpen, setIsLocalAccountModalOpen] = useState(false)
@@ -213,28 +215,8 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
                     data={accounts}
                     isLoading={isLoading}
                     variant="embedded"
-                    searchPlaceholder="Buscar cuentas por nombre..."
-                    filterColumn="name"
-                    initialColumnVisibility={{
-                        account_type: false
-                    }}
-                    facetedFilters={[
-                        {
-                            column: "account_type",
-                            title: "Tipo de Cuenta",
-                            options: [
-                                { label: "Caja Física (Efectivo)", value: "CASH" },
-                                { label: "Cuenta Bancaria", value: "CHECKING" },
-                                { label: "T. Débito Empresa", value: "DEBIT_CARD" },
-                                { label: "T. Crédito Empresa", value: "CREDIT_CARD" },
-                                { label: "Chequera / Instr.", value: "CHECKBOOK" },
-                                { label: "Puente", value: "BRIDGE" },
-                                { label: "Cta. Recaudadora", value: "MERCHANT" },
-                            ]
-                        }
-                    ]}
-                    useAdvancedFilter={true}
                     createAction={activeTab === "accounts" ? createAction : undefined}
+                    leftAction={<SmartSearchBar searchDef={treasuryAccountSearchDef} placeholder="Buscar cuenta..." />}
                 />
             </TabsContent>
 

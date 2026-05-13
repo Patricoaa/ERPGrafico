@@ -75,7 +75,7 @@ export function InventoryHeader() {
 
     const navigation = {
         moduleName: "Inventario",
-        moduleHref: "/inventory",
+        moduleHref: "/inventory/products?tab=products",
         tabs,
         activeValue,
         subActiveValue,

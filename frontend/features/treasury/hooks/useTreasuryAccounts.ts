@@ -8,9 +8,14 @@ import { ACCOUNTS_QUERY_KEY } from './queryKeys'
 
 export { ACCOUNTS_QUERY_KEY }
 
+export interface TreasuryAccountFilters {
+    name?: string
+    account_type?: string
+}
+
 interface UseTreasuryAccountsReturn {
     accounts: TreasuryAccount[]
-    refetch: () => Promise<any>
+    refetch: () => Promise<unknown>
     createAccount: (payload: TreasuryAccountCreatePayload) => Promise<TreasuryAccount>
     updateAccount: (params: { id: number, payload: TreasuryAccountUpdatePayload }) => Promise<TreasuryAccount>
     deleteAccount: (id: number) => Promise<void>
@@ -19,12 +24,12 @@ interface UseTreasuryAccountsReturn {
     isLoading: boolean
 }
 
-export function useTreasuryAccounts(): UseTreasuryAccountsReturn {
+export function useTreasuryAccounts({ filters }: { filters?: TreasuryAccountFilters } = {}): UseTreasuryAccountsReturn {
     const queryClient = useQueryClient()
 
     const { data: accounts, isLoading, refetch } = useQuery({
-        queryKey: ACCOUNTS_QUERY_KEY,
-        queryFn: treasuryApi.getAccounts,
+        queryKey: [...ACCOUNTS_QUERY_KEY, filters],
+        queryFn: () => treasuryApi.getAccounts(filters),
         staleTime: 5 * 60 * 1000, // 5 min
     })
 

@@ -1,7 +1,6 @@
 "use client"
 
 import { showApiError } from "@/lib/errors"
-
 import { useEffect, useState, useMemo } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { DataTable } from "@/components/ui/data-table"
@@ -17,6 +16,8 @@ import type { BulkAction } from "@/components/shared"
 import React from "react"
 
 import { useWarehouses, type Warehouse } from "@/features/inventory/hooks/useWarehouses"
+import { SmartSearchBar, useClientSearch } from "@/components/shared"
+import { warehouseSearchDef } from "@/features/inventory/searchDef"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 
 interface WarehouseListProps {
@@ -27,7 +28,8 @@ interface WarehouseListProps {
 
 export function WarehouseList({ externalOpen, onExternalOpenChange, createAction }: WarehouseListProps) {
     const { warehouses, isLoading, refetch, deleteWarehouse } = useWarehouses()
-    
+    const { filterFn } = useClientSearch<Warehouse>(warehouseSearchDef)
+
     const [editingWarehouse, setEditingWarehouse] = useState<Warehouse | null>(null)
     const [isFormOpen, setIsFormOpen] = useState(false)
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
@@ -162,14 +164,10 @@ export function WarehouseList({ externalOpen, onExternalOpenChange, createAction
         <div className="space-y-6">
             <DataTable
                 columns={columns}
-                data={warehouses}
+                data={filterFn(warehouses)}
                 isLoading={isLoading}
                 variant="embedded"
-                
-                useAdvancedFilter={true}
-                filterColumn="name"
-                searchPlaceholder="Buscar almacén por nombre o código..."
-                globalFilterFields={["name", "code", "address"]}
+                leftAction={<SmartSearchBar searchDef={warehouseSearchDef} placeholder="Buscar almacén..." />}
                 bulkActions={bulkActions}
                 createAction={createAction}
             />
@@ -200,7 +198,7 @@ export function WarehouseList({ externalOpen, onExternalOpenChange, createAction
                             ¿Confirma la eliminación del almacén <span className="font-black text-foreground underline">{warehouseToDelete?.name}</span>?
                         </p>
                         <p className="text-[11px] text-muted-foreground bg-destructive/5 border border-destructive/10 p-3 rounded-md">
-                             <strong className="text-destructive uppercase">Advertencia:</strong> Esta acción es irreversible y podría afectar la integridad de los stocks registrados en esta ubicación.
+                            <strong className="text-destructive uppercase">Advertencia:</strong> Esta acción es irreversible y podría afectar la integridad de los stocks registrados en esta ubicación.
                         </p>
                     </div>
                 }

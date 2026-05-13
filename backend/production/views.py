@@ -1,7 +1,18 @@
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from .models import WorkOrder, ProductionConsumption, BillOfMaterials, BillOfMaterialsLine, WorkOrderMaterial
+from django_filters.rest_framework import DjangoFilterBackend, FilterSet
+import django_filters
+
+class WorkOrderFilterSet(FilterSet):
+    due_date_after = django_filters.DateFilter(field_name='due_date', lookup_expr='gte')
+    due_date_before = django_filters.DateFilter(field_name='due_date', lookup_expr='lte')
+
+    class Meta:
+        model = WorkOrder
+        fields = ['status', 'due_date_after', 'due_date_before']
+
 from .serializers import (
     WorkOrderSerializer,
     ProductionConsumptionSerializer,
@@ -20,6 +31,9 @@ from django.contrib.contenttypes.models import ContentType
 from core.models import Attachment
 
 class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    filterset_class = WorkOrderFilterSet
+    search_fields = ['description', 'number']
     queryset = WorkOrder.objects.select_related(
         'sale_order', 'sale_order__customer', 'related_contact', 'product', 'sale_line', 'warehouse'
     ).prefetch_related(
@@ -467,7 +481,10 @@ class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 class BillOfMaterialsViewSet(viewsets.ModelViewSet):
     queryset = BillOfMaterials.objects.all()
     serializer_class = BillOfMaterialsSerializer
-    
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    filterset_fields = ['active']
+    search_fields = ['name', 'product__name', 'product__code']
+
     def get_queryset(self):
         queryset = super().get_queryset()
         product_id = self.request.query_params.get('product_id')

@@ -10,7 +10,7 @@ import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 import { ColumnDef } from "@tanstack/react-table"
 
 import { CategoryForm } from "./CategoryForm"
-import { BaseModal } from "@/components/shared/BaseModal"
+
 import { Pencil, Trash2 } from "lucide-react"
 
 import { toast } from "sonner"
@@ -18,6 +18,8 @@ import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import React from "react"
 
 import { useCategories, type Category } from "@/features/inventory/hooks/useCategories"
+import { SmartSearchBar, useClientSearch } from "@/components/shared"
+import { categorySearchDef } from "@/features/inventory/searchDef"
 import * as LucideIcons from "lucide-react"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 
@@ -29,6 +31,7 @@ interface CategoryListProps {
 
 export function CategoryList({ externalOpen, onExternalOpenChange, createAction }: CategoryListProps) {
     const { categories, isLoading, refetch, deleteCategory } = useCategories()
+    const { filterFn } = useClientSearch<Category>(categorySearchDef)
     const [editingCategory, setEditingCategory] = useState<Category | null>(null)
     const [isCreateOpen, setIsCreateOpen] = useState(false)  // EntityForm modal
     const [isFormOpen, setIsFormOpen] = useState(false)       // CategoryForm (edit)
@@ -133,19 +136,14 @@ export function CategoryList({ externalOpen, onExternalOpenChange, createAction 
     }, [externalOpen])
 
 
-    const globalFilterFields = useMemo(() => ["name", "parent_name"], [])
-
     return (
         <div className="space-y-4">
             <DataTable
                 columns={columns}
-                data={categories}
+                data={filterFn(categories)}
                 isLoading={isLoading}
                 variant="embedded"
-
-                searchPlaceholder="Buscar categoría por nombre..."
-                globalFilterFields={globalFilterFields}
-                useAdvancedFilter={true}
+                leftAction={<SmartSearchBar searchDef={categorySearchDef} placeholder="Buscar categoría..." />}
                 createAction={createAction}
             />
 

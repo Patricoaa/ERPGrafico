@@ -12,7 +12,9 @@ milestones:
   - M1: ✅ COMPLETADO 2026-05-13 — SmartSearchBar en barrel
   - M2: ✅ COMPLETADO 2026-05-13 — Facturas + Tesorería
   - M3: ✅ COMPLETADO 2026-05-13 — Órdenes de Venta ✅ | Productos ✅ | Contactos ✅
-  - M4: ⏳ DIFERIDO — Sugerencias de valores (opcional)
+  - M4: ✅ COMPLETADO 2026-05-13 — Sugerencias de valores
+  - M5: ✅ COMPLETADO 2026-05-13 — Segunda ola T1-T4 (HR, Producción, Compras, Contabilidad)
+  - M6: ✅ COMPLETADO 2026-05-13 — Tier 5 datasets pequeños (useClientSearch)
 ---
 
 # Plan de Implementación: Smart Search Bar (Server-Side)
@@ -464,8 +466,10 @@ Para cada módulo, verificar manualmente:
 | **M2** | Facturas + Tesorería activos | ✅ COMPLETADO | 2026-05-13 |
 | **M3** | Órdenes ✅ + Productos ✅ + Contactos ✅ | ✅ COMPLETADO | 2026-05-13 |
 | **M4** | Sugerencias de valores | ✅ COMPLETADO | 2026-05-13 |
+| **M5** | Segunda ola: rutas pendientes (T1-T4) | ✅ COMPLETADO | 2026-05-13 |
+| **M6** | Tier 5: SmartSearchBar + useClientSearch en datasets pequeños | ✅ COMPLETADO | 2026-05-13 |
 
-**Esfuerzo real acumulado:** ~3.5 días (M0–M4, todos completos)  
+**Esfuerzo real acumulado:** ~5 días (M0–M6, todos completos)  
 **Pendiente:** Testing manual S1–S5 para verificación final
 
 ---
@@ -490,6 +494,9 @@ Decisiones y descubrimientos no anticipados en el plan original:
 | Documento | Contenido |
 |---|---|
 | [smart-search-analysis.md](./smart-search-analysis.md) | Análisis de opciones, decisión arquitectónica, restricciones de contratos |
+| [gap-analysis.md](./gap-analysis.md) | Clasificación por tier de las 35 rutas pendientes (segunda ola) |
+| [rollout-plan.md](./rollout-plan.md) | Plan de implementación segunda ola: T1→T2→HR→T3 |
+| [searchbar-decision.md](../../20-contracts/searchbar-decision.md) | Árbol de decisión: useSmartSearch vs useClientSearch vs excluido |
 | [hooks-audit.md](../hooks/hooks-audit.md) | Estado post-refactoring de los 41 hooks — prerequisito completado |
 | [hook-contracts.md](../../20-contracts/hook-contracts.md) | Contratos de hooks: staleTime, queryKeys, invalidación |
 | [component-datatable-views.md](../../20-contracts/component-datatable-views.md) | Contrato del DataTable — isLoading skeleton, no useState para vista activa |

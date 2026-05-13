@@ -3,6 +3,9 @@ import api from '@/lib/api'
 import { toast } from 'sonner'
 import { BOM, ProductMinimal } from '../types'
 import { BOMS_QUERY_KEY, PRODUCTS_QUERY_KEY } from '@/features/inventory/hooks/queryKeys'
+import type { FilterState } from '@/components/shared'
+
+export const ALL_BOMS_QUERY_KEY = ['all-boms']
 
 // Re-export for backward compat
 export { BOMS_QUERY_KEY }
@@ -49,6 +52,21 @@ export function useBOMs(params: { product_id?: string | number, parent_id?: stri
         deleteBom: deleteMutation.mutateAsync,
         toggleActive: toggleActiveMutation.mutateAsync,
     }
+}
+
+export function useAllBOMs(filters?: FilterState) {
+    const { data, isLoading, refetch } = useQuery({
+        queryKey: [...ALL_BOMS_QUERY_KEY, filters],
+        queryFn: async (): Promise<BOM[]> => {
+            const params = new URLSearchParams()
+            if (filters?.search) params.append('search', filters.search)
+            if (filters?.active !== undefined) params.append('active', filters.active)
+            const res = await api.get('/production/boms/', { params })
+            return res.data.results || res.data
+        },
+        staleTime: 5 * 60 * 1000,
+    })
+    return { boms: data ?? [], isLoading, refetch }
 }
 
 export function useProductionVariants(parentId: number | string | undefined) {

@@ -1,5 +1,6 @@
 import { Metadata } from "next"
 import { Suspense } from "react"
+import { redirect } from "next/navigation"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { ProductList, CategoryList, PricingRuleList, SubscriptionsView } from "@/features/inventory"
 import { TableSkeleton, ToolbarCreateButton } from "@/components/shared"
@@ -20,6 +21,10 @@ export default async function UnifiedProductsPage({ searchParams }: PageProps) {
     // Fallback for legacy notification links
     if (activeTab === "general") {
         activeTab = "products"
+    }
+
+    if (!resolvedParams.tab) {
+        redirect('/inventory/products?tab=products')
     }
 
     const getCreateAction = (tab: string) => {

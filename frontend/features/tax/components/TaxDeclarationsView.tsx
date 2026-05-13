@@ -29,7 +29,8 @@ import { StatusBadge } from "@/components/shared/StatusBadge"
 import { TaxPeriod, TaxDeclaration, TaxPaymentData } from "../types"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { Row } from "@tanstack/react-table"
-import { CardSkeleton, TableSkeleton } from "@/components/shared"
+import { CardSkeleton, TableSkeleton, SmartSearchBar, useClientSearch } from "@/components/shared"
+import { taxPeriodSearchDef } from "@/features/tax/searchDef"
 import { EntityCard } from "@/components/shared/EntityCard"
 
 interface TaxDeclarationsViewProps {
@@ -202,6 +203,9 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange, create
         }
     }
 
+    const { filterFn } = useClientSearch<TaxPeriod>(taxPeriodSearchDef)
+    const filteredPeriods = filterFn(periods)
+
     const latestPeriod = periods.length > 0 ? periods[0] : null
     const currentPeriodDisplay = latestPeriod
         ? `${latestPeriod.month_display} ${latestPeriod.year}`.toUpperCase()
@@ -365,25 +369,12 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange, create
 
             <DataTable
                 columns={columns}
-                data={periods}
+                data={filteredPeriods}
                 isLoading={isLoading}
                 variant="embedded"
-                filterColumn="period_display"
-                searchPlaceholder="Buscar período..."
-                useAdvancedFilter={true}
+                leftAction={<SmartSearchBar searchDef={taxPeriodSearchDef} placeholder="Buscar período..." />}
                 showToolbarSort={true}
                 createAction={createAction}
-                facetedFilters={[
-                    {
-                        column: "status",
-                        title: "Estado",
-                        options: [
-                            { label: "Abierto", value: "OPEN" },
-                            { label: "Cerrado", value: "CLOSED" },
-                            { label: "En Revisión", value: "UNDER_REVIEW" },
-                        ]
-                    }
-                ]}
                 renderLoadingView={() => (
                     <div className="grid gap-3 pt-2">
                         {Array.from({ length: 6 }).map((_, i) => (

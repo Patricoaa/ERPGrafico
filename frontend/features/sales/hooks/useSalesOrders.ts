@@ -67,7 +67,13 @@ export function useSalesOrders({ filters }: { filters?: SaleOrderFilters } = {})
     }
 }
 
-export function useSalesNotes({ filters }: { filters?: { date_after?: string, date_before?: string } } = {}) {
+export interface SaleNoteFilters {
+    date_after?: string
+    date_before?: string
+    customer_name?: string
+}
+
+export function useSalesNotes({ filters }: { filters?: SaleNoteFilters } = {}) {
     const { data, isLoading, refetch } = useQuery({
         queryKey: SALES_KEYS.notes(filters || {}),
         queryFn: () => salesApi.getSalesNotes(filters),

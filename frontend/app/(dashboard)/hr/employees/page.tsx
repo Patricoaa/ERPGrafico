@@ -1,10 +1,8 @@
 "use client"
 
-import React, { useState, useEffect, useCallback } from "react"
+import React, { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { toast } from "sonner"
 import { EmployeeFormModal } from "@/features/hr"
-import { getEmployees } from '@/features/hr/api/hrApi'
 import type { Employee } from "@/types/hr"
 import { ColumnDef } from "@tanstack/react-table"
 import { DataTable } from "@/components/ui/data-table"
@@ -13,8 +11,10 @@ import { createActionsColumn, DataCell } from "@/components/ui/data-table-cells"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { useSearchParams, usePathname } from "next/navigation"
 import { Pencil } from "lucide-react"
-import { ToolbarCreateButton } from "@/components/shared"
+import { ToolbarCreateButton, SmartSearchBar, useSmartSearch } from "@/components/shared"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
+import { useEmployees } from "@/features/hr/hooks/useEmployees"
+import { employeeSearchDef } from "@/features/hr/searchDef"
 
 // Employee schemas and types moved to features/hr/components/EmployeeFormDialog
 
@@ -23,14 +23,13 @@ export default function EmployeesPage() {
     const router = useRouter()
     const pathname = usePathname()
     const searchParams = useSearchParams()
-    const [employees, setEmployees] = useState<Employee[]>([])
-    const [loading, setLoading] = useState(true)
-    const [search, setSearch] = useState("")
+    const { filters } = useSmartSearch(employeeSearchDef)
+    const { employees, isLoading: loading, refetch: fetchEmployees } = useEmployees(filters)
 
     const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<Employee>({
         endpoint: '/hr/employees'
     })
-    
+
     // Dialog state synchronized with URL or local edit
     const isNewModalOpen = searchParams.get("modal") === "new"
     const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null)
@@ -53,19 +52,6 @@ export default function EmployeesPage() {
             }
         }
     }
-
-    const fetchEmployees = useCallback(async () => {
-        try {
-            const data = await getEmployees()
-            setEmployees(data)
-        } catch {
-            toast.error("Error al cargar empleados")
-        } finally {
-            setLoading(false)
-        }
-    }, [])
-
-    useEffect(() => { fetchEmployees() }, [fetchEmployees])
 
     const columns: ColumnDef<Employee>[] = [
         {
@@ -158,19 +144,7 @@ export default function EmployeesPage() {
                 data={employees}
                 isLoading={loading}
                 variant="embedded"
-                globalFilterFields={["name", "identity_document", "code", "position", "department"]}
-                searchPlaceholder="Buscar por nombre, RUT, o cargo..."
-                facetedFilters={[
-                    {
-                        column: "status",
-                        title: "Estado",
-                        options: [
-                            { label: "Activo", value: "ACTIVE" },
-                            { label: "Inactivo", value: "INACTIVE" },
-                        ],
-                    },
-                ]}
-                useAdvancedFilter={true}
+                leftAction={<SmartSearchBar searchDef={employeeSearchDef} placeholder="Buscar por nombre o RUT..." className="w-80" />}
                 defaultPageSize={20}
                 createAction={createAction}
             />

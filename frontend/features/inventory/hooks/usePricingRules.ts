@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
+import type { FilterState } from '@/components/shared'
 import { PRODUCTS_QUERY_KEY } from './queryKeys'
 
 export interface PricingRule {
@@ -29,13 +30,16 @@ export interface PricingRule {
 
 export const PRICING_RULES_QUERY_KEY = ['pricingRules']
 
-export function usePricingRules() {
+export function usePricingRules(filters?: FilterState) {
     const queryClient = useQueryClient()
 
     const { data: rules, isLoading, refetch } = useQuery({
-        queryKey: PRICING_RULES_QUERY_KEY,
+        queryKey: [...PRICING_RULES_QUERY_KEY, filters],
         queryFn: async (): Promise<PricingRule[]> => {
-            const response = await api.get('/inventory/pricing-rules/')
+            const params = new URLSearchParams()
+            if (filters?.search) params.append('search', filters.search)
+            if (filters?.active !== undefined) params.append('active', filters.active)
+            const response = await api.get('/inventory/pricing-rules/', { params })
             return response.data.results || response.data
         },
         staleTime: 5 * 60 * 1000, // 5 min

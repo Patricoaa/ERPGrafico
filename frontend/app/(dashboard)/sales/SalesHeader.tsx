@@ -99,7 +99,7 @@ export function SalesHeader() {
 
     const navigation = {
         moduleName: "Ventas",
-        moduleHref: "/sales",
+        moduleHref: "/sales/orders?tab=orders",
         tabs,
         activeValue,
         subActiveValue,

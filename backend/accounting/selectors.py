@@ -23,7 +23,13 @@ def list_accounts(*, params: dict) -> QuerySet:
 
     if params.get("is_leaf", "").lower() == "true":
         queryset = queryset.filter(children__isnull=True)
-    
+
+    if search := params.get("search"):
+        queryset = queryset.filter(Q(name__icontains=search) | Q(code__icontains=search))
+
+    if account_type := params.get("account_type"):
+        queryset = queryset.filter(account_type=account_type)
+
     return queryset
 
 

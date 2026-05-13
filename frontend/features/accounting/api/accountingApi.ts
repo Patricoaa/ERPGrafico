@@ -8,6 +8,7 @@ export const accountingApi = {
         if (filters?.name) params.append('name', filters.name)
         if (filters?.account_type) params.append('account_type', filters.account_type)
         if (filters?.is_leaf) params.append('is_leaf', 'true')
+        if (filters?.search) params.append('search', filters.search)
 
         const { data } = await api.get<{ results: Account[] }>('/accounting/accounts/', { params })
         return data.results || data

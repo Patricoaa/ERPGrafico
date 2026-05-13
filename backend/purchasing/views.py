@@ -1,4 +1,4 @@
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from .models import PurchaseOrder, PurchaseReceipt, PurchaseReturn
@@ -11,10 +11,23 @@ from decimal import Decimal
 
 from core.mixins import BulkImportMixin
 from core.mixins import AuditHistoryMixin
+from django_filters.rest_framework import DjangoFilterBackend, FilterSet
+import django_filters
+
+class PurchaseOrderFilterSet(FilterSet):
+    date_after = django_filters.DateFilter(field_name='date', lookup_expr='gte')
+    date_before = django_filters.DateFilter(field_name='date', lookup_expr='lte')
+
+    class Meta:
+        model = PurchaseOrder
+        fields = ['status', 'date_after', 'date_before']
 
 class PurchaseOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = PurchaseOrder.objects.all()
-    
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    filterset_class = PurchaseOrderFilterSet
+    search_fields = ['supplier__name', 'supplier__tax_id', 'display_id']
+
     def get_serializer_class(self):
         if self.action in ['create', 'update', 'partial_update']:
             return WritePurchaseOrderSerializer

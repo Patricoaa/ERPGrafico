@@ -12,7 +12,6 @@ import {
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import {
-    ChevronDown, ChevronRight,
     RefreshCw, ShieldAlert, Gavel
 } from "lucide-react"
 import {
@@ -30,7 +29,7 @@ import { Button } from "@/components/ui/button"
 import { TableSkeleton } from "@/components/shared"
 import { DataTable } from "@/components/ui/data-table"
 import { type Table as ReactTable, type Row, type HeaderGroup, type Header, type Cell, flexRender, ColumnDef } from "@tanstack/react-table"
-import { TableCell } from "@/components/ui/table"
+
 import { EmptyState } from "@/components/shared/EmptyState"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 
@@ -325,13 +324,15 @@ export function PortfolioTable({
     data,
     isLoading,
     onRefresh,
-    createAction
+    createAction,
+    leftAction,
 }: {
     columns: ColumnDef<CreditContact>[],
     data: CreditContact[],
     isLoading: boolean,
     onRefresh: () => void,
-    createAction?: React.ReactNode
+    createAction?: React.ReactNode,
+    leftAction?: React.ReactNode,
 }) {
     const renderPortfolioCustomView = useCallback((table: ReactTable<CreditContact>) => {
         const rows = table.getRowModel().rows
@@ -375,11 +376,9 @@ export function PortfolioTable({
             data={data}
             variant="embedded"
             isLoading={isLoading}
-            useAdvancedFilter
-            globalFilterFields={["name", "tax_id"]}
-            searchPlaceholder="Buscar cliente..."
             renderCustomView={renderPortfolioCustomView}
             createAction={createAction}
+            leftAction={leftAction}
         />
     )
 }

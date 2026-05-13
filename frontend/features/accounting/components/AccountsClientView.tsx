@@ -21,6 +21,8 @@ import { buildAccountTree } from "../utils/accountTree"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { ActivitySidebar } from "@/features/audit/components"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
+import { SmartSearchBar, useSmartSearch } from "@/components/shared"
+import { accountSearchDef } from "../searchDef"
 
 interface AccountsClientViewProps {
     externalOpen?: boolean
@@ -29,7 +31,8 @@ interface AccountsClientViewProps {
 }
 
 export function AccountsClientView({ externalOpen, onExternalOpenChange, createAction }: AccountsClientViewProps) {
-    const { accounts: flatAccounts, isLoading, refetch, deleteAccount } = useAccounts()
+    const { filters } = useSmartSearch(accountSearchDef)
+    const { accounts: flatAccounts, isLoading, refetch, deleteAccount } = useAccounts({ filters })
     const [deleteTarget, setDeleteTarget] = useState<number | null>(null)
     const [isFormOpen, setIsFormOpen] = useState(false)
     const [editingAccount, setEditingAccount] = useState<Account | null>(null)
@@ -255,27 +258,12 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
                 data={accounts}
                 isLoading={isLoading}
                 variant="embedded"
-                globalFilterFields={["code", "name"]}
-                searchPlaceholder="Buscar por código o nombre..."
-                facetedFilters={[
-                    {
-                        column: "account_type",
-                        title: "Tipo",
-                        options: [
-                            { label: "Activo", value: "ASSET" },
-                            { label: "Pasivo", value: "LIABILITY" },
-                            { label: "Patrimonio", value: "EQUITY" },
-                            { label: "Ingreso", value: "INCOME" },
-                            { label: "Gasto", value: "EXPENSE" },
-                        ],
-                    },
-                ]}
-                useAdvancedFilter={true}
                 defaultPageSize={500}
                 getSubRows={(row: Account & { children?: unknown[] }) => row.children as (Account & { children?: unknown[] })[] | undefined}
                 autoExpand={true}
                 rightAction={null}
                 createAction={createAction}
+                leftAction={<SmartSearchBar searchDef={accountSearchDef} placeholder="Cuenta o código..." />}
             />
 
             <AccountForm

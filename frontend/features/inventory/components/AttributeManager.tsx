@@ -37,9 +37,12 @@ interface AttributeManagerProps {
 }
 
 import { useAttributes } from "@/features/inventory/hooks/useAttributes"
+import { SmartSearchBar, useSmartSearch } from "@/components/shared"
+import { attributeSearchDef } from "../searchDef"
 
 export function AttributeManager({ externalOpen, createAction }: AttributeManagerProps) {
-    const { attributes, isLoading, refetch } = useAttributes()
+    const { filters } = useSmartSearch(attributeSearchDef)
+    const { attributes, isLoading, refetch } = useAttributes({ filters })
     const [isAttrModalOpen, setIsAttrModalOpen] = useState(false)
     const [isValueModalOpen, setIsValueModalOpen] = useState(false)
     const [selectedAttribute, setSelectedAttribute] = useState<ProductAttribute | null>(null)
@@ -287,11 +290,9 @@ export function AttributeManager({ externalOpen, createAction }: AttributeManage
                 data={attributes}
                 isLoading={isLoading}
                 variant="embedded"
-                filterColumn="name"
-                searchPlaceholder="Buscar atributos..."
-                useAdvancedFilter={true}
                 bulkActions={bulkActions}
                 createAction={createAction}
+                leftAction={<SmartSearchBar searchDef={attributeSearchDef} placeholder="Buscar atributo..." />}
             />
 
             {/* Modal para Atributo */}

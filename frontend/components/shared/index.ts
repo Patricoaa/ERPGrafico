@@ -78,7 +78,7 @@ export * from './FormSection';
 export * from './LoadingFallback';
 
 // Smart Search
-export { SmartSearchBar, useSmartSearch } from './SmartSearchBar';
+export { SmartSearchBar, useSmartSearch, useClientSearch } from './SmartSearchBar';
 export type { FilterState } from './SmartSearchBar';
 
 // Filters & Inputs

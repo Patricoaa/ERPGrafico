@@ -10,6 +10,7 @@
     "lint": "eslint",
     "test": "vitest",
     "type-check": "tsc --noEmit",
+    "vercel-ignore": "git diff --quiet HEAD^ HEAD ./",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"
   },

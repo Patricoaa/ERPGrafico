@@ -1,5 +1,6 @@
 import { Metadata } from "next"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
+import { redirect } from "next/navigation"
 import { WarehouseList, MovementList, StockReport } from "@/features/inventory"
 import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
 
@@ -16,6 +17,10 @@ export default async function UnifiedStockPage({ searchParams }: PageProps) {
     const resolvedParams = await searchParams
     const activeTab = resolvedParams.tab || "report"
     const modal = resolvedParams.modal
+
+    if (!resolvedParams.tab) {
+        redirect('/inventory/stock?tab=report')
+    }
 
     return (
         <div className="pt-2">

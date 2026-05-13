@@ -1,4 +1,5 @@
 import { Tabs } from "@/components/ui/tabs"
+import { redirect } from "next/navigation"
 import { UoMsView } from "@/features/inventory"
 
 interface PageProps {
@@ -8,6 +9,10 @@ interface PageProps {
 export default async function UnifiedUoMPage({ searchParams }: PageProps) {
     const { tab, modal } = await searchParams
     const activeTab = tab || "units"
+
+    if (!tab) {
+        redirect('/inventory/uoms?tab=units')
+    }
 
     return (
         <div className="pt-2">

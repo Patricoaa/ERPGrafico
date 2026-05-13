@@ -19,6 +19,8 @@ import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 
 import { useUoMs, type UoM } from "@/features/inventory/hooks/useUoMs"
+import { SmartSearchBar, useSmartSearch } from "@/components/shared"
+import { uomSearchDef } from "@/features/inventory/searchDef"
 
 interface UoMListProps {
     externalOpen?: boolean
@@ -27,7 +29,8 @@ interface UoMListProps {
 }
 
 export function UoMList({ externalOpen, onExternalOpenChange, createAction }: UoMListProps) {
-    const { uoms, isLoading, refetch, deleteUoM } = useUoMs()
+    const { filters } = useSmartSearch(uomSearchDef)
+    const { uoms, isLoading, refetch, deleteUoM } = useUoMs(filters)
 
     const [isUoMModalOpen, setIsUoMModalOpen] = useState(false)
     const [editingUoM, setEditingUoM] = useState<Partial<UoM>>({})
@@ -166,22 +169,8 @@ export function UoMList({ externalOpen, onExternalOpenChange, createAction }: Uo
                 data={uoms}
                 isLoading={isLoading}
                 variant="embedded"
-                filterColumn="name"
-                searchPlaceholder="Buscar unidad..."
-                useAdvancedFilter={true}
+                leftAction={<SmartSearchBar searchDef={uomSearchDef} placeholder="Buscar unidad..." className="w-80" />}
                 bulkActions={bulkActions}
-                globalFilterFields={["name", "category_name"]}
-                facetedFilters={[
-                    {
-                        column: "uom_type",
-                        title: "Tipo",
-                        options: [
-                            { label: "Referencia", value: "REFERENCE" },
-                            { label: "Mayor", value: "BIGGER" },
-                            { label: "Menor", value: "SMALLER" },
-                        ],
-                    },
-                ]}
                 createAction={createAction}
             />
 

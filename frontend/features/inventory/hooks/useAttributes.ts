@@ -19,16 +19,20 @@ export interface AttributeValue {
     extra_price: number | string
 }
 
+export interface AttributeFilters {
+    search?: string
+}
+
 export const ATTRIBUTES_QUERY_KEY = ['inventoryAttributes']
 
-export function useAttributes() {
+export function useAttributes({ filters }: { filters?: AttributeFilters } = {}) {
     const queryClient = useQueryClient()
 
     const { data: attributes, isLoading, refetch } = useQuery({
-        queryKey: ATTRIBUTES_QUERY_KEY,
+        queryKey: [...ATTRIBUTES_QUERY_KEY, filters],
         queryFn: async (): Promise<Attribute[]> => {
             const [attrRes, valRes] = await Promise.all([
-                api.get("/inventory/attributes/"),
+                api.get("/inventory/attributes/", { params: filters }),
                 api.get("/inventory/attribute-values/")
             ])
 

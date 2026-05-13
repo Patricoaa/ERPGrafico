@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { showApiError } from "@/lib/errors"
+import type { FilterState } from "@/components/shared"
 import type { PaymentTerminalProvider, PaymentTerminalDevice } from "../types"
 export type { PaymentTerminalProvider, PaymentTerminalDevice }
 
@@ -62,13 +63,16 @@ export function useTerminalProviders() {
 /**
  * Hook for managing Payment Terminal Devices (Hardware)
  */
-export function useTerminalDevices() {
+export function useTerminalDevices(filters?: FilterState) {
     const queryClient = useQueryClient()
 
     const { data: devices, isLoading, error, refetch } = useQuery<PaymentTerminalDevice[]>({
-        queryKey: ['terminal-devices'],
+        queryKey: ['terminal-devices', filters],
         queryFn: async () => {
-            const res = await api.get('/treasury/terminal-devices/')
+            const params = new URLSearchParams()
+            if (filters?.status) params.append('status', filters.status)
+            if (filters?.search) params.append('search', filters.search)
+            const res = await api.get('/treasury/terminal-devices/', { params })
             return res.data.results || res.data
         }
     })
