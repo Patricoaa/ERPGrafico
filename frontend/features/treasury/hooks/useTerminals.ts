@@ -1,4 +1,4 @@
-import { useSuspenseQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { treasuryApi } from '../api/treasuryApi'
 import type { Terminal, TerminalUpdatePayload } from '../types'
@@ -10,6 +10,7 @@ interface UseTerminalsReturn {
     refetch: () => Promise<any>
     toggleActive: (terminal: Terminal) => Promise<void>
     deleteTerminal: (terminal: Terminal) => Promise<void>
+    isLoading: boolean
 }
 
 /**
@@ -18,7 +19,7 @@ interface UseTerminalsReturn {
 export function useTerminals(): UseTerminalsReturn {
     const queryClient = useQueryClient()
 
-    const { data: terminals = [], refetch } = useSuspenseQuery({
+    const { data: terminals, isLoading, refetch } = useQuery({
         queryKey: TERMINALS_QUERY_KEY,
         queryFn: treasuryApi.getTerminals,
     })
@@ -62,9 +63,10 @@ export function useTerminals(): UseTerminalsReturn {
     }
 
     return {
-        terminals,
+        terminals: terminals ?? [],
         refetch,
         toggleActive,
         deleteTerminal,
+        isLoading,
     }
 }

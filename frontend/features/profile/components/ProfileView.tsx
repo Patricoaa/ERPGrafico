@@ -616,7 +616,7 @@ function PersonalTab({
                                             searchPlaceholder="Buscar por folio..."
                                             globalFilterFields={["display_id"]}
                                             defaultPageSize={10}
-                                            cardMode={false}
+                                            variant="standalone"
                                             noBorder={true}
                                             useAdvancedFilter={true}
                                             toolbarClassName="px-6 pt-6 pb-2 pl-14"

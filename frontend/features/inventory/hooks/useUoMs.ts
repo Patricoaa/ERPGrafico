@@ -1,4 +1,4 @@
-import { useSuspenseQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
 
 export interface UoMCategory {
@@ -23,7 +23,7 @@ export const UOM_CATEGORIES_QUERY_KEY = ['uomCategories']
 export function useUoMs() {
     const queryClient = useQueryClient()
 
-    const { data: uoms, refetch } = useSuspenseQuery({
+    const { data: uoms, isLoading: isUoMsLoading, refetch } = useQuery({
         queryKey: UOMS_QUERY_KEY,
         queryFn: async (): Promise<UoM[]> => {
             const response = await api.get('/inventory/uoms/')
@@ -31,7 +31,7 @@ export function useUoMs() {
         },
     })
 
-    const { data: categories } = useSuspenseQuery({
+    const { data: categories, isLoading: isCategoriesLoading } = useQuery({
         queryKey: UOM_CATEGORIES_QUERY_KEY,
         queryFn: async (): Promise<UoMCategory[]> => {
             const response = await api.get('/inventory/uom-categories/')
@@ -62,8 +62,9 @@ export function useUoMs() {
     })
 
     return {
-        uoms,
-        categories,
+        uoms: uoms ?? [],
+        categories: categories ?? [],
+        isLoading: isUoMsLoading || isCategoriesLoading,
         refetch,
         deleteUoM: deleteMutation.mutateAsync,
         saveUoM: saveMutation.mutateAsync,

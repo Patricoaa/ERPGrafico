@@ -4,7 +4,6 @@ import React, { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { EmployeeFormModal } from "@/features/hr"
-import { TableSkeleton } from "@/components/shared/TableSkeleton"
 import { getEmployees } from '@/features/hr/api/hrApi'
 import type { Employee } from "@/types/hr"
 import { ColumnDef } from "@tanstack/react-table"
@@ -154,30 +153,27 @@ export default function EmployeesPage() {
 
     return (
         <div className="space-y-4">
-            {loading ? (
-                <TableSkeleton columns={6} rows={10} />
-            ) : (
-                <DataTable
-                    columns={columns}
-                    data={employees}
-                    cardMode
-                    globalFilterFields={["name", "identity_document", "code", "position", "department"]}
-                    searchPlaceholder="Buscar por nombre, RUT, o cargo..."
-                    facetedFilters={[
-                        {
-                            column: "status",
-                            title: "Estado",
-                            options: [
-                                { label: "Activo", value: "ACTIVE" },
-                                { label: "Inactivo", value: "INACTIVE" },
-                            ],
-                        },
-                    ]}
-                    useAdvancedFilter={true}
-                    defaultPageSize={20}
-                    createAction={createAction}
-                />
-            )}
+            <DataTable
+                columns={columns}
+                data={employees}
+                isLoading={loading}
+                variant="embedded"
+                globalFilterFields={["name", "identity_document", "code", "position", "department"]}
+                searchPlaceholder="Buscar por nombre, RUT, o cargo..."
+                facetedFilters={[
+                    {
+                        column: "status",
+                        title: "Estado",
+                        options: [
+                            { label: "Activo", value: "ACTIVE" },
+                            { label: "Inactivo", value: "INACTIVE" },
+                        ],
+                    },
+                ]}
+                useAdvancedFilter={true}
+                defaultPageSize={20}
+                createAction={createAction}
+            />
             <EmployeeFormModal
                 open={dialogOpen}
                 onOpenChange={setDialogOpen}

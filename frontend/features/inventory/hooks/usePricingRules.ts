@@ -1,4 +1,4 @@
-import { useSuspenseQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
 
 export interface PricingRule {
@@ -31,7 +31,7 @@ export const PRICING_RULES_QUERY_KEY = ['pricingRules']
 export function usePricingRules() {
     const queryClient = useQueryClient()
 
-    const { data: rules, refetch } = useSuspenseQuery({
+    const { data: rules, isLoading, refetch } = useQuery({
         queryKey: PRICING_RULES_QUERY_KEY,
         queryFn: async (): Promise<PricingRule[]> => {
             const response = await api.get('/inventory/pricing-rules/')
@@ -49,7 +49,8 @@ export function usePricingRules() {
     })
 
     return {
-        rules,
+        rules: rules ?? [],
+        isLoading,
         refetch,
         deletePricingRule: deleteMutation.mutateAsync,
         isDeleting: deleteMutation.isPending

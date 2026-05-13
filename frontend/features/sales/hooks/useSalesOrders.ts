@@ -1,5 +1,5 @@
 import { showApiError } from "@/lib/errors"
-import { useQueryClient, useMutation, useSuspenseQuery, useQuery } from '@tanstack/react-query'
+import { useQueryClient, useMutation, useQuery } from '@tanstack/react-query'
 import { salesApi } from '../api/salesApi'
 import { toast } from 'sonner'
 import { SaleOrderFilters, SaleOrderPayload } from '../types'
@@ -14,7 +14,7 @@ const SALES_KEYS = {
 export function useSalesOrders({ filters }: { filters?: SaleOrderFilters } = {}) {
     const queryClient = useQueryClient()
 
-    const { data: orders, refetch } = useSuspenseQuery({
+    const { data: orders, isLoading, refetch } = useQuery({
         queryKey: SALES_KEYS.orders(filters || {}),
         queryFn: () => salesApi.getOrders(filters),
     })
@@ -54,7 +54,8 @@ export function useSalesOrders({ filters }: { filters?: SaleOrderFilters } = {})
     })
 
     return {
-        orders,
+        orders: orders ?? [],
+        isLoading,
         refetch,
         createOrder: createMutation.mutateAsync,
         updateOrder: updateMutation.mutateAsync,
@@ -66,10 +67,10 @@ export function useSalesOrders({ filters }: { filters?: SaleOrderFilters } = {})
 }
 
 export function useSalesNotes({ filters }: { filters?: { date_after?: string, date_before?: string } } = {}) {
-    const { data, refetch } = useSuspenseQuery({
+    const { data, isLoading, refetch } = useQuery({
         queryKey: SALES_KEYS.notes(filters || {}),
         queryFn: () => salesApi.getSalesNotes(filters),
     })
 
-    return { data, refetch }
+    return { data: data ?? [], isLoading, refetch }
 }

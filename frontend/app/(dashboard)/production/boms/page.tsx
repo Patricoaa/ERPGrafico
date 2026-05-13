@@ -8,8 +8,7 @@ import {
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { DataTable } from "@/components/ui/data-table"
 import { createActionsColumn, DataCell } from "@/components/ui/data-table-cells"
-import { Button } from "@/components/ui/button"
-import { Plus, Pencil, Trash2, Layers, CheckCircle2, XCircle } from "lucide-react"
+import { Pencil, Trash2, Layers } from "lucide-react"
 import api from "@/lib/api"
 import { BOMFormModal } from "@/features/production/components/BOMFormModal"
 import { toast } from "sonner"
@@ -167,8 +166,8 @@ export default function BOMsPage() {
             ),
             cell: ({ row }) => (
                 <div className="flex justify-center">
-                    <DataCell.Status 
-                        status={row.getValue("active") ? "active" : "inactive"} 
+                    <DataCell.Status
+                        status={row.getValue("active") ? "active" : "inactive"}
                         label={row.getValue("active") ? "Activa" : "Inactiva"}
                     />
                 </div>
@@ -201,7 +200,7 @@ export default function BOMsPage() {
                     columns={columns}
                     data={boms}
                     isLoading={loading}
-                    cardMode
+                    variant="embedded"
                     defaultPageSize={20}
                     filterColumn="product_name"
                     searchPlaceholder="Buscar por producto..."
@@ -225,10 +224,10 @@ export default function BOMsPage() {
                 onOpenChange={handleFormClose}
                 onSuccess={fetchBoms}
                 bomToEdit={editingBom || undefined}
-                product={editingBom ? { 
-                    id: editingBom.product, 
-                    name: editingBom.product_name, 
-                    code: editingBom.product_code 
+                product={editingBom ? {
+                    id: editingBom.product,
+                    name: editingBom.product_name,
+                    code: editingBom.product_code
                 } as unknown as import('@/features/production/types').ProductMinimal : undefined}
             />
 

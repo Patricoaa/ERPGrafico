@@ -1,4 +1,4 @@
-import { useSuspenseQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { inventoryApi } from '../api/inventoryApi'
 import type { ProductFilters, ProductUpdatePayload } from '../types'
 
@@ -11,7 +11,7 @@ interface UseProductsProps {
 export function useProducts({ filters }: UseProductsProps = {}) {
     const queryClient = useQueryClient()
 
-    const { data: products, refetch } = useSuspenseQuery({
+    const { data: products, isLoading, refetch } = useQuery({
         queryKey: [...PRODUCTS_QUERY_KEY, filters],
         queryFn: () => inventoryApi.getProducts(filters),
     })
@@ -26,7 +26,8 @@ export function useProducts({ filters }: UseProductsProps = {}) {
     })
 
     return {
-        products,
+        products: products ?? [],
+        isLoading,
         refetch,
         updateProduct: updateProductMutation.mutateAsync,
         isUpdating: updateProductMutation.isPending

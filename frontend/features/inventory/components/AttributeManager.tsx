@@ -39,7 +39,7 @@ interface AttributeManagerProps {
 import { useAttributes } from "@/features/inventory/hooks/useAttributes"
 
 export function AttributeManager({ externalOpen, createAction }: AttributeManagerProps) {
-    const { attributes, refetch } = useAttributes()
+    const { attributes, isLoading, refetch } = useAttributes()
     const [isAttrModalOpen, setIsAttrModalOpen] = useState(false)
     const [isValueModalOpen, setIsValueModalOpen] = useState(false)
     const [selectedAttribute, setSelectedAttribute] = useState<ProductAttribute | null>(null)
@@ -285,7 +285,8 @@ export function AttributeManager({ externalOpen, createAction }: AttributeManage
             <DataTable
                 columns={columns}
                 data={attributes}
-                cardMode
+                isLoading={isLoading}
+                variant="embedded"
                 filterColumn="name"
                 searchPlaceholder="Buscar atributos..."
                 useAdvancedFilter={true}

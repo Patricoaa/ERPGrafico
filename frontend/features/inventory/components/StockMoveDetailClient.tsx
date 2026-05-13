@@ -1,6 +1,7 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React from "react"
+import { useQuery } from "@tanstack/react-query"
 import { notFound } from "next/navigation"
 import api from "@/lib/api"
 import { EntityDetailPage, FormSkeleton, LabeledContainer } from "@/components/shared"
@@ -15,16 +16,15 @@ interface StockMoveDetailClientProps {
 }
 
 export function StockMoveDetailClient({ moveId }: StockMoveDetailClientProps) {
-    const [move, setMove] = useState<any>(null)
-    const [loading, setLoading] = useState(true)
-    const [error, setError] = useState<number | null>(null)
+    const { data: move, isLoading: loading, error: queryError } = useQuery({
+        queryKey: ['stockMove', moveId],
+        queryFn: async () => {
+            const res = await api.get(`/inventory/stock_moves/${moveId}/`)
+            return res.data
+        }
+    })
 
-    useEffect(() => {
-        api.get(`/inventory/stock_moves/${moveId}/`)
-            .then(res => setMove(res.data))
-            .catch(err => setError(err.response?.status || 500))
-            .finally(() => setLoading(false))
-    }, [moveId])
+    const error = queryError ? (queryError as any).response?.status || 500 : null
 
     if (error === 404) return notFound()
     if (error) return <div className="p-8 text-destructive">Error al cargar el movimiento de stock</div>

@@ -233,7 +233,7 @@ export function MappingConfigSheet({
                         columns={columns}
                         data={accounts}
                         isLoading={isLoading}
-                        cardMode={false}
+                        variant="standalone"
                         searchPlaceholder="Filtrar por nombre de cuenta..."
                         filterColumn="name"
                         useAdvancedFilter={true}

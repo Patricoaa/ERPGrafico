@@ -4,7 +4,6 @@ import React, { useState, useEffect, useCallback } from "react"
 import { toast } from "sonner"
 import { AdvanceFormModal } from "@/features/hr"
 import { getAdvances, createAdvance, updateAdvance, deleteAdvance, getEmployees, getPayrolls } from '@/features/hr/api/hrApi'
-import { TableSkeleton } from "@/components/shared/TableSkeleton"
 import { PaymentModal } from "@/features/treasury"
 import type { SalaryAdvance, Employee, Payroll } from "@/types/hr"
 
@@ -161,19 +160,16 @@ export default function AdvancesPage() {
     return (
         <div className="space-y-4">
 
-            {loading ? (
-                <TableSkeleton columns={5} rows={10} />
-            ) : (
-                <DataTable
-                    columns={columns}
-                    data={advances}
-                    cardMode
-                    filterColumn="employee_name"
-                    defaultPageSize={20}
-                    useAdvancedFilter={true}
-                    createAction={createAction}
-                />
-            )}
+            <DataTable
+                columns={columns}
+                data={advances}
+                isLoading={loading}
+                variant="embedded"
+                filterColumn="employee_name"
+                defaultPageSize={20}
+                useAdvancedFilter={true}
+                createAction={createAction}
+            />
 
             <AdvanceFormModal
                 open={dialogOpen}

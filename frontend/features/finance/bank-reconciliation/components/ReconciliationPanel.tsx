@@ -897,7 +897,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                     <DataTable
                                         columns={bankColumns}
                                         data={unreconciledLines}
-                                        cardMode
+                                        variant="embedded"
                                         searchPlaceholder="Buscar movimiento..."
                                         rowSelection={bankRowSelection}
                                         onRowSelectionChange={handleLineSelectionChange}
@@ -959,7 +959,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                     <DataTable
                                         columns={paymentColumns}
                                         data={unreconciledPayments}
-                                        cardMode
+                                        variant="embedded"
                                         searchPlaceholder="Buscar pago..."
                                         rowSelection={systemRowSelection}
                                         onRowSelectionChange={handlePaymentSelectionChange}

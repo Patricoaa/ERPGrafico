@@ -27,7 +27,7 @@ interface UoMListProps {
 }
 
 export function UoMList({ externalOpen, onExternalOpenChange, createAction }: UoMListProps) {
-    const { uoms, refetch, deleteUoM } = useUoMs()
+    const { uoms, isLoading, refetch, deleteUoM } = useUoMs()
 
     const [isUoMModalOpen, setIsUoMModalOpen] = useState(false)
     const [editingUoM, setEditingUoM] = useState<Partial<UoM>>({})
@@ -164,7 +164,8 @@ export function UoMList({ externalOpen, onExternalOpenChange, createAction }: Uo
             <DataTable
                 columns={columns}
                 data={uoms}
-                cardMode
+                isLoading={isLoading}
+                variant="embedded"
                 filterColumn="name"
                 searchPlaceholder="Buscar unidad..."
                 useAdvancedFilter={true}

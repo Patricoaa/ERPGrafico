@@ -1,4 +1,4 @@
-import { useSuspenseQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
 import { toast } from 'sonner'
 
@@ -11,7 +11,7 @@ export const PURCHASING_KEYS = {
 export function usePurchasingOrders() {
     const queryClient = useQueryClient()
 
-    const { data: orders, refetch } = useSuspenseQuery({
+    const { data: orders, isLoading, refetch } = useQuery({
         queryKey: PURCHASING_KEYS.orders(),
         queryFn: async () => {
             const res = await api.get('/purchasing/orders/')
@@ -28,14 +28,15 @@ export function usePurchasingOrders() {
     })
 
     return {
-        orders,
+        orders: orders ?? [],
+        isLoading,
         refetch,
         deleteOrder: deleteMutation.mutateAsync,
     }
 }
 
 export function usePurchasingNotes() {
-    const { data: notes, refetch } = useSuspenseQuery({
+    const { data: notes, isLoading, refetch } = useQuery({
         queryKey: PURCHASING_KEYS.notes(),
         queryFn: async () => {
             const response = await api.get('/billing/invoices/', {
@@ -51,5 +52,5 @@ export function usePurchasingNotes() {
         },
     })
 
-    return { notes, refetch }
+    return { notes: notes ?? [], isLoading, refetch }
 }

@@ -42,7 +42,7 @@ interface MovementListProps {
 import { useStockMoves } from "@/features/inventory/hooks/useStockMoves"
 
 export function MovementList({ externalOpen, onExternalOpenChange, createAction }: MovementListProps) {
-    const { moves, refetch } = useStockMoves()
+    const { moves, isLoading, refetch } = useStockMoves()
     const [viewingTransaction, setViewingTransaction] = useState<{ type: TransactionType, id: number | string, view?: 'details' | 'history' | 'all' } | null>(null)
     const [showAdjustmentModal, setShowAdjustmentModal] = useState(false)
     const [isFormLoading, setIsFormLoading] = useState(false)
@@ -169,7 +169,8 @@ export function MovementList({ externalOpen, onExternalOpenChange, createAction 
             <DataTable
                 columns={columns}
                 data={moves}
-                cardMode
+                isLoading={isLoading}
+                variant="embedded"
                 filterColumn="product_name"
                 searchPlaceholder="Filtrar por producto o almacén..."
                 useAdvancedFilter={true}

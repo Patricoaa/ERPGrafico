@@ -25,7 +25,7 @@ import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 
 export function UsersSettingsView({ activeTab }: UsersSettingsViewProps) {
-    const { users, refetch } = useUsers()
+    const { users, isLoading, refetch } = useUsers()
     const [isGroupModalOpen, setIsGroupModalOpen] = useState(false)
     const searchParams = useSearchParams()
     const router = useRouter()
@@ -175,7 +175,8 @@ export function UsersSettingsView({ activeTab }: UsersSettingsViewProps) {
                     <DataTable
                         columns={columns}
                         data={users}
-                        cardMode
+                        variant="embedded"
+                        isLoading={isLoading}
                         globalFilterFields={["username", "email", "first_name", "last_name"]}
                         searchPlaceholder="Buscar usuario por nombre, email o username..."
                         useAdvancedFilter={true}

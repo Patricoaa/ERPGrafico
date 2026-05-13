@@ -1,4 +1,4 @@
-import { useSuspenseQuery } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import api from '@/lib/api'
 
 export interface Bank {
@@ -12,7 +12,7 @@ export interface Bank {
 export const BANKS_QUERY_KEY = ['banks']
 
 export function useBanks() {
-    const { data: banks, refetch } = useSuspenseQuery({
+    const { data: banks, isLoading, refetch } = useQuery({
         queryKey: BANKS_QUERY_KEY,
         queryFn: async (): Promise<Bank[]> => {
             const response = await api.get('/treasury/banks/')
@@ -21,7 +21,8 @@ export function useBanks() {
     })
 
     return {
-        banks,
+        banks: banks ?? [],
+        isLoading,
         refetch,
     }
 }
@@ -43,7 +44,7 @@ export interface PaymentMethod {
 export const PAYMENT_METHODS_QUERY_KEY = ['paymentMethods']
 
 export function usePaymentMethods() {
-    const { data: methods, refetch } = useSuspenseQuery({
+    const { data: methods, isLoading, refetch } = useQuery({
         queryKey: PAYMENT_METHODS_QUERY_KEY,
         queryFn: async (): Promise<PaymentMethod[]> => {
             const response = await api.get('/treasury/payment-methods/')
@@ -52,7 +53,8 @@ export function usePaymentMethods() {
     })
 
     return {
-        methods,
+        methods: methods ?? [],
+        isLoading,
         refetch,
     }
 }

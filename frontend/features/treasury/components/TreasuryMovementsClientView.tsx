@@ -62,7 +62,7 @@ interface TreasuryMovementsClientViewProps {
 
 export function TreasuryMovementsClientView({ externalOpen, createAction }: TreasuryMovementsClientViewProps) {
     const { openContact, openTreasuryAccount } = useGlobalModalActions()
-    const { movements, refetch } = useTreasuryMovements()
+    const { movements, isLoading, refetch } = useTreasuryMovements()
     const searchParams = useSearchParams()
     const router = useRouter()
     const pathname = usePathname()
@@ -307,7 +307,8 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
             <DataTable
                 columns={columns}
                 data={movements}
-                cardMode
+                isLoading={isLoading}
+                variant="embedded"
                 globalFilterFields={["notes", "reference", "partner_name", "from_account_name", "to_account_name"]}
                 searchPlaceholder="Buscar movimientos..."
                 useAdvancedFilter={true}

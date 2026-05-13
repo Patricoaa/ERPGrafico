@@ -1,5 +1,5 @@
 import { showApiError } from "@/lib/errors"
-import { useQueryClient, useMutation, useSuspenseQuery, useQuery } from '@tanstack/react-query'
+import { useQueryClient, useMutation, useQuery } from '@tanstack/react-query'
 import { contactsApi } from '../api/contactsApi'
 import { toast } from 'sonner'
 import { ContactFilters, ContactPayload } from '../types'
@@ -16,13 +16,14 @@ const CONTACTS_KEYS = {
 export function useContacts({ filters }: { filters?: ContactFilters } = {}) {
     const queryClient = useQueryClient()
 
-    const { data: contacts, refetch } = useSuspenseQuery({
+    const { data: contacts, isLoading, refetch } = useQuery({
         queryKey: CONTACTS_KEYS.list(filters || {}),
         queryFn: () => contactsApi.getContacts(filters),
     })
 
     return {
-        contacts,
+        contacts: contacts ?? [],
+        isLoading,
         refetch,
         ...useContactMutations()
     }

@@ -27,7 +27,7 @@ interface LabeledSwitchProps {
 /**
  * LabeledSwitch — "Notched Boolean" standard component
  *
- * DESIGN CONTRACT (v2 - Premium Industrial):
+ * DESIGN CONTRACT:
  * - Default (off) state: `border-dashed` border, neutral track.
  * - Active (on) state:   Themed glow, high-contrast track, and glowing thumb.
  * - Interaction: Full row is clickable, protected against event bubbling loops.

@@ -4,8 +4,7 @@ import { showApiError } from "@/lib/errors"
 import { useState, useEffect, use } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
     Calendar, Banknote, TrendingUp, TrendingDown,
     Undo2, Info, AlertCircle, ExternalLink, Activity
@@ -430,7 +429,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
             <DataTable
                 columns={columns}
                 data={statement.lines}
-                cardMode
+                variant="embedded"
                 filterColumn="description"
                 searchPlaceholder="Buscar por descripción o referencia..."
                 facetedFilters={[

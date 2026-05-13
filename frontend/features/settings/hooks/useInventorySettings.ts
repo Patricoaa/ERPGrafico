@@ -1,4 +1,4 @@
-import { useSuspenseQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { settingsApi } from '../api/settingsApi'
 import type { InventorySettings, InventorySettingsUpdatePayload } from '../types'
@@ -18,7 +18,7 @@ interface UseInventorySettingsReturn {
 export function useInventorySettings(): UseInventorySettingsReturn {
     const queryClient = useQueryClient()
 
-    const { data: settings, refetch } = useSuspenseQuery({
+    const { data: settings, isLoading, refetch } = useQuery({
         queryKey: INVENTORY_SETTINGS_QUERY_KEY,
         queryFn: settingsApi.getInventorySettings,
     })
@@ -41,7 +41,8 @@ export function useInventorySettings(): UseInventorySettingsReturn {
     }
 
     return {
-        settings,
+        settings: settings as InventorySettings,
+        isLoading,
         saving: updateMutation.isPending,
         updateSettings,
         refetch,

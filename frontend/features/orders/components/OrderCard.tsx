@@ -8,7 +8,7 @@ import { NoteHubStatus } from "./NoteHubStatus"
 import { PurchaseOrderHubStatus } from "./PurchaseOrderHubStatus"
 import { cn } from "@/lib/utils"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
-import { Card } from "@/components/ui/card"
+import { EntityCard } from "@/components/shared/EntityCard"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { Order, OrderLine } from "../types"
 
@@ -87,84 +87,73 @@ export function OrderCard({ item, type, onClick, onActionClick, hideStatus = fal
         }
     }
 
-    const handleKeyDown = (e: React.KeyboardEvent) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault()
-            handleClick()
-        }
-    }
-
     return (
-        <Card
-            role="button"
-            tabIndex={0}
-            data-order-card="true"
-            aria-selected={isSelected}
-            data-state={isSelected ? 'selected' : undefined}
+        <EntityCard
+            isSelected={isSelected && isHubOpen}
+            onClick={handleClick}
             className={cn(
-                "group flex flex-col p-4 relative z-10 cursor-pointer rounded-none border border-border/50 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/10 transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-1",
-                // SEAMLESS INTEGRATION WITH HUB DOCK
-                isSelected && isHubOpen && "z-[30] !bg-background",
-                // NO SCALE SHIFT - ONLY OPACITY/GRAYSCALE FOR FOCUS
+                // Hub de-emphasis: greyed out when hub open but not selected
                 !isSelected && isHubOpen && "opacity-40 grayscale-[0.2] blur-[0.2px]",
                 className
             )}
-            onClick={handleClick}
-            onKeyDown={handleKeyDown}
         >
-            {/* ROW 1: Header — Icon + ID + Name + Hub Status + Total + Arrow */}
-            <div className="flex items-center justify-between w-full">
-                <div className="flex items-center gap-4 min-w-[30%]">
-                    <div className={cn("w-12 h-12 rounded flex flex-col items-center justify-center border transition-all duration-500 group-hover:scale-105 shrink-0", iconBg, iconColor, iconBorder)}>
-                        <Icon className="h-5 w-5" />
-                    </div>
-                    <div>
+            <EntityCard.Header
+                title={
+                    <div className="flex items-center gap-3">
+                        {/* Document icon */}
+                        <div className={cn(
+                            "w-10 h-10 rounded flex flex-col items-center justify-center border transition-all duration-500 group-hover:scale-105 shrink-0",
+                            iconBg, iconColor, iconBorder
+                        )}>
+                            <Icon className="h-4 w-4" />
+                        </div>
+                        {/* Entity name */}
                         {(visibleColumns?.customer_name !== false && visibleColumns?.partner_name !== false) && (
-                            <div className="flex items-center gap-2">
-                                <h4 className="font-heading font-extrabold text-base text-foreground line-clamp-1 max-w-[200px] tracking-tight">
-                                    {itemName}
-                                </h4>
+                            <span className="font-heading font-extrabold text-base text-foreground line-clamp-1 max-w-[240px] tracking-tight">
+                                {itemName}
+                            </span>
+                        )}
+                    </div>
+                }
+                subtitle={
+                    <div className="flex items-center gap-2.5 text-[11px] font-medium text-muted-foreground pl-[52px]">
+                        <span className="font-mono font-semibold text-foreground/80 bg-muted/50 px-1.5 py-0.5 rounded-md">
+                            {itemNumber}
+                        </span>
+                        {visibleColumns?.date !== false && (
+                            <span className="flex items-center gap-1">
+                                <Calendar className="h-3 w-3 opacity-70" />
+                                {formatPlainDate(item.date)}
+                            </span>
+                        )}
+                        {isSale && item.pos_session && (
+                            <span className="flex items-center gap-1 text-primary bg-primary/5 px-1.5 py-0.5 rounded-md">
+                                <Monitor className="h-3 w-3" />
+                                #{item.pos_session}
+                            </span>
+                        )}
+                    </div>
+                }
+                trailing={
+                    <div className="flex items-center gap-5">
+                        {/* Hub status — centered between left and right */}
+                        {!hideStatus && visibleColumns?.status !== false && (
+                            <div className="hidden sm:flex flex-1 justify-center px-4">
+                                {isNote ? (
+                                    <NoteHubStatus note={item} />
+                                ) : isPurchase ? (
+                                    <PurchaseOrderHubStatus order={item} />
+                                ) : isWorkOrder ? (
+                                    <StatusBadge status={item.status} size="sm" />
+                                ) : (
+                                    <OrderHubStatus order={item} />
+                                )}
                             </div>
                         )}
-                        <div className="flex items-center gap-2.5 mt-1 text-[11px] font-medium text-muted-foreground">
-                            <span className="font-mono font-semibold text-foreground/80 bg-muted/50 px-1.5 py-0.5 rounded-md">
-                                {itemNumber}
-                            </span>
-                            {visibleColumns?.date !== false && (
-                                <span className="flex items-center gap-1">
-                                    <Calendar className="h-3 w-3 opacity-70" />
-                                    {formatPlainDate(item.date)}
-                                </span>
-                            )}
-                            {isSale && item.pos_session && (
-                                <span className="flex items-center gap-1 text-primary bg-primary/5 px-1.5 py-0.5 rounded-md">
-                                    <Monitor className="h-3 w-3" />
-                                    #{item.pos_session}
-                                </span>
-                            )}
-                        </div>
-                    </div>
-                </div>
 
-                {/* CENTERED MINI STATES */}
-                {!hideStatus && visibleColumns?.status !== false && (
-                    <div className="flex-1 flex justify-center px-4">
-                        {isNote ? (
-                            <NoteHubStatus note={item} />
-                        ) : isPurchase ? (
-                            <PurchaseOrderHubStatus order={item} />
-                        ) : isWorkOrder ? (
-                            <StatusBadge status={item.status} size="sm" />
-                        ) : (
-                            <OrderHubStatus order={item} />
-                        )}
-                    </div>
-                )}
-
-                <div className="flex items-center gap-5">
-                    <div className="flex flex-col items-end min-w-[100px]">
+                        {/* Total amount */}
                         {visibleColumns?.total !== false && (
-                            <>
+                            <div className="flex flex-col items-end min-w-[90px]">
                                 <span className="text-[9px] text-muted-foreground uppercase tracking-widest font-extrabold mb-0.5">
                                     Total
                                 </span>
@@ -173,21 +162,22 @@ export function OrderCard({ item, type, onClick, onActionClick, hideStatus = fal
                                     showColor={!isLedger}
                                     className={cn("text-base font-heading font-bold tracking-tight", isLedger && "text-destructive dark:text-destructive")}
                                 />
-                            </>
+                            </div>
+                        )}
+
+                        {/* Arrow indicator */}
+                        {isHubOpen && isSelected ? (
+                            <ArrowLeft className="h-5 w-5 text-primary animate-in fade-in slide-in-from-right-1 duration-300" />
+                        ) : (
+                            <ArrowRight className="h-5 w-5 text-muted-foreground/30 group-hover:text-primary group-hover:translate-x-1 transition-all" />
                         )}
                     </div>
+                }
+            />
 
-                    {isHubOpen && isSelected ? (
-                        <ArrowLeft className="h-5 w-5 text-primary animate-in fade-in slide-in-from-right-1 duration-300" />
-                    ) : (
-                        <ArrowRight className="h-5 w-5 text-muted-foreground/30 group-hover:text-primary group-hover:translate-x-1 transition-all" />
-                    )}
-                </div>
-            </div>
-
-            {/* ROW 2: Product Lines — Full list, multiline */}
+            {/* ROW 2: Product Lines & Pending Amount */}
             {(lines.length > 0 || hasPending) && !isWorkOrder && (
-                <div className="mt-1.5 pt-1.5 border-t border-border/30 flex items-start justify-between gap-4">
+                <EntityCard.Body className="flex items-start justify-between gap-4 pt-2 border-t border-border/30 mt-1">
                     <div className="flex flex-wrap gap-x-4 gap-y-0.5 flex-1">
                         {lines.map((line: OrderLine, idx: number) => (
                             <span key={idx} className="text-[11px] text-muted-foreground/80 flex items-center gap-1">
@@ -203,24 +193,19 @@ export function OrderCard({ item, type, onClick, onActionClick, hideStatus = fal
                     </div>
 
                     {hasPending && visibleColumns?.payment_status !== false && (
-                        <div className="flex items-center gap-5 shrink-0 pl-4">
-                            <div className="flex flex-col items-end min-w-[100px]">
-                                <span className="text-[9px] text-warning/80 uppercase tracking-widest font-extrabold mb-0.5">
-                                    Pendiente
-                                </span>
-                                <MoneyDisplay
-                                    amount={pending}
-                                    showColor={false}
-                                    className="text-sm font-heading font-bold tracking-tight text-warning"
-                                />
-                            </div>
-                            <div className="w-5" /> {/* Empty spacer to align with arrow in row 1 */}
+                        <div className="flex flex-col items-end min-w-[90px] shrink-0">
+                            <span className="text-[9px] text-warning/80 uppercase tracking-widest font-extrabold mb-0.5">
+                                Pendiente
+                            </span>
+                            <MoneyDisplay
+                                amount={pending}
+                                showColor={false}
+                                className="text-sm font-heading font-bold tracking-tight text-warning"
+                            />
                         </div>
                     )}
-                </div>
+                </EntityCard.Body>
             )}
-
-
-        </Card>
+        </EntityCard>
     )
 }

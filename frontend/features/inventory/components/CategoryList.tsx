@@ -28,7 +28,7 @@ interface CategoryListProps {
 }
 
 export function CategoryList({ externalOpen, onExternalOpenChange, createAction }: CategoryListProps) {
-    const { categories, refetch, deleteCategory } = useCategories()
+    const { categories, isLoading, refetch, deleteCategory } = useCategories()
     const [editingCategory, setEditingCategory] = useState<Category | null>(null)
     const [isCreateOpen, setIsCreateOpen] = useState(false)  // EntityForm modal
     const [isFormOpen, setIsFormOpen] = useState(false)       // CategoryForm (edit)
@@ -140,7 +140,8 @@ export function CategoryList({ externalOpen, onExternalOpenChange, createAction 
             <DataTable
                 columns={columns}
                 data={categories}
-                cardMode
+                isLoading={isLoading}
+                variant="embedded"
 
                 searchPlaceholder="Buscar categoría por nombre..."
                 globalFilterFields={globalFilterFields}

@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Plus, Truck, Pencil, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -38,26 +39,14 @@ export function MaterialAssignmentStep({
   const [qty, setQty] = useState('1')
   const [uomId, setUomId] = useState<string>('')
   const [productObj, setProductObj] = useState<ProductMinimal | null>(null)
-  const [variants, setVariants] = useState<ProductMinimal[]>([])
-  const [loadingVariants, setLoadingVariants] = useState(false)
-  const [uoms, setUoms] = useState<UoM[]>([])
-
-  const [supplierId, setSupplierId] = useState<string | null>(null)
-  const [grossPrice, setGrossPrice] = useState('0')
-  const [netPrice, setNetPrice] = useState('0')
-  const [documentType, setDocumentType] = useState('FACTURA')
-
-  const [saving, setSaving] = useState(false)
-
-  // Fetch product variants when a template product is selected
-  useEffect(() => {
-    if (!productObj?.has_variants) { setVariants([]); return }
-    setLoadingVariants(true)
-    api.get(`/inventory/products/?parent_template=${productObj.id}`)
-      .then((res) => setVariants(res.data.results ?? res.data))
-      .catch(() => setVariants([]))
-      .finally(() => setLoadingVariants(false))
-  }, [productObj])
+  const { data: variants = [], isLoading: loadingVariants } = useQuery({
+    queryKey: ['productVariants', productObj?.id],
+    queryFn: async () => {
+      const res = await api.get(`/inventory/products/?parent_template=${productObj?.id}`)
+      return res.data.results ?? res.data
+    },
+    enabled: !!productObj?.has_variants
+  })
 
   const reset = () => {
     setIsAddOpen(false)
@@ -67,7 +56,6 @@ export function MaterialAssignmentStep({
     setQty('1')
     setUomId('')
     setProductObj(null)
-    setVariants([])
     setSupplierId(null)
     setGrossPrice('0')
     setNetPrice('0')
@@ -160,7 +148,7 @@ export function MaterialAssignmentStep({
         </div>
         <div className="w-full md:w-40 space-y-2">
           <label className="text-xs font-bold uppercase">Unidad</label>
-          <UoMSelector product={productObj as any} context="bom" value={uomId} onChange={setUomId} uoms={uoms} />
+          <UoMSelector product={productObj as any} context="bom" value={uomId} onChange={setUomId} />
         </div>
       </div>
       <div className="flex flex-col md:flex-row gap-4 w-full pt-2 border-t border-primary/10 mt-2">
@@ -333,7 +321,7 @@ export function MaterialAssignmentStep({
                         </div>
                         <div className="w-full md:w-40 space-y-2">
                           <label className="text-xs font-bold uppercase">Unidad</label>
-                          <UoMSelector product={productObj as any} context="bom" value={uomId} onChange={setUomId} uoms={uoms} />
+                          <UoMSelector product={productObj as any} context="bom" value={uomId} onChange={setUomId} />
                         </div>
                         <div className="flex gap-2">
                           <Button variant="outline" size="sm" onClick={reset}>Cancelar</Button>
