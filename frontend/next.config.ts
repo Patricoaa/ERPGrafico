@@ -1,14 +1,15 @@
 import type { NextConfig } from "next";
-import { execSync } from "child_process";
 import packageJson from "./package.json";
 
-// Get current git hash
-let gitHash = "unknown";
-try {
-  gitHash = execSync("git rev-parse --short HEAD").toString().trim();
-} catch (e) {
-  console.warn("Could not get git hash", e);
-}
+// Git hash: Vercel inyecta VERCEL_GIT_COMMIT_SHA; en Docker se puede pasar GIT_HASH como ARG/ENV
+const gitHash =
+  (process.env.VERCEL_GIT_COMMIT_SHA ?? process.env.GIT_HASH ?? "unknown").slice(0, 7);
+
+// Hostname del backend para next/image — se configura por entorno
+const backendHostname =
+  process.env.NEXT_PUBLIC_API_URL
+    ? new URL(process.env.NEXT_PUBLIC_API_URL).hostname
+    : "erpgrafico-production.up.railway.app";
 
 const nextConfig: NextConfig = {
   output: "standalone",
@@ -25,7 +26,7 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "erpgrafico-production.up.railway.app",
+        hostname: backendHostname,
       },
       {
         protocol: "http",
