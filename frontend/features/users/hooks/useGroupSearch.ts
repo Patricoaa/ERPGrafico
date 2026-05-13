@@ -1,57 +1,48 @@
-import { useState, useCallback } from "react"
-import api from "@/lib/api"
-import { showApiError } from "@/lib/errors"
-import { AppGroup } from "@/types/entities"
+import { useQuery } from '@tanstack/react-query'
+import api from '@/lib/api'
+import type { AppGroup } from '@/types/entities'
 
-interface UseGroupSearchReturn {
-    groups: AppGroup[]
-    singleGroup: AppGroup | null
-    loading: boolean
-    fetchGroups: (search?: string) => Promise<void>
-    fetchSingleGroup: (id: string | number) => Promise<void>
+export const GROUP_KEYS = {
+    all: ['groups'] as const,
+    search: (term: string) => [...GROUP_KEYS.all, 'search', term] as const,
+    detail: (id: string | number) => [...GROUP_KEYS.all, 'detail', id] as const,
 }
 
-const globalCache: Record<string, AppGroup[]> = {}
-
-export function useGroupSearch(): UseGroupSearchReturn {
-    const [groups, setGroups] = useState<AppGroup[]>([])
-    const [singleGroup, setSingleGroup] = useState<AppGroup | null>(null)
-    const [loading, setLoading] = useState(false)
-
-    const fetchSingleGroup = useCallback(async (id: string | number) => {
-        try {
-            const res = await api.get(`/core/groups/${id}/`)
-            setSingleGroup(res.data)
-        } catch (e) {
-            console.error("Error fetching single group", e)
-        }
-    }, [])
-
-    const fetchGroups = useCallback(async (search: string = "") => {
-        const cacheKey = search
-        if (globalCache[cacheKey]) {
-            setGroups(globalCache[cacheKey])
-            return
-        }
-
-        try {
-            setLoading(true)
+export function useGroupSearch(search: string = "", enabled: boolean = true) {
+    const query = useQuery({
+        queryKey: GROUP_KEYS.search(search),
+        queryFn: async ({ signal }) => {
             const params = new URLSearchParams()
             if (search) params.append("search", search)
             params.append("limit", "50")
 
-            const res = await api.get(`/core/groups/?${params.toString()}`)
-            const data = res.data.results || res.data
-            
-            globalCache[cacheKey] = data
-            setGroups(data)
-        } catch (err) {
-            showApiError(err, "Error al buscar roles")
-            setGroups([])
-        } finally {
-            setLoading(false)
-        }
-    }, [])
+            const res = await api.get(`/core/groups/?${params.toString()}`, { signal })
+            return (res.data.results || res.data) as AppGroup[]
+        },
+        enabled,
+        staleTime: 5 * 60 * 1000, // 5 min
+    })
 
-    return { groups, singleGroup, loading, fetchGroups, fetchSingleGroup }
+    return {
+        groups: query.data ?? [],
+        loading: query.isLoading,
+        isFetching: query.isFetching,
+    }
+}
+
+export function useSingleGroup(id: string | number | null) {
+    const query = useQuery({
+        queryKey: GROUP_KEYS.detail(id!),
+        queryFn: async ({ signal }) => {
+            const res = await api.get(`/core/groups/${id}/`, { signal })
+            return res.data as AppGroup
+        },
+        enabled: !!id,
+        staleTime: 5 * 60 * 1000, // 5 min
+    })
+
+    return {
+        group: query.data ?? null,
+        loading: query.isLoading,
+    }
 }

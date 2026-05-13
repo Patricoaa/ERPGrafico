@@ -8,6 +8,15 @@ export interface Attribute {
     value_type: 'text' | 'number' | 'date' | 'boolean'
     is_required: boolean
     active: boolean
+    values?: AttributeValue[]
+}
+
+export interface AttributeValue {
+    id: number
+    attribute: number
+    name: string
+    code: string
+    extra_price: number | string
 }
 
 export const ATTRIBUTES_QUERY_KEY = ['inventoryAttributes']
@@ -26,11 +35,12 @@ export function useAttributes() {
             const attrs = attrRes.data.results || attrRes.data
             const vals = valRes.data.results || valRes.data
 
-            return attrs.map((attr: any) => ({
+            return attrs.map((attr: Attribute) => ({
                 ...attr,
-                values: vals.filter((v: any) => v.attribute === attr.id)
+                values: vals.filter((v: AttributeValue) => v.attribute === attr.id)
             }))
         },
+        staleTime: 15 * 60 * 1000, // 15 min — datos de configuración
     })
 
     const deleteMutation = useMutation({

@@ -1,32 +1,30 @@
-import { useState, useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { TrialBalanceReport } from '../types';
-import { showApiError } from '@/lib/errors';
 
-export function useTrialBalance() {
-    const [data, setData] = useState<TrialBalanceReport | null>(null);
-    const [isLoading, setIsLoading] = useState(false);
+import { TRIAL_BALANCE_KEYS } from './queryKeys'
 
-    const fetchTrialBalance = useCallback(async (startDate?: string, endDate?: string) => {
-        setIsLoading(true);
-        try {
+export { TRIAL_BALANCE_KEYS };
+
+export function useTrialBalance(startDate?: string, endDate?: string) {
+    const query = useQuery({
+        queryKey: TRIAL_BALANCE_KEYS.period(startDate, endDate),
+        queryFn: async ({ signal }) => {
             const params: Record<string, string> = {};
             if (startDate) params.start_date = startDate;
             if (endDate) params.end_date = endDate;
 
-            const response = await api.get('/finances/api/trial-balance/', { params });
-            setData(response.data);
-        } catch (error) {
-            console.error('Error fetching trial balance:', error);
-            showApiError(error, 'Error al cargar el balance de comprobación');
-        } finally {
-            setIsLoading(false);
-        }
-    }, []);
+            const response = await api.get('/finances/api/trial-balance/', { params, signal });
+            return response.data as TrialBalanceReport;
+        },
+        staleTime: 5 * 60 * 1000, // 5 min
+    });
 
     return {
-        data,
-        isLoading,
-        fetchTrialBalance
+        data: query.data ?? null,
+        isLoading: query.isLoading,
+        isFetching: query.isFetching,
+        error: query.error ? (query.error as Error).message : null,
+        refetch: query.refetch,
     };
 }

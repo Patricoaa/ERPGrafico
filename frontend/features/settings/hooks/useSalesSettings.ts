@@ -25,6 +25,7 @@ export function useSalesSettings(): UseSalesSettingsReturn {
     const { data: settings, isLoading, refetch } = useQuery({
         queryKey: SALES_SETTINGS_QUERY_KEY,
         queryFn: settingsApi.getSalesSettings,
+        staleTime: 10 * 60 * 1000, // 10 min
     })
 
     const updateMutation = useMutation({

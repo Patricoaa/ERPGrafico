@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Check, ChevronDown, Search, Loader2, AlertCircle } from "lucide-react"
-import { cn, translateProductType } from "@/lib/utils"
+import { cn } from "@/lib/utils"
 import { getEntityIcon } from "@/lib/entity-registry"
 import { PricingUtils } from '@/features/inventory/utils/pricing'
 import { Button } from "@/components/ui/button"
@@ -20,7 +20,7 @@ import {
 import { BaseModal } from "@/components/shared/BaseModal"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { useProductSearch } from "@/features/inventory/hooks/useProductSearch"
+import { useProductSearch, useSingleProduct } from "@/features/inventory/hooks/useProductSearch"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { Product } from "@/types/entities"
 import { CardSkeleton } from "@/components/shared"
@@ -72,45 +72,35 @@ export function ProductSelector({
     required = false,
     variant = 'standalone'
 }: ProductSelectorProps) {
-    const { products: fetchedProducts, singleProduct, loading: searchLoading, fetchProducts, fetchSingleProduct } = useProductSearch()
     const [open, setOpen] = useState(false)
     const [filteredProducts, setFilteredProducts] = useState<Product[]>([])
     const [searchTerm, setSearchTerm] = useState("")
-    const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
     const [displayLimit, setDisplayLimit] = useState(20)
+
+    const shouldFetchProducts = open || searchTerm.length > 0
+    const { products: fetchedProducts, loading: searchLoading } = useProductSearch({
+        search: searchTerm,
+        productType,
+        limit: 200, // Preload more to allow local filtering
+        context,
+        excludeVariantTemplates
+    }, shouldFetchProducts)
+
+    const { product: singleProduct } = useSingleProduct(value || null)
+    const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
 
     // Variant Selection state
     const [isVariantDialogOpen, setIsVariantDialogOpen] = useState(false)
     const [templateToResolve, setTemplateToResolve] = useState<Product | null>(null)
 
-    // Effect to fetch the selected product if it's missing but we have a value
-    useEffect(() => {
-        if (value && (!selectedProduct || selectedProduct.id.toString() !== value.toString())) {
-            fetchSingleProduct(value.toString())
-        } else if (!value) {
-            requestAnimationFrame(() => setSelectedProduct(null))
-        }
-    }, [value, selectedProduct, fetchSingleProduct])
-
     // Sync fetched single product to local state
     useEffect(() => {
         if (singleProduct && singleProduct.id.toString() === value?.toString()) {
             requestAnimationFrame(() => setSelectedProduct(singleProduct))
+        } else if (!value) {
+            requestAnimationFrame(() => setSelectedProduct(null))
         }
     }, [singleProduct, value])
-
-    // Effect to fetch full list only when open or searching
-    useEffect(() => {
-        if (!open && !searchTerm) return
-
-        fetchProducts({
-            search: searchTerm,
-            productType,
-            limit: 200, // Preload more to allow local filtering
-            context,
-            excludeVariantTemplates
-        })
-    }, [open, searchTerm, productType, context, excludeVariantTemplates, fetchProducts])
 
     // Effect to apply local filters
     useEffect(() => {
@@ -220,8 +210,8 @@ export function ProductSelector({
                     disabled={disabled}
                     className={cn(
                         "w-full justify-between overflow-hidden shadow-none focus-visible:ring-0 transition-all",
-                        variant === 'standalone' 
-                            ? "h-[1.5rem] px-0 border-none bg-transparent hover:bg-transparent" 
+                        variant === 'standalone'
+                            ? "h-[1.5rem] px-0 border-none bg-transparent hover:bg-transparent"
                             : cn("h-9 text-xs px-2 bg-background hover:bg-primary/[0.02]", className)
                     )}
                 >

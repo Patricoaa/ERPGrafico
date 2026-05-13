@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
+import { PRODUCTS_QUERY_KEY } from './queryKeys'
 
 export interface PricingRule {
     id: number
@@ -37,6 +38,7 @@ export function usePricingRules() {
             const response = await api.get('/inventory/pricing-rules/')
             return response.data.results || response.data
         },
+        staleTime: 5 * 60 * 1000, // 5 min
     })
 
     const deleteMutation = useMutation({
@@ -45,6 +47,8 @@ export function usePricingRules() {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: PRICING_RULES_QUERY_KEY })
+            // A deleted rule can change computed prices shown in the product list
+            queryClient.invalidateQueries({ queryKey: PRODUCTS_QUERY_KEY })
         },
     })
 

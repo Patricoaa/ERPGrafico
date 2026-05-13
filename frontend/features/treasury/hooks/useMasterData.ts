@@ -9,7 +9,9 @@ export interface Bank {
     is_active: boolean
 }
 
-export const BANKS_QUERY_KEY = ['banks']
+import { BANKS_QUERY_KEY, PAYMENT_METHODS_QUERY_KEY } from './queryKeys'
+
+export { BANKS_QUERY_KEY }
 
 export function useBanks() {
     const { data: banks, isLoading, refetch } = useQuery({
@@ -18,6 +20,7 @@ export function useBanks() {
             const response = await api.get('/treasury/banks/')
             return response.data
         },
+        staleTime: 15 * 60 * 1000, // 15 min — datos casi estáticos
     })
 
     return {
@@ -41,7 +44,7 @@ export interface PaymentMethod {
     is_terminal_integration?: boolean
 }
 
-export const PAYMENT_METHODS_QUERY_KEY = ['paymentMethods']
+export { PAYMENT_METHODS_QUERY_KEY }
 
 export function usePaymentMethods() {
     const { data: methods, isLoading, refetch } = useQuery({
@@ -50,6 +53,7 @@ export function usePaymentMethods() {
             const response = await api.get('/treasury/payment-methods/')
             return response.data
         },
+        staleTime: 15 * 60 * 1000, // 15 min — datos casi estáticos
     })
 
     return {

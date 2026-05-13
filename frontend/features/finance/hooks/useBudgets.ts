@@ -21,6 +21,7 @@ export function useBudgets() {
             const response = await api.get('/accounting/budgets/')
             return response.data
         },
+        staleTime: 5 * 60 * 1000, // 5 min
     })
 
     const createMutation = useMutation({

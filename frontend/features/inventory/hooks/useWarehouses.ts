@@ -19,6 +19,7 @@ export function useWarehouses() {
             const response = await api.get('/inventory/warehouses/')
             return response.data.results || response.data
         },
+        staleTime: 15 * 60 * 1000, // 15 min — datos de configuración
     })
 
     const deleteWarehouseMutation = useMutation({

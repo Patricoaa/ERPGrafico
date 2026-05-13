@@ -25,26 +25,19 @@ interface GroupSelectorProps {
 }
 
 export function GroupSelector({ value, onChange, placeholder = "Seleccionar grupo...", disabled = false, label, error }: GroupSelectorProps) {
-    const { groups, loading: searchLoading, fetchGroups } = useGroupSearch()
     const [open, setOpen] = useState(false)
     const [searchTerm, setSearchTerm] = useState("")
     const debouncedSearch = useDebounce(searchTerm, 500)
 
+    // We fetch groups if dropdown is open, OR if we have a value but it's not selected yet (to resolve name)
+    const shouldFetch = open || (!!value && !selectedGroup)
+    const { groups, loading: searchLoading } = useGroupSearch(debouncedSearch, shouldFetch)
+
     // In this case, value is the NAME of the group, not ID, as per our plan to store name in assigned_group
     const [selectedGroup, setSelectedGroup] = useState<Group | null>(null)
 
-    // Handle fetching and syncing selected group
     useEffect(() => {
-        if (open) {
-            fetchGroups(debouncedSearch)
-        }
-    }, [debouncedSearch, open, fetchGroups])
-
-    useEffect(() => {
-        if (value && !selectedGroup) {
-            // Fetch once if we need to map name to object (e.g. initial render)
-            fetchGroups()
-        } else if (!value) {
+        if (!value) {
             requestAnimationFrame(() => setSelectedGroup(null))
         }
     }, [value])

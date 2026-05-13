@@ -11,7 +11,7 @@ export const WORK_ORDERS_LIST_KEY = 'work-orders'
 
 export interface TransitionPayload {
   nextStageId: string
-  data?: Record<string, unknown>
+  data?: WorkOrderStageData
   /** Optional design file to attach (multipart) */
   designFile?: File | null
 }
@@ -200,7 +200,7 @@ export function useWorkOrderMutations(
   const addCommentMutation = useMutation({
     mutationFn: async ({ text, authorName, currentStageData }: AddCommentPayload) => {
       const newComment = {
-        id: Date.now(),
+        id: crypto.randomUUID(),
         user: authorName,
         text,
         timestamp: new Date().toISOString(),

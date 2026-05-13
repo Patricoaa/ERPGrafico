@@ -11,6 +11,7 @@ export function useUsers() {
             const response = await api.get('/core/users/')
             return response.data.results || response.data
         },
+        staleTime: 10 * 60 * 1000, // 10 min
     })
 
     return {
