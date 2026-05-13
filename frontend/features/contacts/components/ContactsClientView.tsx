@@ -9,7 +9,9 @@ import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 import { useContacts, type Contact } from "@/features/contacts"
-import { LoadingFallback, StatusBadge } from "@/components/shared"
+import { LoadingFallback, SmartSearchBar, StatusBadge, useSmartSearch } from "@/components/shared"
+import { contactSearchDef } from "@/features/contacts/searchDef"
+import type { ContactFilters } from "@/features/contacts/types"
 import { cn } from "@/lib/utils"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { formatEntityDisplay } from "@/lib/entity-registry"
@@ -26,7 +28,8 @@ interface ContactsClientViewProps {
 }
 
 export function ContactsClientView({ isNewModalOpen = false, createAction }: ContactsClientViewProps) {
-    const { contacts, isLoading, deleteContact } = useContacts()
+    const { filters: smartFilters } = useSmartSearch(contactSearchDef)
+    const { contacts, isLoading, deleteContact } = useContacts({ filters: smartFilters as ContactFilters })
     const [selectedContact, setSelectedContact] = useState<Contact | null>(null)
     const [modalOpen, setModalOpen] = useState(false)
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
@@ -213,20 +216,7 @@ export function ContactsClientView({ isNewModalOpen = false, createAction }: Con
                 data={contacts}
                 isLoading={isLoading}
                 variant="embedded"
-                globalFilterFields={["name", "tax_id", "code"]}
-                searchPlaceholder="Buscar por nombre, RUT o código..."
-                facetedFilters={[
-                    {
-                        column: "contact_type",
-                        title: "Tipo",
-                        options: [
-                            { label: "Cliente", value: "CUSTOMER" },
-                            { label: "Proveedor", value: "SUPPLIER" },
-                            { label: "Ambos", value: "BOTH" },
-                        ],
-                    },
-                ]}
-                useAdvancedFilter={true}
+                leftAction={<SmartSearchBar searchDef={contactSearchDef} placeholder="Buscar por nombre, RUT o tipo..." className="w-80" />}
                 defaultPageSize={20}
                 createAction={createAction}
             />

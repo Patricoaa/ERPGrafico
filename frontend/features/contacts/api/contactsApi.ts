@@ -10,9 +10,9 @@ export const contactsApi = {
      */
     getContacts: async (filters?: ContactFilters): Promise<Contact[]> => {
         const params = new URLSearchParams()
-        if (filters?.name) params.append('name', filters.name)
+        if (filters?.search) params.append('search', filters.search)
+        if (filters?.type) params.append('type', filters.type)
         if (filters?.tax_id) params.append('tax_id', filters.tax_id)
-        if (filters?.contact_type) params.append('contact_type', filters.contact_type)
         if (filters?.is_default_customer !== undefined) params.append('is_default_customer', String(filters.is_default_customer))
         if (filters?.is_default_vendor !== undefined) params.append('is_default_vendor', String(filters.is_default_vendor))
 

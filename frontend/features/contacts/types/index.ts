@@ -24,10 +24,10 @@ export interface Contact {
 }
 
 export interface ContactFilters {
-    name?: string
+    search?: string
+    type?: string
     tax_id?: string
     code?: string
-    contact_type?: string
     is_default_customer?: boolean
     is_default_vendor?: boolean
 }

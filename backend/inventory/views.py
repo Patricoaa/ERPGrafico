@@ -41,6 +41,19 @@ class ProductViewSet(BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
             return get_product_base_queryset(user=user)
         return list_products(user=user, params=self.request.query_params)
 
+    @action(detail=False, methods=['get'], url_path='filter-suggestions')
+    def filter_suggestions(self, request):
+        q = request.query_params.get('q', '').strip()
+        if len(q) < 2:
+            return Response([])
+        names = (
+            Product.objects.filter(active=True, name__icontains=q)
+            .values_list('name', flat=True)
+            .distinct()
+            .order_by('name')[:10]
+        )
+        return Response(list(names))
+
     @action(detail=True, methods=['post'])
     def toggle_favorite(self, request, pk=None):
         product = self.get_object()

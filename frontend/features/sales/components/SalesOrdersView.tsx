@@ -20,6 +20,9 @@ import { DataCell } from "@/components/ui/data-table-cells"
 import { NoteHubStatus } from "@/features/orders/components/NoteHubStatus"
 import { Tabs } from "@/components/ui/tabs"
 import { useSalesOrders, useSalesNotes, type SaleOrder, type SaleNote } from "@/features/sales"
+import { SmartSearchBar, useSmartSearch } from "@/components/shared"
+import { salesOrderSearchDef } from "@/features/sales/searchDef"
+import type { SaleOrderFilters } from "@/features/sales/types"
 import { cn } from "@/lib/utils"
 import { ENTITY_REGISTRY } from "@/lib/entity-registry"
 
@@ -81,9 +84,11 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
 
     ]
 
+    const { filters: smartFilters } = useSmartSearch(salesOrderSearchDef)
     const { orders, isLoading: isLoadingOrders, refetch: refetchOrders } = useSalesOrders({
         filters: {
-            pos_session: posSessionId || undefined
+            ...(smartFilters as SaleOrderFilters),
+            pos_session: posSessionId || undefined,
         }
     })
     const { data: notes, isLoading: isLoadingNotes, refetch: refetchNotes } = useSalesNotes()
@@ -271,82 +276,82 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
         <Tabs value={viewMode} className="w-full flex flex-col h-full">
             <DataTable
                 columns={(viewMode === 'orders' ? columns : noteColumns) as any}
-                data={(viewMode === 'orders' ? filteredOrders : filteredNotes) as any}
+                data={(viewMode === 'orders' ? orders : filteredNotes) as any}
                 onRowClick={(row: any) => toggleSelection(row.original.id)}
                 variant="embedded"
                 isLoading={viewMode === 'orders' ? isLoadingOrders : isLoadingNotes}
                     currentView={currentView}
                     onViewChange={handleViewChange}
                     viewOptions={viewOptions}
-                    filterColumn={viewMode === 'orders' ? "customer_name" : "number"}
-                    searchPlaceholder={viewMode === 'orders' ? "Buscar por cliente..." : "Buscar por número..."}
-                    facetedFilters={[
+                    // orders: SmartSearchBar server-side + badge facets client-side
+                    // notes: input client-side + status facets + date range
+                    leftAction={viewMode === 'orders'
+                        ? <SmartSearchBar searchDef={salesOrderSearchDef} placeholder="Buscar órdenes..." className="w-80" />
+                        : undefined
+                    }
+                    filterColumn={viewMode === 'notes' ? "number" : undefined}
+                    searchPlaceholder={viewMode === 'notes' ? "Buscar por número..." : undefined}
+                    facetedFilters={viewMode === 'orders' ? [
+                        {
+                            column: "production_status",
+                            title: "Producción",
+                            options: [
+                                { label: "En Proceso", value: "active" },
+                                { label: "Completado", value: "success" },
+                                { label: "Pendiente", value: "neutral" },
+                            ]
+                        },
+                        {
+                            column: "logistics_status",
+                            title: "Logística",
+                            options: [
+                                { label: "En Proceso", value: "active" },
+                                { label: "Completado", value: "success" },
+                                { label: "Pendiente", value: "neutral" },
+                            ]
+                        },
+                        {
+                            column: "billing_status",
+                            title: "Facturación",
+                            options: [
+                                { label: "En Proceso", value: "active" },
+                                { label: "Completado", value: "success" },
+                                { label: "Pendiente", value: "neutral" },
+                            ]
+                        },
+                        {
+                            column: "treasury_status",
+                            title: "Tesorería",
+                            options: [
+                                { label: "En Proceso", value: "active" },
+                                { label: "Completado", value: "success" },
+                                { label: "Pendiente", value: "neutral" },
+                            ]
+                        }
+                    ] : [
                         {
                             column: "status",
                             title: "Estado",
-                            options: viewMode === 'orders' ? [
-                                { label: "Borrador", value: "DRAFT" },
-                                { label: "Confirmado", value: "CONFIRMED" },
-                                { label: "Facturado", value: "INVOICED" },
-                                { label: "Pagado", value: "PAID" },
-                                { label: "Anulado", value: "CANCELLED" },
-                            ] : [
+                            options: [
                                 { label: "Borrador", value: "DRAFT" },
                                 { label: "Publicado", value: "POSTED" },
                                 { label: "Pagado", value: "PAID" },
                                 { label: "Anulado", value: "CANCELLED" },
                             ],
                         },
-                        ...(viewMode === 'orders' ? [
-                            {
-                                column: "production_status",
-                                title: "Producción",
-                                options: [
-                                    { label: "En Proceso", value: "active" },
-                                    { label: "Completado", value: "success" },
-                                    { label: "Pendiente", value: "neutral" },
-                                ]
-                            },
-                            {
-                                column: "logistics_status",
-                                title: "Logística",
-                                options: [
-                                    { label: "En Proceso", value: "active" },
-                                    { label: "Completado", value: "success" },
-                                    { label: "Pendiente", value: "neutral" },
-                                ]
-                            },
-                            {
-                                column: "billing_status",
-                                title: "Facturación",
-                                options: [
-                                    { label: "En Proceso", value: "active" },
-                                    { label: "Completado", value: "success" },
-                                    { label: "Pendiente", value: "neutral" },
-                                ]
-                            },
-                            {
-                                column: "treasury_status",
-                                title: "Tesorería",
-                                options: [
-                                    { label: "En Proceso", value: "active" },
-                                    { label: "Completado", value: "success" },
-                                    { label: "Pendiente", value: "neutral" },
-                                ]
-                            }
-                        ] : [])
                     ]}
-                    useAdvancedFilter={true}
+                    useAdvancedFilter={viewMode === 'notes'}
                     showToolbarSort={true}
-                    onReset={() => setDateRange(undefined)}
-                    customFilters={
-                        <DateRangeFilter
+                    onReset={viewMode === 'notes' ? () => setDateRange(undefined) : undefined}
+                    customFilters={viewMode === 'notes'
+                        ? <DateRangeFilter
                             onDateChange={setDateRange}
-                            label={viewMode === 'orders' ? "Fecha de Venta" : "Fecha de Emisión"}
+                            label="Fecha de Emisión"
                             className="bg-transparent border-none w-full"
-                        />
+                          />
+                        : undefined
                     }
-                    isCustomFiltered={!!dateRange}
+                    isCustomFiltered={viewMode === 'notes' ? !!dateRange : undefined}
                     customFilterCount={dateRange ? 1 : 0}
 
                     defaultPageSize={20}
