@@ -1,9 +1,20 @@
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, filters
 from django.http import HttpResponse
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.db.models import Sum, Q
 from .models import Account, JournalEntry, AccountingSettings, Budget, BudgetItem, AccountType, JournalItem, FiscalYear
+from django_filters.rest_framework import DjangoFilterBackend, FilterSet
+import django_filters
+
+class JournalEntryFilterSet(FilterSet):
+    date_after = django_filters.DateFilter(field_name='date', lookup_expr='gte')
+    date_before = django_filters.DateFilter(field_name='date', lookup_expr='lte')
+
+    class Meta:
+        model = JournalEntry
+        fields = ['status', 'date_after', 'date_before']
+
 from .serializers import (
     AccountSerializer, JournalEntrySerializer, AccountingSettingsSerializer,
     BudgetSerializer, BudgetItemSerializer, FiscalYearSerializer, FiscalYearPreviewSerializer
@@ -102,7 +113,10 @@ class AccountViewSet(BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
 class JournalEntryViewSet(viewsets.ModelViewSet, AuditHistory):
     queryset = JournalEntry.objects.all()
     serializer_class = JournalEntrySerializer
-    
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    filterset_class = JournalEntryFilterSet
+    search_fields = ['description', 'reference', 'display_id']
+
     @action(detail=True, methods=['post'])
     def post_entry(self, request, pk=None):
         entry = self.get_object()

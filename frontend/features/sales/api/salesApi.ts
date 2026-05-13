@@ -55,7 +55,7 @@ export const salesApi = {
     /**
      * Fetch sales notes (credit/debit notes associated with orders)
      */
-    getSalesNotes: async (filters?: { date_after?: string, date_before?: string }): Promise<SaleNote[]> => {
+    getSalesNotes: async (filters?: { date_after?: string, date_before?: string, customer_name?: string }): Promise<SaleNote[]> => {
         const params = new URLSearchParams()
         params.append('dte_type__in', 'NOTA_CREDITO,NOTA_DEBITO')
         params.append('sale_order__isnull', 'true') // Actually false in logic: sale_order__isnull=false means it HAS a sale order. In Django filter: sale_order__isnull=false. 

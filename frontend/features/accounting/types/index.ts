@@ -21,6 +21,7 @@ export interface AccountFilters {
     name?: string
     account_type?: string
     is_leaf?: boolean
+    search?: string
 }
 
 export interface LedgerData {

@@ -3,6 +3,7 @@ import { Suspense, lazy } from "react"
 import { LoadingFallback } from "@/components/shared/LoadingFallback"
 import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
 import { Tabs } from "@/components/ui/tabs"
+import { redirect } from "next/navigation"
 
 const CreditPortfolioView = lazy(() =>
     import("@/features/credits").then(m => ({ default: m.CreditPortfolioView }))
@@ -25,6 +26,10 @@ export default async function CreditsPage({ searchParams }: PageProps) {
     const resolvedParams = await searchParams
     const activeTab = resolvedParams.tab || "portfolio"
     const modalOpen = resolvedParams.modal === "new"
+
+    if (!resolvedParams.tab) {
+        redirect('/sales/credits?tab=portfolio')
+    }
 
     const createAction = activeTab === 'portfolio' ? (
         <ToolbarCreateButton

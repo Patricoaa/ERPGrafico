@@ -7,62 +7,48 @@ import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { createActionsColumn, DataCell } from "@/components/ui/data-table-cells"
 import { ColumnDef } from "@tanstack/react-table"
 import api from "@/lib/api"
-import { Pencil, Trash2, Ban, Settings, LayoutGrid, List, Columns, X, Factory } from "lucide-react"
+import { Pencil, Trash2, Ban, Settings, List, Columns } from "lucide-react"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { WorkOrderForm } from "@/features/production/components/forms/WorkOrderForm"
 import { WorkOrderWizard } from "@/features/production/components/WorkOrderWizard"
 import { WorkOrderKanban } from "@/features/production/components/WorkOrderKanban"
 import { toast } from "sonner"
-import { DateRangeFilter } from "@/components/shared/DateRangeFilter"
-import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
-import { isWithinInterval, parseISO, startOfDay, endOfDay } from "date-fns"
+import { ToolbarCreateButton, SmartSearchBar, useSmartSearch } from "@/components/shared"
 import { translateProductionStage } from "@/lib/utils"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { usePathname } from "next/navigation"
+import { useWorkOrders } from "@/features/production/hooks/useWorkOrders"
+import { workOrderSearchDef } from "@/features/production/searchDef"
 
 import type { WorkOrder } from "@/features/production/types"
-const statusOptions = [
-    { label: "Borrador", value: "DRAFT" },
-    { label: "En Proceso", value: "IN_PROGRESS" },
-    { label: "Terminada", value: "FINISHED" },
-    { label: "Anulada", value: "CANCELLED" },
-]
-
-const statusMap: Record<string, { label: string, variant: "default" | "secondary" | "outline" | "destructive" }> = {
-    'DRAFT': { label: 'Borrador', variant: 'secondary' },
-    'IN_PROGRESS': { label: 'En Proceso', variant: 'outline' },
-    'FINISHED': { label: 'Terminada', variant: 'outline' },
-    'CANCELLED': { label: 'Anulada', variant: 'destructive' },
-}
 
 export default function WorkOrdersPage() {
-    const [orders, setOrders] = useState<WorkOrder[]>([])
-    const [loading, setLoading] = useState(true)
     const [editingOrder, setEditingOrder] = useState<WorkOrder | null>(null)
     const [isFormOpen, setIsFormOpen] = useState(false)
     const [activeWizardId, setActiveWizardId] = useState<number | null>(null)
-    const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date } | undefined>()
     const [viewMode, setViewMode] = useState<string>("list")
     const searchParams = useSearchParams()
     const router = useRouter()
     const pathname = usePathname()
 
+    const { filters } = useSmartSearch(workOrderSearchDef)
+    const { orders, isLoading: loading, refetch: refetchOrders } = useWorkOrders(filters)
+
     const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<WorkOrder>({
         endpoint: '/production/orders'
     })
 
-    // Open detail modal if ?selected= is present (ADR-0020)
     useEffect(() => {
         if (selectedFromUrl) {
             setActiveWizardId(selectedFromUrl.id)
         }
     }, [selectedFromUrl])
+
     const isNewModalOpen = searchParams.get("modal") === "new"
     const [requestedStage, setRequestedStage] = useState<string | undefined>()
 
-    // Modal state sync with URL
     useEffect(() => {
         if (isNewModalOpen) {
             setIsFormOpen(true)
@@ -82,36 +68,11 @@ export default function WorkOrdersPage() {
         }
     }
 
-    const filteredOrders = orders.filter(order => {
-        // Date range filter
-        if (!dateRange || !dateRange.from) return true
-        if (!order.due_date) return false
-
-        const orderDate = parseISO(order.due_date)
-        const start = startOfDay(dateRange.from)
-        const end = dateRange.to ? endOfDay(dateRange.to) : endOfDay(dateRange.from)
-
-        return isWithinInterval(orderDate, { start, end })
-    })
-
-    const fetchOrders = async () => {
-        setLoading(true)
-        try {
-            const response = await api.get('/production/orders/')
-            setOrders(response.data.results || response.data)
-        } catch (error) {
-            console.error("Failed to fetch works orders", error)
-            toast.error("Error al cargar las OTs.")
-        } finally {
-            setLoading(false)
-        }
-    }
-
     const deleteConfirm = useConfirmAction<number>(async (id) => {
         try {
             await api.delete(`/production/orders/${id}/`)
             toast.success("OT eliminada correctamente.")
-            fetchOrders()
+            refetchOrders()
         } catch (error) {
             console.error("Error deleting order:", error)
             toast.error("Error al eliminar la OT.")
@@ -126,7 +87,7 @@ export default function WorkOrdersPage() {
                 next_stage: 'CANCELLED'
             })
             toast.success("OT anulada correctamente.")
-            fetchOrders()
+            refetchOrders()
         } catch (error) {
             console.error("Error canceling order:", error)
             toast.error("Error al anular la OT.")
@@ -136,14 +97,9 @@ export default function WorkOrdersPage() {
     const handleCancel = (id: number) => cancelConfirm.requestConfirm(id)
 
     const handleKanbanTransition = async (orderId: number, nextStage: string) => {
-        // Instead of auto-transitioning, open the wizard to validate/confirm details
         setActiveWizardId(orderId)
         setRequestedStage(nextStage)
     }
-
-    useEffect(() => {
-        fetchOrders()
-    }, [])
 
     const columns = useMemo<ColumnDef<WorkOrder>[]>(() => [
         {
@@ -279,7 +235,7 @@ export default function WorkOrdersPage() {
                     initialData={editingOrder as any}
                     open={isFormOpen}
                     onOpenChange={handleFormClose}
-                    onSuccess={fetchOrders}
+                    onSuccess={refetchOrders}
                 />
             ) : null}
             {activeWizardId && (
@@ -293,7 +249,7 @@ export default function WorkOrdersPage() {
                             clearSelection()
                         }
                     }}
-                    onSuccess={fetchOrders}
+                    onSuccess={refetchOrders}
                     targetStage={requestedStage}
                 />
             )}
@@ -304,34 +260,14 @@ export default function WorkOrdersPage() {
                     data={orders}
                     isLoading={loading}
                     variant="embedded"
-                    filterColumn="description"
                     defaultPageSize={50}
-                    globalFilterFields={["number", "description", "sale_customer_name"]}
-                    searchPlaceholder="Buscar por folio, descripción o cliente..."
+                    leftAction={<SmartSearchBar searchDef={workOrderSearchDef} placeholder="Buscar OTs..." className="w-80" />}
                     viewOptions={[
                         { label: "Lista", value: "list", icon: List },
                         { label: "Tablero", value: "kanban", icon: Columns },
                     ]}
                     currentView={viewMode}
                     onViewChange={setViewMode}
-                    facetedFilters={[
-                        {
-                            column: "status",
-                            title: "Estado",
-                            options: statusOptions
-                        }
-                    ]}
-                    useAdvancedFilter={true}
-                    isCustomFiltered={!!dateRange}
-                    customFilterCount={dateRange ? 1 : 0}
-                    customFilters={
-                        <DateRangeFilter
-                            onDateChange={setDateRange}
-                            label="Fecha de Entrega"
-                            className="bg-transparent border-none w-full"
-                        />
-                    }
-                    onReset={() => setDateRange(undefined)}
                     renderCustomView={viewMode === "kanban" ? renderKanbanView : undefined}
                     createAction={<ToolbarCreateButton label="Nueva OT" href="/production/orders?modal=new" />}
                 />

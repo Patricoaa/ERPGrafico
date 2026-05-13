@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from "react"
 import { useTerminalProviders, useTerminalDevices, type PaymentTerminalProvider, type PaymentTerminalDevice } from "../hooks/useTerminalProviders"
 import { Button } from "@/components/ui/button"
-import { BaseModal, StatusBadge, SubmitButton, CancelButton, IconButton, LabeledInput, LabeledSelect, FormSection, MultiSelectTagInput } from "@/components/shared"
+import { BaseModal, StatusBadge, SubmitButton, CancelButton, IconButton, LabeledInput, LabeledSelect, FormSection, MultiSelectTagInput, SmartSearchBar, useSmartSearch, useClientSearch } from "@/components/shared"
+import { deviceSearchDef, providerSearchDef } from "@/features/treasury/searchDef"
 import { toast } from "sonner"
 import {
     Settings,
@@ -52,8 +53,10 @@ export function PaymentHardwareManagement({
         }
     }, [externalActiveTab])
 
+    const { filters: deviceFilters } = useSmartSearch(deviceSearchDef)
+    const { filterFn: filterProviders } = useClientSearch<PaymentTerminalProvider>(providerSearchDef)
     const { providers, isLoading: isLoadingProviders, refetch: refetchProviders, deleteProvider } = useTerminalProviders()
-    const { devices, isLoading: isLoadingDevices, refetch: refetchDevices, deleteDevice } = useTerminalDevices()
+    const { devices, isLoading: isLoadingDevices, refetch: refetchDevices, deleteDevice } = useTerminalDevices(deviceFilters)
 
     const [providerDialogOpen, setProviderDialogOpen] = useState(false)
     const [editingProvider, setEditingProvider] = useState<PaymentTerminalProvider | null>(null)
@@ -225,27 +228,16 @@ export function PaymentHardwareManagement({
             {activeTab === "providers" ? (
                 <DataTable
                     columns={providerColumns}
-                    data={providers}
+                    data={filterProviders(providers)}
                     isLoading={isLoadingProviders}
                     variant="embedded"
-                    filterColumn="name"
-                    searchPlaceholder="Buscar proveedor..."
+                    leftAction={<SmartSearchBar searchDef={providerSearchDef} placeholder="Buscar proveedor..." />}
                     defaultPageSize={20}
                     currentView={viewMode}
                     onViewChange={handleViewChange}
                     viewOptions={[
                         { label: "Lista", value: "list", icon: List },
                         { label: "Tarjeta", value: "card", icon: LayoutGrid }
-                    ]}
-                    facetedFilters={[
-                        {
-                            column: "status",
-                            title: "Estado",
-                            options: [
-                                { label: "Activos", value: "ACTIVE" },
-                                { label: "Inactivos", value: "INACTIVE" }
-                            ]
-                        }
                     ]}
                     createAction={createAction || (
                         <Button onClick={handleCreateProvider} className="h-9">
@@ -308,24 +300,13 @@ export function PaymentHardwareManagement({
                     data={devices}
                     isLoading={isLoadingDevices}
                     variant="embedded"
-                    filterColumn="name"
-                    searchPlaceholder="Buscar dispositivo..."
+                    leftAction={<SmartSearchBar searchDef={deviceSearchDef} placeholder="Buscar dispositivo..." className="w-80" />}
                     defaultPageSize={20}
                     currentView={viewMode}
                     onViewChange={handleViewChange}
                     viewOptions={[
                         { label: "Lista", value: "list", icon: List },
                         { label: "Tarjeta", value: "card", icon: LayoutGrid }
-                    ]}
-                    facetedFilters={[
-                        {
-                            column: "status",
-                            title: "Estado",
-                            options: [
-                                { label: "Activos", value: "ACTIVE" },
-                                { label: "Inactivos", value: "INACTIVE" }
-                            ]
-                        }
                     ]}
                     createAction={createAction || (
                         <Button onClick={handleCreateDevice} className="h-9">

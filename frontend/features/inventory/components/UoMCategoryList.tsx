@@ -14,8 +14,7 @@ import { Pencil, Trash2 } from "lucide-react"
 import type { BulkAction } from "@/components/shared"
 import { UoMCategoryForm } from "./UoMCategoryForm"
 import { toast } from "sonner"
-import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
-import { cn } from "@/lib/utils"
+
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 
@@ -31,9 +30,12 @@ interface UoMCategoryListProps {
 }
 
 import { useUoMs } from "@/features/inventory/hooks/useUoMs"
+import { SmartSearchBar, useClientSearch } from "@/components/shared"
+import { uomCategorySearchDef } from "@/features/inventory/searchDef"
 
 export function UoMCategoryList({ externalOpen, onExternalOpenChange, createAction }: UoMCategoryListProps) {
     const { categories, isLoading, refetch } = useUoMs()
+    const { filterFn } = useClientSearch<UoMCategory>(uomCategorySearchDef)
 
     // Modal State
     const [isModalOpen, setIsModalOpen] = useState(false)
@@ -47,7 +49,7 @@ export function UoMCategoryList({ externalOpen, onExternalOpenChange, createActi
         setIsModalOpen(false)
         setCurrentCategory({})
         onExternalOpenChange?.(false)
-        
+
         if (externalOpen || searchParams.get("modal")) {
             const params = new URLSearchParams(searchParams.toString())
             params.delete("modal")
@@ -138,12 +140,11 @@ export function UoMCategoryList({ externalOpen, onExternalOpenChange, createActi
         <div className="space-y-4">
             <DataTable
                 columns={columns}
-                data={categories}
+                data={filterFn(categories)}
                 isLoading={isLoading}
                 variant="embedded"
-                filterColumn="name"
+                leftAction={<SmartSearchBar searchDef={uomCategorySearchDef} placeholder="Buscar categoría..." />}
                 pageSizeOptions={[10, 20]}
-                useAdvancedFilter={true}
                 bulkActions={bulkActions}
                 createAction={createAction}
             />

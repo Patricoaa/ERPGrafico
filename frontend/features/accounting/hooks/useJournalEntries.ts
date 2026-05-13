@@ -4,6 +4,7 @@ import { showApiError } from '@/lib/errors'
 import { accountingApi } from '../api/accountingApi'
 import { LEDGER_QUERY_KEY } from './useLedger'
 import { ACCOUNTS_QUERY_KEY } from './useAccounts'
+import type { FilterState } from '@/components/shared'
 
 import { JOURNAL_ENTRIES_QUERY_KEY } from './queryKeys'
 
@@ -24,14 +25,19 @@ export interface JournalEntry {
     }[]
 }
 
-export function useJournalEntries() {
+export function useJournalEntries(filters?: FilterState) {
     const { data: entries, isLoading, refetch } = useQuery({
-        queryKey: JOURNAL_ENTRIES_QUERY_KEY,
+        queryKey: [...JOURNAL_ENTRIES_QUERY_KEY, filters],
         queryFn: async () => {
-            const data = await accountingApi.getEntries()
+            const params: Record<string, unknown> = {}
+            if (filters?.status) params['status'] = filters.status
+            if (filters?.search) params['search'] = filters.search
+            if (filters?.date_from) params['date_after'] = filters.date_from
+            if (filters?.date_to) params['date_before'] = filters.date_to
+            const data = await accountingApi.getEntries(params)
             return data.results || data
         },
-        staleTime: 2 * 60 * 1000, // 2 min
+        staleTime: 2 * 60 * 1000,
     })
 
     return {

@@ -1,6 +1,8 @@
-from rest_framework import viewsets, status, pagination
+from rest_framework import viewsets, status, pagination, filters as drf_filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from django_filters.rest_framework import DjangoFilterBackend, FilterSet
+import django_filters
 from django.db import transaction
 from django.utils import timezone
 from django.core.exceptions import ValidationError
@@ -94,9 +96,21 @@ class PaymentMethodViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         serializer.save()
 
 
+class TreasuryAccountFilterSet(FilterSet):
+    name = django_filters.CharFilter(field_name='name', lookup_expr='icontains')
+    account_type = django_filters.CharFilter(field_name='account_type', lookup_expr='exact')
+
+    class Meta:
+        model = TreasuryAccount
+        fields = ['name', 'account_type']
+
+
 class TreasuryAccountViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = TreasuryAccount.objects.all().order_by('account_type', 'name')
     serializer_class = TreasuryAccountSerializer
+    filter_backends = [DjangoFilterBackend, drf_filters.SearchFilter]
+    filterset_class = TreasuryAccountFilterSet
+    search_fields = ['name']
 
     def get_queryset(self):
         qs = super().get_queryset()

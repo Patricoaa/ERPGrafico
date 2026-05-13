@@ -58,6 +58,15 @@ export default function SalesOrdersPage() {
         }
     }, [isHubOpen, hubEverOpened, selectedId, pathname, searchParams, router])
 
+    // 4. Ensure URL consistency for default tab
+    useEffect(() => {
+        if (!searchParams.get('tab') && !legacyId) {
+            const params = new URLSearchParams(searchParams.toString())
+            params.set('tab', 'orders')
+            router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+        }
+    }, [searchParams, pathname, router, legacyId])
+
     if (legacyId) {
         return <div className="p-8 text-center text-muted-foreground">Redirigiendo...</div>
     }

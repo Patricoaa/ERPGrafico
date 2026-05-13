@@ -18,11 +18,20 @@ import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 
 import { useJournalEntries, type JournalEntry } from "@/features/accounting/hooks/useJournalEntries"
-import { useAccountingAccounts } from "@/features/accounting/hooks/useAccounts" 
+import { useAccountingAccounts } from "@/features/accounting/hooks/useAccounts"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
+import { SmartSearchBar, useSmartSearch } from "@/components/shared"
+import { journalEntrySearchDef } from "@/features/accounting/searchDef"
+
+interface EntriesPageProps {
+    externalOpen?: boolean
+    onExternalOpenChange?: (open: boolean) => void
+    createAction?: React.ReactNode
+}
 
 export default function EntriesPage({ externalOpen, onExternalOpenChange, createAction }: EntriesPageProps) {
-    const { entries, isLoading, refetch } = useJournalEntries()
+    const { filters } = useSmartSearch(journalEntrySearchDef)
+    const { entries, isLoading, refetch } = useJournalEntries(filters)
     const { accounts } = useAccountingAccounts({ filters: { is_leaf: true } })
     const [viewingTransaction, setViewingTransaction] = useState<{ type: 'journal_entry', id: number | string } | null>(null)
     const [isFormOpen, setIsFormOpen] = useState(false)
@@ -219,19 +228,7 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
                     data={entries}
                     isLoading={isLoading}
                     variant="embedded"
-                    filterColumn="description"
-                    searchPlaceholder="Buscar por descripción..."
-                    facetedFilters={[
-                        {
-                            column: "state",
-                            title: "Estado",
-                            options: [
-                                { label: "Borrador", value: "DRAFT" },
-                                { label: "Publicado", value: "POSTED" },
-                            ],
-                        },
-                    ]}
-                    useAdvancedFilter={true}
+                    leftAction={<SmartSearchBar searchDef={journalEntrySearchDef} placeholder="Buscar asientos..." className="w-80" />}
                     defaultPageSize={20}
                     createAction={createAction}
                 />

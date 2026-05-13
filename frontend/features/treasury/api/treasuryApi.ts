@@ -63,8 +63,8 @@ export const treasuryApi = {
     /**
      * Fetch all treasury accounts
      */
-    getAccounts: async (): Promise<TreasuryAccount[]> => {
-        const { data } = await api.get<{ results: TreasuryAccount[] }>('/treasury/accounts/')
+    getAccounts: async (filters?: { name?: string; account_type?: string }): Promise<TreasuryAccount[]> => {
+        const { data } = await api.get<{ results: TreasuryAccount[] }>('/treasury/accounts/', { params: filters })
         return data.results || data
     },
 

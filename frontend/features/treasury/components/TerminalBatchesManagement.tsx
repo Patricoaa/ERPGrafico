@@ -4,21 +4,14 @@ import React, { useState, useEffect, lazy, Suspense, useMemo } from "react"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import type { ColumnDef } from "@tanstack/react-table"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Plus, FileText, CreditCard, Calendar, Building2 } from "lucide-react"
-import api from "@/lib/api"
-import { toast } from "sonner"
-import { format, subDays } from "date-fns"
-import { es } from "date-fns/locale"
+import { Plus, Building2 } from "lucide-react"
+import { format } from "date-fns"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { useTerminalBatches } from "@/features/treasury"
-import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
-import { DateRangeFilter } from "@/components/shared/DateRangeFilter"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
-import { FormSkeleton } from "@/components/shared"
-import type { DateRange } from "react-day-picker"
+import { FormSkeleton, SmartSearchBar, useSmartSearch } from "@/components/shared"
+import { terminalBatchSearchDef } from "@/features/treasury/searchDef"
 
 // Lazy load feature components
 const LazyTerminalBatchForm = lazy(() => import("./TerminalBatchForm"))
@@ -41,13 +34,10 @@ export function TerminalBatchesManagement({
     onExternalOpenInvoiceChange,
     createAction
 }: TerminalBatchesManagementProps) {
-    const { batches, isLoading, refetch } = useTerminalBatches()
+    const { filters } = useSmartSearch(terminalBatchSearchDef)
+    const { batches, isLoading, refetch } = useTerminalBatches(filters)
     const [openCreate, setOpenCreate] = useState(false)
     const [openInvoice, setOpenInvoice] = useState(false)
-    const [dateRange, setDateRange] = useState<DateRange | undefined>({
-        from: subDays(new Date(), 30),
-        to: new Date()
-    })
     const [isMounted, setIsMounted] = useState(false)
 
     useEffect(() => {
@@ -143,25 +133,7 @@ export function TerminalBatchesManagement({
                 data={batches}
                 isLoading={isLoading}
                 variant="embedded"
-                useAdvancedFilter={true}
-                facetedFilters={[
-                    {
-                        column: "status",
-                        title: "Estado",
-                        options: [
-                            { label: "Pendiente", value: "PENDING" },
-                            { label: "Liquidado", value: "SETTLED" },
-                            { label: "Facturado", value: "INVOICED" },
-                            { label: "Conciliado", value: "RECONCILED" },
-                        ]
-                    }
-                ]}
-                customFilters={
-                    <DateRangeFilter onDateChange={setDateRange} label="Fecha de Ventas" className="bg-transparent border-none w-full" />
-                }
-                isCustomFiltered={!!dateRange}
-                customFilterCount={dateRange ? 1 : 0}
-                onReset={() => setDateRange(undefined)}
+                leftAction={<SmartSearchBar searchDef={terminalBatchSearchDef} placeholder="Filtrar liquidaciones..." className="w-80" />}
                 createAction={createAction}
             />
 

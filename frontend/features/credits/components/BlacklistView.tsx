@@ -1,13 +1,15 @@
 "use client"
 
-import React, { useState, useEffect, useCallback } from "react"
+import React, { useState, useMemo, useCallback } from "react"
 import {
-    getBlacklistedPortfolio,
     getContactCreditLedger,
     unblockContact,
     recoverDebt
 } from '@/features/credits/api/creditsApi'
 import { CreditContact, CreditLedgerEntry } from '@/features/credits/api/creditsApi'
+import { SmartSearchBar, useClientSearch } from "@/components/shared"
+import { creditContactSearchDef } from "../searchDef"
+import { useBlacklistedPortfolio } from "../hooks/useCredits"
 import { formatCurrency } from "@/lib/utils"
 import { DataTable } from "@/components/ui/data-table"
 import { type Table as ReactTable, type Row, type HeaderGroup, type Header, type Cell, ColumnDef, flexRender } from "@tanstack/react-table"
@@ -218,24 +220,9 @@ function ExpandableBlacklistRow({ row, onRefresh }: { row: Row<CreditContact>, o
 }
 
 export function BlacklistView() {
-    const [data, setData] = useState<{ contacts?: CreditContact[] } | null>(null)
-    const [loading, setLoading] = useState(true)
-
-    const fetchData = useCallback(async () => {
-        setLoading(true)
-        try {
-            const res = await getBlacklistedPortfolio()
-            setData(res)
-        } catch (error) {
-            console.error("Error fetching blacklist:", error)
-        } finally {
-            setLoading(false)
-        }
-    }, [])
-
-    useEffect(() => {
-        fetchData()
-    }, [fetchData])
+    const { contacts: rawContacts, isLoading: loading, refetch: fetchData } = useBlacklistedPortfolio()
+    const { filterFn } = useClientSearch<CreditContact>(creditContactSearchDef)
+    const contacts = useMemo(() => filterFn(rawContacts), [rawContacts, filterFn])
 
     const columns: ColumnDef<CreditContact>[] = [
         {
@@ -267,18 +254,14 @@ export function BlacklistView() {
         }
     ]
 
-    const contacts = data?.contacts || []
-
     return (
         <div className="space-y-6">
             <DataTable
                 columns={columns}
                 data={contacts}
-                useAdvancedFilter
-                searchPlaceholder="Buscar por cliente o RUT..."
-                globalFilterFields={["name", "tax_id"]}
                 variant="embedded"
                 isLoading={loading}
+                leftAction={<SmartSearchBar searchDef={creditContactSearchDef} placeholder="Cliente o RUT..." />}
                 renderCustomView={(table: ReactTable<CreditContact>) => {
                     const rows = table.getRowModel().rows
                     if (rows.length === 0 && !loading) {

@@ -1,10 +1,11 @@
 "use client"
 
 import { showApiError, getErrorMessage } from "@/lib/errors"
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { ColumnDef } from "@tanstack/react-table"
-import { IconButton } from "@/components/shared"
+import { IconButton, SmartSearchBar, useSmartSearch } from "@/components/shared"
+import { purchaseInvoiceSearchDef } from '../searchDef'
 import { EntityCard } from "@/components/shared/EntityCard"
 import { List, FileBadge, LayoutDashboard, ArrowRight, ArrowLeft } from "lucide-react"
 import api from "@/lib/api"
@@ -32,7 +33,8 @@ const statusMap: Record<string, { label: string, variant: "default" | "secondary
 }
 
 export function PurchaseInvoicesClientView() {
-    const { invoices: documents, isLoading, refetch: fetchDocuments } = usePurchaseInvoices()
+    const { filters } = useSmartSearch(purchaseInvoiceSearchDef)
+    const { invoices: documents, isLoading, refetch: fetchDocuments } = usePurchaseInvoices({ filters })
     const [payingDoc, setPayingDoc] = useState<any | null>(null)
     const [receivingDoc, setReceivingDoc] = useState<any | null>(null)
     const [notingDoc, setNotingDoc] = useState<any | null>(null)
@@ -212,12 +214,6 @@ export function PurchaseInvoicesClientView() {
             },
         },
         {
-            accessorKey: "status",
-            header: () => null,
-            cell: () => null,
-            filterFn: (row, id, value) => value.includes(row.getValue(id)),
-        },
-        {
             id: "hub_trigger",
             header: () => null,
             cell: ({ row }) => {
@@ -276,21 +272,7 @@ export function PurchaseInvoicesClientView() {
                 currentView={currentView}
                 onViewChange={handleViewChange}
                 viewOptions={viewOptions}
-                filterColumn="partner_name"
-                searchPlaceholder="Buscar por proveedor..."
-                facetedFilters={[
-                    {
-                        column: "status",
-                        title: "Estado",
-                        options: [
-                            { label: "Folio Pendiente", value: "DRAFT" },
-                            { label: "Publicado", value: "POSTED" },
-                            { label: "Pagado", value: "PAID" },
-                            { label: "Anulado", value: "CANCELLED" },
-                        ],
-                    },
-                ]}
-                useAdvancedFilter={true}
+                leftAction={<SmartSearchBar searchDef={purchaseInvoiceSearchDef} placeholder="Buscar facturas de compra..." className="w-80" />}
                 defaultPageSize={20}
                 renderCustomView={currentView === 'card' ? (table) => {
                     const rows = table.getRowModel().rows

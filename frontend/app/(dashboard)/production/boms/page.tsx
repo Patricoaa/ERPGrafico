@@ -14,9 +14,11 @@ import { BOMFormModal } from "@/features/production/components/BOMFormModal"
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 import { formatCurrency } from "@/lib/utils"
-import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
+import { ToolbarCreateButton, SmartSearchBar, useSmartSearch } from "@/components/shared"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+import { useAllBOMs } from "@/features/production/hooks/useBOMs"
+import { bomSearchDef } from "@/features/production/searchDef"
 
 import type { BOM } from "@/features/production/types"
 
@@ -29,15 +31,15 @@ interface BOMListItem extends BOM {
 }
 
 export default function BOMsPage() {
-    const [boms, setBoms] = useState<BOMListItem[]>([])
-    const [loading, setLoading] = useState(true)
     const [isFormOpen, setIsFormOpen] = useState(false)
     const [editingBom, setEditingBom] = useState<BOMListItem | null>(null)
     const searchParams = useSearchParams()
     const router = useRouter()
     const isNewModalOpen = searchParams.get("modal") === "new"
 
-    // Modal state sync with URL
+    const { filters } = useSmartSearch(bomSearchDef)
+    const { boms, isLoading: loading, refetch: refetchBoms } = useAllBOMs(filters)
+
     useEffect(() => {
         if (isNewModalOpen) {
             setIsFormOpen(true)
@@ -57,24 +59,11 @@ export default function BOMsPage() {
         }
     }
 
-    const fetchBoms = async () => {
-        setLoading(true)
-        try {
-            const response = await api.get('/production/boms/')
-            setBoms(response.data.results || response.data)
-        } catch (error) {
-            console.error("Error fetching BOMs:", error)
-            toast.error("Error al cargar las Listas de Materiales")
-        } finally {
-            setLoading(false)
-        }
-    }
-
     const deleteConfirm = useConfirmAction<number>(async (id) => {
         try {
             await api.delete(`/production/boms/${id}/`)
             toast.success("Lista de Materiales eliminada correctamente")
-            fetchBoms()
+            refetchBoms()
         } catch (error) {
             toast.error("Error al eliminar Lista de Materiales")
         }
@@ -92,14 +81,10 @@ export default function BOMsPage() {
         }
     }
 
-    useEffect(() => {
-        fetchBoms()
-    }, [])
 
 
 
-
-    const columns: import("@tanstack/react-table").ColumnDef<BOMListItem>[] = [
+    const columns: ColumnDef<BOMListItem>[] = [
         {
             accessorKey: "product_name",
             header: ({ column }) => (
@@ -198,23 +183,11 @@ export default function BOMsPage() {
             <div className="pt-4">
                 <DataTable
                     columns={columns}
-                    data={boms}
+                    data={boms as unknown as BOMListItem[]}
                     isLoading={loading}
                     variant="embedded"
                     defaultPageSize={20}
-                    filterColumn="product_name"
-                    searchPlaceholder="Buscar por producto..."
-                    facetedFilters={[
-                        {
-                            column: "active",
-                            title: "Estado",
-                            options: [
-                                { label: "Activa", value: "true" },
-                                { label: "Inactiva", value: "false" },
-                            ],
-                        },
-                    ]}
-                    useAdvancedFilter={true}
+                    leftAction={<SmartSearchBar searchDef={bomSearchDef} placeholder="Buscar por producto..." className="w-80" />}
                     createAction={<ToolbarCreateButton label="Nueva Lista" href="/production/boms?modal=new" />}
                 />
             </div>
@@ -222,7 +195,7 @@ export default function BOMsPage() {
             <BOMFormModal
                 open={isFormOpen}
                 onOpenChange={handleFormClose}
-                onSuccess={fetchBoms}
+                onSuccess={refetchBoms}
                 bomToEdit={editingBom || undefined}
                 product={editingBom ? {
                     id: editingBom.product,

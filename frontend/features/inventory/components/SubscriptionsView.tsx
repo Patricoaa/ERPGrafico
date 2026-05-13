@@ -28,34 +28,14 @@ import { DataTable } from "@/components/ui/data-table"
 import type { Product } from "@/types/entities"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
-import { PageHeader, PageHeaderButton } from "@/components/shared"
+import { PageHeader, PageHeaderButton, SmartSearchBar, useSmartSearch } from "@/components/shared"
 import { Restriction } from "@/features/inventory/types"
 import { PageContainer } from "@/components/shared"
 import { cn } from "@/lib/utils"
+import { useSubscriptions, type Subscription } from "@/features/inventory/hooks/useSubscriptions"
+import { subscriptionSearchDef } from "@/features/inventory/searchDef"
 
-interface Subscription {
-    id: number
-    product: number
-    product_name: string
-    product_code: string
-    product_internal_code?: string
-    category_name?: string
-    supplier_name: string
-    supplier_id: number
-    start_date: string
-    end_date: string | null
-    next_payment_date: string
-    amount: string
-    currency: string
-    status: string
-    status_display: string
-    recurrence_period: string
-    recurrence_display: string
-    payment_day_type: string | null
-    payment_day: number | null
-    payment_interval_days: number | null
-    notes: string
-}
+// Subscription type imported from useSubscriptions hook
 
 interface Stats {
     active_subscriptions: number
@@ -72,10 +52,9 @@ interface SubscriptionsViewProps {
 }
 
 export function SubscriptionsView({ hideHeader = false, externalOpen = false, createAction }: SubscriptionsViewProps) {
-    const [subscriptions, setSubscriptions] = useState<Subscription[]>([])
+    const { filters } = useSmartSearch(subscriptionSearchDef)
+    const { subscriptions, isLoading: loading, refetch: fetchSubscriptions } = useSubscriptions(filters)
     const [stats, setStats] = useState<Stats | null>(null)
-    const [loading, setLoading] = useState(true)
-
 
     // Form & Actions state
     const [isFormOpen, setIsFormOpen] = useState(false)
@@ -105,19 +84,6 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false, cr
         }
     }
 
-    const fetchSubscriptions = useCallback(async () => {
-        try {
-            setLoading(true)
-            const response = await api.get('/inventory/subscriptions/')
-            setSubscriptions(response.data.results || response.data)
-        } catch (error) {
-            console.error("Error fetching subscriptions:", error)
-            showApiError(error, "Error al cargar suscripciones")
-        } finally {
-            setLoading(false)
-        }
-    }, [])
-
     const fetchStats = useCallback(async () => {
         try {
             const response = await api.get('/inventory/subscriptions/stats/')
@@ -128,23 +94,8 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false, cr
     }, [])
 
     useEffect(() => {
-        let isMounted = true
-        
-        const load = async () => {
-            if (isMounted) {
-                await Promise.all([
-                    fetchSubscriptions(),
-                    fetchStats()
-                ])
-            }
-        }
-
-        load()
-
-        return () => {
-            isMounted = false
-        }
-    }, [fetchSubscriptions, fetchStats])
+        fetchStats()
+    }, [])
 
     const handlePause = useCallback(async (id: number) => {
         try {
@@ -495,20 +446,7 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false, cr
                     data={subscriptions}
                     isLoading={loading}
                     variant="embedded"
-                    filterColumn="product"
-                    searchPlaceholder="Buscar por producto..."
-                    facetedFilters={[
-                        {
-                            column: "status",
-                            title: "Estado",
-                            options: [
-                                { label: "Activo", value: "ACTIVE" },
-                                { label: "Pausado", value: "PAUSED" },
-                                { label: "Cancelado", value: "CANCELLED" },
-                            ],
-                        },
-                    ]}
-                    useAdvancedFilter={true}
+                    leftAction={<SmartSearchBar searchDef={subscriptionSearchDef} placeholder="Buscar suscripciones..." className="w-80" />}
                     defaultPageSize={20}
                     bulkActions={bulkActions}
                     createAction={createAction}

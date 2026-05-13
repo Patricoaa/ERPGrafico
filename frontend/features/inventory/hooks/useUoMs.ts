@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
+import type { FilterState } from '@/components/shared'
 
 export interface UoMCategory {
     id: number
@@ -20,13 +21,15 @@ export interface UoM {
 export const UOMS_QUERY_KEY = ['uoms']
 export const UOM_CATEGORIES_QUERY_KEY = ['uomCategories']
 
-export function useUoMs() {
+export function useUoMs(filters?: FilterState) {
     const queryClient = useQueryClient()
 
     const { data: uoms, isLoading: isUoMsLoading, refetch } = useQuery({
-        queryKey: UOMS_QUERY_KEY,
+        queryKey: [...UOMS_QUERY_KEY, filters],
         queryFn: async (): Promise<UoM[]> => {
-            const response = await api.get('/inventory/uoms/')
+            const params = new URLSearchParams()
+            if (filters?.search) params.append('search', filters.search)
+            const response = await api.get('/inventory/uoms/', { params })
             return response.data.results || response.data
         },
         staleTime: 60 * 60 * 1000, // 1 hora — datos estáticos

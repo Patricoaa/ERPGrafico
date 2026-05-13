@@ -3,14 +3,15 @@
 import { useState, useEffect } from "react"
 import { toast } from "sonner"
 import api from "@/lib/api"
-import { Button } from "@/components/ui/button"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
 import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
-import { Plus, Edit, Trash2, Loader2, Users } from "lucide-react"
+import { Edit, Trash2, Users } from "lucide-react"
 import { GroupForm } from "@/features/users/components/GroupForm"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+import { SmartSearchBar, useClientSearch } from "@/components/shared"
+import { groupSearchDef } from "@/features/settings/searchDef"
 
 interface GroupManagementProps {
     externalOpen?: boolean
@@ -20,7 +21,8 @@ interface GroupManagementProps {
 
 export function GroupManagement({ externalOpen, onExternalOpenChange, createAction }: GroupManagementProps) {
     const [loading, setLoading] = useState(true)
-    const [groups, setGroups] = useState<any[]>([])
+    const [groups, setGroups] = useState<Record<string, unknown>[]>([])
+    const { filterFn } = useClientSearch<Record<string, unknown>>(groupSearchDef)
     const [deleteId, setDeleteId] = useState<number | null>(null)
     const [showCreateModal, setShowCreateModal] = useState(false)
 
@@ -58,7 +60,7 @@ export function GroupManagement({ externalOpen, onExternalOpenChange, createActi
         }
     }
 
-    const columns: ColumnDef<any>[] = [
+    const columns: ColumnDef<Record<string, unknown>>[] = [
         {
             accessorKey: "name",
             header: ({ column }) => (
@@ -78,19 +80,19 @@ export function GroupManagement({ externalOpen, onExternalOpenChange, createActi
             ),
             cell: ({ row }) => <div className="pl-4 text-xs">{row.getValue("user_count")}</div>,
         },
-        createActionsColumn<any>({
+        createActionsColumn<Record<string, unknown>>({
             renderActions: (group) => (
                 <>
                     <GroupForm
-                        initialData={group}
+                        initialData={group as { id: number; name: string }}
                         onSuccess={fetchGroups}
                         trigger={<DataCell.Action icon={Edit} title="Editar" />}
                     />
-                    <DataCell.Action 
-                        icon={Trash2} 
-                        title="Eliminar" 
-                        className="text-destructive hover:text-destructive" 
-                        onClick={() => setDeleteId(group.id)} 
+                    <DataCell.Action
+                        icon={Trash2}
+                        title="Eliminar"
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => setDeleteId(group.id as number)}
                     />
                 </>
             )
@@ -101,12 +103,10 @@ export function GroupManagement({ externalOpen, onExternalOpenChange, createActi
         <div className="space-y-4">
             <DataTable
                 columns={columns}
-                data={groups}
+                data={filterFn(groups)}
                 isLoading={loading}
                 variant="embedded"
-                filterColumn="name"
-                searchPlaceholder="Buscar grupo..."
-                useAdvancedFilter={true}
+                leftAction={<SmartSearchBar searchDef={groupSearchDef} placeholder="Buscar grupo..." />}
                 createAction={createAction}
             />
 

@@ -40,7 +40,7 @@ export function HRHeader() {
 
     const navigation = {
         moduleName: "Recursos Humanos",
-        moduleHref: "/hr",
+        moduleHref: "/hr/employees",
         tabs,
         activeValue,
         subActiveValue,

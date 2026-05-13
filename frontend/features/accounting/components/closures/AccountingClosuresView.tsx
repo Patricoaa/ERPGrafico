@@ -16,7 +16,8 @@ import { DataTableColumnHeader } from '@/components/ui/data-table-column-header'
 import { createActionsColumn, DataCell } from '@/components/ui/data-table-cells';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { LayoutGrid, List, PlayCircle, ShieldAlert, Lock, LockOpen } from 'lucide-react';
-import { PageHeaderButton } from '@/components/shared';
+import { PageHeaderButton, SmartSearchBar, useClientSearch } from '@/components/shared';
+import { fiscalYearSearchDef } from '../../searchDef';
 
 interface AccountingClosuresViewProps {
     externalOpen?: boolean;
@@ -157,6 +158,8 @@ export function AccountingClosuresView({ externalOpen, onExternalOpenChange }: A
         }
     };
 
+    const { filterFn } = useClientSearch<{ year: number; periods: AccountingPeriod[]; fiscalYear: FiscalYear | undefined; status: string }>(fiscalYearSearchDef)
+
     const [viewMode, setViewMode] = useState<string>(searchParams.get("view") ?? "card");
 
     const handleViewChange = (v: string) => {
@@ -251,11 +254,10 @@ export function AccountingClosuresView({ externalOpen, onExternalOpenChange }: A
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
             <DataTable
                 columns={columns}
-                data={groupedData}
+                data={filterFn(groupedData.map(r => ({ ...r, status: r.fiscalYear?.status ?? 'OPEN' })))}
                 isLoading={actionLoadingYr || actionLoadingPeriod}
                 variant="standalone"
-                filterColumn="year"
-                searchPlaceholder="Buscar por año..."
+                leftAction={<SmartSearchBar searchDef={fiscalYearSearchDef} placeholder="Buscar ejercicio..." />}
                 currentView={viewMode}
                 onViewChange={handleViewChange}
                 defaultPageSize={10}

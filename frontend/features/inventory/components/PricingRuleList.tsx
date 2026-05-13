@@ -10,7 +10,7 @@ import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 import { ColumnDef } from "@tanstack/react-table"
 import api from "@/lib/api"
 import { PricingRuleForm } from "@/features/sales/components/PricingRuleForm"
-import { Pencil, Trash2, Plus } from "lucide-react"
+import { Pencil, Trash2 } from "lucide-react"
 
 import { toast } from "sonner"
 import { StatusBadge } from "@/components/shared/StatusBadge"
@@ -50,9 +50,12 @@ interface PricingRuleListProps {
 }
 
 import { usePricingRules } from "@/features/inventory/hooks/usePricingRules"
+import { SmartSearchBar, useSmartSearch } from "@/components/shared"
+import { pricingRuleSearchDef } from "@/features/inventory/searchDef"
 
 export function PricingRuleList({ externalOpen, onExternalOpenChange, createAction }: PricingRuleListProps) {
-    const { rules, isLoading, refetch } = usePricingRules()
+    const { filters } = useSmartSearch(pricingRuleSearchDef)
+    const { rules, isLoading, refetch } = usePricingRules(filters)
     const [editingRule, setEditingRule] = useState<PricingRule | null>(null)
     const [isFormOpen, setIsFormOpen] = useState(false)
 
@@ -82,6 +85,8 @@ export function PricingRuleList({ externalOpen, onExternalOpenChange, createActi
             showApiError(error, "Error al eliminar la regla.")
         }
     })
+
+    const handleDelete = (id: number) => deleteConfirm.requestConfirm(id)
 
     const columns = useMemo<ColumnDef<PricingRule>[]>(() => [
         {
@@ -231,19 +236,7 @@ export function PricingRuleList({ externalOpen, onExternalOpenChange, createActi
                     data={rules}
                     isLoading={isLoading}
                     variant="embedded"
-                    globalFilterFields={["name"]}
-                    searchPlaceholder="Buscar por nombre o producto..."
-                    facetedFilters={[
-                        {
-                            column: "active",
-                            title: "Estado",
-                            options: [
-                                { label: "Activo", value: "true" },
-                                { label: "Inactivo", value: "false" },
-                            ],
-                        },
-                    ]}
-                    useAdvancedFilter={true}
+                    leftAction={<SmartSearchBar searchDef={pricingRuleSearchDef} placeholder="Buscar reglas de precio..." className="w-80" />}
                     createAction={createAction}
                 />
             </div>

@@ -5,7 +5,6 @@ import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
-import { Button } from "@/components/ui/button"
 import { LayoutDashboard, List, ArrowRight, ArrowLeft } from "lucide-react"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { EntityCard } from "@/components/shared/EntityCard"
@@ -18,7 +17,7 @@ import { NoteHubStatus } from "@/features/orders/components/NoteHubStatus"
 import { Tabs } from "@/components/ui/tabs"
 import { useSalesOrders, useSalesNotes, type SaleOrder, type SaleNote } from "@/features/sales"
 import { SmartSearchBar, useSmartSearch } from "@/components/shared"
-import { salesOrderSearchDef } from "@/features/sales/searchDef"
+import { salesOrderSearchDef, salesNoteSearchDef } from "@/features/sales/searchDef"
 import type { SaleOrderFilters } from "@/features/sales/types"
 import { cn } from "@/lib/utils"
 import { ENTITY_REGISTRY } from "@/lib/entity-registry"
@@ -63,13 +62,13 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
     const toggleSelection = (id: number) => {
         const isSelected = viewMode === "orders" ? hubConfig?.orderId === id : hubConfig?.invoiceId === id
         const params = new URLSearchParams(searchParams.toString())
-        
+
         if (isSelected && isHubOpen) {
             params.delete('selected')
         } else {
             params.set('selected', String(id))
         }
-        
+
         const query = params.toString()
         router.push(query ? `${pathname}?${query}` : pathname, { scroll: false })
     }
@@ -87,7 +86,13 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
             pos_session: posSessionId || undefined,
         }
     })
-    const { data: notes, isLoading: isLoadingNotes, refetch: refetchNotes } = useSalesNotes()
+    const { data: notes, isLoading: isLoadingNotes, refetch: refetchNotes } = useSalesNotes({
+        filters: {
+            customer_name: (smartFilters as Record<string, string>).customer_name,
+            date_after: (smartFilters as Record<string, string>).date_after,
+            date_before: (smartFilters as Record<string, string>).date_before,
+        }
+    })
 
     const handleActionSuccess = () => {
         // Refetch both to ensure cards background update
@@ -146,8 +151,8 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
                             title={isSelected && isHubOpen ? "Cerrar Panel" : "Abrir Panel"}
                             className={cn(
                                 "transition-all",
-                                isSelected && isHubOpen 
-                                    ? "text-primary animate-in fade-in slide-in-from-right-1 duration-300" 
+                                isSelected && isHubOpen
+                                    ? "text-primary animate-in fade-in slide-in-from-right-1 duration-300"
                                     : "text-muted-foreground/30 hover:text-primary hover:translate-x-0.5"
                             )}
                             onClick={() => toggleSelection(item.id)}
@@ -206,8 +211,8 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
                             title={isSelected && isHubOpen ? "Cerrar Panel" : "Abrir Panel"}
                             className={cn(
                                 "transition-all",
-                                isSelected && isHubOpen 
-                                    ? "text-primary animate-in fade-in slide-in-from-right-1 duration-300" 
+                                isSelected && isHubOpen
+                                    ? "text-primary animate-in fade-in slide-in-from-right-1 duration-300"
                                     : "text-muted-foreground/30 hover:text-primary hover:translate-x-0.5"
                             )}
                             onClick={() => toggleSelection(item.id)}
@@ -226,61 +231,61 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
                 onRowClick={(row: any) => toggleSelection(row.original.id)}
                 variant="embedded"
                 isLoading={viewMode === 'orders' ? isLoadingOrders : isLoadingNotes}
-                    currentView={currentView}
-                    onViewChange={handleViewChange}
-                    viewOptions={viewOptions}
-                    leftAction={viewMode === 'orders'
-                        ? <SmartSearchBar searchDef={salesOrderSearchDef} placeholder="Buscar órdenes..." />
-                        : undefined
-                    }
-                    showToolbarSort={true}
+                currentView={currentView}
+                onViewChange={handleViewChange}
+                viewOptions={viewOptions}
+                leftAction={viewMode === 'orders'
+                    ? <SmartSearchBar searchDef={salesOrderSearchDef} placeholder="Buscar órdenes..." />
+                    : <SmartSearchBar searchDef={salesNoteSearchDef} placeholder="Buscar notas..." />
+                }
+                showToolbarSort={true}
 
-                    defaultPageSize={20}
-                    renderCustomView={currentView === 'card' ? (table) => {
-                        const rows = table.getRowModel().rows
-                        if (rows.length === 0) {
-                            return (
-                                <EmptyState
-                                    context="search"
-                                    title={viewMode === 'orders' ? `No se encontraron ${ENTITY_REGISTRY['sales.saleorder']?.titlePlural.toLowerCase()}` : "No se encontraron notas"}
-                                    description="Ajusta el rango de fechas o los filtros para encontrar lo que buscas."
-                                />
-                            )
-                        }
+                defaultPageSize={20}
+                renderCustomView={currentView === 'card' ? (table) => {
+                    const rows = table.getRowModel().rows
+                    if (rows.length === 0) {
                         return (
-                            <div className="grid gap-3 pt-1">
-                                {rows.map((row) => {
-                                    const item = row.original as any
-                                    const id = Number(item.id)
-                                    const isSelected = viewMode === 'orders'
-                                        ? hubConfig?.orderId === id
-                                        : hubConfig?.invoiceId === id
-
-                                    return (
-                                        <OrderCard
-                                            key={id}
-                                            item={item}
-                                            isSelected={isSelected}
-                                            isHubOpen={isHubOpen}
-                                            type={viewMode === 'orders' ? 'sale' : 'note'}
-                                            hideStatus={hideStatusInCards}
-                                            visibleColumns={table.getState().columnVisibility}
-                                            onClick={() => toggleSelection(id)}
-                                        />
-                                    )
-                                })}
-                            </div>
+                            <EmptyState
+                                context="search"
+                                title={viewMode === 'orders' ? `No se encontraron ${ENTITY_REGISTRY['sales.saleorder']?.titlePlural.toLowerCase()}` : "No se encontraron notas"}
+                                description="Ajusta el rango de fechas o los filtros para encontrar lo que buscas."
+                            />
                         )
-                    } : undefined}
-                    renderLoadingView={currentView === 'card' ? () => (
+                    }
+                    return (
                         <div className="grid gap-3 pt-1">
-                            {Array.from({ length: 8 }).map((_, i) => (
-                                <EntityCard.Skeleton key={i} />
-                            ))}
+                            {rows.map((row) => {
+                                const item = row.original as any
+                                const id = Number(item.id)
+                                const isSelected = viewMode === 'orders'
+                                    ? hubConfig?.orderId === id
+                                    : hubConfig?.invoiceId === id
+
+                                return (
+                                    <OrderCard
+                                        key={id}
+                                        item={item}
+                                        isSelected={isSelected}
+                                        isHubOpen={isHubOpen}
+                                        type={viewMode === 'orders' ? 'sale' : 'note'}
+                                        hideStatus={hideStatusInCards}
+                                        visibleColumns={table.getState().columnVisibility}
+                                        onClick={() => toggleSelection(id)}
+                                    />
+                                )
+                            })}
                         </div>
-                    ) : undefined}
-                />
-            
+                    )
+                } : undefined}
+                renderLoadingView={currentView === 'card' ? () => (
+                    <div className="grid gap-3 pt-1">
+                        {Array.from({ length: 8 }).map((_, i) => (
+                            <EntityCard.Skeleton key={i} />
+                        ))}
+                    </div>
+                ) : undefined}
+            />
+
         </Tabs>
     )
 }

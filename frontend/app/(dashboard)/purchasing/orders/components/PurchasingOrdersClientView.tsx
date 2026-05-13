@@ -8,7 +8,7 @@ import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
 import { DataCell } from "@/components/ui/data-table-cells"
 import { Button } from "@/components/ui/button"
-import { List, LayoutDashboard, Plus, ArrowRight, ArrowLeft, Filter, Monitor } from "lucide-react"
+import { List, LayoutDashboard, ArrowRight, ArrowLeft } from "lucide-react"
 import api from "@/lib/api"
 import { PurchaseOrderForm } from "@/features/purchasing/components/PurchaseOrderForm"
 import { toast } from "sonner"
@@ -16,8 +16,7 @@ import { DocumentRegistrationModal } from "@/features/purchasing/components/Docu
 import { DocumentCompletionModal } from "@/components/shared/DocumentCompletionModal"
 import { PurchaseCheckoutWizard } from "@/features/purchasing/components/PurchaseCheckoutWizard"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
-import { DateRangeFilter } from "@/components/shared/DateRangeFilter"
-import { isWithinInterval, parseISO, startOfDay, endOfDay, format } from "date-fns"
+import { format } from "date-fns"
 import { PurchaseOrderHubStatus } from "@/features/orders/components/PurchaseOrderHubStatus"
 import { getPurchaseHubStatuses } from '@/features/purchasing/utils/status'
 import { NoteHubStatus } from "@/features/orders/components/NoteHubStatus"
@@ -59,9 +58,12 @@ interface PurchasingOrdersClientViewProps {
 }
 
 import { usePurchasingOrders, usePurchasingNotes } from "@/features/purchasing/hooks/usePurchasing"
+import { SmartSearchBar, useSmartSearch } from "@/components/shared"
+import { purchaseOrderSearchDef } from "@/features/purchasing/searchDef"
 
 export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, createAction }: PurchasingOrdersClientViewProps) {
-    const { orders, isLoading: isLoadingOrders, refetch: fetchOrders, deleteOrder } = usePurchasingOrders()
+    const { filters } = useSmartSearch(purchaseOrderSearchDef)
+    const { orders, isLoading: isLoadingOrders, refetch: fetchOrders, deleteOrder } = usePurchasingOrders(filters)
     const { notes, isLoading: isLoadingNotes, refetch: fetchNotes } = usePurchasingNotes()
 
     const searchParams = useSearchParams()
@@ -75,7 +77,6 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
     const [folioModalOpen, setFolioModalOpen] = useState(false)
     const [selectedInvoice, setSelectedInvoice] = useState<{ id: number, type: string } | null>(null)
     const [checkoutOrderId, setCheckoutOrderId] = useState<number | null>(null)
-    const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date } | undefined>()
     const [currentView, setCurrentView] = React.useState<'card' | 'list'>(
         (searchParams.get('view') as 'card' | 'list') ?? 'card'
     )
@@ -127,15 +128,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
         }
     }, [externalOpenCheckout])
 
-    const filteredOrders = orders.filter((order: any) => {
-        if (!dateRange || !dateRange.from) return true
-
-        const orderDate = parseISO(order.date)
-        const start = startOfDay(dateRange.from)
-        const end = dateRange.to ? endOfDay(dateRange.to) : endOfDay(dateRange.from)
-
-        return isWithinInterval(orderDate, { start, end })
-    })
+    const filteredOrders = orders
 
     const deleteConfirm = useConfirmAction<number>(async (id) => {
         try {
@@ -213,13 +206,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
         }
     }
 
-    const filteredNotes = notes.filter((note: any) => {
-        if (!dateRange || !dateRange.from) return true
-        const noteDate = parseISO(note.date || new Date().toISOString())
-        const start = startOfDay(dateRange.from)
-        const end = dateRange.to ? endOfDay(dateRange.to) : endOfDay(dateRange.from)
-        return isWithinInterval(noteDate, { start, end })
-    })
+    const filteredNotes = notes
 
     const noteColumns: ColumnDef<Order>[] = [
         {
@@ -457,65 +444,8 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                     currentView={currentView}
                     onViewChange={handleViewChange}
                     viewOptions={viewOptions}
-                    filterColumn={viewMode === 'orders' ? "supplier_name" : "number"}
-                    searchPlaceholder={viewMode === 'orders' ? "Buscar por proveedor..." : "Buscar por folio..."}
-                    facetedFilters={[
-                        {
-                            column: "status",
-                            title: "Origen",
-                            options: viewMode === 'orders' ? [
-                                { label: "Borrador", value: "DRAFT" },
-                                { label: "Confirmado", value: "CONFIRMED" },
-                            ] : [
-                                { label: "Borrador", value: "DRAFT" },
-                                { label: "Publicado", value: "POSTED" },
-                                { label: "Pagado", value: "PAID" },
-                                { label: "Anulado", value: "CANCELLED" },
-                            ],
-                        },
-                        ...(viewMode === 'orders' ? [
-                            {
-                                column: "reception_status",
-                                title: "Recepción",
-                                options: [
-                                    { label: "En Proceso", value: "active" },
-                                    { label: "Completado", value: "success" },
-                                    { label: "Pendiente", value: "neutral" },
-                                ]
-                            },
-                            {
-                                column: "billing_status",
-                                title: "Facturación",
-                                options: [
-                                    { label: "En Proceso", value: "active" },
-                                    { label: "Completado", value: "success" },
-                                    { label: "Pendiente", value: "neutral" },
-                                ]
-                            },
-                            {
-                                column: "treasury_status",
-                                title: "Tesorería",
-                                options: [
-                                    { label: "En Proceso", value: "active" },
-                                    { label: "Completado", value: "success" },
-                                    { label: "Pendiente", value: "neutral" },
-                                ]
-                            }
-                        ] : [])
-                    ]}
-                    useAdvancedFilter={true}
+                    leftAction={<SmartSearchBar searchDef={purchaseOrderSearchDef} placeholder="Buscar por proveedor..." className="w-80" />}
                     showToolbarSort={true}
-                    onReset={() => setDateRange(undefined)}
-                    globalFilterFields={["number"]}
-                    isCustomFiltered={!!dateRange}
-                    customFilterCount={dateRange ? 1 : 0}
-                    customFilters={
-                        <DateRangeFilter
-                            onDateChange={setDateRange}
-                            label={viewMode === 'orders' ? "Fecha de Orden" : "Fecha de Emisión"}
-                            className="bg-transparent border-none w-full"
-                        />
-                    }
                     renderCustomView={currentView === 'card' ? (table) => {
                         const rows = table.getRowModel().rows
                         if (rows.length === 0) {

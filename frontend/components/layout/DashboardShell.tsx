@@ -66,17 +66,17 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
 
     const categoryToUrl: Record<string, string> = {
         "dashboard": "/",
-        "accounting": "/accounting",
+        "accounting": "/accounting/ledger",
         "contacts": "/contacts",
-        "sales": "/sales",
-        "billing": "/billing",
-        "inventory": "/inventory",
+        "sales": "/sales/orders?tab=orders",
+        "billing": "/billing/invoices",
+        "inventory": "/inventory/products?tab=products",
         "production": "/production",
-        "treasury": "/treasury",
-        "purchasing": "/purchasing",
+        "treasury": "/treasury/movements",
+        "purchasing": "/purchasing/orders?tab=orders",
         "finances": "/finances",
         "tax": "/tax",
-        "hr": "/hr",
+        "hr": "/hr/employees",
     }
 
 

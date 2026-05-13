@@ -1,10 +1,10 @@
 "use client"
 
-import React, { useState, useEffect, useCallback } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import React, { useState, useEffect } from "react"
+import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { toast } from "sonner"
 import { CreatePayrollModal, PayrollDetailSheet } from "@/features/hr"
-import { getPayrolls, deletePayroll, paySalary, payPrevired, createAdvance } from '@/features/hr/api/hrApi'
+import { deletePayroll, paySalary, payPrevired, createAdvance } from '@/features/hr/api/hrApi'
 import type { Payroll } from "@/types/hr"
 import { ColumnDef } from "@tanstack/react-table"
 import { DataTable } from "@/components/ui/data-table"
@@ -14,18 +14,20 @@ import { StatusBadge } from "@/components/shared/StatusBadge"
 import { Eye, Trash2, Coins, CreditCard, Wallet } from "lucide-react"
 import { PaymentModal } from "@/features/treasury"
 
-
-import { ToolbarCreateButton } from "@/components/shared"
+import { ToolbarCreateButton, SmartSearchBar, useSmartSearch } from "@/components/shared"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
+import { usePayrolls } from "@/features/hr/hooks/usePayrolls"
+import { payrollSearchDef } from "@/features/hr/searchDef"
 
 // Schema and dialog moved to features/hr/components/CreatePayrollDialog
 
 export default function PayrollsPage() {
     const createAction = <ToolbarCreateButton label="Generar Liquidaciones" href="/hr/payrolls?modal=new" />
     const router = useRouter()
+    const pathname = usePathname()
     const searchParams = useSearchParams()
-    const [payrolls, setPayrolls] = useState<Payroll[]>([])
-    const [loading, setLoading] = useState(true)
+    const { filters } = useSmartSearch(payrollSearchDef)
+    const { payrolls, isLoading: loading, refetch: fetchPayrolls } = usePayrolls(filters)
 
     const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<Payroll>({
         endpoint: '/hr/payrolls'
@@ -40,19 +42,6 @@ export default function PayrollsPage() {
 
     const isNewModalOpen = searchParams.get("modal") === "new"
     const [dialogOpen, setDialogOpen] = useState(isNewModalOpen)
-
-    const fetchPayrolls = useCallback(async () => {
-        try {
-            const data = await getPayrolls()
-            setPayrolls(data)
-        } catch {
-            toast.error("Error al cargar liquidaciones")
-        } finally {
-            setLoading(false)
-        }
-    }, [])
-
-    useEffect(() => { fetchPayrolls() }, [fetchPayrolls])
 
     useEffect(() => {
         const action = searchParams.get("action")
@@ -319,20 +308,7 @@ export default function PayrollsPage() {
                 data={payrolls}
                 isLoading={loading}
                 variant="embedded"
-                filterColumn="employee"
-                globalFilterFields={["display_id", "employee"]}
-                searchPlaceholder="Buscar liquidación o empleado..."
-                facetedFilters={[
-                    {
-                        column: "status",
-                        title: "Estado",
-                        options: [
-                            { label: "Borrador", value: "DRAFT" },
-                            { label: "Contabilizado", value: "POSTED" },
-                        ],
-                    },
-                ]}
-                useAdvancedFilter={true}
+                leftAction={<SmartSearchBar searchDef={payrollSearchDef} placeholder="Buscar por empleado o período..." className="w-80" />}
                 defaultPageSize={20}
                 onRowClick={(row: Payroll) => openDetail(row.id)}
                 createAction={createAction}

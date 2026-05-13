@@ -2,7 +2,7 @@ from decimal import Decimal
 from django.db import transaction, models
 from django.db.models import Sum
 from django.utils import timezone
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.core.exceptions import ValidationError
@@ -99,8 +99,9 @@ class EmployeeFilter(django_filters.FilterSet):
 class EmployeeViewSet(AuditHistory, viewsets.ModelViewSet):
     queryset = Employee.objects.select_related('contact', 'afp').all()
     serializer_class = EmployeeSerializer
-    filter_backends = [DjangoFilterBackend]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_class = EmployeeFilter
+    search_fields = ['contact__name', 'contact__tax_id', 'position']
 
 
 # --- Absence ---
@@ -139,8 +140,9 @@ class PayrollViewSet(viewsets.ModelViewSet):
         'employee', 'employee__contact',
         'journal_entry', 'previred_journal_entry'
     ).prefetch_related('items', 'items__concept').all()
-    filter_backends = [DjangoFilterBackend]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_class = PayrollFilter
+    search_fields = ['employee__contact__name']
 
     def get_serializer_class(self):
         if self.action in ('retrieve', 'create', 'update', 'partial_update'):

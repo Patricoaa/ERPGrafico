@@ -532,6 +532,8 @@ class ProductViewSet(BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
 class ProductAttributeViewSet(viewsets.ModelViewSet, AuditHistory):
     queryset = ProductAttribute.objects.all()
     serializer_class = ProductAttributeSerializer
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['name']
 
 class ProductAttributeValueViewSet(viewsets.ModelViewSet, AuditHistory):
     queryset = ProductAttributeValue.objects.all()
@@ -549,8 +551,9 @@ class WarehouseViewSet(viewsets.ModelViewSet, AuditHistory):
 class UoMViewSet(viewsets.ModelViewSet, AuditHistory):
     queryset = UoM.objects.all()
     serializer_class = UoMSerializer
-    filter_backends = [DjangoFilterBackend]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_fields = ['category', 'active']
+    search_fields = ['name', 'abbreviation']
 
     @action(detail=False, methods=['get'])
     def allowed(self, request):
@@ -645,8 +648,9 @@ class StockMoveViewSet(viewsets.ReadOnlyModelViewSet, AuditHistory):
 class PricingRuleViewSet(AuditHistory, viewsets.ModelViewSet):
     queryset = PricingRule.objects.all()
     serializer_class = PricingRuleSerializer
-    filter_backends = [DjangoFilterBackend]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_fields = ['product', 'category', 'active']
+    search_fields = ['name']
 
 class CustomFieldTemplateViewSet(viewsets.ModelViewSet):
     queryset = CustomFieldTemplate.objects.all()
@@ -662,8 +666,9 @@ class ProductCustomFieldViewSet(viewsets.ModelViewSet):
 class SubscriptionViewSet(viewsets.ModelViewSet):
     queryset = Subscription.objects.all()
     serializer_class = SubscriptionSerializer
-    filter_backends = [DjangoFilterBackend]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_fields = ['status', 'product', 'supplier']
+    search_fields = ['product__name']
 
     def get_queryset(self):
         """
