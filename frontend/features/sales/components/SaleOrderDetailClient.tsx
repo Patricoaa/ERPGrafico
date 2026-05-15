@@ -7,12 +7,16 @@ import api from "@/lib/api"
 import { EntityDetailPage, FormFooter, SubmitButton, CancelButton, FormSkeleton } from "@/components/shared"
 import { SaleOrderForm } from "./forms/SaleOrderForm"
 import { toast } from "sonner"
+import { SaleOrderSidebar } from "./SaleOrderSidebar"
 
 interface SaleOrderDetailClientProps {
     orderId: string
 }
 
 export function SaleOrderDetailClient({ orderId }: SaleOrderDetailClientProps) {
+    const [isSaving, setIsSaving] = useState(false)
+    const router = useRouter()
+    
     const { data: order, isLoading: loading, error: queryError } = useQuery({
         queryKey: ['saleOrder', orderId],
         queryFn: async () => {
@@ -43,6 +47,7 @@ export function SaleOrderDetailClient({ orderId }: SaleOrderDetailClientProps) {
                 { label: order.number, href: `/sales/orders/${orderId}` }
             ]}
             instanceId={order.id}
+            sidebar={<SaleOrderSidebar orderId={order.id} />}
             footer={
                 <FormFooter
                     actions={

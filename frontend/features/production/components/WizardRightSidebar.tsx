@@ -21,19 +21,13 @@ import { CommentSystem } from "@/components/shared/CommentSystem"
 import { formatPlainDate, cn } from "@/lib/utils"
 import type { WorkOrder } from "../types"
 
-interface Comment {
-    user: string
-    text: string
-    timestamp: string
-}
+import { useWorkOrderComments } from "../hooks/useWorkOrderComments"
 
 interface WizardRightSidebarProps {
     order: WorkOrder
     viewingStepIndex: number
     productName: string
     stageData: WorkOrder['stage_data']
-    onAddComment: (text: string) => void
-    comments: Comment[]
 }
 
 export function WizardRightSidebar({
@@ -41,9 +35,17 @@ export function WizardRightSidebar({
     viewingStepIndex,
     productName,
     stageData,
-    onAddComment,
-    comments = []
 }: WizardRightSidebarProps) {
+    const { comments, addComment, isAdding } = useWorkOrderComments(order.id)
+    
+    // Map backend comments to the format expected by CommentSystem
+    const mappedComments = comments.map(c => ({
+        user: c.user_name,
+        text: c.text,
+        timestamp: c.created_at,
+        source: c.source_label
+    }))
+
     const techSpecs = [
         { label: "Pre-Impresión", value: stageData?.prepress_specs || order?.specifications_prepress },
         { label: "Diseño Requerido", value: stageData?.design_needed ? "SÍ" : "NO" },
@@ -173,8 +175,8 @@ export function WizardRightSidebar({
                         </AccordionTrigger>
                         <AccordionContent className="pt-2">
                             <CommentSystem
-                                comments={comments}
-                                onAddComment={onAddComment}
+                                comments={mappedComments}
+                                onAddComment={addComment}
                                 placeholder="Agregar observación interna..."
                                 emptyMessage="No hay observaciones aún"
                                 maxHeight="none"

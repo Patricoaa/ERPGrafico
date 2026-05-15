@@ -242,18 +242,6 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
     }
   }
 
-  const handleAddComment = async (text: string) => {
-    if (!order) return
-    try {
-      await mutations.addComment({
-        text,
-        authorName: user?.first_name ?? user?.username ?? 'Usuario',
-        currentStageData: order.stage_data ?? {},
-      })
-      fetchOrder()
-    } catch { toast.error('Error al registrar comentario') }
-  }
-
   const handleAnnul = async () => {
     try {
       await mutations.annul('')
@@ -459,8 +447,6 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
             viewingStepIndex={viewingStepIndex}
             productName={productName}
             stageData={stageData}
-            comments={order?.stage_data?.comments ?? []}
-            onAddComment={handleAddComment}
           />
         </div>
       </BaseModal>

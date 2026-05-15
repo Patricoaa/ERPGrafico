@@ -661,7 +661,7 @@ Tarea horaria: OTs con `due_date < today AND status NOT IN (FINISHED, CANCELLED)
 Seleccionar múltiples OTs → acción "Imprimir todas" (une PDFs) o "Avanzar etapa".
 **Criterio:** Selección múltiple activa acciones bulk en toolbar.
 
-### TASK-307 — Sincronizar comentarios OT ↔ NV
+### ✅ TASK-307 — Sincronizar comentarios OT ↔ NV
 **Esfuerzo:** M · **Archivos:** workflow/models.py (Comment polymorphic), serializers
 Comments como entidad propia con GenericForeignKey, no en `stage_data.comments`.
 **Criterio:** Comentar en NV aparece en OT relacionada y viceversa.
