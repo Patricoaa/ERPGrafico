@@ -631,10 +631,10 @@ Verificar primero si `weasyprint` ya está en `requirements.txt`. Si no, agregar
 
 Las tareas P3 son independientes y se priorizan según feedback de usuarios piloto. Detalle reducido — cada una sigue el formato:
 
-### TASK-301 — Badge "OT atrasada" en kanban y tabla
+### TASK-301 ✅ — Badge "OT atrasada" en kanban y tabla
 **Esfuerzo:** XS · **Archivos:** WorkOrderKanban.tsx, orders/page.tsx
 Mostrar badge rojo si `due_date < today AND status != FINISHED`.
-**Criterio:** OT atrasada visible visualmente sin abrir.
+**Criterio:** [x] OT atrasada visible visualmente sin abrir.
 
 ### TASK-302 — Botón "Duplicar OT"
 **Esfuerzo:** S · **Archivos:** views.py (action `duplicate`), WorkOrderWizard, orders/page.tsx
