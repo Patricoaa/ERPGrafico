@@ -6,6 +6,7 @@ class ProductionConfig(AppConfig):
 
     def ready(self):
         import production.signals
+        import production.tasks
         try:
             from core.permissions import PermissionRegistry
             PermissionRegistry.register('production', [

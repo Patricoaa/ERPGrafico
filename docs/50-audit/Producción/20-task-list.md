@@ -651,7 +651,7 @@ Toggle "Solo mis OT" filtra por `workflow_tasks__assigned_to=current_user`.
 `?type=stock&product_id=X` salta el modal de tipo y va directo al form NONE.
 **Criterio:** URL desde reposición/inventario abre form pre-configurado.
 
-### TASK-305 — Notificaciones de OT atrasada (Celery beat)
+### TASK-305 — Notificaciones de OT atrasada (Celery beat) ✅
 **Esfuerzo:** S · **Archivos:** production/tasks.py (Celery), production/apps.py
 Tarea horaria: OTs con `due_date < today AND status NOT IN (FINISHED, CANCELLED)` → notification a `task.assigned_to`.
 **Criterio:** OT atrasada genera 1 notification por día máx.
