@@ -11,6 +11,8 @@ import { StatusBadge } from "@/components/shared/StatusBadge"
 import { WorkOrderForm } from "@/features/production/components/forms/WorkOrderForm"
 import { WorkOrderWizard } from "@/features/production/components/WorkOrderWizard"
 import { WorkOrderKanban } from "@/features/production/components/WorkOrderKanban"
+import { Badge } from "@/components/ui/badge"
+import { isWorkOrderOverdue } from "@/features/production/utils"
 
 import { ToolbarCreateButton, SmartSearchBar, useSmartSearch } from "@/components/shared"
 import { translateProductionStage } from "@/lib/utils"
@@ -122,8 +124,13 @@ export default function WorkOrdersPage() {
                 <DataTableColumnHeader column={column} title="Estado" className="justify-center" />
             ),
             cell: ({ row }) => (
-                <div className="flex justify-center">
+                <div className="flex justify-center gap-1.5 items-center flex-wrap">
                     <StatusBadge status={row.original.status} />
+                    {isWorkOrderOverdue(row.original) && (
+                        <Badge variant="destructive" className="h-5 text-[9px] px-1.5 uppercase tracking-wider font-bold">
+                            Atrasada
+                        </Badge>
+                    )}
                 </div>
             ),
             filterFn: (row, id, value) => {

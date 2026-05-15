@@ -8,6 +8,7 @@ import {
     User,
     ChevronRight,
     AlertCircle,
+    CheckCircle2,
 } from "lucide-react"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { Badge } from "@/components/ui/badge"
@@ -15,6 +16,7 @@ import { CardSkeleton, Skeleton } from "@/components/shared"
 import { WorkOrder } from "../types"
 import { formatEntityDisplay } from "@/lib/entity-registry"
 import { STAGES_ORDERED } from "../constants/stages"
+import { isWorkOrderOverdue } from "../utils"
 
 interface KanbanProps {
     orders: WorkOrder[]
@@ -72,6 +74,11 @@ export function WorkOrderKanban({ orders, onTransition, onManage, isLoading }: K
                                                     <StatusBadge status={order.status} size="sm" />
                                                 </div>
                                                 <div className="flex gap-2 items-center flex-wrap">
+                                                    {isWorkOrderOverdue(order) && (
+                                                        <Badge variant="destructive" className="h-4 text-[9px] px-1 uppercase tracking-wider font-bold">
+                                                            Atrasada
+                                                        </Badge>
+                                                    )}
                                                     {order.outsourcing_status === 'partial' && (
                                                         <StatusBadge 
                                                             status="PARTIAL" 
@@ -107,7 +114,7 @@ export function WorkOrderKanban({ orders, onTransition, onManage, isLoading }: K
                                                         <User className="mr-1.5 h-3 w-3" />
                                                         <span className="truncate">{order.sale_customer_name || "Manual / Interno"}</span>
                                                     </div>
-                                                    <div className="flex items-center text-[11px] text-muted-foreground">
+                                                    <div className={cn("flex items-center text-[11px]", isWorkOrderOverdue(order) ? "text-destructive font-medium" : "text-muted-foreground")}>
                                                         <Clock className="mr-1.5 h-3 w-3" />
                                                         <span>{order.sale_order_date || order.due_date || "Sin fecha"}</span>
                                                     </div>
