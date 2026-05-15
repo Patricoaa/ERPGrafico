@@ -13,3 +13,4 @@ export type {
   UpdateMaterialPayload,
   AddCommentPayload,
 } from './useWorkOrderMutations'
+export { useWorkOrderListActions } from './useWorkOrderListActions'
