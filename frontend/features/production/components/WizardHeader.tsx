@@ -1,6 +1,6 @@
 "use client"
 
-import { CalendarIcon, Pencil, LayoutDashboard, Ban, Trash2, Copy } from "lucide-react"
+import { CalendarIcon, Pencil, LayoutDashboard, Ban, Trash2, Copy, BookTemplate } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { formatPlainDate, cn, formatCurrency } from "@/lib/utils"
 import { StatusBadge } from "@/components/shared/StatusBadge"
@@ -15,6 +15,7 @@ interface WizardHeaderProps {
     onAnnul: () => void
     onDelete: () => void
     onDuplicate: () => void
+    onSaveAsTemplate?: () => void
     isAnnuling: boolean
     isDeleting: boolean
     isDuplicating: boolean
@@ -28,6 +29,7 @@ export function WizardHeader({
     onAnnul,
     onDelete,
     onDuplicate,
+    onSaveAsTemplate,
     isAnnuling,
     isDeleting,
     isDuplicating
@@ -94,6 +96,17 @@ export function WizardHeader({
                 >
                     <Copy className="h-4 w-4" />
                 </Button>
+                {onSaveAsTemplate && (
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0 hover:bg-background hover:shadow-sm"
+                        onClick={onSaveAsTemplate}
+                        title="Guardar como plantilla"
+                    >
+                        <BookTemplate className="h-4 w-4" />
+                    </Button>
+                )}
                 <Button
                     variant="ghost"
                     size="sm"

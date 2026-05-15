@@ -237,8 +237,8 @@ export function MaterialAssignmentStep({
                         </div>
                         <div className="flex gap-2">
                           <Button variant="outline" size="sm" onClick={reset}>Cancelar</Button>
-                          <Button size="sm" onClick={handleSave} disabled={saving}>
-                            {saving ? (editingMaterialId ? 'Guardando...' : 'Añadiendo...') : (editingMaterialId ? 'Guardar' : 'Añadir')}
+                          <Button size="sm" onClick={handleSave} disabled={isAddingMaterial}>
+                            {isAddingMaterial ? (editingMaterialId ? 'Guardando...' : 'Añadiendo...') : (editingMaterialId ? 'Guardar' : 'Añadir')}
                           </Button>
                         </div>
                       </div>

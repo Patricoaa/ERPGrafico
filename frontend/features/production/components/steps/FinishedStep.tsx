@@ -1,17 +1,24 @@
 "use client"
 
-import { CheckCircle2, LayoutDashboard, AlertTriangle } from 'lucide-react'
+import { useRef } from 'react'
+import { CheckCircle2, LayoutDashboard, AlertTriangle, Camera, Loader2, Copy } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useHubPanel } from '@/components/providers/HubPanelProvider'
 import type { WorkOrder } from '../../types'
 
 interface FinishedStepProps {
   order: WorkOrder
+  onUploadPhoto?: (file: File) => Promise<void>
+  isUploadingPhoto?: boolean
+  onPrintCopy?: () => Promise<void>
+  isDuplicating?: boolean
 }
 
-export function FinishedStep({ order }: FinishedStepProps) {
+export function FinishedStep({ order, onUploadPhoto, isUploadingPhoto, onPrintCopy, isDuplicating }: FinishedStepProps) {
   const { openHub } = useHubPanel()
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const discrepancy = order.production_discrepancy
+  const hasPhoto = !!(order.stage_data as Record<string, unknown>)?.final_photo
 
   return (
     <div className="flex flex-col items-center justify-center py-12 text-center space-y-6 animate-in zoom-in-95 duration-500">
@@ -47,7 +54,7 @@ export function FinishedStep({ order }: FinishedStepProps) {
         </div>
       )}
 
-      <div className="flex gap-3">
+      <div className="flex gap-3 flex-wrap justify-center">
         <Button
           onClick={() => order.sale_order?.id && openHub({ orderId: order.sale_order.id, type: 'sale' })}
           className="gap-2 font-semibold"
@@ -55,6 +62,36 @@ export function FinishedStep({ order }: FinishedStepProps) {
           <LayoutDashboard className="h-4 w-4" />
           Ir al HUB de Venta
         </Button>
+        {onPrintCopy && (
+          <Button variant="outline" className="gap-2" disabled={isDuplicating} onClick={onPrintCopy}>
+            {isDuplicating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Copy className="h-4 w-4" />}
+            Imprimir copia
+          </Button>
+        )}
+        {onUploadPhoto && (
+          <>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0]
+                if (file) onUploadPhoto(file)
+                e.target.value = ''
+              }}
+            />
+            <Button
+              variant="outline"
+              className="gap-2"
+              disabled={isUploadingPhoto}
+              onClick={() => fileInputRef.current?.click()}
+            >
+              {isUploadingPhoto ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
+              {hasPhoto ? 'Reemplazar foto' : 'Adjuntar foto'}
+            </Button>
+          </>
+        )}
       </div>
     </div>
   )

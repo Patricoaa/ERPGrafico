@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Task, Notification, TaskAssignmentRule, WorkflowSettings, NotificationRule
+from .models import Task, Notification, TaskAssignmentRule, WorkflowSettings, NotificationRule, Comment
 from core.serializers import UserSerializer, AttachmentSerializer
 
 class TaskSerializer(serializers.ModelSerializer):
@@ -52,3 +52,26 @@ class NotificationRuleSerializer(serializers.ModelSerializer):
     class Meta:
         model = NotificationRule
         fields = '__all__'
+
+
+class CommentSerializer(serializers.ModelSerializer):
+    user_name = serializers.SerializerMethodField()
+    source_label = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Comment
+        fields = ['id', 'user', 'user_name', 'text', 'created_at', 'source_label']
+        read_only_fields = ['id', 'user', 'user_name', 'created_at', 'source_label']
+
+    def get_user_name(self, obj):
+        if obj.user:
+            return obj.user.get_full_name() or obj.user.username
+        return 'Sistema'
+
+    def get_source_label(self, obj):
+        model_name = obj.content_type.model if obj.content_type else ''
+        if model_name == 'workorder':
+            return 'OT'
+        if model_name in ('saleorder', 'invoice'):
+            return 'NV'
+        return model_name.upper()

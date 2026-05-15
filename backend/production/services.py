@@ -1337,9 +1337,18 @@ class WorkOrderPdfService:
         except ImportError:
             raise Exception("WeasyPrint is not installed. Please install it.")
 
-        # Prepare QR code
+        # Prepare QR code — points to the scan endpoint so mobile scan triggers transition
+        from production.models import ScanToken
+        import secrets
+        from django.utils import timezone
+        from datetime import timedelta
         base_url = request.build_absolute_uri('/')[:-1] if request else getattr(settings, 'SITE_URL', 'http://localhost:3000')
-        qr_data = f"{base_url}/production/orders/{work_order.pk}"
+        scan_token = ScanToken.objects.create(
+            work_order=work_order,
+            token=secrets.token_urlsafe(32),
+            expires_at=timezone.now() + timedelta(hours=24),
+        )
+        qr_data = f"{base_url}/api/production/orders/scan/{scan_token.token}/"
         
         qr = qrcode.QRCode(version=1, box_size=10, border=4)
         qr.add_data(qr_data)
@@ -1380,6 +1389,44 @@ class WorkOrderPdfService:
         pdf_bytes = html.write_pdf()
         
         return pdf_bytes
+
+    @staticmethod
+    def generate_bulk_pdf(work_orders, request=None):
+        """TASK-306: Render multiple OTs into a single PDF document."""
+        from django.template.loader import render_to_string
+        from io import BytesIO
+        import qrcode, base64
+        try:
+            from weasyprint import HTML
+        except ImportError:
+            raise Exception("WeasyPrint is not installed.")
+
+        contexts = []
+        for wo in work_orders:
+            try:
+                base_url = request.build_absolute_uri('/')[:-1] if request else 'http://localhost:3000'
+                qr = qrcode.QRCode(version=1, box_size=6, border=2)
+                qr.add_data(f"{base_url}/production/orders/{wo.pk}")
+                qr.make(fit=True)
+                buf = BytesIO()
+                qr.make_image(fill_color="black", back_color="white").save(buf, format="PNG")
+                qr_b64 = base64.b64encode(buf.getvalue()).decode()
+                stage_data = wo.canonical_stage_data or {}
+                contexts.append({
+                    'work_order': wo,
+                    'materials': wo.materials.select_related('component', 'uom', 'supplier').all(),
+                    'history_log': wo.stage_history.select_related('user').order_by('-created_at')[:3],
+                    'qr_image': qr_b64,
+                    'flat_stage_data': {},
+                    'quantity': stage_data.get('quantity', ''),
+                    'uom_name': stage_data.get('uom_name', ''),
+                })
+            except Exception:
+                continue
+
+        html_string = render_to_string('production/work_order_bulk_pdf.html', {'orders': contexts})
+        base = request.build_absolute_uri('/') if request else ''
+        return HTML(string=html_string, base_url=base).write_pdf()
 
 
 class WorkOrderMetricsService:

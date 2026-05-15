@@ -43,15 +43,22 @@ class AccountingSettingsViewSet(viewsets.ModelViewSet):
             if request.method == 'GET':
                  return Response({"detail": "Settings not found"}, status=status.HTTP_404_NOT_FOUND)
             obj = AccountingSettings.objects.create()
-        
+
         if request.method == 'GET':
             serializer = self.get_serializer(obj)
             return Response(serializer.data)
-        
+
         serializer = self.get_serializer(obj, data=request.data, partial=(request.method == 'PATCH'))
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data)
+
+    @action(detail=False, methods=['get'], url_path='vat', permission_classes=[IsAuthenticated])
+    def vat(self, request):
+        obj = AccountingSettings.get_solo()
+        rate = obj.default_vat_rate if obj else 19
+        rate_float = float(rate)
+        return Response({'rate': rate_float, 'multiplier': round(1 + rate_float / 100, 10)})
 
 class AccountViewSet(BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
     queryset = Account.objects.all()

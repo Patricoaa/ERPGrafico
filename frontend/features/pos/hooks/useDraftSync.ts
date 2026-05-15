@@ -47,7 +47,12 @@ function getBrowserSessionKey(): string {
     const KEY = 'pos_browser_session_key'
     let key = sessionStorage.getItem(KEY)
     if (!key) {
-        key = crypto.randomUUID()
+        if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+            key = crypto.randomUUID()
+        } else {
+            // Fallback for non-secure contexts where crypto.randomUUID is undefined
+            key = 'session_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
+        }
         sessionStorage.setItem(KEY, key)
     }
     return key

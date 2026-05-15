@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { motion, AnimatePresence } from 'framer-motion'
 import { AlertTriangle, Package, FileText, CheckCircle2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { BaseModal } from '@/components/shared/BaseModal'
 import { ActionConfirmModal } from '@/components/shared/ActionConfirmModal'
 import { LabeledSelect } from '@/components/shared'
@@ -23,6 +24,7 @@ import { FormSkeleton } from '@/components/shared'
 import { WizardHeader } from './WizardHeader'
 import { WizardProcessSidebar } from './WizardProcessSidebar'
 import { WizardStickyFooter } from './WizardStickyFooter'
+import { OrderCommentPanel } from './shared'
 import { WizardRightSidebar } from './WizardRightSidebar'
 import {
   MaterialAssignmentStep,
@@ -87,6 +89,9 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
   const { multiplier: vatMultiplier } = useVatRate()
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [isDuplicateModalOpen, setIsDuplicateModalOpen] = useState(false)
+  const [isSaveTemplateOpen, setIsSaveTemplateOpen] = useState(false)
+  const [templateName, setTemplateName] = useState('')
+  const [isSavingTemplate, setIsSavingTemplate] = useState(false)
 
   // ── mutations (all write ops via hook) ─────────────────────────────────────
   const mutations = useWorkOrderMutations(orderId, { onSuccess: () => { fetchOrder(); onSuccess?.() } })
@@ -108,6 +113,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
 
   // local UI state that doesn't need to be in the store
   const finishConfirm = useConfirmAction<string>(async (stageId) => { handleTransition(stageId) })
+  const [showCheatsheet, setShowCheatsheet] = useState(false)
 
   // ── derived ────────────────────────────────────────────────────────────────
   const STAGES = order ? getFilteredStages(order) : BASE_STAGES.filter((s) => s.alwaysShow)
@@ -164,6 +170,9 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
     if (!open) return
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') { onOpenChange(false); return }
+      if (e.key === '?' && !e.ctrlKey && !e.altKey && !(e.target instanceof HTMLInputElement) && !(e.target instanceof HTMLTextAreaElement)) {
+        setShowCheatsheet((v) => !v); return
+      }
       if (!e.ctrlKey) return
       if (e.key === 'ArrowRight' && isViewingCurrentStage && order?.status !== 'FINISHED') {
         const nextStage = STAGES[viewingStepIndex + 1]
@@ -303,6 +312,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
             onAnnul={() => setIsAnnulModalOpen(true)}
             onDelete={() => setIsDeleteModalOpen(true)}
             onDuplicate={() => setIsDuplicateModalOpen(true)}
+            onSaveAsTemplate={() => { setTemplateName(''); setIsSaveTemplateOpen(true) }}
             isAnnuling={mutations.isAnnuling}
             isDeleting={mutations.isDeleting}
             isDuplicating={mutations.isDuplicating}
@@ -404,10 +414,20 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                       />
                     </div>
                   )}
-                  {currentStageId === 'FINISHED' && <FinishedStep order={order!} />}
+                  {currentStageId === 'FINISHED' && (
+                    <FinishedStep
+                      order={order!}
+                      onUploadPhoto={mutations.uploadFinalPhoto}
+                      isUploadingPhoto={mutations.isUploadingPhoto}
+                      onPrintCopy={mutations.duplicateOrder}
+                      isDuplicating={mutations.isDuplicating}
+                    />
+                  )}
                 </motion.div>
               </AnimatePresence>
             </div>
+
+            {order && <OrderCommentPanel orderId={order.id} />}
 
             <WizardStickyFooter
               isViewingCurrentStage={isViewingCurrentStage}
@@ -581,6 +601,76 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
         description="¿Estás seguro de finalizar la producción? Una vez finalizada la OT, no se puede modificar."
         confirmText="Finalizar"
       />
+
+      <BaseModal
+        open={isSaveTemplateOpen}
+        onOpenChange={setIsSaveTemplateOpen}
+        title="Guardar como plantilla"
+        size="sm"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Se guardará la configuración de esta OT como plantilla reutilizable.
+          </p>
+          <Input
+            placeholder="Nombre de la plantilla…"
+            value={templateName}
+            onChange={e => setTemplateName(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur() }}
+          />
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" size="sm" onClick={() => setIsSaveTemplateOpen(false)}>Cancelar</Button>
+            <Button
+              size="sm"
+              disabled={!templateName.trim() || isSavingTemplate}
+              onClick={async () => {
+                setIsSavingTemplate(true)
+                try {
+                  await api.post('/production/templates/save_from_order/', {
+                    order_id: orderId,
+                    name: templateName.trim(),
+                  })
+                  toast.success('Plantilla guardada correctamente.')
+                  setIsSaveTemplateOpen(false)
+                } catch {
+                  toast.error('Error al guardar la plantilla.')
+                } finally {
+                  setIsSavingTemplate(false)
+                }
+              }}
+            >
+              {isSavingTemplate ? 'Guardando…' : 'Guardar'}
+            </Button>
+          </div>
+        </div>
+      </BaseModal>
+
+      <BaseModal
+        open={showCheatsheet}
+        onOpenChange={setShowCheatsheet}
+        title="Atajos de teclado"
+        size="sm"
+      >
+        <div className="space-y-2 text-sm">
+          {[
+            { keys: ['Ctrl', '→'], desc: 'Avanzar a la siguiente etapa' },
+            { keys: ['Ctrl', '←'], desc: 'Ver etapa anterior (sin transicionar)' },
+            { keys: ['Esc'], desc: 'Cerrar el wizard' },
+            { keys: ['?'], desc: 'Mostrar/ocultar esta ayuda' },
+          ].map(({ keys, desc }) => (
+            <div key={desc} className="flex items-center justify-between gap-4 py-1.5 border-b border-border/40 last:border-0">
+              <span className="text-muted-foreground text-xs">{desc}</span>
+              <div className="flex gap-1 shrink-0">
+                {keys.map((k) => (
+                  <kbd key={k} className="px-2 py-0.5 text-[10px] font-mono font-bold bg-muted border border-border rounded">
+                    {k}
+                  </kbd>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </BaseModal>
     </>
   )
 }

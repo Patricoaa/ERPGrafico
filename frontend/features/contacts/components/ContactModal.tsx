@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useMemo } from "react"
 import { useQuery } from "@tanstack/react-query"
-import { useWindowWidth } from "@/hooks/useWindowWidth"
 import { useFormWithToast } from "@/hooks/use-form-with-toast"
 import * as z from "zod"
 import { BaseModal } from "@/components/shared/BaseModal"
@@ -21,19 +20,17 @@ import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import api from "@/lib/api"
 import { Contact, InsightsData } from "../types"
 import { Order } from "../../orders/types"
-import { toast } from "sonner"
 import { formatRUT, validateRUT } from "@/lib/utils/format"
 import { useContactMutations, useContactInsights } from "@/features/contacts"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { ShoppingCart, Package, Wand2, User, Banknote, Scale, Truck, Receipt, ClipboardList, LayoutDashboard, Calendar, ArrowRight, Mail, MapPin } from "lucide-react"
-import { OrderCard } from "@/features/orders/components/OrderCard"
-
+import { DomainCard } from "@/components/shared/DomainCard"
 import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 import { Separator } from "@/components/ui/separator"
 import { DataTable } from "@/components/ui/data-table"
-import { OrderHubStatus } from "@/features/orders/components/OrderHubStatus"
+import { DomainHubStatus } from "@/components/shared/HubStatus"
 import { ColumnDef } from "@tanstack/react-table"
 import { Card, CardContent } from "@/components/ui/card"
 import { getHubStatuses } from '@/features/orders/utils/status'
@@ -264,7 +261,7 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
             allowOverflow={true}
             contentClassName="p-0"
             footer={
-                <FormFooter 
+                <FormFooter
                     actions={
                         <>
                             <CancelButton onClick={() => onOpenChange(false)} disabled={form.formState.isSubmitting} />
@@ -298,213 +295,213 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                         className="flex-1"
                         contentClassName="bg-transparent"
                     >
-                                <FormTabsContent value="profile" className="h-full w-full flex-1 flex flex-col m-0 p-0 border-0 outline-none">
-                                    <FormSplitLayout
-                                        sidebar={contact?.id ? <ActivitySidebar entityId={contact.id.toString()} entityType="contact" /> : undefined}
-                                        showSidebar={!!contact?.id}
-                                    >
-                                        <div className="space-y-6 px-4 pb-4 pt-2">
-                                            <div className="space-y-4">
-                                                <FormSection title="Estado y Roles" icon={Scale} />
-                                                <div className="flex items-center gap-8 p-6 bg-muted/5 rounded-md border border-primary/5">
-                                                    <FormField
-                                                        control={form.control}
-                                                        name="is_default_customer"
-                                                        render={({ field }) => (
-                                                            <FormItem className="flex flex-row items-center space-x-3 space-y-0 group cursor-pointer">
-                                                                <FormControl>
-                                                                    <Checkbox
-                                                                        checked={field.value}
-                                                                        onCheckedChange={field.onChange}
-                                                                    />
-                                                                </FormControl>
-                                                                <div className="space-y-0.5">
-                                                                    <FormLabel className="text-[11px] font-black uppercase tracking-widest cursor-pointer group-hover:text-primary transition-colors">
-                                                                        Cliente por defecto
-                                                                    </FormLabel>
-                                                                </div>
-                                                            </FormItem>
-                                                        )}
-                                                    />
-                                                    <Separator orientation="vertical" className="h-8" />
-                                                    <FormField
-                                                        control={form.control}
-                                                        name="is_default_vendor"
-                                                        render={({ field }) => (
-                                                            <FormItem className="flex flex-row items-center space-x-3 space-y-0 group cursor-pointer">
-                                                                <FormControl>
-                                                                    <Checkbox
-                                                                        checked={field.value}
-                                                                        onCheckedChange={field.onChange}
-                                                                    />
-                                                                </FormControl>
-                                                                <div className="space-y-0.5">
-                                                                    <FormLabel className="text-[11px] font-black uppercase tracking-widest cursor-pointer group-hover:text-primary transition-colors">
-                                                                        Proveedor por defecto
-                                                                    </FormLabel>
-                                                                </div>
-                                                            </FormItem>
-                                                        )}
-                                                    />
-                                                </div>
-                                            </div>
-
-                                            <div className="space-y-4">
-                                                <FormSection title="Identidad del Contacto" icon={User} />
-                                                <div className="grid grid-cols-4 gap-4">
-                                                    <FormField
-                                                        control={form.control}
-                                                        name="name"
-                                                        render={({ field, fieldState }) => (
-                                                            <FormItem className="col-span-2">
-                                                                <FormControl>
-                                                                    <LabeledInput
-                                                                        label="Nombre / Razón Social"
-                                                                        required
-                                                                        placeholder="Ej: Juan Pérez o Empresa SpA"
-                                                                        error={fieldState.error?.message}
-                                                                        {...field}
-                                                                    />
-                                                                </FormControl>
-                                                            </FormItem>
-                                                        )}
-                                                    />
-
-                                                    <FormField
-                                                        control={form.control}
-                                                        name="tax_id"
-                                                        render={({ field, fieldState }) => (
-                                                            <FormItem className="col-span-2">
-                                                                <FormControl>
-                                                                    <LabeledInput
-                                                                        label="RUT / Tax ID"
-                                                                        required
-                                                                        placeholder="12.345.678-9"
-                                                                        error={fieldState.error?.message}
-                                                                        {...field}
-                                                                        onChange={(e) => field.onChange(formatRUT(e.target.value))}
-                                                                    />
-                                                                </FormControl>
-                                                            </FormItem>
-                                                        )}
-                                                    />
-                                                </div>
-                                            </div>
-
-                                            <div className="space-y-4">
-                                                <FormSection title="Información de Contacto" icon={Mail} />
-                                                <div className="grid grid-cols-4 gap-4">
-                                                    <FormField
-                                                        control={form.control}
-                                                        name="email"
-                                                        render={({ field, fieldState }) => (
-                                                            <FormItem className="col-span-2">
-                                                                <FormControl>
-                                                                    <LabeledInput
-                                                                        label="Email"
-                                                                        type="email"
-                                                                        placeholder="ejemplo@correo.com"
-                                                                        error={fieldState.error?.message}
-                                                                        {...field}
-                                                                    />
-                                                                </FormControl>
-                                                            </FormItem>
-                                                        )}
-                                                    />
-
-                                                    <FormField
-                                                        control={form.control}
-                                                        name="phone"
-                                                        render={({ field, fieldState }) => (
-                                                            <FormItem className="col-span-2">
-                                                                <FormControl>
-                                                                    <LabeledInput
-                                                                        label="Teléfono"
-                                                                        placeholder="+56 9 ..."
-                                                                        error={fieldState.error?.message}
-                                                                        {...field}
-                                                                    />
-                                                                </FormControl>
-                                                            </FormItem>
-                                                        )}
-                                                    />
-                                                </div>
-                                            </div>
-
-                                            <div className="space-y-4">
-                                                <FormSection title="Ubicación" icon={MapPin} />
-                                                <div className="grid grid-cols-4 gap-4">
-                                                    <FormField
-                                                        control={form.control}
-                                                        name="address"
-                                                        render={({ field, fieldState }) => (
-                                                            <FormItem className="col-span-3">
-                                                                <FormControl>
-                                                                    <LabeledInput
-                                                                        label="Dirección"
-                                                                        placeholder="Calle, Número, Depto"
-                                                                        error={fieldState.error?.message}
-                                                                        {...field}
-                                                                    />
-                                                                </FormControl>
-                                                            </FormItem>
-                                                        )}
-                                                    />
-
-                                                    <FormField
-                                                        control={form.control}
-                                                        name="city"
-                                                        render={({ field, fieldState }) => (
-                                                            <FormItem className="col-span-1">
-                                                                <FormControl>
-                                                                    <LabeledInput
-                                                                        label="Ciudad / Comuna"
-                                                                        placeholder="Santiago"
-                                                                        error={fieldState.error?.message}
-                                                                        {...field}
-                                                                    />
-                                                                </FormControl>
-                                                            </FormItem>
-                                                        )}
-                                                    />
-                                                </div>
-                                            </div>
+                        <FormTabsContent value="profile" className="h-full w-full flex-1 flex flex-col m-0 p-0 border-0 outline-none">
+                            <FormSplitLayout
+                                sidebar={contact?.id ? <ActivitySidebar entityId={contact.id.toString()} entityType="contact" /> : undefined}
+                                showSidebar={!!contact?.id}
+                            >
+                                <div className="space-y-6 px-4 pb-4 pt-2">
+                                    <div className="space-y-4">
+                                        <FormSection title="Estado y Roles" icon={Scale} />
+                                        <div className="flex items-center gap-8 p-6 bg-muted/5 rounded-md border border-primary/5">
+                                            <FormField
+                                                control={form.control}
+                                                name="is_default_customer"
+                                                render={({ field }) => (
+                                                    <FormItem className="flex flex-row items-center space-x-3 space-y-0 group cursor-pointer">
+                                                        <FormControl>
+                                                            <Checkbox
+                                                                checked={field.value}
+                                                                onCheckedChange={field.onChange}
+                                                            />
+                                                        </FormControl>
+                                                        <div className="space-y-0.5">
+                                                            <FormLabel className="text-[11px] font-black uppercase tracking-widest cursor-pointer group-hover:text-primary transition-colors">
+                                                                Cliente por defecto
+                                                            </FormLabel>
+                                                        </div>
+                                                    </FormItem>
+                                                )}
+                                            />
+                                            <Separator orientation="vertical" className="h-8" />
+                                            <FormField
+                                                control={form.control}
+                                                name="is_default_vendor"
+                                                render={({ field }) => (
+                                                    <FormItem className="flex flex-row items-center space-x-3 space-y-0 group cursor-pointer">
+                                                        <FormControl>
+                                                            <Checkbox
+                                                                checked={field.value}
+                                                                onCheckedChange={field.onChange}
+                                                            />
+                                                        </FormControl>
+                                                        <div className="space-y-0.5">
+                                                            <FormLabel className="text-[11px] font-black uppercase tracking-widest cursor-pointer group-hover:text-primary transition-colors">
+                                                                Proveedor por defecto
+                                                            </FormLabel>
+                                                        </div>
+                                                    </FormItem>
+                                                )}
+                                            />
                                         </div>
-                                    </FormSplitLayout>
-                                </FormTabsContent>
+                                    </div>
 
-                                <FormTabsContent value="sales" className="h-full w-full flex-1 m-0 border-0 outline-none overflow-hidden flex flex-col p-6">
-                                    <InsightsTable
-                                        data={insightsData?.sales?.orders || []}
-                                        type="sale"
-                                        title="Historial de Ventas (NV)"
-                                        icon={ShoppingCart}
-                                        onActionSuccess={handleActionSuccess}
-                                    />
-                                </FormTabsContent>
+                                    <div className="space-y-4">
+                                        <FormSection title="Identidad del Contacto" icon={User} />
+                                        <div className="grid grid-cols-4 gap-4">
+                                            <FormField
+                                                control={form.control}
+                                                name="name"
+                                                render={({ field, fieldState }) => (
+                                                    <FormItem className="col-span-2">
+                                                        <FormControl>
+                                                            <LabeledInput
+                                                                label="Nombre / Razón Social"
+                                                                required
+                                                                placeholder="Ej: Juan Pérez o Empresa SpA"
+                                                                error={fieldState.error?.message}
+                                                                {...field}
+                                                            />
+                                                        </FormControl>
+                                                    </FormItem>
+                                                )}
+                                            />
 
-                                <FormTabsContent value="purchases" className="h-full w-full flex-1 m-0 border-0 outline-none overflow-hidden flex flex-col p-6">
-                                    <InsightsTable
-                                        data={insightsData?.purchases?.orders || []}
-                                        type="purchase"
-                                        title="Historial de Compras (OC)"
-                                        icon={Package}
-                                        onActionSuccess={handleActionSuccess}
-                                    />
-                                </FormTabsContent>
+                                            <FormField
+                                                control={form.control}
+                                                name="tax_id"
+                                                render={({ field, fieldState }) => (
+                                                    <FormItem className="col-span-2">
+                                                        <FormControl>
+                                                            <LabeledInput
+                                                                label="RUT / Tax ID"
+                                                                required
+                                                                placeholder="12.345.678-9"
+                                                                error={fieldState.error?.message}
+                                                                {...field}
+                                                                onChange={(e) => field.onChange(formatRUT(e.target.value))}
+                                                            />
+                                                        </FormControl>
+                                                    </FormItem>
+                                                )}
+                                            />
+                                        </div>
+                                    </div>
 
-                                <FormTabsContent value="work_orders" className="h-full w-full flex-1 m-0 border-0 outline-none overflow-hidden flex flex-col p-6">
-                                    <InsightsTable
-                                        data={insightsData?.work_orders?.orders || []}
-                                        type="work_order"
-                                        title="Historial de Órdenes de Trabajo"
-                                        icon={Wand2}
-                                        onActionSuccess={handleActionSuccess}
-                                    />
-                                </FormTabsContent>
-                                <FormTabsContent value="credit" className="h-full w-full flex-1 m-0 border-0 outline-none overflow-hidden flex flex-col p-6">
-                                    <CreditLedgerTable data={ledgerData} loading={loadingLedger} onActionSuccess={handleActionSuccess} />
-                                </FormTabsContent>
+                                    <div className="space-y-4">
+                                        <FormSection title="Información de Contacto" icon={Mail} />
+                                        <div className="grid grid-cols-4 gap-4">
+                                            <FormField
+                                                control={form.control}
+                                                name="email"
+                                                render={({ field, fieldState }) => (
+                                                    <FormItem className="col-span-2">
+                                                        <FormControl>
+                                                            <LabeledInput
+                                                                label="Email"
+                                                                type="email"
+                                                                placeholder="ejemplo@correo.com"
+                                                                error={fieldState.error?.message}
+                                                                {...field}
+                                                            />
+                                                        </FormControl>
+                                                    </FormItem>
+                                                )}
+                                            />
+
+                                            <FormField
+                                                control={form.control}
+                                                name="phone"
+                                                render={({ field, fieldState }) => (
+                                                    <FormItem className="col-span-2">
+                                                        <FormControl>
+                                                            <LabeledInput
+                                                                label="Teléfono"
+                                                                placeholder="+56 9 ..."
+                                                                error={fieldState.error?.message}
+                                                                {...field}
+                                                            />
+                                                        </FormControl>
+                                                    </FormItem>
+                                                )}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-4">
+                                        <FormSection title="Ubicación" icon={MapPin} />
+                                        <div className="grid grid-cols-4 gap-4">
+                                            <FormField
+                                                control={form.control}
+                                                name="address"
+                                                render={({ field, fieldState }) => (
+                                                    <FormItem className="col-span-3">
+                                                        <FormControl>
+                                                            <LabeledInput
+                                                                label="Dirección"
+                                                                placeholder="Calle, Número, Depto"
+                                                                error={fieldState.error?.message}
+                                                                {...field}
+                                                            />
+                                                        </FormControl>
+                                                    </FormItem>
+                                                )}
+                                            />
+
+                                            <FormField
+                                                control={form.control}
+                                                name="city"
+                                                render={({ field, fieldState }) => (
+                                                    <FormItem className="col-span-1">
+                                                        <FormControl>
+                                                            <LabeledInput
+                                                                label="Ciudad / Comuna"
+                                                                placeholder="Santiago"
+                                                                error={fieldState.error?.message}
+                                                                {...field}
+                                                            />
+                                                        </FormControl>
+                                                    </FormItem>
+                                                )}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            </FormSplitLayout>
+                        </FormTabsContent>
+
+                        <FormTabsContent value="sales" className="h-full w-full flex-1 m-0 border-0 outline-none overflow-hidden flex flex-col p-6">
+                            <InsightsTable
+                                data={insightsData?.sales?.orders || []}
+                                type="sale"
+                                title="Historial de Ventas (NV)"
+                                icon={ShoppingCart}
+                                onActionSuccess={handleActionSuccess}
+                            />
+                        </FormTabsContent>
+
+                        <FormTabsContent value="purchases" className="h-full w-full flex-1 m-0 border-0 outline-none overflow-hidden flex flex-col p-6">
+                            <InsightsTable
+                                data={insightsData?.purchases?.orders || []}
+                                type="purchase"
+                                title="Historial de Compras (OC)"
+                                icon={Package}
+                                onActionSuccess={handleActionSuccess}
+                            />
+                        </FormTabsContent>
+
+                        <FormTabsContent value="work_orders" className="h-full w-full flex-1 m-0 border-0 outline-none overflow-hidden flex flex-col p-6">
+                            <InsightsTable
+                                data={insightsData?.work_orders?.orders || []}
+                                type="work_order"
+                                title="Historial de Órdenes de Trabajo"
+                                icon={Wand2}
+                                onActionSuccess={handleActionSuccess}
+                            />
+                        </FormTabsContent>
+                        <FormTabsContent value="credit" className="h-full w-full flex-1 m-0 border-0 outline-none overflow-hidden flex flex-col p-6">
+                            <CreditLedgerTable data={ledgerData} loading={loadingLedger} onActionSuccess={handleActionSuccess} />
+                        </FormTabsContent>
                     </FormTabs>
                 </form>
             </Form>
@@ -617,7 +614,7 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
                 let label = 'sales.saleorder';
                 if (type === 'purchase') label = 'purchasing.purchaseorder';
                 else if (type === 'work_order') label = 'production.workorder';
-                
+
                 return <DataCell.DocumentId label={label} data={row.original} />;
             },
         },
@@ -638,7 +635,7 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
                         <StatusBadge status={item.status} size="sm" />
                     )
                 }
-                return <OrderHubStatus order={item} />
+                return <DomainHubStatus data={item} label={type === 'purchase' ? 'purchasing.purchaseorder' : 'sales.saleorder'} />
             }
         },
         createActionsColumn<Record<string, unknown>>({
@@ -771,11 +768,11 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
                     renderCustomView={(table) => (
                         <div className="grid gap-3 pt-2">
                             {table.getRowModel().rows.map((row: any) => (
-                                <OrderCard
+                                <DomainCard
                                     key={row.original.id}
-                                    item={row.original}
-                                    type={type}
-                                    onActionClick={() => {
+                                    label={type === 'sale' ? 'sales.saleorder' : type === 'purchase' ? 'purchasing.purchaseorder' : 'production.workorder'}
+                                    data={row.original}
+                                    onClick={() => {
                                         if (type === 'work_order') {
                                             openWorkOrder(row.original.id)
                                         } else {
@@ -826,7 +823,7 @@ function CreditLedgerTable({ data, loading, onActionSuccess }: { data: Order[], 
         {
             id: "status",
             header: "Estados",
-            cell: ({ row }) => <OrderHubStatus order={row.original} />
+            cell: ({ row }) => <DomainHubStatus data={row.original} label="sales.saleorder" />
         }
     ]
 
@@ -844,11 +841,11 @@ function CreditLedgerTable({ data, loading, onActionSuccess }: { data: Order[], 
                     renderCustomView={(table) => (
                         <div className="grid gap-3 pt-2">
                             {table.getRowModel().rows.map((row) => (
-                                <OrderCard
+                                <DomainCard
                                     key={row.id as string}
-                                    item={row.original as Order}
-                                    type="ledger"
-                                    onActionClick={() => openHub({ orderId: (row.original as Order).id, type: 'sale', onActionSuccess })}
+                                    label="sales.saleorder"
+                                    data={row.original as Order}
+                                    onClick={() => openHub({ orderId: (row.original as Order).id, type: 'sale', onActionSuccess })}
                                 />
                             ))}
                         </div>

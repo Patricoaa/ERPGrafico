@@ -88,6 +88,31 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
         enabled: open && !!defaultProductId && otType === "NONE",
     })
 
+    // TASK-314: Fetch active BOM to suggest due_date from estimated minutes
+    const watchedProductId = form.watch('product_id')
+    const { data: activeBom } = useQuery({
+        queryKey: ['bom-suggestion', watchedProductId],
+        queryFn: async () => {
+            const res = await api.get(`/production/boms/?product_id=${watchedProductId}`)
+            const boms: Array<{ active: boolean; estimated_prepress_min: number; estimated_press_min: number; estimated_postpress_min: number }> = res.data.results ?? res.data
+            return boms.find(b => b.active) ?? null
+        },
+        enabled: open && !!watchedProductId,
+    })
+
+    useEffect(() => {
+        if (!activeBom) return
+        const total = (activeBom.estimated_prepress_min ?? 0) + (activeBom.estimated_press_min ?? 0) + (activeBom.estimated_postpress_min ?? 0)
+        if (total <= 0) return
+        const startDate = form.getValues('start_date') ?? new Date()
+        const suggested = new Date(startDate)
+        suggested.setMinutes(suggested.getMinutes() + total)
+        if (!form.getValues('due_date')) {
+            form.setValue('due_date', suggested)
+            toast.info(`Fecha de entrega sugerida: ${suggested.toLocaleDateString('es-CL')} (${Math.ceil(total / 60)}h según BOM)`)
+        }
+    }, [activeBom])
+
     useEffect(() => {
         if (defaultProductData && !selectedManualProduct && !initialData) {
             handleManualProductSelect(defaultProductData as any)
