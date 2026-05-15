@@ -8,7 +8,7 @@ import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
 import { DataCell } from "@/components/ui/data-table-cells"
 import { Button } from "@/components/ui/button"
-import { List, LayoutDashboard, ArrowRight, ArrowLeft } from "lucide-react"
+import { ArrowRight, ArrowLeft } from "lucide-react"
 import api from "@/lib/api"
 import { PurchaseOrderForm } from "@/features/purchasing/components/PurchaseOrderForm"
 import { toast } from "sonner"
@@ -17,17 +17,16 @@ import { DocumentCompletionModal } from "@/components/shared/DocumentCompletionM
 import { PurchaseCheckoutWizard } from "@/features/purchasing/components/PurchaseCheckoutWizard"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { format } from "date-fns"
-import { PurchaseOrderHubStatus } from "@/features/orders/components/PurchaseOrderHubStatus"
-import { getPurchaseHubStatuses } from '@/features/purchasing/utils/status'
-import { NoteHubStatus } from "@/features/orders/components/NoteHubStatus"
-import { OrderCard } from "@/features/orders/components/OrderCard"
+import { DomainCard, DomainHubStatus } from "@/components/shared"
+import { getHubStatuses } from "@/lib/workflow-status"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { LoadingFallback } from "@/components/shared/LoadingFallback"
 import { EmptyState } from "@/components/shared/EmptyState"
-import { EntityCard } from "@/components/shared/EntityCard"
+import { useViewMode } from "@/hooks/useViewMode"
+import { createDomainCardView, createCardLoadingView } from "@/lib/view-helpers"
 
 
 import type { Order } from "@/features/orders/types"
@@ -77,34 +76,8 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
     const [folioModalOpen, setFolioModalOpen] = useState(false)
     const [selectedInvoice, setSelectedInvoice] = useState<{ id: number, type: string } | null>(null)
     const [checkoutOrderId, setCheckoutOrderId] = useState<number | null>(null)
-    const [currentView, setCurrentView] = React.useState<'card' | 'list'>(
-        (searchParams.get('view') as 'card' | 'list') ?? 'card'
-    )
 
-    const handleViewChange = (v: string) => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.set('view', v)
-        router.push(`${pathname}?${params.toString()}`, { scroll: false })
-        setCurrentView(v as 'card' | 'list')
-    }
-
-    useEffect(() => {
-        const viewParam = searchParams.get('view')
-        if (!viewParam) {
-            const params = new URLSearchParams(searchParams.toString())
-            params.set('view', 'card')
-            router.replace(`${pathname}?${params.toString()}`, { scroll: false })
-            setCurrentView('card')
-        } else if (viewParam !== currentView) {
-            setCurrentView(viewParam as 'card' | 'list')
-        }
-    }, [searchParams, pathname, router, currentView])
-
-    const viewOptions = [
-        { label: "Lista", value: "list", icon: List },
-        { label: "Tarjeta", value: "card", icon: LayoutDashboard }
-
-    ]
+    const { currentView, handleViewChange, viewOptions, isCustomView } = useViewMode('purchasing.purchaseorder')
 
     const { openHub, closeHub, hubConfig, isHubOpen } = useHubPanel()
 
@@ -266,7 +239,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
             ),
             cell: ({ row }) => (
                 <div className="flex justify-center">
-                    <NoteHubStatus note={row.original} />
+                    <DomainHubStatus label="billing.invoice" data={row.original} />
                 </div>
             ),
             meta: { title: "Estado" },
@@ -356,14 +329,14 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Estados" />
             ),
-            cell: ({ row }) => <PurchaseOrderHubStatus order={row.original} />,
+            cell: ({ row }) => <DomainHubStatus label="purchasing.purchaseorder" data={row.original} />,
             meta: { title: "Estado" },
         },
 
         // Hidden columns for filtering only - these provide data for faceted filters
         {
             id: "reception_status",
-            accessorFn: (row) => getPurchaseHubStatuses(row).reception,
+            accessorFn: (row) => getHubStatuses(row as any).logistics, // use generic getHubStatuses from lib
             header: () => null,
             cell: () => null,
             enableSorting: false,
@@ -374,7 +347,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
         },
         {
             id: "billing_status",
-            accessorFn: (row) => getPurchaseHubStatuses(row).billing,
+            accessorFn: (row) => getHubStatuses(row as any).billing,
             header: () => null,
             cell: () => null,
             enableSorting: false,
@@ -385,7 +358,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
         },
         {
             id: "treasury_status",
-            accessorFn: (row) => getPurchaseHubStatuses(row).treasury,
+            accessorFn: (row) => getHubStatuses(row as any).treasury,
             header: () => null,
             cell: () => null,
             enableSorting: false,
@@ -444,52 +417,19 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                     currentView={currentView}
                     onViewChange={handleViewChange}
                     viewOptions={viewOptions}
-                    leftAction={<SmartSearchBar searchDef={purchaseOrderSearchDef} placeholder="Buscar por proveedor..." className="w-80" />}
+                    leftAction={<SmartSearchBar searchDef={purchaseOrderSearchDef} placeholder="Buscar por proveedor..." className="w-full" />}
                     showToolbarSort={true}
-                    renderCustomView={currentView === 'card' ? (table) => {
-                        const rows = table.getRowModel().rows
-                        if (rows.length === 0) {
-                            return (
-                                <EmptyState
-                                    context="inventory"
-                                    title={viewMode === 'orders' ? "Sin Órdenes de Compra" : "Sin Notas Registradas"}
-                                    description={viewMode === 'orders'
-                                        ? "No se han encontrado órdenes de compra en este periodo."
-                                        : "No hay notas de crédito ni débito asociadas a tus compras."
-                                    }
-
-                                    className="py-24"
-                                />
-                            )
+                    renderCustomView={isCustomView ? createDomainCardView(
+                        viewMode === 'orders' ? 'purchasing.purchaseorder' : 'billing.invoice',
+                        {
+                            onRowClick: (data) => toggleSelection(data.id),
+                            isSelected: (data) => viewMode === 'orders'
+                                ? hubConfig?.orderId === data.id
+                                : hubConfig?.invoiceId === data.id,
+                            isHubOpen,
                         }
-                        return (
-                            <div className="grid gap-3 pt-2">
-                                {rows.map((row: import("@tanstack/react-table").Row<any>) => {
-                                    const item = row.original
-                                    const isSelected = viewMode === 'orders'
-                                        ? hubConfig?.orderId === item.id
-                                        : hubConfig?.invoiceId === item.id
-
-                                    return (
-                                        <OrderCard
-                                            key={item.id}
-                                            item={item}
-                                            isSelected={isSelected}
-                                            type={viewMode === 'orders' ? 'purchase' : 'note'}
-                                            onClick={() => toggleSelection(item.id)}
-                                        />
-                                    )
-                                })}
-                            </div>
-                        )
-                    } : undefined}
-                    renderLoadingView={currentView === 'card' ? () => (
-                        <div className="grid gap-3 pt-2">
-                            {Array.from({ length: 8 }).map((_, i) => (
-                                <EntityCard.Skeleton key={i} />
-                            ))}
-                        </div>
                     ) : undefined}
+                    renderLoadingView={isCustomView ? createCardLoadingView('single-column') : undefined}
                     createAction={createAction}
                 />
             </Tabs>

@@ -29,13 +29,15 @@ def populate_search_index(apps, schema_editor):
                 continue
                 
             try:
-                for instance in entity.model.objects.all():
-                    try:
-                        UniversalRegistry.update_index(instance)
-                        count += 1
-                    except Exception as e:
-                        # Log but continue with next record
-                        pass
+                from django.db import transaction
+                with transaction.atomic():
+                    for instance in entity.model.objects.all():
+                        try:
+                            UniversalRegistry.update_index(instance)
+                            count += 1
+                        except Exception as e:
+                            # Log but continue with next record
+                            pass
             except Exception as e:
                 logger.error(f"Error querying {label} during migration: {e}")
         

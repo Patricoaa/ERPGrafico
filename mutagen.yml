@@ -1,0 +1,35 @@
+sync:
+  defaults:
+    mode: "two-way-resolved"
+    ignore:
+      # Ignorar la carpeta .git para no transmitir historial pesadamente
+      vcs: true
+      paths:
+        # Frontend Next.js
+        - "frontend/node_modules/"
+        - "frontend/.next/"
+        
+        # Backend Python/Django
+        - "**/__pycache__/"
+        - "**/*.pyc"
+        - "backend/venv/"
+        
+        # Volúmenes de bases de datos/Docker locales (si existen)
+        - "postgres_data/"
+        - "redis_data/"
+        - "minio_data/"
+        
+        # Archivos locales o de IDEs (para no ensuciar el servidor)
+        - ".vscode/"
+        - ".idea/"
+        - ".gemini/"
+        - ".agents/"
+        
+        # Permitir explícitamente archivos .env necesarios para el entorno remoto
+        - "!/.env.dev"
+        - "!/frontend/.env.local"
+
+  # Nombre de la sesión principal
+  erpgrafico-sync:
+    alpha: "."
+    beta: "pato@192.168.1.95:/home/pato/ERPGrafico"

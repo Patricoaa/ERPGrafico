@@ -12,7 +12,6 @@ import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { createActionsColumn, DataCell } from "@/components/ui/data-table-cells"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { Pencil, Trash2 } from "lucide-react"
-
 import { ToolbarCreateButton, SmartSearchBar, useSmartSearch } from "@/components/shared"
 import { useAbsences } from "@/features/hr/hooks/useAbsences"
 import { absenceSearchDef } from "@/features/hr/searchDef"
@@ -44,7 +43,7 @@ export default function AbsencesPage() {
     }
 
     useEffect(() => {
-        getEmployees().then(setEmployees).catch(() => {})
+        getEmployees().then(setEmployees).catch(() => { })
     }, [])
 
     const handleDelete = async (id: number) => {
@@ -123,7 +122,7 @@ export default function AbsencesPage() {
                 data={absences}
                 isLoading={loading}
                 variant="embedded"
-                leftAction={<SmartSearchBar searchDef={absenceSearchDef} placeholder="Filtrar inasistencias..." className="w-80" />}
+                leftAction={<SmartSearchBar searchDef={absenceSearchDef} placeholder="Filtrar inasistencias..." className="w-full" />}
                 defaultPageSize={20}
                 onRowClick={(row: Absence) => { setEditingAbsence(row); setDialogOpen(true) }}
                 createAction={createAction}

@@ -1,15 +1,13 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useTerminals, type Terminal, type PaymentMethod } from "@/features/treasury"
 import api from "@/lib/api"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { Checkbox } from "@/components/ui/checkbox"
 import { toast } from "sonner"
-import { EmptyState } from "@/components/shared/EmptyState"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { CancelButton, IconButton, LabeledInput, LabeledSelect, FormSection, FormFooter, FormSplitLayout } from "@/components/shared"
 import { EntityCard } from "@/components/shared/EntityCard"
@@ -77,14 +75,14 @@ export function TerminalManagement({ externalOpen, onExternalOpenChange, createA
     const searchParams = useSearchParams()
     const router = useRouter()
     const pathname = usePathname()
-    const [viewMode, setViewMode] = useState<string>(searchParams.get("view") ?? "card")
+    const viewMode = searchParams.get('view') ?? 'card'
+    const isCustomView = viewMode !== 'list'
 
-    const handleViewChange = (v: string) => {
+    const handleViewChange = useCallback((v: string) => {
         const params = new URLSearchParams(searchParams.toString())
         params.set('view', v)
         router.push(`${pathname}?${params.toString()}`, { scroll: false })
-        setViewMode(v)
-    }
+    }, [searchParams, router, pathname])
 
     const columns: ColumnDef<Terminal>[] = [
         {
@@ -169,14 +167,14 @@ export function TerminalManagement({ externalOpen, onExternalOpenChange, createA
                         <Plus className="mr-2 h-4 w-4" /> Crear Caja
                     </Button>
                 )}
-                renderLoadingView={viewMode === 'card' ? () => (
+                renderLoadingView={isCustomView ? () => (
                     <div className="flex flex-col gap-4 pt-2">
                         {Array.from({ length: 3 }).map((_, i) => (
                             <EntityCard.Skeleton key={i} />
                         ))}
                     </div>
                 ) : undefined}
-                renderCustomView={viewMode === 'card' ? (table) => (
+                renderCustomView={isCustomView ? (table) => (
                     <div className="flex flex-col gap-4 pt-2">
                         {table.getRowModel().rows.map(row => {
                             const terminal = row.original
@@ -202,8 +200,8 @@ export function TerminalManagement({ externalOpen, onExternalOpenChange, createA
                                         }
                                     />
                                     <EntityCard.Body>
-                                        <EntityCard.Field 
-                                            label="Ubicación" 
+                                        <EntityCard.Field
+                                            label="Ubicación"
                                             value={
                                                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                                                     <MapPin className="h-3.5 w-3.5" />
@@ -212,7 +210,7 @@ export function TerminalManagement({ externalOpen, onExternalOpenChange, createA
                                             }
                                         />
                                         {terminal.payment_terminal_device && (
-                                            <EntityCard.Field 
+                                            <EntityCard.Field
                                                 label="Dispositivo"
                                                 value={
                                                     <div className="flex items-center gap-1.5 text-[10px] font-bold text-primary px-1.5 py-0.5 bg-primary/5 border border-primary/10 rounded uppercase">

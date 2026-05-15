@@ -151,5 +151,36 @@ export const productSearchDef: SearchDefinition = {
         { label: 'Suscripción', value: 'SUBSCRIPTION' },
       ],
     },
+    {
+      key: 'active',
+      label: 'Estado',
+      type: 'enum',
+      serverParam: 'active',
+      options: [
+        { label: 'Todos', value: 'all' },
+        { label: 'Activo', value: 'true' },
+        { label: 'Archivado', value: 'false' },
+      ],
+    },
+    {
+      key: 'can_be_sold',
+      label: 'Venta',
+      type: 'enum',
+      serverParam: 'can_be_sold',
+      options: [
+        { label: 'Sí', value: 'true' },
+        { label: 'No', value: 'false' },
+      ],
+    },
+    {
+      key: 'can_be_purchased',
+      label: 'Compra',
+      type: 'enum',
+      serverParam: 'can_be_purchased',
+      options: [
+        { label: 'Sí', value: 'true' },
+        { label: 'No', value: 'false' },
+      ],
+    },
   ],
 }

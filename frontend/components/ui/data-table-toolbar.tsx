@@ -60,6 +60,7 @@ function translateColumnId(id: string): string {
         total: "Total",
         actions: "Acciones",
         attributes: "Atributos",
+        availability: "Disponible para",
         select: "Selección",
         created_at: "Fec. Creación",
         updated_at: "Últ. Actualización",

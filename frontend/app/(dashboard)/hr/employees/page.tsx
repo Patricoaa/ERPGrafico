@@ -15,6 +15,9 @@ import { ToolbarCreateButton, SmartSearchBar, useSmartSearch } from "@/component
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { useEmployees } from "@/features/hr/hooks/useEmployees"
 import { employeeSearchDef } from "@/features/hr/searchDef"
+import { EntityCard } from "@/components/shared/EntityCard"
+import { useViewMode } from "@/hooks/useViewMode"
+import { createEntityCardView, createCardLoadingView } from "@/lib/view-helpers"
 
 // Employee schemas and types moved to features/hr/components/EmployeeFormDialog
 
@@ -25,7 +28,7 @@ export default function EmployeesPage() {
     const searchParams = useSearchParams()
     const { filters } = useSmartSearch(employeeSearchDef)
     const { employees, isLoading: loading, refetch: fetchEmployees } = useEmployees(filters)
-
+    const { currentView, handleViewChange, viewOptions, isCustomView } = useViewMode('hr.employee')
     const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<Employee>({
         endpoint: '/hr/employees'
     })
@@ -126,8 +129,8 @@ export default function EmployeesPage() {
                 <DataCell.Action
                     icon={Pencil}
                     title="Editar Empleado"
-                    onClick={(e) => { 
-                        e.stopPropagation(); 
+                    onClick={(e) => {
+                        e.stopPropagation();
                         const params = new URLSearchParams(searchParams.toString())
                         params.set('selected', String(employee.id))
                         router.push(`${pathname}?${params.toString()}`, { scroll: false })
@@ -144,9 +147,40 @@ export default function EmployeesPage() {
                 data={employees}
                 isLoading={loading}
                 variant="embedded"
-                leftAction={<SmartSearchBar searchDef={employeeSearchDef} placeholder="Buscar por nombre o RUT..." className="w-80" />}
+                leftAction={<SmartSearchBar searchDef={employeeSearchDef} placeholder="Buscar por nombre o RUT..." className="w-full" />}
                 defaultPageSize={20}
                 createAction={createAction}
+                currentView={currentView}
+                onViewChange={handleViewChange}
+                viewOptions={viewOptions}
+                renderLoadingView={isCustomView ? createCardLoadingView('multi-column', 10) : undefined}
+                renderCustomView={isCustomView ? createEntityCardView('hr.employee', {
+                    renderCard: (emp: Employee) => (
+                        <EntityCard key={emp.id} onClick={() => {
+                            const params = new URLSearchParams(searchParams.toString())
+                            params.set('selected', String(emp.id))
+                            router.push(`${pathname}?${params.toString()}`, { scroll: false })
+                        }}>
+                            <EntityCard.Header
+                                title={emp.contact_detail?.name || "Sin nombre"}
+                                subtitle={emp.contact_detail?.tax_id || emp.display_id}
+                                trailing={
+                                    <StatusBadge status={emp.status} label={emp.status_display} size="sm" />
+                                }
+                            />
+                            <EntityCard.Body>
+                                <EntityCard.Field label="Cargo" value={emp.position || '—'} />
+                                <EntityCard.Field label="Dpto." value={emp.department || '—'} />
+                                <EntityCard.Field label="Previsión" value={`AFP: ${emp.afp_detail?.name || 'N/A'}`} />
+                                <EntityCard.Field label="Salud" value={emp.salud_type_display || 'N/A'} />
+                            </EntityCard.Body>
+                            <EntityCard.Footer className="justify-between items-center border-t bg-muted/10 py-2 px-4">
+                                <span className="text-[10px] font-bold text-muted-foreground uppercase">Sueldo Base</span>
+                                <DataCell.Currency value={parseFloat((emp.base_salary as string) || "0")} className="font-bold text-base" />
+                            </EntityCard.Footer>
+                        </EntityCard>
+                    )
+                }) : undefined}
             />
             <EmployeeFormModal
                 open={dialogOpen}

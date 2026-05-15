@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { useFiscalYears } from '../../hooks/useFiscalYears';
 import { useAccountingPeriods } from '../../hooks/useAccountingPeriods';
 import { FiscalYearCard } from './FiscalYearCard';
@@ -101,13 +101,14 @@ export function AccountingClosuresView({ externalOpen, onExternalOpenChange }: A
     }, [selectedFromUrl, previewModalOpen, activeYearToClose]);
 
     const handleCreateFY = async (year: number) => {
-        // We initialize the year by creating the first month (January)
-        const success = await createPeriod(year, 1);
-        if (success) {
+        try {
+            await createPeriod({ year, month: 1 });
             fetchPeriods();
             fetchFiscalYears();
+            return true;
+        } catch {
+            return false;
         }
-        return success;
     };
 
     const groupedData = useMemo(() => {
@@ -163,14 +164,14 @@ export function AccountingClosuresView({ externalOpen, onExternalOpenChange }: A
 
     const { filterFn } = useClientSearch<{ year: number; periods: AccountingPeriod[]; fiscalYear: FiscalYear | undefined; status: string }>(fiscalYearSearchDef)
 
-    const [viewMode, setViewMode] = useState<string>(searchParams.get("view") ?? "card");
+    const viewMode = searchParams.get('view') ?? 'card';
+    const isCustomView = viewMode !== 'list';
 
-    const handleViewChange = (v: string) => {
+    const handleViewChange = useCallback((v: string) => {
         const params = new URLSearchParams(searchParams.toString());
         params.set('view', v);
         router.push(`${pathname}?${params.toString()}`, { scroll: false });
-        setViewMode(v);
-    };
+    }, [searchParams, router, pathname]);
 
     if (isLoadingYr || isLoadingPeriods) {
         return <ClosuresSkeleton />;
@@ -278,7 +279,7 @@ export function AccountingClosuresView({ externalOpen, onExternalOpenChange }: A
                         label="Nuevo Año Fiscal" 
                     />
                 }
-                renderCustomView={viewMode === 'card' ? (table) => (
+                renderCustomView={isCustomView ? (table) => (
                     <div className="space-y-6 pt-4">
                         {table.getRowModel().rows.map(row => {
                             const { year, periods: yearPeriods, fiscalYear } = row.original;

@@ -6,10 +6,7 @@ import { AdvanceFormModal } from "@/features/hr"
 import { createAdvance, updateAdvance, deleteAdvance, getEmployees, getPayrolls } from '@/features/hr/api/hrApi'
 import { PaymentModal } from "@/features/treasury"
 import type { SalaryAdvance, Employee, Payroll } from "@/types/hr"
-
 import { Pencil, Trash2 } from "lucide-react"
-
-
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { createActionsColumn, DataCell } from "@/components/ui/data-table-cells"
@@ -158,7 +155,7 @@ export default function AdvancesPage() {
                 data={advances}
                 isLoading={loading}
                 variant="embedded"
-                leftAction={<SmartSearchBar searchDef={salaryAdvanceSearchDef} placeholder="Filtrar anticipos..." className="w-80" />}
+                leftAction={<SmartSearchBar searchDef={salaryAdvanceSearchDef} placeholder="Filtrar anticipos..." className="w-full" />}
                 defaultPageSize={20}
                 createAction={createAction}
             />

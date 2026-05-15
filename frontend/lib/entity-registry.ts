@@ -2,6 +2,7 @@ import {
   ReceiptText, Truck, Undo2, FileText,
   Wrench, Package, ArrowLeftRight, Landmark, BookOpen, 
   Hash, Users, User, UserCheck, Book, PiggyBank, ShoppingCart, Receipt,
+  List, LayoutDashboard, LayoutGrid, Kanban,
   type LucideIcon 
 } from 'lucide-react';
 
@@ -9,6 +10,18 @@ import {
  * EntityRegistry — Central source of truth for ERP entity identity.
  * Syncs with backend SearchableEntity registry.
  */
+
+/** Declarative view configuration for DataTable routes */
+export interface ViewPolicy {
+  /** Available view modes for this entity's list page */
+  availableViews: ('list' | 'card' | 'grid' | 'kanban')[];
+  /** Default view when no ?view= param is present */
+  defaultView: 'list' | 'card' | 'grid' | 'kanban';
+  /** Card component strategy: 'domain' = DomainCard (workflow entities), 'entity' = EntityCard, 'entity-compact' = EntityCard compact, 'custom' = domain-specific */
+  cardComponent?: 'domain' | 'entity' | 'entity-compact' | 'custom';
+  /** Grid layout for card/grid views */
+  gridLayout?: 'single-column' | 'multi-column';
+}
 
 export interface EntityMetadata {
   label: string;
@@ -18,6 +31,12 @@ export interface EntityMetadata {
   shortTemplate: string;
   listUrl: string;
   detailUrlPattern: string;
+  /** Field to use for the main partner name in cards/headers */
+  partnerField?: string | ((data: any) => string);
+  /** Workflow status calculation strategy */
+  workflowType?: 'order' | 'invoice' | 'note';
+  /** Declarative view mode policy */
+  viewPolicy?: ViewPolicy;
 }
 
 export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
@@ -29,6 +48,9 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: 'NV-{number}',
     listUrl: '/sales/orders',
     detailUrlPattern: '/sales/orders/{id}',
+    partnerField: (data) => (typeof data.customer_name === 'object' ? data.customer_name?.name : data.customer_name) || data.partner_name || '---',
+    workflowType: 'order',
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'domain', gridLayout: 'single-column' },
   },
   'sales.saledelivery': {
     label: 'sales.saledelivery',
@@ -38,6 +60,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: 'DES-{number}',
     listUrl: '/sales/deliveries',
     detailUrlPattern: '/sales/deliveries/{id}',
+    partnerField: 'partner_name',
   },
   'sales.salereturn': {
     label: 'sales.salereturn',
@@ -47,6 +70,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: 'DEV-{number}',
     listUrl: '/sales/returns',
     detailUrlPattern: '/sales/returns/{id}',
+    partnerField: 'partner_name',
   },
   'purchasing.purchaseorder': {
     label: 'purchasing.purchaseorder',
@@ -56,6 +80,9 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: 'OCS-{number}',
     listUrl: '/purchasing/orders',
     detailUrlPattern: '/purchasing/orders/{id}',
+    partnerField: 'supplier_name',
+    workflowType: 'order',
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'domain', gridLayout: 'single-column' },
   },
   'billing.invoice': {
     label: 'billing.invoice',
@@ -65,6 +92,9 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: 'FAC-{number}',
     listUrl: '/billing/sales',
     detailUrlPattern: '/billing/invoices/{id}',
+    partnerField: (data) => data.partner_name || data.customer_name || data.supplier_name || '---',
+    workflowType: 'invoice',
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'domain', gridLayout: 'single-column' },
   },
   'production.workorder': {
     label: 'production.workorder',
@@ -74,6 +104,9 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: 'OT-{number}',
     listUrl: '/production/orders',
     detailUrlPattern: '/production/orders/{id}',
+    partnerField: 'name',
+    workflowType: 'order',
+    viewPolicy: { availableViews: ['list', 'kanban'], defaultView: 'list', cardComponent: 'custom' },
   },
   'inventory.stockmove': {
     label: 'inventory.stockmove',
@@ -92,6 +125,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: 'PRD-{id}',
     listUrl: '/inventory/products',
     detailUrlPattern: '/inventory/products/{id}',
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', gridLayout: 'single-column' },
   },
   'treasury.treasurymovement': {
     label: 'treasury.treasurymovement',
@@ -101,6 +135,17 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: 'TRX-{id}',
     listUrl: '/treasury/movements',
     detailUrlPattern: '/treasury/movements/{id}',
+    viewPolicy: { availableViews: ['list', 'grid'], defaultView: 'list', cardComponent: 'entity-compact', gridLayout: 'multi-column' },
+  },
+  'treasury.treasuryaccount': {
+    label: 'treasury.treasuryaccount',
+    title: 'Cuenta de Tesorería',
+    titlePlural: 'Cuentas de Tesorería',
+    icon: Landmark,
+    shortTemplate: 'CTA-{id}',
+    listUrl: '/treasury/terminals?tab=accounts',
+    detailUrlPattern: '/treasury/terminals?tab=accounts&selected={id}',
+    viewPolicy: { availableViews: ['list', 'grid'], defaultView: 'list', cardComponent: 'entity-compact', gridLayout: 'multi-column' },
   },
   'treasury.bankstatement': {
     label: 'treasury.bankstatement',
@@ -137,6 +182,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: 'CON-{id}',
     listUrl: '/contacts',
     detailUrlPattern: '/contacts/{id}',
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', gridLayout: 'single-column' },
   },
   'hr.employee': {
     label: 'hr.employee',
@@ -146,6 +192,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: 'EMP-{id}',
     listUrl: '/hr/employees',
     detailUrlPattern: '/hr/employees/{id}',
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', gridLayout: 'single-column' },
   },
   'hr.payroll': {
     label: 'hr.payroll',
@@ -175,7 +222,22 @@ export function formatEntityDisplay(label: string, data: any): string {
   const entity = ENTITY_REGISTRY[label];
   if (!entity) return String(data?.id || data);
   
-  const template = entity.shortTemplate;
+  let template = entity.shortTemplate;
+
+  // Domain-specific override for Billing Invoices (Dynamic Prefixes)
+  if (label === 'billing.invoice' && data?.dte_type) {
+    const dtePrefixes: Record<string, string> = {
+      'FACTURA': 'FAC',
+      'FACTURA_EXENTA': 'FE',
+      'BOLETA': 'BOL',
+      'BOLETA_EXENTA': 'BE',
+      'NOTA_CREDITO': 'NC',
+      'NOTA_DEBITO': 'ND'
+    };
+    const prefix = dtePrefixes[data.dte_type] || 'FAC';
+    template = `${prefix}-{number}`;
+  }
+
   return template.replace(/{([^}]+)}/g, (match, key) => {
     const [path, format] = key.split(':');
     let value = data;
@@ -203,6 +265,42 @@ export function getEntityMetadata(label: string): EntityMetadata | undefined {
 
 export function getEntityIcon(label: string) {
   return ENTITY_REGISTRY[label]?.icon || Package;
+}
+
+export function getPartnerName(label: string, data: any): string {
+  const entity = ENTITY_REGISTRY[label];
+  if (!entity?.partnerField) return data.partner_name || data.name || '---';
+  
+  if (typeof entity.partnerField === 'function') {
+    return entity.partnerField(data);
+  }
+  
+  return data[entity.partnerField] || '---';
+}
+
+/**
+ * Icon and label map for canonical view types.
+ */
+const VIEW_ICON_MAP: Record<string, { label: string; icon: LucideIcon }> = {
+  list:   { label: 'Lista',    icon: List },
+  card:   { label: 'Tarjeta',  icon: LayoutDashboard },
+  grid:   { label: 'Grilla',   icon: LayoutGrid },
+  kanban: { label: 'Kanban',   icon: Kanban },
+};
+
+/**
+ * Generates the viewOptions array for DataTable toolbar from entity metadata.
+ * Returns undefined if the entity only has one view (no selector needed).
+ */
+export function getViewOptions(label: string) {
+  const policy = ENTITY_REGISTRY[label]?.viewPolicy;
+  if (!policy || policy.availableViews.length <= 1) return undefined;
+  
+  return policy.availableViews.map(v => ({
+    label: VIEW_ICON_MAP[v]?.label ?? v,
+    value: v,
+    icon: VIEW_ICON_MAP[v]?.icon ?? List,
+  }));
 }
 
 /**
