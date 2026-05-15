@@ -279,6 +279,17 @@ class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
+    @action(detail=True, methods=['post'])
+    def duplicate(self, request, pk=None):
+        """TASK-302: Duplicate a Work Order"""
+        work_order = self.get_object()
+        try:
+            new_wo = WorkOrderService.duplicate(work_order=work_order, user=request.user)
+            return Response(WorkOrderSerializer(new_wo).data, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            logger.exception("Error duplicating WorkOrder")
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
     @action(detail=False, methods=['get'])
     def metrics(self, request):
         """TASK-204: Production Metrics Endpoint"""

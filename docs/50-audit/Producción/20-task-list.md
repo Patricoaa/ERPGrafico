@@ -636,7 +636,7 @@ Las tareas P3 son independientes y se priorizan según feedback de usuarios pilo
 Mostrar badge rojo si `due_date < today AND status != FINISHED`.
 **Criterio:** [x] OT atrasada visible visualmente sin abrir.
 
-### TASK-302 — Botón "Duplicar OT"
+### TASK-302 — Botón "Duplicar OT" ✅
 **Esfuerzo:** S · **Archivos:** views.py (action `duplicate`), WorkOrderWizard, orders/page.tsx
 Action backend que crea OT clonando descripción, materiales (source=MANUAL), stage_data. Sin link a sale_line.
 **Criterio:** Botón en wizard y action menu de lista; OT nueva en DRAFT.
