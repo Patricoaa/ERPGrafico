@@ -177,6 +177,48 @@ class WorkOrderService:
 
     @staticmethod
     @transaction.atomic
+    def duplicate(work_order, user=None):
+        """
+        TASK-302: Duplicates a WorkOrder.
+        Clones description, product, warehouse, stage_data, materials (as MANUAL).
+        No link to sale_line.
+        """
+        new_wo = WorkOrder.objects.create(
+            description=f"Copia de {work_order.description or 'OT-' + str(work_order.number)}",
+            is_manual=True,
+            product=work_order.product if not work_order.sale_line else work_order.sale_line.product,
+            status=WorkOrder.Status.DRAFT,
+            current_stage=WorkOrder.Stage.MATERIAL_ASSIGNMENT,
+            warehouse=work_order.warehouse,
+            stage_data=work_order.canonical_stage_data.copy() if hasattr(work_order, 'canonical_stage_data') else (work_order.stage_data or {}).copy(),
+            estimated_completion_date=work_order.estimated_completion_date,
+            notes=work_order.notes
+        )
+
+        for mat in work_order.materials.all():
+            WorkOrderMaterial.objects.create(
+                work_order=new_wo,
+                component=mat.component,
+                quantity_planned=mat.quantity_planned,
+                uom=mat.uom,
+                source=WorkOrderMaterial.Source.MANUAL,
+                is_outsourced=mat.is_outsourced,
+                supplier=mat.supplier,
+                unit_price=mat.unit_price,
+                notes=mat.notes
+            )
+
+        WorkOrderService._create_initial_artifacts(
+            new_wo,
+            origin_notes=f"OT duplicada desde OT-{work_order.number}.",
+            task_meta={'order_type': 'manual'},
+            user=user
+        )
+
+        return new_wo
+
+    @staticmethod
+    @transaction.atomic
     def create_ot_for_delivery_line(delivery_line, related_note=None):
         """
         Creates a Work Order for a delivery line if product is express manufacturable.

@@ -60,6 +60,20 @@ export function useWorkOrderListActions(
     onError: (err) => showApiError(err, 'Error al anular la OT'),
   })
 
+  // ── duplicate ──────────────────────────────────────────────────────────────
+  const duplicateMutation = useMutation({
+    mutationFn: async ({ id }: { id: number | string }) => {
+      const res = await api.post(`/production/orders/${id}/duplicate/`)
+      return res.data
+    },
+    onSuccess: () => {
+      toast.success('OT duplicada correctamente.')
+      queryClient.invalidateQueries({ queryKey: [WORK_ORDERS_LIST_KEY] })
+      onSuccess?.()
+    },
+    onError: (err) => showApiError(err, 'Error al duplicar la OT'),
+  })
+
   // ── transition (list-level, e.g. kanban drag or quick action) ──────────────
   const transitionMutation = useMutation({
     mutationFn: async ({ id, nextStage }: TransitionListPayload) => {
@@ -79,8 +93,10 @@ export function useWorkOrderListActions(
     deleteOrder:  deleteMutation.mutateAsync,
     annulOrder:   annulMutation.mutateAsync,
     transition:   transitionMutation.mutateAsync,
+    duplicateOrder: duplicateMutation.mutateAsync,
     isDeleting:   deleteMutation.isPending,
     isAnnuling:   annulMutation.isPending,
     isTransitioning: transitionMutation.isPending,
+    isDuplicating: duplicateMutation.isPending,
   }
 }

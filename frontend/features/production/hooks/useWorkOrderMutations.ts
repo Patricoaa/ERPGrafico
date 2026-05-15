@@ -198,6 +198,19 @@ export function useWorkOrderMutations(
     onError: (err) => showApiError(err, 'Error al eliminar la orden'),
   })
 
+  // ── duplicateOrder ─────────────────────────────────────────────────────────
+  const duplicateOrderMutation = useMutation({
+    mutationFn: async () => {
+      const res = await api.post(`/production/orders/${orderId}/duplicate/`)
+      return res.data
+    },
+    onSuccess: () => {
+      toast.success('Orden de Trabajo duplicada exitosamente')
+      invalidate()
+    },
+    onError: (err) => showApiError(err, 'Error al duplicar la orden'),
+  })
+
   // ── addComment ─────────────────────────────────────────────────────────────
   const addCommentMutation = useMutation({
     mutationFn: async ({ text, authorName, currentStageData }: AddCommentPayload) => {
@@ -232,6 +245,7 @@ export function useWorkOrderMutations(
     removeMaterial: removeMaterialMutation.mutateAsync,
     annul: annulMutation.mutateAsync,
     deleteOrder: deleteOrderMutation.mutateAsync,
+    duplicateOrder: duplicateOrderMutation.mutateAsync,
     addComment: addCommentMutation.mutateAsync,
 
     // loading states (parallel to the wizard's existing boolean flags)
@@ -240,5 +254,6 @@ export function useWorkOrderMutations(
     isAddingMaterial: addMaterialMutation.isPending || updateMaterialMutation.isPending,
     isAnnuling: annulMutation.isPending,
     isDeleting: deleteOrderMutation.isPending,
+    isDuplicating: duplicateOrderMutation.isPending,
   }
 }

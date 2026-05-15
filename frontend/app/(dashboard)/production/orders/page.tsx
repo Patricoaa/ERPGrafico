@@ -6,7 +6,7 @@ import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { createActionsColumn, DataCell } from "@/components/ui/data-table-cells"
 import { ColumnDef } from "@tanstack/react-table"
-import { Pencil, Trash2, Ban, Settings, List, Columns } from "lucide-react"
+import { Pencil, Trash2, Ban, Settings, List, Columns, Copy } from "lucide-react"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { WorkOrderForm } from "@/features/production/components/forms/WorkOrderForm"
 import { WorkOrderWizard } from "@/features/production/components/WorkOrderWizard"
@@ -37,7 +37,7 @@ export default function WorkOrdersPage() {
 
     const { filters } = useSmartSearch(workOrderSearchDef)
     const { orders, isLoading: loading, refetch: refetchOrders } = useWorkOrders(filters)
-    const { deleteOrder, annulOrder } = useWorkOrderListActions({ onSuccess: refetchOrders })
+    const { deleteOrder, annulOrder, duplicateOrder } = useWorkOrderListActions({ onSuccess: refetchOrders })
 
     const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<WorkOrder>({
         endpoint: '/production/orders'
@@ -82,6 +82,12 @@ export default function WorkOrdersPage() {
     })
 
     const handleCancel = (id: number) => cancelConfirm.requestConfirm(id)
+
+    const duplicateConfirm = useConfirmAction<number>(async (id) => {
+        await duplicateOrder({ id })
+    })
+
+    const handleDuplicate = (id: number) => duplicateConfirm.requestConfirm(id)
 
     const handleKanbanTransition = async (orderId: number, nextStage: string) => {
         setActiveWizardId(orderId)
@@ -171,6 +177,11 @@ export default function WorkOrdersPage() {
                             params.set('selected', String(order.id))
                             router.push(`${pathname}?${params.toString()}`, { scroll: false })
                         }}
+                    />
+                    <DataCell.Action
+                        icon={Copy}
+                        title="Duplicar OT"
+                        onClick={() => handleDuplicate(order.id)}
                     />
                     {['MATERIAL_ASSIGNMENT', 'MATERIAL_APPROVAL', 'PREPRESS'].includes(order.current_stage) && (
                         <DataCell.Action
@@ -281,6 +292,15 @@ export default function WorkOrdersPage() {
                 title="Anular OT"
                 description="¿Está seguro de que desea ANULAR esta OT? Esto detendrá el proceso y liberará reservas."
                 variant="destructive"
+            />
+
+            <ActionConfirmModal
+                open={duplicateConfirm.isOpen}
+                onOpenChange={(open) => { if (!open) duplicateConfirm.cancel() }}
+                onConfirm={duplicateConfirm.confirm}
+                title="Duplicar OT"
+                description="Se creará una nueva OT en Borrador con los mismos materiales y configuración. No se vinculará a la Nota de Venta original."
+                variant="default"
             />
         </div >
     )

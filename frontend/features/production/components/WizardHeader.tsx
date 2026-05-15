@@ -1,6 +1,6 @@
 "use client"
 
-import { CalendarIcon, Pencil, LayoutDashboard, Ban, Trash2 } from "lucide-react"
+import { CalendarIcon, Pencil, LayoutDashboard, Ban, Trash2, Copy } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { formatPlainDate, cn, formatCurrency } from "@/lib/utils"
 import { StatusBadge } from "@/components/shared/StatusBadge"
@@ -14,8 +14,10 @@ interface WizardHeaderProps {
     onOpenCommandCenter: (id: number, type: 'sale' | 'purchase') => void
     onAnnul: () => void
     onDelete: () => void
+    onDuplicate: () => void
     isAnnuling: boolean
     isDeleting: boolean
+    isDuplicating: boolean
 }
 
 export function WizardHeader({
@@ -25,8 +27,10 @@ export function WizardHeader({
     onOpenCommandCenter,
     onAnnul,
     onDelete,
+    onDuplicate,
     isAnnuling,
-    isDeleting
+    isDeleting,
+    isDuplicating
 }: WizardHeaderProps) {
     const canEditOrDelete = ['MATERIAL_ASSIGNMENT', 'MATERIAL_APPROVAL', 'PREPRESS'].includes(order?.current_stage)
     const customerName = order?.sale_customer_name || "Manual"
@@ -80,6 +84,16 @@ export function WizardHeader({
                     <LayoutDashboard className="h-4 w-4" />
                 </Button>
                 <div className="w-[1px] h-4 bg-border/60 mx-1" />
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0 hover:bg-background hover:shadow-sm"
+                    onClick={onDuplicate}
+                    disabled={isDuplicating}
+                    title="Duplicar OT"
+                >
+                    <Copy className="h-4 w-4" />
+                </Button>
                 <Button
                     variant="ghost"
                     size="sm"

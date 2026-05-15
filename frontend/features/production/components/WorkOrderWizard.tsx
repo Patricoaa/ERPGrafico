@@ -86,6 +86,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
   const { openHub } = useHubPanel()
   const { multiplier: vatMultiplier } = useVatRate()
   const [isEditOpen, setIsEditOpen] = useState(false)
+  const [isDuplicateModalOpen, setIsDuplicateModalOpen] = useState(false)
 
   // ── mutations (all write ops via hook) ─────────────────────────────────────
   const mutations = useWorkOrderMutations(orderId, { onSuccess: () => { fetchOrder(); onSuccess?.() } })
@@ -259,6 +260,14 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
     } catch (err) { showApiError(err, 'Error al eliminar la orden') }
   }
 
+  const handleDuplicate = async () => {
+    try {
+      await mutations.duplicateOrder()
+      setIsDuplicateModalOpen(false)
+      // Opcional: cerrar wizard o notificar. toast ya está en la mutación.
+    } catch (err) { showApiError(err, 'Error al duplicar la orden') }
+  }
+
   // ── task callbacks (passed down to steps) ─────────────────────────────────
   const taskCallbacks = {
     canComplete: canUserCompleteTask,
@@ -293,8 +302,10 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
             onOpenCommandCenter={(id, type) => openHub({ orderId: id, type: type as any, onActionSuccess: fetchOrder })}
             onAnnul={() => setIsAnnulModalOpen(true)}
             onDelete={() => setIsDeleteModalOpen(true)}
+            onDuplicate={() => setIsDuplicateModalOpen(true)}
             isAnnuling={mutations.isAnnuling}
             isDeleting={mutations.isDeleting}
+            isDuplicating={mutations.isDuplicating}
           />
         }
       >
@@ -532,6 +543,16 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
             </p>
           </div>
         }
+      />
+
+      <ActionConfirmModal
+        open={isDuplicateModalOpen}
+        onOpenChange={setIsDuplicateModalOpen}
+        title="Duplicar Orden de Trabajo"
+        variant="default"
+        onConfirm={handleDuplicate}
+        confirmText="Duplicar"
+        description="Se creará una nueva OT en Borrador con los mismos materiales y configuración. No se vinculará a la Nota de Venta original."
       />
 
       <ActionConfirmModal
