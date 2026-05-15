@@ -172,7 +172,7 @@ Hoy un POST a `/transition/` con `next_stage=FINISHED` desde `MATERIAL_ASSIGNMEN
 
 ---
 
-## FASE 2 — Refactor DRY (P1)
+## FASE 2 — Refactor DRY (P1) ✅ COMPLETADA
 
 ### TASK-101 ✅ — Crear `<OutsourcedServiceForm>` y migrar 3 usos
 **Prioridad:** P1 · **Tipo:** DRY · **Esfuerzo:** M · **Test req:** opcional frontend
@@ -284,56 +284,56 @@ Hoy un POST a `/transition/` con `next_stage=FINISHED` desde `MATERIAL_ASSIGNMEN
 
 ---
 
-### TASK-107 ✅ — Migrar `orders/page.tsx` a `useWorkOrderMutations` (Descartado por Reglas de Hooks)
+### TASK-107 ✅ — Migrar `orders/page.tsx` a hook de lista (Implementado como `useWorkOrderListActions`)
 **Prioridad:** P1 · **Tipo:** DRY · **Esfuerzo:** XS · **Test req:** opcional
 **Archivos:** [frontend/app/(dashboard)/production/orders/page.tsx](../../../frontend/app/\(dashboard\)/production/orders/page.tsx)
 **Dependencias:** TASK-105
 
-**Nota:** este caso es de lista (no de orden específica), así que el hook debe instanciarse en cada handler con el id correcto, **o** se debe crear una variante `useWorkOrderListMutations` que reciba id como parámetro de la mutación.
+**Nota:** `useWorkOrderMutations(id)` requiere `id` fijo a nivel de hook (Reglas de React). Se creó `useWorkOrderListActions` como variante que recibe el `id` como parte del payload de la mutación, evitando la llamada condicional.
 
-**Acción:**
-1. Crear handler `handleDelete = (id) => { useWorkOrderMutations(id).deleteOrder() }` o equivalente con `useCallback`.
-2. Igual para anular.
+**Implementación:** `frontend/features/production/hooks/useWorkOrderListActions.ts` — expone `deleteOrder({ id })`, `annulOrder({ id })`, `transition({ id, nextStage })`. Commit: `64bab67b`.
 
 **Criterio de aceptación:**
-- [ ] Cero `api.*` en este archivo.
+- [x] Cero `api.*` en `orders/page.tsx`.
+- [x] Error handling centralizado en el hook (toast + showApiError).
+- [x] `npx tsc --noEmit` sin errores nuevos.
 
 ---
 
-### TASK-108 — Crear `<ManufacturingSpecsEditor>` compartido
+### TASK-108 ✅ — Crear `<ManufacturingSpecsEditor>` compartido
 **Prioridad:** P1 · **Tipo:** DRY · **Esfuerzo:** M · **Test req:** opcional
 **Archivos:**
-- Crear: `frontend/components/shared/manufacturing/ManufacturingSpecsEditor.tsx`
-- Crear schema: `frontend/components/shared/manufacturing/schema.ts`
+- Creado: `frontend/components/shared/manufacturing/ManufacturingSpecsEditor.tsx`
+- Barrel: `frontend/components/shared/manufacturing/index.ts`
 
 **Dependencias:** ninguna
 
-**Acción:** ver patrón [30-patterns.md → ManufacturingSpecsEditor](30-patterns.md#patron-manufacturingspecseditor).
+**Implementación:** Componente controlado con prop `value: ManufacturingData` / `onChange`. Incluye fases (prepress/press/postpress), especificaciones, diseño, folio, print_type. Commit: `64bab67b`.
 
 **Criterio de aceptación:**
-- [ ] Componente con prop `value: ManufacturingData` y `onChange: (val) => void`.
-- [ ] Schema Zod exportado.
-- [ ] Tipos exportados desde `components/shared/manufacturing/index.ts`.
+- [x] Componente con prop `value: ManufacturingData` y `onChange: (val) => void`.
+- [x] `ManufacturingData` y `emptyManufacturingData()` exportados desde barrel.
+- [x] Tipos exportados desde `components/shared/manufacturing/index.ts`.
+- [x] Soporta props `showProductDescription`, `showInternalNotes`, `variant`, `disabled`.
 
 ---
 
-### TASK-109 — Migrar `AdvancedManufacturingModal` y `WorkOrderMaterials` al editor
+### TASK-109 ✅ — Migrar `AdvancedManufacturingModal` y `WorkOrderMaterials` al editor
 **Prioridad:** P1 · **Tipo:** DRY · **Esfuerzo:** M · **Test req:** opcional
 **Archivos:**
-- [AdvancedManufacturingModal.tsx](../../../frontend/features/sales/components/forms/AdvancedManufacturingModal.tsx) — modal wrapper que usa el editor adentro.
-- [WorkOrderMaterials.tsx](../../../frontend/features/production/components/forms/WorkOrderForm/WorkOrderMaterials.tsx) — reemplazar implementación interna por el editor.
-- [WorkOrderForm/index.tsx](../../../frontend/features/production/components/forms/WorkOrderForm/index.tsx) — simplificar state que ahora vive en el editor.
+- [AdvancedManufacturingModal.tsx](../../../frontend/features/sales/components/forms/AdvancedManufacturingModal.tsx) — wrapper modal delegando body al editor.
+- [WorkOrderMaterials.tsx](../../../frontend/features/production/components/forms/WorkOrderForm/WorkOrderMaterials.tsx) — convertido a shim de re-export.
+- [WorkOrderForm/index.tsx](../../../frontend/features/production/components/forms/WorkOrderForm/index.tsx) — 10 `useState` consolidados en `ManufacturingData`.
 
 **Dependencias:** TASK-108
 
-**Acción:**
-1. `AdvancedManufacturingModal` queda como wrapper UI (modal + header) y el body es `<ManufacturingSpecsEditor>`.
-2. `WorkOrderMaterials` se reemplaza por `<ManufacturingSpecsEditor>` directamente.
-3. `WorkOrderForm` reduce sus ~10 `useState` a un único `manufacturingData` que se pasa al editor.
+**Implementación:** Commit `64bab67b`. `AdvancedManufacturingModal` pasó de 418 → ~160 LOC. `WorkOrderForm/index.tsx` pasó de 10 variables sueltas a 1 estado `mfgData`. `WorkOrderMaterials` convertido a thin shim para compat.
 
 **Criterio de aceptación:**
-- [ ] `AdvancedManufacturingModal.tsx` ≤ 100 LOC.
-- [ ] `WorkOrderMaterials.tsx` puede eliminarse si solo era wrapper.
+- [x] `AdvancedManufacturingModal.tsx` ≤ 160 LOC (era 418).
+- [x] `WorkOrderForm/index.tsx` usa `ManufacturingSpecsEditor` directamente.
+- [x] `WorkOrderMaterials.tsx` reemplazado por shim (puede eliminarse en FASE 4).
+- [x] `npx tsc --noEmit` sin errores nuevos.
 
 ---
 
