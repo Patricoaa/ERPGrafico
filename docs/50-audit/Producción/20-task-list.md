@@ -641,7 +641,7 @@ Mostrar badge rojo si `due_date < today AND status != FINISHED`.
 Action backend que crea OT clonando descripción, materiales (source=MANUAL), stage_data. Sin link a sale_line.
 **Criterio:** Botón en wizard y action menu de lista; OT nueva en DRAFT.
 
-### TASK-303 — Vista "Mi cola de trabajo"
+### TASK-303 — Vista "Mi cola de trabajo" ✅
 **Esfuerzo:** S · **Archivos:** orders/page.tsx, useWorkOrders.ts
 Toggle "Solo mis OT" filtra por `workflow_tasks__assigned_to=current_user`.
 **Criterio:** Toggle persistido en URL.
