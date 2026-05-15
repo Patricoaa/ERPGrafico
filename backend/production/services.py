@@ -18,6 +18,25 @@ from decimal import Decimal
 
 class WorkOrderService:
     @staticmethod
+    def _validate_product_manufacturable(product, require_manufacturable: bool = True) -> None:
+        """TASK-209: Centralised product validation for WorkOrder creation.
+
+        Raises ValidationError when:
+          - require_manufacturable=True and product is not MANUFACTURABLE.
+          - product.requires_bom_validation is True (Express product missing BOM).
+        """
+        if require_manufacturable and product.product_type != Product.Type.MANUFACTURABLE:
+            raise ValidationError("El producto debe ser fabricable.")
+
+        if product.requires_bom_validation:
+            variant_hint = "esta variante" if product.parent_template else "este producto"
+            raise ValidationError(
+                f"El producto '{product.name}' es Express y requiere un BOM asignado "
+                f"antes de crear una Orden de Trabajo. "
+                f"Por favor, asigne un BOM a {variant_hint}."
+            )
+
+    @staticmethod
     @transaction.atomic
     def create_from_sale_line(sale_line, files=None):
         """
@@ -28,12 +47,8 @@ class WorkOrderService:
         if not product or product.product_type != Product.Type.MANUFACTURABLE:
             return None
         
-        # Validate BOM requirement for Express products/variants
-        if product.requires_bom_validation:
-            raise ValidationError(
-                f"El producto '{product.name}' es Express y requiere un BOM asignado antes de crear una Orden de Trabajo. "
-                f"Por favor, asigne un BOM a {'esta variante' if product.parent_template else 'este producto'}."
-            )
+        # TASK-209: Centralised validation
+        WorkOrderService._validate_product_manufacturable(product, require_manufacturable=False)
 
         delivery_with_wh = sale_line.order.deliveries.filter(warehouse__isnull=False).first()
         work_order = WorkOrder.objects.create(
@@ -124,15 +139,8 @@ class WorkOrderService:
         """
         Creates a manual Work Order for internal needs.
         """
-        if product.product_type != Product.Type.MANUFACTURABLE:
-            raise ValidationError("El producto debe ser fabricable.")
-        
-        # Validate BOM requirement for Express products/variants
-        if product.requires_bom_validation:
-            raise ValidationError(
-                f"El producto '{product.name}' es Express y requiere un BOM asignado antes de crear una Orden de Trabajo. "
-                f"Por favor, asigne un BOM a {'esta variante' if product.parent_template else 'este producto'}."
-            )
+        # TASK-209: Centralised validation
+        WorkOrderService._validate_product_manufacturable(product)
 
         if not uom:
             raise ValidationError("La unidad de medida es requerida para fabricaciones manuales.")
@@ -190,13 +198,9 @@ class WorkOrderService:
         if not (product and product.product_type == Product.Type.MANUFACTURABLE and auto_finalize):
             return None
         
-        # Validate BOM requirement for Express products/variants
-        if product.requires_bom_validation:
-            raise ValidationError(
-                f"El producto '{product.name}' es Express y requiere un BOM asignado antes de crear una Orden de Trabajo. "
-                f"Por favor, asigne un BOM a {'esta variante' if product.parent_template else 'este producto'}."
-            )
-        
+        # TASK-209: Centralised validation
+        WorkOrderService._validate_product_manufacturable(product, require_manufacturable=False)
+
         # Create OT with delivered quantity
         work_order = WorkOrder.objects.create(
             description=f"{product.name} - Despacho {delivery_line.delivery.number}",
@@ -248,6 +252,81 @@ class WorkOrderService:
         
         return work_order
     
+
+    @staticmethod
+    @transaction.atomic
+    def create_from_request_payload(data, files, user):
+        """TASK-202: Unified entrypoint for WorkOrder creation from HTTP requests.
+
+        Centralises the branching logic previously duplicated in views.py so that
+        WorkOrderViewSet.create() stays <= 20 LOC.
+
+        Branches:
+            1. Manual (product_id present, no sale_line) -> create_manual()
+            2. Sale-linked (sale_line_id present) -> create_from_sale_line() + partial update
+            3. Fallback -> returns None (view falls back to super().create())
+        """
+        import json
+        from inventory.models import Product, Warehouse, UoM
+        from sales.models import SaleLine
+
+        _EMPTY_SALE_LINE = {'', 'none', '__none__'}
+
+        stage_data = data.get('stage_data', {})
+        if isinstance(stage_data, str):
+            try:
+                stage_data = json.loads(stage_data)
+            except (json.JSONDecodeError, TypeError):
+                stage_data = {}
+
+        product_id   = data.get('product_id')
+        sale_line_id = data.get('sale_line')
+
+        # Branch 1: Manual
+        if product_id and (not sale_line_id or sale_line_id in _EMPTY_SALE_LINE):
+            from decimal import Decimal as _D
+            product  = Product.objects.get(pk=product_id)
+            quantity = _D(str(data.get('quantity', 0)))
+            uom_id   = data.get('uom_id')
+            wh_id    = data.get('warehouse_id')
+            desc     = data.get('description', '')
+
+            warehouse = Warehouse.objects.get(pk=wh_id) if wh_id else Warehouse.objects.first()
+            if not uom_id:
+                raise ValidationError("La unidad de medida es requerida para fabricaciones manuales.")
+            uom = UoM.objects.get(pk=uom_id)
+
+            return WorkOrderService.create_manual(
+                product=product, quantity=quantity, description=desc,
+                warehouse=warehouse, uom=uom, stage_data=stage_data,
+            )
+
+        # Branch 2: Sale-linked
+        if sale_line_id and sale_line_id not in _EMPTY_SALE_LINE:
+            sale_line = SaleLine.objects.get(pk=sale_line_id)
+
+            parsed_files: dict = {}
+            if files:
+                design_files = files.getlist('design_files') or files.getlist('design')
+                approval_file = files.get('approval_file') or files.get('approval')
+                if design_files:
+                    parsed_files['design'] = design_files
+                if approval_file:
+                    parsed_files['approval'] = approval_file
+
+            work_order = WorkOrderService.create_from_sale_line(sale_line, files=parsed_files or None)
+
+            if work_order:
+                from .serializers import WorkOrderSerializer
+                serializer = WorkOrderSerializer(work_order, data=data, partial=True)
+                if serializer.is_valid():
+                    work_order = serializer.save()
+
+            return work_order
+
+        # Branch 3: Fallback
+        return None
+
     @staticmethod
     @transaction.atomic
     def annul_work_order(work_order, user=None, notes=""):

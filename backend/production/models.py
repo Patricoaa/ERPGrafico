@@ -131,6 +131,15 @@ class WorkOrder(models.Model):
         verbose_name = _("Orden de Trabajo")
         verbose_name_plural = _("Ordenes de Trabajo")
         ordering = ['-id']
+        constraints = [
+            # TASK-201: Prevent duplicate active WorkOrders for the same sale_line.
+            # Allows re-creation only after cancellation.
+            models.UniqueConstraint(
+                fields=['sale_line'],
+                condition=models.Q(status__in=['DRAFT', 'IN_PROGRESS']),
+                name='unique_active_workorder_per_saleline',
+            ),
+        ]
 
     def __str__(self):
         return f"{self.display_id} {self.description}"
@@ -342,7 +351,18 @@ class WorkOrderMaterial(models.Model):
     class Meta:
         verbose_name = _("Material de OT")
         verbose_name_plural = _("Materiales de OT")
-        unique_together = [['work_order', 'component']]
+        # TASK-207: Replace strict unique_together with a flexible constraint
+        # that allows the same component with different supplier/UoM (outsourcing).
+        constraints = [
+            # TASK-207: Flexible constraint allowing same component with different
+            # supplier/UoM (outsourcing). nulls_distinct=False treats NULL == NULL
+            # so two stock rows (supplier=None) of the same component+uom are blocked.
+            models.UniqueConstraint(
+                fields=['work_order', 'component', 'is_outsourced', 'supplier', 'uom'],
+                name='unique_workorder_material_variant',
+                nulls_distinct=False,  # NULL == NULL: two stock rows with same component+uom are blocked
+            ),
+        ]
 
     def __str__(self):
         return f"{self.component.name} ({self.work_order.number})"
