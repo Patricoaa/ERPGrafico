@@ -32,6 +32,7 @@ class WorkOrderService:
                 f"Por favor, asigne un BOM a {'esta variante' if product.parent_template else 'este producto'}."
             )
 
+        delivery_with_wh = sale_line.order.deliveries.filter(warehouse__isnull=False).first()
         work_order = WorkOrder.objects.create(
             description=f"{product.name} - NV-{sale_line.order.number}",
             sale_order=sale_line.order,
@@ -39,8 +40,8 @@ class WorkOrderService:
             related_note=getattr(sale_line, 'related_note', None),
             status=WorkOrder.Status.DRAFT,
             current_stage=WorkOrder.Stage.MATERIAL_ASSIGNMENT,
-            warehouse=sale_line.order.deliveries.first().warehouse if sale_line.order.deliveries.filter(warehouse__isnull=False).exists() else Warehouse.objects.first(),
-            stage_data={} 
+            warehouse=delivery_with_wh.warehouse if delivery_with_wh else Warehouse.objects.first(),
+            stage_data={}
         )
         
         # Map and structure stage data

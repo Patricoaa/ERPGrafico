@@ -80,8 +80,8 @@ class WorkOrderFilterSet(FilterSet):
 ```
 
 **Criterio de aceptación:**
-- [ ] `GET /production/orders/?due_date_after=2026-05-01` retorna sólo OT con `estimated_completion_date >= 2026-05-01`.
-- [ ] Test pytest valida el filtro.
+- [x] `GET /production/orders/?due_date_after=2026-05-01` retorna sólo OT con `estimated_completion_date >= 2026-05-01`.
+- [x] Test pytest valida el filtro.
 
 **Test sugerido:**
 ```python
@@ -108,10 +108,10 @@ warehouse = delivery_with_wh.warehouse if delivery_with_wh else Warehouse.object
 ```
 
 **Criterio de aceptación:**
-- [ ] Caso A: sale_order tiene delivery con warehouse → usa ese warehouse.
-- [ ] Caso B: sale_order tiene delivery sin warehouse → usa `Warehouse.objects.first()`.
-- [ ] Caso C: sale_order sin deliveries → usa `Warehouse.objects.first()`.
-- [ ] Cero crashes en los 3 casos.
+- [x] Caso A: sale_order tiene delivery con warehouse → usa ese warehouse.
+- [x] Caso B: sale_order tiene delivery sin warehouse → usa `Warehouse.objects.first()`. *(SaleDelivery.warehouse es NOT NULL, caso cubierto por el fallback general)*
+- [x] Caso C: sale_order sin deliveries → usa `Warehouse.objects.first()`.
+- [x] Cero crashes en los 3 casos.
 
 **Test sugerido:**
 ```python
