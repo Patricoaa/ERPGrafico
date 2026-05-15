@@ -397,6 +397,13 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'sales.tasks.cleanup_old_draft_carts',
         'schedule': crontab(hour=3, minute=0),   # Daily at 03:00 AM
     },
+
+    # ── Production ───────────────────────────────────────────────────────────
+    # Notifica una vez al día a los responsables de OTs atrasadas (due_date < today)
+    'notify_overdue_work_orders_hourly': {
+        'task': 'production.tasks.notify_overdue_work_orders',
+        'schedule': crontab(minute=15),          # Hourly at XX:15
+    },
 }
 
 # --- TIME TRAVEL PATCH FOR TESTING ---
