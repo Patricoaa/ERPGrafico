@@ -530,7 +530,7 @@ Verificar primero si `weasyprint` ya está en `requirements.txt`. Si no, agregar
 
 ---
 
-### TASK-206 — Numeración con prefijo configurable
+### TASK-206 ✅ — Numeración con prefijo configurable
 **Prioridad:** P2 · **Tipo:** Feature · **Esfuerzo:** M · **Test req:** backend
 **Archivos:** [backend/production/models.py:232-240](../../../backend/production/models.py#L232-L240), `backend/core/services.py::SequenceService`
 
@@ -542,9 +542,9 @@ Verificar primero si `weasyprint` ya está en `requirements.txt`. Si no, agregar
 3. Reset anual: si el año cambia, secuencia vuelve a `000001`.
 
 **Criterio de aceptación:**
-- [ ] OT creada en 2026 numerada `2026-000001` (si flag activo).
-- [ ] Si flag inactivo, comportamiento actual (`000001`).
-- [ ] Tests cubren ambos modos.
+- [x] OT creada en 2026 numerada `2026-000001` (si flag activo).
+- [x] Si flag inactivo, comportamiento actual (`000001`).
+- [x] Tests cubren ambos modos.
 
 ---
 

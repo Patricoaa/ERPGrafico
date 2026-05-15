@@ -8,6 +8,23 @@ from simple_history.models import HistoricalRecords
 from sales.models import SaleOrder
 from inventory.models import Product, Warehouse, UoM
 
+class ProductionSettings(models.Model):
+    number_format = models.CharField(_("Formato de Numeración"), max_length=50, default='{seq:06d}')
+    use_year_prefix = models.BooleanField(_("Usar prefijo de año"), default=False)
+
+    class Meta:
+        verbose_name = _("Configuración de Producción")
+        verbose_name_plural = _("Configuraciones de Producción")
+
+    def save(self, *args, **kwargs):
+        self.pk = 1
+        super().save(*args, **kwargs)
+
+    @classmethod
+    def load(cls):
+        obj, created = cls.objects.get_or_create(pk=1)
+        return obj
+
 class WorkOrder(models.Model):
     class Status(models.TextChoices):
         DRAFT = 'DRAFT', _('Borrador')
@@ -252,13 +269,14 @@ class WorkOrder(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.number:
+            from core.services import SequenceService
             from django.db import transaction
+            settings = ProductionSettings.load()
             with transaction.atomic():
-                last_order = WorkOrder.objects.select_for_update().order_by('-id').first()
-                if last_order and last_order.number and last_order.number.isdigit():
-                    self.number = str(int(last_order.number) + 1).zfill(6)
-                else:
-                    self.number = '000001'
+                self.number = SequenceService.get_next_number(
+                    WorkOrder, 
+                    year_prefix=settings.use_year_prefix
+                )
         
         # Sync related_contact from stage_data['contact_id'] if present
         # This ensures OTs created via the checkout flow or manual wizard are correctly linked
