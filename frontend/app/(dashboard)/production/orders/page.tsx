@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo, useCallback } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
-import { createActionsColumn, createSelectionColumn, DataCell } from "@/components/ui/data-table-cells"
+import { createActionsColumn, DataCell } from "@/components/ui/data-table-cells"
 import { ColumnDef } from "@tanstack/react-table"
 import { Pencil, Trash2, Ban, Settings, List, Columns, Copy, CalendarDays, Printer } from "lucide-react"
 import { StatusBadge } from "@/components/shared/StatusBadge"
@@ -13,6 +13,7 @@ import { WorkOrderWizard } from "@/features/production/components/WorkOrderWizar
 import { WorkOrderKanban } from "@/features/production/components/WorkOrderKanban"
 import { WorkOrderTimelineView } from "@/features/production/components/WorkOrderTimelineView"
 import { Badge } from "@/components/ui/badge"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
@@ -123,7 +124,29 @@ export default function WorkOrdersPage() {
     }
 
     const columns = useMemo<ColumnDef<WorkOrder>[]>(() => [
-        createSelectionColumn<WorkOrder>(),
+        {
+            id: "select",
+            header: ({ table }) => (
+                <Checkbox
+                    checked={table.getIsAllPageRowsSelected()}
+                    onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+                    aria-label="Select all"
+                    className="translate-y-[2px]"
+                />
+            ),
+            cell: ({ row }) => (
+                <Checkbox
+                    checked={row.getIsSelected()}
+                    onCheckedChange={(value) => row.toggleSelected(!!value)}
+                    aria-label="Select row"
+                    className="translate-y-[2px]"
+                />
+            ),
+            enableSorting: false,
+            enableHiding: false,
+            size: 40,
+            minSize: 40,
+        },
         {
             accessorKey: "number",
             header: ({ column }) => (
