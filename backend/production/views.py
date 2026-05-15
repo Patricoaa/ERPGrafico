@@ -207,12 +207,14 @@ class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         work_order = self.get_object()
         try:
             material_adjustments = request.data.get('material_adjustments', [])
+            outsourced_adjustments = request.data.get('outsourced_adjustments', [])
             produced_quantity = request.data.get('produced_quantity')
             notes = request.data.get('notes', '')
             
             WorkOrderService.rectify_production(
                 work_order=work_order,
                 material_adjustments=material_adjustments,
+                outsourced_adjustments=outsourced_adjustments,
                 produced_quantity=produced_quantity,
                 user=request.user,
                 notes=notes

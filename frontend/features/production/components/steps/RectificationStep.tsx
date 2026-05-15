@@ -26,9 +26,19 @@ interface MaterialAdjustment {
     actual_quantity: number
 }
 
+interface OutsourcedAdjustment {
+    material_id: number
+    actual_quantity?: number
+    actual_unit_price?: number
+}
+
 interface RectificationStepProps {
     order: WorkOrder | null
-    onChange: (materialAdjustments: MaterialAdjustment[], producedQuantity: number | null) => void
+    onChange: (
+        materialAdjustments: MaterialAdjustment[], 
+        producedQuantity: number | null,
+        outsourcedAdjustments?: OutsourcedAdjustment[]
+    ) => void
 }
 
 export function RectificationStep({ order, onChange }: RectificationStepProps) {
@@ -38,7 +48,17 @@ export function RectificationStep({ order, onChange }: RectificationStepProps) {
     const [actualQuantities, setActualQuantities] = useState<Record<number, string>>(() => {
         const init: Record<number, string> = {}
         materials.forEach((m: WorkOrderMaterial) => {
-            init[m.id] = String(m.quantity_planned)
+            if (!m.is_outsourced) init[m.id] = String(m.quantity_planned)
+        })
+        return init
+    })
+
+    const [actualOutsourced, setActualOutsourced] = useState<Record<number, { qty: string, price: string }>>(() => {
+        const init: Record<number, { qty: string, price: string }> = {}
+        materials.forEach((m: WorkOrderMaterial) => {
+            if (m.is_outsourced) {
+                init[m.id] = { qty: String(m.quantity_planned), price: String(m.unit_price ?? "0") }
+            }
         })
         return init
     })
@@ -64,21 +84,44 @@ export function RectificationStep({ order, onChange }: RectificationStepProps) {
                 actual_quantity: parseFloat(actualQuantities[m.id] ?? String(m.quantity_planned)) || 0
             }))
 
+        const outsourcedAdjustments: OutsourcedAdjustment[] = materials
+            .filter((m: WorkOrderMaterial) => m.is_outsourced)
+            .map((m: WorkOrderMaterial) => ({
+                material_id: m.id,
+                actual_quantity: parseFloat(actualOutsourced[m.id]?.qty ?? String(m.quantity_planned)) || 0,
+                actual_unit_price: parseFloat(actualOutsourced[m.id]?.price ?? String(m.unit_price ?? "0")) || 0
+            }))
+
         const producedQty = isManualWithInventory && actualProducedQty
             ? parseFloat(actualProducedQty) || null
             : null
 
-        onChange(adjustments, producedQty)
-    }, [actualQuantities, actualProducedQty])
+        onChange(adjustments, producedQty, outsourcedAdjustments)
+    }, [actualQuantities, actualProducedQty, actualOutsourced])
 
     const handleQuantityChange = (materialId: number, value: string) => {
         setActualQuantities(prev => ({ ...prev, [materialId]: value }))
     }
 
+    const handleOutsourcedChange = (materialId: number, field: 'qty' | 'price', value: string) => {
+        setActualOutsourced(prev => ({
+            ...prev,
+            [materialId]: { ...prev[materialId], [field]: value }
+        }))
+    }
+
     const resetAll = () => {
-        const reset: Record<number, string> = {}
-        materials.forEach((m: WorkOrderMaterial) => { reset[m.id] = String(m.quantity_planned) })
-        setActualQuantities(reset)
+        const resetQty: Record<number, string> = {}
+        const resetOut: Record<number, { qty: string, price: string }> = {}
+        materials.forEach((m: WorkOrderMaterial) => { 
+            if (!m.is_outsourced) {
+                resetQty[m.id] = String(m.quantity_planned) 
+            } else {
+                resetOut[m.id] = { qty: String(m.quantity_planned), price: String(m.unit_price ?? "0") }
+            }
+        })
+        setActualQuantities(resetQty)
+        setActualOutsourced(resetOut)
         if (isManualWithInventory) setActualProducedQty(plannedProducedQty)
     }
 
@@ -89,8 +132,16 @@ export function RectificationStep({ order, onChange }: RectificationStepProps) {
     }
 
     const hasMeaningfulChanges = materials.some((m: WorkOrderMaterial) => {
-        const diff = getDiff(Number(m.quantity_planned), actualQuantities[m.id] ?? String(m.quantity_planned))
-        return diff !== null && diff !== 0
+        if (!m.is_outsourced) {
+            const diff = getDiff(Number(m.quantity_planned), actualQuantities[m.id] ?? String(m.quantity_planned))
+            return diff !== null && diff !== 0
+        } else {
+            const out = actualOutsourced[m.id]
+            if (!out) return false
+            const diffQty = getDiff(Number(m.quantity_planned), out.qty)
+            const diffPrice = getDiff(Number(m.unit_price ?? "0"), out.price)
+            return (diffQty !== null && diffQty !== 0) || (diffPrice !== null && diffPrice !== 0)
+        }
     }) || (isManualWithInventory && parseFloat(actualProducedQty) !== parseFloat(plannedProducedQty))
 
     const stockMaterials = materials.filter((m: WorkOrderMaterial) => !m.is_outsourced)
@@ -237,26 +288,80 @@ export function RectificationStep({ order, onChange }: RectificationStepProps) {
                 </Alert>
             )}
 
-            {/* Outsourced Materials (read-only, just informational) */}
+            {/* Outsourced Materials */}
             {outsourcedMaterials.length > 0 && (
                 <div>
-                    <div className="flex items-center gap-2 mb-2">
-                        <span className="text-sm font-medium text-muted-foreground">Servicios Tercerizados</span>
+                    <div className="flex items-center gap-2 mb-3">
+                        <Package className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm font-medium text-foreground">Servicios Tercerizados</span>
                         <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border border-border bg-muted/50 text-muted-foreground whitespace-nowrap">
-                            No rectificables
+                            {outsourcedMaterials.length}
                         </span>
                     </div>
-                    <div className="rounded-lg border border-dashed border-border p-3 space-y-1">
-                        {outsourcedMaterials.map((m: WorkOrderMaterial) => (
-                            <div key={m.id} className="flex items-center justify-between text-sm text-muted-foreground py-0.5">
-                                <span>{m.component_name}</span>
-                                <QuantityDisplay value={m.quantity_planned} uom={m.uom_name} decimals={4} inline />
-                            </div>
-                        ))}
+                    <div className="rounded-lg border border-border overflow-hidden">
+                        <table className="w-full text-sm">
+                            <thead>
+                                <tr className="bg-muted/40 border-b border-border">
+                                    <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Servicio</th>
+                                    <th className="text-right px-4 py-2.5 font-medium text-muted-foreground w-24">Cant. Real</th>
+                                    <th className="text-right px-4 py-2.5 font-medium text-muted-foreground w-32">Precio Unit. Real</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {outsourcedMaterials.map((m: WorkOrderMaterial) => {
+                                    const out = actualOutsourced[m.id]
+                                    const actualQty = out?.qty ?? String(m.quantity_planned)
+                                    const actualPrice = out?.price ?? String(m.unit_price ?? "0")
+                                    const diffQty = getDiff(m.quantity_planned, actualQty)
+                                    const diffPrice = getDiff(Number(m.unit_price ?? "0"), actualPrice)
+                                    const hasChange = (diffQty !== null && diffQty !== 0) || (diffPrice !== null && diffPrice !== 0)
+                                    
+                                    return (
+                                        <tr
+                                            key={m.id}
+                                            className={cn(
+                                                "border-b border-border last:border-0 transition-colors",
+                                                hasChange ? "bg-warning/5" : "hover:bg-muted/20"
+                                            )}
+                                        >
+                                            <td className="px-4 py-3">
+                                                <div className="font-medium text-foreground">{m.component_name}</div>
+                                                {m.purchase_order_number && (
+                                                    <div className="text-xs text-muted-foreground mt-0.5">OC-{m.purchase_order_number}</div>
+                                                )}
+                                            </td>
+                                            <td className="px-4 py-3 text-right">
+                                                <Input
+                                                    type="number"
+                                                    min="0"
+                                                    step="any"
+                                                    value={actualQty}
+                                                    onChange={e => handleOutsourcedChange(m.id, 'qty', e.target.value)}
+                                                    className={cn(
+                                                        "w-20 text-right h-8 text-sm ml-auto",
+                                                        diffQty && "border-warning focus-visible:ring-warning"
+                                                    )}
+                                                />
+                                            </td>
+                                            <td className="px-4 py-3 text-right">
+                                                <Input
+                                                    type="number"
+                                                    min="0"
+                                                    step="any"
+                                                    value={actualPrice}
+                                                    onChange={e => handleOutsourcedChange(m.id, 'price', e.target.value)}
+                                                    className={cn(
+                                                        "w-28 text-right h-8 text-sm ml-auto",
+                                                        diffPrice && "border-warning focus-visible:ring-warning"
+                                                    )}
+                                                />
+                                            </td>
+                                        </tr>
+                                    )
+                                })}
+                            </tbody>
+                        </table>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1.5">
-                        Los servicios tercerizados se registran mediante sus Órdenes de Compra y no requieren rectificación.
-                    </p>
                 </div>
             )}
 

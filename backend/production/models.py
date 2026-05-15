@@ -25,6 +25,9 @@ class ProductionSettings(models.Model):
         obj, created = cls.objects.get_or_create(pk=1)
         return obj
 
+def default_stage_data():
+    return {"_version": 1}
+
 class WorkOrder(models.Model):
     class Status(models.TextChoices):
         DRAFT = 'DRAFT', _('Borrador')
@@ -102,7 +105,7 @@ class WorkOrder(models.Model):
     # Store dynamic data for each stage
     stage_data = models.JSONField(
         _("Datos de Etapas"),
-        default=dict,
+        default=default_stage_data,
         blank=True,
         help_text="Datos de diseño, folios, confirmaciones de impresión, etc."
     )
@@ -164,6 +167,18 @@ class WorkOrder(models.Model):
     @property
     def display_id(self):
         return f"OT-{self.number}"
+    
+    @property
+    def canonical_stage_data(self) -> dict:
+        """
+        Returns the stage_data with the latest schema.
+        Applies on-the-fly migrations for data lacking versioning.
+        """
+        data = self.stage_data or {}
+        if '_version' not in data:
+            # v1 migration
+            data['_version'] = 1
+        return data
     
     @property
     def product_info(self):

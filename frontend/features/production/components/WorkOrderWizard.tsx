@@ -96,12 +96,12 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
     taskNotes, taskFiles,
     isAnnulModalOpen, isDeleteModalOpen, isBackwardModalOpen, pendingPrevStage,
     showPOPreview, outsourcedPending,
-    rectificationAdjustments, rectificationProducedQty,
+    rectificationAdjustments, rectificationProducedQty, rectificationOutsourcedAdjustments,
     setOrder, setLoading, setViewingStepIndex,
     setTaskNote, setTaskFile,
     setIsAnnulModalOpen, setIsDeleteModalOpen, setIsBackwardModalOpen, setPendingPrevStage,
     setShowPOPreview, setOutsourcedPending,
-    setRectificationAdjustments, setRectificationProducedQty,
+    setRectificationAdjustments, setRectificationProducedQty, setRectificationOutsourcedAdjustments,
     reset: resetStore,
   } = useWizardStore()
 
@@ -222,6 +222,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
     try {
       await mutations.rectify({
         materialAdjustments: rectificationAdjustments,
+        outsourcedAdjustments: rectificationOutsourcedAdjustments,
         producedQuantity: rectificationProducedQty,
         notes: 'Rectificación desde wizard',
       })
@@ -384,9 +385,10 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                     <div className="space-y-6">
                       <RectificationStep
                         order={order!}
-                        onChange={(adjustments, producedQty) => {
+                        onChange={(adjustments, producedQty, outsourcedAdj) => {
                           setRectificationAdjustments(adjustments)
                           setRectificationProducedQty(producedQty)
+                          if (outsourcedAdj) setRectificationOutsourcedAdjustments(outsourcedAdj)
                         }}
                       />
                     </div>

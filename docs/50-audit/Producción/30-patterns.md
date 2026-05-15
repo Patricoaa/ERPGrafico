@@ -593,6 +593,16 @@ class WorkOrder(models.Model):
     def canonical_stage_data(self) -> dict:
         from .stage_data_schema import migrate_stage_data_to_v1
         return migrate_stage_data_to_v1(self.stage_data or {})
+
+### Cómo crear v2 en el futuro (Guía de Migración)
+
+Si en el futuro la estructura de `stage_data` cambia de forma incompatible (ej. refactor de `specifications` a un array en lugar de un dict), se debe incrementar la versión:
+
+1. Modificar `default_stage_data()` en `models.py` para devolver `{"_version": 2}`.
+2. Actualizar el type `StageData` (o crear `StageDataV2`).
+3. Crear `migrate_stage_data_to_v2(data: dict) -> dict` que tome un dict (que podría ser v1 o anterior), primero lo pase por `migrate_stage_data_to_v1` si es necesario, y luego aplique las transformaciones para v2.
+4. Actualizar la property `canonical_stage_data` para devolver siempre el resultado de `migrate_stage_data_to_v2`.
+5. Opcionalmente (y recomendado), crear una migración de datos (como la de `0010_stage_data_versioning.py`) que procese todos los `WorkOrder.objects.all()` existentes y los persista en v2 para evitar migraciones *on-the-fly* costosas a largo plazo.
 ```
 
 ---
