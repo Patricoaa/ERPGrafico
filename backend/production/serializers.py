@@ -38,6 +38,8 @@ class WorkOrderMaterialSerializer(serializers.ModelSerializer):
     purchase_order_receiving_status = serializers.CharField(source='purchase_line.order.receiving_status', read_only=True)
     purchase_order_id = serializers.IntegerField(source='purchase_line.order.id', read_only=True)
     total_cost = serializers.SerializerMethodField()
+    planned_cost = serializers.SerializerMethodField()
+    actual_cost = serializers.SerializerMethodField()
     
     class Meta:
         model = WorkOrderMaterial
@@ -96,14 +98,32 @@ class WorkOrderMaterialSerializer(serializers.ModelSerializer):
         return float(obj.component.cost_price)
 
     def get_total_cost(self, obj):
-        from decimal import Decimal
+        # Keep total_cost as actual for backward compatibility
+        return self.get_actual_cost(obj)
+
+    def get_planned_cost(self, obj):
         from inventory.services import UoMService
-        
         qty = obj.quantity_planned
         component = obj.component
         
-        # Convert quantity from Material Line UoM to Component Base UoM if they differ
-        # component.cost_price is always per Base UoM
+        if obj.uom and component.uom and obj.uom != component.uom:
+            try:
+                qty = UoMService.convert_quantity(obj.quantity_planned, obj.uom, component.uom)
+            except:
+                pass
+                
+        cost = obj.unit_cost_snapshot
+        if obj.is_outsourced and obj.unit_price > 0:
+            cost = obj.unit_price
+            
+        total = qty * cost
+        return float(total)
+
+    def get_actual_cost(self, obj):
+        from inventory.services import UoMService
+        qty = obj.quantity_planned
+        component = obj.component
+        
         if obj.uom and component.uom and obj.uom != component.uom:
             try:
                 qty = UoMService.convert_quantity(obj.quantity_planned, obj.uom, component.uom)

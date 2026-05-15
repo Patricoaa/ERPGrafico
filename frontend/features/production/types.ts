@@ -12,6 +12,8 @@ export interface WorkOrderMaterial {
     uom_name: string
     uom_category?: number
     total_cost: number
+    planned_cost?: number
+    actual_cost?: number
     source: "MANUAL" | "BOM"
     is_outsourced: boolean
     is_available?: boolean

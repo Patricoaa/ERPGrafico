@@ -364,6 +364,11 @@ class WorkOrderMaterial(models.Model):
         default='FACTURA'
     )
     
+    unit_cost_snapshot = models.DecimalField(
+        _("Costo Unitario (Snapshot)"), max_digits=12, decimal_places=4, default=0,
+        help_text=_("Costo planificado del material en el momento de crear la OT")
+    )
+    
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -381,6 +386,12 @@ class WorkOrderMaterial(models.Model):
                 nulls_distinct=False,  # NULL == NULL: two stock rows with same component+uom are blocked
             ),
         ]
+
+    def save(self, *args, **kwargs):
+        if not self.pk and not self.unit_cost_snapshot:
+            if self.component and hasattr(self.component, 'cost_price'):
+                self.unit_cost_snapshot = self.component.cost_price or 0
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.component.name} ({self.work_order.number})"
