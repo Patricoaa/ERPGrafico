@@ -24,6 +24,7 @@ import { toast } from "sonner"
 import type { BOM, BOMLine, ProductMinimal, UoM } from "../types"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
 import { LabeledInput, LabeledSelect, LabeledSwitch, FormSection, FormFooter, FormLineItemsTable, IconButton } from "@/components/shared"
+import { useVatRate } from "@/hooks/useVatRate"
 
 const tableInputClass = "h-9 w-full bg-background border border-border/80 rounded-sm px-2 text-xs focus:border-primary/40 focus:outline-none transition-all disabled:opacity-50"
 
@@ -85,6 +86,7 @@ export function BOMFormModal({
     bomToEdit,
     onSuccess
 }: BOMFormModalProps) {
+    const { multiplier: vatMultiplier } = useVatRate()
     const [loading, setLoading] = useState(false)
     const [selectedProduct, setSelectedProduct] = useState<ProductMinimal | null>(initialProduct || null)
     const [selectedVariant, setSelectedVariant] = useState<ProductMinimal | null>(null)
@@ -224,7 +226,7 @@ export function BOMFormModal({
                         uom_name: l.uom_name || "",
                         supplier: l.supplier?.toString() || "",
                         supplier_name: l.supplier_name || "",
-                        gross_price: l.unit_price ? parseFloat(l.unit_price) * 1.19 : 0,
+                        gross_price: l.unit_price ? parseFloat(l.unit_price) * vatMultiplier : 0,
                         document_type: l.document_type || "FACTURA",
                         notes: l.notes || ""
                     }))
@@ -274,7 +276,7 @@ export function BOMFormModal({
                 uom: l.uom ? parseInt(l.uom) : null,
                 is_outsourced: true,
                 supplier: parseInt(l.supplier),
-                unit_price: Math.round(l.gross_price / 1.19),
+                unit_price: Math.round(l.gross_price / vatMultiplier),
                 document_type: l.document_type,
                 notes: l.notes
             }))

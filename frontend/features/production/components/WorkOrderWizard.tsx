@@ -11,9 +11,11 @@ import { LabeledSelect } from '@/components/shared'
 import { cn } from '@/lib/utils'
 import { showApiError } from '@/lib/errors'
 import { useConfirmAction } from '@/hooks/useConfirmAction'
+import { useVatRate } from '@/hooks/useVatRate'
 import { useAuth } from '@/contexts/AuthContext'
 import { useHubPanel } from '@/components/providers/HubPanelProvider'
 import api from '@/lib/api'
+import { useWorkOrderMutations } from '../hooks'
 import { completeTask } from '@/features/workflow/api/workflowApi'
 import dynamic from 'next/dynamic'
 import { FormSkeleton } from '@/components/shared'
@@ -35,6 +37,7 @@ import {
 } from './steps'
 import { useWizardStore, selectPendingTasks } from './WorkOrderWizardStore'
 import type { WorkOrder, WorkOrderMaterial, WorkOrderStage, WorkOrderTask } from '../types'
+import { STAGES_ORDERED } from '../constants/stages'
 
 const WorkOrderForm = dynamic(
   () => import('@/features/production/components/forms/WorkOrderForm').then((m) => m.WorkOrderForm),
@@ -43,17 +46,7 @@ const WorkOrderForm = dynamic(
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const BASE_STAGES: WorkOrderStage[] = [
-  { id: 'MATERIAL_ASSIGNMENT',      label: 'Asignación de Materiales',     icon: Package,        alwaysShow: true  },
-  { id: 'MATERIAL_APPROVAL',        label: 'Aprobación de Stock',          icon: CheckCircle2,   alwaysShow: false },
-  { id: 'OUTSOURCING_ASSIGNMENT',   label: 'Asignación de Tercerizados',   icon: Package,        alwaysShow: true  },
-  { id: 'PREPRESS',                 label: 'Pre-Impresión',                icon: FileText,       alwaysShow: false },
-  { id: 'PRESS',                    label: 'Impresión',                    icon: Package,        alwaysShow: false },
-  { id: 'POSTPRESS',                label: 'Post-Impresión',               icon: Package,        alwaysShow: false },
-  { id: 'OUTSOURCING_VERIFICATION', label: 'Verificación de Tercerizados', icon: Package,        alwaysShow: false },
-  { id: 'RECTIFICATION',            label: 'Rectificación',                icon: Package,        alwaysShow: false },
-  { id: 'FINISHED',                 label: 'Finalizada',                   icon: CheckCircle2,   alwaysShow: true  },
-]
+const BASE_STAGES: WorkOrderStage[] = STAGES_ORDERED.filter(s => s.id !== 'CANCELLED')
 
 function getFilteredStages(order: WorkOrder): WorkOrderStage[] {
   return BASE_STAGES.filter((stage) => {
@@ -91,7 +84,11 @@ interface WorkOrderWizardProps {
 export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, targetStage }: WorkOrderWizardProps) {
   const { user } = useAuth()
   const { openHub } = useHubPanel()
+  const { multiplier: vatMultiplier } = useVatRate()
   const [isEditOpen, setIsEditOpen] = useState(false)
+
+  // ── mutations (all write ops via hook) ─────────────────────────────────────
+  const mutations = useWorkOrderMutations(orderId, { onSuccess: () => { fetchOrder(); onSuccess?.() } })
 
   // ── store ──────────────────────────────────────────────────────────────────
   const {
@@ -214,13 +211,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
           await Promise.all(toApprove.map((t) => completeTask(t.id as any, taskNotes[t.id], taskFiles[t.id] ? [taskFiles[t.id]!] : undefined)))
         }
       }
-      const formData = new FormData()
-      formData.append('next_stage', nextStageId)
-      formData.append('data', JSON.stringify(data))
-      await api.post(`/production/orders/${orderId}/transition/`, formData, { headers: { 'Content-Type': 'multipart/form-data' } })
-      toast.success('Etapa actualizada')
-      fetchOrder()
-      onSuccess?.()
+      await mutations.transition({ nextStageId, data })
     } catch (err) {
       showApiError(err, 'Error al cambiar de etapa')
     }
@@ -229,12 +220,12 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
   const handleRectifyAndFinish = async () => {
     if (!order) return
     try {
-      await api.post(`/production/orders/${orderId}/rectify/`, {
-        material_adjustments: rectificationAdjustments,
-        produced_quantity: rectificationProducedQty,
+      await mutations.rectify({
+        materialAdjustments: rectificationAdjustments,
+        producedQuantity: rectificationProducedQty,
         notes: 'Rectificación desde wizard',
       })
-      await handleTransition('FINISHED')
+      await mutations.transition({ nextStageId: 'FINISHED' })
     } catch (err) {
       showApiError(err, 'Error al rectificar y finalizar la OT')
     }
@@ -242,38 +233,28 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
 
   const handleAddComment = async (text: string) => {
     if (!order) return
-    const updatedStageData = {
-      ...order.stage_data,
-      comments: [...(order.stage_data?.comments ?? []), {
-        id: Date.now(),
-        user: user?.first_name ?? user?.username ?? 'Usuario',
-        text,
-        timestamp: new Date().toISOString(),
-      }],
-    }
     try {
-      await api.patch(`/production/orders/${orderId}/`, { stage_data: updatedStageData })
-      setOrder({ ...order, stage_data: updatedStageData })
-      toast.success('Comentario registrado')
+      await mutations.addComment({
+        text,
+        authorName: user?.first_name ?? user?.username ?? 'Usuario',
+        currentStageData: order.stage_data ?? {},
+      })
+      fetchOrder()
     } catch { toast.error('Error al registrar comentario') }
   }
 
   const handleAnnul = async () => {
     try {
-      await api.post(`/production/orders/${orderId}/annul/`)
-      toast.success('Orden de Trabajo anulada exitosamente')
+      await mutations.annul('')
       setIsAnnulModalOpen(false)
-      fetchOrder()
     } catch (err) { showApiError(err, 'Error al anular la orden') }
   }
 
   const handleDelete = async () => {
     try {
-      await api.delete(`/production/orders/${orderId}/`)
-      toast.success('Orden de Trabajo eliminada')
+      await mutations.deleteOrder()
       setIsDeleteModalOpen(false)
       onOpenChange(false)
-      onSuccess?.()
     } catch (err) { showApiError(err, 'Error al eliminar la orden') }
   }
 
@@ -311,8 +292,8 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
             onOpenCommandCenter={(id, type) => openHub({ orderId: id, type: type as any, onActionSuccess: fetchOrder })}
             onAnnul={() => setIsAnnulModalOpen(true)}
             onDelete={() => setIsDeleteModalOpen(true)}
-            isAnnuling={false}
-            isDeleting={false}
+            isAnnuling={mutations.isAnnuling}
+            isDeleting={mutations.isDeleting}
           />
         }
       >
@@ -499,9 +480,9 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                     <td className="p-2 font-medium">{m.supplier_name}</td>
                     <td className="p-2">{m.component_name}</td>
                     <td className="p-2 text-right">{m.quantity_planned}</td>
-                    <td className="p-2 text-right">{(parseFloat(m.unit_price ?? '0') * 1.19).toFixed(0)}</td>
+                    <td className="p-2 text-right">{(parseFloat(m.unit_price ?? '0') * vatMultiplier).toFixed(0)}</td>
                     <td className="p-2 text-right font-bold">
-                      {(parseFloat(String(m.quantity_planned)) * parseFloat(m.unit_price ?? '0') * 1.19).toFixed(0)}
+                      {(parseFloat(String(m.quantity_planned)) * parseFloat(m.unit_price ?? '0') * vatMultiplier).toFixed(0)}
                     </td>
                   </tr>
                 ))}
