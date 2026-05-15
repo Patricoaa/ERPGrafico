@@ -514,7 +514,7 @@ Verificar primero si `weasyprint` ya está en `requirements.txt`. Si no, agregar
 
 ---
 
-### TASK-205 — Card "Métricas de Producción" en dashboard
+### TASK-205 ✅ — Card "Métricas de Producción" en dashboard
 **Prioridad:** P2 · **Tipo:** Feature · **Esfuerzo:** S · **Test req:** opcional
 **Archivos:**
 - Crear: `frontend/features/production/components/ProductionMetricsCard.tsx`
@@ -525,8 +525,8 @@ Verificar primero si `weasyprint` ya está en `requirements.txt`. Si no, agregar
 **Acción:** card con TanStack Query consumiendo el endpoint, mostrando los 4 indicadores principales. Click → drill-down a `/production/orders?stage=PRESS`.
 
 **Criterio de aceptación:**
-- [ ] Card visible en dashboard.
-- [ ] Loading state con `Skeleton`.
+- [x] Card visible en dashboard.
+- [x] Loading state con `Skeleton`.
 
 ---
 
