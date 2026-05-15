@@ -418,7 +418,7 @@ work_order.stage_data = flat_data  # única copia
 
 ## FASE 3 — Gaps ERP (P2)
 
-### TASK-201 — UniqueConstraint contra doble OT por sale_line
+### TASK-201 ✅ — UniqueConstraint contra doble OT por sale_line
 **Prioridad:** P2 · **Tipo:** Bugfix · **Esfuerzo:** S · **Test req:** backend
 **Archivos:** [backend/production/models.py](../../../backend/production/models.py), migración nueva
 **Dependencias:** TASK-005
@@ -438,12 +438,12 @@ work_order.stage_data = flat_data  # única copia
 3. En los 4 entrypoints, atrapar `IntegrityError` y retornar la OT existente.
 
 **Criterio de aceptación:**
-- [ ] Test race condition: 2 threads invocando `create_from_sale_line` simultáneamente → solo se crea 1 OT.
-- [ ] Test reactivación: si la OT está CANCELLED, sí se puede crear una nueva.
+- [x] Test race condition: 2 threads invocando `create_from_sale_line` simultáneamente → solo se crea 1 OT.
+- [x] Test reactivación: si la OT está CANCELLED, sí se puede crear una nueva.
 
 ---
 
-### TASK-202 — Refactor `WorkOrderViewSet.create` a `WorkOrderService.create_from_request_payload()`
+### TASK-202 ✅ — Refactor `WorkOrderViewSet.create` a `WorkOrderService.create_from_request_payload()`
 **Prioridad:** P2 · **Tipo:** Refactor · **Esfuerzo:** M · **Test req:** backend
 **Archivos:** [backend/production/views.py:83-146](../../../backend/production/views.py#L83-L146), [backend/production/services.py](../../../backend/production/services.py)
 **Dependencias:** TASK-111
@@ -463,8 +463,8 @@ work_order.stage_data = flat_data  # única copia
    ```
 
 **Criterio de aceptación:**
-- [ ] `WorkOrderViewSet.create` ≤ 20 LOC.
-- [ ] Tests existentes siguen pasando.
+- [x] `WorkOrderViewSet.create` ≤ 20 LOC.
+- [x] Tests existentes siguen pasando.
 
 ---
 
@@ -548,7 +548,7 @@ Verificar primero si `weasyprint` ya está en `requirements.txt`. Si no, agregar
 
 ---
 
-### TASK-207 — Permitir `unique_together` con `is_outsourced` + `supplier`
+### TASK-207 ✅ — Permitir `unique_together` con `is_outsourced` + `supplier`
 **Prioridad:** P2 · **Tipo:** Bugfix · **Esfuerzo:** S · **Test req:** backend
 **Archivos:** [backend/production/models.py:330-336](../../../backend/production/models.py#L330-L336)
 **Dependencias:** ninguna
@@ -566,8 +566,21 @@ Verificar primero si `weasyprint` ya está en `requirements.txt`. Si no, agregar
 2. Validación adicional en serializer: si dos líneas iguales, sumarse en lugar de fallar.
 
 **Criterio de aceptación:**
-- [ ] Mismo componente con dos UoMs distintas en una OT funciona.
-- [ ] Mismo componente con dos proveedores en outsourcing funciona.
+- [x] Mismo componente con dos UoMs distintas en una OT funciona.
+- [x] Mismo componente con dos proveedores en outsourcing funciona.
+
+---
+
+### TASK-209 ✅ — Extraer `_validate_product_manufacturable()` en services.py
+**Prioridad:** P1 · **Tipo:** Refactor · **Esfuerzo:** S · **Test req:** backend
+**Archivos:** `backend/production/services.py`
+**Dependencias:** ninguna
+
+**Acción:** Extraer validaciones duplicadas a helper estático y usarlo en los 3 métodos de creación.
+
+**Criterio de aceptación:**
+- [x] Lógica de validación movida al helper
+- [x] Tests confirmando el comportamiento correcto
 
 ---
 
