@@ -155,11 +155,11 @@ export function ProductList({ externalOpen, onExternalOpenChange, createAction }
 
     // Open edit form if ?selected= is present (ADR-0020)
     useEffect(() => {
-        if (selectedFromUrl && (!isFormOpen || editingProduct?.id !== selectedFromUrl.id)) {
+        if (selectedFromUrl) {
             setEditingProduct(selectedFromUrl)
             setIsFormOpen(true)
         }
-    }, [selectedFromUrl, isFormOpen, editingProduct])
+    }, [selectedFromUrl])
 
     const clearSelection = () => {
         const params = new URLSearchParams(searchParams.toString())

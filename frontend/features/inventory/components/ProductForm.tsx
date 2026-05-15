@@ -281,6 +281,7 @@ export function ProductForm({ sidebar, open, onOpenChange, initialData, onSucces
 
     useEffect(() => {
         if (open) {
+            setActiveTab("general")
             setIsFetchingInitialData(true)
 
             const initOperations = [
