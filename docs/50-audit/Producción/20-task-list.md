@@ -680,34 +680,34 @@ Panel lateral con cálculo en tiempo real: costo unitario nuevo, Δ, impacto WAC
 **Esfuerzo:** XS · **Archivos:** BOMManager.tsx
 Reemplazar "Lista vacía" por mensaje + CTA "Crear primera receta".
 
-### TASK-311 — Cheatsheet modal con `?`
+### ✅ TASK-311 — Cheatsheet modal con `?`
 **Esfuerzo:** XS · **Archivos:** WorkOrderWizard.tsx
 Tecla `?` abre modal listando atajos: `Ctrl+→`, `Ctrl+←`, `Esc`, etc.
 
-### TASK-312 — Plantillas de OT por cliente
+### ✅ TASK-312 — Plantillas de OT por cliente
 **Esfuerzo:** M · **Archivos:** production/models.py (WorkOrderTemplate), production/views.py
 Modelo `WorkOrderTemplate` con `name`, `customer`, `default_data: JSONField`. Action "Crear desde plantilla" en orders/page.tsx.
 **Criterio:** Crear template desde OT existente; usar template precarga form.
 
-### TASK-313 — QR/Barcode + endpoint scan
+### ✅ TASK-313 — QR/Barcode + endpoint scan
 **Esfuerzo:** M · **Archivos:** production/views.py (action `scan`), PDF template
 PDF imprime QR con URL `/api/production/orders/scan/<token>/`. Endpoint recibe el token + nueva etapa, transiciona.
 **Criterio:** Escanear desde móvil avanza etapa sin autenticación adicional (token short-lived).
 
-### TASK-314 — Tiempo estimado por etapa en BOM
+### ✅ TASK-314 — Tiempo estimado por etapa en BOM
 **Esfuerzo:** M · **Archivos:** BillOfMaterials model (campos `estimated_prepress_min`, etc.) o entidad `BomStage` separada
 Al crear OT, `due_date` se sugiere = `start_date + sum(estimated_*_min)`.
 **Criterio:** Sugerencia visible en form de creación.
 
-### TASK-315 — Foto del producto final
+### ✅ TASK-315 — Foto del producto final
 **Esfuerzo:** XS · **Archivos:** FinishedStep.tsx
 Botón "Adjuntar foto" usa `Attachment` existente con `tag='final_photo'`.
 
-### TASK-316 — Botón "Imprimir copia" (re-impresión rápida)
+### ✅ TASK-316 — Botón "Imprimir copia" (re-impresión rápida)
 **Esfuerzo:** S · **Archivos:** WorkOrderWizard.tsx (en FinishedStep)
 Botón duplica OT con prefijo "Copia de OT-XXX" en descripción.
 
-### TASK-317 — Tablero "Hoy / Mañana / Esta semana"
+### ✅ TASK-317 — Tablero "Hoy / Mañana / Esta semana"
 **Esfuerzo:** S · **Archivos:** crear `WorkOrderTimelineView.tsx`, registrar como `viewOptions` en DataTable
 Tres columnas filtradas por `due_date`.
 
