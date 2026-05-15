@@ -18,6 +18,7 @@ export interface TransitionPayload {
 
 export interface RectifyPayload {
   materialAdjustments?: { material_id: number; actual_quantity: number }[]
+  outsourcedAdjustments?: { material_id: number; actual_quantity?: number; actual_unit_price?: number }[]
   producedQuantity?: number | string | null
   notes?: string
 }
@@ -93,9 +94,10 @@ export function useWorkOrderMutations(
 
   // ── rectify ────────────────────────────────────────────────────────────────
   const rectifyMutation = useMutation({
-    mutationFn: async ({ materialAdjustments = [], producedQuantity, notes = '' }: RectifyPayload) => {
+    mutationFn: async ({ materialAdjustments = [], outsourcedAdjustments = [], producedQuantity, notes = '' }: RectifyPayload) => {
       const res = await api.post(`/production/orders/${orderId}/rectify/`, {
         material_adjustments: materialAdjustments,
+        outsourced_adjustments: outsourcedAdjustments,
         produced_quantity: producedQuantity ?? undefined,
         notes,
       })

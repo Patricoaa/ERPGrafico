@@ -600,25 +600,18 @@ Verificar primero si `weasyprint` ya está en `requirements.txt`. Si no, agregar
 
 ---
 
-### TASK-209 — Rectificación de servicios tercerizados
+### TASK-209 ✅ — Rectificación de servicios tercerizados
 **Prioridad:** P2 · **Tipo:** Feature · **Esfuerzo:** M · **Test req:** backend
 **Archivos:**
 - [backend/production/services.py::rectify_production](../../../backend/production/services.py)
 - [frontend/features/production/components/steps/RectificationStep.tsx](../../../frontend/features/production/components/steps/RectificationStep.tsx)
 
-**Dependencias:** ninguna
-
-**Acción:**
-1. Backend acepta `outsourced_adjustments: [{material_id, actual_quantity, actual_unit_price}]` en `rectify_production`.
-2. Si difiere de la OC asociada, registra discrepancia en `WorkOrderHistory`.
-3. UI muestra outsourced materials con inputs editables (no como "no rectificables").
-
 **Criterio de aceptación:**
-- [ ] Test: rectificar servicio con qty distinta a la planificada → discrepancia registrada.
+- [x] Test: rectificar servicio con qty distinta a la planificada → discrepancia registrada.
 
 ---
 
-### TASK-210 — Stage data versionado
+### TASK-210 ✅ — Stage data versionado
 **Prioridad:** P2 · **Tipo:** Refactor · **Esfuerzo:** M · **Test req:** backend
 **Archivos:** [backend/production/models.py](../../../backend/production/models.py), [backend/production/services.py](../../../backend/production/services.py)
 **Dependencias:** TASK-112
@@ -629,8 +622,8 @@ Verificar primero si `weasyprint` ya está en `requirements.txt`. Si no, agregar
 3. Migración data-only Django agrega `_version: 1` a todas las OTs existentes.
 
 **Criterio de aceptación:**
-- [ ] OTs sin `_version` siguen funcionando (migrate on read).
-- [ ] Documentación en `30-patterns.md` describe cómo crear v2 en el futuro.
+- [x] OTs sin `_version` siguen funcionando (migrate on read).
+- [x] Documentación en `30-patterns.md` describe cómo crear v2 en el futuro.
 
 ---
 

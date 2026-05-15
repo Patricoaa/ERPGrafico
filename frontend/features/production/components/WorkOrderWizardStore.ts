@@ -23,6 +23,7 @@ interface WizardState {
 
   // ── rectification ─────────────────────────────────────────────────────────
   rectificationAdjustments: { material_id: number; actual_quantity: number }[]
+  rectificationOutsourcedAdjustments: { material_id: number; actual_quantity?: number; actual_unit_price?: number }[]
   rectificationProducedQty: number | null
 
   // ── actions ───────────────────────────────────────────────────────────────
@@ -43,13 +44,16 @@ interface WizardState {
   setRectificationAdjustments: (
     adjustments: { material_id: number; actual_quantity: number }[]
   ) => void
+  setRectificationOutsourcedAdjustments: (
+    adjustments: { material_id: number; actual_quantity?: number; actual_unit_price?: number }[]
+  ) => void
   setRectificationProducedQty: (qty: number | null) => void
 
   /** Reset all state (call when wizard closes) */
   reset: () => void
 }
 
-const INITIAL: Omit<WizardState, keyof Omit<WizardState, 'order' | 'loading' | 'viewingStepIndex' | 'taskNotes' | 'taskFiles' | 'isAnnulModalOpen' | 'isDeleteModalOpen' | 'isBackwardModalOpen' | 'pendingPrevStage' | 'showPOPreview' | 'outsourcedPending' | 'rectificationAdjustments' | 'rectificationProducedQty'>> = {
+const INITIAL: Omit<WizardState, keyof Omit<WizardState, 'order' | 'loading' | 'viewingStepIndex' | 'taskNotes' | 'taskFiles' | 'isAnnulModalOpen' | 'isDeleteModalOpen' | 'isBackwardModalOpen' | 'pendingPrevStage' | 'showPOPreview' | 'outsourcedPending' | 'rectificationAdjustments' | 'rectificationOutsourcedAdjustments' | 'rectificationProducedQty'>> = {
   order: null,
   loading: true,
   viewingStepIndex: 0,
@@ -62,6 +66,7 @@ const INITIAL: Omit<WizardState, keyof Omit<WizardState, 'order' | 'loading' | '
   showPOPreview: false,
   outsourcedPending: [],
   rectificationAdjustments: [],
+  rectificationOutsourcedAdjustments: [],
   rectificationProducedQty: null,
 }
 
@@ -88,6 +93,7 @@ export const useWizardStore = create<WizardState>((set) => ({
   setOutsourcedPending: (materials) => set({ outsourcedPending: materials }),
 
   setRectificationAdjustments: (adjustments) => set({ rectificationAdjustments: adjustments }),
+  setRectificationOutsourcedAdjustments: (adjustments) => set({ rectificationOutsourcedAdjustments: adjustments }),
   setRectificationProducedQty: (qty) => set({ rectificationProducedQty: qty }),
 
   reset: () => set(INITIAL),

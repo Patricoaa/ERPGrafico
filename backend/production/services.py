@@ -145,7 +145,7 @@ class WorkOrderService:
         if not uom:
             raise ValidationError("La unidad de medida es requerida para fabricaciones manuales.")
 
-        final_stage_data = {'quantity': float(quantity)}
+        final_stage_data = {'quantity': float(quantity), '_version': 1}
         if uom:
              final_stage_data['uom_id'] = uom.id
              final_stage_data['uom_name'] = uom.name
@@ -791,7 +791,7 @@ class WorkOrderService:
             if work_order.actual_quantity_produced is not None:
                 quantity = work_order.actual_quantity_produced
             else:
-                quantity = Decimal(str(work_order.stage_data.get('quantity', 0)))
+                quantity = Decimal(str(work_order.canonical_stage_data.get('quantity', 0)))
             uom = product.uom
 
         if product and product.track_inventory:
@@ -935,7 +935,7 @@ class WorkOrderService:
 
     @staticmethod
     @transaction.atomic
-    def rectify_production(work_order, material_adjustments=None, produced_quantity=None, user=None, notes=""):
+    def rectify_production(work_order, material_adjustments=None, outsourced_adjustments=None, produced_quantity=None, user=None, notes=""):
         """
         Declares actual quantities consumed and produced before transitioning to FINISHED.
         
@@ -946,6 +946,7 @@ class WorkOrderService:
             work_order: WorkOrder instance (must be in RECTIFICATION stage)
             material_adjustments: list of dicts: [{material_id, actual_quantity}]
                                   If empty or None, quantities remain unchanged.
+            outsourced_adjustments: list of dicts: [{material_id, actual_quantity, actual_unit_price}]
             produced_quantity: Decimal. Real quantity produced (only for manual OTs with track_inventory).
             user: User performing the action.
             notes: Optional notes to record in the history.
@@ -987,13 +988,57 @@ class WorkOrderService:
                     material.quantity_planned = actual_qty
                     material.save()
         
+        # 1.5 Adjust outsourced services
+        if outsourced_adjustments:
+            for adj in outsourced_adjustments:
+                material_id = adj.get('material_id')
+                actual_qty_raw = adj.get('actual_quantity')
+                actual_price_raw = adj.get('actual_unit_price')
+                
+                if material_id is None:
+                    continue
+                    
+                try:
+                    material = WorkOrderMaterial.objects.get(pk=material_id, work_order=work_order, is_outsourced=True)
+                except WorkOrderMaterial.DoesNotExist:
+                    raise ValidationError(f"Servicio tercerizado con ID {material_id} no encontrado en esta OT.")
+                
+                updates = []
+                if actual_qty_raw is not None:
+                    actual_qty = Decimal(str(actual_qty_raw))
+                    if actual_qty < Decimal('0'):
+                        raise ValidationError(f"La cantidad real no puede ser negativa.")
+                    if material.quantity_planned != actual_qty:
+                        updates.append(f"Qty: {material.quantity_planned} → {actual_qty}")
+                        material.quantity_planned = actual_qty
+                        
+                if actual_price_raw is not None:
+                    actual_price = Decimal(str(actual_price_raw))
+                    if actual_price < Decimal('0'):
+                        raise ValidationError(f"El precio real no puede ser negativo.")
+                    if material.unit_price != actual_price:
+                        updates.append(f"Precio: {material.unit_price} → {actual_price}")
+                        material.unit_price = actual_price
+                        
+                if updates:
+                    changes_summary.append(f"Servicio {material.component.name}: " + ", ".join(updates))
+                    # Record discrepancy against Purchase Order (if unit price changed or quantity changed and we have a PO)
+                    if material.purchase_line:
+                        po_qty = material.purchase_line.quantity
+                        po_price = material.purchase_line.unit_cost
+                        if material.quantity_planned != po_qty or material.unit_price != po_price:
+                            changes_summary.append(
+                                f"DISCREPANCIA con OC-{material.purchase_line.order.number} en {material.component.name}"
+                            )
+                    material.save()
+        
         # 2. Adjust produced quantity
         if produced_quantity is not None:
             produced_qty = Decimal(str(produced_quantity))
             if produced_qty <= Decimal('0'):
                 raise ValidationError("La cantidad real producida debe ser mayor a 0.")
             
-            planned_qty = Decimal(str(work_order.stage_data.get('quantity', 0)))
+            planned_qty = Decimal(str(work_order.canonical_stage_data.get('quantity', 0)))
             if planned_qty != produced_qty:
                 changes_summary.append(f"Cantidad producida: {planned_qty} → {produced_qty}")
             
@@ -1212,6 +1257,7 @@ class WorkOrderService:
             return {}
             
         stage_data = {
+            '_version': 1,
             'internal_notes': mfg_data.get('description', ''),
             'product_description': mfg_data.get('product_description', ''),
             'contact_name': mfg_data.get('contact', {}).get('name', '') if mfg_data.get('contact') else '',
@@ -1264,15 +1310,16 @@ class WorkOrderPdfService:
 
         # Prepare flat stage data for rendering (filtering out None or complex objects if needed)
         flat_stage_data = {}
-        if work_order.stage_data:
-            for k, v in work_order.stage_data.items():
+        stage_data = work_order.canonical_stage_data
+        if stage_data:
+            for k, v in stage_data.items():
                 if k not in ['quantity', 'uom_id', 'uom_name', '_version'] and v:
                     # Make key readable
                     readable_key = k.replace('_', ' ').title()
                     flat_stage_data[readable_key] = v
 
-        quantity = work_order.stage_data.get('quantity') if work_order.stage_data else 1
-        uom_name = work_order.stage_data.get('uom_name') if work_order.stage_data else ''
+        quantity = stage_data.get('quantity') if stage_data else 1
+        uom_name = stage_data.get('uom_name') if stage_data else ''
 
         context = {
             'work_order': work_order,
