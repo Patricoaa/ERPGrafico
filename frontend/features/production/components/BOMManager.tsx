@@ -314,24 +314,39 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
 
                 <div className="p-0 overflow-hidden">
                     {!isBOMsLoading && boms.length === 0 ? (
-                        <div className="py-16 flex flex-col items-center justify-center text-center gap-4 border-2 border-dashed rounded-b-md bg-muted/5">
-                            <div className="bg-primary/10 p-4 rounded-full">
-                                <Workflow className="h-8 w-8 text-primary opacity-60" />
+                        <div className="py-16 flex flex-col items-center justify-center text-center gap-5 border-2 border-dashed border-primary/20 rounded-b-md bg-muted/5">
+                            <div className="bg-primary/10 p-5 rounded-full ring-4 ring-primary/5">
+                                <Workflow className="h-10 w-10 text-primary" />
                             </div>
-                            <div className="space-y-1 max-w-xs">
-                                <p className="text-sm font-bold uppercase tracking-widest text-primary">Sin recetas de producción</p>
-                                <p className="text-xs text-muted-foreground">
-                                    Define la estructura de materiales para fabricar este producto.
+                            <div className="space-y-1.5 max-w-sm">
+                                <p className="text-base font-black uppercase tracking-widest text-primary">Sin recetas de producción</p>
+                                <p className="text-[13px] font-medium text-muted-foreground/80">
+                                    Defina la lista de materiales (BOM) y el ruteo de etapas para fabricar este producto.
                                 </p>
                             </div>
-                            <Button
-                                type="button"
-                                onClick={handleCreate}
-                                className="gap-2 text-xs font-black uppercase tracking-widest"
-                            >
-                                <Plus className="h-4 w-4" />
-                                Crear primera receta
-                            </Button>
+                            <div className="flex items-center gap-3 mt-2">
+                                <Button
+                                    type="button"
+                                    onClick={handleCreate}
+                                    className="gap-2 h-10 px-6 text-xs font-black uppercase tracking-widest shadow-md hover:-translate-y-0.5 transition-transform"
+                                >
+                                    <Plus className="h-4 w-4" />
+                                    Crear receta base
+                                </Button>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => {
+                                        // TODO: Implement generate from history
+                                        handleCreate()
+                                    }}
+                                    className="gap-2 h-10 px-6 text-xs font-black uppercase tracking-widest border-primary/20 text-primary hover:bg-primary/5"
+                                    title="Próximamente: Auto-completar según OTs manuales previas"
+                                >
+                                    <History className="h-4 w-4" />
+                                    Generar desde histórico
+                                </Button>
+                            </div>
                         </div>
                     ) : (
                         <DataTable

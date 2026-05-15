@@ -671,12 +671,12 @@ Comments como entidad propia con GenericForeignKey, no en `stage_data.comments`.
 `@dnd-kit/core` (verificar si ya en stack). Mover card → `useWorkOrderMutations.transition`.
 **Criterio:** DnD respeta validación de transiciones.
 
-### TASK-309 — Vista previa de impacto al rectificar
+### ✅ TASK-309 — Vista previa de impacto al rectificar
 **Esfuerzo:** S · **Archivos:** RectificationStep.tsx
 Panel lateral con cálculo en tiempo real: costo unitario nuevo, Δ, impacto WAC.
 **Criterio:** Cambiar qty → panel se actualiza inline.
 
-### TASK-310 — Empty state útil en BOMs
+### ✅ TASK-310 — Empty state útil en BOMs
 **Esfuerzo:** XS · **Archivos:** BOMManager.tsx
 Reemplazar "Lista vacía" por mensaje + CTA "Crear primera receta".
 
