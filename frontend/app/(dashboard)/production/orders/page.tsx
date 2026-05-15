@@ -6,13 +6,12 @@ import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { createActionsColumn, DataCell } from "@/components/ui/data-table-cells"
 import { ColumnDef } from "@tanstack/react-table"
-import api from "@/lib/api"
 import { Pencil, Trash2, Ban, Settings, List, Columns } from "lucide-react"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { WorkOrderForm } from "@/features/production/components/forms/WorkOrderForm"
 import { WorkOrderWizard } from "@/features/production/components/WorkOrderWizard"
 import { WorkOrderKanban } from "@/features/production/components/WorkOrderKanban"
-import { toast } from "sonner"
+
 import { ToolbarCreateButton, SmartSearchBar, useSmartSearch } from "@/components/shared"
 import { translateProductionStage } from "@/lib/utils"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
@@ -20,6 +19,7 @@ import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { usePathname } from "next/navigation"
 import { useWorkOrders } from "@/features/production/hooks/useWorkOrders"
+import { useWorkOrderListActions } from "@/features/production/hooks"
 import { workOrderSearchDef } from "@/features/production/searchDef"
 
 import type { WorkOrder } from "@/features/production/types"
@@ -35,6 +35,7 @@ export default function WorkOrdersPage() {
 
     const { filters } = useSmartSearch(workOrderSearchDef)
     const { orders, isLoading: loading, refetch: refetchOrders } = useWorkOrders(filters)
+    const { deleteOrder, annulOrder } = useWorkOrderListActions({ onSuccess: refetchOrders })
 
     const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<WorkOrder>({
         endpoint: '/production/orders'
@@ -69,29 +70,13 @@ export default function WorkOrdersPage() {
     }
 
     const deleteConfirm = useConfirmAction<number>(async (id) => {
-        try {
-            await api.delete(`/production/orders/${id}/`)
-            toast.success("OT eliminada correctamente.")
-            refetchOrders()
-        } catch (error) {
-            console.error("Error deleting order:", error)
-            toast.error("Error al eliminar la OT.")
-        }
+        await deleteOrder({ id })
     })
 
     const handleDelete = (id: number) => deleteConfirm.requestConfirm(id)
 
     const cancelConfirm = useConfirmAction<number>(async (id) => {
-        try {
-            await api.post(`/production/orders/${id}/transition/`, {
-                next_stage: 'CANCELLED'
-            })
-            toast.success("OT anulada correctamente.")
-            refetchOrders()
-        } catch (error) {
-            console.error("Error canceling order:", error)
-            toast.error("Error al anular la OT.")
-        }
+        await annulOrder({ id })
     })
 
     const handleCancel = (id: number) => cancelConfirm.requestConfirm(id)

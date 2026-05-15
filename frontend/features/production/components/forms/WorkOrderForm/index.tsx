@@ -18,7 +18,7 @@ import api from "@/lib/api"
 import { toast } from "sonner"
 
 import { WorkOrderBasicInfo } from "./WorkOrderBasicInfo"
-import { WorkOrderMaterials } from "./WorkOrderMaterials"
+import { ManufacturingSpecsEditor, emptyManufacturingData, type ManufacturingData } from "@/components/shared/manufacturing"
 import { workOrderSchema, type WorkOrderFormValues, type WorkOrderInitialData } from "@/types/forms"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
@@ -44,21 +44,8 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
     const [loading, setLoading] = useState(false)
     
 
-    // Advanced Manufacturing States
-    const [enablePrepress, setEnablePrepress] = useState(false)
-    const [enablePress, setEnablePress] = useState(false)
-    const [enablePostpress, setEnablePostpress] = useState(false)
-
-    const [prepressSpecs, setPrepressSpecs] = useState("")
-    const [pressSpecs, setPressSpecs] = useState("")
-    const [postpressSpecs, setPostpressSpecs] = useState("")
-
-    const [designNeeded, setDesignNeeded] = useState(false)
-    const [designFiles, setDesignFiles] = useState<File[]>([])
-    const [existingDesignFiles, setExistingDesignFiles] = useState<string[]>([])
-    const [folioEnabled, setFolioEnabled] = useState(false)
-    const [folioStart, setFolioStart] = useState("")
-    const [printType, setPrintType] = useState<string | null>(null)
+    // Advanced Manufacturing State (consolidated — TASK-109)
+    const [mfgData, setMfgData] = useState<ManufacturingData>(emptyManufacturingData())
 
     const [selectedContact, setSelectedContact] = useState<Contact | null>(null)
     const [selectedManualProduct, setSelectedManualProduct] = useState<ProductMinimal | null>(null)
@@ -124,44 +111,44 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                     setSelectedManualProduct(initialData.product as any)
                 }
 
-                const mfgData = initialData.stage_data || {}
+                const stageData = initialData.stage_data || {}
 
                 // Contact
-                if (mfgData.contact_id) {
+                if (stageData.contact_id) {
                     setSelectedContact({
-                        id: Number(mfgData.contact_id),
-                        name: mfgData.contact_name || "Contacto",
-                        tax_id: mfgData.contact_tax_id || ""
+                        id: Number(stageData.contact_id),
+                        name: stageData.contact_name || "Contacto",
+                        tax_id: stageData.contact_tax_id || ""
                     } as any)
                 } else {
                     setSelectedContact(null)
                 }
 
-                // Phases
-                if (mfgData.phases) {
-                    setEnablePrepress(mfgData.phases.prepress || false)
-                    setEnablePress(mfgData.phases.press || false)
-                    setEnablePostpress(mfgData.phases.postpress || false)
-                } else {
-                    setEnablePrepress(false)
-                    setEnablePress(false)
-                    setEnablePostpress(false)
-                }
-
-                setPrepressSpecs(mfgData.prepress_specs || "")
-                setPressSpecs(mfgData.press_specs || "")
-                setPostpressSpecs(mfgData.postpress_specs || "")
-
-                setDesignNeeded(mfgData.design_needed || false)
-                setFolioEnabled(mfgData.folio_enabled || false)
-                setFolioStart(mfgData.folio_start || "")
-                setPrintType(mfgData.print_type || null)
-
-                setExistingDesignFiles(mfgData.design_attachments || [])
-                setDesignFiles([])
+                // Manufacturing data (consolidated — TASK-109)
+                const mfgDataRaw = stageData
+                setMfgData({
+                    phases: {
+                        prepress: mfgDataRaw.phases?.prepress || false,
+                        press: mfgDataRaw.phases?.press || false,
+                        postpress: mfgDataRaw.phases?.postpress || false,
+                    },
+                    specifications: {
+                        prepress: mfgDataRaw.prepress_specs || mfgDataRaw.specifications?.prepress || '',
+                        press: mfgDataRaw.press_specs || mfgDataRaw.specifications?.press || '',
+                        postpress: mfgDataRaw.postpress_specs || mfgDataRaw.specifications?.postpress || '',
+                    },
+                    design_needed: mfgDataRaw.design_needed || false,
+                    design_files: [],
+                    existing_design_files: mfgDataRaw.design_attachments || [],
+                    folio_enabled: mfgDataRaw.folio_enabled || false,
+                    folio_start: mfgDataRaw.folio_start || '',
+                    print_type: mfgDataRaw.print_type || null,
+                    internal_notes: mfgDataRaw.internal_notes || '',
+                    product_description: mfgDataRaw.product_description || '',
+                })
 
             } else {
-                setExistingDesignFiles([])
+                setMfgData(emptyManufacturingData())
                 setSelectedContact(null)
                 setOtType(null)
             }
@@ -229,19 +216,17 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
             contact_id: selectedContact?.id,
             contact_name: selectedContact?.name,
             contact_tax_id: selectedContact?.tax_id,
-            phases: {
-                prepress: enablePrepress,
-                press: enablePress,
-                postpress: enablePostpress
-            },
-            prepress_specs: prepressSpecs,
-            press_specs: pressSpecs,
-            postpress_specs: postpressSpecs,
-            design_needed: designNeeded,
-            folio_enabled: folioEnabled,
-            folio_start: folioStart,
-            print_type: printType,
-            design_attachments: [...existingDesignFiles, ...designFiles.map(f => f.name)],
+            phases: mfgData.phases,
+            specifications: mfgData.specifications,
+            // Legacy keys kept for backward compat with old stage_data records
+            prepress_specs: mfgData.specifications.prepress,
+            press_specs: mfgData.specifications.press,
+            postpress_specs: mfgData.specifications.postpress,
+            design_needed: mfgData.design_needed,
+            folio_enabled: mfgData.folio_enabled,
+            folio_start: mfgData.folio_start,
+            print_type: mfgData.print_type,
+            design_attachments: [...mfgData.existing_design_files, ...mfgData.design_files.map(f => f.name)],
             quantity: data.quantity,
             uom_id: data.uom_id
         }
@@ -278,7 +263,7 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
             formData.append('is_manual', 'true')
         }
 
-        designFiles.forEach((file, index) => {
+        mfgData.design_files.forEach((file, index) => {
             formData.append(`design_file_${index}`, file)
         })
 
@@ -455,19 +440,9 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                                 />
 
                                 {otType === "LINKED" && (
-                                    <WorkOrderMaterials
-                                        enablePrepress={enablePrepress} setEnablePrepress={setEnablePrepress}
-                                        enablePress={enablePress} setEnablePress={setEnablePress}
-                                        enablePostpress={enablePostpress} setEnablePostpress={setEnablePostpress}
-                                        prepressSpecs={prepressSpecs} setPrepressSpecs={setPrepressSpecs}
-                                        pressSpecs={pressSpecs} setPressSpecs={setPressSpecs}
-                                        postpressSpecs={postpressSpecs} setPostpressSpecs={setPostpressSpecs}
-                                        designNeeded={designNeeded} setDesignNeeded={setDesignNeeded}
-                                        designFiles={designFiles} setDesignFiles={setDesignFiles}
-                                        existingDesignFiles={existingDesignFiles} setExistingDesignFiles={setExistingDesignFiles}
-                                        folioEnabled={folioEnabled} setFolioEnabled={setFolioEnabled}
-                                        folioStart={folioStart} setFolioStart={setFolioStart}
-                                        printType={printType} setPrintType={setPrintType}
+                                    <ManufacturingSpecsEditor
+                                        value={mfgData}
+                                        onChange={setMfgData}
                                     />
                                 )}
 
