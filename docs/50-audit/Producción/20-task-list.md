@@ -149,10 +149,10 @@ Hoy un POST a `/transition/` con `next_stage=FINISHED` desde `MATERIAL_ASSIGNMEN
 3. **Decisión:** las transiciones hacia atrás solo se permiten desde estados no-terminales (no se sale de FINISHED ni CANCELLED).
 
 **Criterio de aceptación:**
-- [ ] POST de salto inválido (`MATERIAL_ASSIGNMENT → FINISHED`) retorna 400.
-- [ ] Transición legal pasa.
-- [ ] Retroceso permitido (con la advertencia de reset de tareas que ya existe).
-- [ ] Tests pytest cubren al menos 5 transiciones (válidas + 2 inválidas).
+- [x] POST de salto inválido (`MATERIAL_ASSIGNMENT → FINISHED`) retorna 400.
+- [x] Transición legal pasa.
+- [x] Retroceso permitido (con la advertencia de reset de tareas que ya existe).
+- [x] Tests pytest cubren al menos 5 transiciones (7: 5 válidas + 2 inválidas).
 
 ---
 
@@ -167,8 +167,8 @@ Hoy un POST a `/transition/` con `next_stage=FINISHED` desde `MATERIAL_ASSIGNMEN
 3. Quitar los `import traceback` que queden huérfanos.
 
 **Criterio de aceptación:**
-- [ ] `grep -rn "print(" backend/production/` no retorna resultados (excepto en strings literales).
-- [ ] Mensajes de error siguen apareciendo correctamente con `pytest -s`.
+- [x] `grep -rn "print(" backend/production/` no retorna resultados (excepto en strings literales).
+- [x] Mensajes de error siguen apareciendo correctamente con `pytest -s`.
 
 ---
 
