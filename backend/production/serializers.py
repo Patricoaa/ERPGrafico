@@ -138,6 +138,9 @@ class WorkOrderSerializer(serializers.ModelSerializer):
     cancellation_limit_stage = serializers.ReadOnlyField()
     display_id = serializers.SerializerMethodField()
     
+    # Alias para compatibilidad con frontend (modelo usa estimated_completion_date)
+    due_date = serializers.DateField(source='estimated_completion_date', read_only=True, allow_null=True)
+
     # Metadata helpers
     requires_prepress = serializers.SerializerMethodField()
     requires_press = serializers.SerializerMethodField()

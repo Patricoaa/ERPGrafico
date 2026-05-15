@@ -53,8 +53,8 @@ cd frontend && npx tsc --noEmit -p . 2>&1 | grep MaterialAssignmentStep
 2. Mantener `estimated_completion_date` también expuesto (writable) para no romper el form.
 
 **Criterio de aceptación:**
-- [ ] `GET /production/orders/<id>/` retorna ambos campos con el mismo valor.
-- [ ] Test pytest verifica que ambos campos están presentes en la respuesta.
+- [x] `GET /production/orders/<id>/` retorna ambos campos con el mismo valor.
+- [x] Test pytest verifica que ambos campos están presentes en la respuesta.
 
 **Test sugerido (`backend/production/tests/test_serializers.py`):**
 ```python
