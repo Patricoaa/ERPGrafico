@@ -28,6 +28,7 @@ import {
 } from "@dnd-kit/core"
 import { useDroppable } from "@dnd-kit/core"
 import { useDraggable } from "@dnd-kit/core"
+import { CSS } from "@dnd-kit/utilities"
 
 interface KanbanProps {
     orders: WorkOrder[]
@@ -74,9 +75,9 @@ function DraggableCard({ order, onManage, isDragging }: DraggableCardProps) {
         data: { order },
     })
 
-    const style = transform
-        ? { transform: `translate(${transform.x}px, ${transform.y}px)` }
-        : undefined
+    const style = {
+        transform: CSS.Translate.toString(transform),
+    }
 
     return (
         <div ref={setNodeRef} style={style} {...listeners} {...attributes}>
