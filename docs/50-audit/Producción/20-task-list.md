@@ -487,7 +487,7 @@ Verificar primero si `weasyprint` ya está en `requirements.txt`. Si no, agregar
 
 ---
 
-### TASK-204 — Endpoint `/production/orders/metrics/`
+### TASK-204 ✅ — Endpoint `/production/orders/metrics/`
 **Prioridad:** P2 · **Tipo:** Feature · **Esfuerzo:** M · **Test req:** backend
 **Archivos:**
 - [backend/production/views.py](../../../backend/production/views.py)
@@ -509,8 +509,8 @@ Verificar primero si `weasyprint` ya está en `requirements.txt`. Si no, agregar
 3. Aceptar query params `?from=<date>&to=<date>`.
 
 **Criterio de aceptación:**
-- [ ] Endpoint responde en < 500ms con dataset de 1000 OTs (usar `select_related` + agregaciones DB).
-- [ ] Tests cubren cálculo de avg_time por etapa.
+- [x] Endpoint responde en < 500ms con dataset de 1000 OTs (usar `select_related` + agregaciones DB).
+- [x] Tests cubren cálculo de avg_time por etapa.
 
 ---
 
