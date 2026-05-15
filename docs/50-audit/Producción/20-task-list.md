@@ -9,9 +9,9 @@
 
 ---
 
-## FASE 1 — Estabilización (P0)
+## FASE 1 — Estabilización (P0) ✅ COMPLETADA
 
-### TASK-001 — Fix `MaterialAssignmentStep.tsx` (state no declarado)
+### TASK-001 ✅ — Fix `MaterialAssignmentStep.tsx` (state no declarado)
 **Prioridad:** P0 · **Tipo:** Bugfix · **Esfuerzo:** XS · **Test req:** no aplica
 **Archivos:** [frontend/features/production/components/steps/MaterialAssignmentStep.tsx](../../../frontend/features/production/components/steps/MaterialAssignmentStep.tsx)
 **Dependencias:** ninguna
@@ -40,7 +40,7 @@ cd frontend && npx tsc --noEmit -p . 2>&1 | grep MaterialAssignmentStep
 
 ---
 
-### TASK-002 — Mapear `due_date` como alias en `WorkOrderSerializer`
+### TASK-002 ✅ — Mapear `due_date` como alias en `WorkOrderSerializer`
 **Prioridad:** P0 · **Tipo:** Bugfix · **Esfuerzo:** XS · **Test req:** backend
 **Archivos:** [backend/production/serializers.py](../../../backend/production/serializers.py)
 **Dependencias:** ninguna
@@ -66,7 +66,7 @@ def test_workorder_serializer_exposes_due_date_alias(work_order_factory):
 
 ---
 
-### TASK-003 — Fix FilterSet (`due_date` → `estimated_completion_date`)
+### TASK-003 ✅ — Fix FilterSet (`due_date` → `estimated_completion_date`)
 **Prioridad:** P0 · **Tipo:** Bugfix · **Esfuerzo:** XS · **Test req:** backend
 **Archivos:** [backend/production/views.py:8-14](../../../backend/production/views.py#L8-L14)
 **Dependencias:** ninguna
@@ -95,7 +95,7 @@ def test_workorder_filter_by_due_date_after(api_client, work_order_factory):
 
 ---
 
-### TASK-004 — Fix `deliveries.first().warehouse` con filtro previo
+### TASK-004 ✅ — Fix `deliveries.first().warehouse` con filtro previo
 **Prioridad:** P0 · **Tipo:** Bugfix · **Esfuerzo:** XS · **Test req:** backend
 **Archivos:** [backend/production/services.py:42](../../../backend/production/services.py#L42)
 **Dependencias:** ninguna
@@ -126,7 +126,7 @@ def test_create_ot_uses_delivery_warehouse_when_available(...):
 
 ---
 
-### TASK-005 — Validar transiciones de etapa en backend
+### TASK-005 ✅ — Validar transiciones de etapa en backend
 **Prioridad:** P0 · **Tipo:** Bugfix · **Esfuerzo:** S · **Test req:** backend
 **Archivos:** [backend/production/views.py:271-322](../../../backend/production/views.py#L271-L322), [backend/production/services.py:488-724](../../../backend/production/services.py#L488-L724)
 **Dependencias:** ninguna
@@ -156,7 +156,7 @@ Hoy un POST a `/transition/` con `next_stage=FINISHED` desde `MATERIAL_ASSIGNMEN
 
 ---
 
-### TASK-006 — Reemplazar `print()` por `logging`
+### TASK-006 ✅ — Reemplazar `print()` por `logging`
 **Prioridad:** P0 · **Tipo:** Bugfix · **Esfuerzo:** XS · **Test req:** no aplica
 **Archivos:** [backend/production/views.py](../../../backend/production/views.py), [backend/production/services.py](../../../backend/production/services.py)
 **Dependencias:** ninguna
@@ -174,7 +174,7 @@ Hoy un POST a `/transition/` con `next_stage=FINISHED` desde `MATERIAL_ASSIGNMEN
 
 ## FASE 2 — Refactor DRY (P1)
 
-### TASK-101 — Crear `<OutsourcedServiceForm>` y migrar 3 usos
+### TASK-101 ✅ — Crear `<OutsourcedServiceForm>` y migrar 3 usos
 **Prioridad:** P1 · **Tipo:** DRY · **Esfuerzo:** M · **Test req:** opcional frontend
 **Archivos:**
 - Crear: `frontend/features/production/components/forms/OutsourcedServiceForm.tsx`
@@ -193,7 +193,7 @@ Hoy un POST a `/transition/` con `next_stage=FINISHED` desde `MATERIAL_ASSIGNMEN
 
 ---
 
-### TASK-102 — Crear `useVatRate()` hook + endpoint
+### TASK-102 ✅ — Crear `useVatRate()` hook + endpoint
 **Prioridad:** P1 · **Tipo:** DRY · **Esfuerzo:** S · **Test req:** backend
 **Archivos:**
 - Backend: [backend/accounting/views.py](../../../backend/accounting/views.py), [backend/accounting/models.py](../../../backend/accounting/models.py) (verificar si ya existe `AccountingSettings.vat_rate`)
@@ -207,12 +207,12 @@ Hoy un POST a `/transition/` con `next_stage=FINISHED` desde `MATERIAL_ASSIGNMEN
 3. Hook frontend cachea con `useQuery` (staleTime infinito, manual invalidate).
 
 **Criterio de aceptación:**
-- [ ] `useVatRate()` retorna `{ rate, multiplier, isLoading }`.
-- [ ] Test backend valida que el endpoint existe y retorna el valor configurado.
+- [x] `useVatRate()` retorna `{ rate, multiplier, isLoading }`.
+- [x] Test backend valida que el endpoint existe y retorna el valor configurado.
 
 ---
 
-### TASK-103 — Reemplazar `1.19` hardcoded por `useVatRate()`
+### TASK-103 ✅ — Reemplazar `1.19` hardcoded por `useVatRate()`
 **Prioridad:** P1 · **Tipo:** DRY · **Esfuerzo:** S · **Test req:** opcional
 **Archivos:**
 - [BOMFormModal.tsx](../../../frontend/features/production/components/BOMFormModal.tsx) (líneas 227, 502, 504, 777)
@@ -227,11 +227,11 @@ Hoy un POST a `/transition/` con `next_stage=FINISHED` desde `MATERIAL_ASSIGNMEN
 2. Reemplazar todas las multiplicaciones por `1.19` y divisiones por `/ 1.19` por `* multiplier` y `/ multiplier`.
 
 **Criterio de aceptación:**
-- [ ] `grep -rn "1.19" frontend/features/production/ frontend/features/sales/components/` no retorna ocurrencias en código.
+- [x] `grep -rn "1.19" frontend/features/production/ frontend/features/sales/components/` no retorna ocurrencias en código.
 
 ---
 
-### TASK-104 — Crear `STAGES_REGISTRY` único
+### TASK-104 ✅ — Crear `STAGES_REGISTRY` único
 **Prioridad:** P1 · **Tipo:** DRY · **Esfuerzo:** S · **Test req:** opcional
 **Archivos:**
 - Crear: `frontend/features/production/constants/stages.ts`
@@ -248,7 +248,7 @@ Hoy un POST a `/transition/` con `next_stage=FINISHED` desde `MATERIAL_ASSIGNMEN
 
 ---
 
-### TASK-105 — Migrar `WorkOrderWizard` a `useWorkOrderMutations`
+### TASK-105 ✅ — Migrar `WorkOrderWizard` a `useWorkOrderMutations`
 **Prioridad:** P1 · **Tipo:** DRY · **Esfuerzo:** S · **Test req:** opcional
 **Archivos:** [WorkOrderWizard.tsx](../../../frontend/features/production/components/WorkOrderWizard.tsx)
 **Dependencias:** ninguna
@@ -268,7 +268,7 @@ Hoy un POST a `/transition/` con `next_stage=FINISHED` desde `MATERIAL_ASSIGNMEN
 
 ---
 
-### TASK-106 — Migrar `MaterialAssignmentStep` + `OutsourcingAssignmentStep` a hook
+### TASK-106 ✅ — Migrar `MaterialAssignmentStep` + `OutsourcingAssignmentStep` a hook
 **Prioridad:** P1 · **Tipo:** DRY · **Esfuerzo:** S · **Test req:** opcional
 **Archivos:** [MaterialAssignmentStep.tsx](../../../frontend/features/production/components/steps/MaterialAssignmentStep.tsx), [OutsourcingAssignmentStep.tsx](../../../frontend/features/production/components/steps/OutsourcingAssignmentStep.tsx)
 **Dependencias:** TASK-101, TASK-105
@@ -284,7 +284,7 @@ Hoy un POST a `/transition/` con `next_stage=FINISHED` desde `MATERIAL_ASSIGNMEN
 
 ---
 
-### TASK-107 — Migrar `orders/page.tsx` a `useWorkOrderMutations`
+### TASK-107 ✅ — Migrar `orders/page.tsx` a `useWorkOrderMutations` (Descartado por Reglas de Hooks)
 **Prioridad:** P1 · **Tipo:** DRY · **Esfuerzo:** XS · **Test req:** opcional
 **Archivos:** [frontend/app/(dashboard)/production/orders/page.tsx](../../../frontend/app/\(dashboard\)/production/orders/page.tsx)
 **Dependencias:** TASK-105
@@ -337,7 +337,7 @@ Hoy un POST a `/transition/` con `next_stage=FINISHED` desde `MATERIAL_ASSIGNMEN
 
 ---
 
-### TASK-110 — Extraer `_expand_bom_into_materials()` en services.py
+### TASK-110 ✅ — Extraer `_expand_bom_into_materials()` en services.py
 **Prioridad:** P1 · **Tipo:** Refactor · **Esfuerzo:** M · **Test req:** backend
 **Archivos:** [backend/production/services.py](../../../backend/production/services.py)
 **Dependencias:** ninguna
@@ -362,7 +362,7 @@ Los 3 métodos `create_*` llaman este helper.
 
 ---
 
-### TASK-111 — Extraer `_create_initial_artifacts()` en services.py
+### TASK-111 ✅ — Extraer `_create_initial_artifacts()` en services.py
 **Prioridad:** P1 · **Tipo:** Refactor · **Esfuerzo:** S · **Test req:** backend
 **Archivos:** [backend/production/services.py](../../../backend/production/services.py)
 **Dependencias:** TASK-110
@@ -381,7 +381,7 @@ def _create_initial_artifacts(work_order, origin_notes, task_data):
 
 ---
 
-### TASK-112 — Definir shape canónica de `stage_data`
+### TASK-112 ✅ — Definir shape canónica de `stage_data`
 **Prioridad:** P1 · **Tipo:** Refactor · **Esfuerzo:** M · **Test req:** backend
 **Archivos:**
 - [backend/production/validators.py](../../../backend/production/validators.py)
@@ -400,7 +400,7 @@ Decisión arquitectónica: **una sola estructura** root-level (no copias por fas
 
 ---
 
-### TASK-113 — Eliminar 4 copias del dict en `_map_manufacturing_data`
+### TASK-113 ✅ — Eliminar 4 copias del dict en `_map_manufacturing_data`
 **Prioridad:** P1 · **Tipo:** DRY · **Esfuerzo:** XS · **Test req:** backend
 **Archivos:** [backend/production/services.py:48-56](../../../backend/production/services.py#L48-L56)
 **Dependencias:** TASK-112

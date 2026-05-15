@@ -47,17 +47,11 @@ class WorkOrderService:
             stage_data={}
         )
         
-        # Map and structure stage data
+        # TASK-113: Flat stage_data — no more nested prepress/press/postpress copies
         if sale_line.manufacturing_data:
             flat_data = WorkOrderService._map_manufacturing_data(sale_line.manufacturing_data)
-            work_order.stage_data = {
-                # Nest data for Wizard compatibility
-                'prepress': flat_data,
-                'press': flat_data,
-                'postpress': flat_data,
-                # Keep flat data for backward compatibility or direct access
-                **flat_data
-            }
+            flat_data['_version'] = 1
+            work_order.stage_data = flat_data
             work_order.save()
         
         # Attach files if provided
@@ -85,66 +79,20 @@ class WorkOrderService:
                 work_order.stage_data['approval_attachment'] = approval_file.name
                 work_order.save()
 
-        # Auto-assign materials from BOM if active
-        active_bom = BillOfMaterials.objects.filter(product=product, active=True).first()
-        if active_bom:
-            from inventory.services import UoMService
-            
-            # Convert yield quantity to product's base UoM for accurate scaling
-            # (In case yield is defined in 'kg' but base is 'g', or yield is 100 units)
-            bom_yield_base = active_bom.yield_quantity
-            if active_bom.yield_uom and active_bom.yield_uom != product.uom:
-                try:
-                    bom_yield_base = UoMService.convert_quantity(
-                        active_bom.yield_quantity,
-                        from_uom=active_bom.yield_uom,
-                        to_uom=product.uom
-                    )
-                except Exception:
-                    pass
-            
-            # The sales quantity requested
-            requested_qty_base = Decimal(str(sale_line.quantity))
-            
-            # How many "BOM yield batches" do we need to make the requested amount?
-            factor = requested_qty_base / bom_yield_base if bom_yield_base > 0 else Decimal('1')
-            
-            for line in active_bom.lines.all():
-                WorkOrderMaterial.objects.create(
-                    work_order=work_order,
-                    component=line.component,
-                    quantity_planned=line.quantity * factor,
-                    uom=line.uom or line.component.uom,
-                    source='BOM',
-                    is_outsourced=line.is_outsourced,
-                    supplier=line.supplier,
-                    unit_price=line.unit_price,
-                    document_type=line.document_type,
-                )
+        # TASK-110: Expand BOM via shared helper
+        WorkOrderService._expand_bom_into_materials(work_order, product, sale_line.quantity, sale_line.uom)
 
-        WorkOrderHistory.objects.create(
-            work_order=work_order,
-            stage=work_order.current_stage,
-            status=work_order.status,
-            notes="OT generada automáticamente desde venta."
+        # TASK-111: Create history + workflow task via shared helper
+        WorkOrderService._create_initial_artifacts(
+            work_order,
+            origin_notes="OT generada automáticamente desde venta.",
+            task_meta={
+                'sale_order_id': work_order.sale_order_id,
+                'order_type': 'sale',
+                'order_number': work_order.sale_order.number if work_order.sale_order else '',
+                'prefix': 'NV',
+            },
         )
-
-        # Create OT_CREATION task if not auto-finalized
-        auto_finalize = product.mfg_profile.mfg_auto_finalize if product.mfg_profile else False
-        if not auto_finalize:
-            WorkflowService.create_task(
-                task_type='OT_CREATION',
-                title=f"Asignación materiales: {work_order.display_id}",
-                description=f"Realizar la asignación de materiales y tercerizados para {work_order.display_id}.",
-                content_object=work_order,
-                category=Task.Category.TASK,
-                data={
-                    'sale_order_id': work_order.sale_order_id,
-                    'order_type': 'sale',
-                    'order_number': work_order.sale_order.number if work_order.sale_order else '',
-                    'prefix': 'NV'
-                }
-            )
 
         # Express Flow: Auto-finalize if product is configured for it
         auto_finalize = product.mfg_profile.mfg_auto_finalize if product.mfg_profile else False
@@ -207,65 +155,14 @@ class WorkOrderService:
             stage_data=final_stage_data
         )
 
-        # Auto-assign materials from BOM if active
-        active_bom = BillOfMaterials.objects.filter(product=product, active=True).first()
-        if active_bom:
-            from inventory.services import UoMService
-            
-            # Convert produced quantity to product base UoM if necessary for BOM calculation
-            # BOM quantities are usually per 1 unit of Product Base UoM
-            
-            qty_base = Decimal(str(quantity))
-            if uom and uom != product.uom:
-                 try:
-                     qty_base = UoMService.convert_quantity(Decimal(str(quantity)), uom, product.uom)
-                 except Exception:
-                     pass
+        # TASK-110: Expand BOM via shared helper
+        WorkOrderService._expand_bom_into_materials(work_order, product, quantity, uom)
 
-            # Convert yield quantity to product base UoM
-            bom_yield_base = active_bom.yield_quantity
-            if active_bom.yield_uom and active_bom.yield_uom != product.uom:
-                try:
-                    bom_yield_base = UoMService.convert_quantity(
-                        active_bom.yield_quantity,
-                        from_uom=active_bom.yield_uom,
-                        to_uom=product.uom
-                    )
-                except Exception:
-                    pass
-            
-            factor = qty_base / bom_yield_base if bom_yield_base > 0 else Decimal('1')
-
-            for line in active_bom.lines.all():
-                WorkOrderMaterial.objects.create(
-                    work_order=work_order,
-                    component=line.component,
-                    quantity_planned=line.quantity * factor,
-                    uom=line.uom or line.component.uom,
-                    source='BOM',
-                    is_outsourced=line.is_outsourced,
-                    supplier=line.supplier,
-                    unit_price=line.unit_price,
-                    document_type=line.document_type,
-                )
-
-        WorkOrderHistory.objects.create(
-            work_order=work_order,
-            stage=work_order.current_stage,
-            status=work_order.status,
-            notes="OT creada manualmente."
-        )
-
-        # Create OT_CREATION task
-        WorkflowService.create_task(
-            task_type='OT_CREATION',
-            title=f"Asignación materiales: {work_order.display_id}",
-            description=f"Realizar la asignación de materiales y tercerizados para {work_order.display_id}.",
-            content_object=work_order,
-            category=Task.Category.TASK,
-            data={
-                'order_type': 'manual'
-            }
+        # TASK-111: Create history + workflow task via shared helper
+        WorkOrderService._create_initial_artifacts(
+            work_order,
+            origin_notes="OT creada manualmente.",
+            task_meta={'order_type': 'manual'},
         )
 
         return work_order
@@ -312,71 +209,22 @@ class WorkOrderService:
             stage_data={'quantity': float(delivery_line.quantity)}
         )
         
-        # Auto-assign materials from BOM if active
-        active_bom = BillOfMaterials.objects.filter(product=product, active=True).first()
-        if active_bom:
-            from inventory.services import UoMService
-            
-            qty_base = Decimal(str(delivery_line.quantity))
-            try:
-                qty_base = UoMService.convert_quantity(
-                    delivery_line.quantity,
-                    from_uom=delivery_line.uom or sale_line.uom,
-                    to_uom=product.uom
-                )
-            except Exception:
-                pass
-            
-            # Convert yield quantity to product base UoM
-            bom_yield_base = active_bom.yield_quantity
-            if active_bom.yield_uom and active_bom.yield_uom != product.uom:
-                try:
-                    bom_yield_base = UoMService.convert_quantity(
-                        active_bom.yield_quantity,
-                        from_uom=active_bom.yield_uom,
-                        to_uom=product.uom
-                    )
-                except Exception:
-                    pass
-            
-            factor = qty_base / bom_yield_base if bom_yield_base > 0 else Decimal('1')
-            
-            for bom_line in active_bom.lines.all():
-                WorkOrderMaterial.objects.create(
-                    work_order=work_order,
-                    component=bom_line.component,
-                    quantity_planned=bom_line.quantity * factor,
-                    uom=bom_line.uom or bom_line.component.uom,
-                    source='BOM',
-                    is_outsourced=bom_line.is_outsourced,
-                    supplier=bom_line.supplier,
-                    unit_price=bom_line.unit_price,
-                    document_type=bom_line.document_type,
-                )
-
-        WorkOrderHistory.objects.create(
-            work_order=work_order,
-            stage=work_order.current_stage,
-            status=work_order.status,
-            notes="OT generada desde despacho (Producto Express)"
+        # TASK-110: Expand BOM via shared helper
+        WorkOrderService._expand_bom_into_materials(
+            work_order, product, delivery_line.quantity, delivery_line.uom or sale_line.uom
         )
 
-        # Create OT_CREATION task if not auto-finalized
-        auto_finalize = product.mfg_profile.mfg_auto_finalize if product.mfg_profile else False
-        if not auto_finalize:
-            WorkflowService.create_task(
-                task_type='OT_CREATION',
-                title=f"Asignación materiales: {work_order.display_id}",
-                description=f"Realizar la asignación de materiales y tercerizados para {work_order.display_id}.",
-                content_object=work_order,
-                category=Task.Category.TASK,
-                data={
-                    'sale_order_id': work_order.sale_order_id,
-                    'order_type': 'sale',
-                    'order_number': work_order.sale_order.number if work_order.sale_order else '',
-                    'prefix': 'NV'
-                }
-            )
+        # TASK-111: Create history + workflow task via shared helper
+        WorkOrderService._create_initial_artifacts(
+            work_order,
+            origin_notes="OT generada desde despacho (Producto Express)",
+            task_meta={
+                'sale_order_id': work_order.sale_order_id,
+                'order_type': 'sale',
+                'order_number': work_order.sale_order.number if work_order.sale_order else '',
+                'prefix': 'NV',
+            },
+        )
 
         # Express Flow: Auto-finalize
         auto_finalize = product.mfg_profile.mfg_auto_finalize if product.mfg_profile else False
@@ -1180,6 +1028,99 @@ class WorkOrderService:
                 supplier_invoice_number='', # Empty for draft
                 dte_type=dte_type,
                 status=Invoice.Status.DRAFT
+            )
+
+
+    # ── TASK-110: Extracted BOM expansion helper ────────────────────────────
+    @staticmethod
+    def _expand_bom_into_materials(work_order, product, requested_qty, qty_uom=None):
+        """Expand the active BOM into WorkOrderMaterial rows scaled by qty/yield factor.
+
+        Replaces the duplicated BOM-expansion blocks in create_from_sale_line,
+        create_manual and create_ot_for_delivery_line. Returns a list of
+        created WorkOrderMaterial instances (may be empty if no active BOM).
+        """
+        active_bom = BillOfMaterials.objects.filter(product=product, active=True).first()
+        if not active_bom:
+            return []
+
+        from inventory.services import UoMService
+
+        # Convert requested quantity to product's base UoM
+        qty_base = Decimal(str(requested_qty))
+        if qty_uom and qty_uom != product.uom:
+            try:
+                qty_base = UoMService.convert_quantity(qty_base, from_uom=qty_uom, to_uom=product.uom)
+            except Exception:
+                pass
+
+        # Convert BOM yield to product's base UoM
+        bom_yield_base = active_bom.yield_quantity
+        if active_bom.yield_uom and active_bom.yield_uom != product.uom:
+            try:
+                bom_yield_base = UoMService.convert_quantity(
+                    active_bom.yield_quantity,
+                    from_uom=active_bom.yield_uom,
+                    to_uom=product.uom,
+                )
+            except Exception:
+                pass
+
+        factor = qty_base / bom_yield_base if bom_yield_base > 0 else Decimal('1')
+
+        materials = []
+        for line in active_bom.lines.all():
+            mat = WorkOrderMaterial.objects.create(
+                work_order=work_order,
+                component=line.component,
+                quantity_planned=line.quantity * factor,
+                uom=line.uom or line.component.uom,
+                source='BOM',
+                is_outsourced=line.is_outsourced,
+                supplier=line.supplier,
+                unit_price=line.unit_price,
+                document_type=line.document_type,
+            )
+            materials.append(mat)
+        return materials
+
+    # ── TASK-111: Extracted initial artifacts helper ────────────────────────
+    @staticmethod
+    def _create_initial_artifacts(work_order, *, origin_notes: str, task_meta: dict, user=None):
+        """Create initial WorkOrderHistory + OT_CREATION workflow task.
+
+        Called by all three create_* entrypoints to ensure consistent audit trail
+        and task creation. Skips task creation for auto-finalize (Express) products.
+        """
+        WorkOrderHistory.objects.create(
+            work_order=work_order,
+            stage=work_order.current_stage,
+            status=work_order.status,
+            notes=origin_notes,
+            user=user,
+        )
+
+        # Resolve product for auto-finalize check
+        product = (
+            work_order.product
+            or (work_order.sale_line.product if work_order.sale_line else None)
+        )
+        auto_finalize = (
+            product.mfg_profile.mfg_auto_finalize
+            if product and product.mfg_profile
+            else False
+        )
+        if not auto_finalize:
+            WorkflowService.create_task(
+                task_type='OT_CREATION',
+                title=f"Asignación materiales: {work_order.display_id}",
+                description=(
+                    f"Realizar la asignación de materiales y tercerizados "
+                    f"para {work_order.display_id}."
+                ),
+                content_object=work_order,
+                category=Task.Category.TASK,
+                data=task_meta,
             )
 
     @staticmethod

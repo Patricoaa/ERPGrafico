@@ -9,3 +9,4 @@ export * from './WorkOrderKanban';
 export * from './WorkOrderWizard';
 export * from './steps';
 export * from './forms/WorkOrderForm';
+export * from './shared';

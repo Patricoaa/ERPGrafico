@@ -229,6 +229,18 @@ class WorkOrder(models.Model):
         except ValueError:
             return False
 
+    @property
+    def canonical_stage_data(self) -> dict:
+        """TASK-112: Return stage_data normalized to v1 canonical shape.
+
+        Migrates legacy nested documents (prepress/press/postpress sub-dicts) to
+        the flat v1 layout on-the-fly. Does NOT persist the normalized data —
+        call .save() explicitly if you want to persist after migration.
+        """
+        from .stage_data_schema import migrate_stage_data_to_v1
+        return migrate_stage_data_to_v1(self.stage_data or {})
+
+
     def save(self, *args, **kwargs):
         if not self.number:
             from django.db import transaction

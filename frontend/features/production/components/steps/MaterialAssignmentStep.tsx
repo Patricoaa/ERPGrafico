@@ -13,10 +13,11 @@ import { ProductSelector } from '@/components/selectors/ProductSelector'
 import { UoMSelector } from '@/components/selectors/UoMSelector'
 import { useProductionVariants } from '../../hooks'
 import { MaterialAssignmentTabs } from '../MaterialAssignmentTabs'
+import { useVatRate } from '@/hooks/useVatRate'
+import { useWorkOrderMutations } from '../../hooks'
 import { formatCurrency } from '@/lib/currency'
 import { cn } from '@/lib/utils'
 import { showApiError } from '@/lib/errors'
-import api from '@/lib/api'
 import type { WorkOrder, WorkOrderMaterial, ProductMinimal } from '../../types'
 
 
@@ -30,9 +31,14 @@ interface MaterialAssignmentStepProps {
 export function MaterialAssignmentStep({
   order, isViewingCurrentStage, onMaterialSaved, onMaterialDeleted,
 }: MaterialAssignmentStepProps) {
+  const { multiplier: vatMultiplier } = useVatRate()
+  const { addMaterial, updateMaterial, removeMaterial, isAddingMaterial } = useWorkOrderMutations(
+    order.id,
+    { onSuccess: onMaterialSaved }
+  )
+
   // ── form state (local — not shared) ─────────────────────────────────────
   const [isAddOpen, setIsAddOpen] = useState(false)
-  const [saving, setSaving] = useState(false)
   const [editingMaterialId, setEditingMaterialId] = useState<number | null>(null)
 
   const [productId, setProductId] = useState<string | null>(null)
@@ -56,27 +62,15 @@ export function MaterialAssignmentStep({
     if (!productId) return
     if (parseFloat(qty) <= 0) return
 
-    setSaving(true)
     try {
       if (editingMaterialId) {
-        await api.post(`/production/orders/${order.id}/update_material/`, {
-          material_id: editingMaterialId,
-          quantity: qty,
-          uom_id: uomId,
-        })
+        await updateMaterial({ materialId: editingMaterialId, quantity: qty, uomId })
       } else {
-        await api.post(`/production/orders/${order.id}/add_material/`, {
-          product_id: productId,
-          quantity: qty,
-          uom_id: uomId,
-        })
+        await addMaterial({ productId, quantity: qty, uomId })
       }
       reset()
-      onMaterialSaved()
     } catch (err) {
       showApiError(err, 'Error al guardar material')
-    } finally {
-      setSaving(false)
     }
   }
 
@@ -85,15 +79,18 @@ export function MaterialAssignmentStep({
     setProductId(m.component.toString())
     setQty(m.quantity_planned.toString())
     setUomId(m.uom.toString())
-    api.get(`/inventory/products/${m.component}/`).then((res) => {
-      setProductObj(res.data)
-      setIsAddOpen(true)
+    // Fetch product to populate selector
+    import('@/lib/api').then(({ default: api }) => {
+      api.get(`/inventory/products/${m.component}/`).then((res) => {
+        setProductObj(res.data)
+        setIsAddOpen(true)
+      })
     })
   }
 
   const handleDelete = async (materialId: number) => {
     try {
-      await api.post(`/production/orders/${order.id}/remove_material/`, { material_id: materialId })
+      await removeMaterial(materialId)
       onMaterialDeleted()
     } catch (err) {
       showApiError(err, 'Error al eliminar material')
@@ -276,7 +273,7 @@ export function MaterialAssignmentStep({
                           <span>•</span>
                           <span>Cant: {m.quantity_planned} {m.uom_name}</span>
                           <span>•</span>
-                          <span>{formatCurrency(parseFloat(m.unit_price ?? '0') * 1.19)} (Bruto) c/u</span>
+                          <span>{formatCurrency(parseFloat(m.unit_price ?? '0') * vatMultiplier)} (Bruto) c/u</span>
                         </div>
                       </div>
                     </div>
@@ -284,7 +281,7 @@ export function MaterialAssignmentStep({
                       <div className="text-right mr-2">
                         <p className="text-[10px] font-bold uppercase text-muted-foreground">Total Estimado</p>
                         <p className="text-sm font-bold text-primary">
-                          {formatCurrency(parseFloat(String(m.quantity_planned)) * parseFloat(m.unit_price ?? '0') * 1.19)}
+                          {formatCurrency(parseFloat(String(m.quantity_planned)) * parseFloat(m.unit_price ?? '0') * vatMultiplier)}
                         </p>
                       </div>
                       {isViewingCurrentStage && !m.purchase_order_number && (

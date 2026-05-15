@@ -7,19 +7,14 @@ import {
     Clock,
     User,
     ChevronRight,
-    Package,
     AlertCircle,
-    Printer,
-    FileText,
-    Layers,
-    CheckCircle2,
-    Ban
 } from "lucide-react"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { Badge } from "@/components/ui/badge"
 import { CardSkeleton, Skeleton } from "@/components/shared"
 import { WorkOrder } from "../types"
 import { formatEntityDisplay } from "@/lib/entity-registry"
+import { STAGES_ORDERED } from "../constants/stages"
 
 interface KanbanProps {
     orders: WorkOrder[]
@@ -28,15 +23,7 @@ interface KanbanProps {
     isLoading?: boolean
 }
 
-const STAGES = [
-    { id: 'MATERIAL_ASSIGNMENT', label: 'Asignación de Materiales', color: 'bg-secondary text-secondary-foreground', icon: Package },
-    { id: 'MATERIAL_APPROVAL', label: 'Aprobación de Materiales', color: 'bg-info/10', icon: CheckCircle2 },
-    { id: 'PREPRESS', label: 'Pre-Prensa', color: 'bg-primary/10', icon: FileText },
-    { id: 'PRESS', label: 'Impresión', color: 'bg-warning/10', icon: Printer },
-    { id: 'POSTPRESS', label: 'Post-Impresión', color: 'bg-info/5', icon: Layers },
-    { id: 'FINISHED', label: 'Finalizado', color: 'bg-success/10', icon: CheckCircle2 },
-    { id: 'CANCELLED', label: 'Anulada', color: 'bg-muted/50', icon: Ban },
-]
+const STAGES = STAGES_ORDERED.filter(s => s.showInKanban)
 
 export function WorkOrderKanban({ orders, onTransition, onManage, isLoading }: KanbanProps) {
     return (
