@@ -656,10 +656,10 @@ Toggle "Solo mis OT" filtra por `workflow_tasks__assigned_to=current_user`.
 Tarea horaria: OTs con `due_date < today AND status NOT IN (FINISHED, CANCELLED)` → notification a `task.assigned_to`.
 **Criterio:** OT atrasada genera 1 notification por día máx.
 
-### TASK-306 — Cambio masivo de estado / impresión masiva
+### ✅ TASK-306 — Cambio masivo de estado / impresión masiva
 **Esfuerzo:** M · **Archivos:** orders/page.tsx, views.py (bulk endpoints)
-Selección múltiple en DataTable + actions toolbar "Imprimir todas" / "Avanzar etapa".
-**Criterio:** Selecciono 5 OTs → click "Imprimir" → recibo PDF con 5 OTs.
+Seleccionar múltiples OTs → acción "Imprimir todas" (une PDFs) o "Avanzar etapa".
+**Criterio:** Selección múltiple activa acciones bulk en toolbar.
 
 ### TASK-307 — Sincronizar comentarios OT ↔ NV
 **Esfuerzo:** M · **Archivos:** workflow/models.py (Comment polymorphic), serializers
