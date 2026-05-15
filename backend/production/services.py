@@ -1,5 +1,8 @@
+import logging
 from django.db import transaction
 from django.core.exceptions import ValidationError
+
+logger = logging.getLogger(__name__)
 from django.utils import timezone
 from django.contrib.contenttypes.models import ContentType
 from .models import WorkOrder, ProductionConsumption, BillOfMaterials, WorkOrderMaterial, WorkOrderHistory
@@ -156,7 +159,7 @@ class WorkOrderService:
                     )
             except Exception as e:
                 # Log error but keep OT created
-                print(f"Warning: Auto-finalize failed for OT-{work_order.number}: {str(e)}")
+                logger.exception("Auto-finalize failed for OT-%s", work_order.number)
                 WorkOrderHistory.objects.create(
                     work_order=work_order,
                     stage=work_order.current_stage,
@@ -386,7 +389,7 @@ class WorkOrderService:
                         notes="Finalización automática (Flujo Express - Despacho)"
                     )
             except Exception as e:
-                print(f"Warning: Auto-finalize failed for OT-{work_order.number} during delivery: {str(e)}")
+                logger.exception("Auto-finalize failed for OT-%s during delivery", work_order.number)
                 WorkOrderHistory.objects.create(
                     work_order=work_order,
                     stage=work_order.current_stage,
@@ -492,6 +495,56 @@ class WorkOrderService:
         """
         Handles transition between stages and business logic for each.
         """
+        Stage = WorkOrder.Stage
+        # Terminal states cannot transition out
+        if work_order.current_stage in (Stage.FINISHED, Stage.CANCELLED):
+            raise ValidationError(
+                f"Transición inválida: la OT está en estado terminal '{work_order.get_current_stage_display()}'."
+            )
+        # Explicit forward-transition allowlist (backward moves to any non-terminal are always permitted)
+        FORWARD_ONLY_TRANSITIONS = {
+            Stage.MATERIAL_ASSIGNMENT: {
+                Stage.MATERIAL_APPROVAL, Stage.OUTSOURCING_ASSIGNMENT,
+                Stage.PREPRESS, Stage.PRESS, Stage.CANCELLED,
+            },
+            Stage.MATERIAL_APPROVAL: {
+                Stage.OUTSOURCING_ASSIGNMENT, Stage.PREPRESS, Stage.PRESS, Stage.CANCELLED,
+            },
+            Stage.OUTSOURCING_ASSIGNMENT: {
+                Stage.PREPRESS, Stage.PRESS, Stage.CANCELLED,
+            },
+            Stage.PREPRESS: {
+                Stage.PRESS, Stage.POSTPRESS, Stage.CANCELLED,
+            },
+            Stage.PRESS: {
+                Stage.POSTPRESS, Stage.OUTSOURCING_VERIFICATION, Stage.RECTIFICATION, Stage.CANCELLED,
+            },
+            Stage.POSTPRESS: {
+                Stage.OUTSOURCING_VERIFICATION, Stage.RECTIFICATION, Stage.CANCELLED,
+            },
+            Stage.OUTSOURCING_VERIFICATION: {
+                Stage.RECTIFICATION, Stage.CANCELLED,
+            },
+            Stage.RECTIFICATION: {
+                Stage.FINISHED, Stage.CANCELLED,
+            },
+        }
+        NON_TERMINAL_STAGES = list(FORWARD_ONLY_TRANSITIONS.keys())
+        allowed_forward = FORWARD_ONLY_TRANSITIONS.get(work_order.current_stage, set())
+        # Forward moves (higher index in sequence) must be in the explicit allowlist.
+        # Backward moves to any non-terminal stage are always permitted.
+        try:
+            old_idx = NON_TERMINAL_STAGES.index(work_order.current_stage)
+            new_idx = NON_TERMINAL_STAGES.index(next_stage) if next_stage in NON_TERMINAL_STAGES else len(NON_TERMINAL_STAGES)
+        except ValueError:
+            old_idx = new_idx = 0
+        is_forward = new_idx > old_idx
+        if is_forward and next_stage not in allowed_forward:
+            raise ValidationError(
+                f"Transición inválida: {work_order.get_current_stage_display()} → "
+                f"{WorkOrder.Stage(next_stage).label if next_stage in Stage.values else next_stage}."
+            )
+
         old_stage = work_order.current_stage
         
         # Validate and merge stage data

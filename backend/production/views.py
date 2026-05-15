@@ -1,4 +1,7 @@
+import logging
 from rest_framework import viewsets, status, filters
+
+logger = logging.getLogger(__name__)
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from .models import WorkOrder, ProductionConsumption, BillOfMaterials, BillOfMaterialsLine, WorkOrderMaterial
@@ -141,8 +144,7 @@ class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             return response
             
         except Exception as e:
-            import traceback
-            print(traceback.format_exc())
+            logger.exception("Error creating WorkOrder")
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     def update(self, request, *args, **kwargs):
@@ -188,8 +190,7 @@ class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                         instance.save()
                         
             except Exception as e:
-                print(f"Error attaching files in update: {e}")
-                # We don't fail the request if just attachment failed, but good to know
+                logger.exception("Error attaching files in update for WorkOrder %s", instance.pk)
             
                 
         return response
@@ -504,8 +505,6 @@ class BillOfMaterialsViewSet(viewsets.ModelViewSet):
     
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
-        if not serializer.is_valid():
-            print("ERROR VALIDATING BOM:", serializer.errors)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
