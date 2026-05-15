@@ -646,7 +646,7 @@ Action backend que crea OT clonando descripción, materiales (source=MANUAL), st
 Toggle "Solo mis OT" filtra por `workflow_tasks__assigned_to=current_user`.
 **Criterio:** Toggle persistido en URL.
 
-### TASK-304 — Atajo URL para OT manual de stock
+### TASK-304 — Atajo URL para OT manual de stock ✅
 **Esfuerzo:** XS · **Archivos:** orders/page.tsx
 `?type=stock&product_id=X` salta el modal de tipo y va directo al form NONE.
 **Criterio:** URL desde reposición/inventario abre form pre-configurado.
