@@ -2,6 +2,9 @@ import React from "react"
 import { ClipboardList, Package, Receipt, Banknote, FileText } from "lucide-react"
 import { StatusBadge } from "./StatusBadge"
 import { TooltipProvider } from "@/components/ui/tooltip"
+import { getEntityMetadata } from "@/lib/entity-registry"
+import { getHubStatuses, getInvoiceHubStatuses, getNoteHubStatuses } from "@/lib/workflow-status"
+import { translateStatus } from "@/lib/utils"
 
 export interface HubStatusData {
     origin: string

@@ -482,16 +482,22 @@ export function ProductForm({ sidebar, open, onOpenChange, initialData, onSucces
             formData.append('sale_price_gross', (data.sale_price_gross || 0).toString())
             formData.append('is_dynamic_pricing', data.is_dynamic_pricing ? 'true' : 'false')
 
-            // Related IDs - Sanitization (Avoid sending empty strings which can cause 400 errors)
-            if (data.category) formData.append('category', data.category)
-            if (data.uom) formData.append('uom', data.uom)
-            if (data.sale_uom) formData.append('sale_uom', data.sale_uom)
-            if (data.purchase_uom) formData.append('purchase_uom', data.purchase_uom)
-            if (data.receiving_warehouse) formData.append('receiving_warehouse', data.receiving_warehouse)
+            const appendValid = (key: string, val: any) => {
+                if (val !== undefined && val !== null && val !== 'undefined' && val !== '') {
+                    formData.append(key, val)
+                }
+            }
 
-            if (data.income_account) formData.append('income_account', data.income_account)
-            if (data.expense_account) formData.append('expense_account', data.expense_account)
-            if (data.preferred_supplier) {
+            // Related IDs - Sanitization (Avoid sending empty strings which can cause 400 errors)
+            appendValid('category', data.category)
+            appendValid('uom', data.uom)
+            appendValid('sale_uom', data.sale_uom)
+            appendValid('purchase_uom', data.purchase_uom)
+            appendValid('receiving_warehouse', data.receiving_warehouse)
+            appendValid('income_account', data.income_account)
+            appendValid('expense_account', data.expense_account)
+
+            if (data.preferred_supplier && data.preferred_supplier !== 'undefined') {
                 formData.append('preferred_supplier', data.preferred_supplier)
             } else {
                 formData.append('preferred_supplier', '') // Clear preferred supplier
