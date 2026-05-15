@@ -537,6 +537,43 @@ class SaleOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         except Exception as e:
             return Response({"error": f"Error interno: {str(e)}"}, status=500)
 
+    @action(detail=True, methods=['get', 'post'], url_path='comments')
+    def comments(self, request, pk=None):
+        """TASK-307: Unified comment feed for an NV (includes linked OT comments)."""
+        from django.contrib.contenttypes.models import ContentType
+        from workflow.models import Comment
+        from workflow.serializers import CommentSerializer
+        from production.models import WorkOrder
+
+        order = self.get_object()
+        so_ct = ContentType.objects.get_for_model(SaleOrder)
+
+        if request.method == 'GET':
+            qs = Comment.objects.filter(content_type=so_ct, object_id=order.pk)
+            
+            # Fetch comments from all related WorkOrders
+            production_orders = order.production_orders.all()
+            if production_orders.exists():
+                wo_ct = ContentType.objects.get_for_model(WorkOrder)
+                wo_qs = Comment.objects.filter(content_type=wo_ct, object_id__in=production_orders.values_list('pk', flat=True))
+                qs = (qs | wo_qs).order_by('created_at')
+            else:
+                qs = qs.order_by('created_at')
+                
+            serializer = CommentSerializer(qs, many=True)
+            return Response(serializer.data)
+
+        text = (request.data.get('text') or '').strip()
+        if not text:
+            return Response({'error': 'text es requerido'}, status=status.HTTP_400_BAD_REQUEST)
+        comment = Comment.objects.create(
+            content_type=so_ct,
+            object_id=order.pk,
+            user=request.user,
+            text=text,
+        )
+        return Response(CommentSerializer(comment).data, status=status.HTTP_201_CREATED)
+
 class SaleDeliveryViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = SaleDelivery.objects.all()
     serializer_class = SaleDeliverySerializer

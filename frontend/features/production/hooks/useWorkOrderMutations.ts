@@ -43,11 +43,7 @@ export interface UpdateMaterialPayload {
   documentType?: string
 }
 
-export interface AddCommentPayload {
-  text: string
-  authorName: string
-  currentStageData: WorkOrderStageData
-}
+
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
 
@@ -228,30 +224,7 @@ export function useWorkOrderMutations(
     onError: (err) => showApiError(err, 'Error al subir la foto'),
   })
 
-  // ── addComment ─────────────────────────────────────────────────────────────
-  const addCommentMutation = useMutation({
-    mutationFn: async ({ text, authorName, currentStageData }: AddCommentPayload) => {
-      const newComment = {
-        id: crypto.randomUUID(),
-        user: authorName,
-        text,
-        timestamp: new Date().toISOString(),
-      }
-      const updatedStageData: WorkOrderStageData = {
-        ...currentStageData,
-        comments: [...(currentStageData.comments ?? []), newComment],
-      }
-      const res = await api.patch(`/production/orders/${orderId}/`, {
-        stage_data: updatedStageData,
-      })
-      return res.data
-    },
-    onSuccess: () => {
-      toast.success('Comentario registrado')
-      invalidate()
-    },
-    onError: () => toast.error('Error al registrar comentario'),
-  })
+
 
   return {
     // mutations
@@ -263,7 +236,7 @@ export function useWorkOrderMutations(
     annul: annulMutation.mutateAsync,
     deleteOrder: deleteOrderMutation.mutateAsync,
     duplicateOrder: duplicateOrderMutation.mutateAsync,
-    addComment: addCommentMutation.mutateAsync,
+
     uploadFinalPhoto: uploadFinalPhotoMutation.mutateAsync,
 
     // loading states (parallel to the wizard's existing boolean flags)
