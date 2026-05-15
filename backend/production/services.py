@@ -1291,3 +1291,83 @@ class WorkOrderPdfService:
         pdf_bytes = html.write_pdf()
         
         return pdf_bytes
+
+
+class WorkOrderMetricsService:
+    @staticmethod
+    def get_metrics(from_date=None, to_date=None):
+        """TASK-204: Calculate production metrics."""
+        from django.db.models import Count, F, Window, ExpressionWrapper, fields, Avg
+        from django.db.models.functions import Lead
+        from django.utils import timezone
+        from datetime import timedelta
+        from .models import WorkOrder, WorkOrderHistory
+        import datetime
+
+        now = timezone.now()
+        today = now.date()
+        
+        if not from_date:
+            from_date = now - timedelta(days=30)
+        elif isinstance(from_date, str):
+            from_date = datetime.datetime.fromisoformat(from_date.replace('Z', '+00:00'))
+            
+        if not to_date:
+            to_date = now
+        elif isinstance(to_date, str):
+            to_date = datetime.datetime.fromisoformat(to_date.replace('Z', '+00:00'))
+
+        # 1. ots_by_stage
+        active_ots = WorkOrder.objects.filter(
+            status__in=[WorkOrder.Status.DRAFT, WorkOrder.Status.IN_PROGRESS]
+        ).values('current_stage').annotate(count=Count('id'))
+        ots_by_stage = {item['current_stage']: item['count'] for item in active_ots}
+
+        # 2. overdue_ots
+        overdue_ots = WorkOrder.objects.filter(
+            status__in=[WorkOrder.Status.DRAFT, WorkOrder.Status.IN_PROGRESS],
+            estimated_completion_date__lt=today
+        ).count()
+
+        # 3. throughput in period (finished OTs)
+        throughput = WorkOrder.objects.filter(
+            status=WorkOrder.Status.FINISHED,
+            created_at__gte=from_date,
+            created_at__lte=to_date
+        ).count()
+
+        # 4. avg_time_by_stage
+        # We use PostgreSQL Window functions to calculate the time difference between consecutive history records
+        history = WorkOrderHistory.objects.filter(
+            created_at__gte=from_date,
+            created_at__lte=to_date
+        ).annotate(
+            next_time=Window(
+                expression=Lead('created_at'),
+                partition_by=[F('work_order_id')],
+                order_by=F('created_at').asc()
+            )
+        ).annotate(
+            duration=ExpressionWrapper(F('next_time') - F('created_at'), output_field=fields.DurationField())
+        )
+
+        avg_time_by_stage = {}
+        stage_totals = {}
+        stage_counts = {}
+        
+        for item in history:
+            if item.duration is not None:
+                stage = item.stage
+                days = item.duration.total_seconds() / 86400.0
+                stage_totals[stage] = stage_totals.get(stage, 0) + days
+                stage_counts[stage] = stage_counts.get(stage, 0) + 1
+                
+        for stage in stage_totals:
+            avg_time_by_stage[stage] = round(stage_totals[stage] / stage_counts[stage], 2)
+
+        return {
+            "avg_time_by_stage": avg_time_by_stage,
+            "ots_by_stage": ots_by_stage,
+            "overdue_ots": overdue_ots,
+            "throughput_last_30d": throughput,  # Kept name for frontend compatibility
+        }

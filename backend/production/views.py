@@ -22,7 +22,7 @@ from .serializers import (
     BillOfMaterialsSerializer,
     BillOfMaterialsLineSerializer
 )
-from .services import WorkOrderService, WorkOrderPdfService
+from .services import WorkOrderService, WorkOrderPdfService, WorkOrderMetricsService
 from inventory.models import Product, Warehouse, UoM
 from decimal import Decimal
 from django.db.models import Q, Sum
@@ -274,6 +274,19 @@ class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             
             return Response(WorkOrderSerializer(work_order).data)
         except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+    @action(detail=False, methods=['get'])
+    def metrics(self, request):
+        """TASK-204: Production Metrics Endpoint"""
+        from_date = request.query_params.get('from')
+        to_date = request.query_params.get('to')
+        try:
+            data = WorkOrderMetricsService.get_metrics(from_date, to_date)
+            return Response(data)
+        except Exception as e:
+            logger.exception("Error calculating metrics")
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=['get'])
