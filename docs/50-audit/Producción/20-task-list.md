@@ -666,7 +666,7 @@ Seleccionar múltiples OTs → acción "Imprimir todas" (une PDFs) o "Avanzar et
 Comments como entidad propia con GenericForeignKey, no en `stage_data.comments`.
 **Criterio:** Comentar en NV aparece en OT relacionada y viceversa.
 
-### TASK-308 — Drag-and-drop en kanban
+### ✅ TASK-308 — Drag-and-drop en kanban
 **Esfuerzo:** S · **Archivos:** WorkOrderKanban.tsx
 `@dnd-kit/core` (verificar si ya en stack). Mover card → `useWorkOrderMutations.transition`.
 **Criterio:** DnD respeta validación de transiciones.
