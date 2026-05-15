@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo, useCallback } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
-import { createActionsColumn, DataCell } from "@/components/ui/data-table-cells"
+import { createActionsColumn, createSelectionColumn, DataCell } from "@/components/ui/data-table-cells"
 import { ColumnDef } from "@tanstack/react-table"
 import { Pencil, Trash2, Ban, Settings, List, Columns, Copy, CalendarDays, Printer } from "lucide-react"
 import { StatusBadge } from "@/components/shared/StatusBadge"
@@ -123,6 +123,7 @@ export default function WorkOrdersPage() {
     }
 
     const columns = useMemo<ColumnDef<WorkOrder>[]>(() => [
+        createSelectionColumn<WorkOrder>(),
         {
             accessorKey: "number",
             header: ({ column }) => (
