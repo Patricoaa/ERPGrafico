@@ -170,7 +170,6 @@ services:
       NODE_ENV: development
       NEXT_TELEMETRY_DISABLED: "1"
       # La API se llama a través de nginx en el navegador (URL pública)
-      NEXT_PUBLIC_API_URL: http://localhost/api
       # Dentro de la red Docker, el backend se llama directamente
       BACKEND_INTERNAL_URL: http://backend:8100
       # Chokidar fix para file watching en Windows/WSL
@@ -193,7 +192,7 @@ services:
       resources:
         limits:
           cpus: '2.0'
-          memory: 2G
+          memory: 4G
 
   # ── Nginx Reverse Proxy ─────────────────────────────────
   nginx:

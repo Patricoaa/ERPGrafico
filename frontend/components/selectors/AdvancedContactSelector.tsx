@@ -15,7 +15,7 @@ import { formatRUT } from "@/lib/utils/format"
 import { useContactSearch, useSingleContact } from "@/features/contacts/hooks/useContactSearch"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { Contact } from "@/types/entities"
-import { CardSkeleton } from "@/components/shared"
+import { CardSkeleton, LabeledContainer } from "@/components/shared"
 import React, { Suspense } from "react"
 
 const ContactModal = React.lazy(() => import("@/features/contacts/components/ContactModal"))

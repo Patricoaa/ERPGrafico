@@ -2,9 +2,7 @@
 
 import React, { useEffect, useState } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
-import {
-    ColumnDef
-} from "@tanstack/react-table"
+import { ColumnDef } from "@tanstack/react-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { DataTable } from "@/components/ui/data-table"
 import { createActionsColumn, DataCell } from "@/components/ui/data-table-cells"
@@ -187,7 +185,7 @@ export default function BOMsPage() {
                     isLoading={loading}
                     variant="embedded"
                     defaultPageSize={20}
-                    leftAction={<SmartSearchBar searchDef={bomSearchDef} placeholder="Buscar por producto..." className="w-80" />}
+                    leftAction={<SmartSearchBar searchDef={bomSearchDef} placeholder="Buscar por producto..." className="w-full" />}
                     createAction={<ToolbarCreateButton label="Nueva Lista" href="/production/boms?modal=new" />}
                 />
             </div>

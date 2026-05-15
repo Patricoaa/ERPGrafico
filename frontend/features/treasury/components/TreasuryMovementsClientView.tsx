@@ -14,6 +14,9 @@ import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { useTreasuryMovementsList, type TreasuryMovementFilters } from "@/features/treasury/hooks/useTreasuryMovements"
 import { treasuryMovementsSearchDef } from "@/features/treasury/searchDef"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
+import { EntityCard } from "@/components/shared/EntityCard"
+import { useViewMode } from "@/hooks/useViewMode"
+import { createEntityCardView, createCardLoadingView } from "@/lib/view-helpers"
 
 // Lazy load heavy components
 const CashMovementModal = lazy(() => import("./CashMovementModal"))
@@ -72,6 +75,8 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
     const [openModal, setOpenModal] = useState(false)
     const [detailsOpen, setDetailsOpen] = useState(false)
     const [selectedMovementId, setSelectedMovementId] = useState<number | null>(null)
+
+    const { currentView, handleViewChange, viewOptions, isCustomView } = useViewMode('treasury.treasurymovement')
 
     const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<TreasuryMovement>({
         endpoint: '/treasury/movements'
@@ -214,7 +219,7 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                         const accountId = m.movement_type === 'INBOUND' && data === destData ? m.to_account : (m.movement_type === 'OUTBOUND' && data === sourceData ? m.from_account : (m.movement_type === 'TRANSFER' || m.movement_type === 'ADJUSTMENT' ? (data === sourceData ? m.from_account : m.to_account) : null));
                         return (
                             <DataCell.Link
-                                onClick={() => openTreasuryAccount(accountId)}
+                                onClick={() => { if (accountId) openTreasuryAccount(accountId) }}
                                 className="text-[11px] font-bold"
                             >
                                 {data.label}
@@ -319,6 +324,71 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                     description: "Aún no se han registrado ingresos o egresos de fondos en el sistema para el periodo actual.",
 
                 }}
+                currentView={currentView}
+                onViewChange={handleViewChange}
+                viewOptions={viewOptions}
+                renderLoadingView={isCustomView ? createCardLoadingView('single-column', 5) : undefined}
+                renderCustomView={isCustomView ? createEntityCardView('treasury.treasurymovement', {
+                    renderCard: (m) => {
+                        const type = m.movement_type
+                        const isWriteOff = m.payment_method === 'WRITE_OFF'
+                        
+                        let status = "info" as any
+                        let label = m.movement_type_display
+
+                        if (isWriteOff) {
+                            status = "voided"
+                            label = "Castigo"
+                        } else if (type === 'INBOUND') {
+                            status = "received"
+                            label = "Depósito"
+                        } else if (type === 'OUTBOUND') {
+                            status = "sent"
+                            label = "Retiro"
+                        } else if (type === 'TRANSFER' || type === 'ADJUSTMENT') {
+                            status = "in_progress"
+                            label = type === 'TRANSFER' ? "Traspaso" : "Ajuste"
+                        }
+
+                        let sourceLabel = m.partner_name || m.from_account_name || 'Origen'
+                        let destLabel = m.to_account_name || m.partner_name || 'Destino'
+
+                        if (type === 'INBOUND') {
+                            sourceLabel = m.partner_name || 'Particular'
+                            destLabel = m.to_account_name || 'Caja'
+                        } else if (type === 'OUTBOUND') {
+                            sourceLabel = m.from_account_name || 'Caja'
+                            destLabel = m.partner_name || 'Particular'
+                        } else if (type === 'TRANSFER' || type === 'ADJUSTMENT') {
+                            sourceLabel = m.from_account_name || 'Origen'
+                            destLabel = m.to_account_name || 'Destino'
+                        }
+
+                        const amount = typeof m.amount === 'string' ? parseFloat(m.amount) : m.amount
+                        const signedAmount = type === 'OUTBOUND' ? -amount : amount
+
+                        return (
+                            <EntityCard key={m.id} onClick={() => handleViewDetails(m.id)}>
+                                <EntityCard.Header
+                                    title={`Movimiento ${m.display_id}`}
+                                    subtitle={m.date}
+                                    trailing={
+                                        <div className="flex flex-col items-end gap-2">
+                                            <StatusBadge status={status} label={label} size="sm" className="uppercase font-bold tracking-tight" />
+                                            <DataCell.Currency value={signedAmount} className="font-bold text-base" />
+                                        </div>
+                                    }
+                                />
+                                <EntityCard.Body>
+                                    <EntityCard.Field label="Origen" value={sourceLabel} />
+                                    <EntityCard.Field label="Destino" value={destLabel} />
+                                    <EntityCard.Field label="Método" value={m.payment_method_display} />
+                                    <EntityCard.Field label="Usuario" value={m.created_by_name} />
+                                </EntityCard.Body>
+                            </EntityCard>
+                        )
+                    }
+                }) : undefined}
             />
 
             <Suspense fallback={<FormSkeleton />}>
@@ -329,7 +399,7 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                         if (!open) clearSelection()
                     }}
                     type="payment"
-                    id={selectedMovementId}
+                    id={selectedMovementId!}
                     view="details"
                 />
             </Suspense>

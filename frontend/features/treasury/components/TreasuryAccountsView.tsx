@@ -20,6 +20,9 @@ import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
+import { EntityCard } from "@/components/shared/EntityCard"
+import { useViewMode } from "@/hooks/useViewMode"
+import { createEntityCardView, createCardLoadingView } from "@/lib/view-helpers"
 
 interface TreasuryAccountsViewProps {
     activeTab: string
@@ -38,6 +41,8 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
     const router = useRouter()
     const pathname = usePathname()
     const searchParams = useSearchParams()
+
+    const { currentView, handleViewChange, viewOptions, isCustomView } = useViewMode('treasury.treasuryaccount')
 
     const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<TreasuryAccount>({
         endpoint: '/treasury/accounts'
@@ -217,6 +222,41 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
                     variant="embedded"
                     createAction={activeTab === "accounts" ? createAction : undefined}
                     leftAction={<SmartSearchBar searchDef={treasuryAccountSearchDef} placeholder="Buscar cuenta..." />}
+                    currentView={currentView}
+                    onViewChange={handleViewChange}
+                    viewOptions={viewOptions}
+                    renderLoadingView={isCustomView ? createCardLoadingView('multi-column', 8) : undefined}
+                    renderCustomView={isCustomView ? createEntityCardView('treasury.treasuryaccount', {
+                        renderCard: (acc: TreasuryAccount) => {
+                            const name = acc.account_name
+                            return (
+                                <EntityCard key={acc.id} onClick={() => handleEdit(acc)}>
+                                    <EntityCard.Header
+                                        title={acc.name}
+                                        subtitle={acc.bank_name || 'Sin banco vinculado'}
+                                        trailing={
+                                            acc.is_system_managed ? <Lock className="h-4 w-4 text-muted-foreground opacity-50" /> : null
+                                        }
+                                    />
+                                    <EntityCard.Body>
+                                        <EntityCard.Field label="Tipología" value={acc.account_type_display || typeLabels[acc.account_type] || acc.account_type} />
+                                        <EntityCard.Field label="Cuenta Contable" value={
+                                            name ? (
+                                                <div className="flex flex-col gap-0.5">
+                                                    <DataCell.Code className="text-[10px] bg-transparent p-0">{acc.account_code}</DataCell.Code>
+                                                    <DataCell.Secondary className="truncate max-w-[140px] leading-tight">{name}</DataCell.Secondary>
+                                                </div>
+                                            ) : <DataCell.Secondary className="italic">No vinculada</DataCell.Secondary>
+                                        } />
+                                    </EntityCard.Body>
+                                    <EntityCard.Footer className="justify-between items-center border-t bg-muted/10 py-2 px-4">
+                                        <span className="text-[10px] font-bold text-muted-foreground uppercase">Saldo Actual</span>
+                                        <DataCell.Currency value={acc.current_balance} currency={acc.currency} className="font-bold text-base" />
+                                    </EntityCard.Footer>
+                                </EntityCard>
+                            )
+                        }
+                    }) : undefined}
                 />
             </TabsContent>
 

@@ -261,7 +261,7 @@ export default function WorkOrdersPage() {
                     isLoading={loading}
                     variant="embedded"
                     defaultPageSize={50}
-                    leftAction={<SmartSearchBar searchDef={workOrderSearchDef} placeholder="Buscar OTs..." className="w-80" />}
+                    leftAction={<SmartSearchBar searchDef={workOrderSearchDef} placeholder="Buscar OTs..." className="w-full" />}
                     viewOptions={[
                         { label: "Lista", value: "list", icon: List },
                         { label: "Tablero", value: "kanban", icon: Columns },

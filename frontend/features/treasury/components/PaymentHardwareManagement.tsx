@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useCallback } from "react"
 import { useTerminalProviders, useTerminalDevices, type PaymentTerminalProvider, type PaymentTerminalDevice } from "../hooks/useTerminalProviders"
 import { Button } from "@/components/ui/button"
 import { BaseModal, StatusBadge, SubmitButton, CancelButton, IconButton, LabeledInput, LabeledSelect, FormSection, MultiSelectTagInput, SmartSearchBar, useSmartSearch, useClientSearch } from "@/components/shared"
@@ -116,14 +116,14 @@ export function PaymentHardwareManagement({
     const searchParams = useSearchParams()
     const router = useRouter()
     const pathname = usePathname()
-    const [viewMode, setViewMode] = useState<string>(searchParams.get("view") ?? "card")
+    const viewMode = searchParams.get('view') ?? 'card'
+    const isCustomView = viewMode !== 'list'
 
-    const handleViewChange = (v: string) => {
+    const handleViewChange = useCallback((v: string) => {
         const params = new URLSearchParams(searchParams.toString())
         params.set('view', v)
         router.push(`${pathname}?${params.toString()}`, { scroll: false })
-        setViewMode(v)
-    }
+    }, [searchParams, router, pathname])
 
     const providerColumns: ColumnDef<PaymentTerminalProvider>[] = [
         {
@@ -244,14 +244,14 @@ export function PaymentHardwareManagement({
                             Configurar proveedor
                         </Button>
                     )}
-                    renderLoadingView={viewMode === 'card' ? () => (
+                    renderLoadingView={isCustomView ? () => (
                         <div className="flex flex-col gap-4 pt-2">
                             {Array.from({ length: 3 }).map((_, i) => (
                                 <EntityCard.Skeleton key={i} />
                             ))}
                         </div>
                     ) : undefined}
-                    renderCustomView={viewMode === 'card' ? (table) => (
+                    renderCustomView={isCustomView ? (table) => (
                         <div className="flex flex-col gap-4 pt-2">
                             {table.getRowModel().rows.map(row => {
                                 const provider = row.original
@@ -313,14 +313,14 @@ export function PaymentHardwareManagement({
                             Registrar dispositivo
                         </Button>
                     )}
-                    renderLoadingView={viewMode === 'card' ? () => (
+                    renderLoadingView={isCustomView ? () => (
                         <div className="flex flex-col gap-4 pt-2">
                             {Array.from({ length: 3 }).map((_, i) => (
                                 <EntityCard.Skeleton key={i} />
                             ))}
                         </div>
                     ) : undefined}
-                    renderCustomView={viewMode === 'card' ? (table) => (
+                    renderCustomView={isCustomView ? (table) => (
                         <div className="flex flex-col gap-4 pt-2">
                             {table.getRowModel().rows.map(row => {
                                 const device = row.original

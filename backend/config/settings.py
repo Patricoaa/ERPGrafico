@@ -46,8 +46,8 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-z_@n0q5=yw43a$i1x61*c
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DEBUG', '1') == '1'
 
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
-CSRF_TRUSTED_ORIGINS = os.environ.get('CSRF_TRUSTED_ORIGINS', 'http://localhost:3000,http://127.0.0.1:3000').split(',')
+ALLOWED_HOSTS = [host.strip() for host in os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',') if host.strip()]
+CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in os.environ.get('CSRF_TRUSTED_ORIGINS', 'http://localhost:3000,http://127.0.0.1:3000').split(',') if origin.strip()]
 
 
 # Application definition
@@ -104,7 +104,7 @@ MIDDLEWARE = [
     'core.middleware.AuditMiddleware',
 ]
 
-CORS_ALLOW_ALL_ORIGINS = False
+CORS_ALLOW_ALL_ORIGINS = True
 
 CORS_ALLOWED_ORIGIN_REGEXES = [
     r"^https://erpgrafico\.vercel\.app$",
@@ -428,4 +428,6 @@ import sys
 # 1. Configurar la zona horaria real
 TIME_ZONE = 'America/Santiago'  # Ajusta según tu ubicación
 USE_TZ = True  # Mantener en True para manejo profesional de zonas horarias
+USE_X_FORWARDED_HOST = True
+USE_X_FORWARDED_PORT = True
 #

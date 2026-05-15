@@ -1,26 +1,23 @@
 "use client"
 
-import React, { useEffect, useState } from "react"
+import React from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
-import { LayoutDashboard, List, ArrowRight, ArrowLeft } from "lucide-react"
-import { EmptyState } from "@/components/shared/EmptyState"
-import { EntityCard } from "@/components/shared/EntityCard"
+import { ArrowRight, ArrowLeft } from "lucide-react"
 
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
-import { OrderHubStatus } from "@/features/orders/components/OrderHubStatus"
-import { OrderCard } from "@/features/orders/components/OrderCard"
+import { DomainHubStatus } from "@/components/shared"
 import { DataCell } from "@/components/ui/data-table-cells"
-import { NoteHubStatus } from "@/features/orders/components/NoteHubStatus"
 import { Tabs } from "@/components/ui/tabs"
 import { useSalesOrders, useSalesNotes, type SaleOrder, type SaleNote } from "@/features/sales"
 import { SmartSearchBar, useSmartSearch } from "@/components/shared"
 import { salesOrderSearchDef, salesNoteSearchDef } from "@/features/sales/searchDef"
 import type { SaleOrderFilters } from "@/features/sales/types"
 import { cn } from "@/lib/utils"
-import { ENTITY_REGISTRY } from "@/lib/entity-registry"
+import { useViewMode } from "@/hooks/useViewMode"
+import { createDomainCardView, createCardLoadingView } from "@/lib/view-helpers"
 
 
 interface SalesOrdersViewProps {
@@ -36,28 +33,7 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
     const searchParams = useSearchParams()
     const pathname = usePathname()
 
-    const [currentView, setCurrentView] = React.useState<'card' | 'list'>(
-        (searchParams.get('view') as 'card' | 'list') ?? 'card'
-    )
-
-    const handleViewChange = (v: string) => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.set('view', v)
-        router.push(`${pathname}?${params.toString()}`, { scroll: false })
-        setCurrentView(v as 'card' | 'list')
-    }
-
-    useEffect(() => {
-        const viewParam = searchParams.get('view')
-        if (!viewParam) {
-            const params = new URLSearchParams(searchParams.toString())
-            params.set('view', 'card')
-            router.replace(`${pathname}?${params.toString()}`, { scroll: false })
-            setCurrentView('card')
-        } else if (viewParam !== currentView) {
-            setCurrentView(viewParam as 'card' | 'list')
-        }
-    }, [searchParams, pathname, router, currentView])
+    const { currentView, handleViewChange, viewOptions, isCustomView } = useViewMode('sales.saleorder')
 
     const toggleSelection = (id: number) => {
         const isSelected = viewMode === "orders" ? hubConfig?.orderId === id : hubConfig?.invoiceId === id
@@ -72,12 +48,6 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
         const query = params.toString()
         router.push(query ? `${pathname}?${query}` : pathname, { scroll: false })
     }
-
-    const viewOptions = [
-        { label: "Lista", value: "list", icon: List },
-        { label: "Tarjeta", value: "card", icon: LayoutDashboard }
-
-    ]
 
     const { filters: smartFilters } = useSmartSearch(salesOrderSearchDef)
     const { orders, isLoading: isLoadingOrders, refetch: refetchOrders } = useSalesOrders({
@@ -134,7 +104,7 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
         {
             accessorKey: "status",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Estados" className="justify-center" />,
-            cell: ({ row }) => <div className="flex justify-center items-center"><OrderHubStatus order={row.original as any} /></div>,
+            cell: ({ row }) => <div className="flex justify-center items-center"><DomainHubStatus label="sales.saleorder" data={row.original} /></div>,
             meta: { title: "Estado" },
         },
         {
@@ -193,7 +163,7 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
             header: ({ column }) => <DataTableColumnHeader column={column} title="Estados" className="justify-center" />,
             cell: ({ row }) => (
                 <div className="flex justify-center items-center">
-                    <NoteHubStatus note={row.original as any} />
+                    <DomainHubStatus label="billing.invoice" data={row.original} />
                 </div>
             ),
         },
@@ -223,6 +193,14 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
         }
     ]
 
+    // Determine entity label based on tab
+    const entityLabel = viewMode === 'orders' ? 'sales.saleorder' : 'billing.invoice'
+
+    const getSelectionId = (item: any) => {
+        const id = Number(item.id)
+        return viewMode === 'orders' ? hubConfig?.orderId === id : hubConfig?.invoiceId === id
+    }
+
     return (
         <Tabs value={viewMode} className="w-full flex flex-col h-full">
             <DataTable
@@ -241,49 +219,12 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
                 showToolbarSort={true}
 
                 defaultPageSize={20}
-                renderCustomView={currentView === 'card' ? (table) => {
-                    const rows = table.getRowModel().rows
-                    if (rows.length === 0) {
-                        return (
-                            <EmptyState
-                                context="search"
-                                title={viewMode === 'orders' ? `No se encontraron ${ENTITY_REGISTRY['sales.saleorder']?.titlePlural.toLowerCase()}` : "No se encontraron notas"}
-                                description="Ajusta el rango de fechas o los filtros para encontrar lo que buscas."
-                            />
-                        )
-                    }
-                    return (
-                        <div className="grid gap-3 pt-1">
-                            {rows.map((row) => {
-                                const item = row.original as any
-                                const id = Number(item.id)
-                                const isSelected = viewMode === 'orders'
-                                    ? hubConfig?.orderId === id
-                                    : hubConfig?.invoiceId === id
-
-                                return (
-                                    <OrderCard
-                                        key={id}
-                                        item={item}
-                                        isSelected={isSelected}
-                                        isHubOpen={isHubOpen}
-                                        type={viewMode === 'orders' ? 'sale' : 'note'}
-                                        hideStatus={hideStatusInCards}
-                                        visibleColumns={table.getState().columnVisibility}
-                                        onClick={() => toggleSelection(id)}
-                                    />
-                                )
-                            })}
-                        </div>
-                    )
-                } : undefined}
-                renderLoadingView={currentView === 'card' ? () => (
-                    <div className="grid gap-3 pt-1">
-                        {Array.from({ length: 8 }).map((_, i) => (
-                            <EntityCard.Skeleton key={i} />
-                        ))}
-                    </div>
-                ) : undefined}
+                renderCustomView={isCustomView ? createDomainCardView(entityLabel, {
+                    onRowClick: (data) => toggleSelection(data.id),
+                    isSelected: (data) => !!getSelectionId(data),
+                    isHubOpen,
+                }) : undefined}
+                renderLoadingView={isCustomView ? createCardLoadingView('single-column') : undefined}
             />
 
         </Tabs>

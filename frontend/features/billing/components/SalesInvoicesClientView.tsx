@@ -1,27 +1,26 @@
 "use client"
 
 import { showApiError, getErrorMessage } from "@/lib/errors"
-import React, { useState, useEffect } from "react"
+import React, { useState } from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { DataTable } from "@/components/ui/data-table"
 import { DataCell } from "@/components/ui/data-table-cells"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { ColumnDef } from "@tanstack/react-table"
 import { IconButton, SmartSearchBar, useSmartSearch } from "@/components/shared"
-import { EntityCard } from "@/components/shared/EntityCard"
 import { invoiceSearchDef } from "@/features/billing/searchDef"
-import { LayoutDashboard, ArrowRight, ArrowLeft, List } from "lucide-react"
+import { ArrowRight, ArrowLeft } from "lucide-react"
 import { treasuryApi } from "@/features/treasury/api/treasuryApi"
 import { useInvoices } from "@/features/billing/hooks/useInvoices"
 import { Invoice } from "@/features/billing/types"
-import { EmptyState } from "@/components/shared/EmptyState"
 import { toast } from "sonner"
 import { SaleNoteModal } from "@/features/sales"
 import { PaymentModal } from "@/features/treasury/components/PaymentModal"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
-import { InvoiceCard } from "@/features/billing/components/InvoiceCard"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+import { useViewMode } from "@/hooks/useViewMode"
+import { createDomainCardView, createCardLoadingView } from "@/lib/view-helpers"
 
 export function SalesInvoicesClientView() {
     const { filters } = useSmartSearch(invoiceSearchDef)
@@ -33,28 +32,7 @@ export function SalesInvoicesClientView() {
     const searchParams = useSearchParams()
     const pathname = usePathname()
 
-    const [currentView, setCurrentView] = React.useState<'card' | 'list'>(
-        (searchParams.get('view') as 'card' | 'list') ?? 'card'
-    )
-
-    const handleViewChange = (v: string) => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.set('view', v)
-        router.push(`${pathname}?${params.toString()}`, { scroll: false })
-        setCurrentView(v as 'card' | 'list')
-    }
-
-    useEffect(() => {
-        const viewParam = searchParams.get('view')
-        if (!viewParam) {
-            const params = new URLSearchParams(searchParams.toString())
-            params.set('view', 'card')
-            router.replace(`${pathname}?${params.toString()}`, { scroll: false })
-            setCurrentView('card')
-        } else if (viewParam !== currentView) {
-            setCurrentView(viewParam as 'card' | 'list')
-        }
-    }, [searchParams, pathname, router, currentView])
+    const { currentView, handleViewChange, viewOptions, isCustomView } = useViewMode('billing.invoice')
 
     const toggleSelection = (inv: Invoice) => {
         const isSelected = hubConfig?.invoiceId === inv.id
@@ -67,12 +45,6 @@ export function SalesInvoicesClientView() {
         const query = params.toString()
         router.push(query ? `${pathname}?${query}` : pathname, { scroll: false })
     }
-
-    const viewOptions = [
-        { label: "Lista", value: "list", icon: List },
-        { label: "Tarjeta", value: "card", icon: LayoutDashboard }
-
-    ]
 
     const forceAnnulConfirm = useConfirmAction<number>(async (id) => {
         try {
@@ -196,45 +168,12 @@ export function SalesInvoicesClientView() {
                 viewOptions={viewOptions}
                 leftAction={<SmartSearchBar searchDef={invoiceSearchDef} placeholder="Buscar facturas..." />}
                 defaultPageSize={20}
-                renderCustomView={currentView === 'card' ? (table) => {
-                    const rows = table.getRowModel().rows
-                    if (rows.length === 0) {
-                        return (
-                            <div className="py-12">
-                                <EmptyState
-                                    context="search"
-                                    title="No hay documentos"
-                                    description="No se encontraron facturas o boletas emitidas."
-                                />
-                            </div>
-                        )
-                    }
-                    return (
-                        <div className="grid gap-3 pt-2">
-                            {rows.map((row: any) => {
-                                const inv = row.original as Invoice
-                                const isSelected = hubConfig?.invoiceId === inv.id
-                                return (
-                                    <InvoiceCard
-                                        key={inv.id}
-                                        item={inv}
-                                        type="sale_invoice"
-                                        isSelected={isSelected}
-                                        visibleColumns={table.getState().columnVisibility}
-                                        onClick={() => toggleSelection(inv)}
-                                    />
-                                )
-                            })}
-                        </div>
-                    )
-                } : undefined}
-                renderLoadingView={currentView === 'card' ? () => (
-                    <div className="grid gap-3 pt-2">
-                        {Array.from({ length: 8 }).map((_, i) => (
-                            <EntityCard.Skeleton key={i} />
-                        ))}
-                    </div>
-                ) : undefined}
+                renderCustomView={isCustomView ? createDomainCardView('billing.invoice', {
+                    onRowClick: (data) => toggleSelection(data),
+                    isSelected: (data) => hubConfig?.invoiceId === data.id,
+                    isHubOpen,
+                }) : undefined}
+                renderLoadingView={isCustomView ? createCardLoadingView('single-column') : undefined}
             />
 
             {notingInvoice && (

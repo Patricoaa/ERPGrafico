@@ -4,10 +4,11 @@ doc: component-datatable-views
 status: active
 owner: frontend-team
 created: 2026-05-12
-last_review: 2026-05-12
+last_review: 2026-05-14
 depends_on:
   - component-contracts.md
   - component-skeleton.md
+  - entity-identity.md
 ---
 
 # Contrato: DataTable — Sistema de Vistas e Interacciones
@@ -127,15 +128,36 @@ const handleViewChange = (v: string) => {
 
 **Regla:** Nunca usar `useState` local para la vista activa. El estado efímero provoca que la vista se pierda al navegar atrás.
 
+### Hook `useViewMode` — Patrón preferido
+
+El hook `useViewMode` encapsula toda la lógica de URL sync y genera `viewOptions` automáticamente desde el `ENTITY_REGISTRY`:
+
+```tsx
+import { useViewMode } from "@/hooks/useViewMode"
+
+const { currentView, handleViewChange, viewOptions, isCustomView } = useViewMode('sales.saleorder')
+
+<DataTable
+  currentView={currentView}
+  onViewChange={handleViewChange}
+  viewOptions={viewOptions}
+  renderCustomView={isCustomView ? createDomainCardView('sales.saleorder', { ... }) : undefined}
+  renderLoadingView={isCustomView ? createCardLoadingView('single-column') : undefined}
+  ...
+/>
+```
+
+**Regla:** Todo componente nuevo que use multi-vista **debe** usar `useViewMode`. El patrón manual `useState + useEffect` está deprecado.
+
 ---
 
 ## 6. Primitivas de card — Cuándo usar cada una
 
-### `EntityCard` — Shell estándar (preferido)
+### `EntityCard` — Shell estándar (primitiva visual)
 Primitiva genérica del design system. Usar cuando:
 - Se necesita una tarjeta en una vista de grilla densa (ProductList en modo grid)
 - La tarjeta no requiere lógica de dominio específica (hub, status complejo)
-- Se construye un módulo nuevo
+- Se construye un módulo nuevo de master data o settings
 
 ```tsx
 import { EntityCard } from "@/components/shared/EntityCard"
@@ -152,57 +174,89 @@ import { EntityCard } from "@/components/shared/EntityCard"
 </EntityCard>
 ```
 
-### `OrderCard` — Card de dominio para Órdenes
-Usa `EntityCard` como shell. Renderiza lógica de hub (selección, de-énfasis), `OrderHubStatus`, `PurchaseOrderHubStatus`, `NoteHubStatus`, y líneas de producto. Usar en:
-- `SalesOrdersView` (Ventas)
-- `PurchasingOrdersClientView` (Compras)
-- `ContactModal` → InsightsTable y CreditLedgerTable
+### `DomainCard` — Card inteligente para documentos transaccionales
+Usa `EntityCard` como shell interno. Renderiza automáticamente:
+- Icono, nombre de partner, y display ID desde `ENTITY_REGISTRY`
+- `DomainHubStatus` (workflow badges)
+- Montos totales y pendientes
+- Líneas de producto
 
-### `InvoiceCard` — Card de dominio para Facturas
-Usa `EntityCard` como shell. Renderiza `InvoiceHubStatus`, vínculos a documentos relacionados (notas/ajustes), y monto pendiente. Usar en:
-- `SalesInvoicesClientView`
-- `PurchaseInvoicesClientView`
-
-### ❌ Inline JSX en `renderCustomView` — Prohibido
-No construir tarjetas con JSX inline dentro de `renderCustomView`. Todo card debe ser una composición de `EntityCard` o un componente de dominio derivado de él.
+Usar exclusivamente para entidades con `viewPolicy.cardComponent: 'domain'`:
+- Órdenes de Venta (`sales.saleorder`)
+- Órdenes de Compra (`purchasing.purchaseorder`)
+- Facturas/DTEs (`billing.invoice`)
 
 ```tsx
-// ❌ Prohibido: JSX inline complejo dentro de renderCustomView
-renderCustomView={(table) => (
-  <div className="grid gap-3">
-    {rows.map(row => (
-      <div className="flex p-4 border rounded-lg ...">
-        <h4>...</h4>
-        ...muchas líneas de JSX...
-      </div>
-    ))}
-  </div>
-)}
+import { DomainCard } from "@/components/shared"
 
-// ✅ Correcto: composición con EntityCard o componente de dominio
-renderCustomView={(table) => (
-  <div className="grid gap-3">
-    {rows.map(row => <MyDomainCard key={row.id} item={row.original} />)}
-  </div>
-)}
+<DomainCard label="sales.saleorder" data={order} isSelected={...} isHubOpen={...} />
+```
+
+### ❌ `OrderCard`, `InvoiceCard` — Eliminados
+Estos componentes legados fueron reemplazados por `DomainCard` y eliminados del codebase. No deben recrearse.
+
+### ❌ Inline JSX en `renderCustomView` — Prohibido
+No construir tarjetas con JSX inline dentro de `renderCustomView`. Todo card debe ser una composición de `EntityCard`, `DomainCard`, o un componente de dominio derivado de ellos.
+
+---
+
+## 6.1. View Helpers — Factories para `renderCustomView`
+
+Para reducir boilerplate, existen factories en `lib/view-helpers.ts`:
+
+### `createDomainCardView(label, options)`
+Para entidades con `cardComponent: 'domain'`. Genera un `renderCustomView` completo con empty state y DomainCard:
+
+```tsx
+import { createDomainCardView, createCardLoadingView } from "@/lib/view-helpers"
+
+renderCustomView={isCustomView ? createDomainCardView('sales.saleorder', {
+  onRowClick: (data) => toggleSelection(data),
+  isSelected: (data) => hubConfig?.orderId === data.id,
+  isHubOpen,
+}) : undefined}
+renderLoadingView={isCustomView ? createCardLoadingView('single-column') : undefined}
+```
+
+### `createEntityCardView(label, options)`
+Para entidades con `cardComponent: 'entity'` o `'entity-compact'`. El consumidor proporciona un `renderCard` callback:
+
+```tsx
+renderCustomView={isCustomView ? createEntityCardView('inventory.product', {
+  gridLayout: 'multi-column',
+  renderCard: (product) => (
+    <EntityCard key={product.id} variant="compact" onClick={...}>
+      <EntityCard.Header title={product.name} />
+    </EntityCard>
+  ),
+}) : undefined}
+```
+
+### `createCardLoadingView(layout, count)`
+Genera un `renderLoadingView` con EntityCard.Skeleton en la geometría correcta:
+
+```tsx
+renderLoadingView={isCustomView ? createCardLoadingView('multi-column', 15) : undefined}
 ```
 
 ---
 
-## 7. Vista default — Definida por módulo
+## 7. Vista default — `viewPolicy` en ENTITY_REGISTRY
 
-Cada página define su vista default en código. No existe una configuración global de vista por usuario.
+Cada entidad define su política de vistas en `ENTITY_REGISTRY.viewPolicy`. El hook `useViewMode` lee esta metadata automáticamente.
 
-| Módulo | Vista default |
-|---|---|
-| `SalesOrdersView` | `"card"` |
-| `PurchasingOrdersClientView` | `"card"` |
-| `SalesInvoicesClientView` | `"card"` |
-| `PurchaseInvoicesClientView` | `"card"` |
-| `ProductList` | `"table"` |
-| `production/orders` | `"list"` |
-| `TaxDeclarationsView` | siempre card (sin selector) |
-| `PortfolioTable`, `BlacklistView` | siempre tabla expandible (sin selector) |
+| Entidad | Vistas | Default | Card Component |
+|---|---|---|---|
+| `sales.saleorder` | list, card | card | `domain` |
+| `purchasing.purchaseorder` | list, card | card | `domain` |
+| `billing.invoice` | list, card | card | `domain` |
+| `production.workorder` | list, kanban | list | `custom` |
+| `inventory.product` | list, grid | list | `entity-compact` |
+| `contacts.contact` | list, card | list | `entity` |
+| `hr.employee` | list, card | list | `entity` |
+| Demás entidades | list (solo) | list | — |
+
+**Regla:** Si una entidad no tiene `viewPolicy`, se asume vista `list` única (sin selector). Entidades de tipo Settings y Analíticas no deben tener multi-vista.
 
 ---
 
@@ -280,7 +334,9 @@ Cada PR que toque `DataTable` o sus consumidores debe verificar:
 - [ ] `isLoading` pasado si el componente hace fetch asíncrono
 - [ ] Si hay `viewOptions` con algo distinto de `"list"`: `renderCustomView` presente para esa opción
 - [ ] Si hay `renderCustomView` y `isLoading`: `renderLoadingView` presente
-- [ ] Persistencia de vista usa URL param (`?view=`) con `{ scroll: false }`, no `useState`
-- [ ] Default de vista definido en código (evitar `'kanban'` hardcoded salvo decisión documentada)
-- [ ] Card views usan `EntityCard` o un wrapper de dominio sobre él — **no inline JSX**
+- [ ] Multi-vista usa `useViewMode(entityLabel)` — no `useState` manual para la vista
+- [ ] `viewOptions` generados desde registry (`getViewOptions`) — no arrays hardcodeados
+- [ ] `renderCustomView` usa `createDomainCardView` / `createEntityCardView` cuando aplique — no inline JSX
+- [ ] Default de vista definido en `ENTITY_REGISTRY.viewPolicy.defaultView`
+- [ ] Card views usan `EntityCard` o `DomainCard` — **no inline JSX**
 - [ ] Expandable rows usan `ExpandableTableRow` — **no** `AnimatePresence`/`motion.div` inline

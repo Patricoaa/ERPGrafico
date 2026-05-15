@@ -1,13 +1,12 @@
 "use client"
 
 import { showApiError, getErrorMessage } from "@/lib/errors"
-import React, { useState, useEffect } from "react"
+import React, { useState } from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { ColumnDef } from "@tanstack/react-table"
 import { IconButton, SmartSearchBar, useSmartSearch } from "@/components/shared"
 import { purchaseInvoiceSearchDef } from '../searchDef'
-import { EntityCard } from "@/components/shared/EntityCard"
-import { List, FileBadge, LayoutDashboard, ArrowRight, ArrowLeft } from "lucide-react"
+import { ArrowRight, ArrowLeft, FileBadge } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { PaymentModal } from "@/features/treasury/components/PaymentModal"
@@ -18,12 +17,12 @@ import { DataTable } from "@/components/ui/data-table"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { DataCell } from "@/components/ui/data-table-cells"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
-import { InvoiceCard } from "@/features/billing/components/InvoiceCard"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
-import { EmptyState } from "@/components/shared/EmptyState"
 import { usePurchaseInvoices } from "@/features/billing/hooks/usePurchaseInvoices"
 import { Invoice } from "@/features/billing/types"
+import { useViewMode } from "@/hooks/useViewMode"
+import { createDomainCardView, createCardLoadingView } from "@/lib/view-helpers"
 
 const statusMap: Record<string, { label: string, variant: "default" | "secondary" | "destructive" | "outline" | "success" | "info" | "warning" }> = {
     'DRAFT': { label: 'Folio Pendiente', variant: 'warning' as const },
@@ -43,33 +42,7 @@ export function PurchaseInvoicesClientView() {
     const searchParams = useSearchParams()
     const pathname = usePathname()
 
-    const [currentView, setCurrentView] = React.useState<'card' | 'list'>(
-        (searchParams.get('view') as 'card' | 'list') ?? 'card'
-    )
-
-    const handleViewChange = (v: string) => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.set('view', v)
-        router.push(`${pathname}?${params.toString()}`, { scroll: false })
-        setCurrentView(v as 'card' | 'list')
-    }
-
-    useEffect(() => {
-        const viewParam = searchParams.get('view')
-        if (!viewParam) {
-            const params = new URLSearchParams(searchParams.toString())
-            params.set('view', 'card')
-            router.replace(`${pathname}?${params.toString()}`, { scroll: false })
-            setCurrentView('card')
-        } else if (viewParam !== currentView) {
-            setCurrentView(viewParam as 'card' | 'list')
-        }
-    }, [searchParams, pathname, router, currentView])
-
-    const viewOptions = [
-        { label: "Lista", value: "list", icon: List },
-        { label: "Tarjeta", value: "card", icon: LayoutDashboard }
-    ]
+    const { currentView, handleViewChange, viewOptions, isCustomView } = useViewMode('billing.invoice')
 
     const { openHub, closeHub, hubConfig, isHubOpen } = useHubPanel()
 
@@ -274,48 +247,19 @@ export function PurchaseInvoicesClientView() {
                 viewOptions={viewOptions}
                 leftAction={<SmartSearchBar searchDef={purchaseInvoiceSearchDef} placeholder="Buscar facturas de compra..." className="w-80" />}
                 defaultPageSize={20}
-                renderCustomView={currentView === 'card' ? (table) => {
-                    const rows = table.getRowModel().rows
-                    if (rows.length === 0) {
-                        return (
-                            <div className="py-12">
-                                <EmptyState context="search" title="No hay documentos" description="No se encontraron facturas recibidas." />
-                            </div>
-                        )
-                    }
-                    return (
-                        <div className="grid gap-3 pt-2">
-                            {rows.map((row: any) => {
-                                const inv = row.original
-                                const isSelected = hubConfig?.invoiceId === inv.id
-
-                                return (
-                                    <InvoiceCard
-                                        key={inv.id}
-                                        item={inv}
-                                        type="purchase_invoice"
-                                        isSelected={isSelected}
-                                        visibleColumns={table.getState().columnVisibility}
-                                        onClick={() => {
-                                            if (isSelected) {
-                                                closeHub()
-                                            } else {
-                                                openHub({ orderId: inv.purchase_order || null, invoiceId: inv.id, type: 'purchase', onActionSuccess: fetchDocuments })
-                                            }
-                                        }}
-                                    />
-                                )
-                            })}
-                        </div>
-                    )
-                } : undefined}
-                renderLoadingView={currentView === 'card' ? () => (
-                    <div className="grid gap-3 pt-2">
-                        {Array.from({ length: 8 }).map((_, i) => (
-                            <EntityCard.Skeleton key={i} />
-                        ))}
-                    </div>
-                ) : undefined}
+                renderCustomView={isCustomView ? createDomainCardView('billing.invoice', {
+                    onRowClick: (inv) => {
+                        const isSelected = hubConfig?.invoiceId === inv.id
+                        if (isSelected && isHubOpen) {
+                            closeHub()
+                        } else {
+                            openHub({ orderId: inv.purchase_order || null, invoiceId: inv.id, type: 'purchase', onActionSuccess: fetchDocuments })
+                        }
+                    },
+                    isSelected: (inv) => hubConfig?.invoiceId === inv.id,
+                    isHubOpen,
+                }) : undefined}
+                renderLoadingView={isCustomView ? createCardLoadingView('single-column') : undefined}
             />
             {payingDoc && <PaymentModal open={!!payingDoc} onOpenChange={(open) => !open && setPayingDoc(null)} onConfirm={handlePayment} isPurchase={true} total={parseFloat(payingDoc.total)} pendingAmount={payingDoc.pending_amount ?? parseFloat(payingDoc.total)} hideDteFields={true} isRefund={payingDoc.dte_type === 'NOTA_CREDITO'} existingInvoice={{ dte_type: payingDoc.dte_type, number: payingDoc.number, document_attachment: null }} />}
             {receivingDoc && receivingDoc.purchase_order && <ReceiptModal open={!!receivingDoc} onOpenChange={(open) => !open && setReceivingDoc(null)} orderId={receivingDoc.purchase_order} onSuccess={fetchDocuments} isRefund={receivingDoc.dte_type === 'NOTA_CREDITO'} />}

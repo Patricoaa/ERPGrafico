@@ -17,6 +17,7 @@ export const inventoryApi = {
             params.append('active', val)
         }
         if (filters?.can_be_sold !== undefined) params.append('can_be_sold', String(filters.can_be_sold))
+        if (filters?.can_be_purchased !== undefined) params.append('can_be_purchased', String(filters.can_be_purchased))
         if (filters?.parent_template__isnull !== undefined) params.append('parent_template__isnull', String(filters.parent_template__isnull))
         if (filters?.search) params.append('search', filters.search)
         if (filters?.product_type) params.append('product_type', filters.product_type)

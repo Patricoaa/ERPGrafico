@@ -13,7 +13,6 @@ import { createActionsColumn, DataCell } from "@/components/ui/data-table-cells"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { Eye, Trash2, Coins, CreditCard, Wallet } from "lucide-react"
 import { PaymentModal } from "@/features/treasury"
-
 import { ToolbarCreateButton, SmartSearchBar, useSmartSearch } from "@/components/shared"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { usePayrolls } from "@/features/hr/hooks/usePayrolls"
@@ -308,7 +307,7 @@ export default function PayrollsPage() {
                 data={payrolls}
                 isLoading={loading}
                 variant="embedded"
-                leftAction={<SmartSearchBar searchDef={payrollSearchDef} placeholder="Buscar por empleado o período..." className="w-80" />}
+                leftAction={<SmartSearchBar searchDef={payrollSearchDef} placeholder="Buscar por empleado o período..." className="w-full" />}
                 defaultPageSize={20}
                 onRowClick={(row: Payroll) => openDetail(row.id)}
                 createAction={createAction}
