@@ -1233,3 +1233,61 @@ class WorkOrderService:
             'print_type': mfg_data.get('print_type')
         }
         return stage_data
+
+
+class WorkOrderPdfService:
+    @staticmethod
+    def generate_pdf(work_order, request=None):
+        """TASK-203: Generates a PDF using WeasyPrint from an HTML template."""
+        from django.template.loader import render_to_string
+        from django.conf import settings
+        import qrcode
+        import base64
+        from io import BytesIO
+        try:
+            from weasyprint import HTML
+        except ImportError:
+            raise Exception("WeasyPrint is not installed. Please install it.")
+
+        # Prepare QR code
+        base_url = request.build_absolute_uri('/')[:-1] if request else getattr(settings, 'SITE_URL', 'http://localhost:3000')
+        qr_data = f"{base_url}/production/orders/{work_order.pk}"
+        
+        qr = qrcode.QRCode(version=1, box_size=10, border=4)
+        qr.add_data(qr_data)
+        qr.make(fit=True)
+        img = qr.make_image(fill_color="black", back_color="white")
+        
+        buffered = BytesIO()
+        img.save(buffered, format="PNG")
+        qr_base64 = base64.b64encode(buffered.getvalue()).decode("utf-8")
+
+        # Prepare flat stage data for rendering (filtering out None or complex objects if needed)
+        flat_stage_data = {}
+        if work_order.stage_data:
+            for k, v in work_order.stage_data.items():
+                if k not in ['quantity', 'uom_id', 'uom_name', '_version'] and v:
+                    # Make key readable
+                    readable_key = k.replace('_', ' ').title()
+                    flat_stage_data[readable_key] = v
+
+        quantity = work_order.stage_data.get('quantity') if work_order.stage_data else 1
+        uom_name = work_order.stage_data.get('uom_name') if work_order.stage_data else ''
+
+        context = {
+            'work_order': work_order,
+            'materials': work_order.materials.select_related('component', 'uom', 'supplier').all(),
+            'history_log': work_order.stage_history.select_related('user').order_by('-created_at')[:5],
+            'qr_image': qr_base64,
+            'flat_stage_data': flat_stage_data,
+            'quantity': quantity,
+            'uom_name': uom_name,
+        }
+
+        html_string = render_to_string('production/work_order_pdf.html', context)
+        
+        # WeasyPrint generation
+        html = HTML(string=html_string, base_url=request.build_absolute_uri('/') if request else '')
+        pdf_bytes = html.write_pdf()
+        
+        return pdf_bytes

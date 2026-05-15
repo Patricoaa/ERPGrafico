@@ -468,7 +468,7 @@ work_order.stage_data = flat_data  # única copia
 
 ---
 
-### TASK-203 — PDF de OT con template HTML (weasyprint) + branding
+### TASK-203 ✅ — PDF de OT con template HTML (weasyprint) + branding
 **Prioridad:** P2 · **Tipo:** Feature · **Esfuerzo:** M · **Test req:** backend
 **Archivos:**
 - [backend/production/views.py:324-356](../../../backend/production/views.py#L324-L356) (acción `print_pdf`)
@@ -482,8 +482,8 @@ work_order.stage_data = flat_data  # única copia
 Verificar primero si `weasyprint` ya está en `requirements.txt`. Si no, agregarlo.
 
 **Criterio de aceptación:**
-- [ ] PDF incluye: logo de empresa, número OT, fecha, cliente, especificaciones por fase, lista de materiales, QR con URL/code para scan.
-- [ ] Test pytest verifica que el endpoint retorna `application/pdf` con tamaño > 5KB.
+- [x] PDF incluye: logo de empresa, número OT, fecha, cliente, especificaciones por fase, lista de materiales, QR con URL/code para scan.
+- [x] Test pytest verifica que el endpoint retorna `application/pdf` con tamaño > 5KB.
 
 ---
 

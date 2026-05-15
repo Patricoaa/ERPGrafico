@@ -22,7 +22,7 @@ from .serializers import (
     BillOfMaterialsSerializer,
     BillOfMaterialsLineSerializer
 )
-from .services import WorkOrderService
+from .services import WorkOrderService, WorkOrderPdfService
 from inventory.models import Product, Warehouse, UoM
 from decimal import Decimal
 from django.db.models import Q, Sum
@@ -278,37 +278,18 @@ class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
     @action(detail=True, methods=['get'])
     def print_pdf(self, request, pk=None):
-        """Generate a basic PDF for the Work Order"""
+        """TASK-203: Generate a PDF for the Work Order using WeasyPrint"""
         work_order = self.get_object()
         
-        buffer = BytesIO()
-        p = canvas.Canvas(buffer)
-        
-        # Simple PDF generation logic
-        p.drawString(100, 800, f"ORDEN DE TRABAJO: OT-{work_order.number}")
-        p.drawString(100, 780, f"Descripción: {work_order.description}")
-        p.drawString(100, 760, f"Estado: {work_order.get_status_display()}")
-        p.drawString(100, 740, f"Etapa Actual: {work_order.get_current_stage_display()}")
-        
-        if work_order.sale_order:
-            p.drawString(100, 720, f"Nota de Venta: NV-{work_order.sale_order.number}")
-            p.drawString(100, 700, f"Cliente: {work_order.sale_order.customer.name}")
-
-        y = 660
-        p.drawString(100, y, "MATERIALES ASIGNADOS:")
-        y -= 20
-        for mat in work_order.materials.all():
-            p.drawString(120, y, f"- {mat.component.name} ({mat.component.code}): {mat.quantity_planned} {mat.uom.name}")
-            y -= 15
-        
-        p.showPage()
-        p.save()
-        
-        buffer.seek(0)
-        filename = f"OT-{work_order.number}.pdf"
-        response = HttpResponse(buffer, content_type='application/pdf')
-        response['Content-Disposition'] = f'attachment; filename="{filename}"'
-        return response
+        try:
+            pdf_bytes = WorkOrderPdfService.generate_pdf(work_order, request)
+            filename = f"OT-{work_order.number}.pdf"
+            response = HttpResponse(pdf_bytes, content_type='application/pdf')
+            response['Content-Disposition'] = f'inline; filename="{filename}"'
+            return response
+        except Exception as e:
+            logger.exception("Error generating PDF")
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @action(detail=True, methods=['post'])
     def add_material(self, request, pk=None):
