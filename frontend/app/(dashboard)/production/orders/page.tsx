@@ -68,22 +68,26 @@ export default function WorkOrdersPage() {
     }, [selectedFromUrl])
 
     const isNewModalOpen = searchParams.get("modal") === "new"
+    const requestedType = searchParams.get("type")
+    const requestedProductId = searchParams.get("product_id") || undefined
     const [requestedStage, setRequestedStage] = useState<string | undefined>()
 
     useEffect(() => {
-        if (isNewModalOpen) {
+        if (isNewModalOpen || requestedType === "stock") {
             setIsFormOpen(true)
             setEditingOrder(null)
         }
-    }, [isNewModalOpen])
+    }, [isNewModalOpen, requestedType])
 
     const handleFormClose = (open: boolean) => {
         setIsFormOpen(open)
         if (!open) {
             setEditingOrder(null)
-            if (isNewModalOpen) {
+            if (isNewModalOpen || requestedType || requestedProductId) {
                 const params = new URLSearchParams(searchParams.toString())
                 params.delete("modal")
+                params.delete("type")
+                params.delete("product_id")
                 router.push(`?${params.toString()}`, { scroll: false })
             }
         }
@@ -257,6 +261,8 @@ export default function WorkOrdersPage() {
                     open={isFormOpen}
                     onOpenChange={handleFormClose}
                     onSuccess={refetchOrders}
+                    defaultOtType={requestedType === "stock" ? "NONE" : undefined}
+                    defaultProductId={requestedType === "stock" ? requestedProductId : undefined}
                 />
             ) : null}
             {activeWizardId && (

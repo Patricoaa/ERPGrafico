@@ -33,14 +33,16 @@ interface WorkOrderFormProps {
     open?: boolean
     onOpenChange?: (open: boolean) => void
     triggerVariant?: "default" | "circular"
+    defaultOtType?: "LINKED" | "NONE"
+    defaultProductId?: string
 }
 
-export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenChange, triggerVariant = "default" }: WorkOrderFormProps) {
+export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenChange, triggerVariant = "default", defaultOtType, defaultProductId }: WorkOrderFormProps) {
     const [openState, setOpenState] = useState(false)
     const open = openProp !== undefined ? openProp : openState
     const setOpen = onOpenChange || setOpenState
 
-    const [otType, setOtType] = useState<"LINKED" | "NONE" | null>(null)
+    const [otType, setOtType] = useState<"LINKED" | "NONE" | null>(defaultOtType || null)
     const [loading, setLoading] = useState(false)
     
 
@@ -75,6 +77,23 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
         },
         enabled: open
     })
+
+    const { data: defaultProductData } = useQuery({
+        queryKey: ['product', defaultProductId],
+        queryFn: async () => {
+            if (!defaultProductId) return null
+            const response = await api.get(`/inventory/products/${defaultProductId}/`)
+            return response.data
+        },
+        enabled: open && !!defaultProductId && otType === "NONE",
+    })
+
+    useEffect(() => {
+        if (defaultProductData && !selectedManualProduct && !initialData) {
+            handleManualProductSelect(defaultProductData as any)
+            form.setValue('product_id', String(defaultProductData.id))
+        }
+    }, [defaultProductData, selectedManualProduct, initialData, form])
 
     const lastResetId = useRef<string | number | undefined>(undefined)
     const wasOpen = useRef(false)
@@ -133,16 +152,16 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                         postpress: mfgDataRaw.phases?.postpress || false,
                     },
                     specifications: {
-                        prepress: mfgDataRaw.prepress_specs || mfgDataRaw.specifications?.prepress || '',
-                        press: mfgDataRaw.press_specs || mfgDataRaw.specifications?.press || '',
-                        postpress: mfgDataRaw.postpress_specs || mfgDataRaw.specifications?.postpress || '',
+                        prepress: mfgDataRaw.prepress_specs || (mfgDataRaw as any).specifications?.prepress || '',
+                        press: mfgDataRaw.press_specs || (mfgDataRaw as any).specifications?.press || '',
+                        postpress: mfgDataRaw.postpress_specs || (mfgDataRaw as any).specifications?.postpress || '',
                     },
                     design_needed: mfgDataRaw.design_needed || false,
                     design_files: [],
                     existing_design_files: mfgDataRaw.design_attachments || [],
                     folio_enabled: mfgDataRaw.folio_enabled || false,
                     folio_start: mfgDataRaw.folio_start || '',
-                    print_type: mfgDataRaw.print_type || null,
+                    print_type: (mfgDataRaw.print_type as any) || null,
                     internal_notes: mfgDataRaw.internal_notes || '',
                     product_description: mfgDataRaw.product_description || '',
                 })
@@ -150,7 +169,7 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
             } else {
                 setMfgData(emptyManufacturingData())
                 setSelectedContact(null)
-                setOtType(null)
+                setOtType(defaultOtType || null)
             }
             lastResetId.current = currentId
             wasOpen.current = true
