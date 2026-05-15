@@ -6,7 +6,7 @@ import { WORK_ORDERS_LIST_KEY } from './useWorkOrderMutations'
 
 export { WORK_ORDERS_LIST_KEY }
 
-export function useWorkOrders(filters?: FilterState) {
+export function useWorkOrders(filters?: FilterState & { my_tasks?: boolean }) {
     const queryClient = useQueryClient()
 
     const { data, isLoading, refetch } = useQuery({
@@ -17,6 +17,7 @@ export function useWorkOrders(filters?: FilterState) {
             if (filters?.search) params.append('search', filters.search)
             if (filters?.date_from) params.append('due_date_after', filters.date_from)
             if (filters?.date_to) params.append('due_date_before', filters.date_to)
+            if (filters?.my_tasks) params.append('my_tasks', 'true')
             const res = await api.get('/production/orders/', { params })
             return res.data.results || res.data
         },

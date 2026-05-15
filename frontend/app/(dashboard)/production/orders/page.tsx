@@ -12,6 +12,8 @@ import { WorkOrderForm } from "@/features/production/components/forms/WorkOrderF
 import { WorkOrderWizard } from "@/features/production/components/WorkOrderWizard"
 import { WorkOrderKanban } from "@/features/production/components/WorkOrderKanban"
 import { Badge } from "@/components/ui/badge"
+import { Switch } from "@/components/ui/switch"
+import { Label } from "@/components/ui/label"
 import { isWorkOrderOverdue } from "@/features/production/utils"
 
 import { ToolbarCreateButton, SmartSearchBar, useSmartSearch } from "@/components/shared"
@@ -35,8 +37,24 @@ export default function WorkOrdersPage() {
     const router = useRouter()
     const pathname = usePathname()
 
+    const [myTasks, setMyTasks] = useState(searchParams.get('my_tasks') === 'true')
+
+    const handleMyTasksChange = (checked: boolean) => {
+        setMyTasks(checked)
+        const params = new URLSearchParams(searchParams.toString())
+        if (checked) {
+            params.set('my_tasks', 'true')
+        } else {
+            params.delete('my_tasks')
+        }
+        router.push(`${pathname}?${params.toString()}`, { scroll: false })
+    }
+
     const { filters } = useSmartSearch(workOrderSearchDef)
-    const { orders, isLoading: loading, refetch: refetchOrders } = useWorkOrders(filters)
+    const { orders, isLoading: loading, refetch: refetchOrders } = useWorkOrders({
+        ...(filters as any),
+        my_tasks: myTasks
+    })
     const { deleteOrder, annulOrder, duplicateOrder } = useWorkOrderListActions({ onSuccess: refetchOrders })
 
     const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<WorkOrder>({
@@ -264,7 +282,15 @@ export default function WorkOrdersPage() {
                     isLoading={loading}
                     variant="embedded"
                     defaultPageSize={50}
-                    leftAction={<SmartSearchBar searchDef={workOrderSearchDef} placeholder="Buscar OTs..." className="w-full" />}
+                    leftAction={
+                        <div className="flex items-center gap-6">
+                            <SmartSearchBar searchDef={workOrderSearchDef} placeholder="Buscar OTs..." className="w-[300px]" />
+                            <div className="flex items-center gap-2 whitespace-nowrap bg-background p-1.5 px-3 rounded-md border border-border shadow-sm">
+                                <Switch id="my-tasks-mode" checked={myTasks} onCheckedChange={handleMyTasksChange} />
+                                <Label htmlFor="my-tasks-mode" className="text-sm cursor-pointer font-medium">Solo mis OTs</Label>
+                            </div>
+                        </div>
+                    }
                     viewOptions={[
                         { label: "Lista", value: "list", icon: List },
                         { label: "Tablero", value: "kanban", icon: Columns },

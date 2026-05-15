@@ -11,10 +11,33 @@ import django_filters
 class WorkOrderFilterSet(FilterSet):
     due_date_after = django_filters.DateFilter(field_name='estimated_completion_date', lookup_expr='gte')
     due_date_before = django_filters.DateFilter(field_name='estimated_completion_date', lookup_expr='lte')
+    my_tasks = django_filters.BooleanFilter(method='filter_my_tasks')
 
     class Meta:
         model = WorkOrder
         fields = ['status', 'due_date_after', 'due_date_before']
+
+    def filter_my_tasks(self, queryset, name, value):
+        if value and self.request and self.request.user.is_authenticated:
+            from workflow.models import Task
+            from django.contrib.contenttypes.models import ContentType
+            from django.db.models import Q
+            
+            user = self.request.user
+            ct = ContentType.objects.get_for_model(queryset.model)
+            
+            tasks = Task.objects.filter(
+                content_type=ct,
+                status__in=[Task.Status.PENDING, Task.Status.IN_PROGRESS]
+            )
+            
+            q = Q(assigned_to=user)
+            if user.groups.exists():
+                q |= Q(assigned_group__in=user.groups.all())
+                
+            task_ids = tasks.filter(q).values_list('object_id', flat=True)
+            return queryset.filter(id__in=task_ids)
+        return queryset
 
 from .serializers import (
     WorkOrderSerializer,
