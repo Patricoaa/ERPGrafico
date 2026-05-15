@@ -5,6 +5,7 @@ import { PageHeader } from "@/components/shared/PageHeader"
 import { Skeleton } from "@/components/shared"
 import Link from "next/link"
 import { Calculator, ShoppingCart, Package, Printer, Banknote, ShoppingBag, PieChart, Receipt, UserCog, Users } from "lucide-react"
+import { ProductionMetricsCard } from "@/features/production/components/ProductionMetricsCard"
 
 const modules = [
   { id: "accounting", icon: Calculator, label: "Contabilidad", url: "/accounting", status: "Online", statusColor: "text-success bg-success/10" },
@@ -49,6 +50,8 @@ export default function DashboardPage() {
         description={`Bienvenido de nuevo, ${displayName}. Selecciona un módulo para comenzar.`}
         iconName="home"
       />
+      
+      <ProductionMetricsCard />
       
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {modules.map((mod, index) => {
