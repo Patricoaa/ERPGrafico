@@ -84,65 +84,19 @@ class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         return Response(serializer.data)
 
     def create(self, request, *args, **kwargs):
-        """
-        Overridden create to handle Manual and Sale-Linked OTs via Service.
+        """TASK-202: Delegate all creation logic to WorkOrderService.
+
+        Keeps this view <= 20 LOC. Branch decisions (manual vs sale-linked vs
+        fallback) live in WorkOrderService.create_from_request_payload().
         """
         try:
-            data = request.data
-            import json
-            
-            stage_data = data.get('stage_data', {})
-            if isinstance(stage_data, str):
-                try:
-                    stage_data = json.loads(stage_data)
-                except (json.JSONDecodeError, TypeError):
-                    stage_data = {}
-
-            product_id = data.get('product_id')
-            sale_line_id = data.get('sale_line')
-            
-            # 1. Manual Creation Flow (Product ID present, No Sale Line)
-            if product_id and (not sale_line_id or sale_line_id in ['none', '__none__', '']):
-                return self.create_manual(request)
-
-            # 2. Sale Linked Flow (Sale Line present)
-            elif sale_line_id and sale_line_id not in ['none', '__none__', '']:
-                from sales.models import SaleLine
-                sale_line = SaleLine.objects.get(pk=sale_line_id)
-                
-                # Check if we should enforce uniqueness or allow duplicates?
-                # Service check usually handles duplicates if auto-finalize is on or check existence.
-                # But here the user explicitly clicked "Create" (or Save), so we should allow it or return existing?
-                # Usually standard CRUD allows creation.
-                
-                # Extract files from request
-                files = {}
-                if request.FILES:
-                    # Group files by key patterns if needed, or pass as is
-                    # The service expects 'design' (list) and 'approval' (single)
-                    # We assume frontend sends 'design_files[]' or 'design' and 'approval_file' or 'approval'
-                    
-                    design_files = request.FILES.getlist('design_files') or request.FILES.getlist('design')
-                    approval_file = request.FILES.get('approval_file') or request.FILES.get('approval')
-                    
-                    if design_files:
-                        files['design'] = design_files
-                    if approval_file:
-                        files['approval'] = approval_file
-                
-                work_order = WorkOrderService.create_from_sale_line(sale_line, files=files)
-                
-                if work_order:
-                    # Apply updates from form (dates, description override, stage_data)
-                    serializer = WorkOrderSerializer(work_order, data=data, partial=True)
-                    if serializer.is_valid():
-                        work_order = serializer.save()
-                    return Response(WorkOrderSerializer(work_order).data, status=status.HTTP_201_CREATED)
-            
-            # 3. Fallback to standard (e.g. if sending nothing special)
-            response = super().create(request, *args, **kwargs)
-            return response
-            
+            work_order = WorkOrderService.create_from_request_payload(
+                request.data, request.FILES, request.user
+            )
+            if work_order is not None:
+                return Response(WorkOrderSerializer(work_order).data, status=status.HTTP_201_CREATED)
+            # Fallback: no recognised payload -> standard DRF create
+            return super().create(request, *args, **kwargs)
         except Exception as e:
             logger.exception("Error creating WorkOrder")
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
