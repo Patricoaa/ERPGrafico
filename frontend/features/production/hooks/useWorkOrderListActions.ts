@@ -17,6 +17,8 @@ import { WORK_ORDERS_LIST_KEY, WORK_ORDER_QUERY_KEY } from './useWorkOrderMutati
 interface DeletePayload { id: number | string }
 interface AnnulPayload  { id: number | string; notes?: string }
 interface TransitionListPayload { id: number | string; nextStage: string }
+interface BulkTransitionPayload { ids: number[]; nextStage: string }
+interface BulkPrintPayload { ids: number[] }
 
 /**
  * Mutations scoped to the list page (no single orderId at hook level).
@@ -89,14 +91,58 @@ export function useWorkOrderListActions(
     onError: (err) => showApiError(err, 'Error al cambiar etapa'),
   })
 
+  // ── bulk transition ────────────────────────────────────────────────────────
+  const bulkTransitionMutation = useMutation({
+    mutationFn: async ({ ids, nextStage }: BulkTransitionPayload) => {
+      const res = await api.post('/production/orders/bulk_transition/', {
+        ids,
+        next_stage: nextStage,
+      })
+      return res.data as { ok: number[]; errors: { id: number; error: string }[] }
+    },
+    onSuccess: (data) => {
+      const errCount = data.errors?.length ?? 0
+      if (errCount > 0) {
+        toast.warning(`${data.ok.length} OTs avanzadas, ${errCount} con error.`)
+      } else {
+        toast.success(`${data.ok.length} OTs avanzadas correctamente.`)
+      }
+      invalidate()
+    },
+    onError: (err) => showApiError(err, 'Error al cambiar etapas'),
+  })
+
+  // ── bulk print ─────────────────────────────────────────────────────────────
+  const bulkPrintMutation = useMutation({
+    mutationFn: async ({ ids }: BulkPrintPayload) => {
+      const res = await api.post(
+        '/production/orders/bulk_print/',
+        { ids },
+        { responseType: 'blob' },
+      )
+      const url = URL.createObjectURL(new Blob([res.data as BlobPart], { type: 'application/pdf' }))
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `OTs-${ids.join('-')}.pdf`
+      a.click()
+      URL.revokeObjectURL(url)
+    },
+    onSuccess: () => toast.success('PDF generado correctamente.'),
+    onError: (err) => showApiError(err, 'Error al generar PDF'),
+  })
+
   return {
     deleteOrder:  deleteMutation.mutateAsync,
     annulOrder:   annulMutation.mutateAsync,
     transition:   transitionMutation.mutateAsync,
     duplicateOrder: duplicateMutation.mutateAsync,
+    bulkTransition: bulkTransitionMutation.mutateAsync,
+    bulkPrint:    bulkPrintMutation.mutateAsync,
     isDeleting:   deleteMutation.isPending,
     isAnnuling:   annulMutation.isPending,
     isTransitioning: transitionMutation.isPending,
     isDuplicating: duplicateMutation.isPending,
+    isBulkTransitioning: bulkTransitionMutation.isPending,
+    isBulkPrinting: bulkPrintMutation.isPending,
   }
 }

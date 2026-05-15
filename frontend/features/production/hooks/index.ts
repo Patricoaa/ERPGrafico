@@ -14,3 +14,5 @@ export type {
   AddCommentPayload,
 } from './useWorkOrderMutations'
 export { useWorkOrderListActions } from './useWorkOrderListActions'
+export { useWorkOrderComments } from './useWorkOrderComments'
+export type { WorkOrderComment } from './useWorkOrderComments'

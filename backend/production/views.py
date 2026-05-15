@@ -4,7 +4,7 @@ from rest_framework import viewsets, status, filters
 logger = logging.getLogger(__name__)
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from .models import WorkOrder, ProductionConsumption, BillOfMaterials, BillOfMaterialsLine, WorkOrderMaterial
+from .models import WorkOrder, ProductionConsumption, BillOfMaterials, BillOfMaterialsLine, WorkOrderMaterial, WorkOrderTemplate, ScanToken
 from django_filters.rest_framework import DjangoFilterBackend, FilterSet
 import django_filters
 
@@ -43,7 +43,8 @@ from .serializers import (
     WorkOrderSerializer,
     ProductionConsumptionSerializer,
     BillOfMaterialsSerializer,
-    BillOfMaterialsLineSerializer
+    BillOfMaterialsLineSerializer,
+    WorkOrderTemplateSerializer,
 )
 from .services import WorkOrderService, WorkOrderPdfService, WorkOrderMetricsService
 from inventory.models import Product, Warehouse, UoM
@@ -159,11 +160,22 @@ class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                             object_id=instance.id,
                             user=request.user
                         )
-                        # Ensure stage_data is updated with the filename for legacy support
-                        # Although super().update() likely handled stage_data from body, 
-                        # ensure the filename matches what was uploaded.
                         if not instance.stage_data: instance.stage_data = {}
                         instance.stage_data['approval_attachment'] = approval_file.name
+                        instance.save()
+
+                    # 3. Final Photo
+                    final_photo = request.FILES.get('final_photo')
+                    if final_photo:
+                        Attachment.objects.create(
+                            file=final_photo,
+                            original_filename=f'[final_photo] {final_photo.name}',
+                            content_type=content_type,
+                            object_id=instance.id,
+                            user=request.user
+                        )
+                        if not instance.stage_data: instance.stage_data = {}
+                        instance.stage_data['final_photo'] = final_photo.name
                         instance.save()
                         
             except Exception as e:
@@ -422,6 +434,117 @@ class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+    @action(detail=False, methods=['post'], url_path='bulk_transition')
+    def bulk_transition(self, request):
+        """TASK-306: Advance multiple OTs to the same next stage."""
+        ids = request.data.get('ids', [])
+        next_stage = request.data.get('next_stage')
+        if not ids or not next_stage:
+            return Response({'error': 'ids y next_stage son requeridos'}, status=status.HTTP_400_BAD_REQUEST)
+        results = {'ok': [], 'errors': []}
+        for pk in ids:
+            try:
+                wo = WorkOrder.objects.get(pk=pk)
+                WorkOrderService.transition_to(wo, next_stage)
+                results['ok'].append(pk)
+            except Exception as e:
+                results['errors'].append({'id': pk, 'error': str(e)})
+        return Response(results)
+
+    @action(detail=False, methods=['post'], url_path='bulk_print')
+    def bulk_print(self, request):
+        """TASK-306: Print a merged PDF for multiple OTs."""
+        ids = request.data.get('ids', [])
+        if not ids:
+            return Response({'error': 'ids es requerido'}, status=status.HTTP_400_BAD_REQUEST)
+        orders = WorkOrder.objects.filter(pk__in=ids).select_related('warehouse', 'sale_line__order__customer')
+        if not orders.exists():
+            return Response({'error': 'No se encontraron órdenes'}, status=status.HTTP_404_NOT_FOUND)
+        try:
+            merged = WorkOrderPdfService.generate_bulk_pdf(list(orders))
+            response = HttpResponse(merged, content_type='application/pdf')
+            response['Content-Disposition'] = f'attachment; filename="ots_bulk_{len(ids)}.pdf"'
+            return response
+        except Exception as e:
+            logger.exception("Error generating bulk PDF")
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=True, methods=['post'], url_path='generate_scan_token')
+    def generate_scan_token(self, request, pk=None):
+        """TASK-313: Generate a short-lived scan token for the QR on the printed PDF."""
+        import secrets
+        from django.utils import timezone
+        from datetime import timedelta
+        order = self.get_object()
+        token = secrets.token_urlsafe(32)
+        expires_at = timezone.now() + timedelta(hours=24)
+        scan_token = ScanToken.objects.create(work_order=order, token=token, expires_at=expires_at)
+        base_url = request.build_absolute_uri('/').rstrip('/')
+        scan_url = f"{base_url}/api/production/orders/scan/{token}/"
+        return Response({'token': token, 'scan_url': scan_url, 'expires_at': scan_token.expires_at})
+
+    @action(detail=False, methods=['get', 'post'], url_path=r'scan/(?P<token>[^/.]+)',
+            permission_classes=[], authentication_classes=[])
+    def scan(self, request, token=None):
+        """TASK-313: Tokenized scan endpoint — no auth required (token is the credential)."""
+        from django.utils import timezone
+        try:
+            scan_token = ScanToken.objects.select_related('work_order').get(token=token)
+        except ScanToken.DoesNotExist:
+            return Response({'error': 'Token inválido'}, status=status.HTTP_404_NOT_FOUND)
+        if not scan_token.is_valid():
+            return Response({'error': 'Token expirado o ya utilizado'}, status=status.HTTP_410_GONE)
+        order = scan_token.work_order
+        if request.method == 'GET':
+            return Response({
+                'order_id': order.pk,
+                'number': order.number,
+                'description': order.description,
+                'current_stage': order.current_stage,
+                'status': order.status,
+            })
+        next_stage = request.data.get('next_stage')
+        if not next_stage:
+            return Response({'error': 'next_stage es requerido'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            WorkOrderService.transition_to(order, next_stage, user=None)
+            scan_token.used_at = timezone.now()
+            scan_token.save(update_fields=['used_at'])
+            return Response({'ok': True, 'new_stage': next_stage})
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=['get', 'post'], url_path='comments')
+    def comments(self, request, pk=None):
+        """TASK-307: Unified comment feed for an OT (includes linked NV comments)."""
+        from django.contrib.contenttypes.models import ContentType
+        from workflow.models import Comment
+        from workflow.serializers import CommentSerializer
+
+        order = self.get_object()
+        wo_ct = ContentType.objects.get_for_model(WorkOrder)
+
+        if request.method == 'GET':
+            qs = Comment.objects.filter(content_type=wo_ct, object_id=order.pk)
+            if order.sale_order_id:
+                from sales.models import SaleOrder
+                so_ct = ContentType.objects.get_for_model(SaleOrder)
+                so_qs = Comment.objects.filter(content_type=so_ct, object_id=order.sale_order_id)
+                qs = (qs | so_qs).order_by('created_at')
+            serializer = CommentSerializer(qs, many=True)
+            return Response(serializer.data)
+
+        text = (request.data.get('text') or '').strip()
+        if not text:
+            return Response({'error': 'text es requerido'}, status=status.HTTP_400_BAD_REQUEST)
+        comment = Comment.objects.create(
+            content_type=wo_ct,
+            object_id=order.pk,
+            user=request.user,
+            text=text,
+        )
+        return Response(CommentSerializer(comment).data, status=status.HTTP_201_CREATED)
+
     @action(detail=False, methods=['post'])
     def create_manual(self, request):
         """Create a manual OT"""
@@ -504,3 +627,49 @@ class BillOfMaterialsLineViewSet(viewsets.ModelViewSet):
         if bom_id:
             queryset = queryset.filter(bom_id=bom_id)
         return queryset
+
+
+class WorkOrderTemplateViewSet(viewsets.ModelViewSet):
+    """TASK-312: CRUD for WorkOrderTemplate + save_from_order action."""
+    queryset = WorkOrderTemplate.objects.select_related('customer').all()
+    serializer_class = WorkOrderTemplateSerializer
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        customer_id = self.request.query_params.get('customer_id')
+        if customer_id:
+            qs = qs.filter(customer_id=customer_id)
+        return qs
+
+    @action(detail=False, methods=['post'], url_path='save_from_order')
+    def save_from_order(self, request):
+        """Create a template from an existing WorkOrder."""
+        order_id = request.data.get('order_id')
+        name = (request.data.get('name') or '').strip()
+        if not order_id or not name:
+            return Response({'error': 'order_id y name son requeridos'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            order = WorkOrder.objects.get(pk=order_id)
+        except WorkOrder.DoesNotExist:
+            return Response({'error': 'OT no encontrada'}, status=status.HTTP_404_NOT_FOUND)
+        default_data = {
+            'description': order.description,
+            'stage_data': order.stage_data or {},
+            'materials': [
+                {
+                    'component_id': m.component_id,
+                    'quantity_planned': float(m.quantity_planned),
+                    'uom_id': m.uom_id,
+                    'is_outsourced': m.is_outsourced,
+                    'unit_price': float(m.unit_price),
+                    'supplier_id': m.supplier_id,
+                }
+                for m in order.materials.all()
+            ],
+        }
+        template = WorkOrderTemplate.objects.create(
+            name=name,
+            customer=order.sale_order.customer if order.sale_order else None,
+            default_data=default_data,
+        )
+        return Response(WorkOrderTemplateSerializer(template).data, status=status.HTTP_201_CREATED)

@@ -41,6 +41,88 @@ interface RectificationStepProps {
     ) => void
 }
 
+interface CostImpactPanelProps {
+    materials: WorkOrderMaterial[]
+    actualQuantities: Record<number, string>
+    actualOutsourced: Record<number, { qty: string; price: string }>
+    actualProducedQty: string
+    plannedProducedQty: string
+    isManualWithInventory: boolean
+}
+
+function CostImpactPanel({
+    materials, actualQuantities, actualOutsourced, actualProducedQty, plannedProducedQty, isManualWithInventory
+}: CostImpactPanelProps) {
+    const plannedTotal = materials.reduce((sum, m) => {
+        if (!m.is_outsourced) return sum + (m.planned_cost ?? m.total_cost ?? 0)
+        return sum + (parseFloat(String(m.unit_price ?? 0)) * m.quantity_planned)
+    }, 0)
+
+    const actualTotal = materials.reduce((sum, m) => {
+        if (!m.is_outsourced) {
+            const qty = parseFloat(actualQuantities[m.id] ?? String(m.quantity_planned)) || 0
+            const unitCost = (m.planned_cost ?? m.total_cost ?? 0) / (m.quantity_planned || 1)
+            return sum + qty * unitCost
+        }
+        const out = actualOutsourced[m.id]
+        const qty = parseFloat(out?.qty ?? String(m.quantity_planned)) || 0
+        const price = parseFloat(out?.price ?? String(m.unit_price ?? 0)) || 0
+        return sum + qty * price
+    }, 0)
+
+    const delta = actualTotal - plannedTotal
+    const isIncrease = delta > 0
+
+    const plannedQty = parseFloat(plannedProducedQty) || 1
+    const actualQty = parseFloat(actualProducedQty) || plannedQty
+    const plannedUnitCost = plannedTotal / plannedQty
+    const actualUnitCost = actualTotal / actualQty
+    const unitDelta = actualUnitCost - plannedUnitCost
+
+    return (
+        <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-3">
+            <p className="text-xs font-bold uppercase tracking-widest text-primary flex items-center gap-2">
+                <Info className="h-3.5 w-3.5" />
+                Impacto de costos estimado
+            </p>
+            <div className="grid grid-cols-3 gap-3 text-center">
+                <div className="space-y-0.5">
+                    <p className="text-[10px] text-muted-foreground uppercase font-bold">Costo planificado</p>
+                    <p className="text-sm font-bold">${plannedTotal.toFixed(0)}</p>
+                </div>
+                <div className="space-y-0.5">
+                    <p className="text-[10px] text-muted-foreground uppercase font-bold">Costo real</p>
+                    <p className={cn("text-sm font-bold", isIncrease ? "text-destructive" : "text-success")}>
+                        ${actualTotal.toFixed(0)}
+                    </p>
+                </div>
+                <div className="space-y-0.5">
+                    <p className="text-[10px] text-muted-foreground uppercase font-bold">Δ Total</p>
+                    <p className={cn("text-sm font-bold flex items-center justify-center gap-1", isIncrease ? "text-destructive" : "text-success")}>
+                        {isIncrease ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+                        {isIncrease ? '+' : ''}{delta.toFixed(0)}
+                    </p>
+                </div>
+            </div>
+            {isManualWithInventory && (
+                <div className="border-t border-primary/10 pt-3 grid grid-cols-2 gap-3 text-center">
+                    <div className="space-y-0.5">
+                        <p className="text-[10px] text-muted-foreground uppercase font-bold">Costo unit. planif.</p>
+                        <p className="text-sm font-bold">${plannedUnitCost.toFixed(2)}</p>
+                    </div>
+                    <div className="space-y-0.5">
+                        <p className="text-[10px] text-muted-foreground uppercase font-bold">Costo unit. real</p>
+                        <p className={cn("text-sm font-bold", unitDelta > 0 ? "text-destructive" : "text-success")}>
+                            ${actualUnitCost.toFixed(2)}
+                            <span className="text-[10px] ml-1">({unitDelta > 0 ? '+' : ''}{unitDelta.toFixed(2)})</span>
+                        </p>
+                    </div>
+                </div>
+            )}
+        </div>
+    )
+}
+
 export function RectificationStep({ order, onChange }: RectificationStepProps) {
     const materials = order?.materials || []
 
@@ -176,6 +258,18 @@ export function RectificationStep({ order, onChange }: RectificationStepProps) {
                         Las cantidades han sido modificadas. Al finalizar, se crearán movimientos de inventario compensatorios y se recalcularán los costos de producción.
                     </AlertDescription>
                 </Alert>
+            )}
+
+            {/* Cost Impact Panel — shown inline when there are changes */}
+            {hasMeaningfulChanges && (
+                <CostImpactPanel
+                    materials={materials}
+                    actualQuantities={actualQuantities}
+                    actualOutsourced={actualOutsourced}
+                    actualProducedQty={actualProducedQty}
+                    plannedProducedQty={plannedProducedQty}
+                    isManualWithInventory={!!isManualWithInventory}
+                />
             )}
 
             {/* Materials Table */}

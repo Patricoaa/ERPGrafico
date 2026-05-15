@@ -211,6 +211,23 @@ export function useWorkOrderMutations(
     onError: (err) => showApiError(err, 'Error al duplicar la orden'),
   })
 
+  // ── uploadFinalPhoto ───────────────────────────────────────────────────────
+  const uploadFinalPhotoMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData()
+      formData.append('final_photo', file)
+      const res = await api.patch(`/production/orders/${orderId}/`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+      return res.data
+    },
+    onSuccess: () => {
+      toast.success('Foto adjuntada correctamente')
+      invalidate()
+    },
+    onError: (err) => showApiError(err, 'Error al subir la foto'),
+  })
+
   // ── addComment ─────────────────────────────────────────────────────────────
   const addCommentMutation = useMutation({
     mutationFn: async ({ text, authorName, currentStageData }: AddCommentPayload) => {
@@ -247,6 +264,7 @@ export function useWorkOrderMutations(
     deleteOrder: deleteOrderMutation.mutateAsync,
     duplicateOrder: duplicateOrderMutation.mutateAsync,
     addComment: addCommentMutation.mutateAsync,
+    uploadFinalPhoto: uploadFinalPhotoMutation.mutateAsync,
 
     // loading states (parallel to the wizard's existing boolean flags)
     isTransitioning: transitionMutation.isPending,
@@ -255,5 +273,6 @@ export function useWorkOrderMutations(
     isAnnuling: annulMutation.isPending,
     isDeleting: deleteOrderMutation.isPending,
     isDuplicating: duplicateOrderMutation.isPending,
+    isUploadingPhoto: uploadFinalPhotoMutation.isPending,
   }
 }

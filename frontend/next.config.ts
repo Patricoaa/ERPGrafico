@@ -14,7 +14,7 @@ const backendHostname =
 const nextConfig: NextConfig = {
   // standalone solo para Docker/self-hosted — Vercel gestiona el output por su cuenta
   output: process.env.VERCEL ? undefined : "standalone",
-  allowedDevOrigins: ["192.168.1.95", "localhost", "127.0.0.1"],
+  allowedDevOrigins: ["192.168.1.95", "192.168.1.195", "localhost", "127.0.0.1"],
   env: {
     NEXT_PUBLIC_APP_VERSION: packageJson.version,
     NEXT_PUBLIC_GIT_HASH: gitHash,

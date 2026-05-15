@@ -1,12 +1,10 @@
 "use client"
 
-import React from "react"
 import { useQuery } from "@tanstack/react-query"
 import { notFound } from "next/navigation"
 import api from "@/lib/api"
 import { EntityDetailPage, FormSkeleton } from "@/components/shared"
-import { InvoiceCard } from "./InvoiceCard"
-import { Invoice } from "../types"
+import { DomainCard } from "@/components/shared/DomainCard"
 
 interface InvoiceDetailClientProps {
     invoiceId: string
@@ -26,7 +24,7 @@ export function InvoiceDetailClient({ invoiceId, type }: InvoiceDetailClientProp
 
     if (error === 404) return notFound()
     if (error) return <div className="p-8 text-destructive">Error al cargar la factura</div>
-    
+
     if (loading || !invoice) {
         return (
             <div className="flex-1 p-8">
@@ -36,15 +34,15 @@ export function InvoiceDetailClient({ invoiceId, type }: InvoiceDetailClientProp
     }
 
     const title = type === 'sale' ? 'Factura de Venta' : 'Factura de Compra'
-    const breadcrumbRoot = type === 'sale' 
+    const breadcrumbRoot = type === 'sale'
         ? { label: "Ventas", href: "/billing/sales" }
         : { label: "Compras", href: "/billing/purchases" }
-    
+
     const displayId = invoice.display_id || `${invoice.dte_type_display} ${invoice.number}` || 'Documento'
 
     return (
         <EntityDetailPage
-            entityType={type === 'sale' ? "sale_invoice" : "purchase_invoice"}
+            entityType="invoice"
             title={title}
             displayId={displayId}
             icon={type === 'sale' ? "receipt" : "package"}
@@ -56,10 +54,9 @@ export function InvoiceDetailClient({ invoiceId, type }: InvoiceDetailClientProp
             readonly
         >
             <div className="max-w-4xl mx-auto py-6">
-                <InvoiceCard 
-                    item={invoice} 
-                    type={type === 'sale' ? 'sale_invoice' : 'purchase_invoice'} 
-                    isDetailView={true} 
+                <DomainCard
+                    label="billing.invoice"
+                    data={invoice}
                 />
             </div>
         </EntityDetailPage>

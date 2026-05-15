@@ -313,12 +313,34 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
                 )}
 
                 <div className="p-0 overflow-hidden">
-                    <DataTable
-                        columns={columns}
-                        data={boms}
-                        variant="embedded"
-                        isLoading={isBOMsLoading}
-                    />
+                    {!isBOMsLoading && boms.length === 0 ? (
+                        <div className="py-16 flex flex-col items-center justify-center text-center gap-4 border-2 border-dashed rounded-b-md bg-muted/5">
+                            <div className="bg-primary/10 p-4 rounded-full">
+                                <Workflow className="h-8 w-8 text-primary opacity-60" />
+                            </div>
+                            <div className="space-y-1 max-w-xs">
+                                <p className="text-sm font-bold uppercase tracking-widest text-primary">Sin recetas de producción</p>
+                                <p className="text-xs text-muted-foreground">
+                                    Define la estructura de materiales para fabricar este producto.
+                                </p>
+                            </div>
+                            <Button
+                                type="button"
+                                onClick={handleCreate}
+                                className="gap-2 text-xs font-black uppercase tracking-widest"
+                            >
+                                <Plus className="h-4 w-4" />
+                                Crear primera receta
+                            </Button>
+                        </div>
+                    ) : (
+                        <DataTable
+                            columns={columns}
+                            data={boms}
+                            variant="embedded"
+                            isLoading={isBOMsLoading}
+                        />
+                    )}
                 </div>
             </div>
 

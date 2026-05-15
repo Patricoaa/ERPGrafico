@@ -6,14 +6,19 @@ import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { createActionsColumn, DataCell } from "@/components/ui/data-table-cells"
 import { ColumnDef } from "@tanstack/react-table"
-import { Pencil, Trash2, Ban, Settings, List, Columns, Copy } from "lucide-react"
+import { Pencil, Trash2, Ban, Settings, List, Columns, Copy, CalendarDays, Printer } from "lucide-react"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { WorkOrderForm } from "@/features/production/components/forms/WorkOrderForm"
 import { WorkOrderWizard } from "@/features/production/components/WorkOrderWizard"
 import { WorkOrderKanban } from "@/features/production/components/WorkOrderKanban"
+import { WorkOrderTimelineView } from "@/features/production/components/WorkOrderTimelineView"
 import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
+import { Button } from "@/components/ui/button"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { BulkActionDock } from "@/components/shared"
+import { STAGES_ORDERED } from "@/features/production/constants/stages"
 import { isWorkOrderOverdue } from "@/features/production/utils"
 
 import { ToolbarCreateButton, SmartSearchBar, useSmartSearch } from "@/components/shared"
@@ -55,7 +60,8 @@ export default function WorkOrdersPage() {
         ...(filters as any),
         my_tasks: myTasks
     })
-    const { deleteOrder, annulOrder, duplicateOrder } = useWorkOrderListActions({ onSuccess: refetchOrders })
+    const { deleteOrder, annulOrder, duplicateOrder, bulkTransition, bulkPrint, isBulkTransitioning, isBulkPrinting } = useWorkOrderListActions({ onSuccess: refetchOrders })
+    const [bulkNextStage, setBulkNextStage] = useState<string>('')
 
     const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<WorkOrder>({
         endpoint: '/production/orders'
@@ -251,6 +257,14 @@ export default function WorkOrdersPage() {
         </div>
     ), [loading, handleKanbanTransition])
 
+    const renderTimelineView = useCallback((table: import("@tanstack/react-table").Table<WorkOrder>) => (
+        <WorkOrderTimelineView
+            orders={table.getFilteredRowModel().rows.map((row: import("@tanstack/react-table").Row<WorkOrder>) => row.original)}
+            onManage={(id) => setActiveWizardId(id)}
+            isLoading={loading}
+        />
+    ), [loading])
+
     return (
         <div className="space-y-4">
 
@@ -300,11 +314,51 @@ export default function WorkOrdersPage() {
                     viewOptions={[
                         { label: "Lista", value: "list", icon: List },
                         { label: "Tablero", value: "kanban", icon: Columns },
+                        { label: "Cronograma", value: "timeline", icon: CalendarDays },
                     ]}
                     currentView={viewMode}
                     onViewChange={setViewMode}
-                    renderCustomView={viewMode === "kanban" ? renderKanbanView : undefined}
+                    renderCustomView={
+                        viewMode === "kanban" ? renderKanbanView :
+                        viewMode === "timeline" ? renderTimelineView :
+                        undefined
+                    }
                     createAction={<ToolbarCreateButton label="Nueva OT" href="/production/orders?modal=new" />}
+                    bulkDock={(items, clear) => (
+                        <BulkActionDock selectedCount={items.length} onClear={clear}>
+                            <div className="flex items-center gap-2">
+                                <Select value={bulkNextStage} onValueChange={setBulkNextStage}>
+                                    <SelectTrigger className="h-8 w-[180px] text-xs rounded-full border-border/60">
+                                        <SelectValue placeholder="Seleccionar etapa…" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {STAGES_ORDERED.filter(s => s.id !== 'CANCELLED').map(s => (
+                                            <SelectItem key={s.id} value={s.id} className="text-xs">{s.label}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <Button
+                                    size="sm"
+                                    variant="default"
+                                    disabled={!bulkNextStage || isBulkTransitioning}
+                                    className="h-8 rounded-full px-4 text-xs font-bold"
+                                    onClick={() => bulkTransition({ ids: items.map(o => o.id), nextStage: bulkNextStage }).then(clear)}
+                                >
+                                    {isBulkTransitioning ? 'Avanzando…' : 'Avanzar etapa'}
+                                </Button>
+                                <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    disabled={isBulkPrinting}
+                                    className="h-8 rounded-full px-4 text-xs"
+                                    onClick={() => bulkPrint({ ids: items.map(o => o.id) })}
+                                >
+                                    <Printer className="h-3.5 w-3.5 mr-1.5" />
+                                    {isBulkPrinting ? 'Generando…' : 'Imprimir todas'}
+                                </Button>
+                            </div>
+                        </BulkActionDock>
+                    )}
                 />
             </div>
 

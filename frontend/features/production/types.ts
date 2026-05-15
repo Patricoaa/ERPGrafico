@@ -159,6 +159,9 @@ export interface BOM {
     yield_quantity: number
     yield_uom?: number
     yield_uom_name?: string
+    estimated_prepress_min?: number
+    estimated_press_min?: number
+    estimated_postpress_min?: number
     lines: BOMLine[]
     notes?: string
     updated_at?: string

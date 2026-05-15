@@ -2,6 +2,7 @@
 
 import { useState, useEffect, lazy, Suspense } from "react"
 import api from "@/lib/api"
+import { useVatRate } from "@/hooks/useVatRate"
 import { SalesOrdersView } from "./SalesOrdersView"
 import { FormSkeleton } from "@/components/shared"
 import { SaleOrder, SaleOrderLine } from "../types"
@@ -21,6 +22,7 @@ interface SalesOrdersClientViewProps {
 }
 
 export function SalesOrdersClientView({ viewMode, isCreateModalOpen, setCreateModalOpen }: SalesOrdersClientViewProps) {
+    const { multiplier: vatMultiplier } = useVatRate()
     const [payingOrder, setPayingOrder] = useState<SaleOrder | null>(null)
     const [dispatchingOrder, setDispatchingOrder] = useState<number | null>(null)
     const [completingFolio, setCompletingFolio] = useState<SaleOrder | null>(null)
@@ -62,7 +64,7 @@ export function SalesOrdersClientView({ viewMode, isCreateModalOpen, setCreateMo
                             qty: l.quantity,
                             unit_price_net: l.unit_price,
                         }))}
-                        total={payingOrder ? parseFloat(payingOrder.total.toString()) : (checkoutData?.lines?.reduce((sum: number, l: SaleOrderLine) => sum + (l.quantity * (l.unit_price || 0)) * 1.19, 0) || 0)}
+                        total={payingOrder ? parseFloat(payingOrder.total.toString()) : (checkoutData?.lines?.reduce((sum: number, l: SaleOrderLine) => sum + (l.quantity * (l.unit_price || 0)) * vatMultiplier, 0) || 0)}
                         initialCustomerId={payingOrder?.customer?.toString()}
                         initialCustomerName={payingOrder?.customer_name}
                         channel={checkoutData ? "SALE" : "POS"}

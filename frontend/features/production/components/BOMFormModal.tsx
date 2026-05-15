@@ -62,6 +62,9 @@ const bomSchema = z.object({
     active: z.boolean().default(true),
     yield_quantity: z.coerce.number().min(0.0001, "El rendimiento debe ser mayor a 0").default(1),
     yield_uom: z.string().min(1, "La unidad de salida es requerida"),
+    estimated_prepress_min: z.coerce.number().int().min(0).default(0),
+    estimated_press_min: z.coerce.number().int().min(0).default(0),
+    estimated_postpress_min: z.coerce.number().int().min(0).default(0),
     lines: z.array(materialLineSchema).min(0),
     service_lines: z.array(serviceLineSchema).min(0)
 }).refine(data => data.lines.length > 0 || data.service_lines.length > 0, {
@@ -205,6 +208,9 @@ export function BOMFormModal({
                     active: bomToEdit.active,
                     yield_quantity: bomToEdit.yield_quantity || 1,
                     yield_uom: bomToEdit.yield_uom?.toString() || "",
+                    estimated_prepress_min: bomToEdit.estimated_prepress_min ?? 0,
+                    estimated_press_min: bomToEdit.estimated_press_min ?? 0,
+                    estimated_postpress_min: bomToEdit.estimated_postpress_min ?? 0,
                     lines: stockLines.map((l: BOMLine) => ({
                         component: l.component.toString(),
                         component_code: l.component_code,
@@ -287,6 +293,9 @@ export function BOMFormModal({
                 active: data.active,
                 yield_quantity: data.yield_quantity,
                 yield_uom: data.yield_uom ? parseInt(data.yield_uom) : null,
+                estimated_prepress_min: data.estimated_prepress_min,
+                estimated_press_min: data.estimated_press_min,
+                estimated_postpress_min: data.estimated_postpress_min,
                 lines: [...materialPayloadLines, ...servicePayloadLines]
             }
 
@@ -496,6 +505,32 @@ export function BOMFormModal({
                                     )}
                                 />
                             </div>
+                        </div>
+
+                        {/* Tiempos estimados por etapa (TASK-314) */}
+                        <div className="grid grid-cols-3 gap-4">
+                            {(['prepress', 'press', 'postpress'] as const).map((stage) => {
+                                const fieldName = `estimated_${stage}_min` as const
+                                const labels = { prepress: 'Min. Pre-Impresión', press: 'Min. Impresión', postpress: 'Min. Post-Impresión' }
+                                return (
+                                    <FormField
+                                        key={stage}
+                                        control={form.control as any}
+                                        name={fieldName}
+                                        render={({ field, fieldState }) => (
+                                            <LabeledInput
+                                                label={labels[stage]}
+                                                type="number"
+                                                min="0"
+                                                step="1"
+                                                placeholder="0"
+                                                error={fieldState.error?.message}
+                                                {...field}
+                                            />
+                                        )}
+                                    />
+                                )
+                            })}
                         </div>
 
                         {/* ═══════════════════════════════════════════════════════════════ */}

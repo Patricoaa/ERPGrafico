@@ -459,8 +459,17 @@ class BillOfMaterials(models.Model):
         help_text="Unidad en la que se expresa el rendimiento (se usa la unidad base del producto si se omite)"
     )
     
+    # TASK-314: Estimated minutes per production stage — used to suggest due_date on OT creation
+    estimated_prepress_min = models.PositiveIntegerField(_("Minutos Pre-Impresión"), default=0)
+    estimated_press_min = models.PositiveIntegerField(_("Minutos Impresión"), default=0)
+    estimated_postpress_min = models.PositiveIntegerField(_("Minutos Post-Impresión"), default=0)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    @property
+    def total_estimated_minutes(self):
+        return self.estimated_prepress_min + self.estimated_press_min + self.estimated_postpress_min
 
     class Meta:
         verbose_name = _("Lista de Materiales (BOM)")
@@ -550,3 +559,54 @@ class BillOfMaterialsLine(models.Model):
 
     def __str__(self):
         return f"{self.component.code} x {self.quantity} {self.uom.name if self.uom else ''}"
+
+
+class WorkOrderTemplate(models.Model):
+    """
+    TASK-312: Reusable template for quickly creating WorkOrders with preset data.
+    Created from an existing OT or manually. Used in WorkOrderForm to preload fields.
+    """
+    name = models.CharField(_("Nombre de la plantilla"), max_length=200)
+    customer = models.ForeignKey(
+        'contacts.Contact',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='work_order_templates',
+        verbose_name=_("Cliente"),
+    )
+    # Stores a subset of WorkOrder fields: description, stage_data, materials config, etc.
+    default_data = models.JSONField(_("Datos predeterminados"), default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = _("Plantilla de OT")
+        verbose_name_plural = _("Plantillas de OT")
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
+
+
+class ScanToken(models.Model):
+    """
+    TASK-313: Short-lived token embedded in printed QR codes.
+    Scanning the QR from a mobile device triggers a stage transition
+    without requiring the operator to log in.
+    """
+    work_order = models.ForeignKey(WorkOrder, on_delete=models.CASCADE, related_name='scan_tokens')
+    token = models.CharField(max_length=64, unique=True, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    used_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = _("Token de Escaneo")
+        verbose_name_plural = _("Tokens de Escaneo")
+
+    def is_valid(self):
+        from django.utils import timezone
+        return self.used_at is None and self.expires_at > timezone.now()
+
+    def __str__(self):
+        return f"ScanToken({self.work_order_id}, expires={self.expires_at:%Y-%m-%d %H:%M})"

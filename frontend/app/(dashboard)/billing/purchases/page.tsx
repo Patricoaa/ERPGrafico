@@ -22,8 +22,8 @@ import { DataTable } from "@/components/ui/data-table"
 import { DataCell } from "@/components/ui/data-table-cells"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { formatPlainDate } from "@/lib/utils"
-import { PageContainer, useSmartSearch, SmartSearchBar } from "@/components/shared"
-import { InvoiceCard } from "@/features/billing/components/InvoiceCard"
+import { useSmartSearch, SmartSearchBar } from "@/components/shared"
+import { DomainCard } from "@/components/shared/DomainCard"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { usePurchaseInvoices } from "@/features/billing/hooks/usePurchaseInvoices"
@@ -79,8 +79,8 @@ export default function PurchaseInvoicesPage() {
     const { filters, clearAll } = useSmartSearch(purchaseInvoiceSearchDef)
 
     // Data Fetching (TanStack Query)
-    const { invoices, isLoading: isDataLoading, refetch } = usePurchaseInvoices({ 
-        filters 
+    const { invoices, isLoading: isDataLoading, refetch } = usePurchaseInvoices({
+        filters
     })
 
     const [payingDoc, setPayingDoc] = useState<PurchaseDocument | null>(null)
@@ -467,9 +467,9 @@ export default function PurchaseInvoicesPage() {
                 isLoading={isDataLoading}
                 // Smart Search Integration (Premium Industrial)
                 leftAction={
-                    <SmartSearchBar 
-                        searchDef={purchaseInvoiceSearchDef} 
-                        placeholder="Buscar por proveedor, folio o fecha..." 
+                    <SmartSearchBar
+                        searchDef={purchaseInvoiceSearchDef}
+                        placeholder="Buscar por proveedor, folio o fecha..."
                     />
                 }
                 onReset={clearAll}
@@ -504,10 +504,10 @@ export default function PurchaseInvoicesPage() {
                             {rows.map((row: { original: PurchaseDocument }) => {
                                 const doc: PurchaseDocument = row.original
                                 return (
-                                    <InvoiceCard
+                                    <DomainCard
                                         key={doc.id}
-                                        item={doc as any}
-                                        type="purchase_invoice"
+                                        label="billing.invoice"
+                                        data={doc}
                                         onClick={() => {
                                             openHub({
                                                 orderId: doc.purchase_order || null,
