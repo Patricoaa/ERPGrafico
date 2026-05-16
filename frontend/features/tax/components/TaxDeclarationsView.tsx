@@ -1,5 +1,5 @@
-import { formatCurrency } from "@/lib/money";
 "use client"
+import { formatCurrency } from "@/lib/money";
 
 import { showApiError } from "@/lib/errors"
 import React, { useState, useEffect } from "react"
@@ -61,7 +61,7 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange, create
         setSelectedPeriodId(undefined)
         setSelectedDeclaration(null)
         onExternalOpenChange?.(false)
-        
+
         const params = new URLSearchParams(searchParams.toString())
         params.delete("selected")
         params.delete("action")
@@ -83,7 +83,7 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange, create
             const response = await api.get<{ results?: TaxPeriod[] } | TaxPeriod[]>("/tax/periods/?page_size=100")
             const fetchedPeriods = (response.data as { results?: TaxPeriod[] }).results || (response.data as TaxPeriod[])
             setPeriods(fetchedPeriods)
-            
+
             // The effect above will handle the modal opening based on selectedFromUrl
         } catch (error) {
             console.error("Error fetching tax periods:", error)
@@ -288,18 +288,18 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange, create
                 return (
                     <>
                         {showPaymentButton && (
-                            <DataCell.Action 
-                                icon={isFullyPaid ? HistoryIcon : DollarSign} 
-                                title={isFullyPaid ? "Ver Pagos" : "Pagar"} 
+                            <DataCell.Action
+                                icon={isFullyPaid ? HistoryIcon : DollarSign}
+                                title={isFullyPaid ? "Ver Pagos" : "Pagar"}
                                 onClick={(e) => { e.stopPropagation(); handleOpenPayment(period); }}
                                 className={isFullyPaid ? "text-success" : "text-success"}
                             />
                         )}
                         {canOpenChecklist && (
-                            <DataCell.Action 
-                                icon={ArrowRight} 
-                                title="Iniciar declaración/cierre F29" 
-                                onClick={(e) => { e.stopPropagation(); handleOpenWizard(period); }} 
+                            <DataCell.Action
+                                icon={ArrowRight}
+                                title="Iniciar declaración/cierre F29"
+                                onClick={(e) => { e.stopPropagation(); handleOpenWizard(period); }}
                             />
                         )}
                     </>
@@ -385,7 +385,7 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange, create
                 )}
                 renderCustomView={(table) => {
                     const rows = table.getRowModel().rows
-                    
+
                     if (rows.length === 0) {
                         return (
                             <div className="flex flex-col items-center justify-center py-12 bg-muted/30 rounded-md border-2 border-dashed">
@@ -430,7 +430,7 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange, create
                                                 </div>
                                             </div>
                                         </div>
-                                        
+
                                         <div className="flex items-center gap-2">
                                             {showPaymentButton && (
                                                 <Button

@@ -79,7 +79,7 @@ export default function AuditHubPage() {
         {
             accessorKey: "date",
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Fecha y Hora" />
+                <DataTableColumnHeader column={column} title="Fecha y Hora" className="justify-center" />
             ),
             cell: ({ row }) => {
                 const date = new Date(row.original.date);
@@ -98,7 +98,7 @@ export default function AuditHubPage() {
         {
             accessorKey: "user_name",
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Usuario" />
+                <DataTableColumnHeader column={column} title="Usuario" className="justify-center" />
             ),
             cell: ({ row }) => (
                 <div className="flex justify-center w-full">
@@ -109,7 +109,7 @@ export default function AuditHubPage() {
         {
             accessorKey: "entity_label",
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Entidad" />
+                <DataTableColumnHeader column={column} title="Entidad" className="justify-center" />
             ),
             cell: ({ row }) => (
                 <div className="flex justify-center w-full">
@@ -121,7 +121,7 @@ export default function AuditHubPage() {
             accessorKey: "action_type_label", // Virtual key for filtering
             id: "action_type_label",
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Acción" />
+                <DataTableColumnHeader column={column} title="Acción" className="justify-center" />
             ),
             cell: ({ row }) => {
                 const hType = row.original.history_type;
@@ -154,7 +154,7 @@ export default function AuditHubPage() {
         {
             accessorKey: "description",
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Descripción" />
+                <DataTableColumnHeader column={column} title="Descripción" className="justify-center" />
             ),
             cell: ({ row }) => (
                 <DataCell.Text className="text-xs text-muted-foreground truncate max-w-[500px]">

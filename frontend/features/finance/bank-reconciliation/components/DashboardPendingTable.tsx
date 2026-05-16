@@ -1,7 +1,8 @@
-import { formatCurrency } from "@/lib/money"
+
 "use client"
 
 import React, { useMemo } from "react"
+import { formatCurrency } from "@/lib/money"
 import { ColumnDef } from "@tanstack/react-table"
 import { ArrowRight } from "lucide-react"
 import Link from "next/link"

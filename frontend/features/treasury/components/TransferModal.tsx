@@ -1,5 +1,5 @@
-import { formatCurrency } from "@/lib/money"
 "use client"
+import { formatCurrency } from "@/lib/money"
 
 import React, { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"

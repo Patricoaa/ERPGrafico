@@ -1,5 +1,5 @@
-import { formatCurrency } from "@/lib/money"
 "use client"
+import { formatCurrency } from "@/lib/money"
 
 import { showApiError } from "@/lib/errors"
 import React, { useState, useEffect, useMemo } from "react"
@@ -32,13 +32,13 @@ export function MobilizeEarningsWizard({ open, onOpenChange, onSuccess, initialP
                 try {
                     const data = await partnersApi.getPartners()
                     let availablePartners = data.filter((p: Partner) => parseFloat(p.partner_earnings_balance || "0") > 0)
-                    
+
                     if (initialPartnerId) {
                         availablePartners = availablePartners.filter((p: Partner) => p.id === initialPartnerId)
                     }
 
                     setPartners(availablePartners)
-                    
+
                     const initial: Record<number, { dividend: number, reinvest: number }> = {}
                     availablePartners.forEach((p: Partner) => {
                         initial[p.id] = { dividend: 0, reinvest: 0 }
@@ -69,7 +69,7 @@ export function MobilizeEarningsWizard({ open, onOpenChange, onSuccess, initialP
                 description,
                 mobilizations: payload
             })
-            
+
             toast.success("Utilidades movilizadas correctamente.")
             onSuccess()
             onOpenChange(false)
@@ -84,7 +84,7 @@ export function MobilizeEarningsWizard({ open, onOpenChange, onSuccess, initialP
         const totalDividend = Object.values(mobilizations).reduce((s, v) => s + v.dividend, 0)
         const totalReinvest = Object.values(mobilizations).reduce((s, v) => s + v.reinvest, 0)
         const totalMobilized = totalDividend + totalReinvest
-        
+
         let hasErrors = false
 
         return [
@@ -134,7 +134,7 @@ export function MobilizeEarningsWizard({ open, onOpenChange, onSuccess, initialP
                                                         {formatCurrency(available)}
                                                     </td>
                                                     <td className="py-3 px-3">
-                                                        <Input 
+                                                        <Input
                                                             type="number"
                                                             className={`h-8 font-mono text-right ${isError ? 'border-destructive text-destructive' : ''}`}
                                                             value={divValue || ""}
@@ -149,7 +149,7 @@ export function MobilizeEarningsWizard({ open, onOpenChange, onSuccess, initialP
                                                         />
                                                     </td>
                                                     <td className="py-3 px-3">
-                                                        <Input 
+                                                        <Input
                                                             type="number"
                                                             className={`h-8 font-mono text-right ${isError ? 'border-destructive text-destructive' : ''}`}
                                                             value={reinvValue || ""}
@@ -189,8 +189,8 @@ export function MobilizeEarningsWizard({ open, onOpenChange, onSuccess, initialP
                             <div className="space-y-1">
                                 <h4 className="font-heading font-semibold text-sm">Resumen de Movilización</h4>
                                 <p className="text-xs text-muted-foreground leading-relaxed">
-                                    Se procederá a movilizar utilidades retenidas pasadas. 
-                                    Este proceso generará automáticamente los asientos contables correspondientes 
+                                    Se procederá a movilizar utilidades retenidas pasadas.
+                                    Este proceso generará automáticamente los asientos contables correspondientes
                                     disminuyendo la cuenta de utilidades retenidas y abonando a las cuentas de dividendos por pagar o capital suscrito.
                                 </p>
                             </div>

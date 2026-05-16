@@ -1,7 +1,8 @@
-import { formatCurrency } from "@/lib/money"
+
 "use client"
 
 import React from "react"
+import { formatCurrency } from "@/lib/money"
 import { ExternalLink, User, MonitorSmartphone, Package, Calendar, CalendarClock, Receipt, Hash, Wallet, FileText, CalendarDays, BookOpen, ArrowRightFromLine, ArrowRightToLine, Activity, Gavel } from "lucide-react"
 import type { TransactionData } from "@/types/transactions"
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"

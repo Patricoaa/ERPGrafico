@@ -1,5 +1,5 @@
-import { formatPlainDate } from "@/lib/utils";
 "use client"
+import { formatPlainDate } from "@/lib/utils";
 
 // Cart Component
 // Shopping cart display with totals and actions

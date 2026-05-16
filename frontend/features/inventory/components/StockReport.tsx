@@ -1,5 +1,5 @@
-import { formatCurrency } from "@/lib/money"
 "use client"
+import { formatCurrency } from "@/lib/money"
 
 import { showApiError } from "@/lib/errors"
 
@@ -50,9 +50,9 @@ export function StockReport() {
             accessorKey: "category_name",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Categoría" className="justify-center" />,
             cell: ({ row }) => (
-                <DataCell.Secondary className="font-bold opacity-70">
+                <DataCell.Text className="font-normal">
                     {row.getValue("category_name")}
-                </DataCell.Secondary>
+                </DataCell.Text>
             ),
         },
         {

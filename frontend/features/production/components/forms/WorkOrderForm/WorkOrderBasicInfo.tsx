@@ -1,7 +1,7 @@
 import { useFormContext } from "react-hook-form"
-import { format } from "date-fns"
 import Link from "next/link"
 import { FileText, User, ExternalLink, X } from "lucide-react"
+import { formatCurrency } from "@/lib/money"
 
 import { FormField } from "@/components/ui/form"
 import { Button } from "@/components/ui/button"
@@ -12,7 +12,7 @@ import { AdvancedSaleOrderSelector } from "@/components/selectors/AdvancedSaleOr
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { Skeleton, LabeledInput, LabeledContainer, LabeledSelect, PeriodValidationDateInput } from "@/components/shared"
 
-import { cn } from "@/lib/utils"
+import { cn, formatPlainDate } from "@/lib/utils"
 import { formatEntityDisplay } from "@/lib/entity-registry"
 import type { WorkOrderFormValues, WorkOrderInitialData } from "@/types/forms"
 import type { SaleOrder, SaleOrderLine } from "@/features/sales/types"
@@ -155,7 +155,7 @@ export function WorkOrderBasicInfo({
                                 <div>
                                     <p className="text-xs text-muted-foreground uppercase font-semibold">F. Entrega Planificada</p>
                                     <p className="font-medium text-primary">
-                                        {format(new Date(String(initialData.sale_order_delivery_date) + 'T12:00:00'), "dd/MM/yyyy")}
+                                        {formatPlainDate(String(initialData.sale_order_delivery_date))}
                                     </p>
                                 </div>
                             )}
@@ -201,11 +201,11 @@ export function WorkOrderBasicInfo({
                                                         </div>
                                                         <div>
                                                             <p className="text-[10px] text-muted-foreground uppercase font-bold">Precio Unit.</p>
-                                                            <p className="text-sm font-medium">${parseFloat(String(l.unit_price)).toLocaleString()}</p>
+                                                            <p className="text-sm font-medium">{formatCurrency(parseFloat(String(l.unit_price)))}</p>
                                                         </div>
                                                         <div>
                                                             <p className="text-[10px] text-muted-foreground uppercase font-bold">Subtotal</p>
-                                                            <p className="text-sm font-bold text-primary">${parseFloat(String((l as any).subtotal || 0)).toLocaleString()}</p>
+                                                            <p className="text-sm font-bold text-primary">{formatCurrency(parseFloat(String((l as any).subtotal || 0)))}</p>
                                                         </div>
                                                     </>
                                                 )

@@ -1,7 +1,8 @@
-import { formatCurrency } from "@/lib/money"
+
 "use client"
 
 import React, { Fragment } from "react"
+import { formatCurrency } from "@/lib/money"
 import { Plus } from "lucide-react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { translatePaymentMethod } from "@/lib/utils"
@@ -203,7 +204,7 @@ export function TransactionContent({
                                 <div className="font-black text-xl tracking-tighter uppercase">{data.status_display || 'Pendiente'}</div>
                             </div>
                         </div>
-                        
+
                         <div className="pt-6 border-t border-border/40 grid grid-cols-1 md:grid-cols-3 gap-8">
                             <div className="space-y-1.5">
                                 <span className="text-[10px] font-black uppercase text-muted-foreground tracking-widest opacity-60">Monto Bruto Total</span>
@@ -223,19 +224,19 @@ export function TransactionContent({
                             </div>
                         </div>
                     </div>
-                    
+
                     <div className="bg-primary/5 p-8 rounded-lg border border-dashed border-primary/20 flex items-center justify-between">
-                         <div className="flex items-center gap-4">
-                             <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                                 <Plus className="h-6 w-6" />
-                             </div>
-                             <div className="flex flex-col">
-                                 <span className="text-sm font-black uppercase tracking-tight text-primary leading-none">Resumen del Lote</span>
-                                 <span className="text-xs text-muted-foreground font-medium mt-1">
-                                     {data.payment_count} transacciones procesadas entre el {data.sales_date} y el {data.sales_date_end || data.sales_date}
-                                 </span>
-                             </div>
-                         </div>
+                        <div className="flex items-center gap-4">
+                            <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                                <Plus className="h-6 w-6" />
+                            </div>
+                            <div className="flex flex-col">
+                                <span className="text-sm font-black uppercase tracking-tight text-primary leading-none">Resumen del Lote</span>
+                                <span className="text-xs text-muted-foreground font-medium mt-1">
+                                    {data.payment_count} transacciones procesadas entre el {data.sales_date} y el {data.sales_date_end || data.sales_date}
+                                </span>
+                            </div>
+                        </div>
                     </div>
 
                     {data.notes && (

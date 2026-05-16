@@ -1,33 +1,23 @@
-import { formatCurrency } from "@/lib/money"
 "use client"
+import { formatCurrency } from "@/lib/money"
 
 import React, { useEffect, useState, useMemo, useRef } from "react"
-import { DataTable } from "@/components/ui/data-table"
+import { DataTable } from "@/components/shared/DataTable"
 import { ColumnDef } from "@tanstack/react-table"
-import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+import { DataCell, createActionsColumn, Chip, DataTableColumnHeader } from "@/components/shared"
+import { StatusBadge } from "@/components/shared/StatusBadge"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
 import { ProfitDistribution, ProfitDistributionLine } from "@/features/contacts/types/partner"
 import { formatPlainDate, cn } from "@/lib/utils"
 import {
     Calendar,
-    ChevronRight,
-    Plus,
+
     Wallet,
     Eye,
     Wand2,
     Play
 } from "lucide-react"
 import { toast } from "sonner"
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import { CreateDistributionFlow } from "./CreateDistributionFlow"
 import { MassPaymentModal } from "./MassPaymentModal"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
@@ -92,8 +82,8 @@ export function ProfitDistributionsTab({ initialFlowOpen = false, onModalClose, 
     }, [initialFlowOpen])
 
     const closeFlow = () => {
-        setState(prev => ({ 
-            ...prev, 
+        setState(prev => ({
+            ...prev,
             isFlowOpen: false
         }))
         // Notify parent to clear the URL modal param
@@ -159,9 +149,10 @@ export function ProfitDistributionsTab({ initialFlowOpen = false, onModalClose, 
                 const status = row.getValue("status") as string
                 return (
                     <div className="flex justify-center">
-                        <Badge className={`text-[9px] font-black uppercase border-2 ${getStatusColor(status)}`} variant="outline">
-                            {getStatusText(status)}
-                        </Badge>
+                        <StatusBadge
+                            status={status === 'PAID' ? 'SUCCESS' : status === 'CANCELLED' ? 'DESTRUCTIVE' : 'NEUTRAL'}
+                            label={getStatusText(status)}
+                        />
                     </div>
                 )
             }
@@ -183,19 +174,19 @@ export function ProfitDistributionsTab({ initialFlowOpen = false, onModalClose, 
                 return (
                     <div className="flex flex-wrap justify-center gap-1.5">
                         {totals.dividends > 0 && (
-                            <Badge variant="secondary" className="bg-success/5 text-success border-success/20 text-[9px] font-bold">
+                            <Chip intent="success" size="xs">
                                 DIV: {formatCurrency(totals.dividends)}
-                            </Badge>
+                            </Chip>
                         )}
                         {totals.reinvest > 0 && (
-                            <Badge variant="secondary" className="bg-info/5 text-info border-info/20 text-[9px] font-bold">
+                            <Chip intent="info" size="xs">
                                 REINV: {formatCurrency(totals.reinvest)}
-                            </Badge>
+                            </Chip>
                         )}
                         {totals.retained > 0 && (
-                            <Badge variant="secondary" className="bg-warning/5 text-warning border-warning/20 text-[9px] font-bold">
+                            <Chip intent="warning" size="xs">
                                 RET: {formatCurrency(totals.retained)}
-                            </Badge>
+                            </Chip>
                         )}
                     </div>
                 )
@@ -257,7 +248,7 @@ export function ProfitDistributionsTab({ initialFlowOpen = false, onModalClose, 
                         {dist.status === 'APPROVED' && (
                             <DataCell.Action icon={Play} title="Ejecutar Contablemente" className="text-primary" onClick={() => handleExecute(dist)} />
                         )}
-                        
+
                         {dist.status === 'EXECUTED' && (dist.lines?.some((l) => l.destination === 'DIVIDEND')) && (
                             <DataCell.Action icon={Wallet} title="Pagar Dividendos" className="text-primary" onClick={() => {
                                 setState(prev => ({ ...prev, selectedResolution: dist, isMassPaymentOpen: true }))

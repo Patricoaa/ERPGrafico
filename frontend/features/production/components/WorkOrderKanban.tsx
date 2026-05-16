@@ -45,10 +45,14 @@ function KanbanCard({ order, onManage }: { order: WorkOrder; onManage: (id: numb
                         </Chip>
                     )}
                     {order.outsourcing_status === 'partial' && (
-                        <StatusBadge status="PARTIAL" label="Parcial" size="sm" className="bg-info/10 text-info border-info/20" />
+                        <Chip intent="info" size="xs">
+                            Parcial
+                        </Chip>
                     )}
                     {order.outsourcing_status === 'full' && (
-                        <StatusBadge status="CONFIRMED" label="Tercerizado" size="sm" className="bg-primary/5 text-primary border-primary/10" />
+                        <Chip intent="primary" size="xs">
+                            Tercerizado
+                        </Chip>
                     )}
                 </div>
                 {order.status === 'FINISHED' && (

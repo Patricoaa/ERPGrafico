@@ -141,9 +141,9 @@ export function PurchaseInvoicesClientView() {
                 return (
                     <div className="flex items-center gap-2 justify-center w-full" title={doc.dte_type_display || doc.dte_type}>
                         <FileBadge className="h-3.5 w-3.5 text-muted-foreground/50" />
-                        <DataCell.Secondary className="font-bold uppercase text-[10px]">
+                        <DataCell.Text className="font-normal uppercase text-[11px]">
                             {label}
-                        </DataCell.Secondary>
+                        </DataCell.Text>
                     </div>
                 )
             },

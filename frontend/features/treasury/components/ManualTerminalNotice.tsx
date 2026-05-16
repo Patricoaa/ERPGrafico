@@ -1,5 +1,5 @@
-import { formatCurrency } from "@/lib/money"
 "use client"
+import { formatCurrency } from "@/lib/money"
 
 import { AlertTriangle, CreditCard, Banknote, FileWarning, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"

@@ -116,9 +116,9 @@ export function MovementList({ externalOpen, onExternalOpenChange, createAction 
             accessorKey: "warehouse_name",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Almacén" className="justify-center" />,
             cell: ({ row }) => (
-                <DataCell.Secondary className="font-bold opacity-80 text-center">
+                <DataCell.Text className="font-normal">
                     {row.getValue("warehouse_name")}
-                </DataCell.Secondary>
+                </DataCell.Text>
             ),
         },
         {

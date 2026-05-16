@@ -1,7 +1,8 @@
-import { formatCurrency } from "@/lib/money"
+
 "use client"
 
 import { BaseModal } from "@/components/shared/BaseModal"
+import { formatCurrency } from "@/lib/money"
 import {
     Table,
     TableBody,

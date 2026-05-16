@@ -1,7 +1,7 @@
-import { formatCurrency } from "@/lib/money"
 "use client"
 
 import React from "react"
+import { formatCurrency } from "@/lib/money"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Banknote, Eye, SplitSquareHorizontal } from "lucide-react"

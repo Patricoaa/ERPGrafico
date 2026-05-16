@@ -224,9 +224,9 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false, cr
                 const value = row.getValue("category_name") as string;
                 return (
                     <div className="flex justify-center w-full">
-                        <DataCell.Secondary className="text-xs text-center">
+                        <DataCell.Text className="font-normal">
                             {value || "Sin Categoría"}
-                        </DataCell.Secondary>
+                        </DataCell.Text>
                     </div>
                 );
             },
@@ -260,7 +260,7 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false, cr
             ),
             cell: ({ row }) => (
                 <div className="text-center">
-                    <DataCell.Secondary className="text-foreground">{getPaymentScheduleText(row.original)}</DataCell.Secondary>
+                    <DataCell.Text className="font-normal">{getPaymentScheduleText(row.original)}</DataCell.Text>
                 </div>
             ),
         },

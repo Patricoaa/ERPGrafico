@@ -1,5 +1,5 @@
-import { formatCurrency } from "@/lib/money"
 "use client"
+import { formatCurrency } from "@/lib/money"
 
 import { showApiError } from "@/lib/errors"
 import React, { useState, useEffect, useMemo } from "react"
@@ -142,7 +142,7 @@ export function MassPaymentModal({ open, onOpenChange, resolution, onSuccess }: 
                                                 <td className="px-3 py-2 font-black">{line.partner_name}</td>
                                                 <td className="px-3 py-2 text-right font-mono font-bold text-primary">{formatCurrency(line.pendingAmount)}</td>
                                                 <td className="px-3 py-2">
-                                                    <Input 
+                                                    <Input
                                                         type="number"
                                                         className={`h-8 text-[11px] font-mono text-right ${isOver ? 'border-destructive text-destructive focus-visible:ring-destructive' : ''}`}
                                                         value={payments[line.partner] !== undefined ? payments[line.partner] : ''}

@@ -1,7 +1,8 @@
-import { formatCurrency } from "@/lib/money"
+
 "use client"
 
 import { useEffect } from "react"
+import { formatCurrency } from "@/lib/money"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -64,9 +65,9 @@ export function SplitAllocationDialog({ open, onOpenChange, payment, treasuryAcc
     useEffect(() => {
         if (open && payment && fields.length === 0) {
             form.reset({
-                allocations: [{ 
-                    amount: Math.abs(safeParseFloat(payment.amount)), 
-                    notes: '' 
+                allocations: [{
+                    amount: Math.abs(safeParseFloat(payment.amount)),
+                    notes: ''
                 }]
             })
         }
@@ -82,9 +83,9 @@ export function SplitAllocationDialog({ open, onOpenChange, payment, treasuryAcc
     const handleSave = async (validateSum: boolean) => {
         const values = form.getValues()
         try {
-            await allocateMutation.mutateAsync({ 
-                allocations: values.allocations, 
-                validateSum 
+            await allocateMutation.mutateAsync({
+                allocations: values.allocations,
+                validateSum
             })
             onSuccess?.()
             onOpenChange(false)
@@ -199,10 +200,10 @@ export function SplitAllocationDialog({ open, onOpenChange, payment, treasuryAcc
                                             />
                                         </TableCell>
                                         <TableCell className="text-right">
-                                            <Button 
-                                                variant="ghost" 
-                                                size="icon" 
-                                                className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10" 
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
                                                 onClick={() => remove(idx)}
                                                 type="button"
                                             >
@@ -215,10 +216,10 @@ export function SplitAllocationDialog({ open, onOpenChange, payment, treasuryAcc
                         </Table>
                     </div>
 
-                    <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={() => append({ amount: remaining > 0 ? remaining : 0, notes: '' })} 
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => append({ amount: remaining > 0 ? remaining : 0, notes: '' })}
                         className="w-full border-dashed"
                         type="button"
                     >
@@ -227,15 +228,15 @@ export function SplitAllocationDialog({ open, onOpenChange, payment, treasuryAcc
 
                     <div className="flex justify-end gap-3 pt-4 border-t">
                         <Button variant="ghost" onClick={() => onOpenChange(false)} type="button">Cancelar</Button>
-                        <Button 
-                            variant="secondary" 
+                        <Button
+                            variant="secondary"
                             onClick={() => handleSave(false)}
                             disabled={allocateMutation.isPending || fields.length === 0}
                             type="button"
                         >
                             Guardar Borrador
                         </Button>
-                        <Button 
+                        <Button
                             onClick={() => handleSave(true)}
                             disabled={allocateMutation.isPending || !isZeroTolerance(remaining) || fields.length === 0}
                             className="bg-primary hover:bg-primary/90"

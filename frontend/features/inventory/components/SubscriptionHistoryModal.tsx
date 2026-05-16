@@ -1,5 +1,6 @@
-import { formatCurrency } from "@/lib/money";
 "use client"
+import { formatCurrency } from "@/lib/money";
+import { formatPlainDate } from "@/lib/utils";
 
 import { FormSkeleton } from "@/components/shared"
 
@@ -149,34 +150,34 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                         <div className="flex-1 flex items-center justify-center py-20">
                             <p className="text-muted-foreground">Error al cargar datos.</p>
                         </div>
-                        ) : (
-                            <FormTabs
-                                value={activeTab}
-                                onValueChange={setActiveTab}
-                                orientation="vertical"
-                                header={
-                                    <div className="p-6 pb-2 flex items-center justify-between">
-                                        <div className="flex items-center gap-3">
-                                            <History className="h-5 w-5 text-muted-foreground" />
-                                            <div>
-                                                <h2 className="text-xl font-bold">Historial de Suscripción</h2>
-                                                {data && (
-                                                    <p className="text-sm text-muted-foreground font-medium">
-                                                        {data.product_name} | {data.supplier_name}
-                                                    </p>
-                                                )}
-                                            </div>
+                    ) : (
+                        <FormTabs
+                            value={activeTab}
+                            onValueChange={setActiveTab}
+                            orientation="vertical"
+                            header={
+                                <div className="p-6 pb-2 flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <History className="h-5 w-5 text-muted-foreground" />
+                                        <div>
+                                            <h2 className="text-xl font-bold">Historial de Suscripción</h2>
+                                            {data && (
+                                                <p className="text-sm text-muted-foreground font-medium">
+                                                    {data.product_name} | {data.supplier_name}
+                                                </p>
+                                            )}
                                         </div>
                                     </div>
-                                }
-                                items={[
-                                    { value: "historial", label: "Historial de Costos", icon: History },
-                                    { value: "orders", label: "Órdenes de Compra (OCS)", icon: FileText },
-                                    { value: "notes", label: "Notas de Crédito / Débito", icon: Receipt }
-                                ]}
-                                className="flex-1 overflow-visible"
-                            >
-                                <div className="flex-1 overflow-auto p-6 scrollbar-thin">
+                                </div>
+                            }
+                            items={[
+                                { value: "historial", label: "Historial de Costos", icon: History },
+                                { value: "orders", label: "Órdenes de Compra (OCS)", icon: FileText },
+                                { value: "notes", label: "Notas de Crédito / Débito", icon: Receipt }
+                            ]}
+                            className="flex-1 overflow-visible"
+                        >
+                            <div className="flex-1 overflow-auto p-6 scrollbar-thin">
 
                                 {/* HISTORIAL TAB */}
                                 <FormTabsContent value="historial" className="mt-0 space-y-6">
@@ -223,7 +224,7 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                                                     tickMargin={10}
                                                     stroke="var(--muted-foreground)"
                                                 />
-                                                <YAxis fontSize={10} stroke="var(--muted-foreground)" tickFormatter={(val) => `$${val.toLocaleString()}`} />
+                                                <YAxis fontSize={10} stroke="var(--muted-foreground)" tickFormatter={(val) => formatCurrency(val)} />
                                                 <RechartsTooltip
                                                     labelFormatter={(val) => format(new Date(val), 'PPP', { locale: es })}
                                                     formatter={(val: number | undefined) => [val !== undefined ? formatCurrency(val) : '---', 'Costo Unitario']}
@@ -273,7 +274,7 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                                                             <span className="font-black text-sm text-primary">{order.display_id}</span>
                                                         </TableCell>
                                                         <TableCell className="text-xs font-medium">
-                                                            {format(new Date(order.date), "dd/MM/yyyy")}
+                                                            {formatPlainDate(order.date)}
                                                         </TableCell>
                                                         <TableCell className="text-center">
                                                             <div className="flex justify-center">
@@ -349,7 +350,7 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                                                             </span>
                                                         </TableCell>
                                                         <TableCell className="text-xs font-medium">
-                                                            {format(new Date(note.date), "dd/MM/yyyy")}
+                                                            {formatPlainDate(note.date)}
                                                         </TableCell>
                                                         <TableCell className="text-center">
                                                             <div className="flex justify-center">

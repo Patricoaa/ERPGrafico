@@ -1,5 +1,5 @@
-import { formatPlainDate } from "@/lib/utils";
 "use client"
+import { formatPlainDate } from "@/lib/utils";
 
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
@@ -83,9 +83,9 @@ export function ProfileView({ activeTab, initialProfile }: ProfileViewProps) {
         }
     }, [])
 
-    useEffect(() => { 
+    useEffect(() => {
         if (!initialProfile) {
-            fetchProfile() 
+            fetchProfile()
         }
     }, [fetchProfile, initialProfile])
 
@@ -138,7 +138,7 @@ export function ProfileView({ activeTab, initialProfile }: ProfileViewProps) {
                         downloadingAll={downloadingAll}
                     />
                 </TabsContent>
-                
+
                 {isPartner && contactDetail && (
                     <TabsContent value="partner" className="mt-0 outline-none space-y-6">
                         <PartnerProfileTab contactId={contactDetail.id} />

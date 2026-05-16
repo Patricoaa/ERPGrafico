@@ -1,5 +1,5 @@
-import { formatCurrency } from "@/lib/money"
 "use client"
+import { formatCurrency } from "@/lib/money"
 
 import { showApiError } from "@/lib/errors"
 import { useState, useEffect } from "react"
@@ -90,7 +90,7 @@ export function SessionCloseModal({
                 api.get('/accounting/settings/current/')
                     .then(res => requestAnimationFrame(() => setAccountingSettings(res.data)))
                     .catch(err => console.error("Failed to load accounting settings", err))
-                
+
                 // Fetch full summary to display advanced data (like category sales) in the modal preview
                 api.get(`/treasury/pos-sessions/${session.id}/summary/`)
                     .then(res => requestAnimationFrame(() => setFullReportData(res.data)))

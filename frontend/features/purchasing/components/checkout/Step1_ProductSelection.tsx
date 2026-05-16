@@ -19,6 +19,7 @@ import { toast } from "sonner"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { CheckoutLine } from "../../types"
 import { ProductMinimal, UoM } from "@/types/entities"
+import { formatCurrency } from "@/lib/money"
 
 interface Step1_ProductSelectionProps {
     orderLines: CheckoutLine[]
@@ -192,19 +193,19 @@ export function Step1_ProductSelection({
                                                             <div className="flex justify-between">
                                                                 <span className="text-muted-foreground">Neto (sin IVA)</span>
                                                                 <span className="font-bold text-success">
-                                                                    {netResult.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
+                                                                    {formatCurrency(netResult)}
                                                                 </span>
                                                             </div>
                                                             <div className="flex justify-between">
                                                                 <span className="text-muted-foreground">IVA (19%)</span>
                                                                 <span className="font-medium">
-                                                                    {ivaAmount?.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
+                                                                    {formatCurrency(ivaAmount ?? 0)}
                                                                 </span>
                                                             </div>
                                                             <div className="border-t pt-1.5 flex justify-between">
                                                                 <span className="text-muted-foreground">Bruto</span>
                                                                 <span className="font-medium">
-                                                                    {Number(grossInput).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
+                                                                    {formatCurrency(Number(grossInput))}
                                                                 </span>
                                                             </div>
                                                         </div>
@@ -282,7 +283,7 @@ export function Step1_ProductSelection({
                                     />
                                 </TableCell>
                                 <TableCell className="text-right font-medium">
-                                    {((Number(line.quantity || line.qty) || 0) * (Number(line.unit_cost) || 0)).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
+                                    {formatCurrency((Number(line.quantity || line.qty) || 0) * (Number(line.unit_cost) || 0))}
                                 </TableCell>
                                 <TableCell>
                                     <Button

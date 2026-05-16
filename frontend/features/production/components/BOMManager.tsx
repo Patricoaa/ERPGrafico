@@ -129,7 +129,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
                         ) : (
                             <div className="flex flex-col items-center gap-0.5">
                                 <DataCell.Code>{row.original.product_internal_code || 'VAR'}</DataCell.Code>
-                                <DataCell.Secondary className="text-[10px] truncate max-w-[120px]">{row.original.product_name}</DataCell.Secondary>
+                                <DataCell.Text className="text-[10px] truncate max-w-[120px]">{row.original.product_name}</DataCell.Text>
                             </div>
                         )}
                     </div>
@@ -171,9 +171,9 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
             header: ({ column }) => <DataTableColumnHeader column={column} title="Comp." className="justify-center" />,
             cell: ({ row }) => (
                 <div className="flex justify-center">
-                    <DataCell.Secondary className="font-black opacity-60">
+                    <DataCell.Text className="font-black opacity-60">
                         {`${row.original.lines?.length || 0} ITEMS`}
-                    </DataCell.Secondary>
+                    </DataCell.Text>
                 </div>
             )
         },

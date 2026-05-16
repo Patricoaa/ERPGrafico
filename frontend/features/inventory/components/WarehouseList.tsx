@@ -123,9 +123,9 @@ export function WarehouseList({ externalOpen, onExternalOpenChange, createAction
             accessorKey: "address",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Dirección" className="justify-center" />,
             cell: ({ row }) => (
-                <DataCell.Secondary className="text-center w-full truncate max-w-[200px] opacity-70">
+                <DataCell.Text className="font-normal truncate max-w-[200px]">
                     {row.original.address || "-"}
-                </DataCell.Secondary>
+                </DataCell.Text>
             ),
         },
         createActionsColumn<Warehouse>({

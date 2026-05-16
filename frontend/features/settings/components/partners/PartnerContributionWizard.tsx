@@ -1,12 +1,12 @@
-import { formatCurrency } from "@/lib/money"
 "use client"
+import { formatCurrency } from "@/lib/money"
 
 import React, { useState, useEffect } from "react"
-import { 
-    Wallet, 
-    Package, 
-    Users, 
-    Warehouse as WarehouseIcon, 
+import {
+    Wallet,
+    Package,
+    Users,
+    Warehouse as WarehouseIcon,
     Info,
     ArrowDownCircle,
     Banknote
@@ -42,16 +42,16 @@ export function PartnerContributionWizard({
 }: PartnerContributionWizardProps) {
     const [loading, setLoading] = useState(false)
     const [isCompleting, setIsCompleting] = useState(false)
-    
+
     // Data lists
     const [partners, setPartners] = useState<Partner[]>([])
     const [warehouses, setWarehouses] = useState<any[]>([])
     const [treasuryAccounts, setTreasuryAccounts] = useState<TreasuryAccount[]>([])
-    
+
     // Form State
     const [partnerId, setPartnerId] = useState(initialPartnerId || "")
     const [method, setMethod] = useState<ContributionMethod>("CASH")
-    
+
     // Cash specific
     const [cashData, setCashData] = useState({
         amount: "",
@@ -59,7 +59,7 @@ export function PartnerContributionWizard({
         date: new Date().toISOString().split('T')[0],
         description: ""
     })
-    
+
     // Assets specific
     const [assetData, setAssetData] = useState({
         warehouseId: "",
@@ -70,7 +70,7 @@ export function PartnerContributionWizard({
         date: new Date().toISOString().split('T')[0],
         description: ""
     })
-    
+
     // Product details for assets
     const [productDetails, setProductDetails] = useState<Product | null>(null)
     const [productUoMs, setProductUoMs] = useState<any[]>([])
@@ -87,7 +87,7 @@ export function PartnerContributionWizard({
                 setPartners(pData)
                 setWarehouses(wRes.data.results || wRes.data)
                 setTreasuryAccounts(aRes.data)
-                
+
                 if (initialPartnerId) setPartnerId(initialPartnerId)
             }).catch(err => {
                 console.error(err)
@@ -124,7 +124,7 @@ export function PartnerContributionWizard({
             setProductUoMs([])
             return
         }
-        
+
         api.get(`/inventory/products/${assetData.productId}/`)
             .then(res => {
                 const data = res.data
@@ -149,7 +149,7 @@ export function PartnerContributionWizard({
     const selectedPartner = partners.find(p => p.id.toString() === partnerId)
     const selectedUoM = productUoMs.find(u => u.id.toString() === assetData.uomId)
     const baseUoM = typeof productDetails?.uom === 'object' ? productDetails.uom : productUoMs.find(u => u.id === productDetails?.uom)
-    
+
     const assetTotalValue = (Number(assetData.quantity) || 0) * (Number(assetData.unitCost) || 0)
 
     const handleComplete = async () => {
@@ -175,7 +175,7 @@ export function PartnerContributionWizard({
                     partner_contact_id: partnerId
                 })
             }
-            
+
             toast.success("Aporte registrado exitosamente")
             onSuccess()
             onOpenChange(false)
@@ -242,8 +242,8 @@ export function PartnerContributionWizard({
                         onClick={() => setMethod("CASH")}
                         className={cn(
                             "group flex flex-col items-center gap-4 p-6 rounded-xl border-2 transition-all text-center",
-                            method === "CASH" 
-                                ? "border-success bg-success/5 shadow-lg shadow-success/10" 
+                            method === "CASH"
+                                ? "border-success bg-success/5 shadow-lg shadow-success/10"
                                 : "border-muted hover:border-success/30 hover:bg-muted/50"
                         )}
                     >
@@ -258,13 +258,13 @@ export function PartnerContributionWizard({
                             <p className="text-[10px] text-muted-foreground leading-tight">Caja, banco o transferencia bancaria electrónica.</p>
                         </div>
                     </button>
-                    
+
                     <button
                         onClick={() => setMethod("ASSETS")}
                         className={cn(
                             "group flex flex-col items-center gap-4 p-6 rounded-xl border-2 transition-all text-center",
-                            method === "ASSETS" 
-                                ? "border-warning bg-warning/5 shadow-lg shadow-warning/10" 
+                            method === "ASSETS"
+                                ? "border-warning bg-warning/5 shadow-lg shadow-warning/10"
                                 : "border-muted hover:border-warning/30 hover:bg-muted/50"
                         )}
                     >
@@ -286,7 +286,7 @@ export function PartnerContributionWizard({
             id: "details",
             title: "Detalles del Aporte",
             description: "Complete la información de registro",
-            isValid: method === "CASH" 
+            isValid: method === "CASH"
                 ? (!!cashData.amount && !!cashData.treasuryAccountId)
                 : (!!assetData.productId && !!assetData.warehouseId && !!assetData.quantity && Number(assetData.unitCost) > 0),
             component: method === "CASH" ? (
@@ -341,7 +341,7 @@ export function PartnerContributionWizard({
                             placeholder="Almacén"
                         />
                         <LabeledContainer label="Producto / Recurso">
-                            <ProductSelector 
+                            <ProductSelector
                                 value={assetData.productId}
                                 onChange={(val) => setAssetData(prev => ({ ...prev, productId: val || "" }))}
                                 allowedTypes={["STORABLE", "MANUFACTURABLE"]}
@@ -349,7 +349,7 @@ export function PartnerContributionWizard({
                             />
                         </LabeledContainer>
                     </div>
-                    
+
                     <div className="grid grid-cols-3 gap-4">
                         <LabeledInput
                             label="Cantidad"

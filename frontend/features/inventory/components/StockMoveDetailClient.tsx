@@ -5,8 +5,7 @@ import { useQuery } from "@tanstack/react-query"
 import { notFound } from "next/navigation"
 import api from "@/lib/api"
 import { EntityDetailPage, FormSkeleton, LabeledContainer } from "@/components/shared"
-import { format } from "date-fns"
-import { es } from "date-fns/locale"
+import { formatPlainDate } from "@/lib/utils"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { Chip } from "@/components/shared"
 import { formatEntityDisplay } from "@/lib/entity-registry"
@@ -68,7 +67,7 @@ export function StockMoveDetailClient({ moveId }: StockMoveDetailClientProps) {
                                 <div>
                                     <span className="text-xs text-muted-foreground block">Fecha</span>
                                     <span className="text-sm font-medium">
-                                        {move.date ? format(new Date(move.date), "dd/MM/yyyy", { locale: es }) : '-'}
+                                        {formatPlainDate(move.date)}
                                     </span>
                                 </div>
                                 <div>

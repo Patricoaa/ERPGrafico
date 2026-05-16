@@ -35,6 +35,7 @@ import { ColumnDef } from "@tanstack/react-table"
 import { Card, CardContent } from "@/components/ui/card"
 import { getHubStatuses } from '@/features/orders/utils/status'
 import { TableSkeleton, LabeledInput, FormTabs, FormTabsContent, type FormTabItem, FormFooter, FormSection, FormSplitLayout } from "@/components/shared"
+import { formatCurrency } from "@/lib/money"
 
 const contactSchema = z.object({
     name: z.string().min(2, "El nombre es requerido"),
@@ -688,7 +689,7 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
                                         {type === 'sale' ? 'Por Cobrar' : 'Por Pagar'}
                                     </p>
                                     <p className="text-lg font-bold text-destructive">
-                                        ${metrics.totalPendingMoney.toLocaleString()}
+                                        {formatCurrency(metrics.totalPendingMoney)}
                                     </p>
                                     <p className="text-[9px] text-destructive/60 font-medium">
                                         {metrics.pendingPaymentCount} documentos

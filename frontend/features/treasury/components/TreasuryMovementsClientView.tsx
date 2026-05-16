@@ -226,7 +226,7 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                             </DataCell.Link>
                         );
                     }
-                    return <DataCell.Secondary className="text-[11px] font-bold opacity-70"> {/* intentional: badge density */} {data.label}</DataCell.Secondary>;
+                    return <DataCell.Text className="text-[11px] font-bold opacity-70">{data.label}</DataCell.Text>;
                 };
 
                 return (
@@ -243,9 +243,9 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
             header: ({ column }) => <DataTableColumnHeader column={column} title="Método" className="justify-center" />,
             cell: ({ row }) => (
                 <div className="flex justify-center w-full">
-                    <DataCell.Secondary className="uppercase font-bold tracking-tighter">
+                    <DataCell.Text className="uppercase font-bold tracking-tighter">
                         {row.original.payment_method_display}
-                    </DataCell.Secondary>
+                    </DataCell.Text>
                 </div>
             )
         },

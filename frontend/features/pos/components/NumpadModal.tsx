@@ -1,10 +1,10 @@
-import { formatCurrency } from "@/lib/money"
 "use client"
+
+import { formatCurrency } from "@/lib/money"
 
 import React from "react"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { Numpad } from '@/components/shared'
-import { Button } from "@/components/ui/button"
 
 
 interface NumpadModalProps {

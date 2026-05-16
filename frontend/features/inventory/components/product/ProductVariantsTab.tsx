@@ -1,5 +1,6 @@
 "use client"
 
+import { formatCurrency } from "@/lib/money"
 import { showApiError } from "@/lib/errors"
 import React, { useEffect, useState, useMemo } from "react"
 import { UseFormReturn } from "react-hook-form"
@@ -12,13 +13,10 @@ import api from "@/lib/api"
 import { toast } from "sonner"
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table"
 import { cn } from "@/lib/utils"
-import { SheetHeader, SheetTitle } from "@/components/ui/sheet"
-import { SheetCloseButton } from "@/components/shared/SheetCloseButton"
-import { BaseModal } from "@/components/shared/BaseModal"
 import { getErrorMessage } from "@/lib/errors"
 import { Product, ProductAttributeValue } from "@/types/entities"
 import { ProductInitialData } from "@/types/forms"
-import { FormTabsContent, FormSection, Chip } from "@/components/shared"
+import { FormSection, Chip } from "@/components/shared"
 
 import { VariantQuickEditForm } from "./VariantQuickEditForm"
 import { BulkVariantEditForm } from "./BulkVariantEditForm"
@@ -245,19 +243,19 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                         )}
                     </div>
                 </div>
- 
+
                 <div className="flex items-center gap-2">
-                    <Button 
-                        variant="ghost" 
-                        size="sm" 
+                    <Button
+                        variant="ghost"
+                        size="sm"
                         onClick={fetchVariants}
                         className="h-9 px-4 text-[10px] font-black uppercase tracking-tighter hover:bg-primary/5 text-muted-foreground"
                     >
                         <RefreshCw className="h-3.5 w-3.5 mr-2 opacity-60" /> Sincronizar
                     </Button>
-                    
-                    <Button 
-                        size="sm" 
+
+                    <Button
+                        size="sm"
                         className="h-9 px-5 text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary/20 transition-all hover:scale-[1.02]"
                         disabled={availableAttributes.length === 0}
                         onClick={() => setIsSheetOpen(true)}
@@ -265,9 +263,9 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                         <Wand2 className="h-3.5 w-3.5 mr-2" />
                         {isPendingGeneration ? "Editar Gen." : "Generador"}
                     </Button>
- 
-                    <BaseModal 
-                        open={isSheetOpen} 
+
+                    <BaseModal
+                        open={isSheetOpen}
                         onOpenChange={setIsSheetOpen}
                         size="md"
                         title={
@@ -289,12 +287,12 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                                                 {attr.values.map(val => {
                                                     const isSelected = selectedValues[attr.id]?.includes(val.id) || false;
                                                     return (
-                                                        <div 
-                                                            key={val.id} 
+                                                        <div
+                                                            key={val.id}
                                                             className={cn(
                                                                 "flex items-center space-x-3 p-3.5 rounded-xl border transition-all cursor-pointer group",
-                                                                isSelected 
-                                                                    ? "bg-primary/5 border-primary/40 shadow-sm" 
+                                                                isSelected
+                                                                    ? "bg-primary/5 border-primary/40 shadow-sm"
                                                                     : "bg-background hover:border-primary/30 grayscale hover:grayscale-0 opacity-60 hover:opacity-100"
                                                             )}
                                                             onClick={() => toggleValue(attr.id, val.id)}
@@ -315,7 +313,7 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                                         </div>
                                     ))}
                                 </div>
- 
+
                                 <div className="shrink-0 mt-10 pt-8 border-t border-dashed">
                                     <Button
                                         className="w-full h-16 rounded-2xl font-black uppercase tracking-widest text-sm shadow-lg bg-primary hover:bg-primary/90 text-primary-foreground transition-all hover:scale-[1.01] active:scale-[0.98]"
@@ -324,7 +322,7 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                                     >
                                         {isGenerating ? "Procesando..." : !initialData?.id ? "Fijar Configuración" : "Generar Matriz"}
                                     </Button>
- 
+
                                     {!initialData?.id && (
                                         <div className="mt-4 p-3 bg-warning/5 border border-warning/20 rounded-xl">
                                             <p className="text-[9px] text-warning text-center font-black uppercase tracking-tighter italic">
@@ -341,7 +339,7 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
 
             {/* Split View Layout */}
             <div className="flex-1 flex gap-4 overflow-hidden relative">
-                
+
                 {/* Left: Master Table */}
                 <div className={cn(
                     "flex-1 rounded-md border bg-card/50 overflow-hidden flex flex-col transition-all duration-300",
@@ -352,7 +350,7 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                             <TableHeader className="bg-muted/50 sticky top-0 z-10 shadow-sm">
                                 <TableRow>
                                     <TableHead className="w-12 pl-4">
-                                        <Checkbox 
+                                        <Checkbox
                                             checked={variants.length > 0 && selectedVariantIds.length === variants.length}
                                             onCheckedChange={toggleSelectAll}
                                         />
@@ -369,10 +367,10 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                                 {variants.map(v => {
                                     const isSelected = selectedVariantIds.includes(v.id);
                                     const isActive = activeEditVariantId === v.id;
-                                    
+
                                     return (
-                                        <TableRow 
-                                            key={v.id} 
+                                        <TableRow
+                                            key={v.id}
                                             className={cn(
                                                 "cursor-pointer group transition-colors",
                                                 isActive ? "bg-primary/5 hover:bg-primary/10" : "hover:bg-muted/50",
@@ -381,7 +379,7 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                                             onClick={() => handleRowClick(v.id)}
                                         >
                                             <TableCell className="pl-4" onClick={(e) => e.stopPropagation()}>
-                                                <Checkbox 
+                                                <Checkbox
                                                     checked={isSelected}
                                                     onCheckedChange={() => toggleVariantSelect(v.id)}
                                                     onClick={(e) => e.stopPropagation()}
@@ -406,7 +404,7 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                                                 </div>
                                             </TableCell>
                                             <TableCell className="text-right font-medium text-xs">
-                                                ${Number(v.sale_price).toLocaleString()}
+                                                {formatCurrency(Number(v.sale_price))}
                                             </TableCell>
                                             <TableCell className="text-center">
                                                 {v.has_active_bom ? (
@@ -424,15 +422,15 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                                                 )}
                                             </TableCell>
                                             <TableCell className="text-center">
-                                                 {v.has_active_bom ? (
-                                                      <Chip intent="success">BOM ACTIVA</Chip>
-                                                 ) : (
-                                                      v.mfg_auto_finalize ? (
-                                                          <Chip intent="destructive" className="animate-pulse">SIN RECETA</Chip>
-                                                      ) : (
-                                                          <span className="text-[9px] text-muted-foreground/40 font-bold">-</span>
-                                                      )
-                                                 )}
+                                                {v.has_active_bom ? (
+                                                    <Chip intent="success">BOM ACTIVA</Chip>
+                                                ) : (
+                                                    v.mfg_auto_finalize ? (
+                                                        <Chip intent="destructive" className="animate-pulse">SIN RECETA</Chip>
+                                                    ) : (
+                                                        <span className="text-[9px] text-muted-foreground/40 font-bold">-</span>
+                                                    )
+                                                )}
                                             </TableCell>
                                             <TableCell onClick={(e) => e.stopPropagation()}>
                                                 <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -487,7 +485,7 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                 {(activeEditVariant || selectedVariantIds.length > 0) && (
                     <div className="w-full md:w-2/5 lg:w-1/3 flex-shrink-0 h-full">
                         {selectedVariantIds.length > 0 ? (
-                            <BulkVariantEditForm 
+                            <BulkVariantEditForm
                                 selectedVariants={selectedVariantsList}
                                 availableVariants={variants}
                                 onSaved={(updatedVariants: Product[]) => {
@@ -496,7 +494,7 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                                         const matching = updatedVariants.find((upd: Product) => upd.id === v.id);
                                         return matching || v;
                                     }));
-                                    
+
                                     // Add to form payload for main submit
                                     const currentUpdates = form.getValues("variant_updates") || [];
                                     let newUpdates = [...currentUpdates];
@@ -504,18 +502,18 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                                         newUpdates = [...newUpdates.filter((u: Product) => u.id !== uv.id), uv];
                                     });
                                     form.setValue("variant_updates", newUpdates, { shouldDirty: true });
-                                    
+
                                     setSelectedVariantIds([]);
                                 }}
                                 onCancel={() => setSelectedVariantIds([])}
                             />
                         ) : activeEditVariant ? (
-                            <VariantQuickEditForm 
-                                variant={activeEditVariant} 
+                            <VariantQuickEditForm
+                                variant={activeEditVariant}
                                 onSaved={(updatedVariant: Product) => {
                                     // Update local variants UI
                                     setVariants(prev => prev.map(v => v.id === updatedVariant.id ? updatedVariant : v));
-                                    
+
                                     // Add to form payload for main submit
                                     const currentUpdates = form.getValues("variant_updates") || [];
                                     const newUpdates = [...currentUpdates.filter((u: Product) => u.id !== updatedVariant.id), updatedVariant];
@@ -528,10 +526,10 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                     </div>
                 )}
             </div>
-            
+
             <ActionConfirmModal
                 open={deleteConfirm.isOpen}
-                onOpenChange={(open) => { 
+                onOpenChange={(open) => {
                     if (!open) {
                         deleteConfirm.cancel()
                         setVariantToDelete(null)

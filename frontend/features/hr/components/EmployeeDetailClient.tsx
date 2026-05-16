@@ -9,6 +9,7 @@ import { getEmployee, updateEmployee, getAFPs, getPayrollConcepts } from "@/feat
 import type { Employee, AFP, PayrollConcept } from "@/types/hr"
 import { toast } from "sonner"
 import { showApiError } from "@/lib/errors"
+import { formatCurrency } from "@/lib/money"
 import { EmployeeFormModal } from "@/features/hr/components/EmployeeFormModal"
 
 interface EmployeeDetailClientProps {
@@ -86,7 +87,7 @@ export function EmployeeDetailClient({ employeeId }: EmployeeDetailClientProps) 
                     </div>
                     <div className="space-y-2">
                         <p className="text-sm text-muted-foreground">Sueldo Base</p>
-                        <p className="font-semibold">${parseFloat(String(employee.base_salary)).toLocaleString("es-CL")}</p>
+                        <p className="font-semibold">{formatCurrency(parseFloat(String(employee.base_salary)))}</p>
                     </div>
                     <div className="space-y-2">
                         <p className="text-sm text-muted-foreground">Tipo de Contrato</p>

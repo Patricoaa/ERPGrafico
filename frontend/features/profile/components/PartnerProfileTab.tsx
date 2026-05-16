@@ -1,5 +1,5 @@
-import { formatPlainDate } from "@/lib/utils";
 "use client"
+import { formatPlainDate } from "@/lib/utils";
 
 import React, { useEffect, useState, lazy, Suspense } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
@@ -10,10 +10,10 @@ import { Chip } from "@/components/shared"
 import { DataTable } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { createActionsColumn, DataCell } from '@/components/shared'
-import { 
-    Activity, 
-    CalendarDays, 
-    Wallet, 
+import {
+    Activity,
+    CalendarDays,
+    Wallet,
     User,
     Mail,
     FileText,
@@ -42,7 +42,7 @@ interface Props {
 export function PartnerProfileTab({ contactId }: Props) {
     const [statement, setStatement] = useState<PartnerStatement | null>(null)
     const [loading, setLoading] = useState(true)
-    
+
     // Movement Details state
     const router = useRouter()
     const pathname = usePathname()
@@ -136,7 +136,7 @@ export function PartnerProfileTab({ contactId }: Props) {
                 const type = row.original.transaction_type
                 const amount = row.getValue("amount") as string
                 const isNegative = type === 'WITHDRAWAL' || type === 'REDUCTION' || type === 'TRANSFER_OUT' || type === 'LOAN_OUT'
-                
+
                 return (
                     <div className={cn("flex items-center justify-center gap-1 font-bold w-full", isNegative ? 'text-destructive' : 'text-success')}>
                         <span>{isNegative ? '-' : '+'}</span>
@@ -172,7 +172,7 @@ export function PartnerProfileTab({ contactId }: Props) {
     return (
         <div className="w-full space-y-6">
             <Accordion type="multiple" defaultValue={["summary", "history"]} className="w-full space-y-6">
-                
+
                 {/* Section 1: Metrics & Summary */}
                 <AccordionItem value="summary" className="border-none">
                     <motion.div initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.4 }}>
@@ -235,15 +235,15 @@ export function PartnerProfileTab({ contactId }: Props) {
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                                         <InfoField icon={<User className="h-3.5 w-3.5" />} label="Socio" value={contact.name} />
                                         <InfoField icon={<FileText className="h-3.5 w-3.5" />} label="RUT" value={contact.tax_id} />
-                                        <InfoField 
-                                            icon={<Building2 className="h-3.5 w-3.5" />} 
-                                            label="Cuenta Particular" 
-                                            value={contact.partner_account_detail ? `${contact.partner_account_detail.name} (${contact.partner_account_detail.code})` : "No asignada"} 
+                                        <InfoField
+                                            icon={<Building2 className="h-3.5 w-3.5" />}
+                                            label="Cuenta Particular"
+                                            value={contact.partner_account_detail ? `${contact.partner_account_detail.name} (${contact.partner_account_detail.code})` : "No asignada"}
                                         />
-                                        <InfoField 
-                                            icon={<CalendarDays className="h-3.5 w-3.5" />} 
-                                            label="Socio desde" 
-                                            value={(contact.partner_since || contact.created_at) ? formatPlainDate(contact.partner_since || contact.created_at) : "—"} 
+                                        <InfoField
+                                            icon={<CalendarDays className="h-3.5 w-3.5" />}
+                                            label="Socio desde"
+                                            value={(contact.partner_since || contact.created_at) ? formatPlainDate(contact.partner_since || contact.created_at) : "—"}
                                         />
                                     </div>
                                 </CardContent>

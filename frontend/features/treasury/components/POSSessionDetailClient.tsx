@@ -117,11 +117,11 @@ export function POSSessionDetailClient({ sessionId }: POSSessionDetailClientProp
                 <div className="rounded-lg border bg-card overflow-hidden">
                     <DetailRow
                         label="Apertura"
-                        value={data.opened_at ? new Date(data.opened_at).toLocaleString("es-CL") : "—"}
+                        value={data.opened_at ? `${formatPlainDate(data.opened_at.split('T')[0])} ${data.opened_at.split('T')[1]?.slice(0, 5)}` : "—"}
                     />
                     <DetailRow
                         label="Cierre"
-                        value={data.closed_at ? new Date(data.closed_at).toLocaleString("es-CL") : <span className="text-success font-bold">Abierta</span>}
+                        value={data.closed_at ? `${formatPlainDate(data.closed_at.split('T')[0])} ${data.closed_at.split('T')[1]?.slice(0, 5)}` : <span className="text-success font-bold">Abierta</span>}
                     />
                 </div>
 

@@ -1,5 +1,5 @@
-import { formatCurrency } from "@/lib/money"
 "use client"
+import { formatCurrency } from "@/lib/money"
 
 import { showApiError } from "@/lib/errors"
 import React, { useEffect, useState } from "react"
@@ -13,13 +13,13 @@ import { toast } from "sonner"
 import { Loader2, UserPlus, Info, TrendingDown } from "lucide-react"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 
-import { 
-    Table, 
-    TableBody, 
-    TableCell, 
-    TableHead, 
-    TableHeader, 
-    TableRow 
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow
 } from "@/components/ui/table"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 
@@ -45,8 +45,8 @@ export function AddPartnerModal({ open, onOpenChange, onSuccess }: AddPartnerMod
             partnersApi.getPartners().then(data => {
                 setPartners(data)
                 const total = data.reduce((acc: number, p: Partner) => {
-                    const amount = typeof p.partner_total_contributions === 'string' 
-                        ? parseFloat(p.partner_total_contributions) 
+                    const amount = typeof p.partner_total_contributions === 'string'
+                        ? parseFloat(p.partner_total_contributions)
                         : (p.partner_total_contributions || 0)
                     return acc + amount
                 }, 0)
@@ -165,13 +165,13 @@ export function AddPartnerModal({ open, onOpenChange, onSuccess }: AddPartnerMod
                             </TableHeader>
                             <TableBody>
                                 {partners.map(p => {
-                                    const contributions = typeof p.partner_total_contributions === 'string' 
-                                        ? parseFloat(p.partner_total_contributions) 
+                                    const contributions = typeof p.partner_total_contributions === 'string'
+                                        ? parseFloat(p.partner_total_contributions)
                                         : (p.partner_total_contributions || 0)
-                                    
+
                                     const currentPerc = p.partner_equity_percentage
                                     const projectedPerc = projectedTotal > 0 ? (contributions / projectedTotal * 100).toFixed(2) : '0.00'
-                                    
+
                                     return (
                                         <TableRow key={p.id} className="opacity-70 grayscale-[0.5]">
                                             <TableCell className="text-xs font-medium">{p.name}</TableCell>
@@ -187,7 +187,7 @@ export function AddPartnerModal({ open, onOpenChange, onSuccess }: AddPartnerMod
                                         <TableCell className="text-xs text-primary">NUEVO SOCIO</TableCell>
                                         <TableCell className="text-right text-xs font-mono text-primary">{formatCurrencyExcludingSymbol(newAmount)}</TableCell>
                                         <TableCell className="text-right text-xs">-</TableCell>
-                                        <TableCell className="text-right text-xs text-primary">{ (newAmount / projectedTotal * 100).toFixed(2) }%</TableCell>
+                                        <TableCell className="text-right text-xs text-primary">{(newAmount / projectedTotal * 100).toFixed(2)}%</TableCell>
                                     </TableRow>
                                 )}
                             </TableBody>

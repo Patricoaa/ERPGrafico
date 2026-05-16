@@ -262,7 +262,7 @@ export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
                                         <TableRow key={line.id || idx}>
                                             <TableCell className="font-medium">{line.product_name || line.name || line.description}</TableCell>
                                             <TableCell className="text-right font-semibold">
-                                                {pendingQty.toLocaleString('es-CL')}
+                                                {pendingQty}
                                             </TableCell>
                                             <TableCell>
                                                 <LabeledInput

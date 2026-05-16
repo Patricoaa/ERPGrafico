@@ -1,5 +1,5 @@
-import { formatCurrency } from "@/lib/money"
 "use client"
+import { formatCurrency } from "@/lib/money"
 
 import { useState } from "react"
 import { BaseModal } from "@/components/shared/BaseModal"
