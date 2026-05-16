@@ -199,6 +199,9 @@ export function WorkOrderKanban({ orders, onTransition, onManage, isLoading }: K
     return (
         <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
             <div className="flex space-x-4 overflow-x-auto pb-4 h-[calc(100vh-250px)]">
+                {STAGES.map((stage) => {
+                    const stageOrders = isLoading ? [] : orders.filter(o => o.current_stage === stage.id)
+                    const Icon = stage.icon
                     const isDropDisabled = activeOrder ? !getAvailableNextStages(activeOrder).includes(stage.id) : false
 
                     return (
