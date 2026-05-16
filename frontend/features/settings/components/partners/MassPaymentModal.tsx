@@ -1,3 +1,4 @@
+import { formatCurrency } from "@/lib/money"
 "use client"
 
 import { showApiError } from "@/lib/errors"
@@ -9,7 +10,7 @@ import { Input } from "@/components/ui/input"
 import { LabeledSelect } from "@/components/shared"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
 import { toast } from "sonner"
-import { formatCurrency } from "@/lib/utils"
+
 import { Wallet, CheckCircle2, Banknote } from "lucide-react"
 import { ProfitDistribution, ProfitDistributionLine } from "@/features/contacts/types/partner"
 import { TreasuryAccount } from "@/features/treasury/types"

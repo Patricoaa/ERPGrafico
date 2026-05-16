@@ -84,13 +84,13 @@ const ReportRow = ({
                         
                         <div className="flex flex-col min-w-0">
                             {node.code && (
-                                <span className="font-mono text-[9px] text-muted-foreground tracking-tighter opacity-70 leading-none mb-0.5">
+                                <span className="font-mono text-[10px] text-muted-foreground tracking-tighter opacity-70 leading-none mb-0.5">
                                     {node.code}
                                 </span>
                             )}
                             <span className={cn(
                                 "text-sm tracking-tight truncate", 
-                                level === 0 ? "uppercase font-bold" : "font-medium"
+                                level === 0 ? "uppercase font-black tracking-widest font-heading" : "font-medium"
                             )}>
                                 {node.name}
                             </span>
@@ -199,12 +199,12 @@ export const ReportTable: React.FC<ReportTableProps> = ({
                         accentColor === 'success' ? "border-success/20" : 
                         accentColor === 'info' ? "border-info/20" : "border-destructive/20"
                     )}>
-                        <TableHead className="font-bold text-foreground py-4 px-4 h-12 uppercase tracking-widest text-[9px]">Cuenta / Concepto</TableHead>
-                        <TableHead className="text-right w-[150px] font-bold text-foreground py-4 px-4 h-12 uppercase tracking-widest text-[9px]">{periodLabel || 'Saldo'}</TableHead>
+                        <TableHead className="font-black text-foreground py-4 px-4 h-12 uppercase tracking-widest text-[10px]">Cuenta / Concepto</TableHead>
+                        <TableHead className="text-right w-[150px] font-black text-foreground py-4 px-4 h-12 uppercase tracking-widest text-[10px]">{periodLabel || 'Saldo'}</TableHead>
                         {showComparison && (
                             <>
-                                <TableHead className="text-right w-[150px] font-bold text-muted-foreground py-4 px-4 h-12 uppercase tracking-widest text-[9px]">{compPeriodLabel || 'Anterior'}</TableHead>
-                                <TableHead className="text-right w-[110px] font-bold py-4 px-4 h-12 uppercase tracking-widest text-[9px]">Var.</TableHead>
+                                <TableHead className="text-right w-[150px] font-black text-muted-foreground py-4 px-4 h-12 uppercase tracking-widest text-[10px]">{compPeriodLabel || 'Anterior'}</TableHead>
+                                <TableHead className="text-right w-[110px] font-black py-4 px-4 h-12 uppercase tracking-widest text-[10px]">Var.</TableHead>
                             </>
                         )}
                     </TableRow>

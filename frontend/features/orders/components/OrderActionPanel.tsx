@@ -10,16 +10,16 @@ import {
 import { CollapsibleSheet } from '@/components/shared/CollapsibleSheet'
 import { Zap } from 'lucide-react'
 import { formatEntityDisplay } from '@/lib/entity-registry'
-import { Badge } from '@/components/ui/badge'
+import { Chip } from '@/components/shared'
 import { Separator } from '@/components/ui/separator'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Skeleton, CardSkeleton } from '@/components/shared'
+import { Skeleton, CardSkeleton, StatusBadge } from '@/components/shared'
 import { Progress } from '@/components/ui/progress'
 import { SheetCloseButton } from '@/components/shared/SheetCloseButton'
 import api from '@/lib/api'
 import { toast } from 'sonner'
 import { ActionCategory } from './ActionCategory'
-import { filterAvailableActions, getStatusVariant, getStatusLabel } from '@/lib/action-utils'
+import { filterAvailableActions } from '@/lib/action-utils'
 import { formatPlainDate } from '@/lib/utils'
 import { purchaseOrderActions } from '@/features/purchasing/actions'
 import { saleOrderActions } from '@/features/sales/actions'
@@ -131,9 +131,7 @@ export function OrderActionPanel({
                                 <span className="font-mono">
                                     {formatEntityDisplay(orderType === 'purchase' ? 'purchasing.purchaseorder' : 'sales.saleorder', order)}
                                 </span>
-                                <Badge variant={getStatusVariant(order?.status || "")}>
-                                    {getStatusLabel(order?.status || "")}
-                                </Badge>
+                                <StatusBadge status={order?.status || ""} />
                             </div>
                         )}
                     </SheetTitle>
@@ -190,20 +188,13 @@ export function OrderActionPanel({
                                         <span className="text-xs text-muted-foreground">
                                             {orderType === 'purchase' ? 'Recepción' : 'Despacho'}
                                         </span>
-                                        <Badge
-                                            variant={getStatusVariant(
+                                        <StatusBadge
+                                            status={
                                                 orderType === 'purchase'
                                                     ? (order?.receiving_status || "")
                                                     : (order?.delivery_status || "")
-                                            )}
-                                            className="text-xs"
-                                        >
-                                            {getStatusLabel(
-                                                orderType === 'purchase'
-                                                    ? (order?.receiving_status || "")
-                                                    : (order?.delivery_status || "")
-                                            )}
-                                        </Badge>
+                                            }
+                                        />
                                     </div>
                                 </div>
 
@@ -233,9 +224,7 @@ export function OrderActionPanel({
                                     <div className="pt-2 border-t border-border/50">
                                         <div className="flex items-center justify-between text-xs">
                                             <span className="text-muted-foreground">Documentos</span>
-                                            <Badge variant="outline" className="text-xs">
-                                                {(order?.related_documents?.invoices || order?.invoices)?.length}
-                                            </Badge>
+                                            <Chip.Count value={(order?.related_documents?.invoices || order?.invoices)?.length || 0} hideOnZero={false} intent="neutral" />
                                         </div>
                                     </div>
                                 )}

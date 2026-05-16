@@ -1,13 +1,13 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
-import { DataTable } from "@/components/ui/data-table"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { DataTable } from '@/components/shared'
+import { DataTableColumnHeader } from '@/components/shared'
 import { Button } from "@/components/ui/button"
 import {
     Plus, Trash2, CreditCard, Landmark, Pencil, Lock
 } from "lucide-react"
-import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
+import { DataCell, createActionsColumn } from '@/components/shared'
 import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import api from "@/lib/api"

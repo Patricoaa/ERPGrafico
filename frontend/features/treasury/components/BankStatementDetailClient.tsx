@@ -1,3 +1,4 @@
+import { formatPlainDate } from "@/lib/utils";
 "use client"
 
 import React from "react"
@@ -126,18 +127,18 @@ export function BankStatementDetailClient({ statementId }: BankStatementDetailCl
                 <div className="rounded-lg border bg-card overflow-hidden">
                     <DetailRow
                         label="Fecha de Cartola"
-                        value={new Date(data.statement_date + "T00:00:00").toLocaleDateString("es-CL")}
+                        value={formatPlainDate(data.statement_date)}
                     />
                     {data.period_start && (
                         <DetailRow
                             label="Inicio del Período"
-                            value={new Date(data.period_start + "T00:00:00").toLocaleDateString("es-CL")}
+                            value={formatPlainDate(data.period_start)}
                         />
                     )}
                     {data.period_end && (
                         <DetailRow
                             label="Fin del Período"
-                            value={new Date(data.period_end + "T00:00:00").toLocaleDateString("es-CL")}
+                            value={formatPlainDate(data.period_end)}
                         />
                     )}
                 </div>

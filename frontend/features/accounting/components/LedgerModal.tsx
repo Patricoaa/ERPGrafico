@@ -6,8 +6,8 @@ import { useServerDate } from "@/hooks/useServerDate"
 import { BaseDrawer } from "@/components/shared"
 import { Button } from "@/components/ui/button"
 import { Book, ArrowUpRight, ArrowDownRight, Scale, Calculator, Eye, Trash2 } from "lucide-react"
-import { DataTable } from "@/components/ui/data-table"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { DataTable } from '@/components/shared'
+import { DataTableColumnHeader } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
 import { Card, CardContent } from "@/components/ui/card"
 import { DateRangeFilter } from "@/components/shared/DateRangeFilter"
@@ -20,7 +20,7 @@ import { useDeleteJournalEntry } from "@/features/accounting/hooks/useJournalEnt
 import { es } from "date-fns/locale"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { CardSkeleton } from "@/components/shared"
-import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
+import { DataCell, createActionsColumn } from '@/components/shared'
 
 import type { LedgerMovement } from "@/features/accounting/types"
 

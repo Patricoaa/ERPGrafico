@@ -1,3 +1,4 @@
+import { formatPlainDate } from "@/lib/utils";
 "use client"
 
 import { useState, useEffect } from "react"
@@ -220,7 +221,7 @@ export function TaskInbox() {
     const formatShortDate = (dateStr: string) => {
         if (!dateStr) return '-'
         const val = new Date(dateStr)
-        return val.toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric' })
+        return formatPlainDate(val)
     }
 
     const renderTaskCard = (task: Task) => {

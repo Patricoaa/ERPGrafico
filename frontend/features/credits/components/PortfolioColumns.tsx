@@ -1,8 +1,8 @@
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
-import { DataCell } from "@/components/ui/data-table-cells"
+import { DataTableColumnHeader } from '@/components/shared'
+import { DataCell } from '@/components/shared'
 import { StatusBadge, EntityBadge } from "@/components/shared"
 import { CreditContact, CreditHistoryEntry } from "@/features/credits/api/creditsApi"
 import { cn } from "@/lib/utils"

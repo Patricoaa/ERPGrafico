@@ -102,3 +102,18 @@ export * from './FormLineItemsTable';
 export * from './EntityCard'
 export * from './DomainCard'
 export * from './ExpandableTableRow'
+
+// ─── Migrated from components/ui — GOVERNANCE rule 21 compliance ─────────────
+// Table system
+export * from './DataTable';
+export * from './DataTableToolbar';
+export * from './DataTableFilters';
+export * from './DataTablePagination';
+export * from './DataTableColumnHeader';
+export * from './DataTableFacetedFilter';
+export * from './DataTableCells';
+
+// Utilities
+export * from './DynamicIcon';
+export * from './ErrorBoundary';
+export * from './Numpad';

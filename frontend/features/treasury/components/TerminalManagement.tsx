@@ -11,9 +11,9 @@ import { toast } from "sonner"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { CancelButton, IconButton, LabeledInput, LabeledSelect, FormSection, FormFooter, FormSplitLayout } from "@/components/shared"
 import { EntityCard } from "@/components/shared/EntityCard"
-import { DataTable } from "@/components/ui/data-table"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
-import { createActionsColumn, DataCell } from "@/components/ui/data-table-cells"
+import { DataTable } from '@/components/shared'
+import { DataTableColumnHeader } from '@/components/shared'
+import { createActionsColumn, DataCell } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
 import { List, LayoutGrid, Plus, Power, PowerOff, Settings, MapPin, Trash2, CreditCard, Banknote, Landmark, MonitorSmartphone, Smartphone } from "lucide-react"
 import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"

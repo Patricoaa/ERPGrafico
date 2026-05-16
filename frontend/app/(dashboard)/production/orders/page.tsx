@@ -2,9 +2,9 @@
 
 import { useEffect, useState, useMemo, useCallback } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
-import { DataTable } from "@/components/ui/data-table"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
-import { createActionsColumn, DataCell } from "@/components/ui/data-table-cells"
+import { DataTable } from '@/components/shared'
+import { DataTableColumnHeader } from '@/components/shared'
+import { createActionsColumn, DataCell } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
 import { Pencil, Trash2, Ban, Settings, List, Columns, Copy, CalendarDays, Printer } from "lucide-react"
 
@@ -217,11 +217,9 @@ export default function WorkOrdersPage() {
                 <DataTableColumnHeader column={column} title="Etapa" className="justify-center" />
             ),
             cell: ({ row }) => (
-                <div className="flex justify-center">
-                    <span className="font-mono text-[11px] uppercase text-muted-foreground/80 tracking-tight">
-                        {translateProductionStage(row.original.current_stage)}
-                    </span>
-                </div>
+                <DataCell.Text className="text-center">
+                    {translateProductionStage(row.original.current_stage)}
+                </DataCell.Text>
             ),
         },
         {
@@ -356,8 +354,8 @@ export default function WorkOrdersPage() {
                     onViewChange={setViewMode}
                     renderCustomView={
                         viewMode === "kanban" ? renderKanbanView :
-                        viewMode === "timeline" ? renderTimelineView :
-                        undefined
+                            viewMode === "timeline" ? renderTimelineView :
+                                undefined
                     }
                     createAction={<ToolbarCreateButton label="Nueva OT" href="/production/orders?modal=new" />}
                     bulkDock={(items, clear) => (

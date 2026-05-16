@@ -3,7 +3,7 @@
 import React from "react"
 import Link from "next/link"
 import { ChevronRight } from "lucide-react"
-import { DynamicIcon } from "@/components/ui/dynamic-icon"
+import { DynamicIcon } from '@/components/shared'
 import { cn } from "@/lib/utils"
 import { FormSplitLayout } from "@/components/shared/FormSplitLayout"
 import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"

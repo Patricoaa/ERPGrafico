@@ -1,3 +1,4 @@
+import { formatPlainDate } from "@/lib/utils";
 "use client"
 
 import React, { useState } from "react"
@@ -88,11 +89,11 @@ export function ProductionOrderDetailClient({ orderId }: ProductionOrderDetailCl
                     </div>
                     <div className="space-y-2">
                         <p className="text-sm text-muted-foreground">Fecha Inicio</p>
-                        <p className="font-semibold">{order.start_date ? new Date(order.start_date).toLocaleDateString() : '—'}</p>
+                        <p className="font-semibold">{order.start_date ? formatPlainDate(order.start_date) : '—'}</p>
                     </div>
                     <div className="space-y-2">
                         <p className="text-sm text-muted-foreground">Fecha Entrega</p>
-                        <p className="font-semibold">{order.due_date ? new Date(order.due_date).toLocaleDateString() : '—'}</p>
+                        <p className="font-semibold">{order.due_date ? formatPlainDate(order.due_date) : '—'}</p>
                     </div>
                     <div className="space-y-2 col-span-2">
                         <p className="text-sm text-muted-foreground">Cliente / Nota de Venta</p>

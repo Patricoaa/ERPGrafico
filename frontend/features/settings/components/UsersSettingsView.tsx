@@ -3,9 +3,9 @@
 import { useState, useEffect, useMemo, useCallback } from "react"
 
 
-import { DataTable } from "@/components/ui/data-table"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
-import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
+import { DataTable } from '@/components/shared'
+import { DataTableColumnHeader } from '@/components/shared'
+import { DataCell, createActionsColumn } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { Edit } from "lucide-react"

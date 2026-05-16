@@ -6,7 +6,7 @@
 import { useRef } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { DynamicIcon } from '@/components/ui/dynamic-icon'
+import { DynamicIcon } from '@/components/shared'
 import { cn } from '@/lib/utils'
 import { useDeviceContext } from '@/hooks/useDeviceContext'
 import type { Category } from '@/types/pos'

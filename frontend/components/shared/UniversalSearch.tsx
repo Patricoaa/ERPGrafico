@@ -33,7 +33,7 @@ import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
 import { Skeleton } from "@/components/ui/skeleton"
-import { DynamicIcon } from "@/components/ui/dynamic-icon"
+import { DynamicIcon } from '@/components/shared'
 
 const ICON_MAP: Record<string, any> = {
     "book-open": BookOpen,

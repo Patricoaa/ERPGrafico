@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react"
 import { Input } from "@/components/ui/input"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+
 import { cn } from "@/lib/utils"
 import {
     AlertTriangle,
@@ -318,12 +318,9 @@ export function RectificationStep({ order, onChange }: RectificationStepProps) {
                                                     if (Math.abs(cPct) > 0.01) {
                                                         const isUp = cDiff > 0;
                                                         return (
-                                                            <Badge variant="outline" className={cn(
-                                                                "mt-1 text-[9px] px-1.5 py-0 h-4 border-0",
-                                                                isUp ? "bg-destructive/10 text-destructive" : "bg-success/10 text-success"
-                                                            )}>
+                                                            <Chip size="xs" intent={isUp ? "destructive" : "success"} className="mt-1 border-0">
                                                                 {isUp ? "Costo ↑" : "Costo ↓"} {Math.abs(cPct * 100).toFixed(1)}%
-                                                            </Badge>
+                                                            </Chip>
                                                         )
                                                     }
                                                     return null;

@@ -4,8 +4,8 @@ import React, { useState, useEffect, useRef } from "react"
 import {
     ColumnDef
 } from "@tanstack/react-table"
-import { DataTable } from "@/components/ui/data-table"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { DataTable } from '@/components/shared'
+import { DataTableColumnHeader } from '@/components/shared'
 import { Book, Trash2, Pencil, Plus } from "lucide-react"
 import { IconButton } from "@/components/shared"
 
@@ -13,7 +13,7 @@ import { AccountForm } from "@/features/finance/components/AccountForm"
 import { LedgerModal } from "@/features/accounting/components/LedgerModal"
 import { useAccounts } from "@/features/accounting/hooks/useAccounts"
 import { Account } from "@/features/accounting/types"
-import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
+import { DataCell, createActionsColumn } from '@/components/shared'
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { ChevronRight, ChevronDown } from "lucide-react"

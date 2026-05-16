@@ -1,10 +1,11 @@
+import { formatCurrency } from "@/lib/money"
 "use client"
 
 import { showApiError } from "@/lib/errors"
 
 import React, { useState, useMemo } from "react"
-import { DataTable } from "@/components/ui/data-table"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { DataTable } from '@/components/shared'
+import { DataTableColumnHeader } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
 import { ArrowRightLeft, History } from "lucide-react"
 
@@ -13,9 +14,9 @@ import { AdjustmentForm } from "@/features/inventory/components/AdjustmentForm"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { CancelButton, SubmitButton, FormFooter } from "@/components/shared"
 import { ProductInsightsModal } from "@/features/inventory/components/ProductInsightsModal"
-import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
+import { DataCell, createActionsColumn } from '@/components/shared'
 import { PageContainer } from "@/components/shared"
-import { cn, formatCurrency } from "@/lib/utils"
+import { cn } from "@/lib/utils"
 
 import { useStockReport } from "@/features/inventory/hooks/useStockReport"
 

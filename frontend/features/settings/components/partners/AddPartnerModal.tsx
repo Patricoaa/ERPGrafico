@@ -1,3 +1,4 @@
+import { formatCurrency } from "@/lib/money"
 "use client"
 
 import { showApiError } from "@/lib/errors"
@@ -11,7 +12,7 @@ import { Partner } from "@/features/contacts/types/partner"
 import { toast } from "sonner"
 import { Loader2, UserPlus, Info, TrendingDown } from "lucide-react"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
-import { formatCurrency } from "@/lib/utils"
+
 import { 
     Table, 
     TableBody, 
@@ -206,5 +207,5 @@ export function AddPartnerModal({ open, onOpenChange, onSuccess }: AddPartnerMod
 }
 
 function formatCurrencyExcludingSymbol(amount: number) {
-    return new Intl.NumberFormat('es-CL', { maximumFractionDigits: 0 }).format(amount)
+    return formatCurrency(amount)
 }

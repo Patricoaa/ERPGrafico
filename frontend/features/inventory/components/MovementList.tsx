@@ -2,13 +2,14 @@
 
 import { useState, useMemo, useEffect } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
-import { DataTable } from "@/components/ui/data-table"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
-import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
+import { DataTable } from '@/components/shared'
+import { DataTableColumnHeader } from '@/components/shared'
+import { DataCell, createActionsColumn } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
 
 import { Eye, ArrowRightLeft, Plus } from "lucide-react"
 import { StatusBadge } from "@/components/shared/StatusBadge"
+import { Chip } from "@/components/shared/Chip"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 import { AdjustmentForm } from "@/features/inventory/components/AdjustmentForm"
 import { CancelButton, SubmitButton, FormFooter } from "@/components/shared"
@@ -137,15 +138,15 @@ export function MovementList({ externalOpen, onExternalOpenChange, createAction 
             header: ({ column }) => <DataTableColumnHeader column={column} title="Tipo" className="justify-center" />,
             cell: ({ row }) => {
                 const type = row.original.move_type
-                const statusMap: Record<string, { status: string, label: string }> = {
-                    'IN': { status: 'SUCCESS', label: 'Entrada' },
-                    'OUT': { status: 'DESTRUCTIVE', label: 'Salida' },
-                    'ADJ': { status: 'WARNING', label: 'Ajuste' }
+                const typeMap: Record<string, { intent: "success" | "destructive" | "warning" | "neutral", label: string }> = {
+                    'IN': { intent: 'success', label: 'Entrada' },
+                    'OUT': { intent: 'destructive', label: 'Salida' },
+                    'ADJ': { intent: 'warning', label: 'Ajuste' }
                 }
-                const config = statusMap[type] || { status: 'NEUTRAL', label: type }
+                const config = typeMap[type] || { intent: 'neutral', label: type }
                 return (
                     <div className="flex justify-center w-full">
-                        <StatusBadge status={config.status} label={config.label} size="sm" />
+                        <Chip intent={config.intent} size="sm">{config.label}</Chip>
                     </div>
                 )
             },

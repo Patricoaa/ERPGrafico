@@ -1,3 +1,4 @@
+import { formatCurrency } from "@/lib/money"
 "use client"
 
 import { BaseModal } from "@/components/shared/BaseModal"
@@ -9,9 +10,9 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
+import { StatusBadge } from "@/components/shared"
 import { FileText, Package, Truck, ClipboardList, Download, ExternalLink, Hash } from "lucide-react"
-import { formatCurrency, formatPlainDate } from "@/lib/utils"
+import { formatPlainDate } from "@/lib/utils"
 import { formatEntityDisplay } from "@/lib/entity-registry"
 
 interface DocumentItem {
@@ -126,9 +127,7 @@ export function DocumentListModal({
                                                     <TableCell className="text-xs">{formatPlainDate(item.date || item.created_at)}</TableCell>
                                                     <TableCell className="font-bold text-primary">{formatCurrency(item.total)}</TableCell>
                                                     <TableCell>
-                                                        <Badge variant={item.status === 'PAID' ? 'success' : 'outline'} className="text-[10px]">
-                                                            {item.status_display || item.status}
-                                                        </Badge>
+                                                        <StatusBadge status={item.status_display || item.status || ""} />
                                                     </TableCell>
                                                 </>
                                             )}
@@ -142,9 +141,7 @@ export function DocumentListModal({
                                                     <TableCell className="font-bold">{item.quantity} {item.unit}</TableCell>
                                                     <TableCell className="text-xs">{formatPlainDate(item.due_date)}</TableCell>
                                                     <TableCell>
-                                                        <Badge variant="outline" className="text-[10px] uppercase font-black">
-                                                            {item.status_display || item.status}
-                                                        </Badge>
+                                                        <StatusBadge status={item.status_display || item.status || ""} />
                                                     </TableCell>
                                                 </>
                                             )}
@@ -159,7 +156,7 @@ export function DocumentListModal({
                                                     <TableCell className="text-xs">{formatPlainDate(item.date)}</TableCell>
                                                     <TableCell className="text-xs">{item.items_count || 0} ítems</TableCell>
                                                     <TableCell>
-                                                        <Badge variant="success" className="text-[10px]">COMPLETADO</Badge>
+                                                        <StatusBadge status="COMPLETED" />
                                                     </TableCell>
                                                 </>
                                             )}

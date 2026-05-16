@@ -24,10 +24,10 @@ import { StatusBadge, Chip } from "@/components/shared"
 import { ProductForm } from "@/features/inventory/components/ProductForm"
 import { SubscriptionHistoryModal } from "@/features/inventory/components/SubscriptionHistoryModal"
 import { ArchivingRestrictionsModal } from "@/features/inventory/components/ArchivingRestrictionsModal"
-import { DataTable } from "@/components/ui/data-table"
+import { DataTable } from '@/components/shared'
 import type { Product } from "@/types/entities"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
-import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
+import { DataTableColumnHeader } from '@/components/shared'
+import { DataCell, createActionsColumn } from '@/components/shared'
 import { PageHeader, PageHeaderButton, SmartSearchBar, useSmartSearch } from "@/components/shared"
 import { Restriction } from "@/features/inventory/types"
 import { PageContainer } from "@/components/shared"

@@ -2,7 +2,7 @@ import React from "react"
 import { ClipboardList, Package, Receipt, Banknote, FileText } from "lucide-react"
 import { StatusBadge } from "./StatusBadge"
 import { TooltipProvider } from "@/components/ui/tooltip"
-import { getEntityMetadata } from "@/lib/entity-registry"
+import { getEntityMetadata, getDtePrefix } from "@/lib/entity-registry"
 import { getHubStatuses, getInvoiceHubStatuses, getNoteHubStatuses } from "@/lib/workflow-status"
 import { translateStatus } from "@/lib/utils"
 
@@ -159,7 +159,7 @@ export function DomainHubStatus({ label, data, className }: DomainHubStatusProps
             })(),
             billing: (() => {
                 if (isNote && data.number && data.number !== 'Draft') {
-                    const prefix = data.dte_type === 'NOTA_CREDITO' ? 'NC' : 'ND'
+                    const prefix = getDtePrefix(data.dte_type)
                     const num = data.number.toString().includes(prefix) ? data.number : `${prefix}-${data.number}`
                     return `Facturación: ${num}`
                 }

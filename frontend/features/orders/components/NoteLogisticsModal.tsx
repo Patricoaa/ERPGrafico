@@ -14,7 +14,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
+import { Chip } from "@/components/shared"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { Loader2, Package, AlertTriangle, CheckCircle2, ArrowLeftRight } from "lucide-react"
@@ -220,10 +220,10 @@ export function NoteLogisticsModal({ open, onOpenChange, invoice, onSuccess }: N
                                             <TableCell className="font-medium">{line.product_name}</TableCell>
                                             <TableCell className="text-center">{line.quantity}</TableCell>
                                             <TableCell className="text-center">
-                                                <Badge variant={processed > 0 ? "success" : "outline"}>{processed}</Badge>
+                                                <Chip.Count value={processed} hideOnZero={false} intent="success" />
                                             </TableCell>
                                             <TableCell className="text-center">
-                                                <Badge variant={pending > 0 ? "warning" : "outline"}>{pending}</Badge>
+                                                <Chip.Count value={pending} hideOnZero={false} intent="warning" />
                                             </TableCell>
                                             <TableCell>
                                                 <Input

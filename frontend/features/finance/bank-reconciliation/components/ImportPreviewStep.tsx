@@ -1,10 +1,11 @@
+import { formatCurrency } from "@/lib/money"
 "use client"
 
 import React from "react"
 import { AlertCircle, CheckCircle2, AlertTriangle, Calendar, FileText, DollarSign, Wallet } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { formatCurrency } from "@/lib/utils"
+
 import { Chip } from "@/components/shared"
 import { FormSection } from "@/components/shared"
 

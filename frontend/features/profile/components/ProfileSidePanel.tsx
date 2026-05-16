@@ -131,7 +131,7 @@ export function ProfileSidePanel({ profile }: ProfileSidePanelProps) {
                                     <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider leading-none mb-1.5">Equipos Funcionales</span>
                                     <div className="flex flex-wrap gap-1.5">
                                         {functionalGroups.length > 0 ? functionalGroups.map(g => (
-                                            <Badge key={g} variant="outline" className="text-[9px] border-white/10 bg-white/5">{g}</Badge>
+                                            <Chip key={g} size="xs" intent="neutral" className="border-white/10 bg-white/5">{g}</Chip>
                                         )) : (
                                             <span className="text-xs text-muted-foreground italic leading-none">Sin equipos asignados</span>
                                         )}

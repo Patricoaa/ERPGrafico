@@ -1,3 +1,4 @@
+import { formatCurrency } from "@/lib/money"
 "use client"
 
 import { useState, useEffect } from "react"
@@ -7,7 +8,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { Separator } from "@/components/ui/separator"
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip"
-import { formatCurrency } from "@/lib/utils"
+
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 import api from "@/lib/api"

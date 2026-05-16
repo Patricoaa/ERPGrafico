@@ -1,3 +1,4 @@
+import { formatCurrency } from "@/lib/money"
 "use client";
 
 import React, { useState } from 'react';
@@ -7,7 +8,7 @@ import { EmptyState } from '@/components/shared/EmptyState';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Calculator, Calendar, CheckCircle2, AlertCircle } from 'lucide-react';
-import { formatCurrency } from '@/lib/utils';
+
 import { PeriodValidationDateInput } from '@/components/shared';
 
 export function TrialBalanceView() {

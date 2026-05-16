@@ -3,9 +3,9 @@
 import { showApiError, getErrorMessage } from "@/lib/errors"
 import React, { useState } from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
-import { DataTable } from "@/components/ui/data-table"
-import { DataCell } from "@/components/ui/data-table-cells"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { DataTable } from '@/components/shared'
+import { DataCell } from '@/components/shared'
+import { DataTableColumnHeader } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
 import { IconButton, SmartSearchBar, useSmartSearch } from "@/components/shared"
 import { invoiceSearchDef } from "@/features/billing/searchDef"
@@ -21,6 +21,7 @@ import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { useViewMode } from "@/hooks/useViewMode"
 import { createDomainCardView, createCardLoadingView } from "@/lib/view-helpers"
+import { getDtePrefix } from "@/lib/entity-registry"
 
 export function SalesInvoicesClientView() {
     const { filters } = useSmartSearch(invoiceSearchDef)
@@ -81,7 +82,8 @@ export function SalesInvoicesClientView() {
             let paymentType = 'INBOUND'
             if (payingInv.dte_type === 'NOTA_CREDITO') paymentType = 'OUTBOUND'
             formData.append('payment_type', paymentType)
-            formData.append('reference', `${payingInv.dte_type === 'NOTA_CREDITO' ? 'NC' : payingInv.dte_type === 'NOTA_DEBITO' ? 'ND' : 'PAGO'}-${payingInv.number}`)
+            const prefix = ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(payingInv.dte_type) ? getDtePrefix(payingInv.dte_type) : 'PAGO';
+            formData.append('reference', `${prefix}-${payingInv.number}`)
             formData.append('sale_order', payingInv.sale_order ? payingInv.sale_order.toString() : '')
             formData.append('invoice', payingInv.id.toString())
             formData.append('payment_method', d.paymentMethod)

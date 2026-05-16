@@ -27,9 +27,9 @@ import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { ShoppingCart, Package, Wand2, User, Banknote, Scale, Truck, Receipt, ClipboardList, LayoutDashboard, Calendar, ArrowRight, Mail, MapPin } from "lucide-react"
 import { DomainCard } from "@/components/shared/DomainCard"
-import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
+import { DataCell, createActionsColumn } from '@/components/shared'
 import { Separator } from "@/components/ui/separator"
-import { DataTable } from "@/components/ui/data-table"
+import { DataTable } from '@/components/shared'
 import { DomainHubStatus } from "@/components/shared/HubStatus"
 import { ColumnDef } from "@tanstack/react-table"
 import { Card, CardContent } from "@/components/ui/card"

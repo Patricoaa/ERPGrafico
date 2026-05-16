@@ -9,10 +9,10 @@ import { Trash2 } from 'lucide-react'
 import { TableRow, TableCell } from '@/components/ui/table'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
+import { Chip } from "@/components/shared"
 import { UoMSelector } from '@/components/selectors'
 import { cn } from '@/lib/utils'
-import { formatCurrency } from '@/lib/currency'
+import { formatCurrency } from "@/lib/money"
 import { PricingUtils } from '@/features/inventory/utils/pricing'
 import { useDeviceContext, MIN_TOUCH_TARGET } from '@/hooks/useDeviceContext'
 import { useTouchMode } from '@/hooks/useTouchMode'
@@ -119,15 +119,16 @@ function CartItemComponent({
                         min="0.01"
                     />
                     {maxQty !== undefined && maxQty !== Infinity && (
-                        <Badge
-                            variant="secondary"
+                        <Chip
+                            size="xs"
+                            intent={isOverLimit ? "destructive" : "neutral"}
                             className={cn(
-                                "text-[8px] px-1 h-3.5 bg-muted text-muted-foreground hover:bg-muted font-normal border-0 whitespace-nowrap",
-                                isOverLimit && "text-destructive bg-destructive/10"
+                                "text-[8px] px-1 h-3.5 border-0 whitespace-nowrap",
+                                !isOverLimit && "bg-muted hover:bg-muted"
                             )}
                         >
                             MAX: {maxQty}
-                        </Badge>
+                        </Chip>
                     )}
                 </div>
             </TableCell>

@@ -7,11 +7,10 @@ import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Package, ImageIcon } from "lucide-react"
 import api from "@/lib/api"
-import { formatCurrency } from "@/lib/currency"
+import { formatCurrency } from "@/lib/money"
 import { PricingUtils } from '@/features/inventory/utils/pricing'
 import { cn } from "@/lib/utils"
-import { Badge } from "@/components/ui/badge"
-
+import { Chip } from "@/components/shared"
 import type { Product, Variant, CartItem } from '@/types/pos'
 
 interface POSVariantSelectorModalProps {
@@ -145,9 +144,9 @@ export function POSVariantSelectorModal({
                                             </h4>
                                             <div className="flex flex-wrap gap-1 mt-1">
                                                 {v.attribute_values_data?.map((av) => (
-                                                    <Badge key={av.id} variant="outline" className="text-[9px] py-0 h-4 bg-background">
+                                                    <Chip key={av.id} size="xs" intent="neutral" className="bg-background">
                                                         {av.value}
-                                                    </Badge>
+                                                    </Chip>
                                                 ))}
                                             </div>
                                             <div className="mt-2 flex items-center justify-between">
@@ -156,18 +155,18 @@ export function POSVariantSelectorModal({
                                                 </span>
 
                                                 {v.has_active_bom ? (
-                                                    <Badge variant={max > 0 ? "success" : "destructive"} className="text-[10px]">
+                                                    <Chip size="xs" intent={max > 0 ? "success" : "destructive"}>
                                                         {limit !== undefined ? limit : (v.manufacturable_quantity || 0)} fab.
-                                                    </Badge>
+                                                    </Chip>
                                                 ) : (
                                                     (v.product_type === 'MANUFACTURABLE' || v.requires_advanced_manufacturing) ? (
-                                                        <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 text-[10px]">
+                                                        <Chip size="xs" intent="primary">
                                                             Disponible
-                                                        </Badge>
+                                                        </Chip>
                                                     ) : (
-                                                        <Badge variant={max > 0 ? "success" : "destructive"} className="text-[10px]">
+                                                        <Chip size="xs" intent={max > 0 ? "success" : "destructive"}>
                                                             {limit !== undefined ? limit : v.qty_available} stock
-                                                        </Badge>
+                                                        </Chip>
                                                     )
                                                 )}
                                             </div>

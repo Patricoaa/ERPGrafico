@@ -1,3 +1,4 @@
+import { formatCurrency } from "@/lib/money"
 "use client"
 
 import React, { useState, useEffect } from "react"
@@ -7,7 +8,7 @@ import * as z from "zod"
 import { ArrowLeftRight, DollarSign, Calendar as CalendarIcon, Info } from "lucide-react"
 import { TreasuryAccountSelector } from "@/components/selectors"
 import { PeriodValidationDateInput } from "@/components/shared"
-import { formatCurrency, cn } from "@/lib/utils"
+import { cn } from "@/lib/utils"
 import api from "@/lib/api"
 import { showApiError } from "@/lib/errors"
 import { toast } from "sonner"

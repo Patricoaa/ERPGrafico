@@ -1,3 +1,4 @@
+import { formatCurrency } from "@/lib/money"
 import React from "react"
 import {
     Sheet,
@@ -6,7 +7,7 @@ import {
     SheetTitle,
 } from "@/components/ui/sheet"
 import { SheetCloseButton } from "@/components/shared/SheetCloseButton"
-import { formatCurrency } from "@/lib/utils"
+
 import {
     TrendingUp,
     PieChart as PieChartIcon,

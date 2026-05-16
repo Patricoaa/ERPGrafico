@@ -8,15 +8,15 @@ import { Button } from "@/components/ui/button"
 import {
     ColumnDef
 } from "@tanstack/react-table"
-import { DataTable } from "@/components/ui/data-table"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { DataTable } from '@/components/shared'
+import { DataTableColumnHeader } from '@/components/shared'
 
 import { Landmark, Pencil, Trash2, Lock } from "lucide-react"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { BankManagement, PaymentMethodManagement, TerminalManagement } from "@/features/treasury"
 
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
-import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
+import { DataCell, createActionsColumn } from '@/components/shared'
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"

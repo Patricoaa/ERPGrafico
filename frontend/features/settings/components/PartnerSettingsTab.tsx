@@ -4,9 +4,9 @@ import React, { useEffect, useState } from "react"
 import { toast } from "sonner"
 import { Card, CardContent, CardHeader, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { DataTable } from "@/components/ui/data-table"
-import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { DataTable } from '@/components/shared'
+import { DataCell, createActionsColumn } from '@/components/shared'
+import { DataTableColumnHeader } from '@/components/shared'
 import { Building2, Plus, ArrowUpRight, ArrowDownRight, Wallet, Users, Banknote, Edit2, Search, TrendingUp, TrendingDown, Loader2 } from "lucide-react"
 import { ColumnDef } from "@tanstack/react-table"
 import { partnersApi } from "@/features/contacts/api/partnersApi"

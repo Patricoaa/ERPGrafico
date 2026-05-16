@@ -8,7 +8,7 @@ import { EntityDetailPage, FormSkeleton, LabeledContainer } from "@/components/s
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
-import { Badge } from "@/components/ui/badge"
+import { Chip } from "@/components/shared"
 import { formatEntityDisplay } from "@/lib/entity-registry"
 
 interface StockMoveDetailClientProps {
@@ -43,10 +43,10 @@ export function StockMoveDetailClient({ moveId }: StockMoveDetailClientProps) {
         'ADJ': 'Ajuste'
     }
 
-    const typeColors: Record<string, string> = {
-        'IN': 'bg-success/10 text-success hover:bg-success/20',
-        'OUT': 'bg-destructive/10 text-destructive hover:bg-destructive/20',
-        'ADJ': 'bg-warning/10 text-warning hover:bg-warning/20'
+    const typeIntents: Record<string, "success" | "destructive" | "warning"> = {
+        'IN': 'success',
+        'OUT': 'destructive',
+        'ADJ': 'warning'
     }
 
     return (
@@ -74,9 +74,9 @@ export function StockMoveDetailClient({ moveId }: StockMoveDetailClientProps) {
                                 <div>
                                     <span className="text-xs text-muted-foreground block">Tipo</span>
                                     <div className="mt-1">
-                                        <Badge variant="secondary" className={typeColors[move.move_type] || ''}>
+                                        <Chip intent={typeIntents[move.move_type] || 'neutral'}>
                                             {typeLabels[move.move_type] || move.move_type}
-                                        </Badge>
+                                        </Chip>
                                     </div>
                                 </div>
                                 <div className="col-span-2">

@@ -1,3 +1,4 @@
+import { formatCurrency } from "@/lib/money"
 "use client"
 
 import { showApiError } from "@/lib/errors"
@@ -11,7 +12,7 @@ import { ProfitDistribution, ProfitDistributionLine } from "@/features/contacts/
 import { accountingApi } from "@/features/accounting/api/accountingApi"
 import { FiscalYear } from "@/features/accounting/types"
 import { toast } from "sonner"
-import { formatCurrency } from "@/lib/utils"
+
 import { 
     PieChart,
     Calculator,

@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
-import { Badge } from "@/components/ui/badge"
+import { Chip } from "@/components/shared"
 import { CheckCircle2, Clock, AlertTriangle, FileText } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { CardSkeleton } from "@/components/shared"
@@ -65,13 +65,14 @@ export function DashboardKPIs({ data, loading }: DashboardKPIsProps) {
                     </div>
                     <div className="flex gap-1.5 mt-3 flex-wrap">
                         {(Object.entries(differences.by_type || {}) as [string, {label: string, count: number}][]).map(([type, info]) => (
-                            <Badge 
-                                key={type} 
-                                variant="secondary" 
-                                className="text-[10px] font-black uppercase bg-destructive/5 text-destructive border-destructive/10" // intentional: badge density
+                            <Chip
+                                key={type}
+                                size="xs"
+                                intent="destructive"
+                                className="bg-destructive/5 border-destructive/10"
                             >
                                 {info.label}: {info.count}
-                            </Badge>
+                            </Chip>
                         ))}
                         {differences.count === 0 && (
                             <span className="text-[10px] font-black uppercase text-success flex items-center gap-1"> {/* intentional: badge density */}

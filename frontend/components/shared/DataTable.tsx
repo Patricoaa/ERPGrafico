@@ -26,8 +26,8 @@ import { SearchX, LucideIcon } from "lucide-react"
 import { EmptyStateContext } from "@/components/shared/EmptyState"
 import { BulkActionDock, BulkActionButtons, type BulkAction } from "@/components/shared"
 
-import { DataTablePagination } from "./data-table-pagination"
-import { DataTableToolbar } from "./data-table-toolbar"
+import { DataTablePagination } from "@/components/shared/DataTablePagination"
+import { DataTableToolbar } from "@/components/shared/DataTableToolbar"
 
 interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[]

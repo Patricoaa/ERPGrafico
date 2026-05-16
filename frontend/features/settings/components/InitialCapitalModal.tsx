@@ -1,3 +1,4 @@
+import { formatCurrency } from "@/lib/money"
 "use client"
 
 import { showApiError } from "@/lib/errors"
@@ -11,7 +12,7 @@ import { toast } from "sonner"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { Trash2, Plus, Users, Calculator, Info } from "lucide-react"
-import { formatCurrency } from "@/lib/utils"
+
 import { EmptyState } from "@/components/shared/EmptyState"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import type { Partner } from "@/features/contacts/types/partner"

@@ -1,3 +1,4 @@
+import { formatCurrency } from "@/lib/money"
 "use client"
 
 import { showApiError } from "@/lib/errors"
@@ -14,11 +15,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Loader2, Calculator, Banknote, Vault, AlertTriangle, ArrowRightLeft } from "lucide-react"
 import { toast } from "sonner"
 import api from "@/lib/api"
-import { Numpad } from "@/components/ui/numpad"
+import { Numpad } from '@/components/shared'
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { LabeledContainer } from "@/components/shared"
-import { cn, formatCurrency } from "@/lib/utils"
+import { cn } from "@/lib/utils"
 import { POSReport, type POSReportData } from "./POSReport"
 
 import type { POSSession, POSSessionAudit, AccountingSettings, TreasuryAccount } from "@/types/pos"

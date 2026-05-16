@@ -1,3 +1,4 @@
+import { formatCurrency } from "@/lib/money"
 "use client"
 
 import React, { useEffect, useState } from "react"
@@ -13,9 +14,9 @@ import { BaseDrawer } from "@/components/shared"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
 import { PartnerStatement, PartnerTransaction } from "@/features/contacts/types/partner"
 import { toast } from "sonner"
-import { formatCurrency, formatPlainDate as formatDate, cn } from "@/lib/utils"
-import { Badge } from "@/components/ui/badge"
-import { DataTable } from "@/components/ui/data-table"
+import { formatPlainDate as formatDate, cn } from "@/lib/utils"
+
+import { DataTable } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
 import { TableSkeleton } from "@/components/shared"
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu"
@@ -78,12 +79,12 @@ export function PartnerLedgerModal({
         return <History className="h-3.5 w-3.5 text-muted-foreground" />
     }
 
-    const getTransactionColor = (type: string) => {
-        if (type === 'SUBSCRIPTION') return 'bg-info/10 text-info border-info/20'
-        if (type.includes('TRANSFER')) return 'bg-warning/10 text-warning border-warning/20'
-        if (isInflow(type)) return 'bg-success/10 text-success border-success/20'
-        if (isOutflow(type)) return 'bg-destructive/10 text-destructive border-destructive/20'
-        return 'bg-muted/50 text-muted-foreground border-transparent'
+    const getTransactionIntent = (type: string): "info" | "warning" | "success" | "destructive" | "neutral" => {
+        if (type === 'SUBSCRIPTION') return 'info'
+        if (type.includes('TRANSFER')) return 'warning'
+        if (isInflow(type)) return 'success'
+        if (isOutflow(type)) return 'destructive'
+        return 'neutral'
     }
 
     type TransactionWithBalance = PartnerTransaction & { balance_after: number }
@@ -104,9 +105,9 @@ export function PartnerLedgerModal({
             header: "Concepto",
             cell: ({ row }) => (
                 <div className="flex flex-col gap-0.5">
-                    <Badge variant="outline" className={cn("text-[9px] font-black uppercase tracking-wider w-fit h-4 px-1.5 leading-none", getTransactionColor(row.original.transaction_type))}>
+                    <Chip size="xs" intent={getTransactionIntent(row.original.transaction_type)}>
                         {row.original.transaction_type_display}
-                    </Badge>
+                    </Chip>
                     <span className="text-[10px] text-muted-foreground italic truncate max-w-[250px] leading-tight">
                         {row.getValue("description")}
                     </span>

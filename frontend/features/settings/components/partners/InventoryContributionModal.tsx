@@ -1,3 +1,4 @@
+import { formatCurrency } from "@/lib/money"
 "use client"
 
 import { showApiError } from "@/lib/errors"
@@ -19,8 +20,8 @@ import { Label } from "@/components/ui/label"
 import { LabeledInput, LabeledSelect, LabeledContainer, Chip } from "@/components/shared"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { toast } from "sonner"
-import { formatCurrency } from "@/lib/utils"
-import { Badge } from "@/components/ui/badge"
+
+
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import api from "@/lib/api"
 import { partnersApi } from "@/features/contacts/api/partnersApi"

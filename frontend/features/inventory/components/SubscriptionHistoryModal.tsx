@@ -1,3 +1,4 @@
+import { formatCurrency } from "@/lib/money";
 "use client"
 
 import { FormSkeleton } from "@/components/shared"
@@ -23,7 +24,7 @@ import api from "@/lib/api"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { format, isWithinInterval, startOfDay, endOfDay } from "date-fns"
 import { es } from "date-fns/locale"
-import { DataCell } from "@/components/ui/data-table-cells"
+import { DataCell } from '@/components/shared'
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { FormTabs, FormTabsContent } from "@/components/shared"
 import {
@@ -225,7 +226,7 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                                                 <YAxis fontSize={10} stroke="var(--muted-foreground)" tickFormatter={(val) => `$${val.toLocaleString()}`} />
                                                 <RechartsTooltip
                                                     labelFormatter={(val) => format(new Date(val), 'PPP', { locale: es })}
-                                                    formatter={(val: number | undefined) => [val !== undefined ? new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(val) : '---', 'Costo Unitario']}
+                                                    formatter={(val: number | undefined) => [val !== undefined ? formatCurrency(val) : '---', 'Costo Unitario']}
                                                     contentStyle={{ borderRadius: 'var(--radius)', border: '1px solid var(--border)', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', padding: '12px', backgroundColor: 'var(--popover)', color: 'var(--popover-foreground)' }}
                                                 />
                                                 <Bar

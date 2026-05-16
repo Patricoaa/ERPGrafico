@@ -1,3 +1,4 @@
+import { formatCurrency } from "@/lib/money"
 "use client"
 
 import React from "react"
@@ -5,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge"
 import { Banknote, Eye, SplitSquareHorizontal } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { formatPlainDate, translatePaymentMethod, formatCurrency } from "@/lib/utils"
+import { formatPlainDate, translatePaymentMethod } from "@/lib/utils"
 import type { TransactionData, TransactionType } from "@/types/transactions"
 
 type PaymentEntry = {

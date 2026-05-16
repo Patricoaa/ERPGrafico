@@ -2,7 +2,7 @@
 
 import React, { useState } from "react"
 import { BaseModal } from "@/components/shared/BaseModal"
-import { Numpad } from "@/components/ui/numpad"
+import { Numpad } from '@/components/shared'
 import { ShieldCheck } from "lucide-react"
 
 interface PINPadModalProps {

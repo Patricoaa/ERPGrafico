@@ -3,9 +3,9 @@
 import { showApiError } from "@/lib/errors"
 import { useEffect, useState, useMemo } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
-import { DataTable } from "@/components/ui/data-table"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
-import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
+import { DataTable } from '@/components/shared'
+import { DataTableColumnHeader } from '@/components/shared'
+import { DataCell, createActionsColumn } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
 import { Checkbox } from "@/components/ui/checkbox"
 import { WarehouseForm } from "./WarehouseForm"

@@ -214,6 +214,27 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
   },
 };
 
+export const DTE_CONFIG: Record<string, { prefix: string, label: string }> = {
+  'FACTURA': { prefix: 'FAC', label: 'Factura' },
+  'FACTURA_EXENTA': { prefix: 'FE', label: 'Factura Exenta' },
+  'BOLETA': { prefix: 'BOL', label: 'Boleta' },
+  'BOLETA_EXENTA': { prefix: 'BE', label: 'Boleta Exenta' },
+  'NOTA_CREDITO': { prefix: 'NC', label: 'Nota de Crédito' },
+  'NOTA_DEBITO': { prefix: 'ND', label: 'Nota de Débito' },
+  'GUIA_DESPACHO': { prefix: 'GUI', label: 'Guía de Despacho' },
+  'NONE': { prefix: 'SD', label: 'Sin Documento' },
+};
+
+export function getDtePrefix(dteType?: string | null): string {
+  if (!dteType) return 'DOC';
+  return DTE_CONFIG[dteType]?.prefix || 'DOC';
+}
+
+export function getDteLabel(dteType?: string | null): string {
+  if (!dteType) return 'Documento';
+  return DTE_CONFIG[dteType]?.label || dteType;
+}
+
 /**
  * Renders a template string using the provided data.
  * Supports dot notation (e.g. {customer.name}) and simple padding (e.g. {id:06d}).
@@ -226,15 +247,7 @@ export function formatEntityDisplay(label: string, data: any): string {
 
   // Domain-specific override for Billing Invoices (Dynamic Prefixes)
   if (label === 'billing.invoice' && data?.dte_type) {
-    const dtePrefixes: Record<string, string> = {
-      'FACTURA': 'FAC',
-      'FACTURA_EXENTA': 'FE',
-      'BOLETA': 'BOL',
-      'BOLETA_EXENTA': 'BE',
-      'NOTA_CREDITO': 'NC',
-      'NOTA_DEBITO': 'ND'
-    };
-    const prefix = dtePrefixes[data.dte_type] || 'FAC';
+    const prefix = getDtePrefix(data.dte_type);
     template = `${prefix}-{number}`;
   }
 

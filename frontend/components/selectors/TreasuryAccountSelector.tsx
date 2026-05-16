@@ -1,3 +1,4 @@
+import { formatCurrency } from "@/lib/money"
 "use client"
 
 import { useState, useEffect } from "react"
@@ -12,7 +13,7 @@ import {
 import { useTreasuryAccounts, PaymentContext } from "@/hooks/useTreasuryAccounts"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { Input } from "@/components/ui/input"
-import { formatCurrency } from "@/lib/utils"
+
 
 interface TreasuryAccountSelectorProps {
     value?: string | number | null

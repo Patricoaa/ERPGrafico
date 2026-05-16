@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { DataTable } from "@/components/ui/data-table";
+import { DataTable } from '@/components/shared';
 import { Card, CardContent } from "@/components/ui/card";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -19,8 +19,8 @@ import {
 } from "lucide-react";
 import { Skeleton, Chip } from "@/components/shared";
 import api from "@/lib/api";
-import { DataCell } from "@/components/ui/data-table-cells";
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
+import { DataCell } from '@/components/shared';
+import { DataTableColumnHeader } from '@/components/shared';
 import { ColumnDef } from "@tanstack/react-table";
 
 interface GlobalAuditLog {

@@ -1,3 +1,4 @@
+import { formatPlainDate } from "@/lib/utils";
 "use client"
 
 import { getErrorMessage } from "@/lib/errors"
@@ -109,7 +110,7 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
         suggested.setMinutes(suggested.getMinutes() + total)
         if (!form.getValues('due_date')) {
             form.setValue('due_date', suggested)
-            toast.info(`Fecha de entrega sugerida: ${suggested.toLocaleDateString('es-CL')} (${Math.ceil(total / 60)}h según BOM)`)
+            toast.info(`Fecha de entrega sugerida: ${formatPlainDate(suggested)} (${Math.ceil(total / 60)}h según BOM)`)
         }
     }, [activeBom])
 

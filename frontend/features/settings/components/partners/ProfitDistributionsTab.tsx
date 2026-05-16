@@ -1,3 +1,4 @@
+import { formatCurrency } from "@/lib/money"
 "use client"
 
 import React, { useEffect, useState, useMemo, useRef } from "react"
@@ -8,7 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
 import { ProfitDistribution, ProfitDistributionLine } from "@/features/contacts/types/partner"
-import { formatCurrency, formatPlainDate, cn } from "@/lib/utils"
+import { formatPlainDate, cn } from "@/lib/utils"
 import {
     Calendar,
     ChevronRight,

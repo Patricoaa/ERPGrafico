@@ -14,7 +14,7 @@ import {
     Settings, AlertCircle, CheckCircle2, User, Users, Loader2,
     CalendarClock, BellRing, UserCheck,
 } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
+import { Chip } from "@/components/shared"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
@@ -216,9 +216,9 @@ function RowShell({
                     <div className="space-y-0.5">
                         <div className="flex items-center gap-2">
                             <h3 className="text-sm font-semibold leading-none">{name}</h3>
-                            <Badge variant="outline" className="h-4 px-1 text-[9px] font-mono text-muted-foreground uppercase opacity-50">
+                            <Chip size="xs" intent="neutral" className="opacity-50">
                                 {isRecurrent ? "RECURRENTE" : badgeLabel}
-                            </Badge>
+                            </Chip>
                         </div>
                         <p className="text-[10px] text-muted-foreground line-clamp-1">{description}</p>
                     </div>

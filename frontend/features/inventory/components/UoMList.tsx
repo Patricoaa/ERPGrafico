@@ -4,12 +4,12 @@ import { showApiError } from "@/lib/errors"
 
 import React, { useState, useMemo } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
-import { DataTable } from "@/components/ui/data-table"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { DataTable } from '@/components/shared'
+import { DataTableColumnHeader } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Pencil, Trash2 } from "lucide-react"
-import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
+import { DataCell, createActionsColumn } from '@/components/shared'
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import type { BulkAction } from "@/components/shared"
 import { UoMForm } from "./UoMForm"

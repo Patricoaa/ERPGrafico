@@ -1,7 +1,8 @@
+import { formatCurrency } from "@/lib/money"
 
 import { Card, CardContent } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
-import { cn, formatCurrency } from "@/lib/utils"
+import { cn } from "@/lib/utils"
 import { TrendingUp, Package, FileText, Banknote, ClipboardList } from "lucide-react"
 
 import { Order } from "../types"

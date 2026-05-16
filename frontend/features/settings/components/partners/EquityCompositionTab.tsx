@@ -1,3 +1,4 @@
+import { formatCurrency } from "@/lib/money"
 "use client"
 
 import React, { useEffect, useState } from "react"
@@ -37,11 +38,11 @@ import {
     TableRow,
     TableCell
 } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
+
 import { partnersApi } from "@/features/contacts/api/partnersApi"
 import { Partner, PartnerSummary } from "@/features/contacts/types/partner"
 import { toast } from "sonner"
-import { formatCurrency, cn } from "@/lib/utils"
+import { cn } from "@/lib/utils"
 import { CardSkeleton, TableSkeleton } from "@/components/shared"
 import {
     SubscriptionMovementModal,
@@ -55,9 +56,9 @@ import { InitialCapitalModal } from "@/features/settings/components/InitialCapit
 import { MobilizeEarningsWizard } from "@/features/settings/components/partners/MobilizeEarningsWizard"
 import { PartnerLedgerModal } from "@/features/settings/components/partners/PartnerLedgerModal"
 import { EquityStatsSheet } from "@/features/settings/components/partners/EquityStatsSheet"
-import { DataTable } from "@/components/ui/data-table"
+import { DataTable } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
-import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
+import { DataCell, createActionsColumn } from '@/components/shared'
 
 export function EquityCompositionTab({
     initialAddPartnerOpen = false,
@@ -164,9 +165,9 @@ export function EquityCompositionTab({
             header: () => <div className="text-right">Part. %</div>,
             cell: ({ row }) => (
                 <div className="text-right">
-                    <Badge variant="outline" className="font-mono text-[10px] h-5 rounded-sm border-primary/20 bg-primary/5 text-primary font-black">
+                    <Chip size="xs" intent="primary" className="h-5 rounded-sm bg-primary/5">
                         {row.getValue("partner_equity_percentage")}%
-                    </Badge>
+                    </Chip>
                 </div>
             )
         },

@@ -1,17 +1,18 @@
+import { formatCurrency } from "@/lib/money"
 "use client"
 
 import React, { useMemo } from "react"
 import { ColumnDef } from "@tanstack/react-table"
 import { ArrowRight } from "lucide-react"
 import Link from "next/link"
-import { cn, formatPlainDate, formatCurrency } from "@/lib/utils"
+import { cn, formatPlainDate } from "@/lib/utils"
 import type { DashboardPendingItem } from "../types"
 import { Button } from "@/components/ui/button"
-import { DataTable } from "@/components/ui/data-table"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
-import { Badge } from "@/components/ui/badge"
+import { DataTable } from '@/components/shared'
+import { DataTableColumnHeader } from '@/components/shared'
+import { Chip } from "@/components/shared"
 import { useRouter } from "next/navigation"
-import { createActionsColumn, DataCell } from "@/components/ui/data-table-cells"
+import { createActionsColumn, DataCell } from '@/components/shared'
 
 interface DashboardPendingTableProps {
     data: DashboardPendingItem[]
@@ -39,9 +40,9 @@ export function DashboardPendingTable({ data, loading }: DashboardPendingTablePr
             accessorKey: "account",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Cuenta" />,
             cell: ({ row }) => (
-                <Badge variant="outline" className="rounded-sm text-[10px] border-border/40 font-bold uppercase tracking-wider bg-muted/20"> {/* intentional: badge density */}
+                <Chip size="xs" intent="neutral" className="rounded-sm bg-muted/20">
                     {row.getValue("account")}
-                </Badge>
+                </Chip>
             ),
         },
         {
@@ -73,9 +74,9 @@ export function DashboardPendingTable({ data, loading }: DashboardPendingTablePr
             accessorKey: "is_overdue",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" />,
             cell: ({ row }) => row.original.is_overdue && (
-                <Badge variant="destructive" className="text-[10px] uppercase font-black px-1.5 h-4 tracking-tighter shadow-sm shadow-destructive/20"> {/* intentional: badge density */}
+                <Chip size="xs" intent="destructive" className="shadow-sm shadow-destructive/20">
                     Crítico
-                </Badge>
+                </Chip>
             ),
         },
         createActionsColumn<DashboardPendingItem>({

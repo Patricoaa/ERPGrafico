@@ -1,3 +1,4 @@
+import { formatCurrency } from "@/lib/money"
 import React, { useState, useEffect, Suspense, lazy, useMemo } from 'react';
 import { GenericWizard, WizardStep } from '@/components/shared/GenericWizard';
 import { Button } from '@/components/ui/button';
@@ -15,7 +16,7 @@ import {
     Wallet
 } from 'lucide-react';
 import { FiscalYearPreviewResult } from '../../types';
-import { formatCurrency } from '@/lib/utils';
+
 import { cn } from '@/lib/utils';
 import { TableSkeleton, LabeledContainer, CancelButton, SubmitButton, IconButton } from '@/components/shared';
 import { BaseModal } from '@/components/shared/BaseModal';

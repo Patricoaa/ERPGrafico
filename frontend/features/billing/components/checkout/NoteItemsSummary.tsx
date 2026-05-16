@@ -1,10 +1,10 @@
 "use client"
 
 import { Separator } from "@/components/ui/separator"
-import { Badge } from "@/components/ui/badge"
+import { Chip } from "@/components/shared"
 import { ShoppingBag } from "lucide-react"
 import { EmptyState } from "@/components/shared/EmptyState"
-import { formatCurrency } from "@/lib/currency"
+import { formatCurrency } from "@/lib/money"
 import { cn } from "@/lib/utils"
 
 
@@ -46,13 +46,13 @@ export function NoteItemsSummary({
                                                 {item.product_name || `Producto ${item.product_id}`}
                                             </p>
                                             <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
-                                                <Badge variant="secondary" className="text-[9px] px-1.5 py-0 h-4 bg-muted text-muted-foreground font-bold">
+                                                <Chip size="xs" intent="neutral" className="bg-muted">
                                                     {item.quantity} {item.uom_name || 'un'}
-                                                </Badge>
+                                                </Chip>
                                                 {item.reason && (
-                                                    <Badge variant="outline" className="text-[9px] h-3 px-1 font-normal opacity-70 border-muted-foreground/20 italic truncate max-w-[120px]">
+                                                    <Chip size="xs" intent="neutral" className="h-3 px-1 font-normal opacity-70 italic truncate max-w-[120px]">
                                                         {item.reason}
-                                                    </Badge>
+                                                    </Chip>
                                                 )}
                                             </div>
                                         </div>

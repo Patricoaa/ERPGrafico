@@ -1,3 +1,4 @@
+import { formatCurrency } from "@/lib/money";
 "use client"
 
 import { showApiError } from "@/lib/errors"
@@ -20,10 +21,10 @@ import { DeclarationWizard } from "@/features/tax/components/DeclarationWizard"
 import { F29PaymentModal } from "@/features/tax/components/F29PaymentModal"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { useServerDate } from "@/hooks/useServerDate"
-import { DataTable } from "@/components/ui/data-table"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { DataTable } from '@/components/shared'
+import { DataTableColumnHeader } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
-import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
+import { DataCell, createActionsColumn } from '@/components/shared'
 import { cn } from "@/lib/utils"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { TaxPeriod, TaxDeclaration, TaxPaymentData } from "../types"
@@ -252,7 +253,7 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange, create
                 const amount = row.getValue("vat_to_pay") as number
                 return (
                     <div className="flex justify-center w-full font-mono">
-                        {new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(amount)}
+                        {formatCurrency(amount)}
                     </div>
                 )
             }
@@ -340,7 +341,7 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange, create
                             <CardHeader className="pb-2">
                                 <CardTitle className="text-sm font-medium text-muted-foreground">IVA por Pagar (Estimado)</CardTitle>
                                 <CardDescription className="text-2xl font-bold text-foreground">
-                                    {new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(currentVatToPay)}
+                                    {formatCurrency(currentVatToPay)}
                                 </CardDescription>
                             </CardHeader>
                             <CardContent>
@@ -423,7 +424,7 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange, create
                                                     <StatusBadge status={period.status} size="sm" />
                                                     {summary && (
                                                         <span className="text-[10px] text-muted-foreground font-medium">
-                                                            {new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(summary.vat_to_pay)}
+                                                            {formatCurrency(summary.vat_to_pay)}
                                                         </span>
                                                     )}
                                                 </div>
