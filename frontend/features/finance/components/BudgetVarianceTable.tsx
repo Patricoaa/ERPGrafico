@@ -74,7 +74,7 @@ const VarianceCell = ({ value, percentage, type }: { value: number, percentage: 
                 />
                 <span className={cn(
                     "text-[10px] opacity-70",
-                    value === 0 ? "" : (isGood ? "text-emerald-600" : "text-destructive")
+                    value === 0 ? "" : (isGood ? "text-success" : "text-destructive")
                 )}>
                     {percentage.toFixed(1)}%
                 </span>
@@ -93,7 +93,7 @@ const AccountRow = ({ node, level = 0 }: { node: BudgetVarianceNode, level?: num
             <TableRow className={cn(
                 "group hover:bg-muted/50 transition-colors",
                 level === 0 ? "bg-muted/20 font-bold" : "",
-                node.is_unbudgeted ? "bg-amber-500/5" : ""
+                node.is_unbudgeted ? "bg-warning/5" : ""
             )}>
                 <TableCell className="p-2 min-w-[280px]">
                     <div className="flex items-center" style={{ paddingLeft: `${paddingLeft}px` }}>
@@ -114,7 +114,7 @@ const AccountRow = ({ node, level = 0 }: { node: BudgetVarianceNode, level?: num
                             <TooltipProvider>
                                 <Tooltip>
                                     <TooltipTrigger asChild>
-                                        <AlertCircle className="ml-2 h-3.5 w-3.5 text-amber-500 shrink-0" />
+                                        <AlertCircle className="ml-2 h-3.5 w-3.5 text-warning shrink-0" />
                                     </TooltipTrigger>
                                     <TooltipContent>Cuenta no presupuestada con movimientos reales</TooltipContent>
                                 </Tooltip>

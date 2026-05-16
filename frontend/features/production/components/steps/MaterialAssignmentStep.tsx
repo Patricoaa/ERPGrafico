@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Plus, Truck, Pencil, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { EmptyState } from '@/components/shared'
+import { Chip, EmptyState } from '@/components/shared'
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
@@ -142,9 +142,7 @@ export function MaterialAssignmentStep({
                         </td>
                         <td className="p-2 text-right font-bold">{formatCurrency(m.total_cost)}</td>
                         <td className="p-2">
-                          <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border border-border bg-muted/50 text-muted-foreground whitespace-nowrap">
-                            {m.source}
-                          </span>
+                          <Chip size="xs">{m.source}</Chip>
                         </td>
                         <td className="p-2">
                           {m.source === 'MANUAL' && isViewingCurrentStage && (
@@ -296,9 +294,7 @@ export function MaterialAssignmentStep({
                       )}
                       {m.purchase_order_number && (
                         <div className="flex items-center gap-2">
-                          <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded border border-border bg-muted/50 text-muted-foreground whitespace-nowrap">
-                            OCS-{m.purchase_order_number}
-                          </span>
+                          <Chip size="xs">OCS-{m.purchase_order_number}</Chip>
                           <span className="text-[10px] font-medium text-muted-foreground">({m.supplier_name})</span>
                         </div>
                       )}

@@ -16,7 +16,7 @@ import { SplitAllocationDialog } from "./SplitAllocationDialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useReconciledLinesQuery } from "../hooks/useReconciliationQueries"
 
-import { LabeledSelect, LabeledInput, TableSkeleton, ActionDock } from "@/components/shared"
+import { LabeledSelect, LabeledInput, TableSkeleton, ActionDock, Chip } from "@/components/shared"
 import { PeriodValidationDateInput } from "@/components/shared/PeriodValidationDateInput"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -545,9 +545,9 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                             {row.original.description}
                         </span>
                         {row.original.reconciliation_status === 'EXCLUDED' && (
-                            <Badge variant="outline" className="w-fit text-[8px] font-black uppercase py-0 px-1.5 border-destructive/30 text-destructive bg-destructive/5">
+                            <Chip size="xs" intent="destructive">
                                 Excluido
-                            </Badge>
+                            </Chip>
                         )}
                         {row.original.reference && (
                             <span className="text-[10px] font-mono text-muted-foreground truncate opacity-70"> REF: {row.original.reference}</span>
@@ -803,7 +803,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
 
                         <div className="flex items-center gap-3">
                             <div className="flex items-center gap-1.5">
-                                <span className="text-[8px] font-bold uppercase text-muted-foreground/50 tracking-tighter">Desde</span>
+                                <span className="text-[9px] font-bold uppercase text-muted-foreground/50 tracking-tighter">Desde</span>
                                 <Input
                                     type="date"
                                     className="h-7 w-28 px-1 text-[10px] font-medium"
@@ -816,7 +816,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                 />
                             </div>
                             <div className="flex items-center gap-1.5">
-                                <span className="text-[8px] font-bold uppercase text-muted-foreground/50 tracking-tighter">Hasta</span>
+                                <span className="text-[9px] font-bold uppercase text-muted-foreground/50 tracking-tighter">Hasta</span>
                                 <Input
                                     type="date"
                                     className="h-7 w-28 px-1 text-[10px] font-medium"
@@ -1430,7 +1430,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                             label={
                                 <div className="flex items-center gap-2">
                                     <span>Banco</span>
-                                    <span className="text-[8px] bg-info/20 text-info px-1 rounded-sm font-bold">{selectedLines.length}</span>
+                                    <Chip size="xs" intent="info">{selectedLines.length}</Chip>
                                 </div>
                             }
                             value={formatCurrency(safeSum(selectedLines.map(l => Math.abs(safeDifference(safeParseFloat(l.credit), safeParseFloat(l.debit))))))}
@@ -1440,7 +1440,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                             label={
                                 <div className="flex items-center gap-2">
                                     <span>Tesorería</span>
-                                    <span className="text-[8px] bg-foreground/10 text-muted-foreground px-1 rounded-sm font-bold">{selectedPayments.length}</span>
+                                    <Chip size="xs">{selectedPayments.length}</Chip>
                                 </div>
                             }
                             value={formatCurrency(safeSum(selectedPayments.map(p => safeParseFloat(p.amount))))}

@@ -20,7 +20,7 @@ import {
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
-import { StatusBadge } from "@/components/shared/StatusBadge"
+import { StatusBadge, Chip } from "@/components/shared"
 import { ProductForm } from "@/features/inventory/components/ProductForm"
 import { SubscriptionHistoryModal } from "@/features/inventory/components/SubscriptionHistoryModal"
 import { ArchivingRestrictionsModal } from "@/features/inventory/components/ArchivingRestrictionsModal"
@@ -205,14 +205,10 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false, cr
                         <DataCell.Text className="font-medium text-xs leading-tight text-center">{sub.product_name}</DataCell.Text>
                         <div className="flex flex-wrap justify-center gap-1 mt-1">
                             {sub.product_internal_code && (
-                                <DataCell.Badge className="text-[10px] h-4 px-1.5 font-normal opacity-80 uppercase">
-                                    {sub.product_internal_code}
-                                </DataCell.Badge>
+                                <Chip size="xs" className="opacity-80">{sub.product_internal_code}</Chip>
                             )}
                             {sub.product_code && sub.product_code !== sub.product_internal_code && (
-                                <DataCell.Badge className="text-[10px] h-4 px-1.5 font-normal opacity-80 uppercase bg-primary/5 text-primary border-primary/20">
-                                    {sub.product_code}
-                                </DataCell.Badge>
+                                <Chip size="xs" intent="primary" className="opacity-80">{sub.product_code}</Chip>
                             )}
                         </div>
                     </div>

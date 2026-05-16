@@ -12,7 +12,7 @@ import type { Payroll, SalaryAdvance, PayrollPayment } from "@/types/hr"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+import { StatusBadge, Chip } from "@/components/shared"
 import { Card, CardContent } from "@/components/ui/card"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
@@ -432,9 +432,7 @@ function PersonalTab({
                 const s = row.original.remuneration_paid_status
                 return (
                     <div className="flex justify-center">
-                        <DataCell.Badge variant={s === 'PAID' ? 'success' : s === 'PARTIAL' ? 'warning' : 'outline'}>
-                            {s === 'PAID' ? 'Pagado' : s === 'PARTIAL' ? 'Parcial' : 'Pendiente'}
-                        </DataCell.Badge>
+                        <StatusBadge status={s} />
                     </div>
                 )
             }
@@ -484,9 +482,9 @@ function PersonalTab({
                 const label = row.getValue("typeLabel") as string
                 return (
                     <div className="flex justify-center">
-                        <DataCell.Badge variant={type === 'SALARIO' ? 'success' : type === 'ANTICIPO' ? 'info' : 'warning'}>
+                        <Chip size="xs" intent={type === 'SALARIO' ? 'success' : type === 'ANTICIPO' ? 'info' : 'warning'}>
                             {label}
-                        </DataCell.Badge>
+                        </Chip>
                     </div>
                 )
             },

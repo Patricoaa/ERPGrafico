@@ -87,7 +87,7 @@ export function ProductManufacturingTab({ form, products, uoms, variantMode = fa
                                         >
                                             <Package className="h-4 w-4" />
                                             <span className="text-[10px] font-black uppercase tracking-tighter">Simple</span>
-                                            <span className="text-[8px] text-muted-foreground font-medium leading-tight text-center">Manual / Lote</span>
+                                            <span className="text-[9px] text-muted-foreground font-medium leading-tight text-center">Manual / Lote</span>
                                         </TabsTrigger>
                                         <TabsTrigger 
                                             type="button"
@@ -96,7 +96,7 @@ export function ProductManufacturingTab({ form, products, uoms, variantMode = fa
                                         >
                                             <Clock className="h-4 w-4" />
                                             <span className="text-[10px] font-black uppercase tracking-tighter">Express</span>
-                                            <span className="text-[8px] text-muted-foreground font-medium leading-tight text-center">Auto-cierre</span>
+                                            <span className="text-[9px] text-muted-foreground font-medium leading-tight text-center">Auto-cierre</span>
                                         </TabsTrigger>
                                         <TabsTrigger 
                                             type="button"
@@ -105,7 +105,7 @@ export function ProductManufacturingTab({ form, products, uoms, variantMode = fa
                                         >
                                             <Layers className="h-4 w-4" />
                                             <span className="text-[10px] font-black uppercase tracking-tighter">Avanzado</span>
-                                            <span className="text-[8px] text-muted-foreground font-medium leading-tight text-center">Wizard Etapas</span>
+                                            <span className="text-[9px] text-muted-foreground font-medium leading-tight text-center">Wizard Etapas</span>
                                         </TabsTrigger>
                                     </TabsList>
                                 </Tabs>

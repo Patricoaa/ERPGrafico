@@ -305,17 +305,17 @@ export default function PurchaseInvoicesPage() {
                 return (
                     <div className="flex flex-col gap-1">
                         {doc.status !== 'POSTED' && (
-                            <Badge variant={badgeStyle.variant} className="text-[8px] h-4 px-1 uppercase whitespace-nowrap">
+                            <Badge variant={badgeStyle.variant} className="text-[9px] h-4 px-1 uppercase whitespace-nowrap">
                                 {badgeStyle.label}
                             </Badge>
                         )}
                         {/* Additional Status Badges */}
                         <div className="flex flex-wrap gap-1">
                             {(doc.pending_amount ?? 0) <= 0 && doc.status !== 'DRAFT' && doc.status !== 'PAID' && (
-                                <Badge variant="success" className="text-[8px] h-4 px-1 uppercase whitespace-nowrap">Pagado</Badge>
+                                <Badge variant="success" className="text-[9px] h-4 px-1 uppercase whitespace-nowrap">Pagado</Badge>
                             )}
                             {doc.po_receiving_status === 'RECEIVED' && (
-                                <Badge variant="outline" className="text-[8px] h-4 px-1 uppercase border-warning text-warning font-bold whitespace-nowrap">
+                                <Badge variant="outline" className="text-[9px] h-4 px-1 uppercase border-warning text-warning font-bold whitespace-nowrap">
                                     {doc.dte_type === 'NOTA_CREDITO' ? 'Devuelto' : 'Recibido'}
                                 </Badge>
                             )}

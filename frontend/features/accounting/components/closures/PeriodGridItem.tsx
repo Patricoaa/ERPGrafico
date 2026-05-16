@@ -1,7 +1,7 @@
 import React from 'react';
 import { EntityCard } from '@/components/shared/EntityCard';
 import { StatusBadge } from '@/components/shared/StatusBadge';
-import { IconButton } from '@/components/shared';
+import { IconButton, Chip } from '@/components/shared';
 import { AccountingPeriod } from '../../types';
 import { Calendar, Lock, LockOpen, CheckCircle2, Clock, ShieldCheck, ShieldAlert } from 'lucide-react';
 import { formatPlainDate } from '@/lib/utils';
@@ -75,10 +75,9 @@ const StatusIcon = ({ status }: { status: string }) => {
                             <TooltipProvider>
                                 <Tooltip>
                                     <TooltipTrigger asChild>
-                                        <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-warning/10 border border-warning/20 cursor-help animate-pulse-subtle">
-                                            <ShieldCheck className="w-3 h-3 text-warning" />
-                                            <span className="text-[10px] font-bold uppercase text-warning tracking-wider">F29 Cerrado</span>
-                                        </div>
+                                        <Chip intent="warning" icon={ShieldCheck} className="cursor-help animate-pulse-subtle">
+                                            F29 Cerrado
+                                        </Chip>
                                     </TooltipTrigger>
                                     <TooltipContent side="top" className="max-w-[200px] bg-popover border-border">
                                         <p className="text-xs font-medium">El periodo tributario (F29) está oficialmente cerrado ante el SII. Se bloquea la reapertura contable para garantizar integridad fiscal.</p>

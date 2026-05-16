@@ -128,7 +128,7 @@ export function BudgetDetailView({ budgetId }: BudgetDetailViewProps) {
                         <CardTitle className="text-sm font-medium text-muted-foreground">Presupuestado</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">
+                        <div className="text-2xl font-black font-heading tracking-tighter">
                             {executionData.summary.total_budgeted.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
                         </div>
                     </CardContent>
@@ -138,7 +138,7 @@ export function BudgetDetailView({ budgetId }: BudgetDetailViewProps) {
                         <CardTitle className="text-sm font-medium text-muted-foreground">Ejecutado</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">
+                        <div className="text-2xl font-black font-heading tracking-tighter">
                             {executionData.summary.total_actual.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
                         </div>
                     </CardContent>
@@ -148,7 +148,7 @@ export function BudgetDetailView({ budgetId }: BudgetDetailViewProps) {
                         <CardTitle className="text-sm font-medium text-muted-foreground">Desviación</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className={`text-2xl font-bold ${executionData.summary.total_variance < 0 ? 'text-destructive' : 'text-success'}`}>
+                        <div className={`text-2xl font-black font-heading tracking-tighter ${executionData.summary.total_variance < 0 ? 'text-destructive' : 'text-success'}`}>
                             {executionData.summary.total_variance.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
                         </div>
                     </CardContent>

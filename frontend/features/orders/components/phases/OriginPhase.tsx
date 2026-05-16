@@ -158,7 +158,7 @@ export function OriginPhase({
                 {(activeDoc?.lines || activeDoc?.items || []).length > 3 && (
                     <div className="text-[9px] text-muted-foreground/60 italic pt-1 flex justify-between items-center border-t border-border/10 mt-1">
                         <span>Y {(activeDoc?.lines || activeDoc?.items || []).length - 3} productos más...</span>
-                        <span className="font-bold text-primary/60 text-[8px] uppercase tracking-widest">Total {(activeDoc?.lines || activeDoc?.items || []).length} ítems</span>
+                        <span className="font-bold text-primary/60 text-[9px] uppercase tracking-widest">Total {(activeDoc?.lines || activeDoc?.items || []).length} ítems</span>
                     </div>
                 )}
             </div>

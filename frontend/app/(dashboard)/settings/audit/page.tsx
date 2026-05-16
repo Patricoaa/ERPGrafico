@@ -17,7 +17,7 @@ import {
     Minus,
     RefreshCw
 } from "lucide-react";
-import { Skeleton } from "@/components/shared";
+import { Skeleton, Chip } from "@/components/shared";
 import api from "@/lib/api";
 import { DataCell } from "@/components/ui/data-table-cells";
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
@@ -101,9 +101,9 @@ export default function AuditHubPage() {
                 <DataTableColumnHeader column={column} title="Usuario" />
             ),
             cell: ({ row }) => (
-                <DataCell.Badge variant="outline" className="bg-muted font-normal">
-                    {row.original.user_name || "Sistema"}
-                </DataCell.Badge>
+                <div className="flex justify-center w-full">
+                    <Chip size="xs">{row.original.user_name || "Sistema"}</Chip>
+                </div>
             )
         },
         {
@@ -112,9 +112,9 @@ export default function AuditHubPage() {
                 <DataTableColumnHeader column={column} title="Entidad" />
             ),
             cell: ({ row }) => (
-                <DataCell.Badge variant="secondary" className="font-normal capitalize">
-                    {row.original.entity_label || "Sistema"}
-                </DataCell.Badge>
+                <div className="flex justify-center w-full">
+                    <Chip size="xs">{row.original.entity_label || "Sistema"}</Chip>
+                </div>
             )
         },
         {
@@ -133,22 +133,20 @@ export default function AuditHubPage() {
                             hType === '-' ? 'Eliminación' : 'Cambio'
                 );
 
-                let variant: "outline" | "success" | "destructive" | "info" | "warning" | "secondary" | "default" = "outline";
+                let intent: "neutral" | "success" | "destructive" | "info" | "warning" = "neutral";
                 if (source === 'action_log') {
-                    if (row.original.action_type === 'LOGIN') variant = "success";
-                    if (row.original.action_type === 'SECURITY') variant = "destructive";
+                    if (row.original.action_type === 'LOGIN') intent = "success";
+                    if (row.original.action_type === 'SECURITY') intent = "destructive";
                 } else {
-                    if (hType === '+') variant = "info";
-                    if (hType === '~') variant = "warning";
-                    if (hType === '-') variant = "destructive";
+                    if (hType === '+') intent = "info";
+                    if (hType === '~') intent = "warning";
+                    if (hType === '-') intent = "destructive";
                 }
 
                 return (
                     <div className="flex items-center gap-2">
                         <DataCell.Icon icon={icon} className="h-6 w-6" />
-                        <DataCell.Badge variant={variant} className="font-semibold uppercase text-[9px]">
-                            {label}
-                        </DataCell.Badge>
+                        <Chip size="xs" intent={intent}>{label}</Chip>
                     </div>
                 );
             }
@@ -171,12 +169,11 @@ export default function AuditHubPage() {
             cell: ({ row }) => {
                 const source = row.original.source;
                 const label = source === 'action_log' ? 'Sistema' : 'Datos';
-                const variant = source === 'action_log' ? 'default' : 'secondary';
 
                 return (
-                    <DataCell.Badge variant={variant} className="font-normal">
-                        {label}
-                    </DataCell.Badge>
+                    <div className="flex justify-center w-full">
+                        <Chip size="xs">{label}</Chip>
+                    </div>
                 );
             }
         }

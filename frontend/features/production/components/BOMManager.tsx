@@ -10,7 +10,7 @@ import { BOMFormModal } from "./BOMFormModal"
 
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu"
-import { LabeledSelect } from "@/components/shared"
+import { LabeledSelect, Chip } from "@/components/shared"
 import { cn } from "@/lib/utils"
 import { DataTable } from "@/components/ui/data-table"
 import { ColumnDef } from "@tanstack/react-table"
@@ -125,12 +125,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
                 return (
                     <div className="flex items-center justify-center gap-2 w-full">
                         {isBase ? (
-                            <DataCell.Badge
-                                variant="outline"
-                                className="text-[9px] font-black uppercase tracking-widest bg-primary/5 text-primary border-primary/20 h-5 px-1.5"
-                            >
-                                BASE
-                            </DataCell.Badge>
+                            <Chip size="xs" intent="primary">BASE</Chip>
                         ) : (
                             <div className="flex flex-col items-center gap-0.5">
                                 <DataCell.Code>{row.original.product_internal_code || 'VAR'}</DataCell.Code>

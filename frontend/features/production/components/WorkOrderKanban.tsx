@@ -12,7 +12,7 @@ import {
 } from "lucide-react"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { Badge } from "@/components/ui/badge"
-import { CardSkeleton, Skeleton } from "@/components/shared"
+import { CardSkeleton, Chip, Skeleton } from "@/components/shared"
 import { WorkOrder } from "../types"
 import { formatEntityDisplay } from "@/lib/entity-registry"
 import { STAGES_ORDERED } from "../constants/stages"
@@ -37,9 +37,7 @@ function KanbanCard({ order, onManage }: { order: WorkOrder; onManage: (id: numb
         >
             <CardContent className="p-3 space-y-3">
                 <div className="flex items-center justify-between mb-3">
-                    <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded border border-border bg-muted/50 text-muted-foreground whitespace-nowrap">
-                        {formatEntityDisplay('production.workorder', order)}
-                    </span>
+                    <Chip size="xs">{formatEntityDisplay('production.workorder', order)}</Chip>
                     <StatusBadge status={order.status} size="sm" />
                 </div>
                 <div className="flex gap-2 items-center flex-wrap">
@@ -109,9 +107,9 @@ export function WorkOrderKanban({ orders, onManage, isLoading }: KanbanProps) {
                                 <Icon className="h-4 w-4 text-muted-foreground" />
                                 <h3 className="font-bold text-sm uppercase tracking-wider">{stage.label}</h3>
                             </div>
-                            <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border border-border bg-white text-muted-foreground whitespace-nowrap min-w-[20px] flex justify-center">
+                            <Chip size="xs" className="min-w-[20px] justify-center">
                                 {isLoading ? <Skeleton className="h-2.5 w-3" /> : stageOrders.length}
-                            </span>
+                            </Chip>
                         </div>
 
                         {isLoading ? (

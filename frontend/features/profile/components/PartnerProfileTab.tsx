@@ -5,7 +5,7 @@ import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { motion } from "framer-motion"
 import { toast } from "sonner"
 import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+import { Chip } from "@/components/shared"
 import { DataTable } from "@/components/ui/data-table"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { createActionsColumn, DataCell } from "@/components/ui/data-table-cells"
@@ -109,21 +109,21 @@ export function PartnerProfileTab({ contactId }: Props) {
             cell: ({ row }) => {
                 const tx = row.original;
                 const type = tx.transaction_type;
-                let variant: 'success' | 'warning' | 'info' | 'secondary' = 'secondary';
-                
+                let intent: 'success' | 'warning' | 'info' | 'neutral' = 'neutral';
+
                 if (type === 'SUBSCRIPTION' || type === 'CAPITAL_CASH' || type === 'CAPITAL_INVENTORY' || type === 'TRANSFER_IN') {
-                    variant = 'success';
+                    intent = 'success';
                 } else if (type === 'WITHDRAWAL' || type === 'REDUCTION' || type === 'TRANSFER_OUT') {
-                    variant = 'warning';
+                    intent = 'warning';
                 } else if (type === 'LOAN_IN') {
-                    variant = 'info';
+                    intent = 'info';
                 }
 
                 return (
                     <div className="flex justify-center w-full">
-                        <DataCell.Badge variant={variant}>
+                        <Chip size="xs" intent={intent}>
                             {tx.transaction_type_display || type}
-                        </DataCell.Badge>
+                        </Chip>
                     </div>
                 );
             },

@@ -168,7 +168,7 @@ export function TreasuryAccountDetailClient({ accountId }: TreasuryAccountDetail
         >
             <div className="max-w-5xl mx-auto w-full">
                 {isSystemManaged && (
-                    <div className="flex items-start gap-3 p-3 rounded-lg border border-amber-500/20 bg-amber-500/5 text-xs text-amber-600 mb-4">
+                    <div className="flex items-start gap-3 p-3 rounded-lg border border-warning/20 bg-warning/5 text-xs text-warning mb-4">
                         <Lock className="h-4 w-4 mt-0.5 shrink-0" />
                         <p>Esta cuenta es gestionada automáticamente por el sistema. Para modificarla, actualice el Proveedor de Terminal correspondiente.</p>
                     </div>

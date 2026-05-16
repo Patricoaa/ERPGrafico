@@ -104,7 +104,7 @@ export function PartnerLedgerModal({
             header: "Concepto",
             cell: ({ row }) => (
                 <div className="flex flex-col gap-0.5">
-                    <Badge variant="outline" className={cn("text-[8px] font-black uppercase tracking-wider w-fit h-4 px-1.5 leading-none", getTransactionColor(row.original.transaction_type))}>
+                    <Badge variant="outline" className={cn("text-[9px] font-black uppercase tracking-wider w-fit h-4 px-1.5 leading-none", getTransactionColor(row.original.transaction_type))}>
                         {row.original.transaction_type_display}
                     </Badge>
                     <span className="text-[10px] text-muted-foreground italic truncate max-w-[250px] leading-tight">

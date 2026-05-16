@@ -634,7 +634,7 @@ export function POSClientView() {
                         <div className="mx-auto bg-primary text-primary-foreground p-4 rounded-full mb-4 shadow-sm">
                             <Check className="h-10 w-10 stroke-[3px]" />
                         </div>
-                        <AlertDialogTitle className="text-2xl font-black text-center text-foreground">¡Venta Exitosa!</AlertDialogTitle>
+                        <AlertDialogTitle className="text-xl font-black tracking-tight text-center text-foreground">¡Venta Exitosa!</AlertDialogTitle>
                         <AlertDialogDescription className="text-center text-primary/60 font-medium">
                             La venta se ha procesado correctamente. ¿Desea imprimir el comprobante térmico?
                         </AlertDialogDescription>
@@ -681,7 +681,7 @@ export function POSClientView() {
                         <div className="mx-auto bg-warning/10 text-warning p-4 rounded-full mb-4 border border-warning/20">
                             <ShoppingCart className="h-8 w-8" />
                         </div>
-                        <AlertDialogTitle className="text-xl font-bold text-center text-warning">Confirmar Retiro de Socio</AlertDialogTitle>
+                        <AlertDialogTitle className="text-xl font-black tracking-tight text-center text-warning">Confirmar Retiro de Socio</AlertDialogTitle>
                         <AlertDialogDescription className="text-center text-warning/60 font-medium pt-2 text-sm">
                             Se registrará un retiro de stock por concepto de <strong>Retiro de Utilidades</strong>.
                             <br />

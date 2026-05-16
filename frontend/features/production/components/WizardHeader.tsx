@@ -3,7 +3,7 @@
 import { CalendarIcon, Pencil, LayoutDashboard, Ban, Trash2, Copy, BookTemplate } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { formatPlainDate, cn, formatCurrency } from "@/lib/utils"
-import { StatusBadge } from "@/components/shared/StatusBadge"
+import { Chip, StatusBadge } from "@/components/shared"
 import type { WorkOrder } from "../types"
 import { formatEntityDisplay } from "@/lib/entity-registry"
 
@@ -43,13 +43,9 @@ export function WizardHeader({
             <div className="space-y-1 flex-1">
                 <div className="flex items-center gap-2">
                     <h2 className="text-xl font-bold tracking-tight">Gestión de orden de trabajo</h2>
-                    <StatusBadge status={order?.status || 'PENDING'} />
-                    <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border border-border bg-muted/50 text-muted-foreground whitespace-nowrap">
-                        {currentStageLabel}
-                    </span>
-                    <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded border border-border bg-muted/50 text-muted-foreground whitespace-nowrap">
-                        {formatCurrency(order?.total_price || 0)}
-                    </span>
+                    <StatusBadge status={order?.status || 'PENDING'} size="md" />
+                    <Chip size="xs">{currentStageLabel}</Chip>
+                    <Chip size="xs">{formatCurrency(order?.total_price || 0)}</Chip>
                 </div>
                 <div className="flex items-center gap-2 text-xs text-muted-foreground font-medium uppercase tracking-wider">
                     <span>{formatEntityDisplay('production.workorder', order)}</span>

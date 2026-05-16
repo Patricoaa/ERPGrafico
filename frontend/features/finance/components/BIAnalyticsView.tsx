@@ -99,7 +99,7 @@ export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
                         <DollarSign className="h-4 w-4 text-primary" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">
+                        <div className="text-2xl font-black font-heading tracking-tighter">
                             {sales.total_sales.toLocaleString('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 })}
                         </div>
                         <div className="flex items-center text-xs text-success mt-1">
@@ -115,7 +115,7 @@ export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
                         <ShoppingCart className="h-4 w-4 text-success" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">
+                        <div className="text-2xl font-black font-heading tracking-tighter">
                             {sales.average_ticket.toLocaleString('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 })}
                         </div>
                         <p className="text-xs text-muted-foreground mt-1">
@@ -130,7 +130,7 @@ export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
                         <Package className="h-4 w-4 text-accent" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">
+                        <div className="text-2xl font-black font-heading tracking-tighter">
                             {inventory.total_value.toLocaleString('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 })}
                         </div>
                         <p className="text-xs text-muted-foreground mt-1">
@@ -145,7 +145,7 @@ export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
                         <TrendingUp className="h-4 w-4 text-warning" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{inventory.turnover_ratio}x</div>
+                        <div className="text-2xl font-black font-heading tracking-tighter">{inventory.turnover_ratio}x</div>
                         <p className="text-xs text-muted-foreground mt-1">
                             {inventory.low_stock_alerts} alertas de stock bajo
                         </p>

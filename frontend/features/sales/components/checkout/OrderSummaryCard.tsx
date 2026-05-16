@@ -3,6 +3,7 @@
 import { Separator } from "@/components/ui/separator"
 import { ShoppingBag } from "lucide-react"
 import { formatCurrency } from "@/lib/currency"
+import { Chip } from "@/components/shared"
 import { PricingUtils } from '@/features/inventory/utils/pricing'
 
 import { SaleOrderLine } from "../../types"
@@ -50,14 +51,10 @@ export function OrderSummaryCard({
                                         </p>
                                         <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
                                             {line.internal_code && (
-                                                <span className="text-[8px] font-mono border px-1 rounded opacity-70 uppercase border-muted-foreground/20 text-muted-foreground">
-                                                    {line.internal_code}
-                                                </span>
+                                                <Chip size="xs">{line.internal_code}</Chip>
                                             )}
                                             {line.code && line.code !== line.internal_code && (
-                                                <span className="text-[8px] font-mono bg-muted px-1 rounded opacity-70 uppercase text-muted-foreground">
-                                                    {line.code}
-                                                </span>
+                                                <Chip size="xs">{line.code}</Chip>
                                             )}
                                         </div>
                                         <div className="flex items-center gap-2 mt-1">
@@ -65,9 +62,9 @@ export function OrderSummaryCard({
                                                 {line.qty || line.quantity} {line.uom_name || 'un'}
                                             </span>
                                             {line.product_type === 'MANUFACTURABLE' && (
-                                                <span className="text-[8px] font-black uppercase text-warning border border-warning/30 bg-warning/5 px-1 py-0.5 rounded leading-none">
+                                                <Chip size="xs" intent="warning">
                                                     Fab
-                                                </span>
+                                                </Chip>
                                             )}
                                         </div>
                                     </div>

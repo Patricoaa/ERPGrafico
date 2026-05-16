@@ -50,7 +50,7 @@ interface PricingRuleListProps {
 }
 
 import { usePricingRules } from "@/features/inventory/hooks/usePricingRules"
-import { SmartSearchBar, useSmartSearch } from "@/components/shared"
+import { Chip, SmartSearchBar, useSmartSearch } from "@/components/shared"
 import { pricingRuleSearchDef } from "@/features/inventory/searchDef"
 
 export function PricingRuleList({ externalOpen, onExternalOpenChange, createAction }: PricingRuleListProps) {
@@ -118,9 +118,9 @@ export function PricingRuleList({ externalOpen, onExternalOpenChange, createActi
                                 </div>
                             </>
                         ) : rule.category_name ? (
-                            <DataCell.Badge variant="outline" className="w-fit">Categoría: {rule.category_name}</DataCell.Badge>
+                            <Chip size="xs" className="w-fit">Categoría: {rule.category_name}</Chip>
                         ) : (
-                            <DataCell.Badge variant="secondary" className="w-fit">Todos</DataCell.Badge>
+                            <Chip size="xs" className="w-fit">Todos</Chip>
                         )}
                     </div>
                 )
@@ -148,9 +148,7 @@ export function PricingRuleList({ externalOpen, onExternalOpenChange, createActi
             cell: ({ row }) => (
                 <div className="flex justify-center w-full">
                     {row.original.uom_name ? (
-                        <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-[0.25rem] border border-border bg-muted/50 text-muted-foreground whitespace-nowrap">
-                            {row.original.uom_name}
-                        </span>
+                        <Chip size="xs">{row.original.uom_name}</Chip>
                     ) : (
                         <span className="text-xs text-muted-foreground italic">Base</span>
                     )}

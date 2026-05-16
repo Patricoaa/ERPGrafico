@@ -5,7 +5,7 @@ import { AlertCircle, CheckCircle2, AlertTriangle, Calendar, FileText, DollarSig
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { formatCurrency } from "@/lib/utils"
-import { Badge } from "@/components/ui/badge"
+import { Chip } from "@/components/shared"
 import { FormSection } from "@/components/shared"
 
 export interface DryRunWarning {
@@ -149,9 +149,7 @@ export default function ImportPreviewStep({ data, isLoading }: ImportPreviewStep
                                         {warn.line ?? "General"}
                                     </TableCell>
                                     <TableCell>
-                                        <Badge variant="outline" className="text-[10px] font-black uppercase tracking-wider bg-warning/10 text-warning border-warning/20">
-                                            Advertencia
-                                        </Badge>
+                                        <Chip intent="warning">Advertencia</Chip>
                                     </TableCell>
                                     <TableCell className="text-xs text-muted-foreground font-medium">
                                         {warn.message}

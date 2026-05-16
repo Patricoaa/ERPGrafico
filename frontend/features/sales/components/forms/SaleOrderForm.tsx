@@ -8,7 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { Plus, Trash2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import api from "@/lib/api"
-import { BaseModal, ActionSlideButton, MoneyDisplay, LabeledInput, FormSection, LabeledContainer, FormFooter, SubmitButton, CancelButton } from "@/components/shared"
+import { BaseModal, ActionSlideButton, MoneyDisplay, LabeledInput, FormSection, LabeledContainer, FormFooter, SubmitButton, CancelButton, Chip } from "@/components/shared"
 import {
     Form,
     FormField
@@ -384,29 +384,23 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, id = 
                                                                             <div className="flex gap-1.5 flex-wrap mt-2">
                                                                                 {prod.product_type === 'STORABLE' && (
                                                                                     <>
-                                                                                        <span className={cn("text-[8px] font-black uppercase px-2 py-0.5 rounded-full border leading-none tracking-tighter",
-                                                                                            (prod.current_stock || 0) > 0 ? "border-success/30 text-success bg-success/5" : "border-destructive/10 text-destructive/40 bg-muted/30"
-                                                                                        )}>
+                                                                                        <Chip size="xs" intent={(prod.current_stock || 0) > 0 ? "success" : "destructive"}>
                                                                                             Stock: {prod.current_stock || 0}
-                                                                                        </span>
-                                                                                        <span className={cn("text-[8px] font-black uppercase px-2 py-0.5 rounded-full border leading-none tracking-tighter",
-                                                                                            (prod.qty_available || 0) > 0 ? "border-success/30 text-success bg-success/5" : "border-warning/30 text-warning bg-warning/5"
-                                                                                        )}>
+                                                                                        </Chip>
+                                                                                        <Chip size="xs" intent={(prod.qty_available || 0) > 0 ? "success" : "warning"}>
                                                                                             Disp: {prod.qty_available || 0}
-                                                                                        </span>
+                                                                                        </Chip>
                                                                                     </>
                                                                                 )}
 
                                                                                 {prod.product_type === 'MANUFACTURABLE' && prod.has_bom && (
-                                                                                    <span className="text-[8px] font-black uppercase px-2 py-0.5 rounded-full border border-info/30 text-info bg-info/5 leading-none tracking-tighter">
+                                                                                    <Chip size="xs" intent="info">
                                                                                         Fab: {prod.manufacturable_quantity ?? 'N/A'}
-                                                                                    </span>
+                                                                                    </Chip>
                                                                                 )}
 
                                                                                 {(prod.product_type === 'MANUFACTURABLE' || prod.product_type === 'MANUFACTURABLE_CUSTOM') && prod.active && (
-                                                                                    <span className="text-[8px] font-black uppercase px-2 py-0.5 rounded-full border border-success/30 text-success bg-success/5 leading-none tracking-tighter">
-                                                                                        Activo
-                                                                                    </span>
+                                                                                    <Chip size="xs" intent="success">Activo</Chip>
                                                                                 )}
                                                                             </div>
                                                                         )
@@ -475,7 +469,7 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, id = 
                                                                         if (maxQty !== null && maxQty !== Infinity) {
                                                                             return (
                                                                                 <div className="flex justify-center mt-1">
-                                                                                    <span className="text-[8px] font-black text-muted-foreground/40 uppercase tracking-tighter">
+                                                                                    <span className="text-[9px] font-black text-muted-foreground/40 uppercase tracking-tighter">
                                                                                         Límite: {maxQty}
                                                                                     </span>
                                                                                 </div>

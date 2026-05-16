@@ -17,7 +17,7 @@ import { Step4_Payment } from "@/features/billing/components/checkout/Step4_Paym
 import { Step2_ManufacturingDetails } from "@/features/sales/components/checkout/Step2_ManufacturingDetails"
 import { NoteProcessSidebar } from "@/features/billing/components/checkout/NoteProcessSidebar"
 import { NoteItemsSummary } from "@/features/billing/components/checkout/NoteItemsSummary"
-import { FormSkeleton } from "@/components/shared"
+import { Chip, FormSkeleton } from "@/components/shared"
 
 
 interface NoteCheckoutWizardProps {
@@ -413,9 +413,7 @@ export function NoteCheckoutWizard({
                             {title}
                         </span>
                         {isExempt && (
-                            <span className="px-1.5 py-0.5 bg-success/10 text-success text-[10px] font-black uppercase rounded shadow-sm border border-success/20">
-                                Documento Exento
-                            </span>
+                            <Chip intent="success">Documento Exento</Chip>
                         )}
                     </div>
                     {originalInvoice && (

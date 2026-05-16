@@ -18,7 +18,7 @@ import { TreasuryAccount } from "@/features/treasury/types"
 import { Product } from "@/features/inventory/types"
 import api from "@/lib/api"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
-import { LabeledInput, LabeledSelect, LabeledContainer, PeriodValidationDateInput } from "@/components/shared"
+import { LabeledInput, LabeledSelect, LabeledContainer, PeriodValidationDateInput, Chip } from "@/components/shared"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { formatCurrency, cn } from "@/lib/utils"
@@ -211,7 +211,7 @@ export function PartnerWithdrawalWizard({
                         <div className="p-3 bg-destructive/5 border-2 border-dashed border-destructive/20 rounded-lg space-y-2 animate-in fade-in zoom-in-95 duration-300">
                             <div className="flex justify-between items-center text-[10px] text-muted-foreground uppercase font-black">
                                 <span>Pasivo con el Socio</span>
-                                <Badge variant="outline" className="h-4 py-0 text-[8px] border-destructive/20 text-destructive uppercase">Deuda del Socio</Badge>
+                                <Chip size="xs" intent="destructive">Deuda del Socio</Chip>
                             </div>
                             <div className="grid grid-cols-2 gap-4 pt-1">
                                 <div className="space-y-0.5">

@@ -371,7 +371,7 @@ export function PhaseCard({
                                 ))
                             ) : (
                                 <div className="flex flex-col items-center justify-center py-1.5 border border-dashed border-border/10 rounded-md">
-                                    <span className="text-[8px] text-muted-foreground/30 font-black uppercase tracking-widest">{emptyMessage}</span>
+                                    <span className="text-[9px] text-muted-foreground/30 font-black uppercase tracking-widest">{emptyMessage}</span>
                                 </div>
                             )}
                         </div>

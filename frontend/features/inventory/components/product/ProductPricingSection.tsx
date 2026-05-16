@@ -1,7 +1,7 @@
 "use client"
 
 import { FormField } from "@/components/ui/form"
-import { LabeledInput, LabeledSwitch, FormSection, LabeledContainer } from "@/components/shared"
+import { LabeledInput, LabeledSwitch, FormSection, LabeledContainer, Chip } from "@/components/shared"
 import { Scale, DollarSign, Zap, Info } from "lucide-react"
 import { UseFormReturn } from "react-hook-form"
 import { ProductFormValues } from "./schema"
@@ -106,8 +106,8 @@ export function ProductPricingSection({ form, initialData, canBeSold, uoms }: Pr
                             label="Impuesto (19%)"
                             value={PricingUtils.formatCurrency(taxAmount)}
                             readOnly
-                            icon={<Badge variant="outline" className="h-4 px-1 text-[8px] font-black border-blue-500/20 text-blue-600">IVA</Badge>}
-                            className="font-black text-sm h-[1.5rem] bg-blue-500/5 border-blue-500/20 text-blue-600/80 cursor-default"
+                            icon={<Chip size="xs" intent="info">IVA</Chip>}
+                            className="font-black text-sm h-[1.5rem] bg-info/5 border-info/20 text-info/80 cursor-default"
                         />
                     </div>
 
@@ -157,8 +157,8 @@ export function ProductPricingSection({ form, initialData, canBeSold, uoms }: Pr
                 </div>
 
                 <div className={cn("col-span-4 p-6 border-2 border-dashed rounded-xl bg-muted/5 flex flex-col items-center justify-center text-center", !isDynamicPricing && "hidden")}>
-                    <div className="h-10 w-10 rounded-full bg-yellow-500/10 flex items-center justify-center mb-3">
-                        <Zap className="h-5 w-5 text-yellow-600" />
+                    <div className="h-10 w-10 rounded-full bg-warning/10 flex items-center justify-center mb-3">
+                        <Zap className="h-5 w-5 text-warning" />
                     </div>
                     <h4 className="text-sm font-bold text-foreground">Modo de Precio Abierto</h4>
                     <p className="text-xs text-muted-foreground mt-1 max-w-[300px]">
@@ -167,7 +167,7 @@ export function ProductPricingSection({ form, initialData, canBeSold, uoms }: Pr
                 </div>
 
                 {/* Helper info */}
-                <div className="col-span-4 flex items-center gap-2 p-3 rounded-lg bg-blue-500/5 border border-blue-500/10 text-[10px] text-blue-600/80 font-medium">
+                <div className="col-span-4 flex items-center gap-2 p-3 rounded-lg bg-info/5 border border-info/10 text-[10px] text-info/80 font-medium">
                     <Info className="h-3.5 w-3.5 shrink-0" />
                     <span>Los precios se redondean automáticamente a la unidad más cercana (CLP). El IVA se calcula sobre el valor neto ingresado.</span>
                 </div>

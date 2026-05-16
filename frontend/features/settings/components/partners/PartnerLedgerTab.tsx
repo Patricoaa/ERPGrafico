@@ -13,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { TableRow, TableCell } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
+import { Chip } from "@/components/shared"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
 import { Partner, PartnerTransaction } from "@/features/contacts/types/partner"
 import { toast } from "sonner"
@@ -101,6 +102,14 @@ export function PartnerLedgerTab() {
         return 'bg-muted/50 text-muted-foreground border-transparent'
     }
 
+    const getTransactionIntent = (type: string): "info" | "warning" | "success" | "destructive" | "neutral" => {
+        if (type === 'SUBSCRIPTION') return 'info'
+        if (type.includes('TRANSFER')) return 'warning'
+        if (isInflow(type)) return 'success'
+        if (isOutflow(type)) return 'destructive'
+        return 'neutral'
+    }
+
     type TransactionWithBalance = PartnerTransaction & { balance_after: number }
 
     // Calculate Running Balance
@@ -141,9 +150,7 @@ export function PartnerLedgerTab() {
             header: "Concepto",
             cell: ({ row }) => (
                 <div className="flex flex-col gap-0.5">
-                    <Badge variant="outline" className={cn("text-[8px] font-black uppercase tracking-wider w-fit h-4 px-1.5 leading-none", getTransactionColor(row.original.transaction_type))}>
-                        {row.original.transaction_type_display}
-                    </Badge>
+                    <Chip size="xs" intent={getTransactionIntent(row.original.transaction_type)}>{row.original.transaction_type_display}</Chip>
                     <span className="text-[10px] text-muted-foreground italic truncate max-w-[180px] leading-tight">
                         {row.getValue("description")}
                     </span>

@@ -66,9 +66,9 @@ export function ProductionMetricsCard() {
                     <div className="flex flex-col p-4 bg-muted/30 rounded-xl border border-border/40">
                         <div className="flex items-center gap-2 text-muted-foreground mb-2">
                             <Activity className="w-4 h-4" />
-                            <span className="text-xs font-semibold uppercase tracking-wider">Activas</span>
+                            <span className="text-xs font-black uppercase tracking-widest">Activas</span>
                         </div>
-                        <div className="text-2xl font-bold text-foreground">
+                        <div className="text-2xl font-black font-heading tracking-tighter text-foreground">
                             {Object.values(data.ots_by_stage).reduce((a, b) => a + b, 0)}
                         </div>
                         <div className="text-xs text-muted-foreground mt-1">
@@ -77,43 +77,43 @@ export function ProductionMetricsCard() {
                     </div>
 
                     {/* Overdue OTs */}
-                    <Link href="/production/orders?view=list" className="flex flex-col p-4 bg-red-500/5 hover:bg-red-500/10 transition-colors rounded-xl border border-red-200 dark:border-red-900/30">
-                        <div className="flex items-center gap-2 text-red-600 dark:text-red-400 mb-2">
+                    <Link href="/production/orders?view=list" className="flex flex-col p-4 bg-destructive/5 hover:bg-destructive/10 transition-colors rounded-xl border border-destructive/20">
+                        <div className="flex items-center gap-2 text-destructive mb-2">
                             <AlertCircle className="w-4 h-4" />
-                            <span className="text-xs font-semibold uppercase tracking-wider">Atrasadas</span>
+                            <span className="text-xs font-black uppercase tracking-widest">Atrasadas</span>
                         </div>
-                        <div className="text-2xl font-bold text-red-700 dark:text-red-300">
+                        <div className="text-2xl font-black font-heading tracking-tighter text-destructive">
                             {data.overdue_ots}
                         </div>
-                        <div className="text-xs text-red-600/80 dark:text-red-400/80 mt-1">
+                        <div className="text-xs text-destructive/70 mt-1">
                             Requieren atención
                         </div>
                     </Link>
 
                     {/* Throughput */}
-                    <div className="flex flex-col p-4 bg-green-500/5 rounded-xl border border-green-200 dark:border-green-900/30">
-                        <div className="flex items-center gap-2 text-green-600 dark:text-green-400 mb-2">
+                    <div className="flex flex-col p-4 bg-success/5 rounded-xl border border-success/20">
+                        <div className="flex items-center gap-2 text-success mb-2">
                             <CheckCircle2 className="w-4 h-4" />
-                            <span className="text-xs font-semibold uppercase tracking-wider">Finalizadas (30d)</span>
+                            <span className="text-xs font-black uppercase tracking-widest">Finalizadas (30d)</span>
                         </div>
-                        <div className="text-2xl font-bold text-green-700 dark:text-green-300">
+                        <div className="text-2xl font-black font-heading tracking-tighter text-success">
                             {data.throughput_last_30d}
                         </div>
-                        <div className="text-xs text-green-600/80 dark:text-green-400/80 mt-1">
+                        <div className="text-xs text-success/70 mt-1">
                             Órdenes completadas
                         </div>
                     </div>
 
-                    {/* Avg Time - Showing max for simplicity or a specific stage */}
-                    <div className="flex flex-col p-4 bg-blue-500/5 rounded-xl border border-blue-200 dark:border-blue-900/30">
-                        <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 mb-2">
+                    {/* Avg Time */}
+                    <div className="flex flex-col p-4 bg-info/5 rounded-xl border border-info/20">
+                        <div className="flex items-center gap-2 text-info mb-2">
                             <Clock className="w-4 h-4" />
-                            <span className="text-xs font-semibold uppercase tracking-wider">Tiempos</span>
+                            <span className="text-xs font-black uppercase tracking-widest">Tiempos</span>
                         </div>
-                        <div className="text-2xl font-bold text-blue-700 dark:text-blue-300">
+                        <div className="text-2xl font-black font-heading tracking-tighter text-info">
                             {data.avg_time_by_stage['PRESS'] || 0} <span className="text-sm font-medium">días</span>
                         </div>
-                        <div className="text-xs text-blue-600/80 dark:text-blue-400/80 mt-1">
+                        <div className="text-xs text-info/70 mt-1">
                             Promedio en Prensa
                         </div>
                     </div>

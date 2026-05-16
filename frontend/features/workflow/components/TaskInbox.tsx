@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils"
 import api from "@/lib/api"
 import { useRef } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
-import { CardSkeleton, MoneyDisplay, EntityBadge } from "@/components/shared"
+import { CardSkeleton, MoneyDisplay, EntityBadge, Chip } from "@/components/shared"
 import { useAuth } from "@/contexts/AuthContext"
 import { formatEntityDisplay, getEntityMetadata, detectEntityLabel } from "@/lib/entity-registry"
 
@@ -308,13 +308,9 @@ export function TaskInbox() {
                                 className="bg-primary/5 text-primary border-primary/20 font-mono"
                             />
                         ) : task.task_type === 'CREDIT_POS_REQUEST' ? (
-                            <span className="bg-warning/10 text-warning px-2 py-0.5 rounded-full border border-warning/20 font-mono">
-                                CREDITO
-                            </span>
+                            <Chip intent="warning">CREDITO</Chip>
                         ) : task.object_id ? (
-                            <span className="bg-muted text-muted-foreground px-2 py-0.5 rounded-full border border-border/50 font-mono">
-                                #{task.object_id}
-                            </span>
+                            <Chip>#{task.object_id}</Chip>
                         ) : null}
                     </div>
                     <div className="flex items-center gap-2 text-muted-foreground group-hover:text-foreground transition-colors">
@@ -449,13 +445,9 @@ export function TaskInbox() {
                             <CheckCircle2 className="h-3.5 w-3.5" />
                             <span className="hidden sm:inline">Aprobaciones</span>
                             <span className="sm:hidden">Aprob.</span>
-                            <span className={cn(
-                                "text-[10px] ml-1 px-1.5 py-0.5 rounded-full font-bold transition-colors border",
-                                "bg-muted text-muted-foreground border-border/50",
-                                approvalsPending.length > 0 && "bg-primary/10 text-primary border-primary/20 group-data-[state=active]/trigger:bg-primary/20"
-                            )}>
+                            <Chip size="xs" intent={approvalsPending.length > 0 ? "primary" : "neutral"} className="ml-1">
                                 {approvalsPending.length}
-                            </span>
+                            </Chip>
                         </TabsTrigger>
                         <TabsTrigger
                             value="tasks"
@@ -464,13 +456,9 @@ export function TaskInbox() {
                             <ListTodo className="h-3.5 w-3.5" />
                             <span className="hidden sm:inline">Tareas</span>
                             <span className="sm:hidden">Tareas</span>
-                            <span className={cn(
-                                "text-[10px] ml-1 px-1.5 py-0.5 rounded-full font-bold transition-colors border",
-                                "bg-muted text-muted-foreground border-border/50",
-                                operationalTasks.length > 0 && "bg-primary/10 text-primary border-primary/20 group-data-[state=active]/trigger:bg-primary/20"
-                            )}>
+                            <Chip size="xs" intent={operationalTasks.length > 0 ? "primary" : "neutral"} className="ml-1">
                                 {operationalTasks.length}
-                            </span>
+                            </Chip>
                         </TabsTrigger>
                     </TabsList>
 

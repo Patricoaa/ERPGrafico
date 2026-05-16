@@ -97,7 +97,7 @@ export function POSSessionDetailClient({ sessionId }: POSSessionDetailClientProp
                 {/* Status banner */}
                 <div className="flex items-center justify-between p-4 rounded-lg border bg-muted/20 mb-4">
                     <span className="text-sm font-medium text-muted-foreground">Estado de la sesión</span>
-                    <StatusBadge status={data.status} />
+                    <StatusBadge status={data.status} size="md" />
                 </div>
 
                 {/* General info */}

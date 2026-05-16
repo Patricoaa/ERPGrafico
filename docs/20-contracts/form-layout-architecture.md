@@ -298,7 +298,7 @@ Layout estandarizado para el footer de formularios y modales.
 - **Primary Action**: `SubmitButton` o `ActionSlideButton` con `shadow-lg shadow-primary/20`.
 - **Secondary**: `CancelButton` (Outline/Ghost) a la izquierda del primary.
 - **Contextual**: Danger actions (`DangerButton`) al extremo izquierdo.
-- **Typography**: Todos los botones deben ser `font-black text-[11px] uppercase tracking-widest`.
+- **Typography**: Todos los botones deben ser `font-black text-[10px] uppercase tracking-widest`.
 
 ---
 
@@ -346,7 +346,7 @@ Todo formulario modal **debe** usar `FormFooter` en la prop `footer` de `BaseMod
 - **Primary Action**: `SubmitButton` o `ActionSlideButton` — obligatorio a la derecha.
 - **Secondary**: `CancelButton` (Outline/Ghost) — obligatorio a la izquierda del primary.
 - **Contextual**: `DangerButton` (Delete, Void) — al extremo izquierdo via `leftActions`.
-- **Typography**: Todos los botones deben ser `font-black text-[11px] uppercase tracking-widest`.
+- **Typography**: Todos los botones deben ser `font-black text-[10px] uppercase tracking-widest`.
 
 ### Footer estándar (sin acciones peligrosas)
 

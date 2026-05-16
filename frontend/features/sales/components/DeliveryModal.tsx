@@ -4,7 +4,7 @@ import { showApiError } from "@/lib/errors"
 import { useState, useEffect } from "react"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { StatusBadge } from "@/components/shared/StatusBadge"
-import { LabeledInput, LabeledSelect, PeriodValidationDateInput, FormSection, FormFooter, SubmitButton, CancelButton } from "@/components/shared"
+import { LabeledInput, LabeledSelect, PeriodValidationDateInput, FormSection, FormFooter, SubmitButton, CancelButton, Chip } from "@/components/shared"
 
 import {
     Table,
@@ -371,6 +371,7 @@ export function DeliveryForm({ orderId, order, warehouses, onSuccess, id = "deli
                                 order?.delivery_status === 'PARTIAL' ? 'partial' :
                                     'pending'
                         }
+                        size="md"
                     />
                 </div>
 
@@ -422,9 +423,9 @@ export function DeliveryForm({ orderId, order, warehouses, onSuccess, id = "deli
                                                 {line.product_type === 'MANUFACTURABLE' && (
                                                     <>
                                                         {!line.track_inventory && (
-                                                            <span className="text-[8px] font-bold uppercase text-primary/70 bg-primary/5 px-1 py-0.5 rounded border border-primary/20 leading-none">
+                                                            <Chip size="xs" intent="primary">
                                                                 {line.requires_advanced_manufacturing ? 'Fabricación Avanzada' : 'Fabricable'}
-                                                            </span>
+                                                            </Chip>
                                                         )}
 
                                                         {line.work_order_summary ? (
@@ -432,9 +433,8 @@ export function DeliveryForm({ orderId, order, warehouses, onSuccess, id = "deli
                                                                 <StatusBadge
                                                                     status={line.work_order_summary.status.toLowerCase()}
                                                                     size="sm"
-                                                                    className="text-[8px]"
                                                                 />
-                                                                <span className="text-[8px] text-muted-foreground mt-0.5">{line.work_order_summary.number}</span>
+                                                                <span className="text-[9px] text-muted-foreground mt-0.5">{line.work_order_summary.number}</span>
                                                             </div>
                                                         ) : !line.requires_advanced_manufacturing && !line.track_inventory ? (
                                                             <span className={cn(
@@ -444,13 +444,13 @@ export function DeliveryForm({ orderId, order, warehouses, onSuccess, id = "deli
                                                                 {line.manufacturable_quantity ?? 0}
                                                             </span>
                                                         ) : line.requires_advanced_manufacturing ? (
-                                                            <span className="text-[8px] text-destructive">Sin OT registrada</span>
+                                                            <span className="text-[9px] text-destructive">Sin OT registrada</span>
                                                         ) : null}
                                                     </>
                                                 )}
 
                                                 {!line.track_inventory && line.product_type !== 'MANUFACTURABLE' && (
-                                                    <span className="text-[8px] font-bold uppercase text-success/80 bg-success/5 px-1.5 py-0.5 rounded border border-success/20 leading-none">Disponible</span>
+                                                    <Chip size="xs" intent="success">Disponible</Chip>
                                                 )}
                                             </div>
                                         </TableCell>

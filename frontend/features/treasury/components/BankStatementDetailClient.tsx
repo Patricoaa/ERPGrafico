@@ -112,7 +112,7 @@ export function BankStatementDetailClient({ statementId }: BankStatementDetailCl
                 {/* Status banner */}
                 <div className="flex items-center justify-between p-4 rounded-lg border bg-muted/20 mb-4">
                     <span className="text-sm font-medium text-muted-foreground">Estado de la cartola</span>
-                    <StatusBadge status={data.status} />
+                    <StatusBadge status={data.status} size="md" />
                 </div>
 
                 {/* Account & dates */}
