@@ -89,6 +89,7 @@ export interface WorkOrder {
     sale_customer_name?: string
     sale_customer_rut?: string
     sale_order_date?: string
+    sale_order_number?: string | null
     due_date?: string
     outsourcing_status?: "none" | "partial" | "full"
     warehouse_name?: string

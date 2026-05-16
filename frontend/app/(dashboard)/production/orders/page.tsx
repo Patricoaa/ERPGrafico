@@ -7,12 +7,12 @@ import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 import { createActionsColumn, DataCell } from "@/components/ui/data-table-cells"
 import { ColumnDef } from "@tanstack/react-table"
 import { Pencil, Trash2, Ban, Settings, List, Columns, Copy, CalendarDays, Printer } from "lucide-react"
-import { StatusBadge } from "@/components/shared/StatusBadge"
+
 import { WorkOrderForm } from "@/features/production/components/forms/WorkOrderForm"
 import { WorkOrderWizard } from "@/features/production/components/WorkOrderWizard"
 import { WorkOrderKanban } from "@/features/production/components/WorkOrderKanban"
 import { WorkOrderTimelineView } from "@/features/production/components/WorkOrderTimelineView"
-import { Badge } from "@/components/ui/badge"
+
 import { Checkbox } from "@/components/ui/checkbox"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
@@ -154,9 +154,31 @@ export default function WorkOrdersPage() {
             ),
             cell: ({ row }) => (
                 <div className="flex justify-center">
-                    <DataCell.DocumentId type="PRODUCTION_ORDER" number={row.getValue("number")} />
+                    <DataCell.DocumentId
+                        entityLabel="production.workorder"
+                        number={row.getValue("number")}
+                    />
                 </div>
             ),
+        },
+        {
+            id: "sale_order_number",
+            accessorFn: (row) => row.sale_order_number ?? null,
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="NV Asociada" className="justify-center" />
+            ),
+            cell: ({ row }) => {
+                const nvNumber = row.original.sale_order_number
+                if (!nvNumber) return <div className="flex justify-center"><span className="text-muted-foreground text-xs">—</span></div>
+                return (
+                    <div className="flex justify-center">
+                        <DataCell.DocumentId
+                            entityLabel="sales.saleorder"
+                            number={nvNumber}
+                        />
+                    </div>
+                )
+            },
         },
         {
             accessorKey: "start_date",
@@ -183,11 +205,11 @@ export default function WorkOrdersPage() {
             ),
             cell: ({ row }) => (
                 <div className="flex justify-center gap-1.5 items-center flex-wrap">
-                    <StatusBadge status={row.original.status} />
+                    <DataCell.Status status={row.original.status} />
                     {isWorkOrderOverdue(row.original) && (
-                        <Badge variant="destructive" className="h-5 text-[9px] px-1.5 uppercase tracking-wider font-bold">
+                        <DataCell.Badge variant="destructive">
                             Atrasada
-                        </Badge>
+                        </DataCell.Badge>
                     )}
                 </div>
             ),
