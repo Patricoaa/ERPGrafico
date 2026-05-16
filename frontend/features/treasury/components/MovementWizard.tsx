@@ -1,5 +1,5 @@
-import { formatCurrency } from "@/lib/money"
 "use client"
+import { formatCurrency } from "@/lib/money"
 
 import React, { useState, useEffect, useMemo } from 'react'
 import { Button } from "@/components/ui/button"
@@ -78,7 +78,7 @@ export function MovementWizard({
 }: MovementWizardProps) {
     // Current Step index for GenericWizard
     const [stepIndex, setStepIndex] = useState(0)
-    
+
     // Core state
     const [impact, setImpact] = useState<'IN' | 'OUT' | 'TRANSFER'>(() => {
         if (fixedMoveType === 'TRANSFER') return 'TRANSFER'
@@ -86,7 +86,7 @@ export function MovementWizard({
         if (fixedMoveType && MOVEMENT_TYPES.OUT.find(t => t.value === fixedMoveType)) return 'OUT'
         return 'IN'
     })
-    
+
     const [moveType, setMoveType] = useState(fixedMoveType || 'TIP')
 
     // Partner context
@@ -419,13 +419,13 @@ export function MovementWizard({
                             />
                         </div>
                         <LabeledInput
-                             label="Observaciones (Opcional)"
-                             as="textarea"
-                             rows={3}
-                             placeholder="Notas adicionales del movimiento..."
-                             value={notes}
-                             onChange={(e) => setNotes(e.target.value)}
-                             containerClassName="mt-2"
+                            label="Observaciones (Opcional)"
+                            as="textarea"
+                            rows={3}
+                            placeholder="Notas adicionales del movimiento..."
+                            value={notes}
+                            onChange={(e) => setNotes(e.target.value)}
+                            containerClassName="mt-2"
                         />
                     </div>
                 ),
@@ -438,7 +438,7 @@ export function MovementWizard({
                     const amountNum = parseFloat(amount) || 0
                     const isOutbound = impact === 'OUT' || (impact === 'TRANSFER' && transferDirection === 'OUT')
                     const hasInsufficientFunds = isOutbound && maxOutboundAmount !== undefined && amountNum > maxOutboundAmount
-                    
+
                     return (
                         <div className="space-y-6 pt-2">
                             <div className="text-center">
@@ -450,9 +450,9 @@ export function MovementWizard({
                                     <span className="text-muted-foreground font-medium">Operación:</span>
                                     <span className={cn(
                                         "font-black uppercase tracking-[0.15em] px-3 py-1 rounded-sm border text-[10px]",
-                                        impact === "IN" ? "bg-success/10 text-success border-success/30" : 
-                                        impact === "OUT" ? "bg-warning/10 text-warning border-warning/30" : 
-                                        "bg-info/10 text-info border-info/30"
+                                        impact === "IN" ? "bg-success/10 text-success border-success/30" :
+                                            impact === "OUT" ? "bg-warning/10 text-warning border-warning/30" :
+                                                "bg-info/10 text-info border-info/30"
                                     )}>
                                         {impact === 'IN' ? 'Ingreso' : impact === 'OUT' ? 'Salida' : 'Traspaso'}
                                     </span>
@@ -505,7 +505,7 @@ export function MovementWizard({
                         </div>
                     )
                 })(),
-                isValid: !submitting && !( (impact === 'OUT' || (impact === 'TRANSFER' && transferDirection === 'OUT')) && maxOutboundAmount !== undefined && parseFloat(amount) > maxOutboundAmount)
+                isValid: !submitting && !((impact === 'OUT' || (impact === 'TRANSFER' && transferDirection === 'OUT')) && maxOutboundAmount !== undefined && parseFloat(amount) > maxOutboundAmount)
             }
         ]
         return list.filter((s): s is WizardStep => s !== null)

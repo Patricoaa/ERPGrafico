@@ -1,5 +1,5 @@
-import { formatCurrency } from "@/lib/money"
 "use client"
+import { formatCurrency } from "@/lib/money"
 
 import { showApiError } from "@/lib/errors"
 import { useState, useEffect, useRef } from "react"
@@ -106,17 +106,17 @@ export function BOMFormModal({
             console.error("Error fetching line variants:", error)
         }
     }
-    
+
 
     const getEffectiveCost = (baseCost: number, productUomId: string | number, targetUomId: string | number) => {
         const productUom = uoms.find(u => u.id.toString() === productUomId.toString())
         const targetUom = uoms.find(u => u.id.toString() === targetUomId.toString())
-        
+
         if (!productUom || !targetUom) return baseCost
-        
+
         const baseRatio = Number(productUom.ratio) || 1
         const targetRatio = Number(targetUom.ratio) || 1
-        
+
         // cost_price is per productUom
         return (baseCost / baseRatio) * targetRatio
     }
@@ -368,11 +368,11 @@ export function BOMFormModal({
         >
             <div className="px-1">
                 <Form {...form}>
-                    <form id="bom-form" 
+                    <form id="bom-form"
                         onSubmit={form.handleSubmit(onSubmit as any, (errors) => {
                             console.log("Validation errors:", errors)
                             toast.error("Por favor, verifique los campos marcados en rojo")
-                        })} 
+                        })}
                         className="space-y-8 pt-4"
                     >
                         {/* 📋 HEADER: IDENTIFICACIÓN Y CONFIGURACIÓN */}
@@ -592,21 +592,21 @@ export function BOMFormModal({
                                                                     form.setValue(`lines.${index}.component_code`, p.internal_code || p.code)
                                                                     const baseCost = Number(p.cost_price || 0)
                                                                     const baseUomId = typeof p.uom === 'object' ? p.uom.id.toString() : p.uom?.toString() || ""
-                                                                    
+
                                                                     form.setValue(`lines.${index}.base_cost`, baseCost)
                                                                     form.setValue(`lines.${index}.base_uom`, baseUomId)
-                                                                    
+
                                                                     if (p.uom) {
                                                                         const uomId = typeof p.uom === 'object' ? p.uom.id.toString() : p.uom.toString()
                                                                         form.setValue(`lines.${index}.uom`, uomId)
                                                                         form.setValue(`lines.${index}.uom_name`, p.uom_name || (typeof p.uom === 'object' ? p.uom.name : ""))
-                                                                        
+
                                                                         const effectiveCost = getEffectiveCost(baseCost, baseUomId, uomId)
                                                                         form.setValue(`lines.${index}.component_cost`, effectiveCost)
                                                                     } else {
                                                                         form.setValue(`lines.${index}.component_cost`, baseCost)
                                                                     }
-                                                                    
+
                                                                     if (p.uom_category) form.setValue(`lines.${index}.component_uom_category`, p.uom_category)
                                                                     if (p.has_variants) fetchLineVariants(p.id, index)
                                                                 }}
@@ -635,21 +635,21 @@ export function BOMFormModal({
                                                                     form.setValue(`lines.${index}.component_code`, p.internal_code || p.code)
                                                                     const baseCost = Number(p.cost_price || 0)
                                                                     const baseUomId = typeof p.uom === 'object' ? p.uom.id.toString() : p.uom?.toString() || ""
-                                                                    
+
                                                                     form.setValue(`lines.${index}.base_cost`, baseCost)
                                                                     form.setValue(`lines.${index}.base_uom`, baseUomId)
-                                                                    
+
                                                                     if (p.uom) {
                                                                         const uomId = typeof p.uom === 'object' ? p.uom.id.toString() : p.uom.toString()
                                                                         form.setValue(`lines.${index}.uom`, uomId)
                                                                         form.setValue(`lines.${index}.uom_name`, p.uom_name || (typeof p.uom === 'object' ? p.uom.name : ""))
-                                                                        
+
                                                                         const effectiveCost = getEffectiveCost(baseCost, baseUomId, uomId)
                                                                         form.setValue(`lines.${index}.component_cost`, effectiveCost)
                                                                     } else {
                                                                         form.setValue(`lines.${index}.component_cost`, baseCost)
                                                                     }
-                                                                    
+
                                                                     if (p.uom_category) form.setValue(`lines.${index}.component_uom_category`, p.uom_category)
                                                                     if (p.has_variants) fetchLineVariants(p.id, index)
                                                                 }}
@@ -673,15 +673,15 @@ export function BOMFormModal({
                                                                     if (v) {
                                                                         form.setValue(`lines.${index}.component_name`, v.variant_display_name || v.name)
                                                                         form.setValue(`lines.${index}.component_code`, v.internal_code || v.code)
-                                                                        
+
                                                                         const baseCost = Number(v.cost_price || 0)
                                                                         const baseUomId = typeof v.uom === 'object' ? (v.uom as UoM).id.toString() : v.uom?.toString() || ""
-                                                                        
+
                                                                         form.setValue(`lines.${index}.base_cost`, baseCost)
                                                                         form.setValue(`lines.${index}.base_uom`, baseUomId)
-                                                                        
+
                                                                         if (v.uom_category) form.setValue(`lines.${index}.component_uom_category`, p.uom_category)
-                                                                        
+
                                                                         const currentLineUom = form.getValues(`lines.${index}.uom`)
                                                                         const effectiveCost = getEffectiveCost(baseCost, baseUomId, currentLineUom)
                                                                         form.setValue(`lines.${index}.component_cost`, effectiveCost)
@@ -697,7 +697,7 @@ export function BOMFormModal({
                                                 }}
                                             />
                                         </TableCell>
- 
+
                                         {/* Cantidad */}
                                         <TableCell className="py-2 px-3 text-center">
                                             <FormField
@@ -708,7 +708,7 @@ export function BOMFormModal({
                                                 )}
                                             />
                                         </TableCell>
- 
+
                                         {/* Unidad */}
                                         <TableCell className="py-1 px-3">
                                             <FormField
@@ -726,11 +726,11 @@ export function BOMFormModal({
                                                                 const selectedUom = uoms.find((u: { id: string | number }) => u.id.toString() === val)
                                                                 if (selectedUom) {
                                                                     form.setValue(`lines.${index}.uom_name`, selectedUom.name)
-                                                                    
+
                                                                     // RE-CALCULATE COST BASED ON NEW UOM
                                                                     const baseCost = form.getValues(`lines.${index}.base_cost`) || 0
                                                                     const baseUomId = form.getValues(`lines.${index}.base_uom`) || ""
-                                                                    
+
                                                                     if (baseUomId) {
                                                                         const effectiveCost = getEffectiveCost(baseCost, baseUomId, val)
                                                                         form.setValue(`lines.${index}.component_cost`, effectiveCost)

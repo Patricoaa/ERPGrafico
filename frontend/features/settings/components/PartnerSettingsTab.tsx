@@ -84,12 +84,12 @@ export function PartnerSettingsTab() {
     const columns: ColumnDef<any>[] = [
         {
             accessorKey: "name",
-            header: ({ column }) => <DataTableColumnHeader column={column} className="justify-start" title="Socio" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} className="justify-center" title="Socio" />,
             cell: ({ row }) => <DataCell.Text className="font-bold">{row.getValue("name")}</DataCell.Text>,
         },
         {
             accessorKey: "tax_id",
-            header: ({ column }) => <DataTableColumnHeader column={column} className="justify-start" title="RUT" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} className="justify-center" title="RUT" />,
             cell: ({ row }) => <DataCell.Code>{row.getValue("tax_id")}</DataCell.Code>,
         },
         {
@@ -103,7 +103,7 @@ export function PartnerSettingsTab() {
         },
         {
             accessorKey: "partner_balance",
-            header: ({ column }) => <DataTableColumnHeader column={column} className="justify-end" title="Saldo Particular (Neto)" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} className="justify-center" title="Saldo Particular (Neto)" />,
             cell: ({ row }) => <DataCell.Currency className="font-bold text-foreground" value={row.getValue("partner_balance")} />,
         },
         createActionsColumn<any>({

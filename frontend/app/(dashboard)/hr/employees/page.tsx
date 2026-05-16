@@ -83,12 +83,12 @@ export default function EmployeesPage() {
                 const emp = row.original;
                 return (
                     <div className="items-center justify-center w-full">
-                        <DataCell.Secondary >
+                        <DataCell.Text>
                             AFP: {emp.afp_detail?.name || 'No disp.'}
-                        </DataCell.Secondary>
-                        <DataCell.Secondary>
+                        </DataCell.Text>
+                        <DataCell.Text>
                             Salud: {emp.salud_type_display}
-                        </DataCell.Secondary>
+                        </DataCell.Text>
                     </div>
                 );
             },

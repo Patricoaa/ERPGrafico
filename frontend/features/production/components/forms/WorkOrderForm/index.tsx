@@ -1,5 +1,5 @@
-import { formatPlainDate } from "@/lib/utils";
 "use client"
+import { formatPlainDate } from "@/lib/utils";
 
 import { getErrorMessage } from "@/lib/errors"
 import React, { useState, useEffect, useRef } from "react"
@@ -23,7 +23,7 @@ import { ManufacturingSpecsEditor, emptyManufacturingData, type ManufacturingDat
 import { workOrderSchema, type WorkOrderFormValues, type WorkOrderInitialData } from "@/types/forms"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
-import { LabeledInput } from "@/components/shared";
+import { LabeledInput, Chip } from "@/components/shared";
 import type { SaleOrderLine } from "@/features/sales/types"
 import type { Contact } from "@/features/contacts/types"
 import type { UoM, ProductMinimal } from "../../../types"
@@ -45,7 +45,7 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
 
     const [otType, setOtType] = useState<"LINKED" | "NONE" | null>(defaultOtType || null)
     const [loading, setLoading] = useState(false)
-    
+
 
     // Advanced Manufacturing State (consolidated — TASK-109)
     const [mfgData, setMfgData] = useState<ManufacturingData>(emptyManufacturingData())
@@ -345,7 +345,9 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
             <div className="flex items-center gap-2">
                 <StatusBadge status={initialData.status || "DRAFT"} />
                 {initialData.current_stage && (
-                    <StatusBadge status={initialData.status || "DRAFT"} label={translateStatus(initialData.current_stage)} className="bg-primary/5 text-primary border-primary/10" />
+                    <Chip size="xs" intent="primary">
+                        {translateStatus(initialData.current_stage)}
+                    </Chip>
                 )}
             </div>
         )
@@ -355,9 +357,9 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
         <>
             {!initialData && (
                 triggerVariant === "circular" ? (
-                    <PageHeaderButton 
-                        circular 
-                        onClick={() => setOpen(true)} 
+                    <PageHeaderButton
+                        circular
+                        onClick={() => setOpen(true)}
                         title="Nueva OT"
                         iconName="plus"
                         variant="default"

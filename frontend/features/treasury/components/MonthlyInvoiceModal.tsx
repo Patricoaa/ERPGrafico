@@ -146,9 +146,12 @@ export function MonthlyInvoiceModal({ open, onOpenChange }: MonthlyInvoiceModalP
                             label="Mes"
                             value={month}
                             onChange={setMonth}
-                            options={Array.from({ length: 12 }, (_, i) => i + 1).map(m => ({
-                                value: m.toString(),
-                                label: new Date(2000, m - 1, 1).toLocaleString('es-ES', { month: 'long' })
+                            options={[
+                                'Enero','Febrero','Marzo','Abril','Mayo','Junio',
+                                'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'
+                            ].map((name, i) => ({
+                                value: (i + 1).toString(),
+                                label: name
                             }))}
                         />
                     </div>

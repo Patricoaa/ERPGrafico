@@ -114,7 +114,7 @@ export function CategoryList({ externalOpen, onExternalOpenChange, createAction 
         {
             accessorKey: "parent_name",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Categoría Padre" className="justify-center" />,
-            cell: ({ row }) => <DataCell.Secondary className="text-[10px] uppercase font-bold text-muted-foreground opacity-60 text-center w-full">{row.getValue("parent_name") || "-"}</DataCell.Secondary>,
+            cell: ({ row }) => <DataCell.Text className="font-normal text-muted-foreground">{row.getValue("parent_name") || "-"}</DataCell.Text>,
         },
         createActionsColumn<Category>({
             renderActions: (item) => (

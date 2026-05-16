@@ -285,7 +285,7 @@ export function ProductList({ externalOpen, onExternalOpenChange, createAction }
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Categoría" className="justify-center" />
             ),
-            cell: ({ row }) => <DataCell.Secondary>{row.getValue("category_name")}</DataCell.Secondary>,
+            cell: ({ row }) => <DataCell.Text className="font-normal">{row.getValue("category_name")}</DataCell.Text>,
         },
         {
             accessorKey: "active",
@@ -305,9 +305,9 @@ export function ProductList({ externalOpen, onExternalOpenChange, createAction }
                 <DataTableColumnHeader column={column} title="Tipo" className="justify-center" />
             ),
             cell: ({ row }) => (
-                <DataCell.Secondary>
+                <DataCell.Text>
                     {translateProductType(row.getValue("product_type"))}
-                </DataCell.Secondary>
+                </DataCell.Text>
             ),
         },
 

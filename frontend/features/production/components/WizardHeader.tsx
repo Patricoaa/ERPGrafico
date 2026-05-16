@@ -1,5 +1,5 @@
-import { formatCurrency } from "@/lib/money"
 "use client"
+import { formatCurrency } from "@/lib/money"
 
 import { CalendarIcon, Pencil, LayoutDashboard, Ban, Trash2, Copy, BookTemplate } from "lucide-react"
 import { Button } from "@/components/ui/button"

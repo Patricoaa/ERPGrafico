@@ -404,7 +404,7 @@ export function PaymentMethodManagement({ externalOpen, onOpenChange, createActi
             header: ({ column }: { column: Column<PaymentMethod, unknown> }) => <DataTableColumnHeader column={column} title="Cuenta de Tesorería" className="justify-center" />,
             cell: ({ row }: { row: { original: PaymentMethod } }) => (
                 <div className="flex flex-col items-center justify-center gap-1.5 w-full">
-                    <DataCell.Secondary className="text-center">{row.original.treasury_account_name}</DataCell.Secondary>
+                    <DataCell.Text className="font-normal">{row.original.treasury_account_name}</DataCell.Text>
                     <div className="flex justify-center gap-1">
                         {row.original.allow_for_sales && (
                             <Chip size="xs" intent="success">Ventas</Chip>

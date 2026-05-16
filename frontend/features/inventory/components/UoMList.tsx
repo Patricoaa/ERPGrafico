@@ -96,9 +96,9 @@ export function UoMList({ externalOpen, onExternalOpenChange, createAction }: Uo
             accessorKey: "category_name",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Categoría" className="justify-center" />,
             cell: ({ row }) => (
-                <DataCell.Secondary className="text-center w-full">
+                <DataCell.Text className="font-normal">
                     {row.getValue("category_name")}
-                </DataCell.Secondary>
+                </DataCell.Text>
             ),
         },
         {

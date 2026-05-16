@@ -13,7 +13,7 @@ import {
 } from "lucide-react"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 
-import { cn } from "@/lib/utils"
+import { cn, formatPlainDate } from "@/lib/utils"
 import type { Payroll, PayrollItem } from "@/types/hr"
 import { DataCell, StatusBadge } from '@/components/shared'
 import { formatEntityDisplay } from "@/lib/entity-registry"
@@ -367,7 +367,7 @@ export function PayrollCard({
                                                     </span>
                                                 </div>
                                                 <span className="text-[9px] text-muted-foreground font-bold uppercase tracking-tighter mt-1 opacity-60">
-                                                    {new Date(p.date).toLocaleDateString('es-CL', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                                    {formatPlainDate(p.date)}
                                                 </span>
                                             </div>
                                             <MoneyDisplay amount={p.amount} className="text-xs font-black text-foreground tabular-nums" />
@@ -413,7 +413,7 @@ export function PayrollCard({
                         Documento Oficial de Remuneraciones
                     </p>
                     <p className="text-[9px] text-muted-foreground/30 font-medium italic">
-                        Generado por el Módulo de RRHH • {new Date().toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric' })}
+                        Generado por el Módulo de RRHH • {formatPlainDate(new Date().toISOString().split('T')[0])}
                     </p>
                 </div>
 

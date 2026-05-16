@@ -21,16 +21,9 @@ const StatusIcon = ({ status }: { status: string }) => {
         case 'CLOSED': return <Lock className="w-4 h-4 text-muted-foreground" />;
         default: return null;
     }
-};export function PeriodGridItem({ period, onClose, onReopen, isActionLoading }: PeriodGridItemProps) {
-    const getStatusToken = (status: string) => {
-        switch (status) {
-            case 'OPEN': return 'success';
-            case 'UNDER_REVIEW': return 'warning';
-            case 'CLOSED': return 'info';
-            default: return 'generic';
-        }
-    };
+};
 
+export function PeriodGridItem({ period, onClose, onReopen, isActionLoading }: PeriodGridItemProps) {
     const taxClosed = !!(period.tax_period_id && period.tax_period_status === 'CLOSED');
 
     return (
@@ -51,7 +44,7 @@ const StatusIcon = ({ status }: { status: string }) => {
                         </span>
                     </div>
                 }
-                trailing={<StatusBadge status={getStatusToken(period.status)} label={period.status_display} />}
+                trailing={<StatusBadge status={period.status} label={period.status_display} />}
             />
 
             <EntityCard.Body className="grid-cols-1 pt-2">

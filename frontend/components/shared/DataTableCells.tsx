@@ -28,17 +28,17 @@ interface ValueCellProps<T> extends BaseCellProps {
 export const DataCell = {
     /** Standard text cell for primary information */
     Text: ({ children, className, ...props }: BaseCellProps) => (
-        <div className={cn("text-xs font-mono font-medium text-foreground/90 flex justify-center items-center", className)} {...props}>{children}</div>
+        <div className={cn("flex justify-center items-center text-center w-full text-[13px] font-bold text-foreground", className)} {...props}>{children}</div>
     ),
 
     /** Secondary text for categories, descriptions, or subtitles */
     Secondary: ({ children, className, ...props }: BaseCellProps) => (
-        <div className={cn("text-xs font-mono font-medium text-foreground/90 flex justify-center items-center", className)} {...props}>{children}</div>
+        <div className={cn("flex justify-center items-center text-center w-full text-[11px] font-medium text-muted-foreground uppercase tracking-wider", className)} {...props}>{children}</div>
     ),
 
     /** Standard text for identifiers (simple font as per request) */
     Code: ({ children, className, ...props }: BaseCellProps) => (
-        <div className={cn("text-xs font-mono font-medium text-foreground/90 flex justify-center items-center", className)} {...props}>
+        <div className={cn("flex justify-center items-center text-center w-full text-[11px] font-mono font-medium text-muted-foreground uppercase tracking-widest", className)} {...props}>
             {children || "-"}
         </div>
     ),
@@ -71,7 +71,7 @@ export const DataCell = {
         const finalData = data || { id: number, number, display_id: number };
 
         return (
-            <div className={cn("text-xs font-mono font-medium text-foreground/90 flex justify-center items-center", className)} {...props}>
+            <div className={cn("flex justify-center items-center w-full", className)} {...props}>
                 <EntityBadge label={resolvedLabel || 'sales.saleorder'} data={finalData} size="sm" />
             </div>
         );
@@ -81,14 +81,14 @@ export const DataCell = {
     ContactLink: ({ children, contactId, onClick, className, ...props }: HTMLAttributes<HTMLButtonElement> & { contactId?: number | string, onClick?: (e: React.MouseEvent) => void }) => {
         const { openContact } = useGlobalModals();
         return (
-            <div className={cn("text-xs font-mono font-medium text-foreground/90 flex justify-center items-centerw-full group", className)}>
+            <div className={cn("flex justify-center items-center w-full group", className)}>
                 <button
                     onClick={(e) => {
                         e.stopPropagation();
                         if (onClick) onClick(e);
                         else if (contactId) openContact(Number(contactId));
                     }}
-                    className={cn("text-xs font-mono font-medium text-foreground/90 flex justify-center items-center hover:underline hover:text-primary/80 transition-colors text-sm")}
+                    className={cn("flex justify-center items-center gap-1.5 text-[13px] font-bold hover:underline hover:text-primary/80 transition-colors text-foreground")}
                     {...props}
                 >
                     <span className="truncate">{children}</span>
@@ -222,13 +222,13 @@ export const DataCell = {
 
     /** Standard date format */
     Date: ({ value, className, showTime = false, ...props }: ValueCellProps<string | Date> & { showTime?: boolean }) => {
-        if (!value) return <div className={cn("text-xs font-mono font-medium text-foreground/90 flex justify-center items-center", className)} {...props}>-</div>
+        if (!value) return <div className={cn("flex justify-center items-center w-full text-[12px] font-mono text-muted-foreground/50", className)} {...props}>-</div>
         return (
-            <div className={cn("text-xs font-mono font-medium text-foreground/90 flex justify-center items-center", className)} {...props}>
+            <div className={cn("flex justify-center items-center w-full text-[12px] font-mono font-medium text-muted-foreground whitespace-nowrap", className)} {...props}>
                 {formatPlainDate(value)}
                 {showTime && (() => {
                     const date = new Date(value)
-                    return <span className="text-xs text-muted-foreground ml-1">{date.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}</span>
+                    return <span className="text-[11px] text-muted-foreground/60 ml-1.5">{date.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}</span>
                 })()}
             </div>
         )
@@ -237,9 +237,9 @@ export const DataCell = {
     // --- Status & Badges ---
 
     /** Mapped status badge - Internally uses the standardized StatusBadge */
-    Status: ({ status, label, map, variant = "subtle", className }: { status: string, label?: string, map?: Record<string, { label: string, className: string }>, variant?: "default" | "hub" | "dot" | "subtle", className?: string }) => {
+    Status: ({ status, label, map, variant = "default", className }: { status: string, label?: string, map?: Record<string, { label: string, className: string }>, variant?: "default" | "hub" | "dot", className?: string }) => {
         return (
-            <div className="text-xs font-mono font-medium text-foreground/90 flex justify-center items-center">
+            <div className={cn("flex justify-center items-center w-full", className)}>
                 <StatusBadge
                     status={status}
                     label={label || translateStatus(status)}

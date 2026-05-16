@@ -13,6 +13,7 @@ import { LoadingFallback, SmartSearchBar, StatusBadge, useSmartSearch } from "@/
 import { contactSearchDef } from "@/features/contacts/searchDef"
 import type { ContactFilters } from "@/features/contacts/types"
 import { cn } from "@/lib/utils"
+import { formatCurrency } from "@/lib/money"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { formatEntityDisplay } from "@/lib/entity-registry"
 
@@ -144,11 +145,11 @@ export function ContactsClientView({ isNewModalOpen = false, createAction }: Con
                                         <TooltipContent>
                                             <div className="flex flex-col gap-1">
                                                 {Number(contact.credit_limit || 0) > 0 && (
-                                                    <span>Límite de Crédito: ${Number(contact.credit_limit || 0).toLocaleString()} ({contact.credit_days} días)</span>
+                                                    <span>Límite de Crédito: {formatCurrency(Number(contact.credit_limit || 0))} ({contact.credit_days} días)</span>
                                                 )}
                                                 {Number(contact.credit_balance_used || 0) > 0 && (
                                                     <span className="font-bold text-warning">
-                                                        Deuda Activa: ${Number(contact.credit_balance_used || 0).toLocaleString()}
+                                                        Deuda Activa: {formatCurrency(Number(contact.credit_balance_used || 0))}
                                                     </span>
                                                 )}
                                             </div>
@@ -177,12 +178,12 @@ export function ContactsClientView({ isNewModalOpen = false, createAction }: Con
         {
             accessorKey: "email",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Email" className="justify-center" />,
-            cell: ({ row }) => <div className="flex justify-center w-full"><DataCell.Secondary>{row.getValue("email") || "-"}</DataCell.Secondary></div>,
+            cell: ({ row }) => <DataCell.Text className="font-normal lowercase">{row.getValue("email") || "-"}</DataCell.Text>,
         },
         {
             accessorKey: "phone",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Teléfono" className="justify-center" />,
-            cell: ({ row }) => <div className="flex justify-center w-full"><DataCell.Secondary>{row.getValue("phone") || "-"}</DataCell.Secondary></div>,
+            cell: ({ row }) => <DataCell.Code>{row.getValue("phone") || "-"}</DataCell.Code>,
         },
         createActionsColumn<Contact>({
             renderActions: (contact) => (

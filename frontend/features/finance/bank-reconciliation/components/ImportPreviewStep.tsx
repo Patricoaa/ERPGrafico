@@ -1,7 +1,8 @@
-import { formatCurrency } from "@/lib/money"
+
 "use client"
 
 import React from "react"
+import { formatCurrency } from "@/lib/money"
 import { AlertCircle, CheckCircle2, AlertTriangle, Calendar, FileText, DollarSign, Wallet } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -57,14 +58,14 @@ export default function ImportPreviewStep({ data, isLoading }: ImportPreviewStep
     }
 
     if (!data) return null
-    
+
     const hasWarnings = data.warnings.length > 0
     const hasErrors = data.errors.length > 0
 
     return (
         <div className="px-4 pb-4 pt-2 space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
             <FormSection title="Resumen de la Cartola" icon={FileText} />
-            
+
             {data.is_duplicate && (
                 <Alert className="border-warning/50 bg-warning/10 text-warning">
                     <AlertTriangle className="h-4 w-4" />
@@ -76,29 +77,29 @@ export default function ImportPreviewStep({ data, isLoading }: ImportPreviewStep
             )}
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <MetricCard 
-                    title="Líneas Válidas" 
-                    value={data.total_lines} 
-                    icon={FileText} 
+                <MetricCard
+                    title="Líneas Válidas"
+                    value={data.total_lines}
+                    icon={FileText}
                 />
-                <MetricCard 
-                    title="Período" 
+                <MetricCard
+                    title="Período"
                     value={
-                        data.period_start === data.period_end 
+                        data.period_start === data.period_end
                             ? data.period_start || "N/A"
                             : `${data.period_start} al ${data.period_end}`
-                    } 
-                    icon={Calendar} 
+                    }
+                    icon={Calendar}
                 />
-                <MetricCard 
-                    title="Balance Inicial" 
-                    value={formatCurrency(parseFloat(data.opening_balance))} 
-                    icon={DollarSign} 
+                <MetricCard
+                    title="Balance Inicial"
+                    value={formatCurrency(parseFloat(data.opening_balance))}
+                    icon={DollarSign}
                 />
-                <MetricCard 
-                    title="Balance Final" 
-                    value={formatCurrency(parseFloat(data.closing_balance))} 
-                    icon={Wallet} 
+                <MetricCard
+                    title="Balance Final"
+                    value={formatCurrency(parseFloat(data.closing_balance))}
+                    icon={Wallet}
                 />
             </div>
 

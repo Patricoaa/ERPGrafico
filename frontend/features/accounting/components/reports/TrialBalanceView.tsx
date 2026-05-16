@@ -1,5 +1,5 @@
-import { formatCurrency } from "@/lib/money"
-"use client";
+"use client"
+import { formatCurrency } from "@/lib/money";
 
 import React, { useState } from 'react';
 import { useTrialBalance } from '../../hooks/useTrialBalance';

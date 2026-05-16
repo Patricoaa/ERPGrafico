@@ -1,5 +1,5 @@
-import { formatCurrency } from "@/lib/money"
 "use client"
+import { formatCurrency } from "@/lib/money"
 
 import { showApiError } from "@/lib/errors"
 import React, { useState, useEffect } from "react"
@@ -298,7 +298,7 @@ export function InventoryContributionModal({
                         options={warehouses.map(w => ({ label: w.name, value: w.id.toString() }))}
                         placeholder="Seleccione almacén"
                     />
-                    <LabeledContainer 
+                    <LabeledContainer
                         label={<div className="flex items-center"><Package className="h-3.5 w-3.5 mr-1 opacity-50" /> Producto</div>}
                     >
                         <ProductSelector
@@ -329,7 +329,7 @@ export function InventoryContributionModal({
                         className="text-right font-mono"
                         placeholder="0"
                     />
-                    
+
                     <LabeledSelect
                         label="Unidad de Medida"
                         value={uomId}
@@ -338,7 +338,7 @@ export function InventoryContributionModal({
                         options={productUoMs.map(u => ({ label: u.name, value: u.id.toString() }))}
                         placeholder="UoM"
                     />
-                    
+
                     <div className="space-y-1.5 bg-muted/20 pb-2 pt-1 border border-transparent rounded-lg px-2 -mx-2 sm:mx-0">
                         <LabeledInput
                             label={

@@ -1,5 +1,6 @@
-import { formatCurrency } from "@/lib/money"
 "use client"
+
+import { formatCurrency } from "@/lib/money"
 
 import { useState, useEffect } from "react"
 import { Check, ChevronDown, Loader2, Search, Banknote, CreditCard, Wallet, Landmark } from "lucide-react"

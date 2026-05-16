@@ -1,5 +1,5 @@
-import { formatCurrency } from "@/lib/money"
 "use client"
+import { formatCurrency } from "@/lib/money"
 
 import { showApiError } from "@/lib/errors"
 import React, { useState, useEffect, useMemo } from "react"
@@ -13,7 +13,7 @@ import { accountingApi } from "@/features/accounting/api/accountingApi"
 import { FiscalYear } from "@/features/accounting/types"
 import { toast } from "sonner"
 
-import { 
+import {
     PieChart,
     Calculator,
     CheckCircle2,
@@ -21,10 +21,10 @@ import {
     CalendarCheck2
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { 
-    Alert, 
-    AlertTitle, 
-    AlertDescription 
+import {
+    Alert,
+    AlertTitle,
+    AlertDescription
 } from "@/components/ui/alert"
 
 interface ModalProps {
@@ -37,7 +37,7 @@ interface ModalProps {
 export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialResolution }: ModalProps) {
     const [loading, setLoading] = useState(false)
     const [fiscalYears, setFiscalYears] = useState<FiscalYear[]>([])
-    
+
     // Step 1 Form
     const [formData, setFormData] = useState({
         fiscal_year_id: "",
@@ -78,7 +78,7 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
                 try {
                     const data = await accountingApi.getFiscalYears({ status: 'CLOSED' })
                     setFiscalYears(data)
-                    
+
                     const params = new URLSearchParams(window.location.search)
                     const yearParam = params.get('yearId')
                     if (yearParam) {
@@ -111,7 +111,7 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
                 notes: initialResolution.notes || ""
             })
             setLines(initialResolution.lines || [])
-            
+
             const dests: Record<number, DestinationAllocation[]> = {}
             initialResolution.lines?.forEach((l) => {
                 dests[l.id] = (l.destinations || []).map(d => ({
@@ -120,7 +120,7 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
                 }))
                 // if it's loss, auto assign
                 if (initialResolution.is_loss && dests[l.id].length === 0) {
-                     dests[l.id] = [{ destination: 'LOSS', amount: Math.abs(parseFloat(l.net_amount)) }]
+                    dests[l.id] = [{ destination: 'LOSS', amount: Math.abs(parseFloat(l.net_amount)) }]
                 }
             })
             setLineDestinations(dests)
@@ -157,10 +157,10 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
             } else {
                 res = await partnersApi.createProfitDistribution(payload)
             }
-            
+
             setDraftResolution(res)
             setLines(res.lines || [])
-            
+
             const dests: Record<number, DestinationAllocation[]> = {}
             res.lines?.forEach((l) => {
                 dests[l.id] = (l.destinations || []).map(d => ({
@@ -168,11 +168,11 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
                     amount: parseFloat(d.amount as unknown as string)
                 }))
                 if (res.is_loss && dests[l.id].length === 0) {
-                     dests[l.id] = [{ destination: 'LOSS', amount: Math.abs(parseFloat(l.net_amount)) }]
+                    dests[l.id] = [{ destination: 'LOSS', amount: Math.abs(parseFloat(l.net_amount)) }]
                 }
             })
             setLineDestinations(dests)
-            
+
             return true
         } catch (error: unknown) {
             showApiError(error, "Error al procesar distribución")
@@ -202,7 +202,7 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
                 line_id: parseInt(id),
                 destinations: lineDestinations[parseInt(id)].filter(d => d.amount > 0)
             }))
-            
+
             if (draftResolution) {
                 await partnersApi.updateProfitDistributionLines(draftResolution.id, updates)
             }
@@ -351,10 +351,10 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
                                     <th className="px-3 py-3 text-right">Info Montos</th>
                                     {draftResolution?.is_profit ? (
                                         <>
-                                        <th className="px-2 py-3 w-[120px]">Dividendos ($)</th>
-                                        <th className="px-2 py-3 w-[120px]">Reinversión ($)</th>
-                                        <th className="px-2 py-3 w-[120px]">Retenido ($)</th>
-                                        <th className="px-3 py-3 w-[90px] text-right">Diferencia</th>
+                                            <th className="px-2 py-3 w-[120px]">Dividendos ($)</th>
+                                            <th className="px-2 py-3 w-[120px]">Reinversión ($)</th>
+                                            <th className="px-2 py-3 w-[120px]">Retenido ($)</th>
+                                            <th className="px-3 py-3 w-[90px] text-right">Diferencia</th>
                                         </>
                                     ) : (
                                         <th className="px-3 py-3">Absorción (Pérdida)</th>
@@ -366,9 +366,9 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
                                     const net = parseFloat(line.net_amount);
                                     const isCompensated = net <= 0 && draftResolution?.is_profit;
                                     const dests = lineDestinations[line.id] || [];
-                                    
+
                                     const getAmount = (type: string) => dests.find(d => d.destination === type)?.amount || 0;
-                                    
+
                                     const handleAmountChange = (type: string, val: string) => {
                                         const numVal = val === '' ? 0 : parseFloat(val);
                                         setLineDestinations(prev => {
@@ -382,7 +382,7 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
 
                                     const sumAllocated = dests.reduce((sum, d) => sum + d.amount, 0);
                                     const remaining = Math.abs(net) - sumAllocated;
-                                    
+
                                     return (
                                         <tr key={line.id} className="hover:bg-muted/30">
                                             <td className="px-3 py-2 font-black">{line.partner_name}</td>
@@ -400,38 +400,38 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
                                                 </td>
                                             ) : draftResolution?.is_profit ? (
                                                 <>
-                                                <td className="px-2 py-2">
-                                                    <Input 
-                                                        type="number"
-                                                        className="h-8 text-[11px] font-mono text-right"
-                                                        value={getAmount('DIVIDEND') || ''}
-                                                        onChange={(e) => handleAmountChange('DIVIDEND', e.target.value)}
-                                                        placeholder="0"
-                                                    />
-                                                </td>
-                                                <td className="px-2 py-2">
-                                                    <Input 
-                                                        type="number"
-                                                        className="h-8 text-[11px] font-mono text-right"
-                                                        value={getAmount('REINVEST') || ''}
-                                                        onChange={(e) => handleAmountChange('REINVEST', e.target.value)}
-                                                        placeholder="0"
-                                                    />
-                                                </td>
-                                                <td className="px-2 py-2">
-                                                    <Input 
-                                                        type="number"
-                                                        className="h-8 text-[11px] font-mono text-right"
-                                                        value={getAmount('RETAINED') || ''}
-                                                        onChange={(e) => handleAmountChange('RETAINED', e.target.value)}
-                                                        placeholder="0"
-                                                    />
-                                                </td>
-                                                <td className="px-3 py-2 text-right font-mono text-[11px]">
-                                                    <span className={Math.abs(remaining) <= 0.01 ? "text-success" : remaining < 0 ? "text-destructive" : "text-muted-foreground"}>
-                                                        {remaining > 0 ? '+' : ''}{formatCurrency(remaining)}
-                                                    </span>
-                                                </td>
+                                                    <td className="px-2 py-2">
+                                                        <Input
+                                                            type="number"
+                                                            className="h-8 text-[11px] font-mono text-right"
+                                                            value={getAmount('DIVIDEND') || ''}
+                                                            onChange={(e) => handleAmountChange('DIVIDEND', e.target.value)}
+                                                            placeholder="0"
+                                                        />
+                                                    </td>
+                                                    <td className="px-2 py-2">
+                                                        <Input
+                                                            type="number"
+                                                            className="h-8 text-[11px] font-mono text-right"
+                                                            value={getAmount('REINVEST') || ''}
+                                                            onChange={(e) => handleAmountChange('REINVEST', e.target.value)}
+                                                            placeholder="0"
+                                                        />
+                                                    </td>
+                                                    <td className="px-2 py-2">
+                                                        <Input
+                                                            type="number"
+                                                            className="h-8 text-[11px] font-mono text-right"
+                                                            value={getAmount('RETAINED') || ''}
+                                                            onChange={(e) => handleAmountChange('RETAINED', e.target.value)}
+                                                            placeholder="0"
+                                                        />
+                                                    </td>
+                                                    <td className="px-3 py-2 text-right font-mono text-[11px]">
+                                                        <span className={Math.abs(remaining) <= 0.01 ? "text-success" : remaining < 0 ? "text-destructive" : "text-muted-foreground"}>
+                                                            {remaining > 0 ? '+' : ''}{formatCurrency(remaining)}
+                                                        </span>
+                                                    </td>
                                                 </>
                                             ) : (
                                                 <td className="px-3 py-2 text-[10px] font-bold text-muted-foreground">
@@ -464,7 +464,7 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
                             </p>
                         </div>
                     </div>
-                    
+
                     <div className="grid gap-3 bg-muted/40 p-5 rounded-sm border">
                         <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">Impactos Contables Automatizados</p>
                         {[

@@ -1,6 +1,6 @@
+"use client"
 import { formatPlainDate } from "@/lib/utils";
 import { formatCurrency } from "@/lib/money"
-"use client"
 
 import React, { useState, useMemo, useCallback } from "react"
 import {

@@ -16,15 +16,12 @@ import { DocumentRegistrationModal } from "@/features/purchasing/components/Docu
 import { DocumentCompletionModal } from "@/components/shared/DocumentCompletionModal"
 import { PurchaseCheckoutWizard } from "@/features/purchasing/components/PurchaseCheckoutWizard"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
-import { format } from "date-fns"
-import { DomainCard, DomainHubStatus } from "@/components/shared"
+import { DomainHubStatus } from "@/components/shared"
 import { getHubStatuses } from "@/lib/workflow-status"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { LoadingFallback } from "@/components/shared/LoadingFallback"
-import { EmptyState } from "@/components/shared/EmptyState"
+import { Tabs } from "@/components/ui/tabs"
 import { useViewMode } from "@/hooks/useViewMode"
 import { createDomainCardView, createCardLoadingView } from "@/lib/view-helpers"
 
@@ -310,7 +307,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Almacén" />
             ),
-            cell: ({ row }) => <DataCell.Secondary>{row.getValue("warehouse_name")}</DataCell.Secondary>,
+            cell: ({ row }) => <DataCell.Text className="font-normal">{row.getValue("warehouse_name")}</DataCell.Text>,
             meta: { title: "Almacén" },
         },
         {

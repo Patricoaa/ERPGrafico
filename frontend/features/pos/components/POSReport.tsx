@@ -1,9 +1,9 @@
-import { formatCurrency } from "@/lib/money"
+
 "use client"
 
-
+import { formatCurrency } from "@/lib/money"
 import { cn } from "@/lib/utils"
-import { Printer, Calculator, TrendingUp, Activity, CreditCard, ChevronDown, ChevronUp } from "lucide-react"
+import { Printer, Calculator, CreditCard } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useBranding } from "@/contexts/BrandingProvider"
 import { SheetCloseButton } from "@/components/shared"
