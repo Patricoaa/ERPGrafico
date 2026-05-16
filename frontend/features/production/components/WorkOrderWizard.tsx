@@ -317,12 +317,12 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
           />
 
           {/* Center content */}
-          <div className="flex-1 flex flex-col p-6 overflow-hidden relative">
-            <div className="mb-6">
+          <div className="flex-1 flex flex-col overflow-hidden relative">
+            <div className="px-6 pt-6 mb-4 flex-shrink-0">
               <h3 className="text-lg font-semibold">{STAGES[viewingStepIndex]?.label}</h3>
             </div>
 
-            <div className="flex-1 overflow-y-auto min-h-0 relative">
+            <div className="flex-1 overflow-y-auto min-h-0 px-6 relative">
               {/* Mobile navigation */}
               <div className="md:hidden sticky top-0 z-10 bg-background/95 backdrop-blur border-b p-3 mb-4">
                 <LabeledSelect
@@ -357,7 +357,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
                   transition={{ duration: 0.2 }}
-                  className={cn('space-y-6', !isViewingCurrentStage && 'pointer-events-none opacity-80')}
+                  className={cn('space-y-6 pb-6', !isViewingCurrentStage && 'pointer-events-none opacity-80')}
                 >
                   {currentStageId === 'MATERIAL_ASSIGNMENT' && (
                     <MaterialAssignmentStep
@@ -414,8 +414,6 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                 </motion.div>
               </AnimatePresence>
             </div>
-
-
 
             <WizardStickyFooter
               isViewingCurrentStage={isViewingCurrentStage}
