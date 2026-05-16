@@ -135,7 +135,7 @@ export function StatusBadge({
     icon: Icon,
     tooltip,
     size = "md",
-    rounded = false,
+    rounded = true,
     className,
 }: StatusBadgeProps) {
     const normalizedStatus = status?.toUpperCase() || ""
@@ -196,7 +196,7 @@ export function StatusBadge({
             <div className={cn("flex items-center gap-1.5", className)}>
                 <div className={cn("h-2 w-2 rounded-full animate-pulse", dotColor)} />
                 <span className={cn(
-                    "font-heading font-extrabold uppercase tracking-tighter",
+                    "font-mono font-bold uppercase tracking-tight",
                     size === "sm" ? "text-[10px]" : "text-xs text-muted-foreground"
                 )}>
                     {displayLabel}
@@ -210,12 +210,12 @@ export function StatusBadge({
         <Badge
             variant="outline"
             className={cn(
-                "inline-flex items-center font-heading font-extrabold uppercase tracking-tighter border shadow-sm",
+                "inline-flex items-center font-mono font-bold uppercase tracking-tight border shadow-sm",
                 colorClass,
-                size === "sm" && "text-[9px] px-1.5 py-0 gap-1",
-                size === "md" && "text-[10px] px-2 py-0.5 gap-1",
-                size === "lg" && "h-7 text-xs px-2.5 gap-1.5",
-                rounded && "rounded-full px-3",
+                size === "sm" && "h-5 text-[9px] px-2 gap-1",
+                size === "md" && "h-6 text-[10px] px-2.5 gap-1",
+                size === "lg" && "h-8 text-xs px-4 gap-1.5",
+                rounded ? "rounded-full" : "rounded-sm",
                 className
             )}
         >
