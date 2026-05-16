@@ -31,7 +31,7 @@ RUN apt-get update \
     libffi-dev \
     libssl-dev \
     libpq-dev \
-    postgresql-client \n    libpango-1.0-0 \n    libpangoft2-1.0-0 \
+    postgresql-client \
     libpango-1.0-0 \
     libpangoft2-1.0-0 \
     && rm -rf /var/lib/apt/lists/*
@@ -89,7 +89,7 @@ RUN apt-get update \
     libffi-dev \
     libssl-dev \
     libpq-dev \
-    postgresql-client \n    libpango-1.0-0 \n    libpangoft2-1.0-0 \
+    postgresql-client \
     libpango-1.0-0 \
     libpangoft2-1.0-0 \
     && rm -rf /var/lib/apt/lists/*
