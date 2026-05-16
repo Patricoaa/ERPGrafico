@@ -24,7 +24,7 @@ import { FormSkeleton } from '@/components/shared'
 import { WizardHeader } from './WizardHeader'
 import { WizardProcessSidebar } from './WizardProcessSidebar'
 import { WizardStickyFooter } from './WizardStickyFooter'
-import { OrderCommentPanel } from './shared'
+
 import { WizardRightSidebar } from './WizardRightSidebar'
 import {
   MaterialAssignmentStep,
@@ -415,7 +415,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
               </AnimatePresence>
             </div>
 
-            {order && <OrderCommentPanel orderId={order.id} />}
+
 
             <WizardStickyFooter
               isViewingCurrentStage={isViewingCurrentStage}
