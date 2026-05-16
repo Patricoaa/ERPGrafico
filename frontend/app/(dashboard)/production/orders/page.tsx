@@ -225,7 +225,6 @@ export default function WorkOrdersPage() {
             cell: ({ row }) => (
                 <div className="flex justify-center">
                     <DataCell.Badge
-                        variant="outline"
                         className="text-[9px] uppercase tracking-tighter"
                     >
                         {translateProductionStage(row.original.current_stage)}
