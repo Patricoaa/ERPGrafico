@@ -3,7 +3,7 @@
 import React from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
-import { DynamicIcon } from "@/components/ui/dynamic-icon"
+import { DynamicIcon } from '@/components/shared'
 import { LucideIcon, Loader2, Check, CloudUpload, AlertCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Skeleton } from "@/components/ui/skeleton"

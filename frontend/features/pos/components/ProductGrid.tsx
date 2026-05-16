@@ -4,9 +4,9 @@
 // Grid display of products with availability indicators
 
 import { Card, CardContent } from '@/components/ui/card'
-import { DynamicIcon } from '@/components/ui/dynamic-icon'
+import { DynamicIcon } from '@/components/shared'
 import { cn } from '@/lib/utils'
-import { formatCurrency } from '@/lib/currency'
+import { formatCurrency } from "@/lib/money"
 import { PricingUtils } from '@/features/inventory/utils/pricing'
 import { useDeviceContext, MIN_TOUCH_TARGET } from '@/hooks/useDeviceContext'
 import { Product, Category, StockLimits } from '@/types/pos'

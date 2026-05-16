@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
-import { Badge } from "@/components/ui/badge"
+import { StatusBadge } from "@/components/shared"
 import { Eye, CheckCircle2, ChevronDown } from "lucide-react"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { useState, useEffect, useId } from "react"
@@ -316,7 +316,7 @@ export function PhaseCard({
                                                             {doc.number}
                                                         </span>
                                                         {doc.status === 'CANCELLED' && (
-                                                            <Badge variant="outline" className="text-[9px] h-4 px-1.5 border-muted-foreground/30 text-muted-foreground font-bold uppercase">Anulada</Badge>
+                                                            <StatusBadge status="VOIDED" size="sm" />
                                                         )}
                                                     </div>
                                                 </div>

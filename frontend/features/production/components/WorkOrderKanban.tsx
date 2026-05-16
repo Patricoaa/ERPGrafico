@@ -10,9 +10,7 @@ import {
     AlertCircle,
     CheckCircle2,
 } from "lucide-react"
-import { StatusBadge } from "@/components/shared/StatusBadge"
-import { Badge } from "@/components/ui/badge"
-import { CardSkeleton, Chip, Skeleton } from "@/components/shared"
+import { CardSkeleton, Chip, Skeleton, StatusBadge } from "@/components/shared"
 import { WorkOrder } from "../types"
 import { formatEntityDisplay } from "@/lib/entity-registry"
 import { STAGES_ORDERED } from "../constants/stages"
@@ -42,9 +40,9 @@ function KanbanCard({ order, onManage }: { order: WorkOrder; onManage: (id: numb
                 </div>
                 <div className="flex gap-2 items-center flex-wrap">
                     {isWorkOrderOverdue(order) && (
-                        <Badge variant="destructive" className="h-4 text-[9px] px-1 uppercase tracking-wider font-bold">
+                        <Chip intent="destructive" size="xs">
                             Atrasada
-                        </Badge>
+                        </Chip>
                     )}
                     {order.outsourcing_status === 'partial' && (
                         <StatusBadge status="PARTIAL" label="Parcial" size="sm" className="bg-info/10 text-info border-info/20" />

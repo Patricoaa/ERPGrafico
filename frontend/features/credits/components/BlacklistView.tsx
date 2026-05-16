@@ -1,3 +1,5 @@
+import { formatPlainDate } from "@/lib/utils";
+import { formatCurrency } from "@/lib/money"
 "use client"
 
 import React, { useState, useMemo, useCallback } from "react"
@@ -10,10 +12,10 @@ import { CreditContact, CreditLedgerEntry } from '@/features/credits/api/credits
 import { SmartSearchBar, useClientSearch } from "@/components/shared"
 import { creditContactSearchDef } from "../searchDef"
 import { useBlacklistedPortfolio } from "../hooks/useCredits"
-import { formatCurrency } from "@/lib/utils"
-import { DataTable } from "@/components/ui/data-table"
+
+import { DataTable } from '@/components/shared'
 import { type Table as ReactTable, type Row, type HeaderGroup, type Header, type Cell, ColumnDef, flexRender } from "@tanstack/react-table"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { DataTableColumnHeader } from '@/components/shared'
 
 import { Button } from "@/components/ui/button"
 import { UserCheck, DollarSign, AlertCircle } from "lucide-react"
@@ -33,7 +35,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Input } from "@/components/ui/input"
 import { EmptyState } from "@/components/shared/EmptyState"
-import { DataCell } from "@/components/ui/data-table-cells"
+import { DataCell } from '@/components/shared'
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { formatEntityDisplay } from "@/lib/entity-registry"
 
@@ -248,7 +250,7 @@ export function BlacklistView() {
             header: ({ column }) => <DataTableColumnHeader column={column} title="Bloqueado desde" className="justify-center text-muted-foreground" />,
             cell: ({ row }) => (
                 <div className="flex justify-center w-full">
-                    <div className="text-center text-[11px] text-muted-foreground font-medium">{row.original.credit_last_evaluated ? new Date(row.original.credit_last_evaluated).toLocaleDateString() : "—"}</div>
+                    <div className="text-center text-[11px] text-muted-foreground font-medium">{row.original.credit_last_evaluated ? formatPlainDate(row.original.credit_last_evaluated) : "—"}</div>
                 </div>
             ),
         }

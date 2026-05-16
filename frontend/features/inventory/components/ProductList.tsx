@@ -4,8 +4,8 @@ import { showApiError } from "@/lib/errors"
 
 import React, { useEffect, useState, useMemo } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
-import { DataTable } from "@/components/ui/data-table"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { DataTable } from '@/components/shared'
+import { DataTableColumnHeader } from '@/components/shared'
 
 import { ColumnDef } from "@tanstack/react-table"
 import { StatusBadge } from "@/components/shared/StatusBadge"
@@ -21,7 +21,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Archive as ArchiveIcon } from "lucide-react"
 import { ArchivingRestrictionsModal } from "./ArchivingRestrictionsModal"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
-import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
+import { DataCell, createActionsColumn } from '@/components/shared'
 import { EntityCard } from "@/components/shared"
 import { useProducts } from "@/features/inventory/hooks/useProducts"
 import { Product, Restriction, ProductFilters } from "@/features/inventory/types"
@@ -214,7 +214,7 @@ export function ProductList({ externalOpen, onExternalOpenChange, createAction }
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="SKU" className="justify-center" />
             ),
-            cell: ({ row }) => <DataCell.Text className="font-mono text-xs">{row.getValue("code")}</DataCell.Text>,
+            cell: ({ row }) => <DataCell.Code>{row.getValue("code")}</DataCell.Code>,
             size: 100,
             minSize: 80,
         },

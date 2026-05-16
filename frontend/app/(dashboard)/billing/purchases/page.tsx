@@ -7,7 +7,7 @@ import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+import { Chip } from "@/components/shared"
 import { Eye, FileBadge, Banknote, Package, Trash2, History, FileEdit, X, MoreVertical } from "lucide-react"
 import api from "@/lib/api"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
@@ -18,11 +18,12 @@ import { ReceiptModal } from "@/features/purchasing/components/ReceiptModal"
 import { PurchaseNoteModal } from "@/features/purchasing/components/PurchaseNoteModal"
 import { DocumentCompletionModal } from "@/components/shared/DocumentCompletionModal"
 import { Progress } from "@/components/ui/progress"
-import { DataTable } from "@/components/ui/data-table"
-import { DataCell } from "@/components/ui/data-table-cells"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { DataTable } from '@/components/shared'
+import { DataCell } from '@/components/shared'
+import { DataTableColumnHeader } from '@/components/shared'
 import { formatPlainDate } from "@/lib/utils"
-import { useSmartSearch, SmartSearchBar } from "@/components/shared"
+import { useSmartSearch, SmartSearchBar, StatusBadge } from "@/components/shared"
+import { getDtePrefix } from "@/lib/entity-registry"
 import { DomainCard } from "@/components/shared/DomainCard"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
@@ -55,12 +56,7 @@ interface PurchaseDocument {
     }
 }
 
-const statusMap: Record<string, { label: string, variant: "default" | "secondary" | "destructive" | "outline" | "success" | "info" | "warning" }> = {
-    'DRAFT': { label: 'Folio Pendiente', variant: 'warning' },
-    'POSTED': { label: 'Publicado', variant: 'info' },
-    'PAID': { label: 'Pagado', variant: 'success' },
-    'CANCELLED': { label: 'Anulado', variant: 'destructive' },
-}
+
 
 interface PurchasePaymentData {
     amount: string | number
@@ -196,7 +192,8 @@ export default function PurchaseInvoicesPage() {
             if (isCreditNote) paymentType = 'INBOUND' // Receiving money back (Devolución)
 
             formData.append('payment_type', paymentType)
-            formData.append('reference', `${payingDoc.dte_type === 'NOTA_CREDITO' ? 'NC' : payingDoc.dte_type === 'NOTA_DEBITO' ? 'ND' : 'PAGO'}-${payingDoc.number}`)
+            const prefix = ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(payingDoc.dte_type) ? getDtePrefix(payingDoc.dte_type) : 'PAGO';
+            formData.append('reference', `${prefix}-${payingDoc.number}`)
             formData.append('purchase_order', payingDoc.purchase_order ? payingDoc.purchase_order.toString() : '')
             formData.append('invoice', payingDoc.id.toString())
             formData.append('payment_method', data.paymentMethod)
@@ -249,11 +246,7 @@ export default function PurchaseInvoicesPage() {
                     <div className="flex items-center gap-2" title={doc.dte_type_display}>
                         <FileBadge className={`h-4 w-4 ${doc.dte_type === 'NOTA_CREDITO' ? 'text-primary' : doc.dte_type === 'NOTA_DEBITO' ? 'text-warning' : 'text-muted-foreground'}`} />
                         <span className="text-xs font-bold uppercase hidden md:inline-block">
-                            {doc.dte_type === 'NOTA_CREDITO' ? 'NC' :
-                                doc.dte_type === 'NOTA_DEBITO' ? 'ND' :
-                                    doc.dte_type === 'BOLETA' ? 'BOL' :
-                                        doc.dte_type === 'FACTURA_EXENTA' ? 'FE' :
-                                            doc.dte_type === 'BOLETA_EXENTA' ? 'BE' : 'FAC'}
+                            {getDtePrefix(doc.dte_type)}
                         </span>
                     </div>
                 )
@@ -301,23 +294,24 @@ export default function PurchaseInvoicesPage() {
             header: "Estado",
             cell: ({ row }) => {
                 const doc = row.original
-                const badgeStyle = statusMap[doc.status] || { label: doc.status, variant: 'secondary' }
                 return (
-                    <div className="flex flex-col gap-1">
+                    <div className="flex flex-col gap-1 items-start">
                         {doc.status !== 'POSTED' && (
-                            <Badge variant={badgeStyle.variant} className="text-[9px] h-4 px-1 uppercase whitespace-nowrap">
-                                {badgeStyle.label}
-                            </Badge>
+                            <StatusBadge 
+                                status={doc.status}
+                                label={doc.status === 'DRAFT' ? 'Folio Pendiente' : undefined}
+                                size="xs"
+                            />
                         )}
                         {/* Additional Status Badges */}
                         <div className="flex flex-wrap gap-1">
                             {(doc.pending_amount ?? 0) <= 0 && doc.status !== 'DRAFT' && doc.status !== 'PAID' && (
-                                <Badge variant="success" className="text-[9px] h-4 px-1 uppercase whitespace-nowrap">Pagado</Badge>
+                                <StatusBadge status="PAID" size="xs" />
                             )}
                             {doc.po_receiving_status === 'RECEIVED' && (
-                                <Badge variant="outline" className="text-[9px] h-4 px-1 uppercase border-warning text-warning font-bold whitespace-nowrap">
+                                <Chip size="xs" intent="warning" className="border-warning text-warning">
                                     {doc.dte_type === 'NOTA_CREDITO' ? 'Devuelto' : 'Recibido'}
-                                </Badge>
+                                </Chip>
                             )}
                         </div>
                     </div>

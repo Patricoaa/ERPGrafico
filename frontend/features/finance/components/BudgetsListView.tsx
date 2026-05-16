@@ -8,13 +8,13 @@ import { Pencil, FileText, Calendar, Wallet } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { LabeledInput } from "@/components/shared"
 import { toast } from "sonner"
-import { DataTable } from "@/components/ui/data-table"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { DataTable } from '@/components/shared'
+import { DataTableColumnHeader } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
 import { BaseModal } from "@/components/shared/BaseModal"
 
 import { BudgetEditor } from "@/features/finance/components/BudgetEditor"
-import { createActionsColumn, DataCell } from "@/components/ui/data-table-cells"
+import { createActionsColumn, DataCell } from '@/components/shared'
 
 import { useSearchParams, usePathname } from "next/navigation"
 

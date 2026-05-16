@@ -28,10 +28,16 @@ import { Chip } from "@/components/shared"
 ## Basic usage
 
 ```tsx
+// 1. Uso básico (Ad-hoc)
 <Chip>Almacenable</Chip>
 <Chip intent="success">Activo</Chip>
 <Chip size="xs" intent="warning">CREDITO</Chip>
 <Chip size="md" intent="primary" icon={ShieldCheck}>Sistema</Chip>
+
+// 2. Uso Inteligente (Recomendado)
+<Chip.Category domain="product_type" value="STORABLE" />
+<Chip.Flag isTrue={isActive} trueLabel="Activo" falseLabel="Inactivo" falseIntent="destructive" />
+<Chip.Count value={count} label="Seleccionados" hideOnZero />
 ```
 
 ---
@@ -101,16 +107,13 @@ These are part of the invariant and are applied internally by `intent` and `size
 
 ```tsx
 // Type tag in a table cell (product type)
-<Chip size="xs" intent="info">Almacenable</Chip>
+<Chip.Category domain="product_type" value="STORABLE" />
 
 // BOM status in manufacturing tab
-<Chip intent="success">BOM ACTIVA</Chip>
-<Chip intent="destructive" className="animate-pulse">SIN RECETA</Chip>
+<Chip.Flag isTrue={hasBom} trueLabel="BOM ACTIVA" falseLabel="SIN RECETA" falseIntent="destructive" />
 
 // Count badge on a tab trigger
-<Chip size="xs" intent={count > 0 ? "primary" : "neutral"} className="ml-1">
-  {count}
-</Chip>
+<Chip.Count value={count} size="xs" />
 
 // Feature flag in a settings row
 <Chip size="xs" intent="primary">SYSTEM</Chip>

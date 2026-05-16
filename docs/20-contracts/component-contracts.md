@@ -88,11 +88,11 @@ Typography invariant: `font-mono font-black uppercase tracking-widest`. Decision
 
 ## StatusBadge 🟢
 
-Only authorized component for rendering entity states. No ad-hoc badges allowed.
-> 📄 Para la resolución de íconos y títulos de entidad, ver **[entity-identity.md](./entity-identity.md)**.
+Workflow states and record status. Strictly mapped to `STATUS_MAP` in `lib/badge-resolvers.ts`.
 
 ```tsx
-<StatusBadge variant="sale-order" status="in_production" />
+<StatusBadge status="IN_PROGRESS" />
+<StatusBadge status="PAID" variant="dot" />
 ```
 
 | prop | type | required | default | notes |

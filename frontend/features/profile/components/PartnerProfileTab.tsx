@@ -1,3 +1,4 @@
+import { formatPlainDate } from "@/lib/utils";
 "use client"
 
 import React, { useEffect, useState, lazy, Suspense } from "react"
@@ -6,9 +7,9 @@ import { motion } from "framer-motion"
 import { toast } from "sonner"
 import { Card, CardContent } from "@/components/ui/card"
 import { Chip } from "@/components/shared"
-import { DataTable } from "@/components/ui/data-table"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
-import { createActionsColumn, DataCell } from "@/components/ui/data-table-cells"
+import { DataTable } from '@/components/shared'
+import { DataTableColumnHeader } from '@/components/shared'
+import { createActionsColumn, DataCell } from '@/components/shared'
 import { 
     Activity, 
     CalendarDays, 
@@ -242,7 +243,7 @@ export function PartnerProfileTab({ contactId }: Props) {
                                         <InfoField 
                                             icon={<CalendarDays className="h-3.5 w-3.5" />} 
                                             label="Socio desde" 
-                                            value={(contact.partner_since || contact.created_at) ? new Date((contact.partner_since || contact.created_at) as string).toLocaleDateString('es-CL') : "—"} 
+                                            value={(contact.partner_since || contact.created_at) ? formatPlainDate(contact.partner_since || contact.created_at) : "—"} 
                                         />
                                     </div>
                                 </CardContent>

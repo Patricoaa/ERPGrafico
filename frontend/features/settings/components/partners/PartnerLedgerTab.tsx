@@ -1,4 +1,5 @@
-﻿"use client"
+import { formatCurrency } from "@/lib/money"
+"use client"
 
 import React, { useEffect, useState } from "react"
 import {
@@ -12,12 +13,12 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { TableRow, TableCell } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
+
 import { Chip } from "@/components/shared"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
 import { Partner, PartnerTransaction } from "@/features/contacts/types/partner"
 import { toast } from "sonner"
-import { formatCurrency, formatPlainDate as formatDate, cn } from "@/lib/utils"
+import { formatPlainDate as formatDate, cn } from "@/lib/utils"
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -28,7 +29,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { PartnerContributionWizard } from "@/features/settings/components/partners/PartnerContributionWizard"
 import { PartnerWithdrawalWizard } from "@/features/settings/components/partners/PartnerWithdrawalWizard"
-import { DataTable } from "@/components/ui/data-table"
+import { DataTable } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
 
 const TRANSACTION_TYPE_OPTIONS = [
@@ -257,9 +258,9 @@ export function PartnerLedgerTab() {
                                 <div className="space-y-1">
                                     <p className="text-[10px] font-black uppercase text-muted-foreground tracking-tighter">Resumen de Selección</p>
                                     <div className="flex items-center gap-2">
-                                        <Badge variant="outline" className="bg-primary/5 text-primary text-[9px] font-mono border-primary/20">
+                                        <Chip size="xs" intent="primary" className="bg-primary/5 border-primary/20">
                                             {rows.length} MOVIMIENTOS
-                                        </Badge>
+                                        </Chip>
                                     </div>
                                 </div>
                             </TableCell>

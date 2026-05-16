@@ -1,3 +1,4 @@
+import { formatCurrency } from "@/lib/money"
 "use client"
 
 import { showApiError } from "@/lib/errors"
@@ -7,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { LabeledInput, PeriodValidationDateInput } from "@/components/shared"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
 import { toast } from "sonner"
-import { formatCurrency } from "@/lib/utils"
+
 import { ArrowRightLeft, CheckCircle2 } from "lucide-react"
 import { Partner } from "@/features/contacts/types/partner"
 

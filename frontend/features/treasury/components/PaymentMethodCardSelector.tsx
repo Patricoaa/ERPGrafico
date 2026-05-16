@@ -7,7 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { useAllowedPaymentMethods, PaymentMethod } from "@/hooks/useAllowedPaymentMethods"
 import { useState, useMemo, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Numpad } from "@/components/ui/numpad"
+import { Numpad } from '@/components/shared'
 import { BaseModal } from "@/components/shared/BaseModal"
 import { LabeledInput, LabeledSelect, MoneyDisplay } from "@/components/shared"
 import { formatMoney } from "@/lib/money"

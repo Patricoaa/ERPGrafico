@@ -20,7 +20,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { ProductSelector } from '@/components/selectors/ProductSelector'
 import { UoMSelector } from '@/components/selectors/UoMSelector'
 import { AdvancedContactSelector } from '@/components/selectors/AdvancedContactSelector'
-import { formatCurrency } from '@/lib/currency'
+import { formatCurrency } from "@/lib/money"
 import { useVatRate } from '@/hooks/useVatRate'
 import { useQuery } from '@tanstack/react-query'
 import type { ProductMinimal, UoM } from '../../types'

@@ -14,7 +14,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { Skeleton } from "@/components/ui/skeleton"
 import { PageHeaderSkeleton, UniversalSearch } from "@/components/shared"
 import { Loader2 } from "lucide-react"
-import { DynamicIcon } from "@/components/ui/dynamic-icon"
+import { DynamicIcon } from '@/components/shared'
 import { HeaderNavDropdowns } from "@/components/shared/HeaderNavDropdowns"
 
 // Lazy load: solo se compila al abrir el inbox, no en la carga inicial de cada página

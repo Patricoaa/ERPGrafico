@@ -5,9 +5,9 @@ import { useRouter } from "next/navigation"
 import { EmployeeFormModal } from "@/features/hr"
 import type { Employee } from "@/types/hr"
 import { ColumnDef } from "@tanstack/react-table"
-import { DataTable } from "@/components/ui/data-table"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
-import { createActionsColumn, DataCell } from "@/components/ui/data-table-cells"
+import { DataTable } from '@/components/shared'
+import { DataTableColumnHeader } from '@/components/shared'
+import { createActionsColumn, DataCell } from '@/components/shared'
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { useSearchParams, usePathname } from "next/navigation"
 import { Pencil } from "lucide-react"
@@ -60,7 +60,7 @@ export default function EmployeesPage() {
         {
             accessorKey: "display_id",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Código" className="justify-center" />,
-            cell: ({ row }) => <div className="flex justify-center w-full"><DataCell.Code className="font-semibold">{row.getValue("display_id")}</DataCell.Code></div>,
+            cell: ({ row }) => <div><DataCell.Code>{row.getValue("display_id")}</DataCell.Code></div>,
         },
         {
             accessorFn: (row) => row.contact_detail?.name || "",
@@ -69,7 +69,7 @@ export default function EmployeesPage() {
             cell: ({ row }) => {
                 const emp = row.original;
                 return (
-                    <div className="flex flex-col items-center justify-center w-full">
+                    <div>
                         <DataCell.Text className="font-bold">{emp.contact_detail?.name}</DataCell.Text>
                         <DataCell.Secondary>{emp.contact_detail?.tax_id}</DataCell.Secondary>
                     </div>
@@ -82,11 +82,11 @@ export default function EmployeesPage() {
             cell: ({ row }) => {
                 const emp = row.original;
                 return (
-                    <div className="flex flex-col gap-1 items-center justify-center w-full">
-                        <DataCell.Secondary className="text-[9px] uppercase font-bold">
+                    <div className="items-center justify-center w-full">
+                        <DataCell.Secondary >
                             AFP: {emp.afp_detail?.name || 'No disp.'}
                         </DataCell.Secondary>
-                        <DataCell.Secondary className="text-[9px] uppercase font-bold">
+                        <DataCell.Secondary>
                             Salud: {emp.salud_type_display}
                         </DataCell.Secondary>
                     </div>

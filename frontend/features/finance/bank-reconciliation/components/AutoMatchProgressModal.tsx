@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useCallback } from "react"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
-import { Badge } from "@/components/ui/badge"
+import { Chip } from "@/components/shared"
 import { CheckCircle2, Loader2, XCircle, Zap } from "lucide-react"
 import { cn } from "@/lib/utils"
 import api from "@/lib/api"
@@ -185,21 +185,19 @@ export function AutoMatchProgressModal({
                     )}
 
                     {/* Status Badge */}
-                    <Badge
-                        variant="outline"
-                        className={cn(
-                            "font-black uppercase text-xs tracking-widest px-3 py-1",
-                            progress.status === 'SUCCESS' && "border-success/30 bg-success/10 text-success",
-                            progress.status === 'FAILURE' && "border-destructive/30 bg-destructive/10 text-destructive",
-                            isRunning && "border-primary/30 bg-primary/10 text-primary",
-                        )}
+                    <Chip
+                        intent={
+                            progress.status === 'SUCCESS' ? 'success' :
+                            progress.status === 'FAILURE' ? 'destructive' :
+                            isRunning ? 'primary' : 'neutral'
+                        }
                     >
                         {progress.status === 'idle' && "Iniciando..."}
                         {progress.status === 'PENDING' && "En Cola..."}
                         {progress.status === 'PROGRESS' && "Procesando..."}
                         {progress.status === 'SUCCESS' && "Completado"}
                         {progress.status === 'FAILURE' && "Error"}
-                    </Badge>
+                    </Chip>
                 </div>
 
                 {/* Progress Bar */}

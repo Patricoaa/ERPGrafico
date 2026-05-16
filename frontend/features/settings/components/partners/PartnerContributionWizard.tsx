@@ -1,3 +1,4 @@
+import { formatCurrency } from "@/lib/money"
 "use client"
 
 import React, { useState, useEffect } from "react"
@@ -18,9 +19,9 @@ import { Product } from "@/features/inventory/types"
 import api from "@/lib/api"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { LabeledInput, LabeledSelect, LabeledContainer, PeriodValidationDateInput, Chip } from "@/components/shared"
-import { Badge } from "@/components/ui/badge"
+
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { formatCurrency, cn } from "@/lib/utils"
+import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 import { showApiError } from "@/lib/errors"
 

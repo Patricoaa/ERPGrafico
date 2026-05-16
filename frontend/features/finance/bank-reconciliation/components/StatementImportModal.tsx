@@ -13,7 +13,7 @@ import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountS
 import { FileUp, Columns, Table as TableIcon, AlertCircle, CheckCircle2, RefreshCw, FileSearch, Landmark, FileText, SlidersHorizontal } from "lucide-react"
 import api from "@/lib/api"
 import { cn } from "@/lib/utils"
-import { Badge } from "@/components/ui/badge"
+import { Chip } from "@/components/shared"
 import ImportPreviewStep, { DryRunResult } from "./ImportPreviewStep"
 
 const importSchema = z.object({
@@ -462,18 +462,19 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess }: 
                                 balance: 'Saldo'
                             }
                             return (
-                                <Badge
+                                <Chip
                                     key={f}
-                                    variant="outline"
+                                    size="sm"
+                                    intent={mapping[f] !== null ? "success" : "neutral"}
                                     className={cn(
-                                        "h-6 px-3 text-[10px] font-black uppercase transition-all", // intentional: badge density
+                                        "h-6 px-3 transition-all",
                                         mapping[f] !== null
-                                            ? "bg-success/10 border-success/20 text-success shadow-sm shadow-success/5"
+                                            ? "shadow-sm shadow-success/5"
                                             : "bg-muted/50 border-border text-muted-foreground/40 line-through"
                                     )}
                                 >
                                     {labels[f]} {mapping[f] !== null && '✓'}
-                                </Badge>
+                                </Chip>
                             )
                         })}
                     </div>

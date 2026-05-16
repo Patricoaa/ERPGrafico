@@ -1,15 +1,15 @@
 "use client"
 
 import React, { useState, useEffect, lazy, Suspense, useMemo } from "react"
-import { DataTable } from "@/components/ui/data-table"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { DataTable } from '@/components/shared'
+import { DataTableColumnHeader } from '@/components/shared'
 import type { ColumnDef } from "@tanstack/react-table"
 import { Plus, Building2 } from "lucide-react"
 import { format } from "date-fns"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { useTerminalBatches } from "@/features/treasury"
 import { StatusBadge } from "@/components/shared/StatusBadge"
-import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
+import { DataCell, createActionsColumn } from '@/components/shared'
 import { FormSkeleton, SmartSearchBar, useSmartSearch } from "@/components/shared"
 import { terminalBatchSearchDef } from "@/features/treasury/searchDef"
 

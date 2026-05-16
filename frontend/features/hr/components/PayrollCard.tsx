@@ -3,7 +3,7 @@
 import React from "react"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
-import { Badge } from "@/components/ui/badge"
+
 import { Button } from "@/components/ui/button"
 import {
     Table, TableBody, TableCell, TableHead, TableHeader, TableRow
@@ -15,7 +15,7 @@ import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 
 import { cn } from "@/lib/utils"
 import type { Payroll, PayrollItem } from "@/types/hr"
-import { DataCell } from "@/components/ui/data-table-cells"
+import { DataCell, StatusBadge } from '@/components/shared'
 import { formatEntityDisplay } from "@/lib/entity-registry"
 
 import { useConfirmAction } from "@/hooks/useConfirmAction"
@@ -210,14 +210,12 @@ export function PayrollCard({
 
                     {!isReadOnly && (
                         <div className="hidden sm:flex flex-col items-end gap-3 shrink-0">
-                            <Badge variant="outline" className={cn(
-                                "px-4 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-sm shadow-sm border-none ring-1 ring-inset",
-                                isPosted
-                                    ? "bg-success/10 text-success ring-success/20"
-                                    : "bg-warning/10 text-warning ring-warning/20"
-                            )}>
-                                {payroll.status_display}
-                            </Badge>
+                            <StatusBadge
+                                status={payroll.status || (isPosted ? 'POSTED' : 'DRAFT')}
+                                label={payroll.status_display}
+                                size="md"
+                                className="px-4 py-1.5 shadow-sm rounded-sm"
+                            />
                         </div>
                     )}
                 </div>

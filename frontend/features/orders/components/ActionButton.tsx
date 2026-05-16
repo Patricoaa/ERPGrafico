@@ -1,7 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+import { Chip } from "@/components/shared"
 import { Action } from "@/types/actions"
 import { getActionBadgeCount } from '@/lib/action-utils'
 import { cn } from "@/lib/utils"
@@ -72,15 +72,16 @@ export function ActionButton({
                 </div>
 
                 {showBadge && !ghost && (badgeCount !== undefined || badge) && (
-                    <Badge
-                        variant={(badge?.type as "default" | "secondary" | "destructive" | "outline") || "secondary"}
-                        className={cn(
-                            "ml-auto shrink-0",
-                            compact ? "text-[9px] h-4 px-1 min-w-[16px] justify-center" : "text-[10px] h-5 px-1.5"
-                        )}
+                    <Chip
+                        intent={
+                            badge?.type === "destructive" ? "destructive" :
+                            badge?.type === "default" ? "primary" : "neutral"
+                        }
+                        size={compact ? "xs" : "sm"}
+                        className="ml-auto shrink-0 min-w-[16px] justify-center"
                     >
                         {badgeCount !== undefined ? badgeCount : badge?.label}
-                    </Badge>
+                    </Chip>
                 )}
             </div>
         </Button>

@@ -27,7 +27,7 @@ import {
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { Button } from "@/components/ui/button"
 import { TableSkeleton } from "@/components/shared"
-import { DataTable } from "@/components/ui/data-table"
+import { DataTable } from '@/components/shared'
 import { type Table as ReactTable, type Row, type HeaderGroup, type Header, type Cell, flexRender, ColumnDef } from "@tanstack/react-table"
 
 import { EmptyState } from "@/components/shared/EmptyState"

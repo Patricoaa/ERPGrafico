@@ -45,23 +45,7 @@ export function FiscalYearCard({
     const status = fiscalYear?.status || 'OPEN';
     const isClosed = status === 'CLOSED';
 
-    const getStatusToken = (s: string) => {
-        switch (s) {
-            case 'OPEN': return 'success';
-            case 'CLOSING': return 'warning';
-            case 'CLOSED': return 'info';
-            default: return 'generic';
-        }
-    };
 
-    const getStatusLabel = (s: string) => {
-        switch (s) {
-            case 'OPEN': return 'Abierto';
-            case 'CLOSING': return 'En Cierre';
-            case 'CLOSED': return 'Cerrado';
-            default: return s;
-        }
-    };
 
     return (
         <EntityCard className="mb-6 cursor-default">
@@ -77,7 +61,7 @@ export function FiscalYearCard({
                 subtitle={
                     <div className="flex flex-col gap-1 mt-1">
                         <div className="flex items-center gap-2">
-                            <StatusBadge status={getStatusToken(status)} label={getStatusLabel(status)} />
+                            <StatusBadge status={status} />
                         </div>
                         {isClosed && fiscalYear?.closed_at ? (
                             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">

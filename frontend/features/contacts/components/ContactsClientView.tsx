@@ -4,10 +4,10 @@ import { ColumnDef } from "@tanstack/react-table"
 import { Edit, Trash2, Building2, User as UserIcon, Banknote } from "lucide-react"
 
 import { formatRUT } from "@/lib/utils/format"
-import { DataTable } from "@/components/ui/data-table"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { DataTable } from '@/components/shared'
+import { DataTableColumnHeader } from '@/components/shared'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
+import { DataCell, createActionsColumn } from '@/components/shared'
 import { useContacts, type Contact } from "@/features/contacts"
 import { LoadingFallback, SmartSearchBar, StatusBadge, useSmartSearch } from "@/components/shared"
 import { contactSearchDef } from "@/features/contacts/searchDef"

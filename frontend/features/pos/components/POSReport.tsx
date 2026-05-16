@@ -1,7 +1,8 @@
+import { formatCurrency } from "@/lib/money"
 "use client"
 
 
-import { formatCurrency, cn } from "@/lib/utils"
+import { cn } from "@/lib/utils"
 import { Printer, Calculator, TrendingUp, Activity, CreditCard, ChevronDown, ChevronUp } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useBranding } from "@/contexts/BrandingProvider"

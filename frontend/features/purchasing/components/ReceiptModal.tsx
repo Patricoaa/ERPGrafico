@@ -5,7 +5,7 @@ import { showApiError } from "@/lib/errors"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { Button } from "@/components/ui/button"
 import { LabeledInput, LabeledSelect, PeriodValidationDateInput } from "@/components/shared"
-import { Badge } from "@/components/ui/badge"
+import { Chip } from "@/components/shared"
 import {
     Table,
     TableBody,
@@ -283,15 +283,15 @@ export function ReceiptModal({
                     {/* Receiving Status */}
                     <div className="flex items-center gap-2">
                         <span className="text-sm text-muted-foreground">Estado de {isRefund ? 'Devolución' : 'Recepción'}:</span>
-                        <Badge variant={
+                        <Chip intent={
                             order?.receiving_status === 'RECEIVED' ? 'success' :
-                                order?.receiving_status === 'PARTIAL' ? 'secondary' :
-                                    'outline'
+                                order?.receiving_status === 'PARTIAL' ? 'info' :
+                                    'neutral'
                         }>
                             {order?.receiving_status === 'RECEIVED' ? (isRefund ? 'Devuelto' : 'Recibido') :
                                 order?.receiving_status === 'PARTIAL' ? 'Parcial' :
                                     'Pendiente'}
-                        </Badge>
+                        </Chip>
                     </div>
 
                     {/* Products Table */}
@@ -326,10 +326,10 @@ export function ReceiptModal({
                                                     </div>
                                                 </TableCell>
                                                 <TableCell className="text-center">
-                                                    <Badge variant="outline" className="font-normal border-none bg-muted/50">{line.uom_name}</Badge>
+                                                    <Chip size="xs" intent="neutral" className="font-normal border-none bg-muted/50">{line.uom_name}</Chip>
                                                 </TableCell>
                                                 <TableCell className="text-center">
-                                                    <Badge variant="outline">{line.quantity_pending}</Badge>
+                                                    <Chip size="xs" intent="neutral">{line.quantity_pending}</Chip>
                                                 </TableCell>
                                                 <TableCell className="text-center">
                                                     <LabeledInput

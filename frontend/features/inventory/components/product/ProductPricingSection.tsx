@@ -8,7 +8,7 @@ import { ProductFormValues } from "./schema"
 import { PricingUtils } from "../../utils/pricing"
 import { cn } from "@/lib/utils"
 import { UoM } from "@/types/entities"
-import { Badge } from "@/components/ui/badge"
+
 import { UoMSelector } from "@/components/selectors"
 
 interface ProductPricingSectionProps {

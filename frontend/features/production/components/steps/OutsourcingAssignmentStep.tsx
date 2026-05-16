@@ -4,7 +4,7 @@ import { Plus, Truck, Pencil, Trash2, Info } from 'lucide-react'
 import { Chip } from '@/components/shared'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
-import { formatCurrency } from '@/lib/currency'
+import { formatCurrency } from "@/lib/money"
 import { showApiError } from '@/lib/errors'
 import { useHubPanel } from '@/components/providers/HubPanelProvider'
 import { useWorkOrderMutations } from '../../hooks'

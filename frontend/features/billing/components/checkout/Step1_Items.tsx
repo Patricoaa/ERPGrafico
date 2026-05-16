@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 import { LabeledInput } from "@/components/shared"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
+
 import { Chip } from "@/components/shared"
 import { AlertCircle, Tag, Package, Hash } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -193,12 +193,9 @@ export function Step1_Items({
                                             />
                                             {selected && showMaxBadge && (
                                                 <div className="absolute -top-3 -right-3">
-                                                    <Badge className={cn(
-                                                        "h-5 min-w-5 flex items-center justify-center text-[9px] font-black border-2 border-background shadow-sm",
-                                                        isCreditNote ? "bg-primary" : "bg-warning"
-                                                    )}>
+                                                    <Chip size="xs" intent={isCreditNote ? "primary" : "warning"} className="border-2 border-background shadow-sm">
                                                         MAX {maxQty}
-                                                    </Badge>
+                                                    </Chip>
                                                 </div>
                                             )}
                                         </div>

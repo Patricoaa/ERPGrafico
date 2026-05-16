@@ -1,3 +1,4 @@
+import { formatCurrency } from "@/lib/money"
 "use client"
 
 import React from "react"
@@ -5,7 +6,7 @@ import { ExternalLink, User, MonitorSmartphone, Package, Calendar, CalendarClock
 import type { TransactionData } from "@/types/transactions"
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 import { useRouter } from "next/navigation"
-import { formatPlainDate, translateReceivingStatus, translatePaymentMethod, formatCurrency } from "@/lib/utils"
+import { formatPlainDate, translateReceivingStatus, translatePaymentMethod } from "@/lib/utils"
 import { BannerStatus } from "./BannerStatus"
 import { MetadataItem } from "./MetadataItem"
 import { AttachmentList } from "../AttachmentList"

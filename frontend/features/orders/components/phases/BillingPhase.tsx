@@ -4,6 +4,7 @@ import { useState } from "react"
 import { PhaseCard } from "./PhaseCard"
 import { FileText, Trash2, X } from "lucide-react"
 import { formatDocumentId } from '@/features/orders/utils/status'
+import { getDtePrefix, getDteLabel } from '@/lib/entity-registry'
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
@@ -119,7 +120,7 @@ export function BillingPhase({
                     ...(isNoteMode ? [{
                         type: activeDoc.dte_type_display || 'Nota',
                         number: activeDoc.display_id || formatDocumentId(
-                            activeDoc.dte_type === 'NOTA_CREDITO' ? 'NC' : 'ND',
+                            getDtePrefix(activeDoc.dte_type),
                             activeDoc.number || '---',
                             activeDoc.display_id
                         ),
@@ -136,9 +137,7 @@ export function BillingPhase({
                         .map((inv: Order) => ({
                             type: inv.dte_type_display || 'Documento',
                             number: inv.display_id || formatDocumentId(
-                                inv.dte_type === 'BOLETA' ? 'BOL' :
-                                    inv.dte_type === 'FACTURA_EXENTA' ? 'FE' :
-                                        inv.dte_type === 'BOLETA_EXENTA' ? 'BE' : 'FACT',
+                                getDtePrefix(inv.dte_type),
                                 inv.number || '---',
                                 inv.display_id
                             ),
@@ -163,7 +162,7 @@ export function BillingPhase({
                             ]
                         })),
                     ...(!isNoteMode ? (activeDoc.related_documents?.notes || []).map((note: Record<string, unknown>) => ({
-                        type: (note.type_display as string) || (note.dte_type === 'NOTA_CREDITO' ? 'Nota de Crédito' : 'Nota de Débito'),
+                        type: (note.type_display as string) || getDteLabel(note.dte_type as string),
                         number: (note.display_id as string) || (note.number as string),
                         icon: FileText,
                         color: 'text-primary',

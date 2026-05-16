@@ -1,69 +1,119 @@
-"use client"
+import { LucideIcon } from 'lucide-react'
+import type { BadgeIntent } from '@/lib/badge-resolvers'
+import { Badge } from '@/components/shared/Badge'
+import { resolveCategory } from '@/lib/badge-resolvers'
 
-import { cn } from "@/lib/utils"
-import { LucideIcon } from "lucide-react"
-import { ReactNode } from "react"
-
-type ChipSize = "xs" | "sm" | "md"
-type ChipIntent = "neutral" | "info" | "success" | "warning" | "destructive" | "primary"
-
-const SIZE_CLASSES: Record<ChipSize, string> = {
-    xs: "h-[18px] px-2   text-[9px]  gap-1",
-    sm: "h-[22px] px-2.5 text-[10px] gap-1",
-    md: "h-[26px] px-3   text-[11px] gap-1.5",
-}
-
-const ICON_SIZES: Record<ChipSize, string> = {
-    xs: "h-2.5 w-2.5",
-    sm: "h-3   w-3",
-    md: "h-3.5 w-3.5",
-}
-
-const INTENT_CLASSES: Record<ChipIntent, string> = {
-    neutral:     "bg-muted/60         text-muted-foreground  border-border/40",
-    info:        "bg-info/10          text-info              border-info/20",
-    success:     "bg-success/10       text-success           border-success/20",
-    warning:     "bg-warning/10       text-warning           border-warning/20",
-    destructive: "bg-destructive/10   text-destructive       border-destructive/20",
-    primary:     "bg-primary/10       text-primary           border-primary/20",
-}
-
-interface ChipProps {
-    children: ReactNode
-    /** Visual size. Default: 'sm' (tablas, cards, listas densas) */
-    size?: ChipSize
-    /** Semantic color intent. Default: 'neutral' */
-    intent?: ChipIntent
-    /** Optional leading icon */
+export interface ChipProps {
+    children: React.ReactNode
+    intent?: BadgeIntent
+    size?: 'xs' | 'sm' | 'md'
     icon?: LucideIcon
-    /** Only for layout/positioning (margin, flex). Never override typography or colors here. */
     className?: string
 }
 
-/**
- * Chip — Label informativo centralizado para tags, categorías, tipos y conteos.
- *
- * USAR cuando: el label NO es un estado de workflow/entidad (eso es StatusBadge)
- * y NO es un identificador de documento (eso es EntityBadge).
- *
- * Ejemplos: "BOM ACTIVA", "IVA", "SERVICIO", "3 ítems", "Almacenable"
- *
- * Tipografía siempre: font-mono font-black uppercase tracking-widest
- * Padding siempre: definido por `size`, no overrideable por className
- */
-export function Chip({ children, size = "sm", intent = "neutral", icon: Icon, className }: ChipProps) {
+export function Chip({ children, intent = 'neutral', size = 'sm', icon, className }: ChipProps) {
     return (
-        <span
-            className={cn(
-                "inline-flex items-center justify-center rounded-full border leading-none",
-                "font-mono font-black uppercase tracking-widest",
-                SIZE_CLASSES[size],
-                INTENT_CLASSES[intent],
-                className
-            )}
+        <Badge intent={intent} size={size} tracking="wide" icon={icon} className={className}>
+            {children}
+        </Badge>
+    )
+}
+
+// ----------------------------------------------------------------------
+// INTELLIGENT UTILITIES
+// ----------------------------------------------------------------------
+
+/**
+ * Chip.Category
+ * Automatically maps standard domain enumerations (like product_type, tax_type)
+ * to their correct visual intent and standardized label.
+ */
+Chip.Category = function ChipCategory({
+    domain,
+    value,
+    size = 'sm',
+    className
+}: {
+    domain: 'product_type' | 'tax_type' | 'transaction_type' | 'dte_type'
+    value: string
+    size?: 'xs' | 'sm' | 'md'
+    className?: string
+}) {
+    const { intent, label } = resolveCategory(domain, value)
+    return (
+        <Chip intent={intent} size={size} className={className}>
+            {label}
+        </Chip>
+    )
+}
+
+/**
+ * Chip.Flag
+ * Automatically maps true/false values to semantic intents (success/muted/destructive).
+ */
+Chip.Flag = function ChipFlag({
+    isTrue,
+    trueLabel,
+    falseLabel,
+    trueIntent = 'success',
+    falseIntent = 'neutral',
+    size = 'sm',
+    className
+}: {
+    isTrue: boolean
+    trueLabel: string
+    falseLabel?: string
+    trueIntent?: BadgeIntent
+    falseIntent?: BadgeIntent
+    size?: 'xs' | 'sm' | 'md'
+    className?: string
+}) {
+    if (!isTrue && !falseLabel) return null // Hide if false and no label provided
+    
+    return (
+        <Chip 
+            intent={isTrue ? trueIntent : falseIntent} 
+            size={size} 
+            className={className}
         >
-            {Icon && <Icon className={cn("shrink-0", ICON_SIZES[size])} />}
-            <span className="translate-y-[0.5px]">{children}</span>
-        </span>
+            {isTrue ? trueLabel : falseLabel}
+        </Chip>
+    )
+}
+
+/**
+ * Chip.Count
+ * Specialized chip for displaying counts. Hides by default if 0.
+ * Automatically uses 'primary' intent if value > 0, unless overridden.
+ */
+Chip.Count = function ChipCount({
+    value,
+    label,
+    hideOnZero = true,
+    intent = 'primary',
+    zeroIntent = 'neutral',
+    size = 'xs',
+    className
+}: {
+    value: number
+    label?: string
+    hideOnZero?: boolean
+    intent?: BadgeIntent
+    zeroIntent?: BadgeIntent
+    size?: 'xs' | 'sm' | 'md'
+    className?: string
+}) {
+    if (value === 0 && hideOnZero) return null
+
+    const displayValue = label ? `${label} (${value})` : value.toString()
+    
+    return (
+        <Chip 
+            intent={value > 0 ? intent : zeroIntent} 
+            size={size} 
+            className={className}
+        >
+            {displayValue}
+        </Chip>
     )
 }

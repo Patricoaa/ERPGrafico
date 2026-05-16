@@ -1,8 +1,9 @@
+import { formatCurrency } from "@/lib/money"
 "use client"
 
 import { CalendarIcon, Pencil, LayoutDashboard, Ban, Trash2, Copy, BookTemplate } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { formatPlainDate, cn, formatCurrency } from "@/lib/utils"
+import { formatPlainDate, cn } from "@/lib/utils"
 import { Chip, StatusBadge } from "@/components/shared"
 import type { WorkOrder } from "../types"
 import { formatEntityDisplay } from "@/lib/entity-registry"

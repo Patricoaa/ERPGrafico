@@ -1,3 +1,4 @@
+import { formatCurrency } from "@/lib/money"
 "use client"
 
 
@@ -7,7 +8,7 @@ import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { useState, useEffect, useMemo, useCallback, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+import { Chip } from "@/components/shared"
 import { Checkbox } from "@/components/ui/checkbox"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
@@ -29,7 +30,7 @@ import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import api from "@/lib/api"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
-import { cn, formatCurrency } from "@/lib/utils"
+import { cn } from "@/lib/utils"
 import {
     DndContext,
     DragEndEvent,
@@ -65,14 +66,14 @@ import { AutoMatchProgressModal } from "./AutoMatchProgressModal"
 import { ReconciliationIntelligence } from "./ReconciliationIntelligence"
 
 
-import { DataTable } from "@/components/ui/data-table"
+import { DataTable } from '@/components/shared'
 const TransactionViewModal = dynamic(() =>
     import("@/components/shared/TransactionViewModal").then(module => ({ default: module.TransactionViewModal })),
     { ssr: false, loading: () => <Loader2 className="h-6 w-6 animate-spin" /> }
 )
 import { ColumnDef, RowSelectionState, PaginationState, Updater } from "@tanstack/react-table"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
-import { createActionsColumn, DataCell } from "@/components/ui/data-table-cells"
+import { DataTableColumnHeader } from '@/components/shared'
+import { createActionsColumn, DataCell } from '@/components/shared'
 
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
@@ -568,12 +569,9 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
             cell: ({ row }) => {
                 const isCredit = parseFloat(row.original.credit) > parseFloat(row.original.debit)
                 return (
-                    <Badge variant="outline" className={cn(
-                        "text-[9px] font-black uppercase tracking-wider",
-                        isCredit ? "text-success border-success/20 bg-success/5" : "text-destructive border-destructive/20 bg-destructive/5"
-                    )}>
+                    <Chip size="xs" intent={isCredit ? "success" : "destructive"}>
                         {isCredit ? "Abono" : "Cargo"}
-                    </Badge>
+                    </Chip>
                 )
             },
             size: 70,
@@ -666,9 +664,9 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                             {row.original.contact_name}
                         </span>
                         {row.original.terminal_batch_id && (
-                            <Badge variant="secondary" className="w-fit text-[10px] h-4 px-1.5 font-black uppercase bg-info/10 text-info">
+                            <Chip size="xs" intent="info" className="w-fit">
                                 Liquidación Terminal: {row.original.terminal_batch_display}
-                            </Badge>
+                            </Chip>
                         )}
                         {isSuggested && (
                             <div className="flex items-center gap-1 mt-0.5">
@@ -694,12 +692,9 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                 if (item.movement_type === 'ADJUSTMENT') label = "Ajuste"
 
                 return (
-                    <Badge variant="outline" className={cn(
-                        "text-[9px] font-black uppercase tracking-wider",
-                        isDeposit ? "text-success border-success/20 bg-success/5" : "text-destructive border-destructive/20 bg-destructive/5"
-                    )}>
+                    <Chip size="xs" intent={isDeposit ? "success" : "destructive"}>
                         {label}
-                    </Badge>
+                    </Chip>
                 )
             },
             size: 90,
@@ -1216,9 +1211,9 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                     <Label className="text-xs font-black uppercase tracking-wider text-muted-foreground">
                                         Umbral de Confianza
                                     </Label>
-                                    <Badge variant="outline" className="font-mono font-bold text-primary bg-primary/5 border-primary/20">
+                                    <Chip size="sm" intent="primary" className="font-mono">
                                         {confidenceThreshold}%
-                                    </Badge>
+                                    </Chip>
                                 </div>
                                 <input
                                     type="range"

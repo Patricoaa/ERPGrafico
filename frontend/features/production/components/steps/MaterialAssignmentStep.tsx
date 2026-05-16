@@ -15,7 +15,7 @@ import { useProductionVariants } from '../../hooks'
 import { MaterialAssignmentTabs } from '../MaterialAssignmentTabs'
 import { useVatRate } from '@/hooks/useVatRate'
 import { useWorkOrderMutations } from '../../hooks'
-import { formatCurrency } from '@/lib/currency'
+import { formatCurrency } from "@/lib/money"
 import { cn } from '@/lib/utils'
 import { showApiError } from '@/lib/errors'
 import type { WorkOrder, WorkOrderMaterial, ProductMinimal } from '../../types'

@@ -2,7 +2,6 @@
 
 import { useMemo } from "react"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { Clock, User, ChevronRight, Calendar } from "lucide-react"
 import { StatusBadge } from "@/components/shared/StatusBadge"
@@ -97,9 +96,9 @@ export function WorkOrderTimelineView({ orders, onManage, isLoading }: TimelineP
                                             <StatusBadge status={order.status} size="sm" />
                                         </div>
                                         {isWorkOrderOverdue(order) && (
-                                            <Badge variant="destructive" className="h-4 text-[9px] px-1 uppercase tracking-wider font-bold">
+                                            <Chip intent="destructive" size="xs">
                                                 Atrasada
-                                            </Badge>
+                                            </Chip>
                                         )}
                                         <p className="text-sm font-semibold line-clamp-2 leading-snug">{order.description}</p>
                                         <div className="space-y-1 text-[11px] text-muted-foreground">

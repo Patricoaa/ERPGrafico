@@ -11,10 +11,10 @@ import { JournalEntryForm } from "@/features/accounting/components/JournalEntryF
 import api from "@/lib/api"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 import { Trash2, CheckCircle, Eye, Pencil } from "lucide-react"
-import { DataTable } from "@/components/ui/data-table"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { DataTable } from '@/components/shared'
+import { DataTableColumnHeader } from '@/components/shared'
 
-import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
+import { DataCell, createActionsColumn } from '@/components/shared'
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 
 import { useJournalEntries, type JournalEntry } from "@/features/accounting/hooks/useJournalEntries"

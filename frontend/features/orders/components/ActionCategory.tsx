@@ -3,7 +3,7 @@
 import { showApiError, getErrorMessage } from "@/lib/errors"
 import { useState, useEffect, forwardRef, useImperativeHandle, Suspense } from "react"
 import { cn } from "@/lib/utils"
-import { Badge } from "@/components/ui/badge"
+import { Chip } from "@/components/shared"
 import { ActionButton } from "./ActionButton"
 import { Action, ActionCategory as CategoryType } from "@/types/actions"
 import { getActionBadgeCount } from '@/lib/action-utils'
@@ -379,9 +379,7 @@ export const ActionCategory = forwardRef(({
                             )}
                             {category.label && <h3 className="font-heading font-extrabold uppercase text-xs tracking-wider">{category.label}</h3>}
                             {categoryBadgeCount > 0 && (
-                                <Badge variant="secondary" className="ml-auto text-[10px] h-5 rounded">
-                                    {categoryBadgeCount}
-                                </Badge>
+                                <Chip.Count value={categoryBadgeCount} size="sm" intent="neutral" className="ml-auto rounded" />
                             )}
                         </div>
                     )}

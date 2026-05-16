@@ -7,11 +7,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Card, CardContent } from "@/components/ui/card"
 import { Trash2, Plus, Loader2, Calculator, Info, Package } from "lucide-react"
-import { DynamicIcon } from "@/components/ui/dynamic-icon"
+import { DynamicIcon } from '@/components/shared'
 import { SearchBar } from "@/features/pos/components/SearchBar"
 import { CategoryFilter } from "@/features/pos/components/CategoryFilter"
 import { toast } from "sonner"
-import { formatCurrency } from "@/lib/currency"
+import { formatCurrency } from "@/lib/money"
 import { cn } from "@/lib/utils"
 import { resolveMediaUrl } from "@/lib/api"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"

@@ -1,79 +1,88 @@
-"use client";
-
-import React from 'react';
-import Link from 'next/link';
-import { cn } from "@/lib/utils";
-import { getEntityMetadata, formatEntityDisplay } from '@/lib/entity-registry';
-import { Package } from 'lucide-react';
-
-interface EntityBadgeProps {
-  label: string;
-  data: any;
-  showIcon?: boolean;
-  link?: boolean;
-  className?: string;
-  size?: 'sm' | 'md' | 'lg';
-  rounded?: boolean;
-}
+"use client"
 
 /**
  * EntityBadge — Premium component to display entity identifiers consistently.
- * Uses the central EntityRegistry for labels, icons, and formatting.
+ *
+ * Thin wrapper over <Badge>. Uses resolveEntity() to map entity label + data
+ * to display code, icon, and detail URL. Renders a Link if URL exists.
+ *
+ * Decision tree:
+ *   workflow state → StatusBadge
+ *   entity ID/number → EntityBadge
+ *   everything else → Chip
+ *
+ * @example
+ * <EntityBadge label="order" data={order} />
  */
-export const EntityBadge: React.FC<EntityBadgeProps> = ({ 
-  label, 
-  data, 
-  showIcon = true, 
-  link = true,
-  className,
-  size = 'md',
-  rounded = true,
+
+import React from 'react'
+import Link from 'next/link'
+import { Badge } from '@/components/shared/Badge'
+import { resolveEntity } from '@/lib/badge-resolvers'
+import { Package } from 'lucide-react'
+
+export interface EntityBadgeProps {
+    /** The entity registry key (e.g. "order", "invoice", "payment") */
+    label: string
+    /** The entity data object (must contain at least 'id' for link generation) */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    data: any
+    /** Whether to show the entity's icon. Default: true */
+    showIcon?: boolean
+    /** Whether to wrap the badge in a Link to the entity's detail view. Default: true */
+    link?: boolean
+    /** Size. Default: 'md'. */
+    size?: 'sm' | 'md' | 'lg' | 'xl'
+    /** Shape. Pill (rounded-full) or square (rounded-sm). Default: pill */
+    rounded?: boolean
+    /** Layout/position classes only */
+    className?: string
+}
+
+export const EntityBadge: React.FC<EntityBadgeProps> = ({
+    label,
+    data,
+    showIcon = true,
+    link = true,
+    size = 'md',
+    rounded = true,
+    className,
 }) => {
-  const metadata = getEntityMetadata(label);
-  const displayCode = formatEntityDisplay(label, data);
-  
-  if (!data) return null;
+    if (!data) return null
 
-  const Icon = metadata?.icon || Package;
-  const detailUrl = metadata?.detailUrlPattern?.replace('{id}', data.id?.toString() || data.toString());
+    const { displayCode, icon: ResolvedIcon, href } = resolveEntity(label, data)
+    const Icon = showIcon ? (ResolvedIcon ?? Package) : undefined
 
-  const sizeClasses = {
-    sm: "h-6 px-3 text-[12px] gap-1.5",
-    md: "h-8 px-4 text-[14px] gap-2",
-    lg: "h-10 px-6 text-base gap-2.5"
-  };
+    // EntityBadge uses a specific, subtle "secondary" style to avoid clashing with
+    // more important semantic colors (status, warnings, etc).
+    // We achieve this by overriding the default intent via className.
+    const customStyle = "bg-secondary/30 text-secondary-foreground border-secondary/50 hover:bg-secondary/50 hover:border-secondary"
 
-  const iconSizes = {
-    sm: "h-3.5 w-3.5",
-    md: "h-4 w-4",
-    lg: "h-5 w-5"
-  };
+    const badgeEl = (
+        <Badge
+            intent="neutral" // Base intent, overridden by className
+            size={size}
+            tracking="tight" // Long IDs (OC-2025-001) need tight spacing
+            shape={rounded ? 'pill' : 'square'}
+            icon={Icon}
+            className={`${customStyle} max-w-[200px] truncate ${className ?? ''}`}
+        >
+            {displayCode}
+        </Badge>
+    )
 
-  const badgeContent = (
-    <span className={cn(
-      "inline-flex items-center justify-center font-mono uppercase tracking-tight border transition-all duration-200 leading-none",
-      "bg-secondary/30 text-secondary-foreground border-secondary/50",
-      "hover:bg-secondary/50 hover:border-secondary",
-      rounded ? "rounded-full" : "rounded-sm",
-      sizeClasses[size],
-      className
-    )}>
-      {showIcon && <Icon className={cn("shrink-0 opacity-60", iconSizes[size])} />}
-      <span className="truncate font-black max-w-[200px] translate-y-[0.5px]">
-        {displayCode}
-      </span>
-    </span>
-  );
+    if (link && href) {
+        return (
+            <Link
+                href={href}
+                className="inline-block outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded-md transition-shadow"
+            >
+                {badgeEl}
+            </Link>
+        )
+    }
 
-  if (link && detailUrl) {
-    return (
-      <Link href={detailUrl} className="inline-block outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded-md">
-        {badgeContent}
-      </Link>
-    );
-  }
+    return badgeEl
+}
 
-  return badgeContent;
-};
-
-EntityBadge.displayName = "EntityBadge";
+EntityBadge.displayName = 'EntityBadge'

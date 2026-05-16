@@ -2,7 +2,7 @@ import React from "react"
 import Link from "next/link"
 import { ChevronDown, LucideIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { DynamicIcon } from "@/components/ui/dynamic-icon"
+import { DynamicIcon } from '@/components/shared'
 import {
     DropdownMenu,
     DropdownMenuContent,

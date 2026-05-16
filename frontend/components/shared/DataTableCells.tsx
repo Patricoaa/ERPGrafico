@@ -1,4 +1,5 @@
-import { cn, formatCurrency, translateStatus, formatPlainDate, formatDocumentId } from "@/lib/utils"
+import { formatCurrency } from "@/lib/money"
+import { cn, translateStatus, formatPlainDate, formatDocumentId } from "@/lib/utils"
 import { ExternalLink, LucideIcon } from "lucide-react"
 import Link from "next/link"
 import { ReactNode, HTMLAttributes } from "react"
@@ -27,12 +28,12 @@ interface ValueCellProps<T> extends BaseCellProps {
 export const DataCell = {
     /** Standard text cell for primary information */
     Text: ({ children, className, ...props }: BaseCellProps) => (
-        <div className={cn("font-medium truncate flex justify-center items-center", className)} {...props}>{children}</div>
+        <div className={cn("text-xs font-mono font-medium text-foreground/90 flex justify-center items-center", className)} {...props}>{children}</div>
     ),
 
     /** Secondary text for categories, descriptions, or subtitles */
     Secondary: ({ children, className, ...props }: BaseCellProps) => (
-        <div className={cn("text-xs text-muted-foreground truncate flex justify-center items-center", className)} {...props}>{children}</div>
+        <div className={cn("text-xs font-mono font-medium text-foreground/90 flex justify-center items-center", className)} {...props}>{children}</div>
     ),
 
     /** Standard text for identifiers (simple font as per request) */
@@ -46,7 +47,7 @@ export const DataCell = {
     DocumentId: ({ entityLabel, type, number, label, data, className, ...props }: { entityLabel?: string, type?: string, number?: string | number | null | undefined, label?: string, data?: any, className?: string }) => {
         // Resolve label: prefer entityLabel > label > legacy type mapping
         let resolvedLabel = entityLabel || label;
-        
+
         if (!resolvedLabel && type) {
             const TYPE_TO_LABEL: Record<string, string> = {
                 'sale_order': 'sales.saleorder',
@@ -68,9 +69,9 @@ export const DataCell = {
         }
 
         const finalData = data || { id: number, number, display_id: number };
-        
+
         return (
-            <div className={cn("flex justify-center items-center", className)} {...props}>
+            <div className={cn("text-xs font-mono font-medium text-foreground/90 flex justify-center items-center", className)} {...props}>
                 <EntityBadge label={resolvedLabel || 'sales.saleorder'} data={finalData} size="sm" />
             </div>
         );
@@ -80,14 +81,14 @@ export const DataCell = {
     ContactLink: ({ children, contactId, onClick, className, ...props }: HTMLAttributes<HTMLButtonElement> & { contactId?: number | string, onClick?: (e: React.MouseEvent) => void }) => {
         const { openContact } = useGlobalModals();
         return (
-            <div className={cn("flex items-center justify-center w-full group", className)}>
+            <div className={cn("text-xs font-mono font-medium text-foreground/90 flex justify-center items-centerw-full group", className)}>
                 <button
                     onClick={(e) => {
                         e.stopPropagation();
                         if (onClick) onClick(e);
                         else if (contactId) openContact(Number(contactId));
                     }}
-                    className={cn("flex items-center justify-center gap-1.5 font-medium text-primary hover:underline hover:text-primary/80 transition-colors text-sm")}
+                    className={cn("text-xs font-mono font-medium text-foreground/90 flex justify-center items-center hover:underline hover:text-primary/80 transition-colors text-sm")}
                     {...props}
                 >
                     <span className="truncate">{children}</span>
@@ -101,11 +102,11 @@ export const DataCell = {
     Link: ({ children, href, onClick, className, external, ...props }: HTMLAttributes<HTMLElement> & { href?: string, onClick?: () => void, external?: boolean }) => {
         if (href) {
             return (
-                <div className={cn("flex items-center justify-center w-full", className)}>
+                <div className={cn("ftext-xs font-mono font-medium text-foreground/90 flex justify-center items-center", className)}>
                     <Link
                         href={href}
                         target={external ? "_blank" : undefined}
-                        className={cn("font-medium text-primary hover:underline hover:text-primary/80 flex items-center gap-1 w-fit")}
+                        className={cn("text-xs font-mono font-medium text-foreground/90 flex justify-center items-center hover:underline hover:text-primary/80 flex items-center gap-1 w-fit")}
                         {...(props as React.AnchorHTMLAttributes<HTMLAnchorElement>)}
                     >
                         {children}
@@ -115,10 +116,10 @@ export const DataCell = {
             )
         }
         return (
-            <div className={cn("flex items-center justify-center w-full", className)}>
+            <div className={cn("text-xs font-mono font-medium text-foreground/90 flex justify-center items-center", className)}>
                 <button
                     onClick={onClick}
-                    className={cn("font-medium text-primary hover:underline hover:text-primary/80 text-center w-fit")}
+                    className={cn("text-xs font-mono font-medium text-foreground/90 flex justify-center items-center hover:underline hover:text-primary/80 text-center w-fit")}
                     {...(props as React.ButtonHTMLAttributes<HTMLButtonElement>)}
                 >
                     {children}
@@ -131,11 +132,11 @@ export const DataCell = {
 
     /** Right-aligned number with tabular figures */
     Number: ({ value, suffix, prefix, className, decimals = 0, ...props }: ValueCellProps<number | string> & { suffix?: string, prefix?: string, decimals?: number }) => {
-        if (value === null || value === undefined) return <div className={cn("flex justify-center items-center text-muted-foreground", className)} {...props}>-</div>
+        if (value === null || value === undefined) return <div className={cn("text-xs font-mono font-medium text-foreground/90 flex justify-center items-center", className)} {...props}>-</div>
         const num = typeof value === 'string' ? parseFloat(value) : value
         return (
-            <div className={cn("flex justify-center items-center font-medium tabular-nums", className)} {...props}>
-                {prefix}{num.toLocaleString('es-CL', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })} {suffix && <span className="text-[10px] text-muted-foreground font-normal ml-0.5">{suffix}</span>}
+            <div className={cn("text-xs font-mono font-medium text-foreground/90 flex justify-center items-center", className)} {...props}>
+                {prefix}{num.toLocaleString('es-CL', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })} {suffix && <span className="text-xs font-mono font-medium text-foreground/90 flex justify-center items-center">{suffix}</span>}
             </div>
         )
     },
@@ -143,7 +144,7 @@ export const DataCell = {
     /** Currency formatted cell */
     Currency: ({ value, currency = "CLP", className, digits = 0, ...props }: ValueCellProps<number | string> & { currency?: string, digits?: number }) => {
         return (
-            <div className={cn("flex justify-center items-center w-full", className)} {...props}>
+            <div className={cn("text-xs font-mono font-medium text-foreground/90 flex justify-center items-center w-full", className)} {...props}>
                 <MoneyDisplay amount={value} currency={currency} digits={digits} />
             </div>
         )
@@ -152,12 +153,12 @@ export const DataCell = {
     /** Variance cell that colors red/green based on value */
     Variance: ({ value, currency = "CLP", className, digits = 0, ...props }: ValueCellProps<number> & { currency?: string | boolean, digits?: number }) => {
         return (
-            <div className={cn("flex justify-center items-center w-full", className)} {...props}>
-                <MoneyDisplay 
-                    amount={value} 
-                    currency={typeof currency === "string" ? currency : "CLP"} 
-                    digits={digits} 
-                    showColor={true} 
+            <div className={cn("text-xs font-mono font-medium text-foreground/90 flex justify-center items-center", className)} {...props}>
+                <MoneyDisplay
+                    amount={value}
+                    currency={typeof currency === "string" ? currency : "CLP"}
+                    digits={digits}
+                    showColor={true}
                 />
             </div>
         )
@@ -169,10 +170,10 @@ export const DataCell = {
      */
     NumericFlow: ({ value, unit, className, showSign = true, ...props }: HTMLAttributes<HTMLDivElement> & { value: number | string | null | undefined, unit?: string, showSign?: boolean }) => {
         if (value === null || value === undefined || value === "") return <div className="flex justify-center text-muted-foreground text-xs">-</div>
-        
+
         const numValue = Number(value)
-        if (isNaN(numValue)) return <div className="flex justify-center text-muted-foreground text-xs">-</div>
-        
+        if (isNaN(numValue)) return <div className="text-xs font-mono font-medium text-foreground/90 flex justify-center items-center">-</div>
+
         const isPositive = numValue > 0;
         const isNegative = numValue < 0;
 
@@ -180,15 +181,15 @@ export const DataCell = {
         const sign = showSign ? (isPositive ? "+" : "") : "";
 
         return (
-            <div className={cn("flex flex-col items-center justify-center group w-full", className)} {...props}>
+            <div className={cn("text-xs font-mono font-medium text-foreground/90 flex justify-center items-center", className)} {...props}>
                 <span className={cn(
-                    "font-mono font-black text-[14px] tracking-tighter transition-all group-hover:scale-110",
+                    "text-xs font-mono font-medium text-foreground/90 flex justify-center items-center-hover:scale-110",
                     colorClass
                 )}>
                     {sign}{numValue.toFixed(2)}
                 </span>
                 {unit && (
-                    <span className="text-[9px] font-black uppercase tracking-widest opacity-40 group-hover:opacity-100 text-muted-foreground mt-0.5">
+                    <span className="text-xs font-mono font-medium text-foreground/90 flex justify-center items-center-hover:opacity-100 text-muted-foreground mt-0.5">
                         {unit}
                     </span>
                 )}
@@ -221,9 +222,9 @@ export const DataCell = {
 
     /** Standard date format */
     Date: ({ value, className, showTime = false, ...props }: ValueCellProps<string | Date> & { showTime?: boolean }) => {
-        if (!value) return <div className={cn("text-muted-foreground text-xs flex justify-center items-center", className)} {...props}>-</div>
+        if (!value) return <div className={cn("text-xs font-mono font-medium text-foreground/90 flex justify-center items-center", className)} {...props}>-</div>
         return (
-            <div className={cn("text-sm text-foreground/80 flex justify-center items-center tabular-nums", className)} {...props}>
+            <div className={cn("text-xs font-mono font-medium text-foreground/90 flex justify-center items-center", className)} {...props}>
                 {formatPlainDate(value)}
                 {showTime && (() => {
                     const date = new Date(value)
@@ -238,10 +239,10 @@ export const DataCell = {
     /** Mapped status badge - Internally uses the standardized StatusBadge */
     Status: ({ status, label, map, variant = "subtle", className }: { status: string, label?: string, map?: Record<string, { label: string, className: string }>, variant?: "default" | "hub" | "dot" | "subtle", className?: string }) => {
         return (
-            <div className="flex justify-center items-center w-full">
-                <StatusBadge 
-                    status={status} 
-                    label={label || translateStatus(status)} 
+            <div className="text-xs font-mono font-medium text-foreground/90 flex justify-center items-center">
+                <StatusBadge
+                    status={status}
+                    label={label || translateStatus(status)}
                     variant={variant}
                     className={className}
                 />
@@ -263,21 +264,21 @@ export const DataCell = {
      * - Tooltip uses the dark sidebar palette for visual consistency.
      * Enforces rounded-none for design system compliance.
      */
-    Action: ({ 
-        icon: Icon, 
-        onClick, 
-        title, 
-        className, 
-        color, 
-        variant = "ghost", 
+    Action: ({
+        icon: Icon,
+        onClick,
+        title,
+        className,
+        color,
+        variant = "ghost",
         compact = false, // New prop
-        ...props 
-    }: { 
-        icon: LucideIcon, 
-        onClick?: (e: React.MouseEvent) => void, 
-        title?: string, 
-        className?: string, 
-        color?: string, 
+        ...props
+    }: {
+        icon: LucideIcon,
+        onClick?: (e: React.MouseEvent) => void,
+        title?: string,
+        className?: string,
+        color?: string,
         variant?: "ghost" | "outline" | "default" | "secondary",
         compact?: boolean
     } & React.ButtonHTMLAttributes<HTMLButtonElement>) => (
@@ -302,8 +303,8 @@ export const DataCell = {
                     </div>
                 </TooltipTrigger>
                 {title && (
-                    <TooltipContent 
-                        side="top" 
+                    <TooltipContent
+                        side="top"
                         className="text-[9px] font-black uppercase tracking-[0.2em] bg-sidebar text-sidebar-foreground border-sidebar-border px-2 py-1 shadow-xl rounded-none animate-in fade-in zoom-in-95 duration-200"
                     >
                         {title}

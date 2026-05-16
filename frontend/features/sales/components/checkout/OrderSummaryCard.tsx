@@ -2,7 +2,7 @@
 
 import { Separator } from "@/components/ui/separator"
 import { ShoppingBag } from "lucide-react"
-import { formatCurrency } from "@/lib/currency"
+import { formatCurrency } from "@/lib/money"
 import { Chip } from "@/components/shared"
 import { PricingUtils } from '@/features/inventory/utils/pricing'
 

@@ -1,3 +1,4 @@
+import { formatCurrency } from "@/lib/money";
 "use client"
 
 import { FormSkeleton } from "@/components/shared"
@@ -27,7 +28,7 @@ import {
 import api from "@/lib/api"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
-import { DataCell } from "@/components/ui/data-table-cells"
+import { DataCell } from '@/components/shared'
 import { formatEntityDisplay } from "@/lib/entity-registry"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { FormTabs, FormTabsContent } from "@/components/shared"
@@ -339,7 +340,7 @@ export function ProductInsightsModal({ productId, productName, open, onOpenChang
                                             <YAxis fontSize={10} />
                                             <RechartsTooltip
                                                 labelFormatter={(val) => format(new Date(val), 'PPP', { locale: es })}
-                                                formatter={(val) => [new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(Number(val || 0)), '']}
+                                                formatter={(val) => [formatCurrency(Number(val || 0)), '']}
                                             />
                                             <Legend verticalAlign="top" height={36} />
                                             <Area type="monotone" name="Precio Venta" dataKey="sale_price" stroke="var(--primary)" fillOpacity={1} fill="url(#colorSale)" strokeWidth={2} />

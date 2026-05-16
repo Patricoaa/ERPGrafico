@@ -7,7 +7,7 @@ import { Loader2, CheckCircle2, Wallet, ArrowRight, Printer, FileText } from "lu
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+import { Chip } from "@/components/shared"
 import { formatPlainDate } from "@/lib/utils"
 
 interface Step4_CompletionProps {
@@ -54,9 +54,9 @@ export function Step4_Completion({
                             <Wallet className="h-5 w-5 text-primary" />
                             <span className="font-black text-xs uppercase tracking-widest">Resumen de Liquidación</span>
                         </div>
-                        <Badge className="bg-primary text-primary-foreground font-black text-[10px] py-0.5">
+                        <Chip intent="primary" size="sm" className="py-0.5">
                             {invoice.dte_type_display}
-                        </Badge>
+                        </Chip>
                     </div>
 
                     <div className="p-8 space-y-6">

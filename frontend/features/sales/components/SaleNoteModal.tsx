@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { FileBadge, Loader2, CheckCircle2, AlertCircle, ShieldAlert } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
-import { formatCurrency } from "@/lib/currency"
+import { formatCurrency } from "@/lib/money"
 import { PricingUtils } from '@/features/inventory/utils/pricing'
 import { Card } from "@/components/ui/card"
 import { formatEntityDisplay } from "@/lib/entity-registry"

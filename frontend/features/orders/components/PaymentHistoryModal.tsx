@@ -1,3 +1,4 @@
+import { formatCurrency } from "@/lib/money"
 "use client"
 
 import { BaseModal } from "@/components/shared/BaseModal"
@@ -10,7 +11,7 @@ import {
     TableRow,
 } from "@/components/ui/table"
 import { Chip } from "@/components/shared"
-import { formatCurrency, formatPlainDate } from "@/lib/utils"
+import { formatPlainDate } from "@/lib/utils"
 import { Landmark, Calendar, User, Hash, FileText } from "lucide-react"
 import { formatEntityDisplay } from "@/lib/entity-registry"
 import type { TransactionData } from "@/types/transactions"

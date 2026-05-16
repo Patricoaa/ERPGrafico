@@ -13,23 +13,19 @@ import { PaymentModal } from "@/features/treasury/components/PaymentModal"
 import { ReceiptModal } from "@/features/purchasing/components/ReceiptModal"
 import { PurchaseNoteModal } from "@/features/purchasing/components/PurchaseNoteModal"
 import { DocumentCompletionModal } from "@/components/shared/DocumentCompletionModal"
-import { DataTable } from "@/components/ui/data-table"
+import { DataTable } from '@/components/shared'
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
-import { DataCell } from "@/components/ui/data-table-cells"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { DataCell } from '@/components/shared'
+import { DataTableColumnHeader } from '@/components/shared'
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { usePurchaseInvoices } from "@/features/billing/hooks/usePurchaseInvoices"
 import { Invoice } from "@/features/billing/types"
+import { getDtePrefix } from "@/lib/entity-registry"
 import { useViewMode } from "@/hooks/useViewMode"
 import { createDomainCardView, createCardLoadingView } from "@/lib/view-helpers"
 
-const statusMap: Record<string, { label: string, variant: "default" | "secondary" | "destructive" | "outline" | "success" | "info" | "warning" }> = {
-    'DRAFT': { label: 'Folio Pendiente', variant: 'warning' as const },
-    'POSTED': { label: 'Publicado', variant: 'info' },
-    'PAID': { label: 'Pagado', variant: 'success' },
-    'CANCELLED': { label: 'Anulado', variant: 'destructive' },
-}
+
 
 export function PurchaseInvoicesClientView() {
     const { filters } = useSmartSearch(purchaseInvoiceSearchDef)
@@ -101,7 +97,8 @@ export function PurchaseInvoicesClientView() {
             if (isCreditNote) paymentType = 'INBOUND'
 
             formData.append('payment_type', paymentType)
-            formData.append('reference', `${payingDoc.dte_type === 'NOTA_CREDITO' ? 'NC' : payingDoc.dte_type === 'NOTA_DEBITO' ? 'ND' : 'PAGO'}-${payingDoc.number}`)
+            const prefix = ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(payingDoc.dte_type) ? getDtePrefix(payingDoc.dte_type) : 'PAGO';
+            formData.append('reference', `${prefix}-${payingDoc.number}`)
             formData.append('purchase_order', payingDoc.purchase_order ? payingDoc.purchase_order.toString() : '')
             formData.append('invoice', payingDoc.id.toString())
             formData.append('payment_method', d.paymentMethod)
@@ -140,11 +137,7 @@ export function PurchaseInvoicesClientView() {
             header: ({ column }) => <DataTableColumnHeader column={column} title="Tipo" className="justify-center" />,
             cell: ({ row }) => {
                 const doc = row.original
-                const label = doc.dte_type === 'NOTA_CREDITO' ? 'NC' :
-                    doc.dte_type === 'NOTA_DEBITO' ? 'ND' :
-                        doc.dte_type === 'BOLETA' ? 'BOL' :
-                            doc.dte_type === 'FACTURA_EXENTA' ? 'FE' :
-                                doc.dte_type === 'BOLETA_EXENTA' ? 'BE' : 'FAC'
+                const label = getDtePrefix(doc.dte_type)
                 return (
                     <div className="flex items-center gap-2 justify-center w-full" title={doc.dte_type_display || doc.dte_type}>
                         <FileBadge className="h-3.5 w-3.5 text-muted-foreground/50" />

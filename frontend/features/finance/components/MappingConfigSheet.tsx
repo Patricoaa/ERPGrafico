@@ -3,10 +3,10 @@
 import React from "react"
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet"
 import { SheetCloseButton } from "@/components/shared/SheetCloseButton"
-import { DataTable } from "@/components/ui/data-table"
+import { DataTable } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+
 import { SlidersHorizontal, AlertCircle, Save, Tag } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useAccountMappings, MappingType } from "@/features/finance/hooks/useAccountMappings"
@@ -134,9 +134,9 @@ export function MappingConfigSheet({
             accessorKey: "account_type_display",
             header: "Tipo",
             cell: ({ row }) => (
-                <Badge variant="outline" className="text-[9px] uppercase tracking-wider h-5 rounded-sm bg-muted/30">
+                <Chip size="xs" intent="neutral" className="h-5 rounded-sm bg-muted/30">
                     {row.getValue("account_type_display")}
-                </Badge>
+                </Chip>
             )
         },
         {

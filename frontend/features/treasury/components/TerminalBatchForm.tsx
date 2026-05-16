@@ -1,3 +1,4 @@
+import { formatCurrency } from "@/lib/money";
 "use client"
 
 import { showApiError } from "@/lib/errors"
@@ -478,7 +479,7 @@ function SaleSelectionModal({ open, onOpenChange, providerId, dateRange, onConfi
                         </Label>
                     </div>
                     <div className="text-sm font-black text-income">
-                        Total: {new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP" }).format(totalSelected)}
+                        Total: {formatCurrency(totalSelected)}
                     </div>
                 </div>
 
@@ -521,7 +522,7 @@ function SaleSelectionModal({ open, onOpenChange, providerId, dateRange, onConfi
                                         </div>
                                         <div className="text-right">
                                             <p className="text-sm font-black">
-                                                {new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP" }).format(parseFloat(m.amount))}
+                                                {formatCurrency(parseFloat(m.amount))}
                                             </p>
                                         </div>
                                     </div>

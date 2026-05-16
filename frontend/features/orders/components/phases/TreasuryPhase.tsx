@@ -1,10 +1,11 @@
+import { formatCurrency } from "@/lib/money"
 import { getErrorMessage } from "@/lib/errors"
 
 import { useState } from "react"
 import { PhaseCard } from "./PhaseCard"
 import { Banknote, Hash, Trash2, AlertCircle, Gavel } from "lucide-react"
 import { formatDocumentId } from '@/features/orders/utils/status'
-import { cn, formatCurrency } from "@/lib/utils"
+import { cn } from "@/lib/utils"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"

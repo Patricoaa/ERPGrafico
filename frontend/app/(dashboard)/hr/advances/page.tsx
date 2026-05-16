@@ -7,9 +7,9 @@ import { createAdvance, updateAdvance, deleteAdvance, getEmployees, getPayrolls 
 import { PaymentModal } from "@/features/treasury"
 import type { SalaryAdvance, Employee, Payroll } from "@/types/hr"
 import { Pencil, Trash2 } from "lucide-react"
-import { DataTable } from "@/components/ui/data-table"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
-import { createActionsColumn, DataCell } from "@/components/ui/data-table-cells"
+import { DataTable } from '@/components/shared'
+import { DataTableColumnHeader } from '@/components/shared'
+import { createActionsColumn, DataCell } from '@/components/shared'
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { ColumnDef } from "@tanstack/react-table"
 import { useSearchParams } from "next/navigation"

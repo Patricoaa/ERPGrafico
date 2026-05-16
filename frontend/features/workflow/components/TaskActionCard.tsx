@@ -1,7 +1,7 @@
 "use client"
 
 import { Task, TaskAttachment } from '@/features/workflow/api/workflowApi'
-import { Badge } from "@/components/ui/badge"
+
 import { Input } from "@/components/ui/input"
 import { CheckCircle2, Circle, Clock, User, Paperclip, MessageSquare, Download, AlertCircle, ChevronDown, ChevronUp } from "lucide-react"
 import { cn } from "@/lib/utils"

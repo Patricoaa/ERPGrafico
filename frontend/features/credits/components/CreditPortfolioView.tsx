@@ -4,7 +4,7 @@ import { useState, useCallback, useMemo } from "react"
 import { CreditContact, CreditHistoryEntry } from '@/features/credits/api/creditsApi'
 
 import CreditAssignmentModal from "./CreditAssignmentModal"
-import { DataTable } from "@/components/ui/data-table"
+import { DataTable } from '@/components/shared'
 import { PortfolioKpiGrid } from "./PortfolioKpiGrid"
 import { PortfolioTable } from "./PortfolioTable"
 import { getPortfolioColumns, historyColumns } from "./PortfolioColumns"

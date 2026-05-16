@@ -12,10 +12,10 @@ import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu"
 import { LabeledSelect, Chip } from "@/components/shared"
 import { cn } from "@/lib/utils"
-import { DataTable } from "@/components/ui/data-table"
+import { DataTable } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
-import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
+import { DataTableColumnHeader } from '@/components/shared'
+import { DataCell, createActionsColumn } from '@/components/shared'
 
 import { BOM, ProductMinimal } from "../types"
 

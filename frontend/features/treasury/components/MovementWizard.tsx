@@ -1,10 +1,11 @@
+import { formatCurrency } from "@/lib/money"
 "use client"
 
 import React, { useState, useEffect, useMemo } from 'react'
 import { Button } from "@/components/ui/button"
 import { Banknote, LogOut, ArrowRightLeft, Loader2, AlertTriangle, Info, ShieldAlert, CheckCircle2 } from "lucide-react"
-import { cn, formatCurrency } from "@/lib/utils"
-import { Numpad } from "@/components/ui/numpad"
+import { cn } from "@/lib/utils"
+import { Numpad } from '@/components/shared'
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import api from "@/lib/api"

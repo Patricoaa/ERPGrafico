@@ -1,17 +1,18 @@
+import { formatCurrency } from "@/lib/money"
 "use client"
 
 import React, { useEffect, useState } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { ColumnDef } from "@tanstack/react-table"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
-import { DataTable } from "@/components/ui/data-table"
-import { createActionsColumn, DataCell } from "@/components/ui/data-table-cells"
+import { DataTableColumnHeader } from '@/components/shared'
+import { DataTable } from '@/components/shared'
+import { createActionsColumn, DataCell } from '@/components/shared'
 import { Pencil, Trash2, Layers } from "lucide-react"
 import api from "@/lib/api"
 import { BOMFormModal } from "@/features/production/components/BOMFormModal"
 import { toast } from "sonner"
-import { Badge } from "@/components/ui/badge"
-import { formatCurrency } from "@/lib/utils"
+import { Chip } from "@/components/shared"
+
 import { ToolbarCreateButton, SmartSearchBar, useSmartSearch } from "@/components/shared"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
@@ -95,14 +96,14 @@ export default function BOMsPage() {
                         <span className="font-medium text-xs leading-tight text-center">{bom.product_name}</span>
                         <div className="flex flex-wrap justify-center gap-1">
                             {bom.product_internal_code && (
-                                <Badge variant="outline" className="text-[10px] h-4 px-1 font-normal opacity-80 uppercase text-center">
+                                <Chip size="xs" intent="neutral" className="font-normal opacity-80 text-center">
                                     {bom.product_internal_code}
-                                </Badge>
+                                </Chip>
                             )}
                             {bom.product_code && bom.product_code !== bom.product_internal_code && (
-                                <Badge variant="secondary" className="text-[10px] h-4 px-1 font-normal opacity-80 uppercase text-center">
+                                <Chip size="xs" intent="neutral" className="font-normal opacity-80 text-center">
                                     {bom.product_code}
-                                </Badge>
+                                </Chip>
                             )}
                         </div>
                     </div>
@@ -123,10 +124,10 @@ export default function BOMsPage() {
             ),
             cell: ({ row }) => (
                 <div className="flex justify-center">
-                    <Badge variant="secondary" className="gap-1">
+                    <Chip size="sm" intent="neutral" className="gap-1">
                         <Layers className="h-3 w-3" />
                         {row.getValue("lines_count") || 0}
-                    </Badge>
+                    </Chip>
                 </div>
             ),
         },

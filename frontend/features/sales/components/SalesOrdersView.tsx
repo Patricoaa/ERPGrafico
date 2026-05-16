@@ -2,14 +2,14 @@
 
 import React from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
-import { DataTable } from "@/components/ui/data-table"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { DataTable } from '@/components/shared'
+import { DataTableColumnHeader } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
 import { ArrowRight, ArrowLeft } from "lucide-react"
 
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { DomainHubStatus } from "@/components/shared"
-import { DataCell } from "@/components/ui/data-table-cells"
+import { DataCell } from '@/components/shared'
 import { Tabs } from "@/components/ui/tabs"
 import { useSalesOrders, useSalesNotes, type SaleOrder, type SaleNote } from "@/features/sales"
 import { SmartSearchBar, useSmartSearch } from "@/components/shared"

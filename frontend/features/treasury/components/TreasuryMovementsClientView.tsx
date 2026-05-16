@@ -1,12 +1,12 @@
 "use client"
 
 import React, { useState, useEffect, lazy, Suspense } from "react"
-import { DataTable } from "@/components/ui/data-table"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { DataTable } from '@/components/shared'
+import { DataTableColumnHeader } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
 import { ArrowDown, Eye } from "lucide-react"
 
-import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
+import { DataCell, createActionsColumn } from '@/components/shared'
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { FormSkeleton, SmartSearchBar, useSmartSearch } from "@/components/shared"

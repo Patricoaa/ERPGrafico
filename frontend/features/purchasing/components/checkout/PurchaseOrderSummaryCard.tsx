@@ -1,9 +1,9 @@
 "use client"
 
 import { Separator } from "@/components/ui/separator"
-import { Badge } from "@/components/ui/badge"
+import { Chip } from "@/components/shared"
 import { ShoppingBag } from "lucide-react"
-import { formatCurrency } from "@/lib/currency"
+import { formatCurrency } from "@/lib/money"
 import { PricingUtils } from '@/features/inventory/utils/pricing'
 import { CheckoutLine } from "../../types"
 
@@ -40,9 +40,9 @@ export function PurchaseOrderSummaryCard({
                                             {line.name}
                                         </p>
                                         <div className="flex items-center gap-2">
-                                            <Badge variant="secondary" className="text-[9px] px-1.5 py-0 h-4 bg-muted text-muted-foreground font-bold">
+                                            <Chip size="xs" intent="neutral" className="bg-muted">
                                                 {line.qty || line.quantity} {line.uom_name || 'un'}
-                                            </Badge>
+                                            </Chip>
                                         </div>
                                     </div>
                                     <p className="font-mono text-xs font-black whitespace-nowrap pt-0.5">

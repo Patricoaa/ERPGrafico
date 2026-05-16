@@ -1,5 +1,5 @@
 import { AuthGuard } from "@/components/auth"
-import { ErrorBoundary } from "@/components/ui/error-boundary"
+import { ErrorBoundary } from '@/components/shared'
 import { Toaster } from "@/components/ui/sonner"
 import { POSShell } from "@/features/pos"
 

@@ -1,3 +1,4 @@
+import { formatCurrency } from "@/lib/money"
 "use client"
 
 import { showApiError } from "@/lib/errors"
@@ -18,7 +19,7 @@ import { Trash2, Save, Workflow, Box, CheckCircle2, Truck, Package } from "lucid
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { UoMSelector } from "@/components/selectors/UoMSelector"
-import { cn, formatCurrency } from "@/lib/utils"
+import { cn } from "@/lib/utils"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import type { BOM, BOMLine, ProductMinimal, UoM } from "../types"

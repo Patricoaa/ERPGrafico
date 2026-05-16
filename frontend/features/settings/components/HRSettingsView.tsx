@@ -35,15 +35,15 @@ import type {
     AFP,
     PayrollConcept
 } from "@/types/hr"
-import { Badge } from "@/components/ui/badge"
+
 import { FormulaBuilder } from "@/features/hr/components/FormulaBuilder"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
-import { DataTable } from "@/components/ui/data-table"
+import { DataTable } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
 import { cn } from "@/lib/utils"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
-import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
+import { DataCell, createActionsColumn } from '@/components/shared'
 
 import { globalSettingsSchema, conceptSchema, afpSchema, type GlobalHRFormValues, type ConceptFormValues, type AFPFormValues } from "./HRSettingsView.schema"
 
@@ -153,12 +153,9 @@ export function HRSettingsView({ activeTab = "global" }: { activeTab?: string })
                 const category = row.original.category
                 const isHaber = category.includes('HABER')
                 return (
-                    <Badge variant="outline" className={cn(
-                        "text-[9px] font-black uppercase h-5 shadow-sm rounded-sm",
-                        isHaber ? "bg-success/10 text-success border-success/20" : "bg-destructive/10 text-destructive border-destructive/20"
-                    )}>
+                    <Chip size="xs" intent={isHaber ? "success" : "destructive"} className="h-5 shadow-sm rounded-sm">
                         {row.getValue("category_display")}
-                    </Badge>
+                    </Chip>
                 )
             }
         },
