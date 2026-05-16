@@ -16,7 +16,7 @@ import { CardSkeleton, Skeleton } from "@/components/shared"
 import { WorkOrder } from "../types"
 import { formatEntityDisplay } from "@/lib/entity-registry"
 import { STAGES_ORDERED } from "../constants/stages"
-import { isWorkOrderOverdue } from "../utils"
+import { isWorkOrderOverdue, getAvailableNextStages } from "../utils"
 import {
     DndContext,
     DragEndEvent,
@@ -43,17 +43,22 @@ const STAGES = STAGES_ORDERED.filter(s => s.showInKanban)
 
 interface DroppableColumnProps {
     stageId: string
+    isDisabled?: boolean
     children: React.ReactNode
 }
 
-function DroppableColumn({ stageId, children }: DroppableColumnProps) {
-    const { setNodeRef, isOver } = useDroppable({ id: stageId })
+function DroppableColumn({ stageId, isDisabled, children }: DroppableColumnProps) {
+    const { setNodeRef, isOver } = useDroppable({ 
+        id: stageId,
+        disabled: isDisabled 
+    })
     return (
         <div
             ref={setNodeRef}
             className={cn(
                 "p-2 space-y-3 flex-1 overflow-y-auto rounded-b-md transition-colors",
-                isOver && "bg-primary/10 ring-2 ring-inset ring-primary/30"
+                isOver && "bg-primary/10 ring-2 ring-inset ring-primary/30",
+                isDisabled && "opacity-20 pointer-events-none grayscale-[0.5]"
             )}
         >
             {children}
@@ -170,32 +175,45 @@ export function WorkOrderKanban({ orders, onTransition, onManage, isLoading }: K
         const { active, over } = event
         setActiveOrder(null)
         if (!over) return
+
         const orderId = Number(active.id)
         const nextStage = String(over.id)
         const order = orders.find(o => o.id === orderId)
+
         if (!order || order.current_stage === nextStage) return
+
+        // ── Validation interjection ──────────────────────────────────────────
+        // Some stages require mandatory data (attachments, specifications) 
+        // that the Kanban cannot provide. For these, we force open the Wizard.
+        const COMPLEX_STAGES = ['PREPRESS', 'RECTIFICATION', 'FINISHED']
+        
+        if (COMPLEX_STAGES.includes(nextStage)) {
+            // Force open wizard at that specific stage
+            onManage(orderId)
+            return
+        }
+
         onTransition(orderId, nextStage)
     }
 
     return (
         <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
             <div className="flex space-x-4 overflow-x-auto pb-4 h-[calc(100vh-250px)]">
-                {STAGES.map((stage) => {
-                    const stageOrders = isLoading ? [] : orders.filter(o => o.current_stage === stage.id)
-                    const Icon = stage.icon
+                    const isDropDisabled = activeOrder ? !getAvailableNextStages(activeOrder).includes(stage.id) : false
 
                     return (
                         <div
                             key={stage.id}
                             className={cn(
-                                "flex-shrink-0 w-80 rounded-md flex flex-col border shadow-sm",
-                                stage.color
+                                "flex-shrink-0 w-80 rounded-md flex flex-col border shadow-sm transition-opacity duration-300",
+                                stage.color,
+                                isDropDisabled && "opacity-40 grayscale-[0.2]"
                             )}
                         >
                             <div className="p-4 border-b flex items-center justify-between">
                                 <div className="flex items-center space-x-2">
-                                    <Icon className="h-4 w-4 text-muted-foreground" />
-                                    <h3 className="font-bold text-sm uppercase tracking-wider">{stage.label}</h3>
+                                    <Icon className={cn("h-4 w-4 text-muted-foreground", isDropDisabled && "opacity-20")} />
+                                    <h3 className={cn("font-bold text-sm uppercase tracking-wider", isDropDisabled && "text-muted-foreground")}>{stage.label}</h3>
                                 </div>
                                 <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border border-border bg-white text-muted-foreground whitespace-nowrap min-w-[20px] flex justify-center">
                                     {isLoading ? <Skeleton className="h-2.5 w-3" /> : stageOrders.length}
@@ -207,7 +225,7 @@ export function WorkOrderKanban({ orders, onTransition, onManage, isLoading }: K
                                     <CardSkeleton count={3} variant="list" />
                                 </div>
                             ) : (
-                                <DroppableColumn stageId={stage.id}>
+                                <DroppableColumn stageId={stage.id} isDisabled={isDropDisabled}>
                                     {stageOrders.map((order) => (
                                         <DraggableCard
                                             key={order.id}
