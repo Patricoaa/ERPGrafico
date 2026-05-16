@@ -29,6 +29,6 @@ requests>=2.31.0
 rapidfuzz>=3.0
 daphne>=4.0.0
 channels>=4.0.0
-channels-redis>=4.1.0weasyprint
+channels-redis>=4.1.0
 weasyprint
 qrcode[pil]
