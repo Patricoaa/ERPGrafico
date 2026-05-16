@@ -61,8 +61,7 @@ export default function WorkOrdersPage() {
         ...(filters as any),
         my_tasks: myTasks
     })
-    const { deleteOrder, annulOrder, duplicateOrder, bulkTransition, bulkPrint, isBulkTransitioning, isBulkPrinting } = useWorkOrderListActions({ onSuccess: refetchOrders })
-    const [bulkNextStage, setBulkNextStage] = useState<string>('')
+    const { deleteOrder, annulOrder, duplicateOrder, bulkPrint, isBulkPrinting } = useWorkOrderListActions({ onSuccess: refetchOrders })
 
     const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<WorkOrder>({
         endpoint: '/production/orders'
@@ -118,10 +117,7 @@ export default function WorkOrdersPage() {
 
     const handleDuplicate = (id: number) => duplicateConfirm.requestConfirm(id)
 
-    const handleKanbanTransition = async (orderId: number, nextStage: string) => {
-        setActiveWizardId(orderId)
-        setRequestedStage(nextStage)
-    }
+
 
     const columns = useMemo<ColumnDef<WorkOrder>[]>(() => [
         {
@@ -294,13 +290,12 @@ export default function WorkOrdersPage() {
             <div className="min-h-[600px]">
                 <WorkOrderKanban
                     orders={table.getFilteredRowModel().rows.map((row: import("@tanstack/react-table").Row<WorkOrder>) => row.original)}
-                    onTransition={handleKanbanTransition}
                     onManage={(id) => setActiveWizardId(id)}
                     isLoading={loading}
                 />
             </div>
         </div>
-    ), [loading, handleKanbanTransition])
+    ), [loading])
 
     const renderTimelineView = useCallback((table: import("@tanstack/react-table").Table<WorkOrder>) => (
         <WorkOrderTimelineView
@@ -372,25 +367,7 @@ export default function WorkOrdersPage() {
                     bulkDock={(items, clear) => (
                         <BulkActionDock selectedCount={items.length} onClear={clear}>
                             <div className="flex items-center gap-2">
-                                <Select value={bulkNextStage} onValueChange={setBulkNextStage}>
-                                    <SelectTrigger className="h-8 w-[180px] text-xs rounded-full border-border/60">
-                                        <SelectValue placeholder="Seleccionar etapa…" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {STAGES_ORDERED.filter(s => s.id !== 'CANCELLED').map(s => (
-                                            <SelectItem key={s.id} value={s.id} className="text-xs">{s.label}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                <Button
-                                    size="sm"
-                                    variant="default"
-                                    disabled={!bulkNextStage || isBulkTransitioning}
-                                    className="h-8 rounded-full px-4 text-xs font-bold"
-                                    onClick={() => bulkTransition({ ids: items.map(o => o.id), nextStage: bulkNextStage }).then(clear)}
-                                >
-                                    {isBulkTransitioning ? 'Avanzando…' : 'Avanzar etapa'}
-                                </Button>
+
                                 <Button
                                     size="sm"
                                     variant="ghost"

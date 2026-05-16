@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import React from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 import {
@@ -16,91 +16,23 @@ import { CardSkeleton, Skeleton } from "@/components/shared"
 import { WorkOrder } from "../types"
 import { formatEntityDisplay } from "@/lib/entity-registry"
 import { STAGES_ORDERED } from "../constants/stages"
-import { isWorkOrderOverdue, getAvailableNextStages } from "../utils"
-import {
-    DndContext,
-    DragEndEvent,
-    DragOverlay,
-    DragStartEvent,
-    PointerSensor,
-    useSensor,
-    useSensors,
-} from "@dnd-kit/core"
-import { useDroppable } from "@dnd-kit/core"
-import { useDraggable } from "@dnd-kit/core"
-import { CSS } from "@dnd-kit/utilities"
+import { isWorkOrderOverdue } from "../utils"
 
 interface KanbanProps {
     orders: WorkOrder[]
-    onTransition: (orderId: number, nextStage: string) => void
     onManage: (orderId: number) => void
     isLoading?: boolean
 }
 
 const STAGES = STAGES_ORDERED.filter(s => s.showInKanban)
 
-// ── Droppable column ─────────────────────────────────────────────────────────
-
-interface DroppableColumnProps {
-    stageId: string
-    isDisabled?: boolean
-    children: React.ReactNode
-}
-
-function DroppableColumn({ stageId, isDisabled, children }: DroppableColumnProps) {
-    const { setNodeRef, isOver } = useDroppable({ 
-        id: stageId,
-        disabled: isDisabled 
-    })
-    return (
-        <div
-            ref={setNodeRef}
-            className={cn(
-                "p-2 space-y-3 flex-1 overflow-y-auto rounded-b-md transition-colors",
-                isOver && "bg-primary/10 ring-2 ring-inset ring-primary/30",
-                isDisabled && "opacity-20 pointer-events-none grayscale-[0.5]"
-            )}
-        >
-            {children}
-        </div>
-    )
-}
-
-// ── Draggable card ────────────────────────────────────────────────────────────
-
-interface DraggableCardProps {
-    order: WorkOrder
-    onManage: (id: number) => void
-    isDragging?: boolean
-}
-
-function DraggableCard({ order, onManage, isDragging }: DraggableCardProps) {
-    const { attributes, listeners, setNodeRef, transform } = useDraggable({
-        id: String(order.id),
-        data: { order },
-    })
-
-    const style = {
-        transform: CSS.Translate.toString(transform),
-    }
-
-    return (
-        <div ref={setNodeRef} style={style} {...listeners} {...attributes}>
-            <KanbanCard order={order} onManage={onManage} faded={isDragging} />
-        </div>
-    )
-}
-
-// ── Card content (shared between draggable + overlay) ────────────────────────
-
-function KanbanCard({ order, onManage, faded }: { order: WorkOrder; onManage: (id: number) => void; faded?: boolean }) {
+function KanbanCard({ order, onManage }: { order: WorkOrder; onManage: (id: number) => void }) {
     return (
         <Card
             onClick={() => onManage(order.id)}
             className={cn(
                 "cursor-pointer hover:shadow-md transition-all border-none shadow-sm rounded-md",
-                "active:scale-95 duration-100",
-                faded && "opacity-40"
+                "active:scale-95 duration-100"
             )}
         >
             <CardContent className="p-3 space-y-3">
@@ -157,105 +89,54 @@ function KanbanCard({ order, onManage, faded }: { order: WorkOrder; onManage: (i
     )
 }
 
-// ── Main component ────────────────────────────────────────────────────────────
-
-export function WorkOrderKanban({ orders, onTransition, onManage, isLoading }: KanbanProps) {
-    const [activeOrder, setActiveOrder] = useState<WorkOrder | null>(null)
-
-    const sensors = useSensors(
-        useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
-    )
-
-    const handleDragStart = (event: DragStartEvent) => {
-        const order = orders.find(o => String(o.id) === String(event.active.id))
-        setActiveOrder(order ?? null)
-    }
-
-    const handleDragEnd = (event: DragEndEvent) => {
-        const { active, over } = event
-        setActiveOrder(null)
-        if (!over) return
-
-        const orderId = Number(active.id)
-        const nextStage = String(over.id)
-        const order = orders.find(o => o.id === orderId)
-
-        if (!order || order.current_stage === nextStage) return
-
-        // ── Validation interjection ──────────────────────────────────────────
-        // Some stages require mandatory data (attachments, specifications) 
-        // that the Kanban cannot provide. For these, we force open the Wizard.
-        const COMPLEX_STAGES = ['PREPRESS', 'RECTIFICATION', 'FINISHED']
-        
-        if (COMPLEX_STAGES.includes(nextStage)) {
-            // Force open wizard at that specific stage
-            onManage(orderId)
-            return
-        }
-
-        onTransition(orderId, nextStage)
-    }
-
+export function WorkOrderKanban({ orders, onManage, isLoading }: KanbanProps) {
     return (
-        <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-            <div className="flex space-x-4 overflow-x-auto pb-4 h-[calc(100vh-250px)]">
-                {STAGES.map((stage) => {
-                    const stageOrders = isLoading ? [] : orders.filter(o => o.current_stage === stage.id)
-                    const Icon = stage.icon
-                    const isDropDisabled = activeOrder ? !getAvailableNextStages(activeOrder).includes(stage.id) : false
+        <div className="flex space-x-4 overflow-x-auto pb-4 h-[calc(100vh-250px)]">
+            {STAGES.map((stage) => {
+                const stageOrders = isLoading ? [] : orders.filter(o => o.current_stage === stage.id)
+                const Icon = stage.icon
 
-                    return (
-                        <div
-                            key={stage.id}
-                            className={cn(
-                                "flex-shrink-0 w-80 rounded-md flex flex-col border shadow-sm transition-opacity duration-300",
-                                stage.color,
-                                isDropDisabled && "opacity-40 grayscale-[0.2]"
-                            )}
-                        >
-                            <div className="p-4 border-b flex items-center justify-between">
-                                <div className="flex items-center space-x-2">
-                                    <Icon className={cn("h-4 w-4 text-muted-foreground", isDropDisabled && "opacity-20")} />
-                                    <h3 className={cn("font-bold text-sm uppercase tracking-wider", isDropDisabled && "text-muted-foreground")}>{stage.label}</h3>
-                                </div>
-                                <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border border-border bg-white text-muted-foreground whitespace-nowrap min-w-[20px] flex justify-center">
-                                    {isLoading ? <Skeleton className="h-2.5 w-3" /> : stageOrders.length}
-                                </span>
+                return (
+                    <div
+                        key={stage.id}
+                        className={cn(
+                            "flex-shrink-0 w-80 rounded-md flex flex-col border shadow-sm",
+                            stage.color
+                        )}
+                    >
+                        <div className="p-4 border-b flex items-center justify-between">
+                            <div className="flex items-center space-x-2">
+                                <Icon className="h-4 w-4 text-muted-foreground" />
+                                <h3 className="font-bold text-sm uppercase tracking-wider">{stage.label}</h3>
                             </div>
-
-                            {isLoading ? (
-                                <div className="p-2 flex-1">
-                                    <CardSkeleton count={3} variant="list" />
-                                </div>
-                            ) : (
-                                <DroppableColumn stageId={stage.id} isDisabled={isDropDisabled}>
-                                    {stageOrders.map((order) => (
-                                        <DraggableCard
-                                            key={order.id}
-                                            order={order}
-                                            onManage={onManage}
-                                            isDragging={activeOrder?.id === order.id}
-                                        />
-                                    ))}
-                                    {stageOrders.length === 0 && (
-                                        <div className="h-24 border-2 border-dashed border-muted/20 rounded-md flex items-center justify-center text-xs text-muted-foreground italic">
-                                            Sin órdenes
-                                        </div>
-                                    )}
-                                </DroppableColumn>
-                            )}
+                            <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border border-border bg-white text-muted-foreground whitespace-nowrap min-w-[20px] flex justify-center">
+                                {isLoading ? <Skeleton className="h-2.5 w-3" /> : stageOrders.length}
+                            </span>
                         </div>
-                    )
-                })}
-            </div>
 
-            <DragOverlay>
-                {activeOrder && (
-                    <div className="rotate-2 opacity-90 shadow-2xl w-80">
-                        <KanbanCard order={activeOrder} onManage={() => {}} />
+                        {isLoading ? (
+                            <div className="p-2 flex-1">
+                                <CardSkeleton count={3} variant="list" />
+                            </div>
+                        ) : (
+                            <div className="p-2 space-y-3 flex-1 overflow-y-auto rounded-b-md">
+                                {stageOrders.map((order) => (
+                                    <KanbanCard
+                                        key={order.id}
+                                        order={order}
+                                        onManage={onManage}
+                                    />
+                                ))}
+                                {stageOrders.length === 0 && (
+                                    <div className="h-24 border-2 border-dashed border-muted/20 rounded-md flex items-center justify-center text-xs text-muted-foreground italic">
+                                        Sin órdenes
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
-                )}
-            </DragOverlay>
-        </DndContext>
+                )
+            })}
+        </div>
     )
 }
