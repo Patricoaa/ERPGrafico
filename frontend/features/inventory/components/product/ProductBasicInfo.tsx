@@ -93,11 +93,11 @@ export function ProductBasicInfo({ form, isEditing, imagePreview, setImagePrevie
                                         })
                                     }}
                                     disabled={['CONSUMABLE', 'SUBSCRIPTION'].includes(productType)}
-                                    icon={<ShoppingCart className={cn("h-3.5 w-3.5 transition-colors", field.value ? "text-emerald-600" : "text-muted-foreground/60")} />}
+                                    icon={<ShoppingCart className={cn("h-3.5 w-3.5 transition-colors", field.value ? "text-success" : "text-muted-foreground/60")} />}
                                     className={cn(
                                         "h-full transition-all duration-300", 
                                         field.value 
-                                            ? "bg-emerald-500/10 border-emerald-500/30 shadow-sm ring-1 ring-emerald-500/10" 
+                                            ? "bg-success/10 border-success/30 shadow-sm ring-1 ring-success/10" 
                                             : "bg-background border-border hover:border-muted-foreground/30 hover:bg-muted/10 shadow-[inset_0_1px_2px_rgba(0,0,0,0.1)] dark:shadow-[inset_0_1px_2px_rgba(255,255,255,0.02)]"
                                     )}
                                 />
@@ -119,11 +119,11 @@ export function ProductBasicInfo({ form, isEditing, imagePreview, setImagePrevie
                                         })
                                     }}
                                     disabled={productType === 'MANUFACTURABLE'}
-                                    icon={<Truck className={cn("h-3.5 w-3.5 transition-colors", field.value ? "text-amber-600" : "text-muted-foreground/40")} />}
+                                    icon={<Truck className={cn("h-3.5 w-3.5 transition-colors", field.value ? "text-warning" : "text-muted-foreground/40")} />}
                                     className={cn(
                                         "h-full transition-all duration-300", 
                                         field.value 
-                                            ? "bg-amber-500/10 border-amber-500/30 shadow-sm ring-1 ring-amber-500/10" 
+                                            ? "bg-warning/10 border-warning/30 shadow-sm ring-1 ring-warning/10" 
                                             : "bg-background border-border hover:border-muted-foreground/30 hover:bg-muted/10 shadow-[inset_0_1px_2px_rgba(0,0,0,0.1)] dark:shadow-[inset_0_1px_2px_rgba(255,255,255,0.02)]"
                                     )}
                                 />

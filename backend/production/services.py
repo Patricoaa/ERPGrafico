@@ -498,6 +498,17 @@ class WorkOrderService:
                 Stage.FINISHED, Stage.CANCELLED,
             },
         }
+
+        # TASK-311: Enforce manufacturing profile requirements
+        # If moving FORWARD, ensure the target stage is enabled in the OT's profile.
+        # This prevents Kanban/Bulk actions from bypassing the product's workflow configuration.
+        if next_stage == Stage.PREPRESS and not work_order.requires_prepress:
+            raise ValidationError("Esta OT no requiere etapa de Pre-Prensa según su configuración.")
+        if next_stage == Stage.PRESS and not work_order.requires_press:
+            raise ValidationError("Esta OT no requiere etapa de Impresión según su configuración.")
+        if next_stage == Stage.POSTPRESS and not work_order.requires_postpress:
+            raise ValidationError("Esta OT no requiere etapa de Post-Impresión según su configuración.")
+
         NON_TERMINAL_STAGES = list(FORWARD_ONLY_TRANSITIONS.keys())
         allowed_forward = FORWARD_ONLY_TRANSITIONS.get(work_order.current_stage, set())
         # Forward moves (higher index in sequence) must be in the explicit allowlist.

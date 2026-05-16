@@ -3,7 +3,7 @@
 import React from "react"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { Button } from "@/components/ui/button"
-import { CancelButton, SubmitButton } from "@/components/shared"
+import { Chip, CancelButton, SubmitButton } from "@/components/shared"
 import { AlertCircle, ExternalLink, Package } from "lucide-react"
 import Link from "next/link"
 import { Loader2, RefreshCcw } from "lucide-react"
@@ -77,9 +77,7 @@ export function ArchivingRestrictionsModal({
                         >
                             <div className="space-y-1">
                                 <div className="flex items-center gap-2">
-                                    <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded-[0.25rem] border border-border bg-muted/50 text-muted-foreground whitespace-nowrap">
-                                        {restriction.label}
-                                    </span>
+                                    <Chip size="xs">{restriction.label}</Chip>
                                 </div>
                                 <p className="text-sm text-muted-foreground">
                                     {restriction.description}

@@ -15,7 +15,7 @@ import {
     AlertCircle
 } from "lucide-react"
 import { BaseModal } from "@/components/shared/BaseModal"
-import { AutoSaveStatusBadge, FormSkeleton, LabeledInput, LabeledSelect, ToolbarCreateButton } from "@/components/shared"
+import { AutoSaveStatusBadge, Chip, FormSkeleton, LabeledInput, LabeledSelect, ToolbarCreateButton } from "@/components/shared"
 import { useAutoSaveForm } from "@/hooks/useAutoSaveForm"
 import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
@@ -141,9 +141,7 @@ export function HRSettingsView({ activeTab = "global" }: { activeTab?: string })
                 <div className="flex items-center gap-2 py-1">
                     <span className="font-black text-[12px] tracking-tight uppercase leading-none">{row.getValue("name")}</span>
                     {row.original.is_system && (
-                        <Badge variant="secondary" className="text-[8px] font-black h-4 px-1 rounded-sm bg-primary/10 text-primary border-primary/20">
-                            SYSTEM
-                        </Badge>
+                        <Chip size="xs" intent="primary">SYSTEM</Chip>
                     )}
                 </div>
             )
@@ -559,7 +557,7 @@ function ConceptDialog({ concept, onSaved }: { concept?: PayrollConcept, onSaved
                                     <div className="bg-primary/5 p-3 rounded-md border border-dashed border-primary/20 space-y-3">
                                         <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-primary">
                                             Constructor de Fórmula
-                                            <Badge variant="outline" className="text-[8px] bg-background">ADVANCED</Badge>
+                                            <Chip size="xs">ADVANCED</Chip>
                                         </span>
                                         <LabeledInput
                                             label="Expresión"

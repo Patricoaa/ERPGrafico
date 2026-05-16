@@ -17,11 +17,11 @@ interface ProductTypeSelectorProps {
 }
 
 const PRODUCT_TYPES = [
-    { id: 'STORABLE', label: 'Almacenable', icon: Package, color: 'text-blue-500' },
-    { id: 'CONSUMABLE', label: 'Consumible', icon: Zap, color: 'text-amber-500' },
-    { id: 'MANUFACTURABLE', label: 'Fabricable', icon: Factory, color: 'text-emerald-500' },
-    { id: 'SERVICE', label: 'Servicio (Único)', icon: Wrench, color: 'text-purple-500' },
-    { id: 'SUBSCRIPTION', label: 'Suscripción (Recurrente)', icon: Repeat, color: 'text-rose-500' }
+    { id: 'STORABLE',       label: 'Almacenable',             icon: Package, color: 'text-info'        },
+    { id: 'CONSUMABLE',     label: 'Consumible',              icon: Zap,     color: 'text-warning'     },
+    { id: 'MANUFACTURABLE', label: 'Fabricable',              icon: Factory, color: 'text-success'     },
+    { id: 'SERVICE',        label: 'Servicio (Único)',         icon: Wrench,  color: 'text-primary'     },
+    { id: 'SUBSCRIPTION',   label: 'Suscripción (Recurrente)', icon: Repeat,  color: 'text-destructive' },
 ]
 
 export function ProductTypeSelector({

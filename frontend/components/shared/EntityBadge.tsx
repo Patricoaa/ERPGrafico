@@ -13,6 +13,7 @@ interface EntityBadgeProps {
   link?: boolean;
   className?: string;
   size?: 'sm' | 'md' | 'lg';
+  rounded?: boolean;
 }
 
 /**
@@ -37,15 +38,15 @@ export const EntityBadge: React.FC<EntityBadgeProps> = ({
   const detailUrl = metadata?.detailUrlPattern?.replace('{id}', data.id?.toString() || data.toString());
 
   const sizeClasses = {
-    sm: "h-[22px] px-2.5 text-[10px] gap-1",
-    md: "h-7 px-3 text-[11px] gap-1.5",
-    lg: "h-9 px-5 text-sm gap-2"
+    sm: "h-6 px-3 text-[12px] gap-1.5",
+    md: "h-8 px-4 text-[14px] gap-2",
+    lg: "h-10 px-6 text-base gap-2.5"
   };
 
   const iconSizes = {
-    sm: "h-3 w-3",
-    md: "h-3.5 w-3.5",
-    lg: "h-4 w-4"
+    sm: "h-3.5 w-3.5",
+    md: "h-4 w-4",
+    lg: "h-5 w-5"
   };
 
   const badgeContent = (
@@ -58,7 +59,7 @@ export const EntityBadge: React.FC<EntityBadgeProps> = ({
       className
     )}>
       {showIcon && <Icon className={cn("shrink-0 opacity-60", iconSizes[size])} />}
-      <span className="truncate font-bold max-w-[200px] translate-y-[0.5px]">
+      <span className="truncate font-black max-w-[200px] translate-y-[0.5px]">
         {displayCode}
       </span>
     </span>

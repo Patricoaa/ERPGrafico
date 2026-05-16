@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { Clock, User, ChevronRight, Calendar } from "lucide-react"
 import { StatusBadge } from "@/components/shared/StatusBadge"
-import { CardSkeleton } from "@/components/shared"
+import { CardSkeleton, Chip } from "@/components/shared"
 import { WorkOrder } from "../types"
 import { formatEntityDisplay } from "@/lib/entity-registry"
 import { isWorkOrderOverdue } from "../utils"
@@ -74,9 +74,7 @@ export function WorkOrderTimelineView({ orders, onManage, isLoading }: TimelineP
                             <Calendar className="h-4 w-4 text-muted-foreground" />
                             <h3 className="font-bold text-sm uppercase tracking-wider">{label}</h3>
                         </div>
-                        <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border border-border bg-muted/50 text-muted-foreground">
-                            {isLoading ? '…' : colOrders.length}
-                        </span>
+                        <Chip size="xs">{isLoading ? '…' : colOrders.length}</Chip>
                     </div>
 
                     <div className="p-2 space-y-3 flex-1 overflow-y-auto">
@@ -95,9 +93,7 @@ export function WorkOrderTimelineView({ orders, onManage, isLoading }: TimelineP
                                 >
                                     <CardContent className="p-3 space-y-2">
                                         <div className="flex items-center justify-between">
-                                            <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded border border-border bg-muted/50 text-muted-foreground">
-                                                {formatEntityDisplay('production.workorder', order)}
-                                            </span>
+                                            <Chip size="xs">{formatEntityDisplay('production.workorder', order)}</Chip>
                                             <StatusBadge status={order.status} size="sm" />
                                         </div>
                                         {isWorkOrderOverdue(order) && (

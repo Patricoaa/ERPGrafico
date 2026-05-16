@@ -610,6 +610,13 @@ table [data-notched-field] {
   h6 {
     @apply font-heading font-extrabold tracking-tighter uppercase;
   }
+  /* Typography scale — default sizes (overridable per component via Tailwind classes) */
+  h1 { @apply text-3xl; }
+  h2 { @apply text-2xl; }
+  h3 { @apply text-xl; }
+  h4 { @apply text-lg; }
+  h5 { @apply text-sm; }
+  h6 { @apply text-xs; }
 
   /* Precision Scrollbar */
   ::-webkit-scrollbar {

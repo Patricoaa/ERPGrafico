@@ -16,7 +16,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { SubmitButton, CancelButton } from "@/components/shared/ActionButtons"
 import { Label } from "@/components/ui/label"
-import { LabeledInput, LabeledSelect, LabeledContainer } from "@/components/shared"
+import { LabeledInput, LabeledSelect, LabeledContainer, Chip } from "@/components/shared"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { toast } from "sonner"
 import { formatCurrency } from "@/lib/utils"
@@ -343,7 +343,7 @@ export function InventoryContributionModal({
                             label={
                                 <div className="flex justify-between w-full">
                                     <span>Costo {selectedUoM ? `(${selectedUoM.name})` : ''}</span>
-                                    {isCostEditable && <Badge variant="outline" className="text-[8px] h-4 py-0 leading-tight border-warning/30 text-warning bg-warning/10">Editable</Badge>}
+                                    {isCostEditable && <Chip size="xs" intent="warning">Editable</Chip>}
                                 </div>
                             }
                             type={isCostEditable ? "number" : "text"}

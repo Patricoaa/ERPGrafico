@@ -19,7 +19,7 @@ import { Form, FormField } from "@/components/ui/form"
 import {
     CancelButton, LabeledInput, LabeledSelect, FormSection, MultiSelectTagInput,
     BaseModal, FormFooter, FormSplitLayout, ActionSlideButton, ActionConfirmModal,
-    SmartSearchBar, useClientSearch
+    SmartSearchBar, useClientSearch, Chip
 } from "@/components/shared"
 import { bankSearchDef, paymentMethodSearchDef } from "@/features/treasury/searchDef"
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
@@ -407,20 +407,10 @@ export function PaymentMethodManagement({ externalOpen, onOpenChange, createActi
                     <DataCell.Secondary className="text-center">{row.original.treasury_account_name}</DataCell.Secondary>
                     <div className="flex justify-center gap-1">
                         {row.original.allow_for_sales && (
-                            <DataCell.Badge
-                                variant="outline"
-                                className="text-[10px] px-1 h-3.5 bg-income/5 text-income border-income/10 font-black uppercase tracking-tighter"
-                            >
-                                Ventas
-                            </DataCell.Badge>
+                            <Chip size="xs" intent="success">Ventas</Chip>
                         )}
                         {row.original.allow_for_purchases && (
-                            <DataCell.Badge
-                                variant="outline"
-                                className="text-[10px] px-1 h-3.5 bg-asset/5 text-asset border-asset/10 font-black uppercase tracking-tighter"
-                            >
-                                Compras
-                            </DataCell.Badge>
+                            <Chip size="xs" intent="info">Compras</Chip>
                         )}
                     </div>
                 </div>

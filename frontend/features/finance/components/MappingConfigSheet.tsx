@@ -17,7 +17,7 @@ import {
     Account
 } from "@/features/accounting/types"
 import { Checkbox } from "@/components/ui/checkbox"
-import { BulkActionDock, ActionDock } from "@/components/shared"
+import { BulkActionDock, ActionDock, Chip } from "@/components/shared"
 import { cn } from "@/lib/utils"
 
 interface MappingConfigSheetProps {
@@ -213,9 +213,7 @@ export function MappingConfigSheet({
 
                     <div className="flex items-center gap-3">
                         {hasChanges && (
-                            <Badge variant="outline" className="bg-warning/10 text-warning border-warning/20 text-[10px] uppercase font-black px-2 py-0.5">
-                                Cambios Pendientes ({pendingChanges.size})
-                            </Badge>
+                            <Chip intent="warning">Cambios Pendientes ({pendingChanges.size})</Chip>
                         )}
                         <Button 
                             onClick={handleSave} 

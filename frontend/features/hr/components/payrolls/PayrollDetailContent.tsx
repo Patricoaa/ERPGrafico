@@ -208,9 +208,9 @@ export function PayrollDetailContent({ payrollId, onClose, onUpdate, isSheet = f
                                 <h1 className={cn("font-bold tracking-tight text-foreground", isSheet ? "text-xl" : "text-2xl")}>
                                     {isPosted ? "Liquidación" : "Borrador de Liquidación"}
                                 </h1>
-                                <StatusBadge 
-                                    status={isPosted ? "posted" : "draft"} 
-                                    className="rounded-sm px-2 h-4.5"
+                                <StatusBadge
+                                    status={isPosted ? "posted" : "draft"}
+                                    size="md"
                                 />
                             </div>
                             <div className="flex items-center gap-3 text-[10px] sm:text-xs font-semibold text-muted-foreground uppercase tracking-widest mt-0.5">
@@ -248,7 +248,7 @@ export function PayrollDetailContent({ payrollId, onClose, onUpdate, isSheet = f
                                 </AlertDialogTrigger>
                                 <AlertDialogContent className="rounded-lg border-none shadow-2xl">
                                     <AlertDialogHeader>
-                                        <AlertDialogTitle className="text-xl font-bold tracking-tight">¿Contabilizar liquidación?</AlertDialogTitle>
+                                        <AlertDialogTitle className="text-xl font-black tracking-tight">¿Contabilizar liquidación?</AlertDialogTitle>
                                         <AlertDialogDescription className="text-sm">
                                             Se generarán los asientos contables asociados a los haberes y retenciones legales. 
                                             Esta acción bloqueará la edición de la liquidación.

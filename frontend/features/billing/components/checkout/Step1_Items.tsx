@@ -5,6 +5,7 @@ import { LabeledInput } from "@/components/shared"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
+import { Chip } from "@/components/shared"
 import { AlertCircle, Tag, Package, Hash } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -147,13 +148,9 @@ export function Step1_Items({
                                                 {line.product_name}
                                             </span>
                                             <div className="flex items-center gap-2">
-                                                <Badge variant="outline" className="text-[9px] h-4 font-black uppercase tracking-tighter opacity-70">
-                                                    {line.product_code || line.product}
-                                                </Badge>
+                                                <Chip size="xs" className="opacity-70">{line.product_code || line.product}</Chip>
                                                 {line.product_type === 'MANUFACTURABLE' && (
-                                                    <Badge className="bg-warning/10 text-warning hover:bg-warning/10 border-none text-[8px] py-0 h-4 font-black uppercase tracking-tighter">
-                                                        Fab
-                                                    </Badge>
+                                                    <Chip size="xs" intent="warning">Fab</Chip>
                                                 )}
                                             </div>
                                         </div>
@@ -197,7 +194,7 @@ export function Step1_Items({
                                             {selected && showMaxBadge && (
                                                 <div className="absolute -top-3 -right-3">
                                                     <Badge className={cn(
-                                                        "h-5 min-w-5 flex items-center justify-center text-[8px] font-black border-2 border-background shadow-sm",
+                                                        "h-5 min-w-5 flex items-center justify-center text-[9px] font-black border-2 border-background shadow-sm",
                                                         isCreditNote ? "bg-primary" : "bg-warning"
                                                     )}>
                                                         MAX {maxQty}
@@ -225,9 +222,7 @@ export function Step1_Items({
                                                 />
                                             </div>
                                             {isExempt && (
-                                                <span className="text-[9px] font-black text-success uppercase tracking-tighter bg-success/10 px-1 py-0.5 rounded border border-success/10">
-                                                    Exento
-                                                </span>
+                                                <Chip size="xs" intent="success">Exento</Chip>
                                             )}
                                         </div>
                                     </TableCell>

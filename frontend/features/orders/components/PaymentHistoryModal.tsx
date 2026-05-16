@@ -9,7 +9,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
+import { Chip } from "@/components/shared"
 import { formatCurrency, formatPlainDate } from "@/lib/utils"
 import { Landmark, Calendar, User, Hash, FileText } from "lucide-react"
 import { formatEntityDisplay } from "@/lib/entity-registry"
@@ -83,9 +83,7 @@ export function PaymentHistoryModal({
                                             </div>
                                         </TableCell>
                                         <TableCell>
-                                            <Badge variant="outline" className="font-black text-[9px] uppercase border-primary/20 bg-primary/5 text-primary">
-                                                {payment.payment_method_display || payment.payment_method}
-                                            </Badge>
+                                            <Chip size="xs" intent="primary">{payment.payment_method_display || payment.payment_method}</Chip>
                                         </TableCell>
                                         <TableCell>
                                             <div className="flex flex-col gap-1">

@@ -63,6 +63,29 @@ The positioning relative to a `notched-field` (fieldset + legend) depends on the
 
 ---
 
+## Chip 🟢
+
+Single authorized component for **non-status, non-entity-ID** informational labels: type tags, category pills, count indicators, feature flags.
+
+> 📄 Contrato completo en **[component-chip.md](./component-chip.md)**.
+
+```tsx
+<Chip>Almacenable</Chip>
+<Chip size="xs" intent="warning">CREDITO</Chip>
+<Chip size="md" intent="success" icon={ShieldCheck}>BOM ACTIVA</Chip>
+```
+
+| prop | type | required | default | notes |
+|------|------|----------|---------|-------|
+| `size` | `'xs' \| 'sm' \| 'md'` | ❌ | `'sm'` | xs=18px, sm=22px, md=26px |
+| `intent` | `'neutral' \| 'info' \| 'success' \| 'warning' \| 'destructive' \| 'primary'` | ❌ | `'neutral'` | |
+| `icon` | `LucideIcon` | ❌ | — | Same color as text |
+| `className` | `string` | ❌ | — | Layout/position only — never override typography |
+
+Typography invariant: `font-mono font-black uppercase tracking-widest`. Decision boundary: workflows → `StatusBadge`; entity IDs → `EntityBadge`; everything else → `Chip`.
+
+---
+
 ## StatusBadge 🟢
 
 Only authorized component for rendering entity states. No ad-hoc badges allowed.
@@ -76,7 +99,7 @@ Only authorized component for rendering entity states. No ad-hoc badges allowed.
 |------|------|----------|---------|-------|
 | `variant` | `'sale-order' \| 'purchase-order' \| 'work-order' \| 'invoice' \| 'payment' \| 'generic'` | ✅ | — | Maps to state-map entity |
 | `status` | entity-specific union (see [state-map](state-map.md)) | ✅ | — | Must be valid for variant |
-| `size` | `'sm' \| 'md' \| 'lg'` | ❌ | `'md'` | 40px min height `md`+ |
+| `size` | `'sm' \| 'md' \| 'lg'` | ❌ | `'sm'` | sm=h-6/12px (tables), md=h-8/14px (modals), lg=h-10/base (detail) |
 | `className` | `string` | ❌ | — | Merged via `cn()` |
 
 States handled: — (pure presentational, no async).
@@ -973,7 +996,8 @@ Componentes de uso estrictamente interno, no consumir directamente en features:
 
 ## Forbidden usage
 
-- Creating a new badge component instead of using `StatusBadge`.
+- Creating a new badge component instead of using `StatusBadge` (for states) or `Chip` (for labels/tags).
+- Inline `<Badge className="text-[8px] ...">` for informational tags — use `<Chip size="xs">`.
 - Passing raw Tailwind color classes to any shared component.
 - Modifying `/components/ui/` (Shadcn base).
 - Calling `.toLocaleString()` for money formatting — use `MoneyDisplay`.

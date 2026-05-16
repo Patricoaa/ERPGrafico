@@ -1,4 +1,3 @@
-import { Badge } from "@/components/ui/badge"
 import { cn, formatCurrency, translateStatus, formatPlainDate, formatDocumentId } from "@/lib/utils"
 import { ExternalLink, LucideIcon } from "lucide-react"
 import Link from "next/link"
@@ -189,7 +188,7 @@ export const DataCell = {
                     {sign}{numValue.toFixed(2)}
                 </span>
                 {unit && (
-                    <span className="text-[8px] font-black uppercase tracking-widest opacity-40 group-hover:opacity-100 text-muted-foreground mt-0.5">
+                    <span className="text-[9px] font-black uppercase tracking-widest opacity-40 group-hover:opacity-100 text-muted-foreground mt-0.5">
                         {unit}
                     </span>
                 )}
@@ -249,30 +248,6 @@ export const DataCell = {
             </div>
         )
     },
-
-    /** 
-     * Industrial Informational Label (formerly Generic Badge)
-     * Follows the text-contract for non-state information: minimalist, sharp, and muted.
-     */
-    Badge: ({ children, variant, className, ...props }: { children: ReactNode, variant?: "default" | "secondary" | "destructive" | "success" | "warning" | "info" | "outline", className?: string } & HTMLAttributes<HTMLSpanElement>) => (
-        <div className="flex justify-center items-center w-full">
-            {variant ? (
-                <Badge variant={variant} className={cn("text-[9px] font-bold uppercase px-1.5 py-0 rounded-sm", className)} {...props}>
-                    {children}
-                </Badge>
-            ) : (
-                <span 
-                    className={cn(
-                        "text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-sm border border-border bg-muted/50 text-muted-foreground whitespace-nowrap",
-                        className
-                    )} 
-                    {...props}
-                >
-                    {children}
-                </span>
-            )}
-        </div>
-    ),
 
     /** Icon with optional tooltip (wrapper needed in parent for tooltip provider usually, but here just the icon structure) */
     Icon: ({ icon: Icon, className, color, ...props }: { icon: LucideIcon, className?: string, color?: string } & HTMLAttributes<HTMLDivElement>) => (
@@ -385,7 +360,7 @@ export function createActionsColumn<TData>({
     return {
         id: "actions",
         header: () => (
-            <div className="text-center text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+            <div className="text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground">
                 {headerLabel}
             </div>
         ),

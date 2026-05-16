@@ -1,4 +1,5 @@
 import { showApiError } from "@/lib/errors"
+import { Chip } from "@/components/shared"
 import { Button } from "@/components/ui/button"
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table"
 import { EmptyState } from "@/components/shared/EmptyState"
@@ -91,13 +92,9 @@ export function ProductPricingTab({ initialData, pricingRules, fetchPricingRules
                                         <TableRow key={rule.id} className="group transition-colors">
                                             <TableCell>
                                                 {rule.is_category_rule ? (
-                                                    <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border bg-amber-500/10 text-amber-600 border-amber-500/20">
-                                                        Categoría
-                                                    </span>
+                                                    <Chip size="sm" intent="warning">Categoría</Chip>
                                                 ) : (
-                                                    <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border bg-primary/5 text-primary border-primary/20">
-                                                        Producto
-                                                    </span>
+                                                    <Chip size="xs" intent="primary">Producto</Chip>
                                                 )}
                                             </TableCell>
                                             <TableCell>
@@ -119,14 +116,9 @@ export function ProductPricingTab({ initialData, pricingRules, fetchPricingRules
                                                     : `-${Number(rule.discount_percentage)}%`}
                                             </TableCell>
                                             <TableCell className="text-center">
-                                                <div className={cn(
-                                                    "inline-flex px-2 py-0.5 rounded-full text-[9px] font-black uppercase border transition-colors",
-                                                    rule.active
-                                                        ? 'bg-success/10 text-success border-success/20'
-                                                        : 'bg-muted/50 text-muted-foreground border-transparent'
-                                                )}>
+                                                <Chip intent={rule.active ? "success" : "neutral"}>
                                                     {rule.active ? "Activa" : "Inactiva"}
-                                                </div>
+                                                </Chip>
                                             </TableCell>
                                             <TableCell className="text-right flex gap-1 justify-end">
                                                 {isProductRule && (

@@ -6,7 +6,6 @@ import { UseFormReturn } from "react-hook-form"
 import { ProductFormValues } from "./schema"
 import { Button } from "@/components/ui/button"
 import { Trash2, RefreshCw, Layers, Pencil, Wand2 } from "lucide-react"
-import { StatusBadge } from "@/components/shared/StatusBadge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import api from "@/lib/api"
@@ -18,9 +17,8 @@ import { SheetCloseButton } from "@/components/shared/SheetCloseButton"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { getErrorMessage } from "@/lib/errors"
 import { Product, ProductAttributeValue } from "@/types/entities"
-import { Badge } from "@/components/ui/badge"
 import { ProductInitialData } from "@/types/forms"
-import { FormTabsContent, FormSection } from "@/components/shared"
+import { FormTabsContent, FormSection, Chip } from "@/components/shared"
 
 import { VariantQuickEditForm } from "./VariantQuickEditForm"
 import { BulkVariantEditForm } from "./BulkVariantEditForm"
@@ -328,8 +326,8 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                                     </Button>
  
                                     {!initialData?.id && (
-                                        <div className="mt-4 p-3 bg-amber-500/5 border border-amber-500/20 rounded-xl">
-                                            <p className="text-[9px] text-amber-600 text-center font-black uppercase tracking-tighter italic">
+                                        <div className="mt-4 p-3 bg-warning/5 border border-warning/20 rounded-xl">
+                                            <p className="text-[9px] text-warning text-center font-black uppercase tracking-tighter italic">
                                                 * Las variantes se crearán automáticamente al confirmar la ficha principal.
                                             </p>
                                         </div>
@@ -399,9 +397,7 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                                                     <span className="font-bold text-xs truncate max-w-[150px]" title={v.variant_display_name || v.name}>{v.variant_display_name || v.name}</span>
                                                     <div className="flex gap-1 flex-wrap mt-1">
                                                         {v.attribute_values_data?.slice(0, 2).map((av: ProductAttributeValue, valIndex: number) => (
-                                                            <span key={valIndex} className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border bg-muted/50 border-border/50 text-muted-foreground">
-                                                                {av.value}
-                                                            </span>
+                                                            <Chip key={valIndex} size="xs">{av.value}</Chip>
                                                         ))}
                                                         {(v.attribute_values_data?.length ?? 0) > 2 && (
                                                             <span className="text-[10px] text-muted-foreground ml-1">+{(v.attribute_values_data?.length ?? 0) - 2}</span>
@@ -414,30 +410,25 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                                             </TableCell>
                                             <TableCell className="text-center">
                                                 {v.has_active_bom ? (
-                                                    <span className={cn(
-                                                        "text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border",
-                                                        (v.current_stock ?? 0) > 0 ? "bg-success/10 text-success border-success/20" : "bg-destructive/10 text-destructive border-destructive/20"
-                                                    )}>
+                                                    <Chip size="xs" intent={(v.current_stock ?? 0) > 0 ? "success" : "destructive"}>
                                                         STOCK: {v.current_stock || 0}
-                                                    </span>
+                                                    </Chip>
                                                 ) : (
                                                     (v.product_type === 'MANUFACTURABLE' || v.requires_advanced_manufacturing) ? (
-                                                        <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border bg-primary/10 text-primary border-primary/20">
-                                                            Disp
-                                                        </span>
+                                                        <Chip size="xs" intent="primary">Disp</Chip>
                                                     ) : (
-                                                        <Badge className={cn("font-bold px-1.5 py-0 text-[10px] border", (v.current_stock ?? 0) > 0 ? "bg-success/10 text-success border-success/20" : "bg-destructive/10 text-destructive border-destructive/20")}>
+                                                        <Chip size="xs" intent={(v.current_stock ?? 0) > 0 ? "success" : "destructive"}>
                                                             {v.current_stock}
-                                                        </Badge>
+                                                        </Chip>
                                                     )
                                                 )}
                                             </TableCell>
                                             <TableCell className="text-center">
                                                  {v.has_active_bom ? (
-                                                      <span className="text-[9px] text-emerald-600 font-black bg-emerald-500/10 px-2 py-1 rounded-full border border-emerald-500/20 uppercase tracking-tighter">BOM ACTIVA</span>
+                                                      <Chip intent="success">BOM ACTIVA</Chip>
                                                  ) : (
                                                       v.mfg_auto_finalize ? (
-                                                          <span className="text-[9px] text-destructive font-black bg-destructive/10 px-2 py-1 rounded-full border border-destructive/20 uppercase tracking-tighter animate-pulse">SIN RECETA</span>
+                                                          <Chip intent="destructive" className="animate-pulse">SIN RECETA</Chip>
                                                       ) : (
                                                           <span className="text-[9px] text-muted-foreground/40 font-bold">-</span>
                                                       )

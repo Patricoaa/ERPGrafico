@@ -12,7 +12,7 @@ import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 import { useTreasuryAccounts, treasuryApi } from "@/features/treasury"
 
-import { CancelButton, LabeledInput, LabeledSelect, FormSection, FormFooter, FormSplitLayout, ActionSlideButton, BaseModal } from "@/components/shared"
+import { CancelButton, LabeledInput, LabeledSelect, FormSection, FormFooter, FormSplitLayout, ActionSlideButton, BaseModal, Chip } from "@/components/shared"
 import { Form, FormField } from "@/components/ui/form"
 
 const treasuryAccountSchema = z.object({
@@ -143,9 +143,7 @@ export function TreasuryAccountModal({ open, onOpenChange, accountId, onSuccess 
                     <Landmark className="h-5 w-5 text-muted-foreground" />
                     <span>{accountId ? "Ficha de Cuenta" : "Nueva Cuenta"}</span>
                     {isSystemManaged && (
-                        <span className="flex items-center gap-1 text-xs font-normal px-2 py-0.5 rounded-full bg-muted text-muted-foreground border">
-                            <Lock className="h-3 w-3" /> Gestionada por sistema
-                        </span>
+                        <Chip icon={Lock}>Gestionada por sistema</Chip>
                     )}
                 </div>
             }
@@ -197,7 +195,7 @@ export function TreasuryAccountModal({ open, onOpenChange, accountId, onSuccess 
                     <Form {...form}>
                         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-4 pb-4 pt-2">
                             {isSystemManaged && (
-                                <div className="flex items-start gap-3 p-3 rounded-lg border border-amber-500/20 bg-amber-500/5 text-xs text-amber-600">
+                                <div className="flex items-start gap-3 p-3 rounded-lg border border-warning/20 bg-warning/5 text-xs text-warning">
                                     <Lock className="h-4 w-4 mt-0.5 shrink-0" />
                                     <p>Esta cuenta es gestionada automáticamente por el sistema. Para modificarla, actualice el Proveedor de Terminal correspondiente.</p>
                                 </div>

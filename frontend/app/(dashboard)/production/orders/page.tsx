@@ -18,7 +18,7 @@ import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { BulkActionDock } from "@/components/shared"
+import { BulkActionDock, Chip } from "@/components/shared"
 import { STAGES_ORDERED } from "@/features/production/constants/stages"
 import { isWorkOrderOverdue } from "@/features/production/utils"
 
@@ -203,9 +203,7 @@ export default function WorkOrdersPage() {
                 <div className="flex justify-center gap-1.5 items-center flex-wrap">
                     <DataCell.Status status={row.original.status} />
                     {isWorkOrderOverdue(row.original) && (
-                        <DataCell.Badge variant="destructive">
-                            Atrasada
-                        </DataCell.Badge>
+                        <Chip size="xs" intent="destructive">Atrasada</Chip>
                     )}
                 </div>
             ),
@@ -220,11 +218,9 @@ export default function WorkOrdersPage() {
             ),
             cell: ({ row }) => (
                 <div className="flex justify-center">
-                    <DataCell.Badge
-                        className="text-[9px] uppercase tracking-tighter"
-                    >
+                    <span className="font-mono text-[11px] uppercase text-muted-foreground/80 tracking-tight">
                         {translateProductionStage(row.original.current_stage)}
-                    </DataCell.Badge>
+                    </span>
                 </div>
             ),
         },

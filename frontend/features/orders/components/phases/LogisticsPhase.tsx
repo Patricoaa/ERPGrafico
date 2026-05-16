@@ -228,7 +228,7 @@ export function LogisticsPhase({
                         )
                     })}
                     {(activeDoc?.lines || activeDoc?.items || []).length > 3 && (
-                        <div className="text-[8px] text-muted-foreground/40 italic flex justify-center py-1 border-t border-white/5 mt-1 uppercase tracking-tighter font-bold">
+                        <div className="text-[9px] text-muted-foreground/40 italic flex justify-center py-1 border-t border-white/5 mt-1 uppercase tracking-tighter font-bold">
                             + {(activeDoc?.lines || activeDoc?.items || []).length - 3} ítems adicionales en proceso
                         </div>
                     )}

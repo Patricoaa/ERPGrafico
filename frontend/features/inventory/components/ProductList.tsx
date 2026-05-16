@@ -11,7 +11,7 @@ import { ColumnDef } from "@tanstack/react-table"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import type { BulkAction } from "@/components/shared"
 import { ProductForm } from "./ProductForm"
-import { Pencil, Archive, ChevronRight, ChevronDown, Plus, AlertTriangle } from "lucide-react"
+import { Pencil, Archive, ChevronRight, ChevronDown, Plus, AlertTriangle, Layers } from "lucide-react"
 import { toast } from "sonner"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { cn, translateProductType } from "@/lib/utils"
@@ -26,7 +26,7 @@ import { EntityCard } from "@/components/shared"
 import { useProducts } from "@/features/inventory/hooks/useProducts"
 import { Product, Restriction, ProductFilters } from "@/features/inventory/types"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
-import { SmartSearchBar, useSmartSearch } from "@/components/shared"
+import { Chip, SmartSearchBar, useSmartSearch } from "@/components/shared"
 import { productSearchDef } from "@/features/inventory/searchDef"
 import { useViewMode } from "@/hooks/useViewMode"
 import { createEntityCardView, createCardLoadingView } from "@/lib/view-helpers"
@@ -249,13 +249,27 @@ export function ProductList({ externalOpen, onExternalOpenChange, createAction }
                                     />
                                 )}
                                 {product.has_variants && !isChild && (
-                                    <span
-                                        className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border border-primary/20 text-primary bg-primary/5 cursor-pointer hover:bg-primary/10 transition-colors flex items-center gap-1"
+                                    <button 
                                         onClick={() => toggleExpand(product.id)}
+                                        className={cn(
+                                            "flex items-center gap-2 px-1 transition-all duration-200 group/var",
+                                            expandedTemplates.has(product.id) 
+                                                ? "text-primary" 
+                                                : "text-muted-foreground/60 hover:text-primary"
+                                        )}
                                     >
-                                        {product.variants?.length || 0} variantes
-                                        {expandedTemplates.has(product.id) ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
-                                    </span>
+                                        <Layers className={cn(
+                                            "h-3 w-3 transition-transform",
+                                            expandedTemplates.has(product.id) ? "scale-110" : "opacity-70 group-hover/var:opacity-100"
+                                        )} />
+                                        <span className="font-mono text-[10px] font-bold uppercase tracking-[0.15em]">
+                                            {product.variants?.length || 0} Variantes
+                                        </span>
+                                        <ChevronDown className={cn(
+                                            "h-3 w-3 transition-transform duration-300",
+                                            expandedTemplates.has(product.id) ? "rotate-180" : "opacity-40 group-hover/var:opacity-100"
+                                        )} />
+                                    </button>
                                 )}
                             </div>
                             {isChild && product.variant_display_name && (
@@ -303,9 +317,9 @@ export function ProductList({ externalOpen, onExternalOpenChange, createAction }
             cell: ({ row }) => {
                 if (row.original.is_dynamic_pricing) {
                     return (
-                        <DataCell.Badge className="border-warning/30 text-warning bg-warning/5">
-                            Dinámico
-                        </DataCell.Badge>
+                        <div className="flex justify-center w-full">
+                            <Chip size="xs" intent="warning">Dinámico</Chip>
+                        </div>
                     )
                 }
                 return <DataCell.Currency value={row.getValue("sale_price")} />
@@ -317,6 +331,13 @@ export function ProductList({ externalOpen, onExternalOpenChange, createAction }
             id: "tax",
             header: ({ column }) => <DataTableColumnHeader column={column} title="IVA (19%)" className="justify-center" />,
             cell: ({ row }) => {
+                if (row.original.is_dynamic_pricing) {
+                    return (
+                        <div className="flex justify-center w-full">
+                            <Chip size="xs" intent="warning">Dinámico</Chip>
+                        </div>
+                    )
+                }
                 const tax = PricingUtils.calculateTax(Number(row.getValue("sale_price")))
                 return <DataCell.Currency value={tax} />
             },
@@ -330,9 +351,9 @@ export function ProductList({ externalOpen, onExternalOpenChange, createAction }
                 const total = row.original.sale_price_gross || PricingUtils.netToGross(Number(row.getValue("sale_price")))
                 if (row.original.is_dynamic_pricing) {
                     return (
-                        <DataCell.Badge className="border-warning/30 text-warning bg-warning/5">
-                            Dinámico
-                        </DataCell.Badge>
+                        <div className="flex justify-center w-full">
+                            <Chip size="xs" intent="warning">Dinámico</Chip>
+                        </div>
                     )
                 }
                 return <DataCell.Currency value={total} className="font-bold text-foreground" />
@@ -346,14 +367,10 @@ export function ProductList({ externalOpen, onExternalOpenChange, createAction }
             cell: ({ row }) => (
                 <div className="flex justify-center gap-1">
                     {row.original.can_be_sold && (
-                        <span className="text-[9px] font-bold uppercase px-1.5 py-0 h-4 flex items-center rounded border border-muted-foreground/30 text-muted-foreground/80 bg-muted/20">
-                            Venta
-                        </span>
+                        <Chip size="xs">Venta</Chip>
                     )}
                     {row.original.can_be_purchased && (
-                        <span className="text-[9px] font-bold uppercase px-1.5 py-0 h-4 flex items-center rounded border border-muted-foreground/30 text-muted-foreground/80 bg-muted/20">
-                            Compra
-                        </span>
+                        <Chip size="xs">Compra</Chip>
                     )}
                     {!row.original.can_be_sold && !row.original.can_be_purchased && (
                         <span className="text-[10px] text-muted-foreground italic">Ninguno</span>

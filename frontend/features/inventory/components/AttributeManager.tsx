@@ -200,15 +200,14 @@ export function AttributeManager({ externalOpen, createAction }: AttributeManage
                 return (
                     <div className="flex flex-nowrap justify-center gap-1.5 w-full overflow-x-auto scrollbar-hide py-1">
                         {values.map((val) => (
-                            <DataCell.Badge
+                            <span
                                 key={val.id}
-                                variant="secondary"
-                                className="flex items-center gap-1 px-2.5 py-0.5 h-6 text-[10px] font-bold border-secondary/50"
+                                className="inline-flex items-center gap-1 h-[22px] px-2.5 text-[10px] font-mono font-black uppercase tracking-widest rounded-full border border-border/50 bg-muted/60 text-muted-foreground"
                             >
                                 {val.value}
                                 <IconButton
                                     variant="ghost"
-                                    className="ml-1 h-4 w-4 p-0 text-muted-foreground hover:text-destructive transition-colors"
+                                    className="ml-0.5 h-3.5 w-3.5 p-0 text-muted-foreground hover:text-destructive transition-colors"
                                     onClick={(e) => {
                                         e.stopPropagation()
                                         handleDeleteValue(val.id)
@@ -217,7 +216,7 @@ export function AttributeManager({ externalOpen, createAction }: AttributeManage
                                 >
                                     <X className="h-3 w-3" />
                                 </IconButton>
-                            </DataCell.Badge>
+                            </span>
                         ))}
                         <IconButton
                             className="h-6 w-6 rounded-full bg-primary/5 hover:bg-primary/20 text-primary transition-all duration-300"

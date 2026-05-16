@@ -76,7 +76,7 @@ export function OrderHeaderDashboard({
                 <CardContent className="p-4 flex flex-col justify-between h-full relative z-10">
                     <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Total Orden</span>
                     <div className="flex items-end justify-between mt-1">
-                        <span className="text-2xl font-black text-foreground tracking-tight">{formatCurrency(totalAmount)}</span>
+                        <span className="text-2xl font-black font-heading text-foreground tracking-tighter">{formatCurrency(totalAmount)}</span>
                         <TrendingUp className="h-4 w-4 text-muted-foreground" />
                     </div>
                 </CardContent>

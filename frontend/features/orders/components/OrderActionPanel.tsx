@@ -120,7 +120,7 @@ export function OrderActionPanel({
             >
                 <div className="flex flex-col h-full">
                 <SheetHeader className="px-6 pt-6 pb-4">
-                    <SheetTitle className="text-xl">
+                    <SheetTitle className="text-xl font-black tracking-tight">
                         {loading ? (
                             <div className="flex items-center gap-2">
                                 <Skeleton className="h-7 w-32 font-mono" />

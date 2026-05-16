@@ -49,6 +49,7 @@ export * from './ColorBar';
 export * from './MoneyDisplay';
 export * from './QuantityDisplay';
 export * from './StatusBadge';
+export * from './Chip';
 export * from './HubStatus';
 export * from './EntityBadge';
 export * from './AutoSaveStatusBadge';

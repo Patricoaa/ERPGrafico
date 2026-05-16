@@ -1,6 +1,7 @@
 "use client"
 
 import { Plus, Truck, Pencil, Trash2, Info } from 'lucide-react'
+import { Chip } from '@/components/shared'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { formatCurrency } from '@/lib/currency'
@@ -152,9 +153,7 @@ export function OutsourcingAssignmentStep({
                   </div>
                 )}
                 <div className="flex items-center gap-2">
-                  <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded border border-border bg-muted/50 text-muted-foreground whitespace-nowrap">
-                    OCS-{m.purchase_order_number}
-                  </span>
+                  <Chip size="xs">OCS-{m.purchase_order_number}</Chip>
                   <span className="text-[10px] font-medium text-muted-foreground">({m.supplier_name})</span>
                 </div>
               </div>

@@ -200,7 +200,7 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                                                 <CardContent className="p-4">
                                                     <p className="text-[10px] font-bold text-success uppercase tracking-wider">Estado Actual</p>
                                                     <div className="mt-1">
-                                                        <StatusBadge status="SUCCESS" label="ACTIVA" />
+                                                        <StatusBadge status="SUCCESS" label="ACTIVA" size="md" />
                                                     </div>
                                                 </CardContent>
                                             </Card>

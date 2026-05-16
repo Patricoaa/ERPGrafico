@@ -35,6 +35,7 @@ Task routing — common intents:
 | N+1 query / selector / prefetch | [add-selector.md](docs/30-playbooks/add-selector.md) |
 | Settings panel / config section | [add-settings-panel.md](docs/30-playbooks/add-settings-panel.md) |
 | Which component to use / component decision | [component-decision-tree.md](docs/20-contracts/component-decision-tree.md) |
+| Badge / chip / pill for a label or tag | [component-chip.md](docs/20-contracts/component-chip.md) |
 | Module layout / navigation tabs / dynamic header | [module-layout-navigation.md](docs/20-contracts/module-layout-navigation.md) |
 | TypeScript error / `any` escape hatch | [resolve-type-errors.md](docs/30-playbooks/resolve-type-errors.md) |
 | Loading state / skeleton / refetch CLS / loading.tsx | [component-skeleton.md](docs/20-contracts/component-skeleton.md) |

@@ -398,7 +398,7 @@ export function TerminalFormModal({ open, onOpenChange, terminal, onSuccess }: T
                                                                 <span className="font-semibold text-sm text-foreground/90">{account.name}</span>
                                                                 <div className="flex gap-1.5">
                                                                     {account.allows_cash && (
-                                                                        <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-tighter">
+                                                                        <span className="text-[10px] font-black text-success uppercase tracking-widest">
                                                                             Efectivo
                                                                         </span>
                                                                     )}

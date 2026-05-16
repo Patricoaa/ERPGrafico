@@ -212,12 +212,12 @@ export function ProductInventoryTab({ form, initialData, warehouses = [], uoms =
                                                 <span className="text-lg font-mono font-black">{initialData.current_stock || 0}</span>
                                             </div>
                                             <div className="flex flex-col items-center bg-background/60 py-3 rounded-xl border border-dashed">
-                                                <span className="text-[9px] font-black uppercase tracking-tight text-amber-600/80 mb-1">Reservado</span>
-                                                <span className="text-lg font-mono font-black text-amber-600">{initialData.qty_reserved || 0}</span>
+                                                <span className="text-[9px] font-black uppercase tracking-tight text-warning/80 mb-1">Reservado</span>
+                                                <span className="text-lg font-mono font-black text-warning">{initialData.qty_reserved || 0}</span>
                                             </div>
-                                            <div className="flex flex-col items-center bg-emerald-500/5 py-3 rounded-xl border border-emerald-500/20">
-                                                <span className="text-[9px] font-black uppercase tracking-tight text-emerald-600 mb-1">Disponible</span>
-                                                <span className="text-lg font-mono font-black text-emerald-600">{initialData.qty_available || 0}</span>
+                                            <div className="flex flex-col items-center bg-success/5 py-3 rounded-xl border border-success/20">
+                                                <span className="text-[9px] font-black uppercase tracking-tight text-success mb-1">Disponible</span>
+                                                <span className="text-lg font-mono font-black text-success">{initialData.qty_available || 0}</span>
                                             </div>
                                         </div>
                                     )}

@@ -17,7 +17,7 @@ import {
     Info,
     Scale
 } from "lucide-react"
-import { QuantityDisplay, LabeledInput } from "@/components/shared"
+import { Chip, QuantityDisplay, LabeledInput } from "@/components/shared"
 
 import type { WorkOrder, WorkOrderMaterial } from "../../types"
 
@@ -278,9 +278,7 @@ export function RectificationStep({ order, onChange }: RectificationStepProps) {
                     <div className="flex items-center gap-2 mb-3">
                         <Package className="h-4 w-4 text-muted-foreground" />
                         <span className="text-sm font-medium text-foreground">Materiales de Stock</span>
-                        <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border border-border bg-muted/50 text-muted-foreground whitespace-nowrap">
-                            {stockMaterials.length}
-                        </span>
+                        <Chip size="xs">{stockMaterials.length}</Chip>
                     </div>
                     <div className="rounded-lg border border-border overflow-hidden">
                         <table className="w-full text-sm">
@@ -388,9 +386,7 @@ export function RectificationStep({ order, onChange }: RectificationStepProps) {
                     <div className="flex items-center gap-2 mb-3">
                         <Package className="h-4 w-4 text-muted-foreground" />
                         <span className="text-sm font-medium text-foreground">Servicios Tercerizados</span>
-                        <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border border-border bg-muted/50 text-muted-foreground whitespace-nowrap">
-                            {outsourcedMaterials.length}
-                        </span>
+                        <Chip size="xs">{outsourcedMaterials.length}</Chip>
                     </div>
                     <div className="rounded-lg border border-border overflow-hidden">
                         <table className="w-full text-sm">
@@ -465,9 +461,7 @@ export function RectificationStep({ order, onChange }: RectificationStepProps) {
                     <div className="flex items-center gap-2">
                         <Scale className="h-4 w-4 text-primary" />
                         <span className="text-sm font-semibold text-foreground">Cantidad Real Producida</span>
-                        <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border border-border bg-muted/50 text-muted-foreground whitespace-nowrap">
-                            Solo OT de Stock
-                        </span>
+                        <Chip size="xs">Solo OT de Stock</Chip>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4 items-start">

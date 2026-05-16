@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { HubSkeleton } from "@/components/shared/LayoutSkeletons"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
+import { Chip } from "@/components/shared"
 import { Card } from "@/components/ui/card"
 import type { MyProfile } from "@/types/profile"
 import { Mail, Briefcase, Building2, Phone, User } from "lucide-react"
@@ -103,9 +103,7 @@ export function ProfileSidePanel({ profile }: ProfileSidePanelProps) {
                     </div>
 
                     <div className="flex items-center gap-2 relative z-10 mt-1">
-                        <Badge variant="outline" className={`text-[10px] uppercase font-bold ${user.is_active ? "text-success border-success/30 bg-success/10" : "text-destructive border-destructive/30 bg-destructive/10"}`}>
-                            {user.is_active ? "Activo" : "Inactivo"}
-                        </Badge>
+                        <Chip intent={user.is_active ? "success" : "destructive"}>{user.is_active ? "Activo" : "Inactivo"}</Chip>
                     </div>
                 </div>
 

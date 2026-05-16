@@ -50,7 +50,7 @@ export function NoteItemsSummary({
                                                     {item.quantity} {item.uom_name || 'un'}
                                                 </Badge>
                                                 {item.reason && (
-                                                    <Badge variant="outline" className="text-[8px] h-3 px-1 font-normal opacity-70 border-muted-foreground/20 italic truncate max-w-[120px]">
+                                                    <Badge variant="outline" className="text-[9px] h-3 px-1 font-normal opacity-70 border-muted-foreground/20 italic truncate max-w-[120px]">
                                                         {item.reason}
                                                     </Badge>
                                                 )}

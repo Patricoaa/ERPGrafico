@@ -460,7 +460,7 @@ export function BOMFormModal({
                                             <Box className="h-3.5 w-3.5 text-primary" />
                                         </div>
                                         <div className="flex flex-col min-w-0">
-                                            <span className="text-[8px] font-black uppercase text-primary/60 tracking-widest leading-none mb-0.5">Producto</span>
+                                            <span className="text-[9px] font-black uppercase text-primary/60 tracking-widest leading-none mb-0.5">Producto</span>
                                             <span className="text-[10px] font-black text-foreground truncate uppercase">
                                                 {selectedVariant ? (selectedVariant.variant_display_name || selectedVariant.name) : (selectedProduct?.name || "")}
                                             </span>
