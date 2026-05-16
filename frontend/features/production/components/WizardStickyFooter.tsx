@@ -106,7 +106,7 @@ export function WizardStickyFooter({
 
     return (
         <>
-            <div className="sticky bottom-0 border-t bg-background py-3 px-6 flex items-center justify-between z-10">
+            <div className="sticky bottom-0 border-t py-3 px-6 flex items-center justify-between z-10">
                 {isViewingCurrentStage ? (
                     <>
                         <div className="flex items-center gap-2">

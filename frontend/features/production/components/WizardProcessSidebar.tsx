@@ -21,7 +21,7 @@ export function WizardProcessSidebar({
     order
 }: WizardProcessSidebarProps) {
     return (
-        <div className="w-64 border-r bg-muted/10 p-4 space-y-2 hidden md:block overflow-y-auto">
+        <div className="w-64 border-r p-4 space-y-2 hidden md:block overflow-y-auto">
             <h3 className="text-xs font-bold uppercase text-muted-foreground mb-4 px-2">
                 Etapas de Producción
             </h3>
