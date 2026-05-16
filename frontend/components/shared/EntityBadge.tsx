@@ -25,7 +25,8 @@ export const EntityBadge: React.FC<EntityBadgeProps> = ({
   showIcon = true, 
   link = true,
   className,
-  size = 'md'
+  size = 'md',
+  rounded = true,
 }) => {
   const metadata = getEntityMetadata(label);
   const displayCode = formatEntityDisplay(label, data);
@@ -36,27 +37,28 @@ export const EntityBadge: React.FC<EntityBadgeProps> = ({
   const detailUrl = metadata?.detailUrlPattern?.replace('{id}', data.id?.toString() || data.toString());
 
   const sizeClasses = {
-    sm: "px-1.5 py-0.5 text-xs gap-1",
-    md: "px-2 py-1 text-sm gap-1.5",
-    lg: "px-3 py-1.5 text-base gap-2"
+    sm: "h-5 px-2 text-[9px] gap-1",
+    md: "h-6 px-2.5 text-[10px] gap-1.5",
+    lg: "h-8 px-4 text-xs gap-2"
   };
 
   const iconSizes = {
-    sm: "h-3 w-3",
-    md: "h-3.5 w-3.5",
-    lg: "h-4 w-4"
+    sm: "h-2.5 w-2.5",
+    md: "h-3 w-3",
+    lg: "h-3.5 w-3.5"
   };
 
   const badgeContent = (
     <span className={cn(
-      "inline-flex items-center font-medium rounded-md border transition-all duration-200",
+      "inline-flex items-center font-mono uppercase tracking-tight border transition-all duration-200",
       "bg-secondary/30 text-secondary-foreground border-secondary/50",
       "hover:bg-secondary/50 hover:border-secondary",
+      rounded ? "rounded-full" : "rounded-sm",
       sizeClasses[size],
       className
     )}>
-      {showIcon && <Icon className={cn("shrink-0 opacity-70", iconSizes[size])} />}
-      <span className="truncate max-w-[200px]">
+      {showIcon && <Icon className={cn("shrink-0 opacity-60", iconSizes[size])} />}
+      <span className="truncate font-bold max-w-[200px]">
         {displayCode}
       </span>
     </span>
