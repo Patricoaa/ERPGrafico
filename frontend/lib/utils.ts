@@ -10,7 +10,7 @@ import { STATUS_MAP } from './badge-resolvers'
 export function translateStatus(status: string | null | undefined): string {
   if (!status) return ''
   const upper = status.toUpperCase();
-  
+
   if (STATUS_MAP[upper]) {
     return STATUS_MAP[upper].label;
   }
@@ -255,7 +255,7 @@ export function formatPlainDate(value: string | Date | null | undefined): string
 
 import { formatEntityDisplay } from './entity-registry'
 
-export function formatDocumentId(type: string | null | undefined, number: string | number | null | undefined): string {
+export function formatEntity(type: string | null | undefined, number: string | number | null | undefined): string {
   if (!number) return '---'
 
   const typeMap: Record<string, string> = {

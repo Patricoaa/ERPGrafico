@@ -9,7 +9,6 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { createEmployee, updateEmployee, getAFPs, getPayrollConcepts } from '@/features/hr/api/hrApi'
 import type { Employee, AFP, PayrollConcept, EmployeeConceptAmount } from "@/types/hr"
-import { Button } from "@/components/ui/button"
 import { SubmitButton, CancelButton } from "@/components/shared/ActionButtons"
 import { UserCog, CalendarCheck2, Plus, ShieldCheck, ChevronUp, ChevronDown, Trash2, Check, Clock, Settings2, Package, Layers, Wand2, X } from "lucide-react"
 import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
@@ -20,7 +19,7 @@ import {
 import { Switch } from "@/components/ui/switch"
 import { cn } from "@/lib/utils"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
-import { BaseModal, EmptyState, LabeledInput, LabeledSelect, FormTabs, FormTabsContent, FormSection, FormSplitLayout, type FormTabItem, FormFooter } from "@/components/shared"
+import { BaseModal, LabeledInput, LabeledSelect, FormTabs, FormTabsContent, FormSection, FormSplitLayout, type FormTabItem, FormFooter, DatePicker, LabeledContainer } from "@/components/shared"
 
 export const employeeSchema = z.object({
     contact: z.string().min(1, "Contacto requerido"),
@@ -54,9 +53,17 @@ export interface EmployeeFormModalProps {
     trigger?: React.ReactNode
 }
 
+const parseLocalDate = (dateStr?: string) => {
+    if (!dateStr) return undefined
+    const parts = dateStr.split("-")
+    if (parts.length !== 3) return undefined
+    const [year, month, day] = parts.map(Number)
+    return new Date(year, month - 1, day)
+}
+
 export function EmployeeFormModal({ open, onOpenChange, employee, onSaved, trigger }: EmployeeFormModalProps) {
     const [saving, setSaving] = useState(false)
-    
+
     const [activeTab, setActiveTab] = useState("contratacion")
 
     const form = useForm<EmployeeFormValues>({
@@ -91,9 +98,9 @@ export function EmployeeFormModal({ open, onOpenChange, employee, onSaved, trigg
                 getAFPs(),
                 getPayrollConcepts({ formula_type: 'EMPLOYEE_SPECIFIC' })
             ])
-            return { 
-                afps: afpsData, 
-                concepts: conceptsData.filter((c: PayrollConcept) => c.formula_type === 'EMPLOYEE_SPECIFIC') 
+            return {
+                afps: afpsData,
+                concepts: conceptsData.filter((c: PayrollConcept) => c.formula_type === 'EMPLOYEE_SPECIFIC')
             }
         },
         enabled: open
@@ -172,10 +179,10 @@ export function EmployeeFormModal({ open, onOpenChange, employee, onSaved, trigg
                 concept_amounts: conceptAmountsList
             }
             if (employee) {
-                await updateEmployee(employee.id, payload as Parameters<typeof updateEmployee>[1])
+                await updateEmployee(employee.id, payload as unknown as Parameters<typeof updateEmployee>[1])
                 toast.success("Empleado actualizado")
             } else {
-                await createEmployee(payload as Parameters<typeof createEmployee>[0])
+                await createEmployee(payload as unknown as Parameters<typeof createEmployee>[0])
                 toast.success("Empleado creado")
             }
             onSaved()
@@ -263,6 +270,7 @@ export function EmployeeFormModal({ open, onOpenChange, employee, onSaved, trigg
         <BaseModal
             open={open}
             onOpenChange={onOpenChange}
+            title={employee ? "Editar Empleado" : "Nuevo Empleado"}
             headerClassName="sr-only"
             size="2xl"
             className="h-[90vh]"
@@ -299,101 +307,114 @@ export function EmployeeFormModal({ open, onOpenChange, employee, onSaved, trigg
                         }
                     >
                         <fieldset disabled={saving} className="flex-1 min-w-0 transition-opacity disabled:opacity-75 flex flex-col h-full min-h-0">
-                        <FormTabsContent value="contratacion" className="h-full w-full flex-1 flex flex-col m-0 p-0 border-0 outline-none overflow-hidden">
-                            <FormSplitLayout 
-                                sidebar={employee?.id ? <ActivitySidebar entityId={employee.id} entityType="employee" /> : undefined}
-                                showSidebar={!!employee?.id}
-                            >
-                                <div className="space-y-8 pr-2 pb-8">
-                                    <div className="grid grid-cols-4 gap-6 items-start">
-                                        <div className="col-span-4">
-                                            <FormField
-                                                control={form.control} name="contact"
-                                                render={({ field, fieldState }) => (
-                                                    <AdvancedContactSelector
-                                                        label="Contacto"
-                                                        value={field.value || null}
-                                                        onChange={(val) => field.onChange(val || "")}
+                            <FormTabsContent value="contratacion" className="h-full w-full flex-1 flex flex-col m-0 p-0 border-0 outline-none overflow-hidden">
+                                <FormSplitLayout
+                                    sidebar={employee?.id ? <ActivitySidebar entityId={employee.id} entityType="employee" /> : undefined}
+                                    showSidebar={!!employee?.id}
+                                >
+                                    <div className="space-y-8 pr-2 pb-8">
+                                        <div className="grid grid-cols-4 gap-6 items-start">
+                                            <div className="col-span-4">
+                                                <FormField
+                                                    control={form.control} name="contact"
+                                                    render={({ field, fieldState }) => (
+                                                        <AdvancedContactSelector
+                                                            label="Contacto"
+                                                            value={field.value || null}
+                                                            onChange={(val) => field.onChange(val || "")}
+                                                            error={fieldState.error?.message}
+                                                        />
+                                                    )}
+                                                />
+                                            </div>
+                                            <div className="col-span-2">
+                                                <FormField control={form.control} name="position" render={({ field, fieldState }) => (
+                                                    <LabeledInput
+                                                        label="Cargo"
+                                                        placeholder="Ej: Vendedor"
                                                         error={fieldState.error?.message}
+                                                        {...field}
                                                     />
-                                                )}
-                                            />
-                                        </div>
-                                        <div className="col-span-2">
-                                            <FormField control={form.control} name="position" render={({ field, fieldState }) => (
-                                                <LabeledInput
-                                                    label="Cargo"
-                                                    placeholder="Ej: Vendedor"
-                                                    error={fieldState.error?.message}
-                                                    {...field}
-                                                />
-                                            )} />
-                                        </div>
-                                        <div className="col-span-2">
-                                            <FormField control={form.control} name="department" render={({ field, fieldState }) => (
-                                                <LabeledInput
-                                                    label="Departamento"
-                                                    placeholder="Ventas"
-                                                    error={fieldState.error?.message}
-                                                    {...field}
-                                                />
-                                            )} />
-                                        </div>
-                                        <div className="col-span-2">
-                                            <FormField control={form.control} name="base_salary" render={({ field, fieldState }) => (
-                                                <LabeledInput
-                                                    label="Sueldo Base ($)"
-                                                    required
-                                                    type="number"
-                                                    min="0"
-                                                    error={fieldState.error?.message}
-                                                    {...field}
-                                                />
-                                            )} />
-                                        </div>
-                                        <div className="col-span-2">
-                                            <FormField control={form.control} name="contract_type" render={({ field, fieldState }) => (
-                                                <LabeledSelect
-                                                    label="Tipo de Contrato"
-                                                    value={field.value}
-                                                    onChange={field.onChange}
-                                                    error={fieldState.error?.message}
-                                                    options={[
-                                                        { value: "INDEFINIDO", label: "Indefinido" },
-                                                        { value: "PLAZO_FIJO", label: "Plazo Fijo / Obra" }
-                                                    ]}
-                                                />
-                                            )} />
-                                        </div>
-                                        <div className="col-span-2">
-                                            <FormField control={form.control} name="start_date" render={({ field, fieldState }) => (
-                                                <LabeledInput
-                                                    label="Fecha Ingreso"
-                                                    type="date"
-                                                    error={fieldState.error?.message}
-                                                    {...field}
-                                                />
-                                            )} />
-                                        </div>
-                                        <div className="col-span-2">
-                                            <FormField control={form.control} name="status" render={({ field, fieldState }) => (
-                                                <LabeledSelect
-                                                    label="Estado Ficha"
-                                                    value={field.value}
-                                                    onChange={field.onChange}
-                                                    error={fieldState.error?.message}
-                                                    options={[
-                                                        { value: "ACTIVE", label: "Activo" },
-                                                        { value: "INACTIVE", label: "Inactivo" }
-                                                    ]}
-                                                />
-                                            )} />
+                                                )} />
+                                            </div>
+                                            <div className="col-span-2">
+                                                <FormField control={form.control} name="department" render={({ field, fieldState }) => (
+                                                    <LabeledInput
+                                                        label="Departamento"
+                                                        placeholder="Ventas"
+                                                        error={fieldState.error?.message}
+                                                        {...field}
+                                                    />
+                                                )} />
+                                            </div>
+                                            <div className="col-span-2">
+                                                <FormField control={form.control} name="base_salary" render={({ field, fieldState }) => (
+                                                    <LabeledInput
+                                                        label="Sueldo Base ($)"
+                                                        required
+                                                        type="number"
+                                                        min="0"
+                                                        error={fieldState.error?.message}
+                                                        {...field}
+                                                    />
+                                                )} />
+                                            </div>
+                                            <div className="col-span-2">
+                                                <FormField control={form.control} name="contract_type" render={({ field, fieldState }) => (
+                                                    <LabeledSelect
+                                                        label="Tipo de Contrato"
+                                                        value={field.value}
+                                                        onChange={field.onChange}
+                                                        error={fieldState.error?.message}
+                                                        options={[
+                                                            { value: "INDEFINIDO", label: "Indefinido" },
+                                                            { value: "PLAZO_FIJO", label: "Plazo Fijo / Obra" }
+                                                        ]}
+                                                    />
+                                                )} />
+                                            </div>
+                                            <div className="col-span-2">
+                                                <FormField control={form.control} name="start_date" render={({ field, fieldState }) => (
+                                                    <LabeledContainer
+                                                        label="Fecha Ingreso"
+                                                        error={fieldState.error?.message}
+                                                    >
+                                                        <DatePicker
+                                                            date={field.value ? parseLocalDate(field.value) : undefined}
+                                                            onDateChange={(d: Date | undefined) => {
+                                                                if (!d) {
+                                                                    field.onChange("")
+                                                                    return
+                                                                }
+                                                                const year = d.getFullYear()
+                                                                const month = String(d.getMonth() + 1).padStart(2, '0')
+                                                                const day = String(d.getDate()).padStart(2, '0')
+                                                                field.onChange(`${year}-${month}-${day}`)
+                                                            }}
+                                                            className="w-full border-none bg-transparent hover:bg-transparent shadow-none"
+                                                        />
+                                                    </LabeledContainer>
+                                                )} />
+                                            </div>
+                                            <div className="col-span-2">
+                                                <FormField control={form.control} name="status" render={({ field, fieldState }) => (
+                                                    <LabeledSelect
+                                                        label="Estado Ficha"
+                                                        value={field.value}
+                                                        onChange={field.onChange}
+                                                        error={fieldState.error?.message}
+                                                        options={[
+                                                            { value: "ACTIVE", label: "Activo" },
+                                                            { value: "INACTIVE", label: "Inactivo" }
+                                                        ]}
+                                                    />
+                                                )} />
+                                            </div>
                                         </div>
                                     </div>
-                                                </div>
-                            </FormSplitLayout>
-                        </FormTabsContent>
-                        <FormTabsContent value="jornada" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin space-y-12">
+                                </FormSplitLayout>
+                            </FormTabsContent>
+                            <FormTabsContent value="jornada" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin space-y-12">
                                 <div className="space-y-8">
                                     <FormSection title="Detalles de Jornada" icon={CalendarCheck2} />
                                     <div className="grid grid-cols-4 gap-6 items-start">

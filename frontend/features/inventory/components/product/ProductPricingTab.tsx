@@ -1,11 +1,10 @@
 import { showApiError } from "@/lib/errors"
-import { Chip } from "@/components/shared"
+import { Chip, DataCell } from "@/components/shared"
 import { Button } from "@/components/ui/button"
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table"
 import { EmptyState } from "@/components/shared/EmptyState"
-import { cn } from "@/lib/utils"
 import { Card } from "@/components/ui/card"
-import { Info, Plus, Pencil, Trash2 } from "lucide-react"
+import { Info, Plus, Pencil } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { formatCurrency } from "@/lib/money"
@@ -122,26 +121,18 @@ export function ProductPricingTab({ initialData, pricingRules, fetchPricingRules
                                             </TableCell>
                                             <TableCell className="text-right flex gap-1 justify-end">
                                                 {isProductRule && (
-                                                    <>
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                                                            onClick={() => {
-                                                                onOpenRuleDialog(rule)
-                                                            }}
-                                                        >
-                                                            <Pencil className="h-3 w-3" />
-                                                        </Button>
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            className="h-8 w-8 text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
-                                                            onClick={() => deleteConfirm.requestConfirm(rule.id)}
-                                                        >
-                                                            <Trash2 className="h-3 w-3" />
-                                                        </Button>
-                                                    </>
+                                                    <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <DataCell.ActionGroup>
+                                                            <DataCell.Action
+                                                                action="edit"
+                                                                onClick={() => onOpenRuleDialog(rule)}
+                                                            />
+                                                            <DataCell.Action
+                                                                action="delete"
+                                                                onClick={() => deleteConfirm.requestConfirm(rule.id)}
+                                                            />
+                                                        </DataCell.ActionGroup>
+                                                    </div>
                                                 )}
                                             </TableCell>
                                         </TableRow>

@@ -156,6 +156,24 @@ Sistema central de tablas de datos y sus primitivas de vista.
 
 ---
 
+## Row & Card Actions 🟢
+
+> 📄 Contrato completo en **[component-row-actions.md](./component-row-actions.md)**.
+
+Registry cerrado de acciones CRUD (`ROW_ACTIONS` en `@/lib/row-actions`) + renderers unificados para filas y tarjetas. Icono, tooltip y color salen del registry — nunca hardcodear.
+
+| componente | superficie | uso |
+|---|---|---|
+| `createActionsColumn<T>` | Tabla | Columna estandarizada de acciones |
+| `DataCell.Action action="<key>"` | Tabla | Botón icono individual (forma preferida) |
+| `DataCell.ActionMenu items={[…]}` | Tabla | Kebab overflow para 4+ acciones |
+| `CardActions` + `CardActions.Item` / `CardActions.Menu` | Card / Kanban | Mismos primitivos para footers de tarjeta |
+| `useEntityRouteActions()` | Hook | Handlers `openSelected` / `openDetail` / `openHub` |
+
+Orden canónico (siempre): `view → detail → hub → edit → duplicate → pay → deliver → receive → download → print → share → archive → restore → lock/unlock → annul → delete`. `annul` y `delete` siempre al final, en ese orden, ambas detrás de `ActionConfirmModal` (`variant="destructive"`).
+
+---
+
 ## ActionDock 🟡
 
 Floating taskbar for multi-selection actions and summary statistics. Automatically adjusts its horizontal position when Hub or Inbox panels are open.
@@ -361,7 +379,7 @@ States handled: — (pure controlled). Shows count badge when >2 selected; shows
 
 > 📄 Documentación completa en **[component-input.md](./component-input.md)**.
 
-Primitivo único para el par label + campo de texto. Reemplaza el patrón deprecated `FORM_STYLES.label + FORM_STYLES.input`.
+Primitivo único para el par label + campo de texto.
 
 ```tsx
 <LabeledInput label="Nombre" required error={fieldState.error?.message} {...field} />

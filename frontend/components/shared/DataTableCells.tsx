@@ -1,6 +1,6 @@
-import { formatCurrency } from "@/lib/money"
-import { cn, translateStatus, formatPlainDate, formatDocumentId } from "@/lib/utils"
-import { ExternalLink, LucideIcon } from "lucide-react"
+
+import { cn, translateStatus, formatPlainDate } from "@/lib/utils"
+import { ExternalLink, LucideIcon, MoreVertical } from "lucide-react"
 import Link from "next/link"
 import { ReactNode, HTMLAttributes } from "react"
 import type { ColumnDef } from "@tanstack/react-table"
@@ -9,11 +9,19 @@ import { MoneyDisplay, StatusBadge, EntityBadge, CropFrame } from "@/components/
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { Button } from "@/components/ui/button"
 import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import {
     Tooltip,
     TooltipContent,
     TooltipProvider,
     TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { ROW_ACTIONS, type RowActionKey } from "@/lib/row-actions"
 
 interface BaseCellProps extends HTMLAttributes<HTMLDivElement> {
     children?: ReactNode
@@ -43,8 +51,8 @@ export const DataCell = {
         </div>
     ),
 
-    /** Standardized Document ID with prefix and padding (Uses EntityBadge) */
-    DocumentId: ({ entityLabel, type, number, label, data, className, ...props }: { entityLabel?: string, type?: string, number?: string | number | null | undefined, label?: string, data?: any, className?: string }) => {
+    /** Standardized Entity ID with prefix and padding (Uses EntityBadge, matches Status badge typography/size) */
+    Entity: ({ entityLabel, type, number, label, data, className, size = "sm", ...props }: { entityLabel?: string, type?: string, number?: string | number | null | undefined, label?: string, data?: any, className?: string, size?: 'sm' | 'md' | 'lg' | 'xl' }) => {
         // Resolve label: prefer entityLabel > label > legacy type mapping
         let resolvedLabel = entityLabel || label;
 
@@ -72,7 +80,7 @@ export const DataCell = {
 
         return (
             <div className={cn("flex justify-center items-center w-full", className)} {...props}>
-                <EntityBadge label={resolvedLabel || 'sales.saleorder'} data={finalData} size="sm" />
+                <EntityBadge label={resolvedLabel || 'sales.saleorder'} data={finalData} size={size} />
             </div>
         );
     },
@@ -257,70 +265,202 @@ export const DataCell = {
         </div>
     ),
 
-    /** 
-     * Standardized Row Action 
+    /**
+     * Standardized Row Action
      * Incorporates CropFrame and a Ghost Button.
      * - hover:bg-transparent overrides ghost default accent fill; CropFrame is the sole hover feedback.
      * - Tooltip uses the dark sidebar palette for visual consistency.
      * Enforces rounded-none for design system compliance.
+     *
+     * Two forms:
+     * - Registry form (preferred): <DataCell.Action action="edit" onClick={...} />
+     *   Resolves icon + title + color from ROW_ACTIONS (lib/row-actions.ts).
+     * - Inline form (module-specific actions only):
+     *   <DataCell.Action icon={Pencil} title="Editar" onClick={...} />
+     *
+     * @contract docs/20-contracts/component-row-actions.md
      */
     Action: ({
-        icon: Icon,
+        action,
+        icon: iconProp,
         onClick,
-        title,
+        title: titleProp,
         className,
         color,
         variant = "ghost",
-        compact = false, // New prop
+        compact = false,
         ...props
     }: {
-        icon: LucideIcon,
+        action?: RowActionKey,
+        icon?: LucideIcon,
         onClick?: (e: React.MouseEvent) => void,
         title?: string,
         className?: string,
         color?: string,
         variant?: "ghost" | "outline" | "default" | "secondary",
         compact?: boolean
-    } & React.ButtonHTMLAttributes<HTMLButtonElement>) => (
-        <TooltipProvider delayDuration={400}>
-            <Tooltip>
-                <TooltipTrigger asChild>
-                    <div className="flex justify-center items-center">
-                        <CropFrame variant={compact ? "compact" : "default"} thickness={1}>
-                            <Button
-                                variant={variant}
-                                size="icon"
-                                className={cn("h-7 w-7 rounded-none transition-all duration-300 hover:bg-transparent hover:scale-105 active:scale-95", className)}
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    onClick?.(e);
-                                }}
-                                {...props}
-                            >
-                                <Icon className={cn("h-4 w-4", color)} />
-                            </Button>
-                        </CropFrame>
-                    </div>
-                </TooltipTrigger>
-                {title && (
-                    <TooltipContent
-                        side="top"
-                        className="text-[9px] font-black uppercase tracking-[0.2em] bg-sidebar text-sidebar-foreground border-sidebar-border px-2 py-1 shadow-xl rounded-none animate-in fade-in zoom-in-95 duration-200"
-                    >
-                        {title}
-                    </TooltipContent>
-                )}
-            </Tooltip>
-        </TooltipProvider>
-    ),
+    } & Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'title'>) => {
+        const def = action ? ROW_ACTIONS[action] : undefined
+        const Icon = iconProp ?? def?.icon
+        const title = titleProp ?? def?.label
+        const resolvedColor = color ?? def?.iconColorClass
+
+        if (!Icon) {
+            // Misuse: neither `action` nor `icon` provided.
+            return null
+        }
+
+        return (
+            <TooltipProvider delayDuration={400}>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <div className="flex justify-center items-center">
+                            <CropFrame variant={compact ? "compact" : "default"} thickness={1}>
+                                <Button
+                                    variant={variant}
+                                    size="icon"
+                                    className={cn("h-7 w-7 rounded-none transition-all duration-300 hover:bg-transparent hover:scale-105 active:scale-95", className)}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onClick?.(e);
+                                    }}
+                                    {...props}
+                                >
+                                    <Icon className={cn("h-4 w-4", resolvedColor)} />
+                                </Button>
+                            </CropFrame>
+                        </div>
+                    </TooltipTrigger>
+                    {title && (
+                        <TooltipContent
+                            side="top"
+                            className="text-[9px] font-black uppercase tracking-[0.2em] bg-sidebar text-sidebar-foreground border-sidebar-border px-2 py-1 shadow-xl rounded-none animate-in fade-in zoom-in-95 duration-200"
+                        >
+                            {title}
+                        </TooltipContent>
+                    )}
+                </Tooltip>
+            </TooltipProvider>
+        )
+    },
 
     /** Container for multiple row actions to ensure proper spacing and alignment */
     ActionGroup: ({ children, className, ...props }: { children: ReactNode, className?: string } & HTMLAttributes<HTMLDivElement>) => (
         <div className={cn("flex justify-center items-center gap-1.5", className)} onClick={(e) => e.stopPropagation()} {...props}>
             {children}
         </div>
-    )
+    ),
+
+    /**
+     * Overflow / kebab menu for row & card actions.
+     *
+     * Use when the row has 4+ actions, or when secondary/destructive actions
+     * should be one tap away rather than always visible.
+     *
+     * Items can be:
+     *  - Registry actions:    { action: "duplicate", onClick }
+     *  - Module-specific:     { icon: Recalc, label: "Recalcular", onClick }
+     *  - Separators:          { separator: true }
+     *
+     * @contract docs/20-contracts/component-row-actions.md §4
+     */
+    ActionMenu: ({
+        items,
+        title = "Más acciones",
+        className,
+        align = "end",
+        compact = false,
+    }: {
+        items: ActionMenuItem[],
+        title?: string,
+        className?: string,
+        align?: "start" | "center" | "end",
+        compact?: boolean,
+    }) => (
+        <TooltipProvider delayDuration={400}>
+            <Tooltip>
+                <DropdownMenu>
+                    <TooltipTrigger asChild>
+                        <DropdownMenuTrigger asChild>
+                            <div className="flex justify-center items-center">
+                                <CropFrame variant={compact ? "compact" : "default"} thickness={1}>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className={cn("h-7 w-7 rounded-none transition-all duration-300 hover:bg-transparent hover:scale-105 active:scale-95", className)}
+                                        onClick={(e) => e.stopPropagation()}
+                                        aria-label={title}
+                                    >
+                                        <MoreVertical className="h-4 w-4" />
+                                    </Button>
+                                </CropFrame>
+                            </div>
+                        </DropdownMenuTrigger>
+                    </TooltipTrigger>
+                    <DropdownMenuContent
+                        align={align}
+                        className="rounded-none border-sidebar-border min-w-[10rem]"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        {items.map((item, idx) => {
+                            if ('separator' in item && item.separator) {
+                                return <DropdownMenuSeparator key={`sep-${idx}`} />
+                            }
+                            const def = 'action' in item && item.action ? ROW_ACTIONS[item.action] : undefined
+                            const Icon = ('icon' in item && item.icon) ? item.icon : def?.icon
+                            const label = ('label' in item && item.label) ? item.label : def?.label
+                            const isDestructive = ('action' in item && item.action === 'delete') || def?.intent === 'destructive'
+
+                            if (!Icon || !label) return null
+
+                            return (
+                                <DropdownMenuItem
+                                    key={('action' in item && item.action) ? item.action : idx}
+                                    variant={isDestructive ? 'destructive' : 'default'}
+                                    disabled={'disabled' in item ? item.disabled : false}
+                                    onClick={(e) => {
+                                        e.stopPropagation()
+                                        if ('onClick' in item && item.onClick) item.onClick(e as unknown as React.MouseEvent)
+                                    }}
+                                    className="text-[11px] font-medium uppercase tracking-wider rounded-none cursor-pointer"
+                                >
+                                    <Icon className="h-3.5 w-3.5" />
+                                    {label}
+                                </DropdownMenuItem>
+                            )
+                        })}
+                    </DropdownMenuContent>
+                </DropdownMenu>
+                <TooltipContent
+                    side="top"
+                    className="text-[9px] font-black uppercase tracking-[0.2em] bg-sidebar text-sidebar-foreground border-sidebar-border px-2 py-1 shadow-xl rounded-none animate-in fade-in zoom-in-95 duration-200"
+                >
+                    {title}
+                </TooltipContent>
+            </Tooltip>
+        </TooltipProvider>
+    ),
 }
+
+// ─── ActionMenu item types ────────────────────────────────────────────────────
+
+export type ActionMenuItem =
+    | { separator: true }
+    | {
+        action: RowActionKey
+        onClick: (e: React.MouseEvent) => void
+        disabled?: boolean
+        /** Override label from registry */
+        label?: string
+        /** Override icon from registry */
+        icon?: LucideIcon
+    }
+    | {
+        icon: LucideIcon
+        label: string
+        onClick: (e: React.MouseEvent) => void
+        disabled?: boolean
+    }
 
 // ─── Reusable Actions Column Factory ──────────────────────────────────────────
 // Generates a standardized actions column for DataTable.

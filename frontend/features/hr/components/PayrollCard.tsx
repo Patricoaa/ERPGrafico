@@ -9,7 +9,7 @@ import {
     Table, TableBody, TableCell, TableHead, TableHeader, TableRow
 } from "@/components/ui/table"
 import {
-    Loader2, Trash2, Pencil, Sparkles, AlertCircle, DollarSign, Clock, CheckCircle2, Plus, History
+    Loader2, Sparkles, AlertCircle, DollarSign, Clock, CheckCircle2, Plus, History
 } from "lucide-react"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 
@@ -63,23 +63,11 @@ function ItemRow({ item, type, isReadOnly, onEdit, onDeleteRequest }: {
             </TableCell>
             {!isReadOnly && (
                 <TableCell className="w-[80px] p-0 pr-6 text-right">
-                    <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 rounded-sm text-muted-foreground hover:text-primary hover:bg-primary/5"
-                            onClick={() => onEdit?.(item)}
-                        >
-                            <Pencil className="h-3 w-3" />
-                        </Button>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 rounded-sm text-muted-foreground hover:text-expense hover:bg-expense/10"
-                            onClick={() => onDeleteRequest?.(item)}
-                        >
-                            <Trash2 className="h-3 w-3" />
-                        </Button>
+                    <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                        <DataCell.ActionGroup className="justify-end">
+                            <DataCell.Action action="edit"   compact onClick={() => onEdit?.(item)} />
+                            <DataCell.Action action="delete" compact onClick={() => onDeleteRequest?.(item)} />
+                        </DataCell.ActionGroup>
                     </div>
                 </TableCell>
             )}

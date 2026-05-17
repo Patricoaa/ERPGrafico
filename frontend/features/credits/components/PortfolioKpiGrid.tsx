@@ -4,13 +4,13 @@ import { motion } from "framer-motion"
 import { cn } from "@/lib/utils"
 import { CreditCard, Target, ShieldAlert, Activity } from "lucide-react"
 import { CreditPortfolioResponse } from "@/features/credits/api/creditsApi"
+import { MoneyDisplay } from "@/components/shared"
 
-const fmt = (v: string | number | undefined) =>
-    Number(v || 0).toLocaleString("es-CL", { style: "currency", currency: "CLP", maximumFractionDigits: 0 })
+
 
 function KpiCard({ label, value, sub, icon: Icon, color }: {
     label: string
-    value: string | number
+    value: React.ReactNode
     sub?: string
     icon: React.ElementType
     color: string
@@ -58,21 +58,21 @@ export function PortfolioKpiGrid({ data }: { data: CreditPortfolioResponse | nul
         <div className="grid gap-4 md:grid-cols-4">
             <KpiCard
                 label="Deuda Total"
-                value={fmt(totalDebt)}
+                value={<MoneyDisplay amount={totalDebt} digits={0} />}
                 sub={`${s?.count_debtors || 0} clientes con deuda activa`}
                 icon={CreditCard}
                 color="bg-primary/5 text-primary border-primary/20"
             />
             <KpiCard
                 label="Exposición Total"
-                value={fmt(computedTotalLimit)}
+                value={<MoneyDisplay amount={computedTotalLimit} digits={0} />}
                 sub={`Uso: ${computedUtilizationRate.toFixed(1)}% del límite`}
                 icon={Target}
                 color="bg-info/5 text-info border-info/20"
             />
             <KpiCard
                 label="Pérdida Potencial"
-                value={fmt(potentialLoss)}
+                value={<MoneyDisplay amount={potentialLoss} digits={0} />}
                 sub={`${s?.risk_distribution?.CRITICAL || 0} riesgos críticos`}
                 icon={ShieldAlert}
                 color={potentialLoss > 0 ? "bg-destructive/5 text-destructive border-destructive/20" : "bg-muted text-muted-foreground border-border"}

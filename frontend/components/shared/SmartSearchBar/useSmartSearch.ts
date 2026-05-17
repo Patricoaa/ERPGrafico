@@ -22,6 +22,7 @@ function getFieldLabelForParam(def: SearchDefinition, param: string): string {
       if (field.serverParam === param) return field.label
     }
   }
+  if (param === 'search') return 'Búsqueda'
   return param
 }
 
@@ -45,6 +46,8 @@ export function useSmartSearch(def: SearchDefinition) {
         map[param] = parseAsString
       }
     }
+    // Always include 'search' as a recognized parameter for global search
+    map['search'] = parseAsString
     return map
   }, [def])
 

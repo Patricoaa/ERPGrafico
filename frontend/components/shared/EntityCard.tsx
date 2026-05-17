@@ -46,12 +46,7 @@ function EntityCardRoot({
                 className
             )}
         >
-            {isSelected && (
-                <span
-                    aria-hidden
-                    className="absolute inset-x-0 top-0 h-0.5 rounded-t-lg bg-primary"
-                />
-            )}
+
             {children}
         </div>
     )

@@ -1,5 +1,4 @@
 "use client"
-import { formatCurrency } from "@/lib/money"
 
 import React, { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
@@ -8,13 +7,12 @@ import * as z from "zod"
 import { ArrowLeftRight, DollarSign, Calendar as CalendarIcon, Info } from "lucide-react"
 import { TreasuryAccountSelector } from "@/components/selectors"
 import { PeriodValidationDateInput } from "@/components/shared"
-import { cn } from "@/lib/utils"
 import api from "@/lib/api"
 import { showApiError } from "@/lib/errors"
 import { toast } from "sonner"
 import { useServerDate } from "@/hooks/useServerDate"
 import { Form, FormField } from "@/components/ui/form"
-import { CancelButton, LabeledInput, FormSection, FormFooter, FormSplitLayout, ActionSlideButton, BaseModal } from "@/components/shared"
+import { CancelButton, LabeledInput, FormSection, FormFooter, FormSplitLayout, ActionSlideButton, BaseModal, MoneyDisplay } from "@/components/shared"
 
 const transferSchema = z.object({
     from_account_id: z.string().min(1, "Seleccione una cuenta de origen"),
@@ -169,8 +167,8 @@ export function TransferModal({ open, onOpenChange, onSuccess }: TransferModalPr
                                                 />
                                                 {sourceAccount && (
                                                     <div className="absolute -bottom-5 right-1 px-1.5 py-0.5 rounded bg-muted/30 border border-muted/50">
-                                                        <p className="text-[10px] font-mono leading-none"> {/* intentional: badge density */}
-                                                            DISP: <span className="font-bold text-success">{formatCurrency(sourceAccount.current_balance)}</span>
+                                                        <p className="text-[10px] font-mono leading-none">
+                                                            DISP: <span className="font-bold text-success"><MoneyDisplay amount={sourceAccount.current_balance} /></span>
                                                         </p>
                                                     </div>
                                                 )}
@@ -240,9 +238,9 @@ export function TransferModal({ open, onOpenChange, onSuccess }: TransferModalPr
                                 <div className="col-span-2 flex items-end">
                                     {sourceAccount && toAccountId && amount && !isNaN(parseFloat(amount)) && (
                                         <div className="w-full p-2.5 rounded-lg bg-warning/5 border border-warning/20 flex flex-col items-center justify-center animate-in zoom-in-95 duration-300">
-                                            <p className="text-[10px] text-warning font-black uppercase tracking-widest mb-1"> {/* intentional: badge density */} Impacto en Origen</p>
+                                            <p className="text-[10px] text-warning font-black uppercase tracking-widest mb-1">Impacto en Origen</p>
                                             <p className="text-xs font-black text-warning">
-                                                {formatCurrency(sourceAccount.current_balance - parseFloat(amount))}
+                                                <MoneyDisplay amount={sourceAccount.current_balance - parseFloat(amount)} />
                                             </p>
                                         </div>
                                     )}

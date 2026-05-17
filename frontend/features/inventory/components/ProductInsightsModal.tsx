@@ -22,7 +22,6 @@ import {
     Factory,
     ArrowUpRight,
     ArrowDownRight,
-    Eye,
     LayoutDashboard
 } from "lucide-react"
 import api from "@/lib/api"
@@ -425,20 +424,18 @@ export function ProductInsightsModal({ productId, productName, open, onOpenChang
                                                     </TableCell>
                                                     <TableCell className="text-xs">{move.warehouse}</TableCell>
                                                     <TableCell className="text-right">
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            className="h-8 w-8 text-primary"
-                                                            onClick={() => {
-                                                                if (move.related_type === 'work_order') {
-                                                                    openWorkOrder(move.related_id)
-                                                                } else {
-                                                                    openTransaction(move.related_id, move.related_type)
-                                                                }
-                                                            }}
-                                                        >
-                                                            <Eye className="h-4 w-4" />
-                                                        </Button>
+                                                        <DataCell.ActionGroup>
+                                                            <DataCell.Action
+                                                                action="view"
+                                                                onClick={() => {
+                                                                    if (move.related_type === 'work_order') {
+                                                                        openWorkOrder(move.related_id)
+                                                                    } else {
+                                                                        openTransaction(move.related_id, move.related_type)
+                                                                    }
+                                                                }}
+                                                            />
+                                                        </DataCell.ActionGroup>
                                                     </TableCell>
                                                 </TableRow>
                                             ))}
@@ -481,14 +478,12 @@ export function ProductInsightsModal({ productId, productName, open, onOpenChang
                                                         <DataCell.Number value={usage.quantity} className="text-left" decimals={2} />
                                                     </TableCell>
                                                     <TableCell className="text-right">
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            className="h-8 w-8 text-primary"
-                                                            onClick={() => openWorkOrder(usage.ot_id)}
-                                                        >
-                                                            <Eye className="h-4 w-4" />
-                                                        </Button>
+                                                        <DataCell.ActionGroup>
+                                                            <DataCell.Action
+                                                                action="view"
+                                                                onClick={() => openWorkOrder(usage.ot_id)}
+                                                            />
+                                                        </DataCell.ActionGroup>
                                                     </TableCell>
                                                 </TableRow>
                                             ))}

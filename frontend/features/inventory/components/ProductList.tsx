@@ -11,7 +11,7 @@ import { ColumnDef } from "@tanstack/react-table"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import type { BulkAction } from "@/components/shared"
 import { ProductForm } from "./ProductForm"
-import { Pencil, Archive, ChevronRight, ChevronDown, Plus, AlertTriangle, Layers } from "lucide-react"
+import { ChevronDown, Plus, AlertTriangle, Layers } from "lucide-react"
 import { toast } from "sonner"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { cn, translateProductType } from "@/lib/utils"
@@ -21,7 +21,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Archive as ArchiveIcon } from "lucide-react"
 import { ArchivingRestrictionsModal } from "./ArchivingRestrictionsModal"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
-import { DataCell, createActionsColumn } from '@/components/shared'
+import { DataCell, createActionsColumn, MoneyDisplay } from '@/components/shared'
 import { EntityCard } from "@/components/shared"
 import { useProducts } from "@/features/inventory/hooks/useProducts"
 import { Product, Restriction, ProductFilters } from "@/features/inventory/types"
@@ -249,12 +249,12 @@ export function ProductList({ externalOpen, onExternalOpenChange, createAction }
                                     />
                                 )}
                                 {product.has_variants && !isChild && (
-                                    <button 
+                                    <button
                                         onClick={() => toggleExpand(product.id)}
                                         className={cn(
                                             "flex items-center gap-2 px-1 transition-all duration-200 group/var",
-                                            expandedTemplates.has(product.id) 
-                                                ? "text-primary" 
+                                            expandedTemplates.has(product.id)
+                                                ? "text-primary"
                                                 : "text-muted-foreground/60 hover:text-primary"
                                         )}
                                     >
@@ -285,7 +285,7 @@ export function ProductList({ externalOpen, onExternalOpenChange, createAction }
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Categoría" className="justify-center" />
             ),
-            cell: ({ row }) => <DataCell.Text className="font-normal">{row.getValue("category_name")}</DataCell.Text>,
+            cell: ({ row }) => <DataCell.Text>{row.getValue("category_name")}</DataCell.Text>,
         },
         {
             accessorKey: "active",
@@ -382,8 +382,7 @@ export function ProductList({ externalOpen, onExternalOpenChange, createAction }
             renderActions: (item) => (
                 <>
                     <DataCell.Action
-                        icon={Pencil}
-                        title="Editar"
+                        action="edit"
                         onClick={() => {
                             const params = new URLSearchParams(searchParams.toString())
                             params.set('selected', String(item.id))
@@ -391,9 +390,7 @@ export function ProductList({ externalOpen, onExternalOpenChange, createAction }
                         }}
                     />
                     <DataCell.Action
-                        icon={item.active ? Archive : Plus}
-                        title={item.active ? "Archivar" : "Restaurar"}
-                        className={item.active ? "text-destructive" : "text-success"}
+                        action={item.active ? "archive" : "restore"}
                         onClick={() => handleArchive(item)}
                     />
                 </>
@@ -464,9 +461,11 @@ export function ProductList({ externalOpen, onExternalOpenChange, createAction }
                                     title={product.name}
                                     subtitle={<span className="font-mono text-xs">{product.code}</span>}
                                     trailing={
-                                        product.active ?
-                                            <EntityCard.Badge label="ACTIVO" variant="default" className="bg-success/20 text-success hover:bg-success/30" /> :
-                                            <EntityCard.Badge label="ARCHIVADO" variant="secondary" />
+                                        <StatusBadge
+                                            variant="generic"
+                                            status={product.active ? "active" : "inactive"}
+                                            size="sm"
+                                        />
                                     }
                                 />
                                 <EntityCard.Body>
@@ -476,18 +475,18 @@ export function ProductList({ externalOpen, onExternalOpenChange, createAction }
                                         label="Precio Neto"
                                         value={
                                             product.is_dynamic_pricing
-                                                ? <span className="text-warning font-bold">Dinámico</span>
-                                                : PricingUtils.formatCurrency(Number(product.sale_price))
+                                                ? <Chip size="xs" intent="warning">Dinámico</Chip>
+                                                : <MoneyDisplay amount={product.sale_price} />
                                         }
                                     />
                                     <EntityCard.Field
                                         label="Precio Total"
                                         value={
                                             product.is_dynamic_pricing
-                                                ? <span className="text-warning font-bold">Dinámico</span>
-                                                : PricingUtils.formatCurrency(Number(product.sale_price_gross || PricingUtils.netToGross(Number(product.sale_price))))
+                                                ? <Chip size="xs" intent="warning">Dinámico</Chip>
+                                                : <MoneyDisplay amount={product.sale_price_gross || PricingUtils.netToGross(Number(product.sale_price))} className="text-primary" />
                                         }
-                                        className="font-bold text-primary"
+                                        className="font-bold"
                                     />
                                 </EntityCard.Body>
                             </EntityCard>

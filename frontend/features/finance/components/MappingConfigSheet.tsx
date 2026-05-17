@@ -116,18 +116,18 @@ export function MappingConfigSheet({
             accessorKey: "code",
             header: "Código",
             cell: ({ row }) => (
-                <div className="font-mono text-[11px] opacity-70 whitespace-nowrap">
+                <DataCell.Code className="justify-start opacity-70">
                     {row.getValue("code")}
-                </div>
+                </DataCell.Code>
             )
         },
         {
             accessorKey: "name",
             header: "Cuenta",
             cell: ({ row }) => (
-                <div className="font-black text-[12px] tracking-tight uppercase leading-none max-w-[200px] sm:max-w-[300px] truncate">
+                <DataCell.Text className="justify-start tracking-tight uppercase max-w-[200px] sm:max-w-[300px] truncate">
                     {row.getValue("name")}
-                </div>
+                </DataCell.Text>
             )
         },
         {
@@ -166,7 +166,7 @@ export function MappingConfigSheet({
                             )}>
                                 <SelectValue placeholder="Sin mapeo" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="w-[var(--radix-select-trigger-width)]">
                                 <SelectItem value="none" className="text-muted-foreground italic">Sin mapeo</SelectItem>
                                 {getCategories().map(cat => (
                                     <SelectItem key={cat.value} value={cat.value}>
@@ -243,7 +243,7 @@ export function MappingConfigSheet({
                                             <Tag className="mr-2 h-3.5 w-3.5" />
                                             <SelectValue placeholder="Asignar Categoría" />
                                         </SelectTrigger>
-                                        <SelectContent>
+                                        <SelectContent className="w-[var(--radix-select-trigger-width)]">
                                             <SelectItem value="none" className="text-muted-foreground italic">Quitar mapeo</SelectItem>
                                             {getCategories().map(cat => (
                                                 <SelectItem key={cat.value} value={cat.value}>

@@ -6,22 +6,17 @@ import { DataTable } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { createActionsColumn, DataCell } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
-import { Pencil, Trash2, Ban, Settings, List, Columns, Copy, CalendarDays, Printer } from "lucide-react"
-
+import { List, Columns, CalendarDays, Printer } from "lucide-react"
 import { WorkOrderForm } from "@/features/production/components/forms/WorkOrderForm"
 import { WorkOrderWizard } from "@/features/production/components/WorkOrderWizard"
 import { WorkOrderKanban } from "@/features/production/components/WorkOrderKanban"
 import { WorkOrderTimelineView } from "@/features/production/components/WorkOrderTimelineView"
-
 import { Checkbox } from "@/components/ui/checkbox"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { BulkActionDock, Chip } from "@/components/shared"
-import { STAGES_ORDERED } from "@/features/production/constants/stages"
 import { isWorkOrderOverdue } from "@/features/production/utils"
-
 import { ToolbarCreateButton, SmartSearchBar, useSmartSearch } from "@/components/shared"
 import { translateProductionStage } from "@/lib/utils"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
@@ -150,7 +145,7 @@ export default function WorkOrdersPage() {
             ),
             cell: ({ row }) => (
                 <div className="flex justify-center">
-                    <DataCell.DocumentId
+                    <DataCell.Entity
                         entityLabel="production.workorder"
                         number={row.getValue("number")}
                     />
@@ -165,12 +160,13 @@ export default function WorkOrdersPage() {
             ),
             cell: ({ row }) => {
                 const nvNumber = row.original.sale_order_number
-                if (!nvNumber) return <div className="flex justify-center"><span className="text-muted-foreground text-xs">—</span></div>
+                if (!nvNumber) return <div className="flex justify-center"></div>
                 return (
                     <div className="flex justify-center">
-                        <DataCell.DocumentId
+                        <DataCell.Entity
                             entityLabel="sales.saleorder"
                             number={nvNumber}
+
                         />
                     </div>
                 )
@@ -230,54 +226,39 @@ export default function WorkOrdersPage() {
             cell: ({ row }) => <div className="flex justify-center"><DataCell.Date value={row.getValue("due_date")} /></div>,
         },
         createActionsColumn<WorkOrder>({
-            renderActions: (order) => (
-                <>
-                    <DataCell.Action
-                        icon={Settings}
-                        title="Gestionar Workflow"
-                        onClick={() => {
-                            const params = new URLSearchParams(searchParams.toString())
-                            params.set('selected', String(order.id))
-                            router.push(`${pathname}?${params.toString()}`, { scroll: false })
-                        }}
-                    />
-                    <DataCell.Action
-                        icon={Copy}
-                        title="Duplicar OT"
-                        onClick={() => handleDuplicate(order.id)}
-                    />
-                    {['MATERIAL_ASSIGNMENT', 'MATERIAL_APPROVAL', 'PREPRESS'].includes(order.current_stage) && (
+            renderActions: (order) => {
+                const isEditable = ['MATERIAL_ASSIGNMENT', 'MATERIAL_APPROVAL', 'PREPRESS'].includes(order.current_stage)
+                const canAnnul = !['DRAFT', 'FINISHED', 'CANCELLED'].includes(order.status)
+                const overflow = [
+                    { action: 'duplicate' as const, onClick: () => handleDuplicate(order.id) },
+                    ...(canAnnul ? [{ action: 'annul' as const, onClick: () => handleCancel(order.id) }] : []),
+                    ...(isEditable ? [{ action: 'delete' as const, onClick: () => handleDelete(order.id) }] : []),
+                ]
+                return (
+                    <>
                         <DataCell.Action
-                            icon={Pencil}
-                            title="Editar"
+                            action="hub"
                             onClick={() => {
-                                setEditingOrder(order)
-                                setIsFormOpen(true)
+                                const params = new URLSearchParams(searchParams.toString())
+                                params.set('selected', String(order.id))
+                                router.push(`${pathname}?${params.toString()}`, { scroll: false })
                             }}
                         />
-                    )}
-
-                    {['MATERIAL_ASSIGNMENT', 'MATERIAL_APPROVAL', 'PREPRESS'].includes(order.current_stage) && (
-                        <DataCell.Action
-                            icon={Trash2}
-                            title="Eliminar"
-                            className="text-destructive hover:text-destructive"
-                            onClick={() => handleDelete(order.id)}
-                        />
-                    )}
-
-                    {!['DRAFT', 'FINISHED', 'CANCELLED'].includes(order.status) && (
-                        <DataCell.Action
-                            icon={Ban}
-                            title="Anular"
-                            className="text-warning hover:text-warning"
-                            onClick={() => handleCancel(order.id)}
-                        />
-                    )}
-                </>
-            )
+                        {isEditable && (
+                            <DataCell.Action
+                                action="edit"
+                                onClick={() => {
+                                    setEditingOrder(order)
+                                    setIsFormOpen(true)
+                                }}
+                            />
+                        )}
+                        <DataCell.ActionMenu items={overflow} />
+                    </>
+                )
+            }
         }),
-    ], [])
+    ], [handleDuplicate, handleCancel, handleDelete, searchParams, router, pathname])
 
     const renderKanbanView = useCallback((table: import("@tanstack/react-table").Table<WorkOrder>) => (
         <div className="relative">
@@ -285,6 +266,9 @@ export default function WorkOrdersPage() {
                 <WorkOrderKanban
                     orders={table.getFilteredRowModel().rows.map((row: import("@tanstack/react-table").Row<WorkOrder>) => row.original)}
                     onManage={(id) => setActiveWizardId(id)}
+                    onDuplicate={handleDuplicate}
+                    onAnnul={handleCancel}
+                    onDelete={handleDelete}
                     isLoading={loading}
                 />
             </div>

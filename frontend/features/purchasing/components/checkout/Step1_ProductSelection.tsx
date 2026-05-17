@@ -20,6 +20,7 @@ import { EmptyState } from "@/components/shared/EmptyState"
 import { CheckoutLine } from "../../types"
 import { ProductMinimal, UoM } from "@/types/entities"
 import { formatCurrency } from "@/lib/money"
+import { MoneyDisplay, DataCell } from "@/components/shared"
 
 interface Step1_ProductSelectionProps {
     orderLines: CheckoutLine[]
@@ -283,18 +284,14 @@ export function Step1_ProductSelection({
                                     />
                                 </TableCell>
                                 <TableCell className="text-right font-medium">
-                                    {formatCurrency((Number(line.quantity || line.qty) || 0) * (Number(line.unit_cost) || 0))}
+                                    <MoneyDisplay amount={(Number(line.quantity || line.qty) || 0) * (Number(line.unit_cost) || 0)} />
                                 </TableCell>
-                                <TableCell>
-                                    <Button
-                                        type="button"
-                                        variant="ghost"
-                                        size="icon"
+                                <TableCell className="text-center">
+                                    <DataCell.Action
+                                        action="delete"
                                         onClick={() => handleRemoveLine(index)}
                                         disabled={orderLines.length === 1}
-                                    >
-                                        <Trash2 className="h-4 w-4" />
-                                    </Button>
+                                    />
                                 </TableCell>
                             </TableRow>
                         ))}

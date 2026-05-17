@@ -1,54 +1,37 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
-import { motion } from "framer-motion"
+import React from "react"
 import { HubSkeleton } from "@/components/shared/LayoutSkeletons"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Chip } from "@/components/shared"
-import { Card } from "@/components/ui/card"
+import { CollapsibleSheet, Chip } from "@/components/shared"
 import type { MyProfile } from "@/types/profile"
-import { Mail, Briefcase, Building2, Phone, User } from "lucide-react"
-import { useHubPanel } from "@/components/providers/HubPanelProvider"
+import { Mail, Building2, Phone, User } from "lucide-react"
 
 export interface ProfileSidePanelProps {
     profile: MyProfile | null
+    open?: boolean
+    onOpenChange?: (open: boolean) => void
 }
 
-export function ProfileSidePanel({ profile }: ProfileSidePanelProps) {
-    const [isInboxOpen, setIsInboxOpen] = useState(false)
-    const { isHubEffectivelyOpen } = useHubPanel()
-
-    useEffect(() => {
-        // Set feature panel width so the main canvas is pushed
-        document.body.setAttribute('data-side-panel-width', '360')
-        
-        // Observe Inbox changes
-        const checkInbox = () => {
-            setIsInboxOpen(document.body.hasAttribute('data-inbox-open'))
-        }
-        checkInbox()
-        
-        const observer = new MutationObserver(checkInbox)
-        observer.observe(document.body, { attributes: true, attributeFilter: ['data-inbox-open'] })
-        
-        return () => {
-            document.body.removeAttribute('data-side-panel-width')
-            observer.disconnect()
-        }
-    }, [])
+export function ProfileSidePanel({ profile, open = true, onOpenChange }: ProfileSidePanelProps) {
+    const handleOpenChange = (newOpen: boolean) => {
+        onOpenChange?.(newOpen)
+    }
 
     if (!profile) {
         return (
-            <aside
-                className="fixed top-20 h-[calc(100vh-6rem)] w-[360px] bg-sidebar dark border border-white/5 flex flex-col will-change-transform overflow-hidden z-40 shadow-2xl rounded-lg transition-all duration-500 ease-[var(--ease-premium)] hidden xl:flex"
-                style={{ 
-                    right: `calc(1rem + ${isInboxOpen ? 320 + 16 : 0}px + ${isHubEffectivelyOpen ? 360 + 16 : 0}px)` 
-                }}
+            <CollapsibleSheet
+                sheetId="profile-side-panel"
+                open={open}
+                onOpenChange={handleOpenChange}
+                tabLabel="Perfil"
+                tabIcon={User}
+                fullWidth={360}
             >
                 <div className="flex-1 overflow-y-auto overflow-x-hidden p-6">
                     <HubSkeleton />
                 </div>
-            </aside>
+            </CollapsibleSheet>
         )
     }
 
@@ -69,21 +52,19 @@ export function ProfileSidePanel({ profile }: ProfileSidePanelProps) {
     
     // Position/Department priority: employee -> direct info (if it existed)
     const position = employee?.position || "—"
-    const department = employee?.department || "—"
 
     const functionalGroups = user.groups?.filter(g => !systemRoles.includes(g)) || []
 
     return (
-        <aside
-            className={
-                "fixed top-20 h-[calc(100vh-6rem)] w-[360px] bg-sidebar dark border border-white/5 flex flex-col will-change-transform overflow-hidden z-40 shadow-2xl rounded-lg " +
-                "transition-all duration-500 ease-[var(--ease-premium)] hidden xl:flex text-foreground"
-            }
-            style={{ 
-                right: `calc(1rem + ${isInboxOpen ? 320 + 16 : 0}px + ${isHubEffectivelyOpen ? 360 + 16 : 0}px)` 
-            }}
+        <CollapsibleSheet
+            sheetId="profile-side-panel"
+            open={open}
+            onOpenChange={handleOpenChange}
+            tabLabel="Perfil"
+            tabIcon={User}
+            fullWidth={360}
         >
-            <div className="flex-1 overflow-y-auto overflow-x-hidden">
+            <div className="flex-1 overflow-y-auto overflow-x-hidden text-foreground">
                 {/* Header / Avatar Area */}
                 <div className="flex flex-col items-center justify-center py-10 px-6 gap-5 border-b border-white/5 relative overflow-hidden">
                     <Avatar className="h-24 w-24 border-2 border-primary/20 shadow-xl ring-4 ring-background relative z-10">
@@ -165,6 +146,6 @@ export function ProfileSidePanel({ profile }: ProfileSidePanelProps) {
                     </div>
                 </div>
             </div>
-        </aside>
+        </CollapsibleSheet>
     )
 }

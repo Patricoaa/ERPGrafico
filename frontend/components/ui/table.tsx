@@ -4,9 +4,9 @@ import { cn } from "@/lib/utils"
 
 const Table = React.forwardRef<
   HTMLTableElement,
-  React.HTMLAttributes<HTMLTableElement>
->(({ className, ...props }, ref) => (
-  <div data-slot="table-container" className="relative w-full overflow-x-auto">
+  React.HTMLAttributes<HTMLTableElement> & { containerClassName?: string }
+>(({ className, containerClassName, ...props }, ref) => (
+  <div data-slot="table-container" className={cn("relative w-full overflow-x-auto", containerClassName)}>
     <table
       ref={ref}
       data-slot="table"

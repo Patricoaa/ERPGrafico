@@ -35,10 +35,7 @@ interface FinancialStatementTableProps {
     compPeriodLabel?: string;
 }
 
-const formatCurrency = (val: number | undefined | null) => {
-    if (val === undefined || val === null) return '$0';
-    return val.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' });
-};
+
 
 const AccountRow = ({ node, level = 0, showComparison }: { node: AccountNode, level?: number, showComparison?: boolean }) => {
     const [expanded, setExpanded] = useState(true);

@@ -5,10 +5,10 @@ import { showApiError } from "@/lib/errors"
 import { useState, useEffect, useRef } from "react"
 import { useForm, useFieldArray, useWatch, Control } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Plus, Trash2 } from "lucide-react"
+import { Plus } from "lucide-react"
 import { cn } from "@/lib/utils"
 import api from "@/lib/api"
-import { BaseModal, ActionSlideButton, MoneyDisplay, LabeledInput, FormSection, LabeledContainer, FormFooter, SubmitButton, CancelButton, Chip } from "@/components/shared"
+import { BaseModal, ActionSlideButton, DataCell, MoneyDisplay, LabeledInput, FormSection, LabeledContainer, FormFooter, SubmitButton, CancelButton, Chip } from "@/components/shared"
 import {
     Form,
     FormField
@@ -573,18 +573,13 @@ export function SaleOrderForm({ onSuccess, onConfirmCheckout, initialData, id = 
                                                         })()}
                                                     </TableCell>
                                                     <TableCell className="align-top">
-                                                        <div className="flex items-center gap-1">
-                                                            <Button
-                                                                type="button"
-                                                                variant="ghost"
-                                                                size="icon"
+                                                        <DataCell.ActionGroup>
+                                                            <DataCell.Action
+                                                                action="delete"
                                                                 onClick={() => remove(index)}
                                                                 disabled={fields.length === 1}
-                                                                className="h-8 w-8 text-destructive"
-                                                            >
-                                                                <Trash2 className="h-4 w-4" />
-                                                            </Button>
-                                                        </div>
+                                                            />
+                                                        </DataCell.ActionGroup>
                                                     </TableCell>
                                                 </TableRow>
                                             ))}

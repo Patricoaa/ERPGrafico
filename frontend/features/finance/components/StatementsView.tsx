@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react"
 import { TabsContent } from "@/components/ui/tabs"
 import { Card, CardContent } from "@/components/ui/card"
-import { TableSkeleton } from "@/components/shared"
+import { TableSkeleton, MoneyDisplay } from "@/components/shared"
 import { PageContainer } from "@/components/shared"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
@@ -265,15 +265,15 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
                                                             <div className="text-right">
                                                                 <div className={cn("text-[10px] uppercase font-bold opacity-70", idx === (d.sections?.length || 0) - 1 ? "text-primary-foreground" : "text-muted-foreground")}>{periodLabel || 'Actual'}</div>
                                                                 <div className="text-2xl font-black font-mono">
-                                                                    {(section.total || 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
+                                                                    <MoneyDisplay amount={section.total} digits={0} />
                                                                 </div>
                                                             </div>
                                                             {showComparison && (
                                                                 <div className={cn("text-right border-l pl-12", idx === (d.sections?.length || 0) - 1 ? "border-primary-foreground/30" : "border")}>
                                                                     <div className={cn("text-[10px] uppercase font-bold opacity-70", idx === (d.sections?.length || 0) - 1 ? "text-primary-foreground" : "text-muted-foreground")}>{compPeriodLabel || 'Anterior'}</div>
                                                                     <div className={cn("text-2xl font-black font-mono opacity-80", idx === (d.sections?.length || 0) - 1 ? "text-primary-foreground" : "")}>
-                                                                        {(section.total_comp || 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
-                                                                    </div>
+                                                                         <MoneyDisplay amount={section.total_comp} digits={0} />
+                                                                     </div>
                                                                 </div>
                                                             )}
                                                         </div>

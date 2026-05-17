@@ -4,8 +4,8 @@ import React from "react"
 import { formatCurrency } from "@/lib/money"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Banknote, Eye, SplitSquareHorizontal } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { Banknote, SplitSquareHorizontal } from "lucide-react"
+import { DataCell } from "@/components/shared/DataTableCells"
 import { formatPlainDate, translatePaymentMethod } from "@/lib/utils"
 import type { TransactionData, TransactionType } from "@/types/transactions"
 
@@ -79,11 +79,12 @@ export const PaymentHistorySection = React.memo(({ data, currentType, navigateTo
                                         </div>
                                     </TableCell>
                                     <TableCell className="text-right">
-                                        <div className="flex justify-end gap-1">
-                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-primary rounded-lg hover:bg-primary/5" onClick={() => navigateTo('payment', pay.id)}>
-                                                <Eye className="h-4 w-4" />
-                                            </Button>
-                                        </div>
+                                        <DataCell.ActionGroup className="justify-end">
+                                            <DataCell.Action
+                                                action="view"
+                                                onClick={() => navigateTo('payment', pay.id)}
+                                            />
+                                        </DataCell.ActionGroup>
                                     </TableCell>
                                 </TableRow>
                             )

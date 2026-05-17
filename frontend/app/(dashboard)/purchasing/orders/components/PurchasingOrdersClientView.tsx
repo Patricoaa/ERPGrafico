@@ -20,7 +20,6 @@ import { DomainHubStatus } from "@/components/shared"
 import { getHubStatuses } from "@/lib/workflow-status"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
-
 import { Tabs } from "@/components/ui/tabs"
 import { useViewMode } from "@/hooks/useViewMode"
 import { createDomainCardView, createCardLoadingView } from "@/lib/view-helpers"
@@ -195,7 +194,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
             ),
             cell: ({ row }) => (
                 <div className="flex flex-col items-center">
-                    <DataCell.DocumentId type={row.original.dte_type as any} number={row.getValue("number")} />
+                    <DataCell.Entity type={row.original.dte_type as any} number={row.getValue("number")} />
                 </div>
             ),
             meta: { title: "Folio" },
@@ -281,7 +280,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
             ),
             cell: ({ row }) => (
                 <div className="flex flex-col items-center">
-                    <DataCell.DocumentId type="purchase_order" number={row.getValue("number")} />
+                    <DataCell.Entity type="purchase_order" number={row.getValue("number")} />
                 </div>
             ),
             meta: { title: "Folio" },

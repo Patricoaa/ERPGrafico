@@ -1,10 +1,9 @@
 "use client"
 import { formatCurrency } from "@/lib/money"
 
-import { CalendarIcon, Pencil, LayoutDashboard, Ban, Trash2, Copy, BookTemplate } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { formatPlainDate, cn } from "@/lib/utils"
-import { Chip, StatusBadge } from "@/components/shared"
+import { CalendarIcon, BookTemplate } from "lucide-react"
+import { formatPlainDate } from "@/lib/utils"
+import { Chip, DataCell, StatusBadge } from "@/components/shared"
 import type { WorkOrder } from "../types"
 import { formatEntityDisplay } from "@/lib/entity-registry"
 
@@ -60,73 +59,43 @@ export function WizardHeader({
                 </div>
             </div>
 
-            <div className="flex items-center gap-1.5 bg-muted/30 p-1 rounded-lg border border-border/50">
+            <DataCell.ActionGroup>
                 {canEditOrDelete && (
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={onEdit}
-                        title="Editar OT"
-                        className="h-8 w-8 p-0 hover:bg-background hover:shadow-sm"
-                    >
-                        <Pencil className="h-4 w-4" />
-                    </Button>
+                    <DataCell.Action action="edit" onClick={onEdit} />
                 )}
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => order?.sale_order && onOpenCommandCenter(order.sale_order.id, 'sale')}
+                <DataCell.Action
+                    action="hub"
                     title="Configuración de Venta"
-                    className="h-8 w-8 p-0 hover:bg-background hover:shadow-sm"
+                    onClick={() => order?.sale_order && onOpenCommandCenter(order.sale_order.id, 'sale')}
                     disabled={!order?.sale_order}
-                >
-                    <LayoutDashboard className="h-4 w-4" />
-                </Button>
+                />
                 <div className="w-[1px] h-4 bg-border/60 mx-1" />
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 w-8 p-0 hover:bg-background hover:shadow-sm"
+                <DataCell.Action
+                    action="duplicate"
                     onClick={onDuplicate}
                     disabled={isDuplicating}
-                    title="Duplicar OT"
-                >
-                    <Copy className="h-4 w-4" />
-                </Button>
+                />
                 {onSaveAsTemplate && (
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 w-8 p-0 hover:bg-background hover:shadow-sm"
-                        onClick={onSaveAsTemplate}
+                    <DataCell.Action
+                        icon={BookTemplate}
                         title="Guardar como plantilla"
-                    >
-                        <BookTemplate className="h-4 w-4" />
-                    </Button>
+                        onClick={onSaveAsTemplate}
+                    />
                 )}
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 w-8 p-0 text-warning hover:text-warning hover:bg-warning/10"
+                <DataCell.Action
+                    action="annul"
+                    title={order?.is_cancellable === false ? "Anulación no permitida en esta etapa" : "Anular OT"}
                     onClick={onAnnul}
                     disabled={isAnnuling || order?.status === 'CANCELLED' || order?.is_cancellable === false}
-                    title={order?.is_cancellable === false ? "Anulación no permitida en esta etapa" : "Anular OT"}
-                >
-                    <Ban className="h-4 w-4" />
-                </Button>
+                />
                 {canEditOrDelete && (
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                    <DataCell.Action
+                        action="delete"
                         onClick={onDelete}
                         disabled={isDeleting}
-                        title="Eliminar OT"
-                    >
-                        <Trash2 className="h-4 w-4" />
-                    </Button>
+                    />
                 )}
-            </div>
+            </DataCell.ActionGroup>
         </div>
     )
 }

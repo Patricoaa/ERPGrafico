@@ -14,7 +14,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
-import { PageHeader, LoadingFallback } from "@/components/shared"
+import { PageHeader, LoadingFallback, MoneyDisplay } from "@/components/shared"
 import { toast } from "sonner"
 import Link from "next/link"
 
@@ -129,7 +129,7 @@ export function BudgetDetailView({ budgetId }: BudgetDetailViewProps) {
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-black font-heading tracking-tighter">
-                            {executionData.summary.total_budgeted.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
+                            <MoneyDisplay amount={executionData.summary.total_budgeted} digits={0} />
                         </div>
                     </CardContent>
                 </Card>
@@ -139,7 +139,7 @@ export function BudgetDetailView({ budgetId }: BudgetDetailViewProps) {
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-black font-heading tracking-tighter">
-                            {executionData.summary.total_actual.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
+                            <MoneyDisplay amount={executionData.summary.total_actual} digits={0} />
                         </div>
                     </CardContent>
                 </Card>
@@ -148,8 +148,12 @@ export function BudgetDetailView({ budgetId }: BudgetDetailViewProps) {
                         <CardTitle className="text-sm font-medium text-muted-foreground">Desviación</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className={`text-2xl font-black font-heading tracking-tighter ${executionData.summary.total_variance < 0 ? 'text-destructive' : 'text-success'}`}>
-                            {executionData.summary.total_variance.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
+                        <div className="text-2xl font-black font-heading tracking-tighter">
+                            <MoneyDisplay 
+                                amount={executionData.summary.total_variance} 
+                                digits={0} 
+                                showColor={true} 
+                            />
                         </div>
                     </CardContent>
                 </Card>
@@ -177,10 +181,10 @@ export function BudgetDetailView({ budgetId }: BudgetDetailViewProps) {
                                         <div className="text-xs text-muted-foreground">{item.account_code}</div>
                                     </TableCell>
                                     <TableCell className="text-right font-mono">
-                                        {item.budgeted.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
+                                        <MoneyDisplay amount={item.budgeted} digits={0} />
                                     </TableCell>
                                     <TableCell className="text-right font-mono">
-                                        {item.actual.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
+                                        <MoneyDisplay amount={item.actual} digits={0} />
                                     </TableCell>
                                     <TableCell>
                                         <div className="flex items-center gap-2">

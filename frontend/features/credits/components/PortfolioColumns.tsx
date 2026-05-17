@@ -8,9 +8,6 @@ import { CreditContact, CreditHistoryEntry } from "@/features/credits/api/credit
 import { cn } from "@/lib/utils"
 import { AlertCircle } from "lucide-react"
 
-const fmt = (v: string | number | undefined) =>
-    Number(v || 0).toLocaleString("es-CL", { style: "currency", currency: "CLP", maximumFractionDigits: 0 })
-
 export const getPortfolioColumns = (onEdit: (c: CreditContact) => void): ColumnDef<CreditContact>[] => [
     {
         accessorKey: "name",
@@ -83,7 +80,11 @@ export const getPortfolioColumns = (onEdit: (c: CreditContact) => void): ColumnD
             const val = Number(aging.overdue_30) + Number(aging.overdue_60) + Number(aging.overdue_90) + Number(aging.overdue_90plus)
             return (
                 <div className="flex justify-center w-full">
-                    <div className={cn("text-center text-[12px] font-mono", val > 0 ? "text-destructive font-black" : "")}>{val > 0 ? fmt(val) : <span className="text-muted-foreground/30">—</span>}</div>
+                    {val > 0 ? (
+                        <DataCell.Currency value={val} className="text-destructive font-black" />
+                    ) : (
+                        <span className="text-muted-foreground/30">—</span>
+                    )}
                 </div>
             )
         },

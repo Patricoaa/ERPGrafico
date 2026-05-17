@@ -43,7 +43,7 @@ export function StatusBadge({
     variant = 'default',
     icon: Icon,
     tooltip,
-    size = 'md',
+    size = 'sm',
     className,
 }: StatusBadgeProps) {
     const { intent, label: resolvedLabel } = resolveStatus(status)

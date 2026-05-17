@@ -1,8 +1,8 @@
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
-import { StatusBadge } from "@/components/shared"
-import { Eye, CheckCircle2, ChevronDown } from "lucide-react"
+import { DataCell, StatusBadge } from "@/components/shared"
+import { CheckCircle2, ChevronDown } from "lucide-react"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { useState, useEffect, useId } from "react"
 import { Card } from "@/components/ui/card"
@@ -346,26 +346,17 @@ export function PhaseCard({
                                                 </Tooltip>
                                             ))}
 
-                                            <Tooltip>
-                                                <TooltipTrigger asChild>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className={cn("text-muted-foreground hover:text-primary hover:bg-primary/20 rounded", "h-7 w-7")}
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            e.preventDefault();
-                                                            if (!doc.disabled) onViewDetail?.(doc.docType, doc.id);
-                                                        }}
-                                                        disabled={doc.disabled}
-                                                    >
-                                                        <Eye className="h-3.5 w-3.5" />
-                                                    </Button>
-                                                </TooltipTrigger>
-                                                <TooltipContent>
-                                                    <p>Ver Detalles</p>
-                                                </TooltipContent>
-                                            </Tooltip>
+                                            <DataCell.Action
+                                                action="view"
+                                                title="Ver Detalles"
+                                                compact
+                                                disabled={doc.disabled}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    e.preventDefault();
+                                                    if (!doc.disabled) onViewDetail?.(doc.docType, doc.id);
+                                                }}
+                                            />
                                         </div>
                                     </div>
                                 ))

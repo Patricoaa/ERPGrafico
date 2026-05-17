@@ -6,17 +6,15 @@ import React, { useEffect, useState, useMemo } from "react"
 import { UseFormReturn } from "react-hook-form"
 import { ProductFormValues } from "./schema"
 import { Button } from "@/components/ui/button"
-import { Trash2, RefreshCw, Layers, Pencil, Wand2 } from "lucide-react"
+import { RefreshCw, Layers, Wand2 } from "lucide-react"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Label } from "@/components/ui/label"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table"
 import { cn } from "@/lib/utils"
-import { getErrorMessage } from "@/lib/errors"
 import { Product, ProductAttributeValue } from "@/types/entities"
 import { ProductInitialData } from "@/types/forms"
-import { FormSection, Chip } from "@/components/shared"
+import { DataCell, FormSection, Chip } from "@/components/shared"
 
 import { VariantQuickEditForm } from "./VariantQuickEditForm"
 import { BulkVariantEditForm } from "./BulkVariantEditForm"
@@ -433,26 +431,21 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                                                 )}
                                             </TableCell>
                                             <TableCell onClick={(e) => e.stopPropagation()}>
-                                                <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                    <Button
-                                                        type="button"
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="h-7 w-7 text-primary hover:bg-primary/10 hidden lg:flex"
-                                                        onClick={(e) => { e.stopPropagation(); onEditVariant?.(v); }}
-                                                        title="Edición Avanzada (Modal Completo)"
-                                                    >
-                                                        <Pencil className="h-3 w-3" />
-                                                    </Button>
-                                                    <Button
-                                                        type="button"
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="h-7 w-7 text-destructive hover:bg-destructive/10"
-                                                        onClick={(e) => handleDeleteVariant(v, e)}
-                                                    >
-                                                        <Trash2 className="h-3 w-3" />
-                                                    </Button>
+                                                <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <DataCell.ActionGroup>
+                                                        <DataCell.Action
+                                                            action="edit"
+                                                            title="Edición Avanzada (Modal Completo)"
+                                                            compact
+                                                            className="hidden lg:flex"
+                                                            onClick={(e) => { e.stopPropagation(); onEditVariant?.(v); }}
+                                                        />
+                                                        <DataCell.Action
+                                                            action="delete"
+                                                            compact
+                                                            onClick={(e) => handleDeleteVariant(v, e)}
+                                                        />
+                                                    </DataCell.ActionGroup>
                                                 </div>
                                             </TableCell>
                                         </TableRow>

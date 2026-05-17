@@ -162,6 +162,19 @@ export function DataTable<TData, TValue>({
 }: DataTableProps<TData, TValue>) {
     const isEmbedded = variant === 'embedded'
 
+    const containerRef = React.useRef<HTMLDivElement>(null)
+    const [isInModal, setIsInModal] = React.useState(false)
+
+    React.useEffect(() => {
+        if (containerRef.current) {
+            const hasDialogParent = !!containerRef.current.closest('[role="dialog"]') || 
+                                    !!containerRef.current.closest('.dialog') || 
+                                    !!containerRef.current.closest('[data-state*="open"]') ||
+                                    !!containerRef.current.closest('.modal');
+            setIsInModal(hasDialogParent)
+        }
+    }, [])
+
     // Uncontrolled mode: let TanStack Table manage sorting/filters/visibility/
     // expansion/selection state internally. Previous controlled-state wiring
     // triggered React 19's "state update on a component that hasn't mounted
@@ -345,10 +358,14 @@ export function DataTable<TData, TValue>({
 
 
         return (
-            <div className="relative space-y-1">
+            <div ref={containerRef} className="relative space-y-1">
                 {/* Toolbar Section (Outside) */}
                 {showToolbar && (
-                    <div className={cn("px-1", toolbarClassName)}>
+                    <div className={cn(
+                        "px-1",
+                        !isInModal && "sticky top-0 z-20 bg-transparent py-2",
+                        toolbarClassName
+                    )}>
                         <DataTableToolbar
                             table={table}
                             filterColumn={filterColumn}
@@ -373,7 +390,7 @@ export function DataTable<TData, TValue>({
                     </div>
                 )}
 
-                <div className="overflow-x-auto">
+                <div className={cn(renderCustomView ? "overflow-x-auto" : "overflow-visible")}>
                     {renderCustomView ? (
                         <div className="py-0">
                             {isLoading 
@@ -381,8 +398,10 @@ export function DataTable<TData, TValue>({
                                 : renderCustomView(table)}
                         </div>
                     ) : (
-                        <Table>
-                            <TableHeader className="bg-transparent">
+                        <Table containerClassName={cn(
+                            !isInModal && "max-h-[calc(100vh-260px)] overflow-y-auto custom-scrollbar"
+                        )}>
+                            <TableHeader className={cn(!isInModal ? "sticky top-0 bg-background z-10 shadow-sm border-b" : "bg-transparent")}>
                                 {table.getHeaderGroups().map((headerGroup) => (
                                     <TableRow
                                         key={headerGroup.id}
@@ -430,9 +449,12 @@ export function DataTable<TData, TValue>({
 
     // ─── Classic Mode (unchanged) ─────────────────────────────────────────────
     return (
-        <div className="space-y-4">
+        <div ref={containerRef} className="space-y-4">
             {showToolbar && (
-                <div className={toolbarClassName}>
+                <div className={cn(
+                    !isInModal && "sticky top-0 z-20 bg-transparent py-2",
+                    toolbarClassName
+                )}>
                     <DataTableToolbar
                         table={table}
                         filterColumn={filterColumn}
@@ -462,8 +484,10 @@ export function DataTable<TData, TValue>({
                     : renderCustomView(table)
             ) : (
                 <div className={cn(!noBorder && "rounded-md border")}>
-                    <Table>
-                        <TableHeader className="bg-muted/30">
+                    <Table containerClassName={cn(
+                        !isInModal && "max-h-[calc(100vh-260px)] overflow-y-auto custom-scrollbar"
+                    )}>
+                        <TableHeader className={cn(!isInModal ? "sticky top-0 bg-background z-10 shadow-sm border-b" : "bg-muted/30")}>
                             {table.getHeaderGroups().map((headerGroup) => (
                                 <TableRow key={headerGroup.id}>
                                     {headerGroup.headers.map((header) => {

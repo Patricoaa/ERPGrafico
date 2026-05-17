@@ -616,7 +616,7 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
                 if (type === 'purchase') label = 'purchasing.purchaseorder';
                 else if (type === 'work_order') label = 'production.workorder';
 
-                return <DataCell.DocumentId label={label} data={row.original} />;
+                return <DataCell.Entity label={label} data={row.original} />;
             },
         },
         ...(type !== 'work_order' ? [
@@ -814,7 +814,7 @@ function CreditLedgerTable({ data, loading, onActionSuccess }: { data: Order[], 
         {
             accessorKey: "number",
             header: "Número",
-            cell: ({ row }) => <DataCell.DocumentId label="sales.saleorder" data={row.original} />,
+            cell: ({ row }) => <DataCell.Entity label="sales.saleorder" data={row.original} />,
         },
         {
             accessorKey: "balance",

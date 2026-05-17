@@ -1,8 +1,7 @@
 "use client"
 
-import { useState, useCallback, useMemo } from "react"
+import { useCallback, useMemo } from "react"
 import { CreditContact, CreditHistoryEntry } from '@/features/credits/api/creditsApi'
-
 import CreditAssignmentModal from "./CreditAssignmentModal"
 import { DataTable } from '@/components/shared'
 import { PortfolioKpiGrid } from "./PortfolioKpiGrid"
@@ -11,6 +10,8 @@ import { getPortfolioColumns, historyColumns } from "./PortfolioColumns"
 import { SmartSearchBar, useClientSearch } from "@/components/shared"
 import { creditContactSearchDef, creditHistorySearchDef } from "../searchDef"
 import { useCreditPortfolio, useCreditHistory } from "../hooks/useCredits"
+import { useSelectedEntity } from "@/hooks/useSelectedEntity"
+import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
 
 const EMPTY_CONTACTS: CreditContact[] = []
 const EMPTY_HISTORY: CreditHistoryEntry[] = []
@@ -27,13 +28,14 @@ export function CreditPortfolioView({
     const { data, contacts: rawContacts, isLoading, refetch } = useCreditPortfolio()
     const { data: rawHistory, isLoading: loadingHistory } = useCreditHistory()
 
-    const [assignmentModalOpen, setAssignmentModalOpen] = useState(false)
-    const [editingContact, setEditingContact] = useState<CreditContact | null>(null)
+    // ADR-0020: edit modal opens via ?selected={contactId}
+    const { entity: selectedContact, isLoading: isLoadingSelected, clearSelection } =
+        useSelectedEntity<CreditContact>({ endpoint: '/contacts' })
+    const { openSelected } = useEntityRouteActions()
 
     const handleEditLimit = useCallback((contact: CreditContact) => {
-        setEditingContact(contact)
-        setAssignmentModalOpen(true)
-    }, [])
+        openSelected(contact.id)
+    }, [openSelected])
 
     const portfolioCols = useMemo(() => getPortfolioColumns(handleEditLimit), [handleEditLimit])
 
@@ -51,19 +53,15 @@ export function CreditPortfolioView({
 
     const handleModalSuccess = useCallback(async () => {
         await refetch()
-        setAssignmentModalOpen(false)
-        setEditingContact(null)
-    }, [refetch])
+        clearSelection()
+    }, [refetch, clearSelection])
 
     return (
         <div className="space-y-6">
             <CreditAssignmentModal
-                open={assignmentModalOpen || externalOpen}
-                onOpenChange={(open) => {
-                    setAssignmentModalOpen(open)
-                    if (!open) setEditingContact(null)
-                }}
-                contact={editingContact}
+                open={!!selectedContact || isLoadingSelected || externalOpen}
+                onOpenChange={(open) => { if (!open) clearSelection() }}
+                contact={selectedContact}
                 onSuccess={handleModalSuccess}
             />
 

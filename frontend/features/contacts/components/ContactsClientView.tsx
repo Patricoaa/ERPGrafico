@@ -12,7 +12,6 @@ import { useContacts, type Contact } from "@/features/contacts"
 import { LoadingFallback, SmartSearchBar, StatusBadge, useSmartSearch } from "@/components/shared"
 import { contactSearchDef } from "@/features/contacts/searchDef"
 import type { ContactFilters } from "@/features/contacts/types"
-import { cn } from "@/lib/utils"
 import { formatCurrency } from "@/lib/money"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { formatEntityDisplay } from "@/lib/entity-registry"
@@ -98,7 +97,15 @@ export function ContactsClientView({ isNewModalOpen = false, createAction }: Con
         {
             accessorKey: "display_id",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Código" className="justify-center" />,
-            cell: ({ row }) => <div className="flex justify-center w-full"><DataCell.Code className="font-semibold">{formatEntityDisplay('contacts.contact', row.original)}</DataCell.Code></div>,
+            cell: ({ row }) => <div className="flex justify-center w-full"><DataCell.Code >{formatEntityDisplay('contacts.contact', row.original)}</DataCell.Code></div>,
+        },
+        {
+            accessorKey: "tax_id",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="RUT / Identificación" className="justify-center" />,
+            cell: ({ row }) => {
+                const taxId = row.getValue("tax_id") as string | null
+                return <div className="flex justify-center w-full"><DataCell.Text>{taxId ? formatRUT(taxId) : 'S/Rut'}</DataCell.Text></div>
+            },
         },
         {
             accessorKey: "name",
@@ -162,14 +169,7 @@ export function ContactsClientView({ isNewModalOpen = false, createAction }: Con
                 )
             },
         },
-        {
-            accessorKey: "tax_id",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="RUT / Identificación" className="justify-center" />,
-            cell: ({ row }) => {
-                const taxId = row.getValue("tax_id") as string | null
-                return <div className="flex justify-center w-full"><DataCell.Code>{taxId ? formatRUT(taxId) : 'S/Rut'}</DataCell.Code></div>
-            },
-        },
+
         {
             accessorKey: "contact_type",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Tipo" className="justify-center" />,
@@ -178,12 +178,13 @@ export function ContactsClientView({ isNewModalOpen = false, createAction }: Con
         {
             accessorKey: "email",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Email" className="justify-center" />,
-            cell: ({ row }) => <DataCell.Text className="font-normal lowercase">{row.getValue("email") || "-"}</DataCell.Text>,
+            cell: ({ row }) => <DataCell.Text className="lowercase">{row.getValue("email") || "-"}</DataCell.Text>,
         },
         {
             accessorKey: "phone",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Teléfono" className="justify-center" />,
-            cell: ({ row }) => <DataCell.Code>{row.getValue("phone") || "-"}</DataCell.Code>,
+            cell: ({ row }) => <DataCell.Text
+            >{row.getValue("phone") || "-"}</DataCell.Text>,
         },
         createActionsColumn<Contact>({
             renderActions: (contact) => (

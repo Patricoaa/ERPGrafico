@@ -42,6 +42,22 @@ export function CollapsibleSheet({
     const { registerSheet, unregisterSheet, getSheetOffset, isSheetCollapsed, getSheetIndex } = useGlobalModals()
     const [isMounted, setIsMounted] = useState(false)
 
+    // Track other global panels to calculate correct 'right' position dynamically
+    const [globalPanelStates, setGlobalPanelStates] = useState({ hub: false, inbox: false })
+    useEffect(() => {
+        if (typeof window === 'undefined') return
+        const updateStates = () => {
+            setGlobalPanelStates({
+                hub: document.body.hasAttribute('data-hub-open'),
+                inbox: document.body.hasAttribute('data-inbox-open')
+            })
+        }
+        updateStates()
+        const observer = new MutationObserver(updateStates)
+        observer.observe(document.body, { attributes: true, attributeFilter: ['data-hub-open', 'data-inbox-open'] })
+        return () => observer.disconnect()
+    }, [])
+
     // Map named sizes to pixel widths
     const sizeMap: Record<string, number> = {
         sm: 442,
@@ -70,6 +86,24 @@ export function CollapsibleSheet({
     const isCollapsed = isSheetCollapsed(sheetId)
     const offset = getSheetOffset(sheetId)
     const stackIndex = getSheetIndex(sheetId)
+
+    // Sync body attribute for stage repulsion in DashboardShell
+    useEffect(() => {
+        if (open && !isCollapsed) {
+            document.body.setAttribute('data-side-panel-width', String(calculatedWidth))
+        } else {
+            const currentWidth = document.body.getAttribute('data-side-panel-width')
+            if (currentWidth === String(calculatedWidth)) {
+                document.body.removeAttribute('data-side-panel-width')
+            }
+        }
+        return () => {
+            const currentWidth = document.body.getAttribute('data-side-panel-width')
+            if (currentWidth === String(calculatedWidth)) {
+                document.body.removeAttribute('data-side-panel-width')
+            }
+        }
+    }, [open, isCollapsed, calculatedWidth])
     
     // PERF-07: DOM Pruning Engine
     // Detaches the subtree from CSS layout calculations without unmounting React instances immediately.
@@ -128,6 +162,7 @@ export function CollapsibleSheet({
             onFocusOutside={(e) => e.preventDefault()}
             onInteractOutside={(e) => e.preventDefault()}
             style={{
+                right: `calc(1rem + ${(globalPanelStates.inbox ? 320 : 0) + (globalPanelStates.hub ? 360 : 0)}px + ${((globalPanelStates.inbox ? 1 : 0) + (globalPanelStates.hub ? 1 : 0)) * 16}px)`,
                 transform: (!open || isCollapsed) ? `translateX(calc(100% - ${offset}px))` : 'translateX(0)',
                 zIndex: 40 + (!open || isCollapsed ? 0 : 5), // Below action modals (z-50) but above page content
                 // width and right are now handled by the .right-0 Repulsion System in globals.css
@@ -135,7 +170,7 @@ export function CollapsibleSheet({
                 // If full size, use 100vw but keep offset for layering if needed
                 maxWidth: size === "full" ? '100vw' : calculatedWidth,
                 width: size === "full" ? '100vw' : calculatedWidth,
-                transition: (!open && !isCollapsed) ? 'none' : 'transform 500ms cubic-bezier(0.16, 1, 0.3, 1), margin-right 500ms cubic-bezier(0.16, 1, 0.3, 1), width 500ms cubic-bezier(0.16, 1, 0.3, 1)'
+                transition: (!open && !isCollapsed) ? 'none' : 'transform 500ms cubic-bezier(0.16, 1, 0.3, 1), right 500ms cubic-bezier(0.16, 1, 0.3, 1), width 500ms cubic-bezier(0.16, 1, 0.3, 1)'
             }}
         >
             <SheetTitle className="sr-only">{tabLabel}</SheetTitle>

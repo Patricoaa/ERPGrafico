@@ -101,6 +101,7 @@ export * from './FormLineItemsTable';
 
 export * from './EntityCard'
 export * from './DomainCard'
+export * from './CardActions'
 export * from './ExpandableTableRow'
 
 // ─── Migrated from components/ui — GOVERNANCE rule 21 compliance ─────────────

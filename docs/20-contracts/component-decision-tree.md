@@ -26,6 +26,31 @@ graph TD
 - **`ActionConfirmModal`**: Úsalo siempre que requieras que el usuario confirme una acción antes de ejecutar una llamada asíncrona (conecta con `onConfirm` para manejar estados de carga).
 - **`BaseModal`**: Es la primitiva. Nunca uses `Dialog` de shadcn directamente, siempre envuelve en `BaseModal` para garantizar el layout con `ScrollArea` y el footer estándar.
 
+## 1.5 Acciones de Fila y Tarjeta (Row & Card Actions)
+
+> 📄 Contrato completo en **[component-row-actions.md](./component-row-actions.md)**.
+
+Cualquier acción CRUD que aparezca en una fila de `DataTable`, en el footer de una `EntityCard` o en una tarjeta de Kanban DEBE provenir del registry cerrado **`ROW_ACTIONS`** (`@/lib/row-actions`) y renderizarse con uno de los componentes oficiales — nunca con `<Button>` o `<Popover>` hechos a mano.
+
+```mermaid
+graph TD
+    A["¿Dónde renderizo la acción?"]
+    A -->|"Fila de DataTable"| B["createActionsColumn + DataCell.Action / DataCell.ActionMenu"]
+    A -->|"Footer de EntityCard / tarjeta Kanban"| C["CardActions + CardActions.Item / CardActions.Menu"]
+    B --> D{"¿Cuántas acciones?"}
+    C --> D
+    D -->|"1–3"| E["Todas inline (action='<key>')"]
+    D -->|"4"| F["3 inline + 1 en kebab — o 4 inline si hay espacio"]
+    D -->|"5+"| G["2 read + edit inline · resto en DataCell.ActionMenu / CardActions.Menu"]
+```
+
+- **Forma preferida:** `<DataCell.Action action="edit" onClick={…} />` — icono, tooltip y color salen del registry.
+- **Acciones específicas del módulo (no CRUD):** mismo componente, pasando `icon` + `title` propios — se conservan tamaño (h-7 w-7), tooltip (delay 400ms, paleta sidebar) y `CropFrame`.
+- **Apertura de modales / sheets vía URL:** usa el hook **`useEntityRouteActions`** (`?selected` edit · `?detail` TransactionViewModal · `?hub` CollapsibleSheet). Nunca uses `?id`, `?edit`, `?modal`, y reserva `?view` exclusivamente para el switch de viewMode.
+- **Orden canónico (siempre):** `view → detail → hub → edit → duplicate → pay → deliver → receive → download → print → share → archive → restore → lock/unlock → annul → delete`. `annul` y `delete` siempre al final, en ese orden.
+- **`annul` vs `delete`:** `annul` para documentos transaccionales (factura, OV, pago — preserva el registro para auditoría); `delete` para masters/config (categoría, almacén — borra el registro). Ambas son destructivas.
+- **Confirmación destructiva obligatoria:** `annul` y `delete` SIEMPRE abren `ActionConfirmModal` con `variant="destructive"`. Nunca destruyen directo.
+
 ## 2. Presentación de Datos y Contenedores
 
 ```mermaid
@@ -39,16 +64,12 @@ graph TD
     A -->|Reporte jerárquico contable| G(ReportTable)
 ```
 
-- **`MoneyDisplay`**: **Obligatorio** para montos. Nunca uses `Number.prototype.toLocaleString()` en bruto.
 - **`StatusBadge`**: **Obligatorio** para el estado de las entidades (ej. `in_production`, `paid`). Lee `state-map.md`.
-- **`Card` de shadcn**: Contenedor estándar. [Ver documentación oficial (component-card.md)](./component-card.md). Nunca uses wrappers propietarios y está **estrictamente prohibido** emular tarjetas usando clases utilitarias crudas (ej. `<div className={FORM_STYLES.card}>`). Usa siempre `<Card variant="...">`.
+- **`Card` de shadcn**: Contenedor estándar. [Ver documentación oficial (component-card.md)](./component-card.md).
 
 ## 3. Inputs y Formularios
 
 **Regla de entrada:** Para cualquier campo de texto o textarea simple, usa `LabeledInput`. Para casos complejos de negocio, usa las especializaciones.
-
-> [!WARNING]
-> `FORM_STYLES.label` y `FORM_STYLES.input` están **deprecated**. No usarlos en código nuevo.
 
 ```mermaid
 graph TD

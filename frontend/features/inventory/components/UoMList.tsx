@@ -2,13 +2,13 @@
 
 import { showApiError } from "@/lib/errors"
 
-import React, { useState, useMemo } from "react"
+import React, { useMemo } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { DataTable } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Pencil, Trash2 } from "lucide-react"
+import { Trash2 } from "lucide-react"
 import { DataCell, createActionsColumn } from '@/components/shared'
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import type { BulkAction } from "@/components/shared"
@@ -17,6 +17,8 @@ import { UoMForm } from "./UoMForm"
 import { toast } from "sonner"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+import { useSelectedEntity } from "@/hooks/useSelectedEntity"
+import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
 
 import { useUoMs, type UoM } from "@/features/inventory/hooks/useUoMs"
 import { SmartSearchBar, useSmartSearch } from "@/components/shared"
@@ -32,16 +34,17 @@ export function UoMList({ externalOpen, onExternalOpenChange, createAction }: Uo
     const { filters } = useSmartSearch(uomSearchDef)
     const { uoms, isLoading, refetch, deleteUoM } = useUoMs(filters)
 
-    const [isUoMModalOpen, setIsUoMModalOpen] = useState(false)
-    const [editingUoM, setEditingUoM] = useState<Partial<UoM>>({})
-
     const router = useRouter()
     const pathname = usePathname()
     const searchParams = useSearchParams()
 
+    // ADR-0020: edit modal opens via ?selected={id}
+    const { entity: selectedUoM, isLoading: isLoadingSelected, clearSelection } =
+        useSelectedEntity<UoM>({ endpoint: '/inventory/uoms' })
+    const { openSelected } = useEntityRouteActions()
+
     const handleCloseModal = () => {
-        setIsUoMModalOpen(false)
-        setEditingUoM({})
+        clearSelection()
         onExternalOpenChange?.(false)
 
         if (externalOpen || searchParams.get("modal")) {
@@ -136,12 +139,12 @@ export function UoMList({ externalOpen, onExternalOpenChange, createAction }: Uo
         createActionsColumn<UoM>({
             renderActions: (item) => (
                 <>
-                    <DataCell.Action icon={Pencil} title="Editar" onClick={() => { setEditingUoM(item); setIsUoMModalOpen(true) }} />
-                    <DataCell.Action icon={Trash2} title="Eliminar" className="text-destructive" onClick={() => handleDelete(item.id)} />
+                    <DataCell.Action action="edit"   onClick={() => openSelected(item.id)} />
+                    <DataCell.Action action="delete" onClick={() => handleDelete(item.id)} />
                 </>
             ),
         }),
-    ], [handleDelete])
+    ], [handleDelete, openSelected])
 
     const bulkActions = useMemo<BulkAction<UoM>[]>(() => [
         {
@@ -174,17 +177,12 @@ export function UoMList({ externalOpen, onExternalOpenChange, createAction }: Uo
                 createAction={createAction}
             />
 
-            {/* Unified Modal — UoMForm keeps rich FK + audit widgets for both create and edit */}
+            {/* Unified Modal — UoMForm keeps rich FK + audit widgets for both create and edit.
+                Edit mode driven by ?selected={id} (ADR-0020); create mode driven by externalOpen. */}
             <UoMForm
-                open={isUoMModalOpen || !!externalOpen}
-                onOpenChange={(open) => {
-                    if (!open) {
-                        handleCloseModal()
-                    } else {
-                        setIsUoMModalOpen(true)
-                    }
-                }}
-                initialData={editingUoM.id ? editingUoM : undefined}
+                open={!!selectedUoM || isLoadingSelected || !!externalOpen}
+                onOpenChange={(open) => { if (!open) handleCloseModal() }}
+                initialData={selectedUoM ?? undefined}
                 onSuccess={() => { refetch(); handleCloseModal() }}
             />
 
