@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { BaseModal } from "@/components/shared/BaseModal"
+import { Hash } from "lucide-react"
 import {
     Form,
     FormControl,
@@ -74,6 +75,7 @@ export function TransactionNumberForm({
             open={open}
             onOpenChange={onOpenChange}
             size="xs"
+            icon={Hash}
             title="Registrar N° de Transacción"
             description="Ingrese el número de comprobante o transacción bancaria."
             footer={

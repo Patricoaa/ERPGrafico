@@ -123,9 +123,10 @@ Un dominio agrupa campos conceptualmente relacionados. Ejemplos:
 <BaseModal
     open={open}
     onOpenChange={onOpenChange}
+    icon={Tag}
     title="Ficha de Entidad"
     size="xl"
-    headerClassName="sr-only"     // Ocultar header de BaseModal
+    variant="form-tabs"           // Estandarizado para pestañas dinámicas
     hideScrollArea={true}         // FormTabs maneja su propio scroll
     allowOverflow={true}          // Permitir que el riel sobresalga
     contentClassName="p-0"
@@ -364,7 +365,6 @@ Todo formulario debe declarar explícitamente su estrategia de guardado. Hay tre
 // Panel singleton: mínimo viable
 const { status, invalidReason, lastSavedAt, retry } = useAutoSaveForm({
     form,
-    watchedFields: ["field1", "field2"],
     onSave: async (values) => {
         await api.patch("/settings/current/", values)
     },
@@ -375,7 +375,6 @@ const { status, invalidReason, lastSavedAt, retry } = useAutoSaveForm({
 // Con validación cruzada (gating semántico)
 const { status, invalidReason } = useAutoSaveForm({
     form,
-    watchedFields: ["weight_a", "weight_b", "weight_c"],
     onSave: async (values) => { /* ... */ },
     validate: (v) =>
         sumWeights(v) === 100 || "Los pesos deben sumar 100 % — los cambios no se guardarán hasta corregir",

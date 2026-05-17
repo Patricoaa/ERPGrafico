@@ -75,7 +75,7 @@ export function TreasurySettingsView({ activeTab = "conciliation" }: TreasurySet
                 <form className="space-y-6">
                     {activeTab === "conciliation" && (
                         <div className="m-0 p-0 border-0 outline-none mt-6">
-                            <Card className="rounded-md border-2">
+                            <Card variant="transparent" className="border-2">
                                 <CardHeader className="pb-4">
                                     <div className="flex items-center gap-2">
                                         <ArrowLeftRight className="h-4 w-4 text-primary opacity-50" />
@@ -99,7 +99,7 @@ export function TreasurySettingsView({ activeTab = "conciliation" }: TreasurySet
 
                     {activeTab === "audit" && (
                         <div className="m-0 p-0 border-0 outline-none mt-6">
-                            <Card className="rounded-md border-2">
+                            <Card variant="transparent" className="border-2">
                                 <CardHeader className="pb-4">
                                     <div className="flex items-center gap-2">
                                         <Banknote className="h-4 w-4 text-primary opacity-50" />
@@ -119,7 +119,7 @@ export function TreasurySettingsView({ activeTab = "conciliation" }: TreasurySet
 
                     {activeTab === "movements" && (
                         <div className="m-0 p-0 border-0 outline-none mt-6">
-                            <Card className="rounded-md border-2">
+                            <Card variant="transparent" className="border-2">
                                 <CardHeader className="pb-4">
                                     <div className="flex items-center gap-2">
                                         <Settings2 className="h-4 w-4 text-primary opacity-50" />

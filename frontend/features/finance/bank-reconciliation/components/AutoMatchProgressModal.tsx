@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useCallback } from "react"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
-import { Chip } from "@/components/shared"
+import { Chip, FormFooter, CancelButton } from "@/components/shared"
 import { CheckCircle2, Loader2, XCircle, Zap } from "lucide-react"
 import { cn } from "@/lib/utils"
 import api from "@/lib/api"
@@ -140,24 +140,23 @@ export function AutoMatchProgressModal({
         <BaseModal
             open={open}
             onOpenChange={handleClose}
+            icon={Zap}
             title="Auto-Match Inteligente"
             description="El sistema está analizando y conciliando líneas de cartola automáticamente."
             footer={
-                <div className="flex justify-end w-full">
-                    {isDone ? (
-                        <Button onClick={() => handleClose(false)}>
-                            Cerrar
-                        </Button>
-                    ) : (
-                        <Button
-                            variant="outline"
-                            onClick={() => handleClose(false)}
-                            className="text-muted-foreground"
-                        >
-                            Cancelar
-                        </Button>
-                    )}
-                </div>
+                <FormFooter
+                    actions={
+                        isDone ? (
+                            <Button onClick={() => handleClose(false)}>
+                                Cerrar
+                            </Button>
+                        ) : (
+                            <CancelButton onClick={() => handleClose(false)}>
+                                Cancelar
+                            </CancelButton>
+                        )
+                    }
+                />
             }
         >
             <div className="space-y-6 py-4">

@@ -966,14 +966,7 @@ Botón expansible para acciones secundarias.
 
 ## ActionSlideButton 🟢
 
-Botón con animación de deslizamiento para revelar acciones adicionales. Ideal para procesos primarios con alta carga kinética.
-
-| prop | type | required | default | notes |
-|------|------|----------|---------|-------|
-| `children` | `ReactNode` | ✅ | — | Texto del botón |
-| `icon` | `LucideIcon` | ❌ | — | Icono opcional a la izquierda |
-| `variant` | `'primary' \| 'destructive' \| 'success'` | ❌ | `'primary'` | |
-| `loading` | `boolean` | ❌ | `false` | Muestra spinner y deshabilita |
+> 📄 Ver **[component-button.md](./component-button.md#actionslidebutton--premium-kinetic-button)**.
 
 ---
 

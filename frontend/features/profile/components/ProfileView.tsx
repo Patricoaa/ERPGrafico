@@ -62,10 +62,11 @@ type PinFormValues = z.infer<typeof pinSchema>
 
 interface ProfileViewProps {
     activeTab: string
+    activeSubTab?: string
     initialProfile?: MyProfile
 }
 
-export function ProfileView({ activeTab, initialProfile }: ProfileViewProps) {
+export function ProfileView({ activeTab, activeSubTab = "employee", initialProfile }: ProfileViewProps) {
     const router = useRouter()
     const [profile, setProfile] = useState<MyProfile | null>(initialProfile || null)
     const [loading, setLoading] = useState(!initialProfile)
@@ -136,6 +137,7 @@ export function ProfileView({ activeTab, initialProfile }: ProfileViewProps) {
                         onSelectedPayrollsChange={setSelectedPayrolls}
                         onBulkDownload={handleBulkDownload}
                         downloadingAll={downloadingAll}
+                        activeSubTab={activeSubTab}
                     />
                 </TabsContent>
 
@@ -218,8 +220,8 @@ function PasswordChangeCard() {
     }
 
     return (
-        <Card className="border shadow-sm overflow-hidden">
-            <div className="px-6 py-4 border-b bg-muted/30">
+        <Card variant="transparent" className="border-2 overflow-hidden">
+            <div className="px-4 py-3 border-b bg-transparent">
                 <div className="flex items-center gap-3">
                     <KeyRound className="h-5 w-5" />
                     <div>
@@ -287,12 +289,14 @@ function PersonalTab({
     onSelectedPayrollsChange,
     onBulkDownload,
     downloadingAll,
+    activeSubTab = "employee"
 }: {
     profile: MyProfile
     selectedPayrolls: number[]
     onSelectedPayrollsChange: (ids: number[]) => void
     onBulkDownload: () => void
     downloadingAll: boolean
+    activeSubTab?: string
 }) {
     const router = useRouter()
     const { employee, payrolls, advances, payments } = profile
@@ -433,7 +437,7 @@ function PersonalTab({
                 const s = row.original.remuneration_paid_status
                 return (
                     <div className="flex justify-center">
-                        <StatusBadge status={s} />
+                        <StatusBadge status={s || "PENDING"} />
                     </div>
                 )
             }
@@ -507,155 +511,195 @@ function PersonalTab({
 
     return (
         <div className="w-full">
-            <Accordion type="multiple" defaultValue={["employee", "payrolls", "payments"]} className="w-full space-y-6">
+            {/* Sub-tab 1: Ficha de Empleado */}
+            {activeSubTab === "employee" && (
+                <motion.div initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.4 }}>
+                    <Card variant="transparent" className="border-2 overflow-hidden">
+                        <div className="px-4 py-3 border-b bg-transparent">
+                            <div className="flex items-center gap-3">
+                                <BadgeCheck className="h-5 w-5 text-primary" />
+                                <div>
+                                    <h3 className="text-sm font-bold tracking-tight">Ficha de Empleado</h3>
+                                    <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-normal">
+                                        {employee.display_id} <span className="opacity-30">|</span> {employee.status_display}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <CardContent className="p-6">
+                            {/* Contact Info */}
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <InfoField icon={<User className="h-3.5 w-3.5" />} label="Nombre" value={contact?.name || "—"} />
+                                <InfoField icon={<FileText className="h-3.5 w-3.5" />} label="RUT" value={contact?.tax_id || "—"} />
+                                <InfoField icon={<Mail className="h-3.5 w-3.5" />} label="Email" value={contact?.email || "—"} />
+                            </div>
 
-                {/* Employee Card */}
-                <AccordionItem value="employee" className="border-none">
-                    <motion.div initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.4 }}>
-                        <Card className="border shadow-sm overflow-hidden">
-                            <AccordionTrigger className="hover:no-underline px-6 py-4 border-b bg-muted/30 [&[data-state=open]>div>svg]:rotate-180">
+                            {/* Section: Employment Data */}
+                            <div className="flex items-center gap-2 pt-6 pb-2">
+                                <div className="flex-1 h-px bg-border" />
+                                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">
+                                    Información Laboral
+                                </span>
+                                <div className="flex-1 h-px bg-border" />
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6 pt-2">
+                                <InfoField icon={<Briefcase className="h-3.5 w-3.5" />} label="Cargo" value={employee.position || "—"} />
+                                <InfoField icon={<Building2 className="h-3.5 w-3.5" />} label="Departamento" value={employee.department || "—"} />
+                                <InfoField icon={<Calendar className="h-3.5 w-3.5" />} label="Fecha Ingreso" value={employee.start_date ? formatPlainDate(employee.start_date) : "—"} />
+                                <InfoField icon={<FileText className="h-3.5 w-3.5" />} label="Contrato" value={employee.contract_type_display || "—"} />
+                            </div>
+
+                            {/* Previsional */}
+                            <div className="flex items-center gap-2 pt-6 pb-2">
+                                <div className="flex-1 h-px bg-border" />
+                                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">
+                                    Información Previsional
+                                </span>
+                                <div className="flex-1 h-px bg-border" />
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6 pt-2">
+                                <InfoField icon={<ShieldCheck className="h-3.5 w-3.5" />} label="AFP" value={employee.afp_detail?.name || "—"} />
+                                <InfoField icon={<ShieldCheck className="h-3.5 w-3.5" />} label="Sistema Salud" value={employee.salud_type_display || "—"} />
+                                <div className="space-y-1.5">
+                                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Sueldo Base</span>
+                                    <div className="flex items-center gap-2 h-10 px-3 rounded-sm border bg-muted/20 text-sm font-bold text-foreground">
+                                        <CreditCard className="h-3.5 w-3.5 text-muted-foreground" />
+                                        <MoneyDisplay amount={parseFloat(employee.base_salary || "0")} />
+                                    </div>
+                                </div>
+                                <InfoField icon={<Clock className="h-3.5 w-3.5" />} label="Jornada" value={employee.jornada_type_display || "—"} />
+                            </div>
+                        </CardContent>
+                    </Card>
+                </motion.div>
+            )}
+
+            {/* Sub-tab 2: Liquidaciones */}
+            {activeSubTab === "payrolls" && (
+                <motion.div initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.4, delay: 0.1 }}>
+                    <Card variant="transparent" className="border-2 overflow-hidden">
+                        <div className="px-4 py-3 border-b bg-transparent">
+                            <div className="flex items-center justify-between w-full">
                                 <div className="flex items-center gap-3">
-                                    <BadgeCheck className="h-5 w-5" />
-                                    <div className="text-left">
-                                        <h3 className="text-sm font-bold tracking-tight">Ficha de Empleado</h3>
+                                    <FileText className="h-5 w-5 text-primary" />
+                                    <div>
+                                        <h3 className="text-sm font-bold tracking-tight">Historial de Liquidaciones</h3>
                                         <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-normal">
-                                            {employee.display_id} <span className="opacity-30">|</span> {employee.status_display}
+                                            {payrolls.length} liquidación(es) registrada(s)
                                         </p>
                                     </div>
                                 </div>
-                            </AccordionTrigger>
-                            <AccordionContent className="p-0 border-t-0">
-                                <CardContent className="p-6">
-                                    {/* Contact Info */}
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                        <InfoField icon={<User className="h-3.5 w-3.5" />} label="Nombre" value={contact?.name || "—"} />
-                                        <InfoField icon={<FileText className="h-3.5 w-3.5" />} label="RUT" value={contact?.tax_id || "—"} />
-                                        <InfoField icon={<Mail className="h-3.5 w-3.5" />} label="Email" value={contact?.email || "—"} />
-                                    </div>
-
-                                    {/* Section: Employment Data */}
-                                    <div className="flex items-center gap-2 pt-6 pb-2">
-                                        <div className="flex-1 h-px bg-border" />
-                                        <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">
-                                            Información Laboral
-                                        </span>
-                                        <div className="flex-1 h-px bg-border" />
-                                    </div>
-
-                                    <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6 pt-2">
-                                        <InfoField icon={<Briefcase className="h-3.5 w-3.5" />} label="Cargo" value={employee.position || "—"} />
-                                        <InfoField icon={<Building2 className="h-3.5 w-3.5" />} label="Departamento" value={employee.department || "—"} />
-                                        <InfoField icon={<Calendar className="h-3.5 w-3.5" />} label="Fecha Ingreso" value={employee.start_date ? formatPlainDate(employee.start_date) : "—"} />
-                                        <InfoField icon={<FileText className="h-3.5 w-3.5" />} label="Contrato" value={employee.contract_type_display || "—"} />
-                                    </div>
-
-                                    {/* Previsional */}
-                                    <div className="flex items-center gap-2 pt-6 pb-2">
-                                        <div className="flex-1 h-px bg-border" />
-                                        <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">
-                                            Información Previsional
-                                        </span>
-                                        <div className="flex-1 h-px bg-border" />
-                                    </div>
-
-                                    <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6 pt-2">
-                                        <InfoField icon={<ShieldCheck className="h-3.5 w-3.5" />} label="AFP" value={employee.afp_detail?.name || "—"} />
-                                        <InfoField icon={<ShieldCheck className="h-3.5 w-3.5" />} label="Sistema Salud" value={employee.salud_type_display || "—"} />
-                                        <div className="space-y-1.5">
-                                            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Sueldo Base</span>
-                                            <div className="flex items-center gap-2 h-10 px-3 rounded-sm border bg-muted/20 text-sm font-bold text-foreground">
-                                                <CreditCard className="h-3.5 w-3.5 text-muted-foreground" />
-                                                <MoneyDisplay amount={parseFloat(employee.base_salary || "0")} />
-                                            </div>
-                                        </div>
-                                        <InfoField icon={<Clock className="h-3.5 w-3.5" />} label="Jornada" value={employee.jornada_type_display || "—"} />
-                                    </div>
-                                </CardContent>
-                            </AccordionContent>
-                        </Card>
-                    </motion.div>
-                </AccordionItem>
-
-                <AccordionItem value="payrolls" className="border-none">
-                    <motion.div initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.4, delay: 0.1 }}>
-                        <Card className="border shadow-sm overflow-hidden">
-                            <AccordionTrigger className="hover:no-underline px-6 py-4 border-b bg-muted/30 [&[data-state=open]>div>svg]:rotate-180">
-                                <div className="flex items-center justify-between w-full">
-                                    <div className="flex items-center gap-3">
-                                        <FileText className="h-5 w-5" />
-                                        <div className="text-left">
-                                            <h3 className="text-sm font-bold tracking-tight">Historial de Liquidaciones</h3>
-                                            <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-normal">
-                                                {payrolls.length} liquidación(es) registrada(s)
-                                            </p>
-                                        </div>
-                                    </div>
+                            </div>
+                        </div>
+                        <CardContent className="p-0">
+                            {selectedPayrolls.length > 0 && (
+                                <div className="px-6 py-2 border-b bg-muted/10 flex justify-end">
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        className="gap-2 rounded-sm text-xs font-bold border-primary/30 text-primary hover:bg-primary/5"
+                                        onClick={onBulkDownload}
+                                        disabled={downloadingAll}
+                                    >
+                                        {downloadingAll ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+                                        Descargar {selectedPayrolls.length} seleccionada(s)
+                                    </Button>
                                 </div>
-                            </AccordionTrigger>
-                            <AccordionContent className="p-0 border-t-0">
-                                {selectedPayrolls.length > 0 && (
-                                    <div className="px-6 py-2 border-b bg-muted/10 flex justify-end">
-                                        <Button
-                                            size="sm"
-                                            variant="outline"
-                                            className="gap-2 rounded-sm text-xs font-bold border-primary/30 text-primary hover:bg-primary/5"
-                                            onClick={onBulkDownload}
-                                            disabled={downloadingAll}
-                                        >
-                                            {downloadingAll ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
-                                            Descargar {selectedPayrolls.length} seleccionada(s)
-                                        </Button>
-                                    </div>
-                                )}
-                                <div className="px-0">
-                                    {payrolls.length > 0 ? (
-                                        <DataTable
-                                            columns={payrollColumns}
-                                            data={payrolls}
-                                            searchPlaceholder="Buscar por folio..."
-                                            globalFilterFields={["display_id"]}
-                                            defaultPageSize={10}
-                                            variant="standalone"
-                                            noBorder={true}
-                                            useAdvancedFilter={true}
-                                            toolbarClassName="px-6 pt-6 pb-2 pl-14"
-                                            showToolbarSort={false}
-                                            facetedFilters={[{
-                                                column: "period_label",
-                                                title: "Período",
-                                                options: Array.from(new Set(payrolls.map(p => p.period_label))).map(label => ({ label, value: label }))
-                                            }]}
-                                            renderSubComponent={(row) => {
-                                                const relatedPayments = unifiedPayments.filter(p => p.payroll_display_id === row.original.display_id)
-                                                return (
-                                                    <div className="bg-muted/30 pb-4">
-                                                        <div className="max-h-[300px] overflow-y-auto custom-scrollbar border-t border-b">
-                                                            <DataTable
-                                                                columns={unifiedPaymentColumns}
-                                                                data={relatedPayments}
-                                                                noBorder={true}
-                                                                hidePagination={true}
-                                                                defaultPageSize={100}
-                                                            />
-                                                        </div>
+                            )}
+                            <div className="px-0">
+                                {payrolls.length > 0 ? (
+                                    <DataTable
+                                        columns={payrollColumns}
+                                        data={payrolls}
+                                        searchPlaceholder="Buscar por folio..."
+                                        globalFilterFields={["display_id"]}
+                                        defaultPageSize={10}
+                                        variant="standalone"
+                                        noBorder={true}
+                                        useAdvancedFilter={true}
+                                        toolbarClassName="px-6 pt-6 pb-2 pl-14"
+                                        showToolbarSort={false}
+                                        facetedFilters={[{
+                                            column: "period_label",
+                                            title: "Período",
+                                            options: Array.from(new Set(payrolls.map(p => p.period_label))).map(label => ({ label, value: label }))
+                                        }]}
+                                        renderSubComponent={(row) => {
+                                            const relatedPayments = unifiedPayments.filter(p => p.payroll_display_id === row.original.display_id)
+                                            return (
+                                                <div className="bg-muted/30 pb-4">
+                                                    <div className="max-h-[300px] overflow-y-auto custom-scrollbar border-t border-b">
+                                                        <DataTable
+                                                            columns={unifiedPaymentColumns}
+                                                            data={relatedPayments}
+                                                            noBorder={true}
+                                                            hidePagination={true}
+                                                            defaultPageSize={100}
+                                                        />
                                                     </div>
-                                                )
-                                            }}
-                                        />
-                                    ) : (
-                                        <EmptyState
-                                            context="generic"
-                                            icon={FileText}
-                                            title="No tiene liquidaciones"
-                                            description="Las liquidaciones contabilizadas aparecerán aquí una vez que sean emitidas."
-                                        />
-                                    )}
+                                                </div>
+                                            )
+                                        }}
+                                    />
+                                ) : (
+                                    <EmptyState
+                                        context="generic"
+                                        icon={FileText}
+                                        title="No tiene liquidaciones"
+                                        description="Las liquidaciones contabilizadas aparecerán aquí una vez que sean emitidas."
+                                    />
+                                )}
+                            </div>
+                        </CardContent>
+                    </Card>
+                </motion.div>
+            )}
+
+            {/* Sub-tab 3: Pagos */}
+            {activeSubTab === "payments" && (
+                <motion.div initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.4, delay: 0.2 }}>
+                    <Card variant="transparent" className="border-2 overflow-hidden">
+                        <div className="px-4 py-3 border-b bg-transparent">
+                            <div className="flex items-center gap-3">
+                                <CreditCard className="h-5 w-5 text-primary" />
+                                <div>
+                                    <h3 className="text-sm font-bold tracking-tight">Historial de Pagos y Anticipos</h3>
+                                    <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-normal">
+                                        {unifiedPayments.length} transacción(es) registrada(s)
+                                    </p>
                                 </div>
-                            </AccordionContent>
-                        </Card>
-                    </motion.div>
-                </AccordionItem>
-            </Accordion>
+                            </div>
+                        </div>
+                        <CardContent className="p-0">
+                            <div className="px-0">
+                                {unifiedPayments.length > 0 ? (
+                                    <DataTable
+                                        columns={unifiedPaymentColumns}
+                                        data={unifiedPayments}
+                                        searchPlaceholder="Buscar por tipo..."
+                                        globalFilterFields={["typeLabel"]}
+                                        defaultPageSize={10}
+                                        variant="standalone"
+                                        noBorder={true}
+                                        useAdvancedFilter={true}
+                                        toolbarClassName="px-6 pt-6 pb-2"
+                                        showToolbarSort={false}
+                                    />
+                                ) : (
+                                    <EmptyState
+                                        context="generic"
+                                        icon={CreditCard}
+                                        title="No tiene transacciones"
+                                        description="Los anticipos y pagos de remuneraciones aparecerán aquí una vez que sean procesados."
+                                    />
+                                )}
+                            </div>
+                        </CardContent>
+                    </Card>
+                </motion.div>
+            )}
 
             <EmployeePayrollPreview
                 payrollId={previewPayrollId}
@@ -692,8 +736,8 @@ function PinChangeCard() {
     }
 
     return (
-        <Card className="border shadow-sm overflow-hidden">
-            <div className="px-6 py-4 border-b bg-muted/30">
+        <Card variant="transparent" className="border-2 overflow-hidden">
+            <div className="px-4 py-3 border-b bg-transparent">
                 <div className="flex items-center gap-3">
                     <Wallet className="h-5 w-5" />
                     <div>

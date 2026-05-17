@@ -307,23 +307,9 @@ export function JournalEntryForm({
                 size={initialData ? "xl" : "lg"}
                 hideScrollArea={true}
                 contentClassName="p-0"
-                title={
-                    <div className="flex items-center gap-3">
-                        <BookOpen className="h-5 w-5 text-muted-foreground" />
-                        <span>{initialData ? "Editar Asiento" : "Nuevo Asiento Contable"}</span>
-                    </div>
-                }
-                description={
-                    <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                        {initialData?.reference && (
-                            <>
-                                <span>Ref: {initialData.reference}</span>
-                                <span className="opacity-30">|</span>
-                            </>
-                        )}
-                        <span>{form.watch("description") || "Registro manual de movimiento"}</span>
-                    </div>
-                }
+                icon={BookOpen}
+                title={initialData ? "Editar Asiento" : "Nuevo Asiento Contable"}
+                description={initialData?.reference ? `Ref: ${initialData.reference} • ${form.watch("description") || "Registro manual"}` : (form.watch("description") || "Registro manual de movimiento")}
                 footer={
                     <FormFooter
                         actions={

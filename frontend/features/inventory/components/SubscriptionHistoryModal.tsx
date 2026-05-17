@@ -135,8 +135,10 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                 hideScrollArea={true}
                 allowOverflow={true}
                 className="max-w-5xl"
-                headerClassName="sr-only"
-                title={`Historial de Suscripción: ${data?.product_name}`}
+                variant="form-tabs"
+                icon={History}
+                title="Historial de Suscripción"
+                description={data ? `${data.product_name} | ${data.supplier_name}` : undefined}
             >
                 <div className="flex flex-col h-full overflow-visible">
                     {loading ? (
@@ -152,21 +154,6 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                             value={activeTab}
                             onValueChange={setActiveTab}
                             orientation="vertical"
-                            header={
-                                <div className="p-6 pb-2 flex items-center justify-between">
-                                    <div className="flex items-center gap-3">
-                                        <History className="h-5 w-5 text-muted-foreground" />
-                                        <div>
-                                            <h2 className="text-xl font-bold">Historial de Suscripción</h2>
-                                            {data && (
-                                                <p className="text-sm text-muted-foreground font-medium">
-                                                    {data.product_name} | {data.supplier_name}
-                                                </p>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                            }
                             items={[
                                 { value: "historial", label: "Historial de Costos", icon: History },
                                 { value: "orders", label: "Órdenes de Compra (OCS)", icon: FileText },

@@ -304,20 +304,20 @@ export function AttributeManager({ externalOpen, createAction }: AttributeManage
                         setIsAttrModalOpen(true)
                     }
                 }}
-                title={
-                    <div className="flex items-center gap-3">
-                        <Tag className="h-5 w-5 text-muted-foreground" />
-                        <span>{selectedAttribute ? "Editar Atributo" : "Nuevo Atributo de Variante"}</span>
-                    </div>
-                }
+                icon={Tag}
+                title={selectedAttribute ? "Editar Atributo" : "Nuevo Atributo de Variante"}
                 description={selectedAttribute ? "Modifica el nombre o añade nuevos valores al atributo." : "Define un nuevo atributo para generar variaciones de producto (ej: Color, Talla)."}
                 footer={
-                    <div className="flex justify-end gap-2 w-full">
-                        <CancelButton onClick={handleCloseModal} disabled={isSaving} />
-                        <SubmitButton onClick={handleCreateAttribute} loading={isSaving}>
-                            {selectedAttribute ? "Guardar Cambios" : "Crear Atributo"}
-                        </SubmitButton>
-                    </div>
+                    <FormFooter
+                        actions={
+                            <>
+                                <CancelButton onClick={handleCloseModal} disabled={isSaving} />
+                                <SubmitButton onClick={handleCreateAttribute} loading={isSaving}>
+                                    {selectedAttribute ? "Guardar Cambios" : "Crear Atributo"}
+                                </SubmitButton>
+                            </>
+                        }
+                    />
                 }
                 hideScrollArea={true}
                 className={cn("transition-all duration-300", selectedAttribute?.id ? "sm:max-w-[1000px]" : "sm:max-w-[600px]")}
@@ -361,19 +361,19 @@ export function AttributeManager({ externalOpen, createAction }: AttributeManage
             <BaseModal
                 open={isValueModalOpen}
                 onOpenChange={setIsValueModalOpen}
-                title={
-                    <div className="flex items-center gap-3">
-                        <Plus className="h-5 w-5 text-muted-foreground" />
-                        <span>Añadir Valor a {selectedAttribute?.name}</span>
-                    </div>
-                }
+                icon={Plus}
+                title={selectedAttribute?.name ? `Añadir Valor a ${selectedAttribute.name}` : "Añadir Valor"}
                 footer={
-                    <div className="flex justify-end gap-2 w-full">
-                        <CancelButton onClick={() => setIsValueModalOpen(false)} disabled={isSaving} />
-                        <SubmitButton onClick={handleCreateValue} loading={isSaving}>
-                            Añadir Valor
-                        </SubmitButton>
-                    </div>
+                    <FormFooter
+                        actions={
+                            <>
+                                <CancelButton onClick={() => setIsValueModalOpen(false)} disabled={isSaving} />
+                                <SubmitButton onClick={handleCreateValue} loading={isSaving}>
+                                    Añadir Valor
+                                </SubmitButton>
+                            </>
+                        }
+                    />
                 }
             >
                 <div className="space-y-4 py-4">

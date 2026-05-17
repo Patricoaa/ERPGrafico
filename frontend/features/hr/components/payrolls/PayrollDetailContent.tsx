@@ -16,7 +16,7 @@ import {
 } from '@/features/hr/api/hrApi'
 import { getEmployeePayrollPreview } from '@/features/profile/api/profileApi'
 import { PaymentModal } from "@/features/treasury/components/PaymentModal"
-import type { PayrollItem, PayrollConcept } from "@/types/hr"
+import type { PayrollItem, PayrollConcept, PayrollPayment, SalaryAdvance } from "@/types/hr"
 import { Button } from "@/components/ui/button"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 
@@ -24,11 +24,8 @@ import { BaseModal } from "@/components/shared/BaseModal"
 import {
     Form, FormField
 } from "@/components/ui/form"
-import { LabeledInput, LabeledSelect } from "@/components/shared"
-import {
-    AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-    AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger
-} from "@/components/ui/alert-dialog"
+import { LabeledInput, LabeledSelect, FormFooter, CancelButton } from "@/components/shared"
+
 import {
     Loader2, BookOpen,
     DollarSign, ShieldCheck, Sparkles,
@@ -72,6 +69,7 @@ export function PayrollDetailContent({ payrollId, onClose, onUpdate, isSheet = f
     const [editingItem, setEditingItem] = useState<PayrollItem | null>(null)
     const [previredDialog, setPreviredDialog] = useState(false)
     const [salaryDialog, setSalaryDialog] = useState(false)
+    const [postConfirmOpen, setPostConfirmOpen] = useState(false)
 
     const { data: payrollData, isLoading: loading, refetch: fetchPayroll } = useQuery({
         queryKey: ['payroll', payrollId, viewMode],
@@ -169,18 +167,18 @@ export function PayrollDetailContent({ payrollId, onClose, onUpdate, isSheet = f
     )
 
     const isPosted = payroll.status === 'POSTED'
-    const salaroPaid = payments.some(p => p.payment_type === 'SALARIO')
-    const previredPaid = payments.some(p => p.payment_type === 'PREVIRED')
+    const salaroPaid = payments.some((p: PayrollPayment) => p.payment_type === 'SALARIO')
+    const previredPaid = payments.some((p: PayrollPayment) => p.payment_type === 'PREVIRED')
 
     const netSalary = parseFloat(payroll.net_salary || "0")
-    const totalAdvances = payroll.advances?.reduce((s, a) => s + parseFloat(a.amount), 0) || 0
-    const totalSalaryPaid = payments.filter(p => p.payment_type === 'SALARIO').reduce((s, p) => s + parseFloat(p.amount), 0)
+    const totalAdvances = payroll.advances?.reduce((s: number, a: SalaryAdvance) => s + parseFloat(a.amount), 0) || 0
+    const totalSalaryPaid = payments.filter((p: PayrollPayment) => p.payment_type === 'SALARIO').reduce((s: number, p: PayrollPayment) => s + parseFloat(p.amount), 0)
     const pendingSalary = Math.max(0, netSalary - totalAdvances - totalSalaryPaid)
 
-    const workerLegalDiscounts = payroll.items?.filter(i => i.concept_detail?.category === 'DESCUENTO_LEGAL_TRABAJADOR') || []
-    const employerContributions = payroll.items?.filter(i => i.concept_detail?.category === 'DESCUENTO_LEGAL_EMPLEADOR') || []
-    const totalPreviredRequired = (workerLegalDiscounts.reduce((s, i) => s + parseFloat(i.amount), 0)) + employerContributions.reduce((s, i) => s + parseFloat(i.amount), 0)
-    const totalPreviredPaid = payments.filter(p => p.payment_type === 'PREVIRED').reduce((s, p) => s + parseFloat(p.amount), 0)
+    const workerLegalDiscounts = payroll.items?.filter((i: PayrollItem) => i.concept_detail?.category === 'DESCUENTO_LEGAL_TRABAJADOR') || []
+    const employerContributions = payroll.items?.filter((i: PayrollItem) => i.concept_detail?.category === 'DESCUENTO_LEGAL_EMPLEADOR') || []
+    const totalPreviredRequired = (workerLegalDiscounts.reduce((s: number, i: PayrollItem) => s + parseFloat(i.amount), 0)) + employerContributions.reduce((s: number, i: PayrollItem) => s + parseFloat(i.amount), 0)
+    const totalPreviredPaid = payments.filter((p: PayrollPayment) => p.payment_type === 'PREVIRED').reduce((s: number, p: PayrollPayment) => s + parseFloat(p.amount), 0)
     const pendingPrevired = Math.max(0, totalPreviredRequired - totalPreviredPaid)
 
     return (
@@ -239,29 +237,15 @@ export function PayrollDetailContent({ payrollId, onClose, onUpdate, isSheet = f
                                 <span className="sm:hidden">Propuesta</span>
                             </Button>
 
-                            <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                    <Button size="sm" className="rounded-sm text-[10px] sm:text-xs font-bold gap-1.5 px-2 sm:px-4 h-8 sm:h-9 shadow-lg shadow-primary/20" disabled={posting}>
-                                        {posting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <BookOpen className="h-3.5 w-3.5" />}
-                                        Contabilizar
-                                    </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent className="rounded-lg border-none shadow-2xl">
-                                    <AlertDialogHeader>
-                                        <AlertDialogTitle className="text-xl font-black tracking-tight">¿Contabilizar liquidación?</AlertDialogTitle>
-                                        <AlertDialogDescription className="text-sm">
-                                            Se generarán los asientos contables asociados a los haberes y retenciones legales.
-                                            Esta acción bloqueará la edición de la liquidación.
-                                        </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter className="mt-4 gap-3">
-                                        <AlertDialogCancel className="rounded-sm font-bold text-xs border-primary/10">Cancelar</AlertDialogCancel>
-                                        <AlertDialogAction onClick={handlePost} className="rounded-sm font-bold text-xs bg-primary hover:bg-primary/90">
-                                            Confirmar y Contabilizar
-                                        </AlertDialogAction>
-                                    </AlertDialogFooter>
-                                </AlertDialogContent>
-                            </AlertDialog>
+                            <Button
+                                size="sm"
+                                className="rounded-sm text-[10px] sm:text-xs font-bold gap-1.5 px-2 sm:px-4 h-8 sm:h-9 "
+                                disabled={posting}
+                                onClick={() => setPostConfirmOpen(true)}
+                            >
+                                {posting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <BookOpen className="h-3.5 w-3.5" />}
+                                Contabilizar
+                            </Button>
                         </>
                     )}
                     {viewMode === 'admin' && isPosted && (
@@ -385,6 +369,16 @@ export function PayrollDetailContent({ payrollId, onClose, onUpdate, isSheet = f
                 description="¿Eliminar esta liquidación? Esta acción no se puede deshacer."
                 variant="destructive"
             />
+
+            <ActionConfirmModal
+                open={postConfirmOpen}
+                onOpenChange={setPostConfirmOpen}
+                onConfirm={handlePost}
+                title="¿Contabilizar liquidación?"
+                description="Se generarán los asientos contables asociados a los haberes y retenciones legales. Esta acción bloqueará la edición de la liquidación."
+                variant="destructive"
+                confirmText="Confirmar y Contabilizar"
+            />
         </div>
     )
 }
@@ -437,39 +431,25 @@ function PayrollItemDialog({ payrollId, item, concepts, onSaved, onEditCleared, 
         <BaseModal
             open={open}
             onOpenChange={(o) => { setOpen(o); if (!o) onEditCleared() }}
-            title={
-                <div className="flex items-center gap-3">
-                    <Sparkles className="h-5 w-5" />
-                    <div className="flex flex-col text-left">
-                        <span className="text-lg font-bold tracking-tight">
-                            {item ? "Editar Línea" : "Nueva Línea"}
-                        </span>
-                        <div className="flex items-center gap-2 text-[10px] font-medium text-muted-foreground uppercase tracking-widest">
-                            Itemización <span className="opacity-30">|</span> Liquidación
-                        </div>
-                    </div>
-                </div>
-            }
+            icon={Sparkles}
+            title={item ? "Editar Línea" : "Nueva Línea"}
+            description="Itemización • Liquidación de Remuneraciones"
             footer={
-                <div className="flex justify-end gap-3 w-full">
-                    <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => { setOpen(false); onEditCleared(); }}
-                        className="rounded-sm text-xs font-bold border-primary/20 hover:bg-primary/5"
-                    >
-                        Cancelar
-                    </Button>
-                    <ActionSlideButton
-                        form="payroll-item-form"
-                        type="submit"
-                        disabled={saving}
-                        className="rounded-sm text-xs font-bold transition-all shadow-lg shadow-primary/20"
-                    >
-                        {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        {item ? "Actualizar Item" : "Añadir a Liquidación"}
-                    </ActionSlideButton>
-                </div>
+                <FormFooter
+                    actions={
+                        <>
+                            <CancelButton onClick={() => { setOpen(false); onEditCleared(); }} />
+                            <ActionSlideButton
+                                form="payroll-item-form"
+                                type="submit"
+                                disabled={saving}
+                            >
+                                {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                {item ? "Actualizar Item" : "Añadir a Liquidación"}
+                            </ActionSlideButton>
+                        </>
+                    }
+                />
             }
         >
             <Form {...form}>

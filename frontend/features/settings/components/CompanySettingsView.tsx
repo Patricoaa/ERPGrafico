@@ -157,7 +157,7 @@ export function CompanySettingsView({ activeTab }: { activeTab: string }) {
             <Form {...form}>
                 <Tabs value={activeTab} className="w-full h-full m-0 p-0 border-0 outline-none">
                     <TabsContent value="general" className="space-y-6">
-                        <Card>
+                        <Card variant="transparent">
                             <CardHeader>
                                 <CardTitle className="text-lg text-primary flex items-center gap-2">
                                     <Building2 className="h-5 w-5" />
@@ -357,7 +357,7 @@ export function CompanySettingsView({ activeTab }: { activeTab: string }) {
                     </TabsContent>
 
                     <TabsContent value="branding" className="space-y-6">
-                        <Card>
+                        <Card variant="transparent">
                             <CardHeader>
                                 <CardTitle className="text-lg text-primary flex items-center gap-2">
                                     <Palette className="h-5 w-5" />

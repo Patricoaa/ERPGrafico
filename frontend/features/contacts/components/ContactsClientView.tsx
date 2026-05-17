@@ -7,7 +7,7 @@ import { formatRUT } from "@/lib/utils/format"
 import { DataTable } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { DataCell, createActionsColumn } from '@/components/shared'
+import { DataCell, createActionsColumn, Chip } from '@/components/shared'
 import { useContacts, type Contact } from "@/features/contacts"
 import { LoadingFallback, SmartSearchBar, StatusBadge, useSmartSearch } from "@/components/shared"
 import { contactSearchDef } from "@/features/contacts/searchDef"
@@ -15,6 +15,7 @@ import type { ContactFilters } from "@/features/contacts/types"
 import { formatCurrency } from "@/lib/money"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { formatEntityDisplay } from "@/lib/entity-registry"
+import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
 
 // Lazy load heavy components
 const ContactModal = lazy(() => import("./ContactModal"))
@@ -37,6 +38,8 @@ export function ContactsClientView({ isNewModalOpen = false, createAction }: Con
     const router = useRouter()
     const searchParams = useSearchParams()
     const pathname = usePathname()
+
+    const { openSelected } = useEntityRouteActions()
 
     const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<Contact>({
         endpoint: '/contacts'
@@ -97,14 +100,14 @@ export function ContactsClientView({ isNewModalOpen = false, createAction }: Con
         {
             accessorKey: "display_id",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Código" className="justify-center" />,
-            cell: ({ row }) => <div className="flex justify-center w-full"><DataCell.Code >{formatEntityDisplay('contacts.contact', row.original)}</DataCell.Code></div>,
+            cell: ({ row }) => <DataCell.Entity entityLabel="contacts.contact" data={row.original} />,
         },
         {
             accessorKey: "tax_id",
             header: ({ column }) => <DataTableColumnHeader column={column} title="RUT / Identificación" className="justify-center" />,
             cell: ({ row }) => {
                 const taxId = row.getValue("tax_id") as string | null
-                return <div className="flex justify-center w-full"><DataCell.Text>{taxId ? formatRUT(taxId) : 'S/Rut'}</DataCell.Text></div>
+                return <DataCell.Text>{taxId ? formatRUT(taxId) : 'S/Rut'}</DataCell.Text>
             },
         },
         {
@@ -114,13 +117,13 @@ export function ContactsClientView({ isNewModalOpen = false, createAction }: Con
                 const contact = row.original as Contact
                 return (
                     <div className="flex items-center justify-center gap-2 w-full">
-                        <DataCell.Text>{contact.name}</DataCell.Text>
-                        <div className="flex gap-1">
+                        <DataCell.Text className="w-auto">{contact.name}</DataCell.Text>
+                        <div className="flex gap-1 shrink-0">
                             {contact.is_default_customer && (
                                 <TooltipProvider>
                                     <Tooltip>
-                                        <TooltipTrigger>
-                                            <DataCell.Icon icon={UserIcon} className="bg-primary/10 text-primary h-6 w-6" />
+                                        <TooltipTrigger asChild>
+                                            <Chip size="xs" intent="primary" icon={UserIcon} className="cursor-help shrink-0">Cliente</Chip>
                                         </TooltipTrigger>
                                         <TooltipContent>Cliente por defecto</TooltipContent>
                                     </Tooltip>
@@ -129,8 +132,8 @@ export function ContactsClientView({ isNewModalOpen = false, createAction }: Con
                             {contact.is_default_vendor && (
                                 <TooltipProvider>
                                     <Tooltip>
-                                        <TooltipTrigger>
-                                            <DataCell.Icon icon={Building2} className="bg-primary/10 text-primary h-6 w-6" />
+                                        <TooltipTrigger asChild>
+                                            <Chip size="xs" intent="success" icon={Building2} className="cursor-help shrink-0">Proveedor</Chip>
                                         </TooltipTrigger>
                                         <TooltipContent>Proveedor por defecto</TooltipContent>
                                     </Tooltip>
@@ -139,15 +142,15 @@ export function ContactsClientView({ isNewModalOpen = false, createAction }: Con
                             {(Number(contact.credit_limit || 0) > 0 || Number(contact.credit_balance_used || 0) > 0) && !contact.credit_blocked && (
                                 <TooltipProvider>
                                     <Tooltip>
-                                        <TooltipTrigger>
-                                            <DataCell.Icon
+                                        <TooltipTrigger asChild>
+                                            <Chip
+                                                size="xs"
+                                                intent={Number(contact.credit_balance_used || 0) > 0 ? "warning" : "success"}
                                                 icon={Banknote}
-                                                className={
-                                                    Number(contact.credit_balance_used || 0) > 0
-                                                        ? "bg-warning/10 text-warning h-6 w-6"
-                                                        : "bg-success/10 text-success h-6 w-6"
-                                                }
-                                            />
+                                                className="cursor-help shrink-0"
+                                            >
+                                                Crédito
+                                            </Chip>
                                         </TooltipTrigger>
                                         <TooltipContent>
                                             <div className="flex flex-col gap-1">
@@ -173,7 +176,11 @@ export function ContactsClientView({ isNewModalOpen = false, createAction }: Con
         {
             accessorKey: "contact_type",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Tipo" className="justify-center" />,
-            cell: ({ row }) => <div className="flex justify-center w-full">{getContactTypeBadge(row.getValue("contact_type"))}</div>,
+            cell: ({ row }) => (
+                <div className="flex justify-center w-full">
+                    <Chip.Category domain="contact_type" value={row.getValue("contact_type")} size="xs" />
+                </div>
+            ),
         },
         {
             accessorKey: "email",
@@ -183,26 +190,18 @@ export function ContactsClientView({ isNewModalOpen = false, createAction }: Con
         {
             accessorKey: "phone",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Teléfono" className="justify-center" />,
-            cell: ({ row }) => <DataCell.Text
-            >{row.getValue("phone") || "-"}</DataCell.Text>,
+            cell: ({ row }) => <DataCell.Text>{row.getValue("phone") || "-"}</DataCell.Text>,
         },
         createActionsColumn<Contact>({
             renderActions: (contact) => (
                 <>
                     <DataCell.Action
-                        icon={Edit}
-                        title="Editar"
-                        onClick={() => {
-                            const params = new URLSearchParams(searchParams.toString())
-                            params.set('selected', String(contact.id))
-                            router.push(`${pathname}?${params.toString()}`, { scroll: false })
-                        }}
+                        action="edit"
+                        onClick={() => openSelected(contact.id)}
                     />
                     {!contact.is_default_customer && !contact.is_default_vendor && (
                         <DataCell.Action
-                            icon={Trash2}
-                            title="Eliminar"
-                            className="text-destructive"
+                            action="delete"
                             onClick={() => handleDelete(contact)}
                         />
                     )}

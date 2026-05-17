@@ -39,29 +39,29 @@ export function ArchivingRestrictionsModal({
             open={open}
             onOpenChange={onOpenChange}
             size="sm"
-            title={
-                <div className="flex items-center gap-2 text-destructive">
-                    <AlertCircle className="h-5 w-5" />
-                    No se puede archivar el producto
-                </div>
-            }
+            icon={<AlertCircle className="h-5 w-5 text-destructive" />}
+            title="No se puede archivar el producto"
             footer={
-                <div className="flex gap-2 w-full justify-end">
-                    <CancelButton onClick={() => onOpenChange(false)} className="flex-1 sm:flex-none">
-                        Cerrar
-                    </CancelButton>
-                    {onRetry && (
-                        <SubmitButton
-                            onClick={onRetry}
-                            loading={isRetrying}
-                            className="flex-1 sm:flex-none"
-                            icon={<RefreshCcw className="h-4 w-4 mr-2" />}
-                            type="button"
-                        >
-                            Reintentar Archivado
-                        </SubmitButton>
-                    )}
-                </div>
+                <FormFooter
+                    actions={
+                        <>
+                            <CancelButton onClick={() => onOpenChange(false)} className="flex-1 sm:flex-none">
+                                Cerrar
+                            </CancelButton>
+                            {onRetry && (
+                                <SubmitButton
+                                    onClick={onRetry}
+                                    loading={isRetrying}
+                                    className="flex-1 sm:flex-none"
+                                    icon={<RefreshCcw className="h-4 w-4 mr-2" />}
+                                    type="button"
+                                >
+                                    Reintentar Archivado
+                                </SubmitButton>
+                            )}
+                        </>
+                    }
+                />
             }
         >
             <div className="space-y-4 py-2">

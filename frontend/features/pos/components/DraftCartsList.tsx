@@ -24,17 +24,7 @@ import {
     Lock,
     Wallet,
 } from "lucide-react"
-import { CardSkeleton } from "@/components/shared"
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+import { CardSkeleton, ActionConfirmModal } from "@/components/shared"
 import type { SyncDraft } from '@/features/pos/hooks/useDraftSync'
 
 export interface DraftCart {
@@ -422,30 +412,24 @@ export function DraftCartsList({
                 </div>
             </BaseModal>
 
-            <AlertDialog open={!!confirmDeleteId} onOpenChange={(o) => !o && setConfirmDeleteId(null)}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>¿Eliminar borrador?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            Se eliminará permanentemente <strong>&quot;{confirmDeleteName}&quot;</strong>. Esta acción no se puede deshacer.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction
-                            onClick={() => {
-                                if (confirmDeleteId) {
-                                    handleDeleteDraft(confirmDeleteId, confirmDeleteName)
-                                    setConfirmDeleteId(null)
-                                }
-                            }}
-                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                        >
-                            Eliminar
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
+            <ActionConfirmModal
+                open={!!confirmDeleteId}
+                onOpenChange={(o) => !o && setConfirmDeleteId(null)}
+                onConfirm={() => {
+                    if (confirmDeleteId) {
+                        handleDeleteDraft(confirmDeleteId, confirmDeleteName)
+                        setConfirmDeleteId(null)
+                    }
+                }}
+                title="¿Eliminar borrador?"
+                description={
+                    <p className="text-sm leading-relaxed">
+                        Se eliminará permanentemente <strong>&quot;{confirmDeleteName}&quot;</strong>. Esta acción no se puede deshacer.
+                    </p>
+                }
+                variant="destructive"
+                confirmText="Eliminar"
+            />
         </>
     )
 }

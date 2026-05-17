@@ -254,10 +254,12 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
         <BaseModal
             open={open}
             onOpenChange={onOpenChange}
+            variant="form-tabs"
+            icon={User}
             title={c ? "Editar Contacto" : "Nuevo Contacto"}
+            description="Ficha Maestra • CRM & Finanzas"
             size="xl"
             className="h-[90vh]"
-            headerClassName="sr-only"
             hideScrollArea={true}
             allowOverflow={true}
             contentClassName="p-0"
@@ -282,17 +284,6 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                         value={activeTab}
                         onValueChange={setActiveTab}
                         orientation="vertical"
-                        header={
-                            <div className="flex flex-col p-6 pb-2">
-                                <h1 className="text-xl font-bold tracking-tight text-foreground flex items-center gap-3">
-                                    <User className="h-6 w-6 text-primary" />
-                                    {c ? "Editar Contacto" : "Nuevo Contacto"}
-                                </h1>
-                                <div className="flex items-center gap-2 text-[10px] font-medium text-muted-foreground uppercase tracking-widest mt-1">
-                                    Ficha Maestra <span className="opacity-30">|</span> CRM & Finanzas
-                                </div>
-                            </div>
-                        }
                         className="flex-1"
                         contentClassName="bg-transparent"
                     >
@@ -642,8 +633,7 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
         createActionsColumn<Record<string, unknown>>({
             renderActions: (item) => (
                 <DataCell.Action
-                    icon={LayoutDashboard}
-                    title="Gestionar Documento"
+                    action="hub"
                     onClick={() => {
                         const i = item as any
                         if (type === 'work_order') {

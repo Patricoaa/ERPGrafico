@@ -4,18 +4,8 @@ import { formatCurrency } from "@/lib/money"
 import { showApiError } from "@/lib/errors"
 import React, { useEffect, useState } from "react"
 import { BaseModal } from "@/components/shared/BaseModal"
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
-import { CancelButton, SubmitButton, LabeledInput, LabeledSelect, PeriodValidationDateInput } from "@/components/shared"
+import { CancelButton, SubmitButton, LabeledInput, LabeledSelect, PeriodValidationDateInput, ActionConfirmModal } from "@/components/shared"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
 import { Partner } from "@/features/contacts/types/partner"
@@ -216,29 +206,20 @@ export function SubscriptionMovementModal({ open, onOpenChange, onSuccess, initi
             </BaseModal>
 
             {/* Confirmation dialog for reductions */}
-            <AlertDialog open={showConfirm} onOpenChange={setShowConfirm}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle className="flex items-center gap-2 text-warning">
-                            <AlertTriangle className="h-5 w-5" />
-                            Confirmar Reducción de Capital
-                        </AlertDialogTitle>
-                        <AlertDialogDescription className="space-y-2">
-                            <p>Está a punto de reducir el capital suscrito de <strong>{selectedPartner?.name}</strong> por <strong>{formatCurrency(amountNum)}</strong>.</p>
-                            <p>Esta operación genera un asiento contable reversando Capital Social. ¿Desea continuar?</p>
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction
-                            onClick={handleSubmit}
-                            className="bg-warning hover:bg-warning/90"
-                        >
-                            Sí, Reducir Capital
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
+            <ActionConfirmModal
+                open={showConfirm}
+                onOpenChange={setShowConfirm}
+                onConfirm={handleSubmit}
+                title="Confirmar Reducción de Capital"
+                description={
+                    <div className="space-y-2 text-sm leading-relaxed">
+                        <p>Está a punto de reducir el capital suscrito de <strong>{selectedPartner?.name}</strong> por <strong>{formatCurrency(amountNum)}</strong>.</p>
+                        <p>Esta operación genera un asiento contable reversando Capital Social. ¿Desea continuar?</p>
+                    </div>
+                }
+                variant="warning"
+                confirmText="Sí, Reducir Capital"
+            />
         </>
     )
 }
@@ -415,34 +396,26 @@ export function EquityTransferModal({ open, onOpenChange, onSuccess }: ModalProp
             </BaseModal>
 
             {/* Confirmation dialog for transfers */}
-            <AlertDialog open={showConfirm} onOpenChange={setShowConfirm}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle className="flex items-center gap-2 text-primary">
-                            <ArrowRightLeft className="h-5 w-5" />
-                            Confirmar Transferencia de Capital
-                        </AlertDialogTitle>
-                        <AlertDialogDescription className="space-y-2">
-                            <p>Está a punto de transferir <strong>{formatCurrency(amountNum)}</strong> de capital suscrito:</p>
-                            <div className="flex items-center gap-2 py-2 px-3 rounded-md bg-muted/50 text-sm font-medium">
-                                <span>{seller?.name}</span>
-                                <ArrowRightLeft className="h-3 w-3 text-muted-foreground" />
-                                <span>{buyer?.name}</span>
-                            </div>
-                            <p>Esto modificará los porcentajes de participación y generará un asiento contable reclasificando el capital suscrito y los saldos pendientes entre los socios involucrados. ¿Desea continuar?</p>
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction
-                            onClick={handleSubmit}
-                            className="bg-primary hover:bg-primary"
-                        >
-                            Sí, Transferir
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
+            <ActionConfirmModal
+                open={showConfirm}
+                onOpenChange={setShowConfirm}
+                onConfirm={handleSubmit}
+                title="Confirmar Transferencia de Capital"
+                description={
+                    <div className="space-y-2 text-sm leading-relaxed">
+                        <p>Está a punto de transferir <strong>{formatCurrency(amountNum)}</strong> de capital suscrito:</p>
+                        <div className="flex items-center gap-2 py-2 px-3 rounded-md bg-muted/50 text-sm font-medium">
+                            <span>{seller?.name}</span>
+                            <ArrowRightLeft className="h-3 w-3 text-muted-foreground" />
+                            <span>{buyer?.name}</span>
+                        </div>
+                        <p>Esto modificará los porcentajes de participación y generará un asiento contable reclasificando el capital suscrito y los saldos pendientes entre los socios involucrados. ¿Desea continuar?</p>
+                    </div>
+                }
+                variant="default"
+                icon={ArrowRightLeft}
+                confirmText="Sí, Transferir"
+            />
         </>
     )
 }

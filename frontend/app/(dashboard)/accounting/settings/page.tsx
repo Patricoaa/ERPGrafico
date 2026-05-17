@@ -9,7 +9,7 @@ interface PageProps {
 
 export default async function AccountingSettingsPage({ searchParams }: PageProps) {
     const { tab } = await searchParams
-    const activeTab = tab || "global"
+    const activeTab = tab || "structure"
 
     return (
         <div className="pt-2">

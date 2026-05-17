@@ -34,7 +34,7 @@ Chip.Category = function ChipCategory({
     size = 'sm',
     className
 }: {
-    domain: 'product_type' | 'tax_type' | 'transaction_type' | 'dte_type'
+    domain: 'product_type' | 'tax_type' | 'transaction_type' | 'dte_type' | 'contact_type'
     value: string
     size?: 'xs' | 'sm' | 'md'
     className?: string

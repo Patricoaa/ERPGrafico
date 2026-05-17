@@ -80,7 +80,7 @@ export const BillingSettingsView: React.FC<{ activeTab?: string }> = ({ activeTa
                     {activeTab === "accounts" && (
                         <div className="space-y-6 m-0 p-0 border-0 outline-none mt-4">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <Card>
+                                <Card variant="transparent">
                                     <CardHeader>
                                         <CardTitle className="text-lg text-primary">Cuentas por Cobrar</CardTitle>
                                         <CardDescription>Gestión de clientes y anticipos recibidos</CardDescription>
@@ -91,7 +91,7 @@ export const BillingSettingsView: React.FC<{ activeTab?: string }> = ({ activeTa
                                     </CardContent>
                                 </Card>
 
-                                <Card>
+                                <Card variant="transparent">
                                     <CardHeader>
                                         <CardTitle className="text-lg text-primary">Cuentas por Pagar</CardTitle>
                                         <CardDescription>Gestión de proveedores y anticipos entregados</CardDescription>
@@ -173,7 +173,7 @@ function DTEConfigCard({ form, name, title, description }: DTEConfigCardProps) {
     ]
 
     return (
-        <Card>
+        <Card variant="transparent">
             <CardHeader>
                 <CardTitle className="text-lg">{title}</CardTitle>
                 <CardDescription>{description}</CardDescription>

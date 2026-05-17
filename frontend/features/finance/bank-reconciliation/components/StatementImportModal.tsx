@@ -511,12 +511,8 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess }: 
         <GenericWizard
             open={open}
             onOpenChange={handleClose}
-            title={
-                <div className="flex items-center gap-2">
-                    <FileSearch className="h-5 w-5 text-muted-foreground" />
-                    <span>Importar Cartola Bancaria</span>
-                </div>
-            }
+            icon={FileSearch}
+            title="Importar Cartola Bancaria"
             steps={steps}
             onComplete={async () => { }} // Handled in onNext of last step
             size={previewData && isGenericFormat() ? "full" : "lg"}

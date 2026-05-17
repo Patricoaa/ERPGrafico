@@ -326,26 +326,14 @@ export function BOMFormModal({
             onOpenChange={onOpenChange}
             size="full"
             className="max-w-[1200px]"
-            title={
-                <div className="flex items-center gap-3">
-                    <Workflow className="h-5 w-5" />
-                    <span className="font-bold tracking-tight">
-                        {bomToEdit ? "Editar Lista de Materiales" : "Nueva Lista de Materiales"}
-                    </span>
-                </div>
-            }
+            icon={Workflow}
+            title={bomToEdit ? "Editar Lista de Materiales" : "Nueva Lista de Materiales"}
             description={
-                <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground uppercase tracking-widest">
-                    <span>Lista de Materiales</span>
-                    <span className="opacity-30">|</span>
-                    {selectedVariant ? (
-                        <span className="text-foreground">V: {selectedVariant.variant_display_name || selectedVariant.name}</span>
-                    ) : selectedProduct ? (
-                        <span className="text-foreground">P: {selectedProduct.name}</span>
-                    ) : (
-                        <span>Receta de Fabricación</span>
-                    )}
-                </div>
+                selectedVariant
+                    ? `Lista de Materiales • V: ${selectedVariant.variant_display_name || selectedVariant.name}`
+                    : selectedProduct
+                    ? `Lista de Materiales • P: ${selectedProduct.name}`
+                    : "Lista de Materiales • Receta de Fabricación"
             }
             footer={
                 <FormFooter

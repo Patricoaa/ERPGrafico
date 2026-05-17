@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/contexts/AuthContext"
 import { PageHeader } from "@/components/shared/PageHeader"
-import { Skeleton } from "@/components/shared"
+import { Skeleton, PageContainer } from "@/components/shared"
 import Link from "next/link"
 import { Calculator, ShoppingCart, Package, Printer, Banknote, ShoppingBag, PieChart, Receipt, UserCog, Users } from "lucide-react"
 import { ProductionMetricsCard } from "@/features/production/components/ProductionMetricsCard"
@@ -29,7 +29,7 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="flex flex-col space-y-8">
+      <PageContainer className="space-y-8" animate={false}>
         <div className="space-y-2">
           <Skeleton className="h-8 w-40" />
           <Skeleton className="h-4 w-72" />
@@ -39,12 +39,12 @@ export default function DashboardPage() {
             <Skeleton key={i} className="h-28 w-full rounded-xl" />
           ))}
         </div>
-      </div>
+      </PageContainer>
     )
   }
 
   return (
-    <div className="flex flex-col space-y-8">
+    <PageContainer className="space-y-8">
       <PageHeader 
         title="Dashboard" 
         description={`Bienvenido de nuevo, ${displayName}. Selecciona un módulo para comenzar.`}
@@ -82,6 +82,6 @@ export default function DashboardPage() {
           )
         })}
       </div>
-    </div>
+    </PageContainer>
   )
 }

@@ -24,16 +24,6 @@ import { toast } from 'sonner'
 import api from '@/lib/api'
 import * as Validation from '@/features/pos/utils/validation'
 import { cn } from "@/lib/utils"
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
 import { Check, Printer } from 'lucide-react'
 import { PrintableReceipt } from '@/components/shared/transaction-modal/PrintableReceipt'
 
@@ -628,18 +618,21 @@ export function POSClientView() {
             <ScannerFeedback ref={scannerFeedbackRef} />
             <SalesOrdersModal open={ordersModalOpen} onOpenChange={setOrdersModalOpen} posSessionId={currentSession?.id} />
 
-            <AlertDialog open={!!completedSaleData} onOpenChange={(open) => { if (!open) setCompletedSaleData(null) }}>
-                <AlertDialogContent className="max-w-md bg-card border-primary/10 shadow-sm rounded-lg">
-                    <AlertDialogHeader>
+            <BaseModal
+                open={!!completedSaleData}
+                onOpenChange={(open) => { if (!open) setCompletedSaleData(null) }}
+                size="sm"
+                title={
+                    <div className="flex flex-col items-center w-full">
                         <div className="mx-auto bg-primary text-primary-foreground p-4 rounded-full mb-4 shadow-sm">
                             <Check className="h-10 w-10 stroke-[3px]" />
                         </div>
-                        <AlertDialogTitle className="text-xl font-black tracking-tight text-center text-foreground">¡Venta Exitosa!</AlertDialogTitle>
-                        <AlertDialogDescription className="text-center text-primary/60 font-medium">
-                            La venta se ha procesado correctamente. ¿Desea imprimir el comprobante térmico?
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter className="flex-col sm:flex-row gap-3 mt-4">
+                        <span className="text-xl font-black tracking-tight text-center text-foreground">¡Venta Exitosa!</span>
+                    </div>
+                }
+                description="La venta se ha procesado correctamente. ¿Desea imprimir el comprobante térmico?"
+                footer={
+                    <div className="flex flex-col sm:flex-row gap-3 w-full mt-4">
                         <Button
                             className="flex-1 h-14 rounded-md text-lg font-black uppercase tracking-widest bg-primary hover:bg-primary/90 shadow-sm group"
                             onClick={() => {
@@ -650,61 +643,53 @@ export function POSClientView() {
                             <Printer className="mr-3 h-5 w-5 group-hover:scale-110 transition-transform" />
                             Imprimir
                         </Button>
-                        <AlertDialogCancel
+                        <Button
+                            variant="outline"
                             className="flex-1 h-14 border-primary/20 text-primary hover:bg-primary/5 rounded-md text-lg font-bold"
                             onClick={() => setCompletedSaleData(null)}
                         >
                             Cerrar
-                        </AlertDialogCancel>
-                    </AlertDialogFooter>
-
-                    {/* Hidden Receipt for Printing */}
-                    {completedSaleData && (
-                        <PrintableReceipt
-                            ref={posContentRef}
-                            data={{
-                                ...(completedSaleData.sale_order_detail as TransactionData || completedSaleData),
-                                terminal_name: currentSession?.terminal_name
-                            }}
-                            currentType={completedSaleData.sale_order_detail ? "sale_order" : "invoice"}
-                            mainTitle="Ticket de Venta"
-                            subTitle={(completedSaleData as any)?.client_name || "Cliente Contado"}
-                        />
-                    )}
-                </AlertDialogContent>
-            </AlertDialog>
+                        </Button>
+                    </div>
+                }
+            >
+                {/* Hidden Receipt for Printing */}
+                {completedSaleData && (
+                    <PrintableReceipt
+                        ref={posContentRef}
+                        data={{
+                            ...(completedSaleData.sale_order_detail as TransactionData || completedSaleData),
+                            terminal_name: currentSession?.terminal_name
+                        }}
+                        currentType={completedSaleData.sale_order_detail ? "sale_order" : "invoice"}
+                        mainTitle="Ticket de Venta"
+                        subTitle={(completedSaleData as any)?.client_name || "Cliente Contado"}
+                    />
+                )}
+            </BaseModal>
 
             {/* Partner Withdrawal Confirmation */}
-            <AlertDialog open={withdrawDialogOpen} onOpenChange={setWithdrawDialogOpen}>
-                <AlertDialogContent className="max-w-md bg-card border-warning/10 shadow-sm rounded-lg">
-                    <AlertDialogHeader>
+            <BaseModal
+                open={withdrawDialogOpen}
+                onOpenChange={setWithdrawDialogOpen}
+                size="sm"
+                title={
+                    <div className="flex flex-col items-center w-full">
                         <div className="mx-auto bg-warning/10 text-warning p-4 rounded-full mb-4 border border-warning/20">
                             <ShoppingCart className="h-8 w-8" />
                         </div>
-                        <AlertDialogTitle className="text-xl font-black tracking-tight text-center text-warning">Confirmar Retiro de Socio</AlertDialogTitle>
-                        <AlertDialogDescription className="text-center text-warning/60 font-medium pt-2 text-sm">
-                            Se registrará un retiro de stock por concepto de <strong>Retiro de Utilidades</strong>.
-                            <br />
-                            Esta acción descontará el inventario inmediatamente y no genera factura ni boleta.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-
-                    <div className="space-y-4 my-2">
-                        <div className="space-y-1.5">
-                            <Label className="text-[10px] font-black uppercase text-warning/50 tracking-widest pl-1">Seleccionar Socio</Label>
-                            <AdvancedContactSelector
-                                value={selectedPartnerId}
-                                onChange={setSelectedPartnerId}
-                                onSelectContact={(c) => setSelectedPartnerName(c.name)}
-                                isPartnerOnly={true}
-                                placeholder="Buscar socio..."
-                            />
-                        </div>
-
-
+                        <span className="text-xl font-black tracking-tight text-center text-warning">Confirmar Retiro de Socio</span>
                     </div>
-
-                    <AlertDialogFooter className="flex-col sm:flex-row gap-3 mt-2">
+                }
+                description={
+                    <div className="text-center text-warning-foreground/60 font-medium pt-2 text-sm leading-relaxed">
+                        Se registrará un retiro de stock por concepto de <strong>Retiro de Utilidades</strong>.
+                        <br />
+                        Esta acción descontará el inventario inmediatamente y no genera factura ni boleta.
+                    </div>
+                }
+                footer={
+                    <div className="flex flex-col sm:flex-row gap-3 w-full mt-2">
                         <Button
                             className="flex-1 h-12 rounded-md text-sm font-bold uppercase tracking-wider bg-warning hover:bg-warning shadow-sm disabled:opacity-50"
                             onClick={handleWithdraw}
@@ -713,15 +698,30 @@ export function POSClientView() {
                             {isWithdrawing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Check className="mr-2 h-4 w-4" />}
                             Confirmar Retiro
                         </Button>
-                        <AlertDialogCancel
+                        <Button
+                            variant="outline"
                             className="flex-1 h-12 border-warning/20 text-warning hover:bg-warning/10 rounded-md text-sm font-bold"
+                            onClick={() => setWithdrawDialogOpen(false)}
                             disabled={isWithdrawing}
                         >
                             Cancelar
-                        </AlertDialogCancel>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
+                        </Button>
+                    </div>
+                }
+            >
+                <div className="space-y-4 my-2">
+                    <div className="space-y-1.5">
+                        <Label className="text-[10px] font-black uppercase text-warning/50 tracking-widest pl-1">Seleccionar Socio</Label>
+                        <AdvancedContactSelector
+                            value={selectedPartnerId}
+                            onChange={setSelectedPartnerId}
+                            onSelectContact={(c) => setSelectedPartnerName(c.name)}
+                            isPartnerOnly={true}
+                            placeholder="Buscar socio..."
+                        />
+                    </div>
+                </div>
+            </BaseModal>
         </div>
     )
 }

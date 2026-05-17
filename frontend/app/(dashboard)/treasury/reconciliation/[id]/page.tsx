@@ -12,16 +12,7 @@ import {
 } from "lucide-react"
 import { TableSkeleton } from "@/components/shared/TableSkeleton"
 import { PageHeader } from "@/components/shared/PageHeader"
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import api from "@/lib/api"
@@ -246,14 +237,14 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
     ]
 
     if (loading) return (
-        <div className="flex-1 p-8 pt-6">
+        <div className="flex-1">
             <TableSkeleton rows={12} columns={5} />
         </div>
     )
 
     if (!statement) {
         return (
-            <div className="flex-1 p-8 pt-6">
+            <div className="flex-1">
                 <Card className="max-w-md mx-auto mt-12">
                     <CardHeader>
                         <CardTitle className="text-destructive flex items-center gap-2">
@@ -467,20 +458,15 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
                 </div>
             </div>
 
-            <AlertDialog open={unmatchDialog.open} onOpenChange={(open) => !open && setUnmatchDialog(prev => ({ ...prev, open: false }))}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>¿Deshacer reconciliación?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            Esta acción desvinculará la línea del pago y la devolverá al estado &quot;No Reconciliado&quot;.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleUnmatch} className="bg-destructive hover:bg-destructive">Confirmar</AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
+            <ActionConfirmModal
+                open={unmatchDialog.open}
+                onOpenChange={(open) => !open && setUnmatchDialog(prev => ({ ...prev, open: false }))}
+                onConfirm={handleUnmatch}
+                title="¿Deshacer reconciliación?"
+                description='Esta acción desvinculará la línea del pago y la devolverá al estado "No Reconciliado".'
+                variant="destructive"
+                confirmText="Confirmar"
+            />
 
             <ActionConfirmModal
                 open={confirmAction.isOpen}

@@ -176,8 +176,8 @@ export function PartnerProfileTab({ contactId }: Props) {
                 {/* Section 1: Metrics & Summary */}
                 <AccordionItem value="summary" className="border-none">
                     <motion.div initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.4 }}>
-                        <Card className="border shadow-sm overflow-hidden">
-                            <AccordionTrigger className="hover:no-underline px-6 py-4 border-b bg-muted/30 [&[data-state=open]>div>svg]:rotate-180">
+                        <Card variant="transparent" className="border-2 overflow-hidden">
+                            <AccordionTrigger className="hover:no-underline px-4 py-3 border-b bg-transparent [&[data-state=open]>div>svg]:rotate-180">
                                 <div className="flex items-center gap-3">
                                     <Wallet className="h-5 w-5" />
                                     <div className="text-left">
@@ -218,8 +218,8 @@ export function PartnerProfileTab({ contactId }: Props) {
                 {/* Section 2: Societal Info */}
                 <AccordionItem value="info" className="border-none">
                     <motion.div initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.4, delay: 0.1 }}>
-                        <Card className="border shadow-sm overflow-hidden">
-                            <AccordionTrigger className="hover:no-underline px-6 py-4 border-b bg-muted/30 [&[data-state=open]>div>svg]:rotate-180">
+                        <Card variant="transparent" className="border-2 overflow-hidden">
+                            <AccordionTrigger className="hover:no-underline px-4 py-3 border-b bg-transparent [&[data-state=open]>div>svg]:rotate-180">
                                 <div className="flex items-center gap-3">
                                     <Briefcase className="h-5 w-5" />
                                     <div className="text-left">
@@ -255,8 +255,8 @@ export function PartnerProfileTab({ contactId }: Props) {
                 {/* Section 3: History */}
                 <AccordionItem value="history" className="border-none">
                     <motion.div initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.4, delay: 0.2 }}>
-                        <Card className="border shadow-sm overflow-hidden">
-                            <AccordionTrigger className="hover:no-underline px-6 py-4 border-b bg-muted/30 [&[data-state=open]>div>svg]:rotate-180">
+                        <Card variant="transparent" className="border-2 overflow-hidden">
+                            <AccordionTrigger className="hover:no-underline px-4 py-3 border-b bg-transparent [&[data-state=open]>div>svg]:rotate-180">
                                 <div className="flex items-center gap-3">
                                     <Activity className="h-5 w-5" />
                                     <div className="text-left">

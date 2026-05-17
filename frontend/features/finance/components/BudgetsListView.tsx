@@ -6,7 +6,7 @@ import Link from "next/link"
 
 import { Pencil, FileText, Calendar, Wallet } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { LabeledInput } from "@/components/shared"
+import { LabeledInput, FormFooter, CancelButton } from "@/components/shared"
 import { toast } from "sonner"
 import { DataTable } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
@@ -170,9 +170,20 @@ export function BudgetsListView({ externalOpen, onExternalOpenChange, createActi
                 open={isCreateOpen}
                 onOpenChange={handleCreateOpenChange}
                 size="md"
+                icon={Wallet}
                 title="Crear Nuevo Presupuesto"
+                description="Planificación Financiera • Control de Gestión"
                 footer={
-                    <Button onClick={handleCreate} className="w-full">Crear Presupuesto Anual</Button>
+                    <FormFooter
+                        actions={
+                            <>
+                                <CancelButton onClick={() => handleCreateOpenChange(false)} />
+                                <Button onClick={handleCreate} className="px-6 font-bold ">
+                                    Crear Presupuesto Anual
+                                </Button>
+                            </>
+                        }
+                    />
                 }
             >
                 <div className="space-y-4">

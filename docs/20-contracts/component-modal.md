@@ -30,6 +30,12 @@ BaseDrawer (primitiva)   — panel inferior (bottom drawer) para contexto amplio
 > | Subvista tabular con contexto visual | `BaseDrawer` |
 > | Modal completamente custom | `BaseModal` (directo) |
 
+### ⚠️ Excepciones Autorizadas de Sistema
+
+Existe una única excepción de sistema autorizada para utilizar la primitiva `Dialog` directamente fuera de `BaseModal`:
+
+*   **UniversalSearch (`UniversalSearch.tsx`)**: Al tratarse de la barra de búsqueda global y paleta de comandos (`Ctrl+K`), requiere un comportamiento visual sumamente personalizado que no cumple con el layout de negocio estándar (campo de entrada de texto gigante en el encabezado, segmentadores horizontales y pie de página con atajos de teclado del sistema).
+
 ---
 
 ## BaseModal 🟢
@@ -40,6 +46,7 @@ Primitiva base de todos los modales del proyecto. Wrappea `Dialog` de Shadcn con
 <BaseModal
   open={open}
   onOpenChange={setOpen}
+  icon={Tag}
   title="Detalle de orden"
   description="Revisa los datos antes de confirmar"
   size="lg"
@@ -53,20 +60,35 @@ Primitiva base de todos los modales del proyecto. Wrappea `Dialog` de Shadcn con
 |------|------|----------|---------|-------|
 | `open` | `boolean` | ✅ | — | |
 | `onOpenChange` | `(open: boolean) => void` | ✅ | — | |
-| `title` | `string \| ReactNode` | ✅ | — | Si se omite se inyecta `sr-only` para a11y |
-| `description` | `string \| ReactNode` | ❌ | — | `asChild` si no es string |
+| `icon` | `LucideIcon \| ReactNode` | ✅ | — | Icono obligatorio al lado del título |
+| `title` | `string \| ReactNode` | ✅ | — | Título obligatorio de la cabecera |
+| `description` | `string \| ReactNode` | ❌ | — | Descripción opcional; se alinea horizontalmente con el título |
 | `children` | `ReactNode` | ✅ | — | Cuerpo del modal |
-| `footer` | `ReactNode` | ❌ | — | Renderizado en `DialogFooter` con fondo `muted/20` |
+| `footer` | `ReactNode` | ❌ | — | Renderizado en `DialogFooter` con fondo transparente |
 | `headerActions` | `ReactNode` | ❌ | — | Slot derecho del header (ej. botones de acción extra) |
 | `size` | `'xs' \| 'sm' \| 'md' \| 'lg' \| 'xl' \| '2xl' \| 'full' \| 'default'` | ❌ | `'default'` | Ver tabla de anchos abajo |
-| `variant` | `'default' \| 'transaction' \| 'wizard' \| 'raw'` | ❌ | `'default'` | Controla estilos de header/footer |
+| `variant` | `'default' \| 'transaction' \| 'wizard' \| 'form-tabs' \| 'raw'` | ❌ | `'default'` | Controla estilos de header/footer |
 | `showCloseButton` | `boolean` | ❌ | `true` | Botón X en esquina superior derecha |
 | `hideScrollArea` | `boolean` | ❌ | `false` | Desactiva `ScrollArea`; obligatorio cuando se usa `FormTabs` vertical |
 | `allowOverflow` | `boolean` | ❌ | `false` | Permite que el contenido sobresalga (ej. para rieles de pestañas negativos) |
 | `className` | `string` | ❌ | — | Clases para `DialogContent` |
 | `contentClassName` | `string` | ❌ | — | Clases para el área de contenido (scroll o div) |
-| `headerClassName` | `string` | ❌ | — | Clases para el `DialogHeader`. Usar `sr-only` para ocultar cabecera original en vertical tabs. |
+| `headerClassName` | `string` | ❌ | — | Clases para el `DialogHeader`. |
 | `footerClassName` | `string` | ❌ | — | Clases para el `DialogFooter` |
+
+### Disposición en Dos Filas con Sincronía Vertical y Comportamiento CRUD Dinámico
+
+*   **Disposición y Alineación**: El título y la descripción se disponen en dos filas verticales separadas, pero **sincronizados verticalmente** al inicio de sus textos. El icono obligatorio se coloca a la izquierda del bloque completo, y la columna de texto (título arriba, descripción abajo) se posiciona a la derecha. Esto garantiza que la descripción comience exactamente alineada con el texto del título, sin solaparse ni quedar debajo del icono.
+*   **Comportamiento Dinámico (CRUD)**:
+    *   **Creación**: El título del modal refleja la acción (ej: `[Icono] Crear Categoría`). La descripción puede omitirse.
+    *   **Edición**: El título refleja la entidad y su estado (ej: `[Icono] Ficha de Categoría`). La descripción horizontal muestra dinámicamente detalles identificadores del registro activo (ej: siglas, folio, nombre de fantasía) para dar contexto instantáneo.
+*   **Pestañas Dinámicas (`form-tabs`)**: En el caso de formularios con pestañas (`FormTabs`), el título o la descripción de la cabecera del modal se actualiza para mostrar el camino de navegación activa (ej: `Editar Producto > Variantes`).
+
+### Invariante de Estados de Carga (Anti-Skeleton)
+
+> [!IMPORTANT]
+> **Las cabeceras (headers) y los pies de página (footers) de los modales NUNCA deben usar skeletons ni ser desmontados durante la carga.**
+> El esqueleto se debe restringir única y exclusivamente al cuerpo principal (`children`). Esto garantiza estabilidad de layout (CLS) y evita que los botones de acción del footer salten brusca y molestamente.
 
 ### Tamaños (`size`)
 
@@ -85,10 +107,11 @@ Primitiva base de todos los modales del proyecto. Wrappea `Dialog` de Shadcn con
 
 | Valor | Efecto visual |
 |-------|---------------|
-| `default` | Header con borde inferior, footer con `bg-muted/20` |
+| `default` | Header con borde inferior, footer con fondo transparente. Icono obligatorio y alineación horizontal. |
 | `transaction` | Header con `bg-primary text-primary-foreground` (sin borde). Usado en `TransactionViewModal` |
 | `wizard` | Header con `border-b pb-2`. Usado internamente por `GenericWizard` |
-| `raw` | Sin bordes en header ni footer; sin `ScrollArea`. Para layouts totalmente custom |
+| `form-tabs` | Header transparente adaptado para pestañas dinámicas. Título + Descripción horizontalmente dinámicos. |
+| `raw` | Sin bordes ni cabecera; sin `ScrollArea`. Para layouts totalmente custom |
 
 States handled: — (sin estado propio; estado lo gestiona el componente padre).
 

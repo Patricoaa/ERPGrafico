@@ -3,12 +3,12 @@
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { motion, AnimatePresence } from 'framer-motion'
-import { AlertTriangle, Package, FileText, CheckCircle2 } from 'lucide-react'
+import { AlertTriangle, Package, FileText, CheckCircle2, Keyboard } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { BaseModal } from '@/components/shared/BaseModal'
 import { ActionConfirmModal } from '@/components/shared/ActionConfirmModal'
-import { LabeledSelect } from '@/components/shared'
+import { LabeledSelect, FormFooter, CancelButton } from '@/components/shared'
 import { cn } from '@/lib/utils'
 import { showApiError } from '@/lib/errors'
 import { useConfirmAction } from '@/hooks/useConfirmAction'
@@ -463,20 +463,25 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
       <BaseModal
         open={showPOPreview}
         onOpenChange={setShowPOPreview}
-        size="md"
-        title={<div className="flex items-center gap-2"><Package className="h-5 w-5 text-primary" />Vista Previa de Órdenes de Compra</div>}
+        icon={Package}
+        title="Vista Previa de Órdenes de Compra"
         description="Se generarán las siguientes Órdenes de Compra en borrador para los servicios tercerizados asignados."
+        size="md"
         footer={
-          <div className="flex justify-end gap-3 w-full">
-            <Button variant="outline" onClick={() => setShowPOPreview(false)}>Cancelar y Revisar</Button>
-            <Button onClick={() => {
-              setShowPOPreview(false)
-              const nextStage = STAGES[actualStepIndex + 1]?.id
-              if (nextStage) handleTransition(nextStage)
-            }}>
-              Confirmar y Generar OC
-            </Button>
-          </div>
+          <FormFooter
+            actions={
+              <>
+                <CancelButton onClick={() => setShowPOPreview(false)}>Cancelar y Revisar</CancelButton>
+                <Button onClick={() => {
+                  setShowPOPreview(false)
+                  const nextStage = STAGES[actualStepIndex + 1]?.id
+                  if (nextStage) handleTransition(nextStage)
+                }}>
+                  Confirmar y Generar OC
+                </Button>
+              </>
+            }
+          />
         }
       >
         <div className="space-y-4 py-4">
@@ -589,50 +594,56 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
       <BaseModal
         open={isSaveTemplateOpen}
         onOpenChange={setIsSaveTemplateOpen}
+        icon={FileText}
         title="Guardar como plantilla"
+        description="Se guardará la configuración de esta OT como plantilla reutilizable."
         size="sm"
+        footer={
+          <FormFooter
+            actions={
+              <>
+                <CancelButton onClick={() => setIsSaveTemplateOpen(false)} />
+                <Button
+                  disabled={!templateName.trim() || isSavingTemplate}
+                  onClick={async () => {
+                    setIsSavingTemplate(true)
+                    try {
+                      await api.post('/production/templates/save_from_order/', {
+                        order_id: orderId,
+                        name: templateName.trim(),
+                      })
+                      toast.success('Plantilla guardada correctamente.')
+                      setIsSaveTemplateOpen(false)
+                    } catch {
+                      toast.error('Error al guardar la plantilla.')
+                    } finally {
+                      setIsSavingTemplate(false)
+                    }
+                  }}
+                >
+                  {isSavingTemplate ? 'Guardando…' : 'Guardar'}
+                </Button>
+              </>
+            }
+          />
+        }
       >
-        <div className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            Se guardará la configuración de esta OT como plantilla reutilizable.
-          </p>
+        <div className="space-y-4 py-2">
           <Input
             placeholder="Nombre de la plantilla…"
             value={templateName}
             onChange={e => setTemplateName(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur() }}
           />
-          <div className="flex justify-end gap-2">
-            <Button variant="ghost" size="sm" onClick={() => setIsSaveTemplateOpen(false)}>Cancelar</Button>
-            <Button
-              size="sm"
-              disabled={!templateName.trim() || isSavingTemplate}
-              onClick={async () => {
-                setIsSavingTemplate(true)
-                try {
-                  await api.post('/production/templates/save_from_order/', {
-                    order_id: orderId,
-                    name: templateName.trim(),
-                  })
-                  toast.success('Plantilla guardada correctamente.')
-                  setIsSaveTemplateOpen(false)
-                } catch {
-                  toast.error('Error al guardar la plantilla.')
-                } finally {
-                  setIsSavingTemplate(false)
-                }
-              }}
-            >
-              {isSavingTemplate ? 'Guardando…' : 'Guardar'}
-            </Button>
-          </div>
         </div>
       </BaseModal>
 
       <BaseModal
         open={showCheatsheet}
         onOpenChange={setShowCheatsheet}
+        icon={Keyboard}
         title="Atajos de teclado"
+        description="Combinaciones rápidas para optimizar su flujo de trabajo."
         size="sm"
       >
         <div className="space-y-2 text-sm">

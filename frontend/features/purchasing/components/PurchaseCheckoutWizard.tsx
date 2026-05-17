@@ -20,6 +20,7 @@ import { Step1_ProductSelection } from "./checkout/Step1_ProductSelection"
 import { Check, ChevronRight, ChevronLeft, Loader2, ShoppingCart } from "lucide-react"
 import { useTreasuryAccounts } from "@/hooks/useTreasuryAccounts"
 import { useServerDate } from "@/hooks/useServerDate"
+import { FormFooter, CancelButton } from "@/components/shared"
 
 interface PurchaseCheckoutWizardProps {
     open: boolean
@@ -369,54 +370,53 @@ export function PurchaseCheckoutWizard({
         <BaseModal
             open={open}
             onOpenChange={onOpenChange}
+            variant="wizard"
+            icon={ShoppingCart}
+            title="Procesar Compra"
+            description="Asistente de compra rápida, facturación y recepción de inventario."
             size="full"
             hideScrollArea
             className="h-[90vh]"
             contentClassName="p-0"
-            title={
-                <div className="flex items-center gap-4">
-                    <ShoppingCart className="h-6 w-6 text-muted-foreground" />
-                    <div>
-                        <span className="font-black tracking-tighter uppercase block">Procesar Compra</span>
-                    </div>
-                </div>
-            }
             footer={
-                <div className="w-full flex justify-between">
-                    <Button
-                        variant="outline"
-                        onClick={handleBack}
-                        disabled={step === 1 || loading}
-                        className="h-12 px-6 font-bold"
-                    >
-                        <ChevronLeft className="mr-2 h-4 w-4" />
-                        Atrás
-                    </Button>
-
-                    {step < totalSteps ? (
-                        <Button 
-                            onClick={handleNext} 
-                            className="w-40 h-12 font-bold"
-                            disabled={step === 3 && !dteData.isPending && (!isFolioValid || !isPeriodValid)}
-                        >
-                            Siguiente
-                            <ChevronRight className="ml-2 h-4 w-4" />
-                        </Button>
-                    ) : (
-                        <Button
-                            onClick={handleFinish}
-                            className="w-48 h-12 bg-success hover:bg-success/90 text-white font-bold transition-all shadow-lg shadow-success/20"
-                            disabled={loading}
-                        >
-                            {loading ? (
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            ) : (
-                                <Check className="mr-2 h-4 w-4" />
-                            )}
-                            Finalizar Compra
-                        </Button>
-                    )}
-                </div>
+                <FormFooter
+                    leftActions={
+                        step > 1 ? (
+                            <CancelButton
+                                onClick={handleBack}
+                                disabled={loading}
+                            >
+                                <ChevronLeft className="mr-1.5 h-3.5 w-3.5" />
+                                Atrás
+                            </CancelButton>
+                        ) : undefined
+                    }
+                    actions={
+                        step < totalSteps ? (
+                            <Button 
+                                onClick={handleNext} 
+                                className="w-40"
+                                disabled={step === 3 && !dteData.isPending && (!isFolioValid || !isPeriodValid)}
+                            >
+                                Siguiente
+                                <ChevronRight className="ml-2 h-4 w-4" />
+                            </Button>
+                        ) : (
+                            <Button
+                                onClick={handleFinish}
+                                className="w-48 bg-success hover:bg-success/90 text-white font-bold transition-all shadow-lg shadow-success/20"
+                                disabled={loading}
+                            >
+                                {loading ? (
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                ) : (
+                                    <Check className="mr-2 h-4 w-4" />
+                                )}
+                                Finalizar Compra
+                            </Button>
+                        )
+                    }
+                />
             }
         >
             <div className="flex flex-1 overflow-hidden h-full">

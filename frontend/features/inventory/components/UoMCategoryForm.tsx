@@ -132,12 +132,8 @@ export function UoMCategoryForm({ open: openProp, onOpenChange, initialData, onS
             size={initialData?.id ? "lg" : "sm"}
             hideScrollArea={!!initialData?.id}
             contentClassName={initialData?.id ? "p-0" : undefined}
-            title={
-                <div className="flex items-center gap-3">
-                    <Ruler className="h-5 w-5 text-muted-foreground" />
-                    <span>{initialData?.id ? "Editar Categoría de Medida" : "Nueva Categoría de Medida"}</span>
-                </div>
-            }
+            icon={Ruler}
+            title={initialData?.id ? "Editar Categoría de Medida" : "Nueva Categoría de Medida"}
             description={initialData?.id ? "Modifique el nombre de la categoría y consulte el historial." : "Define un agrupador para unidades del mismo tipo."}
             footer={
                 <FormFooter

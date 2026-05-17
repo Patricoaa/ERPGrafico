@@ -35,7 +35,7 @@ export default function WorkbenchPage({ params }: { params: Promise<{ id: string
 
     if (isLoading) {
         return (
-            <div className="flex-1 p-8 pt-6">
+            <div className="flex-1">
                 <TableSkeleton rows={12} columns={5} />
             </div>
         )
@@ -43,7 +43,7 @@ export default function WorkbenchPage({ params }: { params: Promise<{ id: string
 
     if (!statement) {
         return (
-            <div className="flex-1 p-8 flex items-center justify-center">
+            <div className="flex-1 flex items-center justify-center min-h-[200px]">
                 <p className="text-muted-foreground">No se encontró la cartola.</p>
             </div>
         )

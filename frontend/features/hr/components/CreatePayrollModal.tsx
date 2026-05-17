@@ -85,19 +85,9 @@ export function CreatePayrollModal({ open, onOpenChange, onSaved, trigger }: Cre
         <BaseModal
             open={open}
             onOpenChange={onOpenChange}
-            title={
-                <div className="flex items-center gap-3">
-                    <div className="p-2 bg-primary/10 rounded-sm text-primary">
-                        <Plus className="h-5 w-5" />
-                    </div>
-                    <div className="flex flex-col text-left">
-                        <span className="text-lg font-bold tracking-tight">Nueva Liquidación</span>
-                        <div className="flex items-center gap-2 text-[10px] font-medium text-muted-foreground uppercase tracking-widest">
-                            RRHH <span className="opacity-30">|</span> Emisión Mensual
-                        </div>
-                    </div>
-                </div>
-            }
+            icon={Plus}
+            title="Nueva Liquidación"
+            description="RRHH • Emisión Mensual"
             footer={
                 <FormFooter
                     actions={
@@ -107,7 +97,7 @@ export function CreatePayrollModal({ open, onOpenChange, onSaved, trigger }: Cre
                                 form="create-payroll-form"
                                 loading={saving}
                                 icon={<FileText className="mr-2 h-3.5 w-3.5" />}
-                                className="rounded-sm text-xs font-bold transition-all shadow-lg shadow-primary/20"
+                                className="rounded-sm text-xs font-bold transition-all"
                             >
                                 Crear Liquidación
                             </SubmitButton>

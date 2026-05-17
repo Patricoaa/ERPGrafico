@@ -102,14 +102,8 @@ export function AdvanceFormModal({ open, onOpenChange, advance, employees, payro
             open={open}
             onOpenChange={onOpenChange}
             size={advance ? "xl" : "md"}
-            title={
-                <div className="flex items-center gap-3">
-                    <div className="p-2 bg-primary/10 rounded-sm">
-                        <WalletCards className="h-5 w-5 text-primary" />
-                    </div>
-                    <span>{advance ? "Ficha de Anticipo" : "Nuevo Anticipo"}</span>
-                </div>
-            }
+            icon={WalletCards}
+            title={advance ? "Ficha de Anticipo" : "Nuevo Anticipo"}
             description={advance ? "Revise y modifique los datos del anticipo solicitado." : "Registre una entrega de dinero a cuenta de la próxima liquidación."}
             hideScrollArea={true}
             contentClassName="p-0"

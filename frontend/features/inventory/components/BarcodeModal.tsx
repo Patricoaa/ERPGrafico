@@ -149,12 +149,8 @@ export function BarcodeModal({ open, onOpenChange, initialValue = "", onApply }:
             open={open}
             onOpenChange={onOpenChange}
             size="md"
-            title={
-                <div className="flex items-center gap-2">
-                    <Barcode className="h-5 w-5 text-primary" />
-                    Código de Barras
-                </div>
-            }
+            icon={Barcode}
+            title="Código de Barras"
             description="Visualice, genere o descargue el código de barras para este producto."
             footer={
                 <FormFooter

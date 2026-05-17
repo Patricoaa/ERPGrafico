@@ -20,6 +20,7 @@ import { VariantQuickEditForm } from "./VariantQuickEditForm"
 import { BulkVariantEditForm } from "./BulkVariantEditForm"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+import { BaseModal } from "@/components/shared/BaseModal"
 
 interface ProductVariantsTabProps {
     form: UseFormReturn<ProductFormValues>
@@ -254,7 +255,7 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
 
                     <Button
                         size="sm"
-                        className="h-9 px-5 text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary/20 transition-all hover:scale-[1.02]"
+                        className="h-9 px-5 text-[10px] font-black uppercase tracking-widest  transition-all hover:scale-[1.02]"
                         disabled={availableAttributes.length === 0}
                         onClick={() => setIsSheetOpen(true)}
                     >
@@ -266,14 +267,9 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                         open={isSheetOpen}
                         onOpenChange={setIsSheetOpen}
                         size="md"
-                        title={
-                            <div className="flex items-center gap-4 text-2xl font-black uppercase tracking-tighter">
-                                <div className="p-3 bg-primary/10 rounded-2xl border-2 border-primary/20">
-                                    <Wand2 className="h-8 w-8 text-primary" />
-                                </div>
-                                Generar Combinaciones
-                            </div>
-                        }
+                        icon={Wand2}
+                        title="Generar Combinaciones"
+                        description="Seleccione los valores de cada atributo para generar la matriz de variantes de producto."
                     >
                         <div className="flex flex-col h-full p-2">
                             <div className="flex-1 flex flex-col min-h-0 overflow-hidden">

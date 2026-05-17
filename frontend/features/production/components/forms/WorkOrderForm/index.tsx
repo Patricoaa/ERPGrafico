@@ -6,7 +6,7 @@ import React, { useState, useEffect, useRef } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Plus, FileText } from "lucide-react"
+import { Plus, FileText, Workflow } from "lucide-react"
 import { format } from "date-fns"
 
 import { BaseModal } from "@/components/shared/BaseModal"
@@ -23,7 +23,7 @@ import { ManufacturingSpecsEditor, emptyManufacturingData, type ManufacturingDat
 import { workOrderSchema, type WorkOrderFormValues, type WorkOrderInitialData } from "@/types/forms"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
-import { LabeledInput, Chip } from "@/components/shared";
+import { LabeledInput, Chip, FormFooter, CancelButton } from "@/components/shared";
 import type { SaleOrderLine } from "@/features/sales/types"
 import type { Contact } from "@/features/contacts/types"
 import type { UoM, ProductMinimal } from "../../../types"
@@ -373,50 +373,43 @@ export function WorkOrderForm({ onSuccess, initialData, open: openProp, onOpenCh
                 onOpenChange={setOpen}
                 size="full"
                 className="max-w-[1000px]"
-                title={
-                    <div className="flex items-center justify-between w-full pr-8">
-                        <div className="space-y-1">
-                            <div className="text-xl font-bold">
-                                {initialData ? `Orden de Trabajo #${initialData?.number}` : "Crear Orden de Trabajo"}
-                            </div>
-                        </div>
-                        {renderStatusBadge()}
-                    </div>
-                }
+                icon={Workflow}
+                title={initialData ? `Orden de Trabajo #${initialData?.number}` : "Crear Orden de Trabajo"}
+                description={initialData ? `Planificación de Producción • OT Estado: ${translateStatus(initialData.status || "DRAFT")}` : "Planificación de Producción • Configuración de Orden"}
                 headerActions={
-                    !initialData && otType && (
-                        <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="text-[10px] h-8 px-3 text-muted-foreground uppercase font-black tracking-widest bg-muted/30 hover:bg-muted/50 border border-muted-foreground/10"
-                            onClick={() => {
-                                setOtType(null)
-                                form.reset()
-                            }}
-                        >
-                            Cambiar Tipo
-                        </Button>
-                    )
+                    <div className="flex items-center gap-3">
+                        {renderStatusBadge()}
+                        {!initialData && otType && (
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="text-[10px] h-8 px-3 text-muted-foreground uppercase font-black tracking-widest bg-muted/30 hover:bg-muted/50 border border-muted-foreground/10"
+                                onClick={() => {
+                                    setOtType(null)
+                                    form.reset()
+                                }}
+                            >
+                                Cambiar Tipo
+                            </Button>
+                        )}
+                    </div>
                 }
                 footer={
-                    <div className="flex justify-end gap-2 w-full">
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => setOpen(false)}
-                            disabled={loading}
-                        >
-                            Cancelar
-                        </Button>
-                        <ActionSlideButton
-                            form="work-order-form"
-                            type="submit"
-                            disabled={loading || (otType === "NONE" && !form.watch('product_id') && !initialData)}
-                        >
-                            {loading ? "Guardando..." : initialData ? "Guardar Cambios" : "Crear Orden"}
-                        </ActionSlideButton>
-                    </div>
+                    <FormFooter
+                        actions={
+                            <>
+                                <CancelButton onClick={() => setOpen(false)} disabled={loading} />
+                                <ActionSlideButton
+                                    form="work-order-form"
+                                    type="submit"
+                                    disabled={loading || (otType === "NONE" && !form.watch('product_id') && !initialData)}
+                                >
+                                    {loading ? "Guardando..." : initialData ? "Guardar Cambios" : "Crear Orden"}
+                                </ActionSlideButton>
+                            </>
+                        }
+                    />
                 }
             >
                 <Form {...form}>

@@ -12,6 +12,9 @@ interface JournalEntryDetailClientProps {
 }
 
 export function JournalEntryDetailClient({ entryId }: JournalEntryDetailClientProps) {
+    const router = useRouter()
+    const [isSaving, setIsSaving] = useState(false)
+
     const { data: entry, isLoading: loading, error: queryError } = useQuery({
         queryKey: ['journalEntry', entryId],
         queryFn: async () => {

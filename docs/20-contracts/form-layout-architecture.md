@@ -295,7 +295,7 @@ Layout estandarizado para el footer de formularios y modales.
 | `className` | `string` | ❌ | — | Clases adicionales |
 
 **Reglas de footer:**
-- **Primary Action**: `SubmitButton` o `ActionSlideButton` con `shadow-lg shadow-primary/20`.
+- **Primary Action**: `SubmitButton` o `ActionSlideButton` con ``.
 - **Secondary**: `CancelButton` (Outline/Ghost) a la izquierda del primary.
 - **Contextual**: Danger actions (`DangerButton`) al extremo izquierdo.
 - **Typography**: Todos los botones deben ser `font-black text-[10px] uppercase tracking-widest`.

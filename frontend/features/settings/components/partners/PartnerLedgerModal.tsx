@@ -10,15 +10,13 @@ import {
     Wallet,
     LogOut
 } from "lucide-react"
-import { BaseDrawer } from "@/components/shared"
+import { BaseDrawer, DataTable, TableSkeleton, Chip } from "@/components/shared"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
 import { PartnerStatement, PartnerTransaction } from "@/features/contacts/types/partner"
 import { toast } from "sonner"
 import { formatPlainDate as formatDate, cn } from "@/lib/utils"
 
-import { DataTable } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
-import { TableSkeleton } from "@/components/shared"
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu"
 import { PartnerContributionWizard } from "@/features/settings/components/partners/PartnerContributionWizard"
 import { PartnerWithdrawalWizard } from "@/features/settings/components/partners/PartnerWithdrawalWizard"

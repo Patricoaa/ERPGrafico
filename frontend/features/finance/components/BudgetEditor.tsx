@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from 'react';
-import { BaseModal, DataCell, LoadingFallback, MoneyDisplay } from "@/components/shared";
+import { BaseModal, DataCell, LoadingFallback, MoneyDisplay, FormFooter, CancelButton } from "@/components/shared";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -237,18 +237,21 @@ export function BudgetEditor({ open, onOpenChange, budget, onSave }: BudgetEdito
             open={open}
             onOpenChange={onOpenChange}
             size="full"
+            icon={BarChart2}
+            title={`Editar Presupuesto: ${budget?.name || ""}`}
+            description="Planificación Financiera • Control de Gestión"
             hideScrollArea
-            title={
-                <div className="flex items-center gap-2">
-                    <BarChart2 className="h-5 w-5 text-primary" />
-                    Editar Presupuesto: {budget?.name}
-                </div>
-            }
             footer={
-                <>
-                    <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-                    <Button onClick={handleSave} className="px-8 font-bold">Guardar Presupuesto</Button>
-                </>
+                <FormFooter
+                    actions={
+                        <>
+                            <CancelButton onClick={() => onOpenChange(false)} />
+                            <Button onClick={handleSave} className="px-8 font-bold ">
+                                Guardar Presupuesto
+                            </Button>
+                        </>
+                    }
+                />
             }
         >
             <div className="flex flex-col h-full bg-background overflow-hidden">

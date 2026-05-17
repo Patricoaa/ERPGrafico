@@ -274,7 +274,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
                                             e.stopPropagation()
                                             handleCreate()
                                         }}
-                                        className="w-full md:w-auto h-10 px-6 gap-2 rounded-lg font-black uppercase tracking-widest text-[11px] shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5"
+                                        className="w-full md:w-auto h-10 px-6 gap-2 rounded-lg font-black uppercase tracking-widest text-[11px]  transition-all hover:-translate-y-0.5"
                                         disabled={selectedVariantId === "all"}
                                     >
                                         <Plus className="h-4 w-4" />

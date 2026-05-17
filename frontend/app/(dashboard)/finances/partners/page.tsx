@@ -5,7 +5,6 @@ import { toast } from "sonner"
 import { LoadingFallback } from "@/components/shared/LoadingFallback"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
-import { PageContainer } from "@/components/shared"
 import { useSearchParams, useRouter } from "next/navigation"
 import { PartnerAccountingTab } from "@/features/settings"
 import Link from "next/link"
@@ -121,7 +120,7 @@ export default function PartnersPage() {
     ) : null
 
     return (
-        <PageContainer>
+        <div className="space-y-6">
             <PageHeader
                 title={headerConfig.title}
                 description={headerConfig.description}
@@ -158,6 +157,6 @@ export default function PartnersPage() {
                     )}
                 </Suspense>
             </div>
-        </PageContainer>
+        </div>
     )
 }
