@@ -15,10 +15,8 @@ import {
     TableRow,
 } from "@/components/ui/table"
 import {
-
     History,
     FileText,
-    LayoutDashboard,
     Receipt
 } from "lucide-react"
 import api from "@/lib/api"
@@ -40,7 +38,6 @@ import {
     Cell
 } from 'recharts'
 import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { DateRangeFilter } from "@/components/shared/DateRangeFilter"
 import { translateStatus } from "@/lib/utils"
@@ -288,19 +285,17 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                                                             <DataCell.Currency value={order.total} className="text-right font-black" />
                                                         </TableCell>
                                                         <TableCell className="text-center">
-                                                            <Button
-                                                                variant="outline"
-                                                                size="sm"
-                                                                className="h-9 rounded-full gap-2 px-4 border-primary/20 hover:bg-primary hover:text-white transition-all shadow-sm"
-                                                                onClick={() => openHub({
-                                                                    orderId: order.id,
-                                                                    type: 'purchase',
-                                                                    onActionSuccess: fetchHistory
-                                                                })}
-                                                            >
-                                                                <LayoutDashboard className="h-4 w-4" />
-                                                                Gestionar
-                                                            </Button>
+                                                            <DataCell.ActionGroup>
+                                                                <DataCell.Action
+                                                                    action="hub"
+                                                                    title="Gestionar OCS"
+                                                                    onClick={() => openHub({
+                                                                        orderId: order.id,
+                                                                        type: 'purchase',
+                                                                        onActionSuccess: fetchHistory
+                                                                    })}
+                                                                />
+                                                            </DataCell.ActionGroup>
                                                         </TableCell>
                                                     </TableRow>
                                                 ))}
@@ -364,19 +359,17 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                                                             <DataCell.Currency value={note.total} className="text-right font-black" />
                                                         </TableCell>
                                                         <TableCell className="text-center">
-                                                            <Button
-                                                                variant="outline"
-                                                                size="sm"
-                                                                className="h-9 rounded-full gap-2 px-4 border-primary/20 hover:bg-primary hover:text-white transition-all shadow-sm"
-                                                                onClick={() => openHub({
-                                                                    invoiceId: note.id,
-                                                                    type: 'purchase',
-                                                                    onActionSuccess: fetchHistory
-                                                                })}
-                                                            >
-                                                                <LayoutDashboard className="h-4 w-4" />
-                                                                Gestionar
-                                                            </Button>
+                                                            <DataCell.ActionGroup>
+                                                                <DataCell.Action
+                                                                    action="hub"
+                                                                    title="Gestionar nota"
+                                                                    onClick={() => openHub({
+                                                                        invoiceId: note.id,
+                                                                        type: 'purchase',
+                                                                        onActionSuccess: fetchHistory
+                                                                    })}
+                                                                />
+                                                            </DataCell.ActionGroup>
                                                         </TableCell>
                                                     </TableRow>
                                                 ))}

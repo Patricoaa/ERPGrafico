@@ -16,7 +16,7 @@ import {
 } from '@/features/hr/api/hrApi'
 import { getEmployeePayrollPreview } from '@/features/profile/api/profileApi'
 import { PaymentModal } from "@/features/treasury/components/PaymentModal"
-import type { Payroll, PayrollItem, PayrollConcept, PayrollPayment } from "@/types/hr"
+import type { PayrollItem, PayrollConcept } from "@/types/hr"
 import { Button } from "@/components/ui/button"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 
@@ -30,15 +30,15 @@ import {
     AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger
 } from "@/components/ui/alert-dialog"
 import {
-    Loader2, Trash2, BookOpen,
+    Loader2, BookOpen,
     DollarSign, ShieldCheck, Sparkles,
     CheckCircle2, FileText, ArrowLeft
 } from "lucide-react"
+import { DataCell } from "@/components/shared"
 import { TableSkeleton } from "@/components/shared/TableSkeleton"
 import { PayrollCard } from "@/features/hr/components/PayrollCard"
 import { cn } from "@/lib/utils"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
-import { SheetCloseButton } from "@/components/shared/SheetCloseButton"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
 
@@ -66,7 +66,7 @@ interface PayrollDetailContentProps {
 
 export function PayrollDetailContent({ payrollId, onClose, onUpdate, isSheet = false, viewMode = 'admin', employee }: PayrollDetailContentProps) {
     const router = useRouter()
-    
+
     const [posting, setPosting] = useState(false)
     const [generating, setGenerating] = useState(false)
     const [editingItem, setEditingItem] = useState<PayrollItem | null>(null)
@@ -176,7 +176,7 @@ export function PayrollDetailContent({ payrollId, onClose, onUpdate, isSheet = f
     const totalAdvances = payroll.advances?.reduce((s, a) => s + parseFloat(a.amount), 0) || 0
     const totalSalaryPaid = payments.filter(p => p.payment_type === 'SALARIO').reduce((s, p) => s + parseFloat(p.amount), 0)
     const pendingSalary = Math.max(0, netSalary - totalAdvances - totalSalaryPaid)
-    
+
     const workerLegalDiscounts = payroll.items?.filter(i => i.concept_detail?.category === 'DESCUENTO_LEGAL_TRABAJADOR') || []
     const employerContributions = payroll.items?.filter(i => i.concept_detail?.category === 'DESCUENTO_LEGAL_EMPLEADOR') || []
     const totalPreviredRequired = (workerLegalDiscounts.reduce((s, i) => s + parseFloat(i.amount), 0)) + employerContributions.reduce((s, i) => s + parseFloat(i.amount), 0)
@@ -192,10 +192,10 @@ export function PayrollDetailContent({ payrollId, onClose, onUpdate, isSheet = f
             )}>
                 <div className="flex items-center gap-4">
                     {!isSheet && (
-                        <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            onClick={() => router.push('/hr/payrolls')} 
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => router.push('/hr/payrolls')}
                             className="rounded-sm h-10 w-10 text-muted-foreground hover:bg-primary/5 hover:text-primary transition-all"
                         >
                             <ArrowLeft className="h-5 w-5" />
@@ -228,7 +228,7 @@ export function PayrollDetailContent({ payrollId, onClose, onUpdate, isSheet = f
                     {viewMode === 'admin' && !isPosted && (
                         <>
                             <Button
-                                variant="outline" 
+                                variant="outline"
                                 size="sm"
                                 className="rounded-sm text-[10px] sm:text-xs font-bold gap-1.5 border-primary/20 text-primary hover:bg-primary/5 px-2 sm:px-4 h-8 sm:h-9"
                                 onClick={handleGenerateProforma}
@@ -250,7 +250,7 @@ export function PayrollDetailContent({ payrollId, onClose, onUpdate, isSheet = f
                                     <AlertDialogHeader>
                                         <AlertDialogTitle className="text-xl font-black tracking-tight">¿Contabilizar liquidación?</AlertDialogTitle>
                                         <AlertDialogDescription className="text-sm">
-                                            Se generarán los asientos contables asociados a los haberes y retenciones legales. 
+                                            Se generarán los asientos contables asociados a los haberes y retenciones legales.
                                             Esta acción bloqueará la edición de la liquidación.
                                         </AlertDialogDescription>
                                     </AlertDialogHeader>
@@ -267,7 +267,7 @@ export function PayrollDetailContent({ payrollId, onClose, onUpdate, isSheet = f
                     {viewMode === 'admin' && isPosted && (
                         <>
                             <Button
-                                variant="outline" 
+                                variant="outline"
                                 size="sm"
                                 className={cn(
                                     "rounded-sm text-[10px] sm:text-xs font-bold gap-1.5 px-2 sm:px-4 h-8 sm:h-9 transition-all",
@@ -282,7 +282,7 @@ export function PayrollDetailContent({ payrollId, onClose, onUpdate, isSheet = f
                                 {salaroPaid ? "Pagado" : "Pagar Sueldo"}
                             </Button>
                             <Button
-                                variant="outline" 
+                                variant="outline"
                                 size="sm"
                                 className={cn(
                                     "rounded-sm text-[10px] sm:text-xs font-bold gap-1.5 px-2 sm:px-4 h-8 sm:h-9 transition-all",
@@ -298,16 +298,9 @@ export function PayrollDetailContent({ payrollId, onClose, onUpdate, isSheet = f
                             </Button>
                         </>
                     )}
-                    
+
                     {viewMode === 'admin' && !isPosted && (
-                        <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-8 w-8 sm:h-9 sm:w-9 rounded-sm text-destructive hover:bg-destructive/10" 
-                            onClick={handleDeletePayroll}
-                        >
-                            <Trash2 className="h-4 w-4 sm:h-4.5 sm:w-4.5" />
-                        </Button>
+                        <DataCell.Action action="delete" onClick={handleDeletePayroll} />
                     )}
 
                     {isSheet && (
@@ -323,7 +316,7 @@ export function PayrollDetailContent({ payrollId, onClose, onUpdate, isSheet = f
             {/* Scroll Area for Content */}
             <div className={cn("flex-1", isSheet ? "overflow-y-auto custom-scrollbar p-6 bg-muted/30" : "")}>
                 <div className={cn(isSheet ? "max-w-4xl mx-auto pb-12" : "")}>
-                    <PayrollCard 
+                    <PayrollCard
                         payroll={payroll}
                         isPosted={isPosted}
                         isSalaryPaid={salaroPaid}
@@ -346,7 +339,7 @@ export function PayrollDetailContent({ payrollId, onClose, onUpdate, isSheet = f
                 title="Registrar Pago de Sueldo"
                 total={pendingSalary}
                 pendingAmount={pendingSalary}
-                isPurchase={true} 
+                isPurchase={true}
                 hideDteFields={true}
                 onConfirm={async (data) => {
                     await paySalary(payrollId, data)
@@ -480,9 +473,9 @@ function PayrollItemDialog({ payrollId, item, concepts, onSaved, onEditCleared, 
             }
         >
             <Form {...form}>
-                <form 
+                <form
                     id="payroll-item-form"
-                    onSubmit={form.handleSubmit(onSubmit)} 
+                    onSubmit={form.handleSubmit(onSubmit)}
                     className="space-y-5 text-left py-2"
                 >
                     <FormField control={form.control} name="concept" render={({ field, fieldState }) => (

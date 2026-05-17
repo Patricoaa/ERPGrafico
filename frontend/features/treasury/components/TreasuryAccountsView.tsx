@@ -4,7 +4,6 @@ import React, { useState, useEffect } from "react"
 import { useTreasuryAccounts, type TreasuryAccount } from "@/features/treasury"
 import { SmartSearchBar, useSmartSearch } from "@/components/shared"
 import { treasuryAccountSearchDef } from "../searchDef"
-import { Button } from "@/components/ui/button"
 import {
     ColumnDef
 } from "@tanstack/react-table"
@@ -197,15 +196,15 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
             renderActions: (item) => (
                 item.is_system_managed ? (
                     <DataCell.Action
-                        icon={Lock}
+                        action="lock"
                         title="Gestionada por sistema"
                         onClick={() => handleEdit(item)}
                         className="text-muted-foreground cursor-default opacity-50"
                     />
                 ) : (
                     <>
-                        <DataCell.Action icon={Pencil} title="Editar" onClick={() => handleEdit(item)} />
-                        <DataCell.Action icon={Trash2} title="Eliminar" className="text-destructive" onClick={() => handleDelete(item.id)} />
+                        <DataCell.Action action="edit" onClick={() => handleEdit(item)} />
+                        <DataCell.Action action="delete" onClick={() => handleDelete(item.id)} />
                     </>
                 )
             ),

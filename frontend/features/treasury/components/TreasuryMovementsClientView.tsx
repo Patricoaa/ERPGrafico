@@ -111,7 +111,7 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                 const m = row.original
                 return (
                     <div className="flex justify-center w-full">
-                        <DataCell.DocumentId label="treasury.treasurymovement" data={m} />
+                        <DataCell.Entity label="treasury.treasurymovement" data={m} />
                     </div>
                 )
             },
@@ -296,7 +296,7 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
         },
         createActionsColumn<TreasuryMovement>({
             renderActions: (item) => (
-                <DataCell.Action icon={Eye} title="Ver Detalle" onClick={() => handleViewDetails(item.id)} />
+                <DataCell.Action action="view" onClick={() => handleViewDetails(item.id)} />
             ),
         })
     ], [openTreasuryAccount, handleViewDetails])

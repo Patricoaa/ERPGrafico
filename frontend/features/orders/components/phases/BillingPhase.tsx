@@ -3,7 +3,7 @@ import { getErrorMessage } from "@/lib/errors"
 import { useState } from "react"
 import { PhaseCard } from "./PhaseCard"
 import { FileText, Trash2, X } from "lucide-react"
-import { formatDocumentId } from '@/features/orders/utils/status'
+import { formatEntity } from '@/features/orders/utils/status'
 import { getDtePrefix, getDteLabel } from '@/lib/entity-registry'
 import api from "@/lib/api"
 import { toast } from "sonner"
@@ -46,8 +46,8 @@ export function BillingPhase({
     isOpen,
     onOpenChange,
 }: BillingPhaseProps) {
-    const registry = (activeDoc?.document_type as string === 'PURCHASE_ORDER' || activeDoc?.document_type as string === 'SERVICE_OBLIGATION') 
-        ? purchaseOrderActions 
+    const registry = (activeDoc?.document_type as string === 'PURCHASE_ORDER' || activeDoc?.document_type as string === 'SERVICE_OBLIGATION')
+        ? purchaseOrderActions
         : saleOrderActions
     const [confirmModal, setConfirmModal] = useState<{
         open: boolean,
@@ -119,7 +119,7 @@ export function BillingPhase({
                 documents={[
                     ...(isNoteMode ? [{
                         type: activeDoc.dte_type_display || 'Nota',
-                        number: activeDoc.display_id || formatDocumentId(
+                        number: activeDoc.display_id || formatEntity(
                             getDtePrefix(activeDoc.dte_type),
                             activeDoc.number || '---',
                             activeDoc.display_id
@@ -136,7 +136,7 @@ export function BillingPhase({
                         .filter((inv: Order) => !isNoteMode || inv.id !== activeDoc.id)
                         .map((inv: Order) => ({
                             type: inv.dte_type_display || 'Documento',
-                            number: inv.display_id || formatDocumentId(
+                            number: inv.display_id || formatEntity(
                                 getDtePrefix(inv.dte_type),
                                 inv.number || '---',
                                 inv.display_id

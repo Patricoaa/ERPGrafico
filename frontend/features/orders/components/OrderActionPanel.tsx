@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import {
-    Sheet,
     SheetHeader,
     SheetTitle,
     SheetDescription,
@@ -21,6 +20,7 @@ import { toast } from 'sonner'
 import { ActionCategory } from './ActionCategory'
 import { filterAvailableActions } from '@/lib/action-utils'
 import { formatPlainDate } from '@/lib/utils'
+import { formatCurrency } from '@/lib/money'
 import { purchaseOrderActions } from '@/features/purchasing/actions'
 import { saleOrderActions } from '@/features/sales/actions'
 import type { UserPermissions } from '@/types/actions'
@@ -110,15 +110,15 @@ export function OrderActionPanel({
     const paymentProgress = getPaymentProgress()
 
     return (
-            <CollapsibleSheet
-                sheetId={`ACTION_PANEL_${orderId}`}
-                open={open}
-                onOpenChange={onOpenChange}
-                tabLabel="Acciones"
-                tabIcon={Zap}
-                size="md"
-            >
-                <div className="flex flex-col h-full">
+        <CollapsibleSheet
+            sheetId={`ACTION_PANEL_${orderId}`}
+            open={open}
+            onOpenChange={onOpenChange}
+            tabLabel="Acciones"
+            tabIcon={Zap}
+            size="md"
+        >
+            <div className="flex flex-col h-full">
                 <SheetHeader className="px-6 pt-6 pb-4">
                     <SheetTitle className="text-xl font-black tracking-tight">
                         {loading ? (
@@ -154,7 +154,7 @@ export function OrderActionPanel({
                     </SheetDescription>
                 </SheetHeader>
 
-                <SheetCloseButton 
+                <SheetCloseButton
                     onClick={() => onOpenChange(false)}
                     className="absolute top-4 right-4 z-[60]"
                 />
@@ -179,7 +179,7 @@ export function OrderActionPanel({
                                     <div className="space-y-1">
                                         <span className="text-xs text-muted-foreground">Total</span>
                                         <div className="text-lg font-bold">
-                                            ${Number(order?.total || 0).toLocaleString('es-CL')}
+                                            {formatCurrency(order?.total || 0)}
                                         </div>
                                     </div>
 
@@ -209,11 +209,11 @@ export function OrderActionPanel({
                                     <Progress value={paymentProgress.percentage} className="h-2" />
                                     <div className="flex justify-between text-xs">
                                         <span className="text-muted-foreground">
-                                            Pagado: ${paymentProgress.paid.toLocaleString('es-CL')}
+                                            Pagado: {formatCurrency(paymentProgress.paid)}
                                         </span>
                                         {paymentProgress.pending > 0 && (
                                             <span className="text-warning font-medium">
-                                                Pendiente: ${paymentProgress.pending.toLocaleString('es-CL')}
+                                                Pendiente: {formatCurrency(paymentProgress.pending)}
                                             </span>
                                         )}
                                     </div>
@@ -260,7 +260,7 @@ export function OrderActionPanel({
                         </div>
                     )}
                 </ScrollArea>
-                </div>
-            </CollapsibleSheet>
+            </div>
+        </CollapsibleSheet>
     )
 }

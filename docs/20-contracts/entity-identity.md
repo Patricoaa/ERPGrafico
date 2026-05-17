@@ -23,7 +23,7 @@ Sistema centralizado de identidad de entidades ERP. Define el **único lugar** d
 4. [EntityBadge](#4-entitybadge)
 5. [EntityHeader](#5-entityheader)
 6. [EntityDetailPage](#6-entitydetailpage)
-7. [DataCell.DocumentId](#7-datacelldocumentid)
+7. [DataCell.Entity](#7-datacellEntity)
 8. [PageHeader — integración con iconos](#8-pageheader--integración-con-iconos)
 9. [Tabla maestra de prefijos](#9-tabla-maestra-de-prefijos)
 10. [Reglas de cumplimiento y prohibiciones](#10-reglas-de-cumplimiento)
@@ -177,7 +177,7 @@ Componente premium para renderizar identificadores de entidades de forma consist
 | `size` | `'sm' \| 'md' \| 'lg'` | ❌ | `'md'` | Tamaño del badge |
 | `className` | `string` | ❌ | — | Clases adicionales |
 
-**Uso en tablas**: ver `DataCell.DocumentId` (§7) que es el wrapper para listas.
+**Uso en tablas**: ver `DataCell.Entity` (§7) que es el wrapper para listas.
 
 ---
 
@@ -257,7 +257,7 @@ Shell completo para rutas `[id]/page.tsx`. Orquesta `EntityHeader` + `FormSplitL
 
 ---
 
-## 7. DataCell.DocumentId
+## 7. DataCell.Entity
 
 **Archivo**: `frontend/components/ui/data-table-cells.tsx`  
 **Import**: `import { DataCell } from '@/components/ui/data-table-cells'`
@@ -266,13 +266,13 @@ Celda de tabla estandarizada para mostrar identificadores de documentos. Interna
 
 ```tsx
 // ✅ Correcto — usar entityLabel directamente (preferido)
-<DataCell.DocumentId entityLabel="purchasing.purchaseorder" data={row.original} />
+<DataCell.Entity entityLabel="purchasing.purchaseorder" data={row.original} />
 
 // ✅ Aceptable — type como clave del mapa interno
-<DataCell.DocumentId type="purchase_order" number={row.getValue('number')} />
+<DataCell.Entity type="purchase_order" number={row.getValue('number')} />
 
 // ❌ Incorrecto — type en mayúsculas no existe en el mapa
-<DataCell.DocumentId type="PURCHASE_ORDER" number={row.getValue('number')} />
+<DataCell.Entity type="PURCHASE_ORDER" number={row.getValue('number')} />
 ```
 
 | prop | type | required | default | notes |
@@ -374,7 +374,7 @@ Todos los prefijos canónicos del sistema. **No usar prefijos que no estén en e
 ### ✅ Permitido
 
 - Leer metadata via `getEntityMetadata()`, `getEntityIcon()`, `formatEntityDisplay()`.
-- Renderizar identificadores via `EntityBadge` o `DataCell.DocumentId`.
+- Renderizar identificadores via `EntityBadge` o `DataCell.Entity`.
 - Usar `EntityHeader` / `EntityDetailPage` en todas las rutas `[id]/page.tsx`.
 - Agregar entidades nuevas al registry con ADR previo si cambia la interfaz `EntityMetadata`.
 
@@ -385,7 +385,7 @@ Todos los prefijos canónicos del sistema. **No usar prefijos que no estén en e
 <span>OCS-{order.number}</span>
 
 // ❌ type en mayúsculas (no existe en el mapa)
-<DataCell.DocumentId type="PURCHASE_ORDER" ... />
+<DataCell.Entity type="PURCHASE_ORDER" ... />
 
 // ❌ Ícono de entidad ad-hoc fuera del registry
 <ShoppingCart className="h-5 w-5" />  // en un EntityHeader
@@ -403,7 +403,7 @@ Todos los prefijos canónicos del sistema. **No usar prefijos que no estén en e
 - [ ] Entrada en `ENTITY_REGISTRY` con todos los campos de `EntityMetadata`
 - [ ] Regla en `detectEntityLabel()` para el prefijo canónico
 - [ ] Backend: `AppConfig.ready()` registra la entidad con `title_singular`, `title_plural`, `short_display_template` (si es buscable)
-- [ ] Vista de lista: `DataCell.DocumentId` usa `entityLabel` o `type` en snake_case correcto
+- [ ] Vista de lista: `DataCell.Entity` usa `entityLabel` o `type` en snake_case correcto
 - [ ] Vista de detalle: `EntityDetailPage` usa `entityLabel`
 
 ---

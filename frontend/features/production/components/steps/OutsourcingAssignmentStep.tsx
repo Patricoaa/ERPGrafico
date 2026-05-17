@@ -1,7 +1,7 @@
 "use client"
 
-import { Plus, Truck, Pencil, Trash2, Info } from 'lucide-react'
-import { Chip } from '@/components/shared'
+import { Plus, Truck, Info } from 'lucide-react'
+import { ActionConfirmModal, Chip, DataCell } from '@/components/shared'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { formatCurrency } from "@/lib/money"
@@ -34,6 +34,7 @@ export function OutsourcingAssignmentStep({
   const [editingId, setEditingId] = useState<number | null>(null)
   const [formData, setFormData] = useState<OutsourcedServiceValues>(emptyOutsourcedService())
   const [uoms] = useState<UoM[]>([])
+  const [serviceToDelete, setServiceToDelete] = useState<WorkOrderMaterial | null>(null)
 
   const reset = () => {
     setIsAddOpen(false)
@@ -143,14 +144,10 @@ export function OutsourcingAssignmentStep({
                   </p>
                 </div>
                 {isViewingCurrentStage && !m.purchase_order_number && (
-                  <div className="flex gap-1">
-                    <Button variant="ghost" size="icon" onClick={() => handleEdit(m)} className="h-8 w-8">
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleDelete(m.id)} className="h-8 w-8 text-destructive hover:bg-destructive/10">
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
+                  <DataCell.ActionGroup>
+                    <DataCell.Action action="edit" onClick={() => handleEdit(m)} />
+                    <DataCell.Action action="delete" onClick={() => setServiceToDelete(m)} />
+                  </DataCell.ActionGroup>
                 )}
                 <div className="flex items-center gap-2">
                   <Chip size="xs">OCS-{m.purchase_order_number}</Chip>
@@ -188,6 +185,23 @@ export function OutsourcingAssignmentStep({
           </div>
         )}
       </div>
+
+      <ActionConfirmModal
+        open={serviceToDelete !== null}
+        onOpenChange={(open) => { if (!open) setServiceToDelete(null) }}
+        onConfirm={async () => {
+          if (serviceToDelete) await handleDelete(serviceToDelete.id)
+        }}
+        title="Eliminar servicio tercerizado"
+        description={
+          <>
+            ¿Eliminar <strong>{serviceToDelete?.component_name}</strong> de la orden de trabajo?
+            Esta acción no se puede deshacer.
+          </>
+        }
+        variant="destructive"
+        confirmText="Eliminar"
+      />
     </div>
   )
 }

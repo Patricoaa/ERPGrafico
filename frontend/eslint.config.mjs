@@ -133,7 +133,7 @@ const eslintConfig = defineConfig([...nextVitals, ...nextTs, globalIgnores([
         message: "React Query hooks must only be used within feature hooks (features/*/hooks/). Do not import them directly in components."
       }]
     }],
-    "no-restricted-syntax": ["warn", 
+    "no-restricted-syntax": ["warn",
       {
         selector: "CallExpression[callee.property.name='toLocaleString']",
         message: "Do not use .toLocaleString() for currency or quantities. Use <MoneyDisplay> or <QuantityDisplay> instead to ensure consistent UI across the app."
@@ -145,6 +145,27 @@ const eslintConfig = defineConfig([...nextVitals, ...nextTs, globalIgnores([
       {
         selector: "JSXElement[openingElement.name.name='Button'] JSXElement[openingElement.name.name='Loader2']",
         message: "Violación de Diseño Industrial: No inyecte Loader2 manualmente en Button. Utilice <SubmitButton loading={...}> o <ActionSlideButton loading={...}>."
+      },
+      {
+        // Row/card action anti-pattern: <Button>...<RegistryIcon/>...</Button>.
+        // Matches when a Button has a child JSX whose name matches a ROW_ACTIONS icon (or known drift alias).
+        // Legit icon buttons (Bell, X, Plus, ChevronLeft, Settings, etc.) are NOT flagged.
+        // Internal renderers (DataCell.Action / IconButton) use a dynamic <Icon> child, so they are not matched.
+        selector: "JSXElement[openingElement.name.name='Button']:has(JSXAttribute[name.name='size'][value.value='icon']) > JSXElement[openingElement.name.name=/^(Pencil|Edit|Edit2|Edit3|SquarePen|Trash|Trash2|Eye|FileText|Copy|Archive|ArchiveRestore|Banknote|DollarSign|Wallet|CreditCard|Truck|PackageCheck|Package|Ban|Lock|Unlock|LayoutDashboard|Share2|Printer|Download)$/]",
+        message: "Row/card action anti-pattern. Use <DataCell.Action action=\"<key>\" /> (table) or <CardActions.Item action=\"<key>\" /> (card/kanban) from @/components/shared. See docs/20-contracts/component-row-actions.md (ROW_ACTIONS registry)."
+      }
+    ]
+  }
+},
+// Row/card action lint extended to top-level app/ pages, which may embed inline actions
+// directly in route components instead of feature components.
+{
+  files: ["app/**/*.tsx"],
+  rules: {
+    "no-restricted-syntax": ["warn",
+      {
+        selector: "JSXElement[openingElement.name.name='Button']:has(JSXAttribute[name.name='size'][value.value='icon']) > JSXElement[openingElement.name.name=/^(Pencil|Edit|Edit2|Edit3|SquarePen|Trash|Trash2|Eye|FileText|Copy|Archive|ArchiveRestore|Banknote|DollarSign|Wallet|CreditCard|Truck|PackageCheck|Package|Ban|Lock|Unlock|LayoutDashboard|Share2|Printer|Download)$/]",
+        message: "Row/card action anti-pattern. Use <DataCell.Action action=\"<key>\" /> or <CardActions.Item action=\"<key>\" /> from @/components/shared. See docs/20-contracts/component-row-actions.md."
       }
     ]
   }

@@ -1,30 +1,46 @@
 "use client"
 
-import React from "react"
+
 import { Card, CardContent } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 import {
     Clock,
     User,
-    ChevronRight,
     AlertCircle,
     CheckCircle2,
 } from "lucide-react"
-import { CardSkeleton, Chip, Skeleton, StatusBadge } from "@/components/shared"
+import { CardActions, CardSkeleton, Chip, Skeleton, StatusBadge } from "@/components/shared"
 import { WorkOrder } from "../types"
 import { formatEntityDisplay } from "@/lib/entity-registry"
 import { STAGES_ORDERED } from "../constants/stages"
 import { isWorkOrderOverdue } from "../utils"
 
-interface KanbanProps {
-    orders: WorkOrder[]
+interface KanbanCardHandlers {
     onManage: (orderId: number) => void
+    onDuplicate?: (orderId: number) => void
+    onAnnul?: (orderId: number) => void
+    onDelete?: (orderId: number) => void
+}
+
+interface KanbanProps extends KanbanCardHandlers {
+    orders: WorkOrder[]
     isLoading?: boolean
 }
 
 const STAGES = STAGES_ORDERED.filter(s => s.showInKanban)
 
-function KanbanCard({ order, onManage }: { order: WorkOrder; onManage: (id: number) => void }) {
+// Stage / status guards mirrored from production/orders/page.tsx
+const EDITABLE_STAGES = ['MATERIAL_ASSIGNMENT', 'MATERIAL_APPROVAL', 'PREPRESS']
+const NON_ANNULLABLE_STATUSES = ['DRAFT', 'FINISHED', 'CANCELLED']
+
+function KanbanCard({ order, onManage, onDuplicate, onAnnul, onDelete }: { order: WorkOrder } & KanbanCardHandlers) {
+    const canDelete = !!onDelete && EDITABLE_STAGES.includes(order.current_stage)
+    const canAnnul = !!onAnnul && !NON_ANNULLABLE_STATUSES.includes(order.status)
+    const overflowItems = [
+        ...(canAnnul ? [{ action: 'annul' as const, onClick: () => onAnnul!(order.id) }] : []),
+        ...(canDelete ? [{ action: 'delete' as const, onClick: () => onDelete!(order.id) }] : []),
+    ]
+
     return (
         <Card
             onClick={() => onManage(order.id)}
@@ -80,16 +96,23 @@ function KanbanCard({ order, onManage }: { order: WorkOrder; onManage: (id: numb
                         Sin materiales asignados
                     </div>
                 )}
-                <div className="pt-2 flex justify-between items-center border-t border-dashed">
-                    <span className="text-[10px] text-muted-foreground">Click para gestionar</span>
-                    <ChevronRight className="h-3 w-3 text-primary" />
+                <div className="pt-2 flex justify-end border-t border-dashed">
+                    <CardActions>
+                        <CardActions.Item action="hub" onClick={() => onManage(order.id)} />
+                        {onDuplicate && (
+                            <CardActions.Item action="duplicate" onClick={() => onDuplicate(order.id)} />
+                        )}
+                        {overflowItems.length > 0 && (
+                            <CardActions.Menu items={overflowItems} />
+                        )}
+                    </CardActions>
                 </div>
             </CardContent>
         </Card>
     )
 }
 
-export function WorkOrderKanban({ orders, onManage, isLoading }: KanbanProps) {
+export function WorkOrderKanban({ orders, onManage, onDuplicate, onAnnul, onDelete, isLoading }: KanbanProps) {
     return (
         <div className="flex space-x-4 overflow-x-auto pb-4 h-[calc(100vh-250px)]">
             {STAGES.map((stage) => {
@@ -125,6 +148,9 @@ export function WorkOrderKanban({ orders, onManage, isLoading }: KanbanProps) {
                                         key={order.id}
                                         order={order}
                                         onManage={onManage}
+                                        onDuplicate={onDuplicate}
+                                        onAnnul={onAnnul}
+                                        onDelete={onDelete}
                                     />
                                 ))}
                                 {stageOrders.length === 0 && (

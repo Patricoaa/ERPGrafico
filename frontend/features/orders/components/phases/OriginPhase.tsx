@@ -2,7 +2,7 @@ import { getErrorMessage } from "@/lib/errors"
 
 import { PhaseCard } from "./PhaseCard"
 import { FileText, Trash2, X, Edit, TrendingUp } from "lucide-react"
-import { formatDocumentId } from '@/features/orders/utils/status'
+import { formatEntity } from '@/features/orders/utils/status'
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
@@ -42,8 +42,8 @@ export function OriginPhase({
     onEdit,
     userPermissions
 }: OriginPhaseProps) {
-    const registry = (activeDoc?.document_type === 'PURCHASE_ORDER' || activeDoc?.document_type === 'SERVICE_OBLIGATION') 
-        ? purchaseOrderActions 
+    const registry = (activeDoc?.document_type === 'PURCHASE_ORDER' || activeDoc?.document_type === 'SERVICE_OBLIGATION')
+        ? purchaseOrderActions
         : saleOrderActions
     const router = useRouter()
     const isSale = type === 'sale'
@@ -62,7 +62,7 @@ export function OriginPhase({
     const documents: PhaseDocument[] = isNoteMode ? [
         {
             type: 'Documento Rectificado',
-            number: formatDocumentId('FACT', activeInvoice?.corrected_invoice?.number || '---', activeInvoice?.corrected_invoice?.display_id),
+            number: formatEntity('FACT', activeInvoice?.corrected_invoice?.number || '---', activeInvoice?.corrected_invoice?.display_id),
             icon: FileText,
             id: activeInvoice?.corrected_invoice?.id as number,
             docType: 'invoice',
@@ -70,7 +70,7 @@ export function OriginPhase({
         },
         ...(order ? [{
             type: isSale ? 'Nota de Venta' : 'Orden de compras y servicios',
-            number: formatDocumentId(isSale ? 'NV' : 'OCS', order?.number || order?.id, order?.display_id),
+            number: formatEntity(isSale ? 'NV' : 'OCS', order?.number || order?.id, order?.display_id),
             icon: FileText,
             id: order?.id,
             docType: type === 'obligation' ? 'service_obligation' : (type === 'sale' ? 'sale_order' : 'purchase_order'),
@@ -79,7 +79,7 @@ export function OriginPhase({
     ] : (order ? [
         {
             type: isSale ? 'Nota de Venta' : 'Orden de compras y servicios',
-            number: formatDocumentId(isSale ? 'NV' : 'OCS', order?.number || order?.id, order?.display_id),
+            number: formatEntity(isSale ? 'NV' : 'OCS', order?.number || order?.id, order?.display_id),
             icon: FileText,
             id: order?.id,
             docType: type === 'obligation' ? 'service_obligation' : (type === 'sale' ? 'sale_order' : 'purchase_order'),
@@ -101,7 +101,7 @@ export function OriginPhase({
     ] : (activeInvoice ? [
         {
             type: activeInvoice?.dte_type_display || 'Factura Directa',
-            number: formatDocumentId('FACT', activeInvoice?.number || '---', activeInvoice?.display_id),
+            number: formatEntity('FACT', activeInvoice?.number || '---', activeInvoice?.display_id),
             icon: FileText,
             id: activeInvoice?.id,
             docType: 'invoice',

@@ -1,10 +1,10 @@
 "use client"
 
 import { useState } from 'react'
-import { Plus, Truck, Pencil, Trash2 } from 'lucide-react'
+import { Plus, Truck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Chip, EmptyState } from '@/components/shared'
+import { ActionConfirmModal, Chip, DataCell, EmptyState } from '@/components/shared'
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
@@ -40,6 +40,7 @@ export function MaterialAssignmentStep({
   // ── form state (local — not shared) ─────────────────────────────────────
   const [isAddOpen, setIsAddOpen] = useState(false)
   const [editingMaterialId, setEditingMaterialId] = useState<number | null>(null)
+  const [materialToDelete, setMaterialToDelete] = useState<WorkOrderMaterial | null>(null)
 
   const [productId, setProductId] = useState<string | null>(null)
   const [qty, setQty] = useState('1')
@@ -146,14 +147,10 @@ export function MaterialAssignmentStep({
                         </td>
                         <td className="p-2">
                           {m.source === 'MANUAL' && isViewingCurrentStage && (
-                            <div className="flex gap-1">
-                              <Button variant="ghost" size="icon" className="h-6 w-6 text-primary" onClick={() => handleEdit(m)}>
-                                <Pencil className="h-3 w-3" />
-                              </Button>
-                              <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => handleDelete(m.id)}>
-                                <Trash2 className="h-3 w-3" />
-                              </Button>
-                            </div>
+                            <DataCell.ActionGroup>
+                              <DataCell.Action action="edit" compact onClick={() => handleEdit(m)} />
+                              <DataCell.Action action="delete" compact onClick={() => setMaterialToDelete(m)} />
+                            </DataCell.ActionGroup>
                           )}
                         </td>
                       </tr>
@@ -283,14 +280,10 @@ export function MaterialAssignmentStep({
                         </p>
                       </div>
                       {isViewingCurrentStage && !m.purchase_order_number && (
-                        <div className="flex gap-1">
-                          <Button variant="ghost" size="icon" onClick={() => handleEdit(m)} className="h-8 w-8">
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon" onClick={() => handleDelete(m.id)} className="h-8 w-8 text-destructive hover:bg-destructive/10">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
+                        <DataCell.ActionGroup>
+                          <DataCell.Action action="edit" onClick={() => handleEdit(m)} />
+                          <DataCell.Action action="delete" onClick={() => setMaterialToDelete(m)} />
+                        </DataCell.ActionGroup>
                       )}
                       {m.purchase_order_number && (
                         <div className="flex items-center gap-2">
@@ -313,6 +306,23 @@ export function MaterialAssignmentStep({
           }
         />
       </div>
+
+      <ActionConfirmModal
+        open={materialToDelete !== null}
+        onOpenChange={(open) => { if (!open) setMaterialToDelete(null) }}
+        onConfirm={async () => {
+          if (materialToDelete) await handleDelete(materialToDelete.id)
+        }}
+        title="Eliminar material"
+        description={
+          <>
+            ¿Eliminar <strong>{materialToDelete?.component_name}</strong> de la orden de trabajo?
+            Esta acción no se puede deshacer.
+          </>
+        }
+        variant="destructive"
+        confirmText="Eliminar"
+      />
     </div>
   )
 }

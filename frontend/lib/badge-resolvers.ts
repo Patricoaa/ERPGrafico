@@ -5,7 +5,7 @@
  * Resolvers are pure functions: domain data in → badge props out.
  * No JSX, no styles, no side effects.
  *
- * Consumers: StatusBadge, EntityBadge, DataCell.DocumentId
+ * Consumers: StatusBadge, EntityBadge, DataCell.Entity
  * Contract: docs/20-contracts/component-badge.md
  */
 

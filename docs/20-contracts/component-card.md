@@ -45,21 +45,11 @@ El componente `Card` acepta una propiedad `variant` que modifica su apariencia p
 | Variante | Estilos Principales | Uso Sugerido |
 |----------|---------------------|--------------|
 | `default` | Borde sólido, sombra leve, fondo `bg-card`, esquinas redondeadas estándar (`rounded-md`). | Tarjetas estándar (ej: InvoiceCard, OrderCard, Dashboards). |
-| `dashed` | Bordes punteados, fondo tenue, esquinas redondeadas de énfasis (`rounded-lg`). | Secciones de formularios, sub-bloques visuales o contenido destacable donde se desee menor jerarquía visual que una tarjeta estándar. Reemplaza al antiguo `FORM_STYLES.card`. |
+| `dashed` | Bordes punteados, fondo tenue, esquinas redondeadas de énfasis (`rounded-lg`). | Secciones de formularios, sub-bloques visuales o contenido destacable donde se desee menor jerarquía visual que una tarjeta estándar. 
 
 ---
 
 ## 3. Anti-Patrones a Evitar 🚫
-
-### ❌ Prohibido el uso de `FORM_STYLES.card`
-**Nunca** utilices utilidades crudas o constantes globales en `div`s genéricos para renderizar tarjetas.
-```tsx
-// MAL
-<div className={FORM_STYLES.card}>...</div>
-
-// BIEN
-<Card variant="dashed" className="p-4">...</Card>
-```
 
 ### ❌ Prohibido anidar Cards
 No coloques un `<Card>` dentro del `<CardContent>` de otro `<Card>`. Si necesitas agrupación secundaria, utiliza `variant="dashed"` de forma aislada o separadores lógicos (`<Separator />`).

@@ -10,7 +10,7 @@ import { Form, FormField } from "@/components/ui/form"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { Loader2, Building2, RefreshCw, Palette, Mail, Phone, MapPin, Globe, Upload, Pencil, Trash2 } from "lucide-react"
 import ContactModal from "@/features/contacts/components/ContactModal"
-import { AutoSaveStatusBadge, LabeledInput, LabeledSelect } from "@/components/shared"
+import { AutoSaveStatusBadge, DataCell, LabeledInput, LabeledSelect } from "@/components/shared"
 import { Button } from "@/components/ui/button"
 import { formatRUT } from "@/lib/utils/format"
 import { cn } from "@/lib/utils"
@@ -205,16 +205,11 @@ export function CompanySettingsView({ activeTab }: { activeTab: string }) {
                                                     </div>
 
                                                     {isLinked && (
-                                                        <Button
-                                                            type="button"
-                                                            variant="outline"
-                                                            size="icon"
-                                                            className="h-[52px] w-[52px] text-primary border-primary/20 hover:bg-primary/10 shadow-sm"
-                                                            onClick={() => setIsEditContactOpen(true)}
+                                                        <DataCell.Action
+                                                            action="edit"
                                                             title="Editar ficha de contacto"
-                                                        >
-                                                            <Pencil className="h-5 w-5" />
-                                                        </Button>
+                                                            onClick={() => setIsEditContactOpen(true)}
+                                                        />
                                                     )}
 
                                                     <Button
@@ -401,18 +396,14 @@ export function CompanySettingsView({ activeTab }: { activeTab: string }) {
                                                             <Pencil className="h-3 w-3 mr-1" />
                                                             Cambiar
                                                         </Button>
-                                                        <Button
-                                                            type="button"
-                                                            variant="destructive"
-                                                            size="icon"
-                                                            className="h-8 w-8"
+                                                        <DataCell.Action
+                                                            action="delete"
+                                                            title="Eliminar logo"
                                                             onClick={(e) => {
                                                                 e.stopPropagation()
                                                                 handleRemoveLogo()
                                                             }}
-                                                        >
-                                                            <Trash2 className="h-4 w-4" />
-                                                        </Button>
+                                                        />
                                                     </div>
                                                 </div>
                                             ) : (

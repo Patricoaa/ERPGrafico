@@ -80,7 +80,7 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
         {
             accessorKey: "number",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Folio" className="justify-center" />,
-            cell: ({ row }) => <DataCell.DocumentId label="sales.saleorder" data={row.original} />,
+            cell: ({ row }) => <DataCell.Entity label="sales.saleorder" data={row.original} />,
             meta: { title: "Folio" },
         },
         {
@@ -143,7 +143,7 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
         {
             accessorKey: "number",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Número" className="justify-center" />,
-            cell: ({ row }) => <DataCell.DocumentId label="billing.invoice" data={row.original} />,
+            cell: ({ row }) => <DataCell.Entity label="billing.invoice" data={row.original} />,
             meta: { title: "Número" },
         },
         {

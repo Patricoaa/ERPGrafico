@@ -307,7 +307,6 @@
   --notched-pad-top: 0.35rem;
   /* Top padding (space above legend) */
   --notched-legend-size: 0.625rem;
-  /* 10px — matches FORM_STYLES.label */
 
   /*
    * GRAPHIC INDUSTRY — Visual Vocabulary Tokens
@@ -610,13 +609,31 @@ table [data-notched-field] {
   h6 {
     @apply font-heading font-extrabold tracking-tighter uppercase;
   }
+
   /* Typography scale — default sizes (overridable per component via Tailwind classes) */
-  h1 { @apply text-3xl; }
-  h2 { @apply text-2xl; }
-  h3 { @apply text-xl; }
-  h4 { @apply text-lg; }
-  h5 { @apply text-sm; }
-  h6 { @apply text-xs; }
+  h1 {
+    @apply text-3xl;
+  }
+
+  h2 {
+    @apply text-2xl;
+  }
+
+  h3 {
+    @apply text-xl;
+  }
+
+  h4 {
+    @apply text-lg;
+  }
+
+  h5 {
+    @apply text-sm;
+  }
+
+  h6 {
+    @apply text-xs;
+  }
 
   /* Precision Scrollbar */
   ::-webkit-scrollbar {

@@ -184,3 +184,23 @@ export const productSearchDef: SearchDefinition = {
     },
   ],
 }
+
+export const stockReportSearchDef: SearchDefinition = {
+  fields: [
+    {
+      key: 'search',
+      label: 'Producto / SKU',
+      type: 'text',
+      serverParam: 'search',
+      clientKey: ['name', 'code', 'internal_code'],
+    },
+    {
+      key: 'category_name',
+      label: 'Categoría',
+      type: 'text',
+      serverParam: 'category_name',
+      clientKey: ['category_name'],
+    },
+  ],
+}
+

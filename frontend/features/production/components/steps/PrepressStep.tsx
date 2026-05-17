@@ -1,7 +1,7 @@
 "use client"
 
-import { FileText, Package, Layers, Download } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { FileText, Package, Layers } from 'lucide-react'
+import { DataCell } from '@/components/shared'
 import { Label } from '@/components/ui/label'
 import { formatBytes } from '@/lib/utils'
 import { ApprovalTaskList } from './ApprovalTaskList'
@@ -40,10 +40,11 @@ export function PrepressStep({
                     <div className="text-[10px] text-muted-foreground shrink-0">
                       {formatBytes(Number(att.file_size ?? 0))}
                     </div>
-                    <Button variant="ghost" size="icon" className="h-6 w-6 hover:bg-primary/10 text-primary"
-                      onClick={() => window.open(att.file, '_blank')} title="Descargar">
-                      <Download className="h-3 w-3" />
-                    </Button>
+                    <DataCell.Action
+                      action="download"
+                      compact
+                      onClick={() => window.open(att.file, '_blank')}
+                    />
                   </div>
                 ))}
               </div>
@@ -68,10 +69,11 @@ export function PrepressStep({
                       <div className="text-[10px] text-muted-foreground shrink-0">
                         {formatBytes(Number(att.file_size ?? 0))}
                       </div>
-                      <Button variant="ghost" size="icon" className="h-6 w-6 hover:bg-primary/10"
-                        onClick={() => window.open(att.file, '_blank')} title="Descargar">
-                        <Download className="h-3 w-3" />
-                      </Button>
+                      <DataCell.Action
+                        action="download"
+                        compact
+                        onClick={() => window.open(att.file, '_blank')}
+                      />
                     </div>
                   ))}
               </div>

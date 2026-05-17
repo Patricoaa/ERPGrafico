@@ -1,17 +1,13 @@
 "use client"
 
 import { showApiError } from "@/lib/errors"
-
 import { useState, useMemo, useCallback, useEffect } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { DataTable } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { DataCell, createActionsColumn } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
-
 import { CategoryForm } from "./CategoryForm"
-
-import { Pencil, Trash2 } from "lucide-react"
 
 import { toast } from "sonner"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
@@ -119,12 +115,12 @@ export function CategoryList({ externalOpen, onExternalOpenChange, createAction 
         createActionsColumn<Category>({
             renderActions: (item) => (
                 <>
-                    <DataCell.Action icon={Pencil} title="Editar" onClick={() => {
+                    <DataCell.Action action="edit" onClick={() => {
                         const params = new URLSearchParams(searchParams.toString())
                         params.set('selected', String(item.id))
                         router.push(`${pathname}?${params.toString()}`, { scroll: false })
                     }} />
-                    <DataCell.Action icon={Trash2} title="Eliminar" className="text-destructive" onClick={() => handleDelete(item)} />
+                    <DataCell.Action action="delete" onClick={() => handleDelete(item)} />
                 </>
             ),
         }),

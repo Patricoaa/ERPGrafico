@@ -108,15 +108,15 @@ export default function AccountLedgerPage() {
     ]
 
     if (loading) {
-        return <div className="p-6"><TableSkeleton rows={10} columns={7} /></div>
+        return <div><TableSkeleton rows={10} columns={7} /></div>
     }
 
     if (!account) {
-        return <div className="p-6">Cuenta no encontrada</div>
+        return <div>Cuenta no encontrada</div>
     }
 
     return (
-        <div className="p-6 space-y-6">
+        <div className="space-y-6">
             <div className="flex items-center gap-4">
                 <Button variant="ghost" size="icon" onClick={() => router.back()}>
                     <ArrowLeft className="h-4 w-4" />

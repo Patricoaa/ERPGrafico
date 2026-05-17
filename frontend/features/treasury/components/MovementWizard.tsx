@@ -9,7 +9,7 @@ import { Numpad } from '@/components/shared'
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import api from "@/lib/api"
-import { LabeledInput } from "@/components/shared"
+import { LabeledInput, MoneyDisplay } from "@/components/shared"
 import { validateAccountingPeriod } from '@/features/accounting/actions'
 import { toast } from 'sonner'
 import { GenericWizard, WizardStep } from '@/components/shared/GenericWizard'
@@ -382,7 +382,7 @@ export function MovementWizard({
                                                 <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
                                                 <div>
                                                     <span className="font-bold block">Aporte supera el capital suscrito</span>
-                                                    <span>Excede los {formatCurrency(partnerCapitalInfo.subscribed)} suscritos.</span>
+                                                    <span>Excede los <MoneyDisplay amount={partnerCapitalInfo.subscribed} /> suscritos.</span>
                                                 </div>
                                             </div>
                                         )
@@ -390,14 +390,14 @@ export function MovementWizard({
                                         return (
                                             <div className="flex items-start gap-2 p-3 bg-info/10 border border-info/20 rounded-md text-xs text-info">
                                                 <Info className="h-4 w-4 shrink-0 mt-0.5" />
-                                                <span>Capital ya enterado ({formatCurrency(partnerCapitalInfo.subscribed)}). Generará excedente.</span>
+                                                <span>Capital ya enterado (<MoneyDisplay amount={partnerCapitalInfo.subscribed} />). Generará excedente.</span>
                                             </div>
                                         )
                                     }
                                     return (
                                         <div className="flex items-center gap-2 p-2.5 bg-success/10 border border-success/20 rounded-md text-xs text-success">
                                             <Info className="h-3.5 w-3.5" />
-                                            <span>Pendiente de entero: <strong>{formatCurrency(partnerCapitalInfo.pending)}</strong></span>
+                                            <span>Pendiente de entero: <strong><MoneyDisplay amount={partnerCapitalInfo.pending} /></strong></span>
                                         </div>
                                     )
                                 })()}
@@ -407,7 +407,7 @@ export function MovementWizard({
                         <div className="p-4 rounded-md border border-input bg-transparent">
                             <div className="text-right mb-4 pr-2">
                                 <div className="text-5xl font-black text-primary font-mono tracking-tighter">
-                                    {formatCurrency(parseFloat(amount) || 0)}
+                                    <MoneyDisplay amount={parseFloat(amount) || 0} />
                                 </div>
                             </div>
                             <Numpad
@@ -493,13 +493,13 @@ export function MovementWizard({
                                 )}
                                 <div className="p-4 flex justify-between items-center py-4">
                                     <span className="text-muted-foreground font-bold">MONTO TOTAL:</span>
-                                    <span className="text-2xl font-black text-primary">{formatCurrency(amountNum)}</span>
+                                    <span className="text-2xl font-black text-primary"><MoneyDisplay amount={amountNum} /></span>
                                 </div>
                             </div>
 
                             {hasInsufficientFunds && (
                                 <div className="p-3 bg-destructive/10 border-2 border-destructive/20 text-destructive rounded-md text-center text-sm font-bold">
-                                    FONDOS INSUFICIENTES (Máx: {formatCurrency(maxOutboundAmount)})
+                                    FONDOS INSUFICIENTES (Máx: <MoneyDisplay amount={maxOutboundAmount} />)
                                 </div>
                             )}
                         </div>

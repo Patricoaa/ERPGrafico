@@ -191,9 +191,9 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                 {/* Railway-style Main Canvas */}
                 <main
                     id="main-content"
-                    className="flex-1 overflow-y-auto custom-scrollbar dot-grid bg-card border border-border/10 rounded-xl"
+                    className="flex-1 flex flex-col overflow-hidden dot-grid bg-card border border-border/10 rounded-xl"
                 >
-                    <div className="w-full min-h-full p-6 lg:p-8">
+                    <div className="w-full flex-1 flex flex-col min-h-0 p-0 lg:p-0">
                         {children}
                     </div>
                 </main>

@@ -7,7 +7,6 @@ import { formatCurrency } from "@/lib/money"
 import dynamic from "next/dynamic"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { useState, useEffect, useMemo, useCallback, useRef } from "react"
-import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { BaseModal } from "@/components/shared/BaseModal"
@@ -17,14 +16,13 @@ import { SplitAllocationDialog } from "./SplitAllocationDialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useReconciledLinesQuery } from "../hooks/useReconciliationQueries"
 
-import { LabeledSelect, LabeledInput, TableSkeleton, ActionDock, Chip } from "@/components/shared"
+import { LabeledSelect, LabeledInput, TableSkeleton, ActionDock, Chip, CollapsibleSheet, SmartSearchBar, useSmartSearch } from "@/components/shared"
+import { reconciliationSearchDef } from "../searchDef"
 import { PeriodValidationDateInput } from "@/components/shared/PeriodValidationDateInput"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { isZeroTolerance, safeDifference, safeSum, safeParseFloat } from "@/lib/math"
 import {
     Ban, CheckCircle2, ChevronRight, ChevronLeft, FileText,
-    Loader2, Search, Sparkles, X, Wand2, SplitSquareHorizontal, Calculator, RotateCcw, Brain, Plus
+    Loader2, Sparkles, X, Wand2, SplitSquareHorizontal, Calculator, RotateCcw, Brain, Plus
 } from "lucide-react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
@@ -57,7 +55,8 @@ import {
     useBulkExcludeMutation,
     useCreateAndMatchMutation,
     useUnmatchMutation,
-    useRestoreMutation
+    useRestoreMutation,
+    useCreateMovementMutation
 } from "../hooks/useReconciliationMutations"
 
 import { MovementWizard, type MovementData } from "@/features/treasury/components/MovementWizard"
@@ -79,7 +78,6 @@ import { toast } from "sonner"
 
 // Types moved to types.ts or correctly imported
 import type {
-    BankStatement,
     BankStatementLine,
     ReconciliationSystemItem,
     QueryPaginationParams
@@ -163,6 +161,28 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
 
     const [bankParams, setBankParams] = useState<QueryPaginationParams>({ page: 1, pageSize: 50 })
     const [systemParams, setSystemParams] = useState<QueryPaginationParams>({ page: 1, pageSize: 50 })
+
+    const { filters } = useSmartSearch(reconciliationSearchDef)
+
+    // Synchronize smart search filters to query parameters
+    useEffect(() => {
+        setBankParams(prev => ({
+            ...prev,
+            page: 1,
+            search: filters.search || "",
+            type: filters.type || "",
+            date_from: filters.date_from || "",
+            date_to: filters.date_to || "",
+        }))
+        setSystemParams(prev => ({
+            ...prev,
+            page: 1,
+            search: filters.search || "",
+            type: filters.type || "",
+            date_from: filters.date_from || "",
+            date_to: filters.date_to || "",
+        }))
+    }, [filters])
 
     const router = useRouter()
     const pathname = usePathname()
@@ -261,6 +281,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
     })
     const [isCreateMovementOpen, setIsCreateMovementOpen] = useState(false)
     const createAndMatchMutation = useCreateAndMatchMutation(statementId, treasuryAccountId)
+    const createMovementMutation = useCreateMovementMutation(treasuryAccountId)
 
     // S4.8: Async auto-match progress state
     const [autoMatchProgressOpen, setAutoMatchProgressOpen] = useState(false)
@@ -284,30 +305,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
         }
     }, [selectedLines.length, selectedPayments.length])
 
-    // Sync Intelligence Panel state with global DashboardShell
-    useEffect(() => {
-        if (intelOpen) {
-            document.body.setAttribute('data-side-panel-width', '400')
-        } else {
-            document.body.removeAttribute('data-side-panel-width')
-        }
-        return () => document.body.removeAttribute('data-side-panel-width')
-    }, [intelOpen])
 
-    // Track other panels to calculate correct 'right' position
-    const [globalPanelStates, setGlobalPanelStates] = useState({ hub: false, inbox: false })
-    useEffect(() => {
-        const updateStates = () => {
-            setGlobalPanelStates({
-                hub: document.body.hasAttribute('data-hub-open'),
-                inbox: document.body.hasAttribute('data-inbox-open')
-            })
-        }
-        updateStates()
-        const observer = new MutationObserver(updateStates)
-        observer.observe(document.body, { attributes: true, attributeFilter: ['data-hub-open', 'data-inbox-open'] })
-        return () => observer.disconnect()
-    }, [])
 
     // ─── Selection Handlers ───────────────────────────────────────────────────
 
@@ -744,128 +742,54 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
     return (
         <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
             <Tabs defaultValue="unreconciled" className="space-y-4 w-full">
-                {/* ─── Sticky Command Bar ─── */}
-                {/* Top Tools Bar */}
-                <div className="flex items-center justify-between bg-card border shadow-sm rounded-lg px-4 py-3">
-                    {/* Left: Navigation */}
-                    <div className="flex items-center gap-4 shrink-0">
-                        <TabsList className="bg-muted/30 p-0.5 rounded-md border border-border/40 h-7 gap-0.5 overflow-hidden items-center">
+                {/* ─── Unified Workbench Toolbar ─── */}
+                <div className="flex items-center justify-between gap-4 w-full mb-3 h-9">
+                    {/* Left: Smart Search Bar (Unified Filtering for Both Tables) */}
+                    <div className="flex-1 min-w-0 h-9">
+                        <SmartSearchBar
+                            searchDef={reconciliationSearchDef}
+                            placeholder="Filtrar movimientos y pagos por descripción, monto, tipo (type:IN/OUT) o rango de fechas..."
+                            className="w-full"
+                        />
+                    </div>
+
+                    {/* Right: Actions & Navigation Group */}
+                    <div className="flex items-center gap-3 shrink-0 h-9">
+                        {/* Navigation Tabs List */}
+                        <TabsList className="bg-muted/30 p-0.5 rounded-md border border-border/40 h-9 gap-0.5 overflow-hidden items-center">
                             <TabsTrigger
                                 value="unreconciled"
-                                className="text-[9px] font-black uppercase tracking-wider px-2.5 h-5 py-0 flex items-center justify-center rounded-sm data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary transition-all"
+                                className="text-[10px] font-black uppercase tracking-wider px-3 h-7 py-0 flex items-center justify-center rounded-sm data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary transition-all"
                             >
                                 Pendientes
                             </TabsTrigger>
                             <TabsTrigger
                                 value="reconciled"
-                                className="text-[9px] font-black uppercase tracking-wider px-2.5 h-5 py-0 flex items-center justify-center rounded-sm data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary transition-all"
+                                className="text-[10px] font-black uppercase tracking-wider px-3 h-7 py-0 flex items-center justify-center rounded-sm data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary transition-all"
                             >
                                 Conciliados
                             </TabsTrigger>
                         </TabsList>
-                    </div>
 
-                    {/* Center: Filters (Flat Layout) */}
-                    <div className="flex-1 flex items-center justify-center gap-3">
-                        <div className="relative">
-                            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
-                            <Input
-                                type="text"
-                                placeholder="Buscar..."
-                                className="h-7 w-32 pl-7 pr-6 rounded-md text-[10px] font-medium"
-                                value={bankParams.search || ""}
-                                onChange={(e) => {
-                                    const val = e.target.value
-                                    setBankParams(prev => ({ ...prev, search: val, page: 1 }))
-                                    setSystemParams(prev => ({ ...prev, search: val, page: 1 }))
-                                }}
-                            />
-                            {(bankParams.search || bankParams.date_from || bankParams.amount_min) && (
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 text-muted-foreground hover:bg-muted"
-                                    onClick={() => {
-                                        setBankParams({ page: 1, pageSize: 50 })
-                                        setSystemParams({ page: 1, pageSize: 50 })
-                                    }}
-                                >
-                                    <X className="h-3 w-3" />
-                                </Button>
-                            )}
-                        </div>
-
-                        <div className="flex items-center gap-3">
-                            <div className="flex items-center gap-1.5">
-                                <span className="text-[9px] font-bold uppercase text-muted-foreground/50 tracking-tighter">Desde</span>
-                                <Input
-                                    type="date"
-                                    className="h-7 w-28 px-1 text-[10px] font-medium"
-                                    value={bankParams.date_from || ""}
-                                    onChange={(e) => {
-                                        const val = e.target.value
-                                        setBankParams(prev => ({ ...prev, date_from: val, page: 1 }))
-                                        setSystemParams(prev => ({ ...prev, date_from: val, page: 1 }))
-                                    }}
-                                />
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                                <span className="text-[9px] font-bold uppercase text-muted-foreground/50 tracking-tighter">Hasta</span>
-                                <Input
-                                    type="date"
-                                    className="h-7 w-28 px-1 text-[10px] font-medium"
-                                    value={bankParams.date_to || ""}
-                                    onChange={(e) => {
-                                        const val = e.target.value
-                                        setBankParams(prev => ({ ...prev, date_to: val, page: 1 }))
-                                        setSystemParams(prev => ({ ...prev, date_to: val, page: 1 }))
-                                    }}
-                                />
-                            </div>
-                        </div>
-
-                        <Select
-                            value={bankParams.type || "all"}
-                            onValueChange={(val) => {
-                                const realVal = val === "all" ? "" : val
-                                setBankParams(prev => ({ ...prev, type: realVal, page: 1 }))
-                                setSystemParams(prev => ({ ...prev, type: realVal, page: 1 }))
-                            }}
-                        >
-                            <SelectTrigger className="h-7 w-[150px] text-[10px] font-medium">
-                                <SelectValue placeholder="Movimientos" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">Todos los Movimientos</SelectItem>
-                                <SelectItem value="IN">Abonos / Ingresos</SelectItem>
-                                <SelectItem value="OUT">Cargos / Egresos</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    {/* Right: Actions */}
-                    <div className="flex items-center gap-2 shrink-0">
                         <Button
                             onClick={() => setActionDialog({ open: true, type: 'automatch' })}
                             disabled={autoMatching}
                             variant="outline"
-                            size="sm"
-                            className="h-7 text-[9px] font-black uppercase tracking-widest bg-success/5 hover:bg-success/10 text-success border-success/20 hover:border-success/30 group transition-all px-3"
+                            className="h-9 text-[10px] font-black uppercase tracking-widest bg-success/5 hover:bg-success/10 text-success border-success/20 hover:border-success/30 group transition-all px-4"
                         >
-                            {autoMatching ? <Loader2 className="mr-1.5 h-3 w-3 animate-spin" /> : <Wand2 className="mr-1.5 h-3 w-3 group-hover:rotate-12 transition-transform" />}
+                            {autoMatching ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Wand2 className="mr-1.5 h-3.5 w-3.5 group-hover:rotate-12 transition-transform" />}
                             Auto-Match
                         </Button>
                         <Button
-                            onClick={() => setIntelOpen(true)}
+                            onClick={() => setIntelOpen(prev => !prev)}
                             variant="outline"
-                            size="sm"
                             className={cn(
-                                "h-7 w-7 p-0 rounded-md border-primary/20 hover:border-primary/40 transition-all",
+                                "h-9 w-9 p-0 rounded-md border-primary/20 hover:border-primary/45 transition-all flex items-center justify-center",
                                 intelOpen && "bg-primary text-primary-foreground border-primary"
                             )}
                             title="Configurar Inteligencia"
                         >
-                            <Brain className="h-3.5 w-3.5" />
+                            <Brain className="h-4 w-4" />
                         </Button>
                     </div>
                 </div>
@@ -885,6 +809,14 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                         <div className="flex items-center gap-2">
                                             <div className="h-2 w-2 rounded-full bg-info" />
                                             <span className="text-xs font-bold uppercase tracking-wider text-foreground/70">Cartola Bancaria</span>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-6 w-6 text-primary hover:bg-primary/0 rounded-full"
+
+                                            >
+
+                                            </Button>
                                         </div>
                                         <span className="text-[10px] font-mono text-muted-foreground">{bankData?.count || 0} pendientes</span>
                                     </div>
@@ -1526,50 +1458,40 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                     />
                 )}
 
-                {/* Intelligence Panel (Fixed/Global Pattern) */}
-                <AnimatePresence>
-                    {intelOpen && (
-                        <motion.div
-                            initial={{ x: "120%", opacity: 0 }}
-                            animate={{ x: 0, opacity: 1 }}
-                            exit={{ x: "120%", opacity: 0 }}
-                            transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                            className={cn(
-                                "fixed top-20 h-[calc(100vh-6rem)] w-[400px] z-[55] border border-white/5 bg-sidebar dark flex flex-col pointer-events-auto rounded-lg shadow-2xl overflow-hidden transition-all duration-500 ease-[var(--ease-premium)]",
-                                globalPanelStates.inbox && globalPanelStates.hub
-                                    ? "right-[calc(320px+360px+3rem)]"
-                                    : globalPanelStates.hub
-                                        ? "right-[calc(360px+2rem)]"
-                                        : globalPanelStates.inbox
-                                            ? "right-[calc(320px+2rem)]"
-                                            : "right-4"
-                            )}
-                        >
-                            <div className="p-4 border-b bg-muted/30 flex justify-between items-center shrink-0">
-                                <div className="flex items-center gap-2">
-                                    <div className="bg-primary/10 p-1.5 rounded-sm">
-                                        <Brain className="h-4 w-4 text-primary" />
-                                    </div>
-                                    <div className="flex flex-col">
-                                        <h2 className="text-xs font-bold uppercase tracking-wider text-foreground/90 leading-tight">Inteligencia</h2>
-                                        <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-tighter">Configuración de Matching</span>
-                                    </div>
+                {/* Intelligence Panel (DRY CollapsibleSheet Pattern) */}
+                <CollapsibleSheet
+                    sheetId="reconciliation-intel"
+                    open={intelOpen}
+                    onOpenChange={setIntelOpen}
+                    tabLabel="Inteligencia"
+                    tabIcon={Brain}
+                    fullWidth={400}
+                >
+                    <div className="flex flex-col h-full bg-background rounded-xl overflow-hidden text-foreground">
+                        <div className="p-4 border-b bg-muted/30 flex justify-between items-center shrink-0">
+                            <div className="flex items-center gap-2">
+                                <div className="bg-primary/10 p-1.5 rounded-sm">
+                                    <Brain className="h-4 w-4 text-primary" />
                                 </div>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-7 w-7 rounded-full hover:bg-destructive/10 hover:text-destructive transition-colors"
-                                    onClick={() => setIntelOpen(false)}
-                                >
-                                    <X className="h-4 w-4" />
-                                </Button>
+                                <div className="flex flex-col">
+                                    <h2 className="text-xs font-bold uppercase tracking-wider text-foreground/90 leading-tight">Inteligencia</h2>
+                                    <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-tighter">Configuración de Matching</span>
+                                </div>
                             </div>
-                            <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
-                                <ReconciliationIntelligence />
-                            </div>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 rounded-full hover:bg-destructive/10 hover:text-destructive transition-colors"
+                                onClick={() => setIntelOpen(false)}
+                            >
+                                <X className="h-4 w-4" />
+                            </Button>
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+                            <ReconciliationIntelligence />
+                        </div>
+                    </div>
+                </CollapsibleSheet>
             </Tabs>
         </DndContext>
     )

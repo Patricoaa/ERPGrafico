@@ -13,10 +13,8 @@ import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 import { Trash2, CheckCircle, Eye, Pencil } from "lucide-react"
 import { DataTable } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
-
 import { DataCell, createActionsColumn } from '@/components/shared'
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
-
 import { useJournalEntries, type JournalEntry } from "@/features/accounting/hooks/useJournalEntries"
 import { useAccountingAccounts } from "@/features/accounting/hooks/useAccounts"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
@@ -139,7 +137,7 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
             ),
             cell: ({ row }) => (
                 <div className="flex justify-center w-full">
-                    <DataCell.DocumentId entityLabel="accounting.journalentry" data={row.original} />
+                    <DataCell.Entity entityLabel="accounting.journalentry" data={row.original} />
                 </div>
             ),
         },

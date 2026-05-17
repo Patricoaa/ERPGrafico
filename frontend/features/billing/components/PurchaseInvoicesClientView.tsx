@@ -4,9 +4,10 @@ import { showApiError, getErrorMessage } from "@/lib/errors"
 import React, { useState } from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { ColumnDef } from "@tanstack/react-table"
-import { IconButton, SmartSearchBar, useSmartSearch } from "@/components/shared"
+import { SmartSearchBar, useSmartSearch } from "@/components/shared"
 import { purchaseInvoiceSearchDef } from '../searchDef'
-import { ArrowRight, ArrowLeft, FileBadge } from "lucide-react"
+import { FileBadge } from "lucide-react"
+import { formatCurrency } from "@/lib/money"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { PaymentModal } from "@/features/treasury/components/PaymentModal"
@@ -125,7 +126,7 @@ export function PurchaseInvoicesClientView() {
         {
             accessorKey: "number",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Folio" className="justify-center" />,
-            cell: ({ row }) => <DataCell.DocumentId label="billing.invoice" data={row.original} />,
+            cell: ({ row }) => <DataCell.Entity label="billing.invoice" data={row.original} />,
         },
         {
             accessorKey: "date",
@@ -172,7 +173,7 @@ export function PurchaseInvoicesClientView() {
                         <DataCell.Progress
                             value={percentage}
                             label={`${percentage}%`}
-                            subLabel={paid.toLocaleString("es-CL", { style: "currency", currency: "CLP", maximumFractionDigits: 0 })}
+                            subLabel={formatCurrency(paid)}
                             className="w-32"
                         />
                     </div>
@@ -187,9 +188,8 @@ export function PurchaseInvoicesClientView() {
                 const isSelected = hubConfig?.invoiceId === item.id
                 return (
                     <div className="flex justify-end pr-2">
-                        <IconButton
-                            circular
-                            className="h-8 w-8 hover:bg-transparent"
+                        <DataCell.Action
+                            action="hub"
                             onClick={() => {
                                 if (isSelected && isHubOpen) {
                                     closeHub()
@@ -202,13 +202,7 @@ export function PurchaseInvoicesClientView() {
                                     })
                                 }
                             }}
-                        >
-                            {isSelected && isHubOpen ? (
-                                <ArrowLeft className="h-4 w-4 text-primary animate-in fade-in slide-in-from-right-1 duration-300" />
-                            ) : (
-                                <ArrowRight className="h-4 w-4 text-muted-foreground/30 group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
-                            )}
-                        </IconButton>
+                        />
                     </div>
                 )
             },

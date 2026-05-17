@@ -234,7 +234,7 @@ export function PaymentMethodSelector({
                             <SelectTrigger className="h-8 border-0 focus:ring-0 bg-transparent shadow-none px-2">
                                 <SelectValue placeholder="Seleccione opción..." />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="w-[var(--radix-select-trigger-width)]">
                                 {currentTypeMethods.map(m => (
                                     <SelectItem key={m.id} value={m.id.toString()}>
                                         {m.name === 'Transferencia Scotiabank' ? 'Scotiabank' : m.name}

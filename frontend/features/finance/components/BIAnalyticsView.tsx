@@ -18,9 +18,10 @@ import {
     Cell
 } from 'recharts';
 import api, { pollTask } from '@/lib/api';
-import { TrendingUp, TrendingDown, Package, DollarSign, Users, ShoppingCart } from 'lucide-react';
-import { CardSkeleton } from "@/components/shared";
+import { TrendingUp, TrendingDown, Package, DollarSign, ShoppingCart } from 'lucide-react';
+import { CardSkeleton, MoneyDisplay } from "@/components/shared";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { formatCurrency } from "@/lib/money";
 import { DateRange } from "react-day-picker";
 import { format } from "date-fns";
 
@@ -100,7 +101,7 @@ export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-black font-heading tracking-tighter">
-                            {sales.total_sales.toLocaleString('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 })}
+                            <MoneyDisplay amount={sales.total_sales} digits={0} />
                         </div>
                         <div className="flex items-center text-xs text-success mt-1">
                             <TrendingUp className="h-3 w-3 mr-1" />
@@ -116,7 +117,7 @@ export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-black font-heading tracking-tighter">
-                            {sales.average_ticket.toLocaleString('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 })}
+                            <MoneyDisplay amount={sales.average_ticket} digits={0} />
                         </div>
                         <p className="text-xs text-muted-foreground mt-1">
                             {sales.sales_count} ventas realizadas
@@ -131,7 +132,7 @@ export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-black font-heading tracking-tighter">
-                            {inventory.total_value.toLocaleString('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 })}
+                            <MoneyDisplay amount={inventory.total_value} digits={0} />
                         </div>
                         <p className="text-xs text-muted-foreground mt-1">
                             {inventory.item_count} productos en stock
@@ -165,7 +166,7 @@ export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
                             <CartesianGrid strokeDasharray="3 3" />
                             <XAxis dataKey="month" />
                             <YAxis />
-                            <Tooltip formatter={((value: number | string) => [Number(value || 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' }), 'Ventas']) as any} />
+                            <Tooltip formatter={((value: number | string) => [formatCurrency(value), 'Ventas']) as any} />
                             <Legend />
                             <Line
                                 type="monotone"
@@ -195,7 +196,7 @@ export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
                                 <CartesianGrid strokeDasharray="3 3" />
                                 <XAxis type="number" />
                                 <YAxis dataKey="name" type="category" width={100} />
-                                <Tooltip formatter={((value: number | string) => [Number(value || 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' }), 'Ventas']) as any} />
+                                <Tooltip formatter={((value: number | string) => [formatCurrency(value), 'Ventas']) as any} />
                                 <Bar dataKey="amount" fill={COLORS[1]} />
                             </BarChart>
                         </ResponsiveContainer>
@@ -225,7 +226,7 @@ export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
                                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                     ))}
                                 </Pie>
-                                <Tooltip formatter={((value: number | string) => [Number(value || 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' }), 'Valor']) as any} />
+                                <Tooltip formatter={((value: number | string) => [formatCurrency(value), 'Valor']) as any} />
                                 <Legend />
                             </PieChart>
                         </ResponsiveContainer>
@@ -243,7 +244,7 @@ export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
                         <div className="space-y-2">
                             <div className="flex justify-between items-center">
                                 <span className="text-sm text-muted-foreground">Volumen de Compra:</span>
-                                <span className="font-semibold">{performance.purchase_total.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}</span>
+                                <span className="font-semibold"><MoneyDisplay amount={performance.purchase_total} /></span>
                             </div>
                         </div>
                     </CardContent>
@@ -275,7 +276,7 @@ export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
                         <div className="space-y-2">
                             <div className="flex justify-between items-center">
                                 <span className="text-sm text-muted-foreground">Saldo Pendiente:</span>
-                                <span className="font-semibold text-primary">{performance.ar_total.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}</span>
+                                <span className="font-semibold text-primary"><MoneyDisplay amount={performance.ar_total} /></span>
                             </div>
                         </div>
                     </CardContent>
@@ -289,7 +290,7 @@ export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
                         <div className="space-y-2">
                             <div className="flex justify-between items-center">
                                 <span className="text-sm text-muted-foreground">Saldo Pendiente:</span>
-                                <span className="font-semibold text-destructive">{performance.ap_total.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}</span>
+                                <span className="font-semibold text-destructive"><MoneyDisplay amount={performance.ap_total} /></span>
                             </div>
                         </div>
                     </CardContent>

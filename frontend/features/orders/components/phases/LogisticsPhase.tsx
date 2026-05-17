@@ -4,7 +4,7 @@ import { useState } from "react"
 import { PhaseCard } from "./PhaseCard"
 import { Package, Ban } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { formatDocumentId } from '@/features/orders/utils/status'
+import { formatEntity } from '@/features/orders/utils/status'
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
@@ -48,8 +48,8 @@ export function LogisticsPhase({
     isOpen,
     onOpenChange,
 }: LogisticsPhaseProps) {
-    const registry = (activeDoc?.document_type === 'PURCHASE_ORDER' || activeDoc?.document_type === 'SERVICE_OBLIGATION') 
-        ? purchaseOrderActions 
+    const registry = (activeDoc?.document_type === 'PURCHASE_ORDER' || activeDoc?.document_type === 'SERVICE_OBLIGATION')
+        ? purchaseOrderActions
         : saleOrderActions
 
     const [confirmModal, setConfirmModal] = useState<{
@@ -103,7 +103,7 @@ export function LogisticsPhase({
         if (Array.isArray(activeDoc.related_returns) && activeDoc.related_returns.length > 0) {
             docs.push(...activeDoc.related_returns.map((doc: any) => ({
                 type: doc.type as string,
-                number: formatDocumentId('DEV', doc.number || doc.id, doc.display_id),
+                number: formatEntity('DEV', doc.number || doc.id, doc.display_id),
                 icon: Package,
                 id: doc.id,
                 docType: doc.docType as string,
@@ -124,7 +124,7 @@ export function LogisticsPhase({
         if (specificDocs && specificDocs.length > 0) {
             docs.push(...specificDocs.map((doc: Record<string, unknown>) => ({
                 type: isSale ? 'Despacho' : 'Recepción',
-                number: formatDocumentId(isSale ? 'DES' : 'REC', (doc.number as string) || (doc.id as number), doc.display_id as string),
+                number: formatEntity(isSale ? 'DES' : 'REC', (doc.number as string) || (doc.id as number), doc.display_id as string),
                 icon: Package,
                 id: doc.id as number,
                 docType: (doc.docType as string) || (isSale ? 'sale_delivery' : 'inventory'),
@@ -144,7 +144,7 @@ export function LogisticsPhase({
         if (docs.length === 0 && (activeDoc.related_stock_moves?.length || 0) > 0) {
             docs.push(...(activeDoc.related_stock_moves || []).map((m: Record<string, unknown>) => ({
                 type: (m.move_type_display as string) || 'Movimiento',
-                number: formatDocumentId('MOV', m.id as number, m.display_id as string),
+                number: formatEntity('MOV', m.id as number, m.display_id as string),
                 icon: Package,
                 id: m.id as number,
                 docType: 'inventory',

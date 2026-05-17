@@ -5,11 +5,9 @@
 
 import { useState } from 'react'
 import { memo } from 'react'
-import { Trash2 } from 'lucide-react'
 import { TableRow, TableCell } from '@/components/ui/table'
 import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
-import { Chip } from "@/components/shared"
+import { Chip, DataCell } from "@/components/shared"
 import { UoMSelector } from '@/components/selectors'
 import { cn } from '@/lib/utils'
 import { formatCurrency } from "@/lib/money"
@@ -219,21 +217,13 @@ function CartItemComponent({
             {/* Actions */}
             <TableCell className="py-2 align-top">
                 {posMode === 'SHOPPING' && (
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        className={cn(
-                            "opacity-0 group-hover:opacity-100 transition-opacity",
-                            // Touch-friendly sizing
-                            isTouchPOS ? "h-10 w-10" : "h-6 w-6"
-                        )}
-                        onClick={() => onRemove(item.cartItemId)}
-                    >
-                        <Trash2 className={cn(
-                            "text-destructive",
-                            isTouchPOS ? "h-5 w-5" : "h-3 w-3"
-                        )} />
-                    </Button>
+                    <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                        <DataCell.Action
+                            action="delete"
+                            compact={!isTouchPOS}
+                            onClick={() => onRemove(item.cartItemId)}
+                        />
+                    </div>
                 )}
             </TableCell>
         </TableRow>

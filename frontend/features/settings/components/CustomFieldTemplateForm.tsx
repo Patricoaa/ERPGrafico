@@ -5,9 +5,9 @@ import React, { useState } from 'react'
 import { useForm, useFieldArray } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { Plus, Trash2, Save, X } from "lucide-react"
+import { Plus, Save, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { CancelButton, IconButton } from "@/components/shared"
+import { CancelButton, DataCell, IconButton } from "@/components/shared"
 import { EmptyState } from "@/components/shared/EmptyState"
 import {
     Form,
@@ -221,15 +221,11 @@ export function CustomFieldTemplateForm({ open, onOpenChange, onSuccess }: Custo
                                         {options.map((option, index) => (
                                             <div key={index} className="flex items-center justify-between bg-muted/50 border rounded-lg pl-3 pr-1 py-1 group hover:border-primary/30 transition-all">
                                                 <span className="text-xs font-medium truncate">{option}</span>
-                                                <Button
-                                                    type="button"
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="h-6 w-6 text-destructive/50 hover:text-destructive hover:bg-destructive/10"
+                                                <DataCell.Action
+                                                    action="delete"
+                                                    compact
                                                     onClick={() => removeOption(index)}
-                                                >
-                                                    <Trash2 className="h-3.5 w-3.5" />
-                                                </Button>
+                                                />
                                             </div>
                                         ))}
                                         {options.length === 0 && (

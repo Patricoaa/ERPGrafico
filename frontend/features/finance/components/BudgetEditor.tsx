@@ -1,24 +1,18 @@
 "use client"
 
 import React, { useState, useEffect } from 'react';
-import { BaseModal, LoadingFallback } from "@/components/shared";
+import { BaseModal, DataCell, LoadingFallback, MoneyDisplay } from "@/components/shared";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
     Tooltip,
     TooltipContent,
     TooltipProvider,
     TooltipTrigger
 } from "@/components/ui/tooltip";
-import { Info, History, Share2, BarChart2 } from "lucide-react";
+import { Info, History, Split, BarChart2 } from "lucide-react";
 import api from '@/lib/api';
 import { cn } from "@/lib/utils";
 
@@ -68,18 +62,14 @@ const BudgetAccountRow = React.memo(({
                     <div className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">{account.account_type_display}</div>
                 </div>
 
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Share2 className="h-3 w-3" />
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => onAutoDistribute?.(account.id)}>
-                            Distribuir Total Equitativamente
-                        </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
+                <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                    <DataCell.Action
+                        icon={Split}
+                        title="Distribuir Total Equitativamente"
+                        compact
+                        onClick={() => onAutoDistribute?.(account.id)}
+                    />
+                </div>
             </div>
             {months.map(m => (
                 <div key={m} className="flex-1 border-r p-1 bg-card/10">
@@ -93,7 +83,7 @@ const BudgetAccountRow = React.memo(({
                 </div>
             ))}
             <div className="w-[100px] p-2 text-right font-mono text-xs font-bold text-primary">
-                {accountTotal.toLocaleString('es-CL')}
+                <MoneyDisplay amount={accountTotal} digits={0} />
             </div>
         </div>
     );

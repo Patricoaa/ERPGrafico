@@ -8,7 +8,7 @@ import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
 import { Chip } from "@/components/shared"
-import { Eye, FileBadge, Banknote, Package, Trash2, History, FileEdit, X, MoreVertical } from "lucide-react"
+import { FileBadge, History, FileEdit, MoreVertical } from "lucide-react"
 import api from "@/lib/api"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { toast } from "sonner"
@@ -223,7 +223,7 @@ export default function PurchaseInvoicesPage() {
                 <DataTableColumnHeader column={column} title="Folio" />
             ),
             cell: ({ row }) => (
-                <DataCell.DocumentId type={row.original.dte_type} number={row.getValue("number")} />
+                <DataCell.Entity type={row.original.dte_type} number={row.getValue("number")} />
             ),
         },
         {
@@ -297,7 +297,7 @@ export default function PurchaseInvoicesPage() {
                 return (
                     <div className="flex flex-col gap-1 items-start">
                         {doc.status !== 'POSTED' && (
-                            <StatusBadge 
+                            <StatusBadge
                                 status={doc.status}
                                 label={doc.status === 'DRAFT' ? 'Folio Pendiente' : undefined}
                                 size="xs"
@@ -345,106 +345,39 @@ export default function PurchaseInvoicesPage() {
                                 Gestionar
                             </Button>
                         ) : (
-                            <>
+                            (() => {
+                                const canPay = (doc.pending_amount ?? 0) > 0 && ['POSTED'].includes(doc.status)
+                                const canReceive = (doc.purchase_order || isNote) && doc.po_receiving_status !== 'RECEIVED'
+                                const canCompleteFolio = doc.status === 'DRAFT'
+                                const canCreateNote = !isNote && doc.number && doc.status !== 'DRAFT'
+                                const hasPayments = (doc.related_documents?.payments?.length ?? 0) > 0 || (doc.serialized_payments?.length ?? 0) > 0
+                                const canDelete = doc.status === 'DRAFT'
+                                const canAnnul = doc.status !== 'DRAFT' && doc.status !== 'CANCELLED'
 
-                                {/* View Details */}
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => openTransaction(doc.id, 'invoice', 'details')}
-                                    title="Ver Detalle"
-                                >
-                                    <Eye className="h-4 w-4" />
-                                </Button>
+                                const overflow = [
+                                    ...(canCompleteFolio ? [{ icon: FileEdit, label: 'Completar Folio', onClick: () => setCompletingDoc(doc) }] : []),
+                                    ...(canReceive ? [{ action: 'receive' as const, label: doc.dte_type === 'NOTA_CREDITO' ? 'Devolución Mercadería' : 'Recibir Mercadería', onClick: () => setReceivingDoc(doc) }] : []),
+                                    ...(canCreateNote ? [{ icon: FileBadge, label: 'Registrar Nota Crédito/Débito', onClick: () => setNotingDoc(doc) }] : []),
+                                    ...(hasPayments ? [{ icon: History, label: 'Historial de Pagos', onClick: () => openTransaction(doc.id, 'invoice', 'history') }] : []),
+                                    ...((canAnnul || canDelete) ? [{ separator: true } as const] : []),
+                                    ...(canDelete ? [{ action: 'delete' as const, onClick: () => handleDelete(doc.id) }] : []),
+                                    ...(canAnnul ? [{ action: 'annul' as const, onClick: () => handleAnnul(doc.id) }] : []),
+                                ]
 
-                                {/* Finalize Folio (Draft only) */}
-                                {doc.status === 'DRAFT' && (
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="text-warning"
-                                        onClick={() => setCompletingDoc(doc)}
-                                        title="Completar Folio"
-                                    >
-                                        <FileEdit className="h-4 w-4" />
-                                    </Button>
-                                )}
-
-                                {/* Receive/Send Merchandise */}
-                                {(doc.purchase_order || isNote) && doc.po_receiving_status !== 'RECEIVED' && (
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="text-warning"
-                                        onClick={() => setReceivingDoc(doc)}
-                                        title={doc.dte_type === 'NOTA_CREDITO' ? "Devolución Mercadería" : "Recibir Mercadería"}
-                                    >
-                                        <Package className="h-4 w-4" />
-                                    </Button>
-                                )}
-
-
-                                {/* Credit/Debit Note (Only for primary documents with folio) */}
-                                {!isNote && doc.number && doc.status !== 'DRAFT' && (
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="text-warning"
-                                        onClick={() => setNotingDoc(doc)}
-                                        title="Registrar Nota Crédito/Débito"
-                                    >
-                                        <FileBadge className="h-4 w-4" />
-                                    </Button>
-                                )}
-
-                                {/* Register Payment / Refund */}
-                                {(doc.pending_amount ?? 0) > 0 && ['POSTED'].includes(doc.status) && (
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="text-success"
-                                        onClick={() => setPayingDoc(doc)}
-                                        title={doc.dte_type === 'NOTA_CREDITO' ? "Registrar Devolución Dinero" : "Registrar Pago"}
-                                    >
-                                        <Banknote className="h-4 w-4" />
-                                    </Button>
-                                )}
-
-                                {/* Payment History */}
-                                {((doc.related_documents?.payments?.length ?? 0) > 0 || (doc.serialized_payments?.length ?? 0) > 0) && (
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="text-success"
-                                        onClick={() => openTransaction(doc.id, 'invoice', 'history')}
-                                        title="Historial de Pagos"
-                                    >
-                                        <History className="h-4 w-4" />
-                                    </Button>
-                                )}
-
-                                {doc.status === 'DRAFT' ? (
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="text-destructive"
-                                        onClick={() => handleDelete(doc.id)}
-                                        title="Eliminar"
-                                    >
-                                        <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                ) : doc.status !== 'CANCELLED' ? (
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="text-destructive hover:text-destructive"
-                                        onClick={() => handleAnnul(doc.id)}
-                                        title="Anular Documento"
-                                    >
-                                        <X className="h-4 w-4" />
-                                    </Button>
-                                ) : null}
-                            </>
+                                return (
+                                    <>
+                                        <DataCell.Action action="detail" title="Ver Detalle" onClick={() => openTransaction(doc.id, 'invoice', 'details')} />
+                                        {canPay && (
+                                            <DataCell.Action
+                                                action="pay"
+                                                title={doc.dte_type === 'NOTA_CREDITO' ? 'Registrar Devolución Dinero' : 'Registrar Pago'}
+                                                onClick={() => setPayingDoc(doc)}
+                                            />
+                                        )}
+                                        {overflow.length > 0 && <DataCell.ActionMenu items={overflow} />}
+                                    </>
+                                )
+                            })()
                         )}
                     </div>
                 )
@@ -459,7 +392,7 @@ export default function PurchaseInvoicesPage() {
                 data={invoices}
                 variant="embedded"
                 isLoading={isDataLoading}
-                // Smart Search Integration (Premium Industrial)
+                // Smart Search Integration
                 leftAction={
                     <SmartSearchBar
                         searchDef={purchaseInvoiceSearchDef}

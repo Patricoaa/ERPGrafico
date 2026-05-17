@@ -7,9 +7,10 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { PurchaseOrderInitialData, PurchaseOrderLine } from "@/types/forms"
 import { ProductMinimal, UoM } from "@/types/entities"
 import * as z from "zod"
-import { Plus, Trash2, DollarSign } from "lucide-react"
+import { Plus, DollarSign } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { BaseModal, ActionSlideButton, MoneyDisplay, LabeledInput, FormSection, FormFooter, CancelButton } from "@/components/shared"
+import { BaseModal, ActionSlideButton, DataCell, MoneyDisplay, LabeledInput, FormSection, FormFooter, CancelButton } from "@/components/shared"
+import { Button } from "@/components/ui/button"
 import {
     Form,
     FormField,
@@ -334,15 +335,13 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
                                                 <MoneyDisplay amount={Number(form.watch(`lines.${index}.quantity`)) * Number(form.watch(`lines.${index}.unit_cost`)) || 0} />
                                             </TableCell>
                                             <TableCell>
-                                                <Button
-                                                    type="button"
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    onClick={() => remove(index)}
-                                                    disabled={fields.length === 1}
-                                                >
-                                                    <Trash2 className="h-4 w-4" />
-                                                </Button>
+                                                <DataCell.ActionGroup>
+                                                    <DataCell.Action
+                                                        action="delete"
+                                                        onClick={() => remove(index)}
+                                                        disabled={fields.length === 1}
+                                                    />
+                                                </DataCell.ActionGroup>
                                             </TableCell>
                                         </TableRow>
                                     ))}

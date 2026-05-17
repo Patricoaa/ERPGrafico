@@ -8,7 +8,6 @@ import { DataCell, createActionsColumn } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
 
 import { Eye, ArrowRightLeft, Plus } from "lucide-react"
-import { StatusBadge } from "@/components/shared/StatusBadge"
 import { Chip } from "@/components/shared/Chip"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 import { AdjustmentForm } from "@/features/inventory/components/AdjustmentForm"
@@ -87,7 +86,7 @@ export function MovementList({ externalOpen, onExternalOpenChange, createAction 
             header: ({ column }) => <DataTableColumnHeader column={column} title="Folio" className="justify-center" />,
             cell: ({ row }) => (
                 <div className="flex flex-col items-center gap-0.5">
-                    <DataCell.DocumentId label="inventory.stockmove" data={row.original} />
+                    <DataCell.Entity label="inventory.stockmove" data={row.original} />
                     <DataCell.Date value={row.original.date} className="text-[10px] opacity-50" />
                 </div>
             ),

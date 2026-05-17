@@ -5,7 +5,7 @@ import { DataTable } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { Button } from "@/components/ui/button"
 import {
-    Plus, Trash2, CreditCard, Landmark, Pencil, Lock
+    Plus, CreditCard, Landmark, Lock
 } from "lucide-react"
 import { DataCell, createActionsColumn } from '@/components/shared'
 import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
@@ -110,17 +110,8 @@ export function BankManagement({ externalOpen, onOpenChange, createAction }: Ban
         createActionsColumn<Bank>({
             renderActions: (item) => (
                 <>
-                    <DataCell.Action
-                        icon={Pencil}
-                        title="Editar"
-                        onClick={() => openEdit(item)}
-                    />
-                    <DataCell.Action
-                        icon={Trash2}
-                        title="Eliminar"
-                        className="text-destructive hover:text-destructive"
-                        onClick={() => handleDelete(item.id)}
-                    />
+                    <DataCell.Action action="edit" onClick={() => openEdit(item)} />
+                    <DataCell.Action action="delete" onClick={() => handleDelete(item.id)} />
                 </>
             )
         })
@@ -420,24 +411,14 @@ export function PaymentMethodManagement({ externalOpen, onOpenChange, createActi
             renderActions: (item) => (
                 item.is_terminal_integration ? (
                     <DataCell.Action
-                        icon={Lock}
+                        action="lock"
                         title="Gestionado por terminal — modifique el dispositivo"
-                        onClick={() => { }}
                         className="text-muted-foreground cursor-default opacity-50"
                     />
                 ) : (
                     <>
-                        <DataCell.Action
-                            icon={Pencil}
-                            title="Editar"
-                            onClick={() => openEdit(item)}
-                        />
-                        <DataCell.Action
-                            icon={Trash2}
-                            title="Eliminar"
-                            className="text-destructive hover:text-destructive"
-                            onClick={() => handleDelete(item.id)}
-                        />
+                        <DataCell.Action action="edit" onClick={() => openEdit(item)} />
+                        <DataCell.Action action="delete" onClick={() => handleDelete(item.id)} />
                     </>
                 )
             )

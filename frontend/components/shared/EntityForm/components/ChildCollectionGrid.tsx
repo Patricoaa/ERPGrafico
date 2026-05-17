@@ -2,8 +2,9 @@
 
 import React from "react";
 import { Control, useFieldArray } from "react-hook-form";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { DataCell } from "../../DataTableCells";
 import { ChildCollectionSchema } from "../hooks/useSchema";
 import { DynamicField } from "./DynamicField";
 
@@ -91,15 +92,11 @@ export const ChildCollectionGrid: React.FC<ChildCollectionGridProps> = ({
                                     error={errors?.[fieldName]?.[idx]?.[col]?.message}
                                 />
                             ))}
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                            <DataCell.Action
+                                action="delete"
+                                compact
                                 onClick={() => remove(idx)}
-                            >
-                                <Trash2 className="w-3.5 h-3.5" />
-                            </Button>
+                            />
                         </div>
                     ))}
                 </div>

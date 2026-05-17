@@ -35,7 +35,19 @@ export function useClientSearch<T extends object>(
 
       return data.filter((row) => {
         const r = row as Record<string, unknown>
+
+        // Apply global search filter first if active
+        if (filters.search) {
+          const searchVal = filters.search.toLowerCase()
+          const matchesGlobal = Object.values(r).some((val) =>
+            String(val ?? '').toLowerCase().includes(searchVal)
+          )
+          if (!matchesGlobal) return false
+        }
+
         return searchDef.fields.every((field) => {
+          if (field.type !== 'daterange' && field.serverParam === 'search') return true
+
           if (field.type === 'daterange') {
             const start = filters[field.serverParamStart]
             const end = filters[field.serverParamEnd]
