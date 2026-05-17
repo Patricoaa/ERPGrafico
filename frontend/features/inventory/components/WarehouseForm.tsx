@@ -186,22 +186,12 @@ export function WarehouseForm({ sidebar, onSuccess, initialData, open: openProp,
                 size={initialData ? "lg" : "md"}
                 hideScrollArea={true}
                 contentClassName="p-0"
-                title={
-                    <div className="flex items-center gap-3">
-                        <List className="h-5 w-5 text-muted-foreground" />
-                        <span>{initialData ? "Editar Almacén" : "Nuevo Almacén"}</span>
-                    </div>
-                }
+                icon={List}
+                title={initialData ? "Editar Almacén" : "Nuevo Almacén"}
                 description={
-                    <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                        {initialData?.code && (
-                            <>
-                                <span>{initialData.code}</span>
-                                <span className="opacity-30">|</span>
-                            </>
-                        )}
-                        <span>{form.watch("name") || "Nuevo Almacén"}</span>
-                    </div>
+                    form.watch("name")
+                        ? `${form.watch("code") ? `${form.watch("code")} | ` : ""}${form.watch("name")}`
+                        : (initialData ? undefined : "Nuevo Almacén")
                 }
                 footer={
                     <FormFooter

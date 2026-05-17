@@ -3,9 +3,7 @@
 import { useState, useEffect } from "react"
 import { showApiError } from "@/lib/errors"
 import { BaseModal } from "@/components/shared/BaseModal"
-import { Button } from "@/components/ui/button"
-import { LabeledInput, LabeledSelect, PeriodValidationDateInput } from "@/components/shared"
-import { Chip } from "@/components/shared"
+import { LabeledInput, LabeledSelect, PeriodValidationDateInput, Chip, FormFooter, CancelButton, SubmitButton } from "@/components/shared"
 import {
     Table,
     TableBody,
@@ -217,18 +215,24 @@ export function ReceiptModal({
             open={open}
             onOpenChange={onOpenChange}
             size="xl"
-            title={`${isRefund ? "Devolver Productos" : (filterType === 'SERVICE' ? "Confirmar Entrega de Servicios" : "Recibir Orden")} OCS-${order?.number}`}
-            description={`Proveedor: ${order?.supplier_name}`}
+            icon={Package}
+            title={`${isRefund ? "Devolver Productos" : (filterType === 'SERVICE' ? "Confirmar Entrega de Servicios" : "Recibir Orden")} OCS-${order?.number || ""}`}
+            description={`Proveedor: ${order?.supplier_name || ""}`}
             footer={
-                <>
-                    <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>
-                        Cancelar
-                    </Button>
-                    <Button onClick={handleReceive} disabled={loading || submitting || !selectedWarehouse}>
-                        {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        {isRefund ? 'Confirmar Devolución' : (filterType === 'SERVICE' ? 'Confirmar Entrega' : 'Confirmar Recepción')}
-                    </Button>
-                </>
+                <FormFooter
+                    actions={
+                        <>
+                            <CancelButton onClick={() => onOpenChange(false)} disabled={submitting} />
+                            <SubmitButton
+                                onClick={handleReceive}
+                                loading={submitting}
+                                disabled={loading || !selectedWarehouse}
+                            >
+                                {isRefund ? 'Confirmar Devolución' : (filterType === 'SERVICE' ? 'Confirmar Entrega' : 'Confirmar Recepción')}
+                            </SubmitButton>
+                        </>
+                    }
+                />
             }
         >
             {loading ? (

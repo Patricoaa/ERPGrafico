@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react';
 import { BaseModal } from '@/components/shared/BaseModal';
-import { Button } from '@/components/ui/button';
 import { Calendar, CheckCircle2, AlertCircle, ShieldAlert } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { LabeledContainer, CancelButton, SubmitButton, FormFooter } from '@/components/shared';
@@ -57,13 +56,9 @@ export function NewFiscalYearModal({
             onOpenChange={(open) => !open && onClose()}
             hideScrollArea={true}
             contentClassName="p-0"
-            title={
-                <div className="flex items-center gap-3">
-                    <Calendar className="h-5 w-5 text-muted-foreground" />
-                    <span>Inicializar Año Fiscal</span>
-                </div>
-            }
-            description="Apertura de nuevos periodos contables"
+            icon={Calendar}
+            title="Inicializar Año Fiscal"
+            description="Apertura de nuevos periodos contables."
             footer={
                 <FormFooter
                     actions={

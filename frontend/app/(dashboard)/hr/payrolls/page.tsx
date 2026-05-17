@@ -43,6 +43,10 @@ export default function PayrollsPage() {
     const [dialogOpen, setDialogOpen] = useState(isNewModalOpen)
 
     useEffect(() => {
+        setDialogOpen(isNewModalOpen)
+    }, [isNewModalOpen])
+
+    useEffect(() => {
         const action = searchParams.get("action")
         if (action === "generate_drafts") {
             const executeAction = async () => {

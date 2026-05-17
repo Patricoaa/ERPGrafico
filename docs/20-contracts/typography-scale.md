@@ -59,7 +59,7 @@ h-9  text-[10px]  font-black  uppercase  tracking-widest
 
 | Componente | Variante | Nota |
 |------------|----------|------|
-| `<SubmitButton>` | Primary (slide) | `shadow-lg shadow-primary/20` |
+| `<SubmitButton>` | Primary (slide) | `` |
 | `<CancelButton>` | Outline | `shadow-sm` |
 | `<DangerButton>` | Destructive | Extremo izquierdo del footer |
 | `<ToolbarCreateButton>` | Primary | `px-4 rounded-md shadow-sm` |

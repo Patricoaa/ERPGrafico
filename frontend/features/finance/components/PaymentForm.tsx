@@ -204,6 +204,7 @@ export function PaymentForm({
                 open={open}
                 onOpenChange={setOpen}
                 size="lg"
+                icon={Landmark}
                 title={initialData ? "Editar Pago" : "Registrar Pago"}
                 description={initialData ? "Actualice la información del pago." : "Ingrese los datos para el flujo de tesorería."}
                 footer={

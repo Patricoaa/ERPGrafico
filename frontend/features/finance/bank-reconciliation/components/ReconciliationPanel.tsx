@@ -16,7 +16,7 @@ import { SplitAllocationDialog } from "./SplitAllocationDialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useReconciledLinesQuery } from "../hooks/useReconciliationQueries"
 
-import { LabeledSelect, LabeledInput, TableSkeleton, ActionDock, Chip, CollapsibleSheet, SmartSearchBar, useSmartSearch } from "@/components/shared"
+import { LabeledSelect, LabeledInput, TableSkeleton, ActionDock, Chip, CollapsibleSheet, SmartSearchBar, useSmartSearch, FormFooter, CancelButton } from "@/components/shared"
 import { reconciliationSearchDef } from "../searchDef"
 import { PeriodValidationDateInput } from "@/components/shared/PeriodValidationDateInput"
 import { isZeroTolerance, safeDifference, safeSum, safeParseFloat } from "@/lib/math"
@@ -1169,6 +1169,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                 <BaseModal
                     open={diffDialog.open}
                     onOpenChange={(open) => !open && setDiffDialog(prev => ({ ...prev, open: false }))}
+                    icon={Calculator}
                     title="Confirmar Conciliación con Ajuste"
                     description={
                         <div className="space-y-4">
@@ -1183,15 +1184,20 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                         </div>
                     }
                     footer={
-                        <div className="flex justify-end gap-2 w-full">
-                            <Button variant="outline" onClick={() => setDiffDialog(prev => ({ ...prev, open: false }))}>Cancelar</Button>
-                            <Button
-                                disabled={!diffDateValid || matching}
-                                onClick={() => diffDialog.isGroup ? handleGroupMatch(true) : handleMatch(diffDialog.lineId, diffDialog.paymentId, false, true)}
-                            >
-                                Confirmar con Ajuste
-                            </Button>
-                        </div>
+                        <FormFooter
+                            actions={
+                                <>
+                                    <CancelButton onClick={() => setDiffDialog(prev => ({ ...prev, open: false }))} />
+                                    <Button
+                                        disabled={!diffDateValid || matching}
+                                        onClick={() => diffDialog.isGroup ? handleGroupMatch(true) : handleMatch(diffDialog.lineId, diffDialog.paymentId, false, true)}
+                                        className=""
+                                    >
+                                        Confirmar con Ajuste
+                                    </Button>
+                                </>
+                            }
+                        />
                     }
                 >
                     <div className="space-y-4 py-4">

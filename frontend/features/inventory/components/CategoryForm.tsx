@@ -12,7 +12,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
     Form,
-    FormControl,
     FormField
 } from "@/components/ui/form"
 import api from "@/lib/api"
@@ -453,22 +452,12 @@ export function CategoryForm({
                 size="lg"
                 hideScrollArea={true}
                 contentClassName="p-0"
-                title={
-                    <div className="flex items-center gap-3">
-                        <LucideIcons.Tag className="h-5 w-5 text-muted-foreground" />
-                        <span>{initialData ? "Ficha de Categoría" : "Crear Categoría"}</span>
-                    </div>
-                }
+                icon={LucideIcons.Tag}
+                title={initialData ? "Ficha de Categoría" : "Crear Categoría"}
                 description={
-                    <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                        {form.watch("prefix") && (
-                            <>
-                                <span>{form.watch("prefix")}</span>
-                                <span className="opacity-30">|</span>
-                            </>
-                        )}
-                        <span>{form.watch("name") || "Nueva Categoría"}</span>
-                    </div>
+                    form.watch("name")
+                        ? `${form.watch("prefix") ? `${form.watch("prefix")} | ` : ""}${form.watch("name")}`
+                        : (initialData ? undefined : "Nueva Categoría")
                 }
                 footer={
                     <FormFooter

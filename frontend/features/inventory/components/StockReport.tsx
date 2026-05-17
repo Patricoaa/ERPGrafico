@@ -185,17 +185,9 @@ export function StockReport() {
                 size="lg"
                 hideScrollArea={true}
                 contentClassName="p-0"
-                title={
-                    <div className="flex items-center gap-4">
-                        <ArrowRightLeft className="h-6 w-6 text-muted-foreground" />
-                        <div className="flex flex-col">
-                            <span className="text-xl font-black uppercase tracking-tight">Ajuste de Stock</span>
-                            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                                {adjustingProduct?.name} • SKU: {adjustingProduct?.internal_code || 'N/A'}
-                            </span>
-                        </div>
-                    </div>
-                }
+                icon={ArrowRightLeft}
+                title="Ajuste de Stock"
+                description={adjustingProduct ? `${adjustingProduct.name} • SKU: ${adjustingProduct.internal_code || 'N/A'}` : undefined}
                 footer={
                     <FormFooter
                         actions={

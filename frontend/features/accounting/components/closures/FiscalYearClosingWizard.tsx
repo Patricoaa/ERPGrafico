@@ -274,12 +274,8 @@ export function FiscalYearClosingWizard({
             open={isOpen}
             onOpenChange={onClose}
             onClose={onClose}
-            title={
-                <div className="flex items-center gap-2">
-                    <Settings2 className="h-5 w-5 text-primary" />
-                    <span>Cierre del Ejercicio {year}</span>
-                </div>
-            }
+            icon={Settings2}
+            title={`Cierre del Ejercicio ${year}`}
             steps={steps}
             onComplete={handleConfirm}
             isCompleting={isLoading}
@@ -293,7 +289,9 @@ export function FiscalYearClosingWizard({
         <BaseModal
             open={showTrialBalance}
             onOpenChange={setShowTrialBalance}
+            icon={Scale}
             title={`Balance de Comprobación - Ejercicio ${year}`}
+            description="Resumen de sumas y saldos del ejercicio contable."
             size="xl"
             hideScrollArea={true}
             contentClassName="p-0"

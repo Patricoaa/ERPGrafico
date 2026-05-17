@@ -2,12 +2,11 @@
 
 import { useEffect } from "react"
 import { BaseModal } from "@/components/shared/BaseModal"
-import { Button } from "@/components/ui/button"
 import { AlertCircle, Loader2 } from "lucide-react"
 import { z } from "zod"
 import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { LabeledSelect, LabeledInput } from "@/components/shared"
+import { LabeledSelect, LabeledInput, FormFooter, CancelButton, DangerButton } from "@/components/shared"
 
 const exclusionSchema = z.object({
     reason: z.string().min(1, "Debes seleccionar un motivo"),
@@ -60,33 +59,20 @@ export function ExclusionModal({
             open={open}
             onOpenChange={onOpenChange}
             size="xs"
-            title={
-                <div className="flex items-center gap-3 py-1">
-                    <div className="p-2 rounded-full bg-destructive/10 text-destructive">
-                        <AlertCircle className="h-5 w-5" />
-                    </div>
-                    <span className="text-lg font-black uppercase tracking-tight">{title}</span>
-                </div>
-            }
+            icon={AlertCircle}
+            title={title}
+            description="Tesorería • Exclusión de Movimiento"
             footer={
-                <div className="flex gap-2 w-full justify-end">
-                    <Button 
-                        variant="outline" 
-                        onClick={() => onOpenChange(false)} 
-                        disabled={isSubmitting} 
-                        className="text-xs font-bold uppercase"
-                    >
-                        Cancelar
-                    </Button>
-                    <Button 
-                        variant="destructive" 
-                        onClick={form.handleSubmit(onSubmit)}
-                        disabled={isSubmitting}
-                        className="font-black uppercase tracking-widest px-6 text-xs"
-                    >
-                        {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Confirmar Exclusión"}
-                    </Button>
-                </div>
+                <FormFooter
+                    actions={
+                        <>
+                            <CancelButton onClick={() => onOpenChange(false)} disabled={isSubmitting} />
+                            <DangerButton onClick={form.handleSubmit(onSubmit)} loading={isSubmitting}>
+                                Confirmar Exclusión
+                            </DangerButton>
+                        </>
+                    }
+                />
             }
         >
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">

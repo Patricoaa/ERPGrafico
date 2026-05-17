@@ -110,14 +110,9 @@ export function AbsenceFormModal({ open, onOpenChange, absence, employees, onSav
         <BaseModal
             open={open}
             onOpenChange={onOpenChange}
-            title={
-                <div className="flex items-center gap-3">
-                    <div className="p-2 bg-primary/10 rounded-md">
-                        <CalendarX2 className="h-5 w-5 text-primary" />
-                    </div>
-                    <span>{absence ? "Editar Inasistencia" : "Registrar Inasistencia"}</span>
-                </div>
-            }
+            icon={CalendarX2}
+            title={absence ? "Editar Inasistencia" : "Registrar Inasistencia"}
+            description="Ingrese los detalles de la ausencia del empleado."
             size="xl"
             hideScrollArea
             contentClassName="p-0"

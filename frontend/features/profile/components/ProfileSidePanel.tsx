@@ -5,7 +5,7 @@ import { HubSkeleton } from "@/components/shared/LayoutSkeletons"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { CollapsibleSheet, Chip } from "@/components/shared"
 import type { MyProfile } from "@/types/profile"
-import { Mail, Building2, Phone, User } from "lucide-react"
+import { User } from "lucide-react"
 
 export interface ProfileSidePanelProps {
     profile: MyProfile | null
@@ -49,7 +49,7 @@ export function ProfileSidePanel({ profile, open = true, onOpenChange }: Profile
     // Contact info priority: contact_detail -> user
     const email = contact_detail?.email || user.email
     const phone = contact_detail?.phone || "—"
-    
+
     // Position/Department priority: employee -> direct info (if it existed)
     const position = employee?.position || "—"
 
@@ -66,16 +66,16 @@ export function ProfileSidePanel({ profile, open = true, onOpenChange }: Profile
         >
             <div className="flex-1 overflow-y-auto overflow-x-hidden text-foreground">
                 {/* Header / Avatar Area */}
-                <div className="flex flex-col items-center justify-center py-10 px-6 gap-5 border-b border-white/5 relative overflow-hidden">
+                <div className="flex flex-col items-center justify-center py-10 px-6 gap-5 border-border/10 relative overflow-hidden">
                     <Avatar className="h-24 w-24 border-2 border-primary/20 shadow-xl ring-4 ring-background relative z-10">
                         <AvatarImage src="" alt={user.username} />
-                        <AvatarFallback className="text-2xl font-black text-white bg-muted">
+                        <AvatarFallback className="text-2xl font-black text-foreground bg-muted">
                             {initials}
                         </AvatarFallback>
                     </Avatar>
 
                     <div className="flex flex-col items-center gap-1 text-center relative z-10">
-                        <h2 className="text-lg font-black tracking-tight leading-none text-white">
+                        <h2 className="text-lg font-black tracking-tight leading-none text-foreground">
                             {`${firstName} ${lastName}`.trim() || user.username}
                         </h2>
                         <p className="text-xs text-muted-foreground uppercase tracking-widest font-bold mt-1">
@@ -90,29 +90,31 @@ export function ProfileSidePanel({ profile, open = true, onOpenChange }: Profile
 
                 <div className="p-6 space-y-8">
                     {/* Sección Datos de Usuario */}
-                    <div className="space-y-4">
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">
-                            Datos de Usuario
-                        </span>
-                        <div className="space-y-3">
-                            <div className="flex items-center gap-3 text-sm">
-                                <div className="h-8 w-8 rounded-full bg-white/5 flex items-center justify-center shrink-0">
-                                    <User className="h-4 w-4 text-muted-foreground" />
-                                </div>
-                                <div className="flex flex-col min-w-0">
+                    <div className="space-y-6 flex flex-col items-center w-full">
+                        <div className="flex items-center gap-2 w-full pt-2">
+                            <div className="flex-1 h-px bg-border/50" />
+                            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 whitespace-nowrap">
+                                Datos de Usuario
+                            </span>
+                            <div className="flex-1 h-px bg-border/50" />
+                        </div>
+
+                        <div className="space-y-6 flex flex-col items-center w-full">
+                            {/* Rol Principal */}
+                            <div className="flex flex-col items-center text-center space-y-1.5">
+                                <div className="flex flex-col items-center">
                                     <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider leading-none mb-1">Rol Principal</span>
-                                    <span className="truncate font-medium leading-none">{primaryRole}</span>
+                                    <span className="font-semibold text-sm leading-none">{primaryRole}</span>
                                 </div>
                             </div>
-                            <div className="flex items-start gap-3 text-sm">
-                                <div className="h-8 w-8 rounded-full bg-white/5 flex items-center justify-center shrink-0 mt-0.5">
-                                    <Building2 className="h-4 w-4 text-muted-foreground" />
-                                </div>
-                                <div className="flex flex-col min-w-0 flex-1">
+
+                            {/* Equipos Funcionales */}
+                            <div className="flex flex-col items-center text-center space-y-1.5">
+                                <div className="flex flex-col items-center min-w-0">
                                     <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider leading-none mb-1.5">Equipos Funcionales</span>
-                                    <div className="flex flex-wrap gap-1.5">
+                                    <div className="flex flex-wrap justify-center gap-1.5">
                                         {functionalGroups.length > 0 ? functionalGroups.map(g => (
-                                            <Chip key={g} size="xs" intent="neutral" className="border-white/10 bg-white/5">{g}</Chip>
+                                            <Chip key={g} size="xs" intent="neutral" className="border-border/10 bg-muted">{g}</Chip>
                                         )) : (
                                             <span className="text-xs text-muted-foreground italic leading-none">Sin equipos asignados</span>
                                         )}
@@ -122,25 +124,31 @@ export function ProfileSidePanel({ profile, open = true, onOpenChange }: Profile
                         </div>
                     </div>
 
-                    <div className="h-px bg-white/5 w-full" />
-
                     {/* Sección Información de Contacto */}
-                    <div className="space-y-4">
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">
-                            Información de Contacto
-                        </span>
-                        <div className="space-y-3">
-                            <div className="flex items-center gap-3 text-sm">
-                                <div className="h-8 w-8 rounded-full bg-white/5 flex items-center justify-center shrink-0">
-                                    <Mail className="h-4 w-4 text-muted-foreground" />
+                    <div className="space-y-6 flex flex-col items-center w-full">
+                        <div className="flex items-center gap-2 w-full pt-2">
+                            <div className="flex-1 h-px bg-border/50" />
+                            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 whitespace-nowrap">
+                                Información de Contacto
+                            </span>
+                            <div className="flex-1 h-px bg-border/50" />
+                        </div>
+
+                        <div className="space-y-6 flex flex-col items-center w-full">
+                            {/* Email */}
+                            <div className="flex flex-col items-center text-center space-y-1.5">
+                                <div className="flex flex-col items-center min-w-0">
+                                    <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider leading-none mb-1">Email</span>
+                                    <span className="font-semibold text-sm truncate max-w-[280px]">{email || "Sin email"}</span>
                                 </div>
-                                <span className="truncate font-medium">{email || "Sin email"}</span>
                             </div>
-                            <div className="flex items-center gap-3 text-sm">
-                                <div className="h-8 w-8 rounded-full bg-white/5 flex items-center justify-center shrink-0">
-                                    <Phone className="h-4 w-4 text-muted-foreground" />
+
+                            {/* Teléfono */}
+                            <div className="flex flex-col items-center text-center space-y-1.5">
+                                <div className="flex flex-col items-center min-w-0">
+                                    <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider leading-none mb-1">Teléfono</span>
+                                    <span className="font-semibold text-sm truncate">{phone}</span>
                                 </div>
-                                <span className="truncate font-medium">{phone}</span>
                             </div>
                         </div>
                     </div>

@@ -25,14 +25,6 @@ import { SubmitButton } from "@/components/shared/ActionButtons"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { useAuth } from "@/contexts/AuthContext"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import {
-    AlertDialog,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
 import { useServerDate } from "@/hooks/useServerDate"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { PINPadModal } from "@/features/pos/components/PINPadModal"
@@ -112,7 +104,7 @@ export function SalesCheckoutWizardContent({
     const { dateString, serverDate } = useServerDate()
     const { openHub, isHubOpen } = useHubPanel()
     const { hasPermission } = useAuth()
-    
+
     const [currentOrderLines, setCurrentOrderLines] = useState<SaleOrderLine[]>(initialOrderLines)
     const [step, setStep] = useState(initialStep || 1)
     const [loading, setLoading] = useState(false)
@@ -176,7 +168,7 @@ export function SalesCheckoutWizardContent({
         if (!didHydrateRef.current) {
             didHydrateRef.current = true
             setCurrentOrderLines(initialOrderLines)
-            
+
             if (quickSale && currentOrderLines.length > 0) {
                 if (initialCustomerId) setSelectedCustomerId(initialCustomerId)
                 setStep(totalSteps)
@@ -186,7 +178,7 @@ export function SalesCheckoutWizardContent({
                 setStep(initialStep ?? 1)
             }
         }
-    }, [initialStep, quickSale, totalSteps, currentOrderLines.length]) 
+    }, [initialStep, quickSale, totalSteps, currentOrderLines.length])
 
     useEffect(() => {
         if (dateString && !initialDteData) {
@@ -389,7 +381,7 @@ export function SalesCheckoutWizardContent({
                         }
                     }
                     return { isValid: true }
-                
+
                 case 'manufacturing':
                     const pendingItems = currentOrderLines.filter((line: SaleOrderLine) =>
                         line.product_type === 'MANUFACTURABLE' && line.requires_advanced_manufacturing && !line.manufacturing_data
@@ -399,10 +391,10 @@ export function SalesCheckoutWizardContent({
                         return { isValid: false }
                     }
                     return { isValid: true }
-                
+
                 case 'delivery':
                     return { isValid: true }
-                
+
                 case 'payment':
                     if (!paymentData.method) {
                         toast.error("Debe seleccionar un método de pago.")
@@ -427,7 +419,7 @@ export function SalesCheckoutWizardContent({
                         }
                     }
                     return { isValid: true }
-                    
+
                 default:
                     return { isValid: true }
             }
@@ -567,8 +559,8 @@ export function SalesCheckoutWizardContent({
             console.error("Checkout error:", error)
             const rawError = getErrorMessage(error) || "Error al procesar la venta"
             const errorMessage = Array.isArray(rawError) ? rawError[0] : String(rawError)
-            
-            if (errorMessage.includes("Intento de aumento de crédito") || 
+
+            if (errorMessage.includes("Intento de aumento de crédito") ||
                 errorMessage.includes("Aprobación de crédito fue emitida para otro cliente") ||
                 errorMessage.includes("Seguridad:")) {
                 setSecurityErrorMessage(errorMessage)
@@ -790,8 +782,8 @@ export function SalesCheckoutWizardContent({
                         {creditApprovalRequired && (
                             <Alert className={cn(
                                 "mb-4 border-l-4 rounded-none",
-                                isApproved 
-                                    ? "border-success bg-success/5 shadow-sm" 
+                                isApproved
+                                    ? "border-success bg-success/5 shadow-sm"
                                     : "border-warning bg-warning/5 shadow-sm"
                             )}>
                                 <div className="flex items-start gap-4">
@@ -819,10 +811,10 @@ export function SalesCheckoutWizardContent({
                                                 "text-sm leading-relaxed",
                                                 isApproved ? "text-success-foreground/80" : "text-warning-foreground/80"
                                             )}>
-                                                {isWaitingApproval 
-                                                    ? "La solicitud ha sido enviada. Consumiendo en tiempo real el estado de la verificación..." 
-                                                    : isApproved 
-                                                        ? "El supervisor ha verificado y autorizado la línea de crédito. Puede continuar y finalizar la venta." 
+                                                {isWaitingApproval
+                                                    ? "La solicitud ha sido enviada. Consumiendo en tiempo real el estado de la verificación..."
+                                                    : isApproved
+                                                        ? "El supervisor ha verificado y autorizado la línea de crédito. Puede continuar y finalizar la venta."
                                                         : creditApprovalReason}
                                             </span>
                                             {!isApproved && (
@@ -871,16 +863,16 @@ export function SalesCheckoutWizardContent({
                                         <AlertTitle className="font-black uppercase tracking-tight text-xs mb-1 text-destructive">Alerta de Seguridad</AlertTitle>
                                         <AlertDescription className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                                             <span className="text-sm text-destructive/80 leading-relaxed">{securityErrorMessage}</span>
-                                            <Button 
-                                                size="sm" 
-                                                variant="outline" 
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
                                                 onClick={() => {
                                                     setSecurityErrorMessage(null)
                                                     setApprovalTaskId(null)
                                                     setIsApproved(false)
                                                     setIsWaitingApproval(false)
                                                     setCreditApprovalRequired(false)
-                                                }} 
+                                                }}
                                                 className="h-8 border-destructive/30 text-destructive hover:bg-destructive/10 shrink-0 uppercase font-bold text-[10px]"
                                             >
                                                 Entendido
@@ -890,7 +882,7 @@ export function SalesCheckoutWizardContent({
                                 </div>
                             </Alert>
                         )}
-                        
+
                         <div className={((creditApprovalRequired || isWaitingApproval) && !isApproved) || securityErrorMessage ? "opacity-30 pointer-events-none" : ""}>
                             {renderStep()}
                         </div>
@@ -911,8 +903,8 @@ export function SalesCheckoutWizardContent({
                         </div>
                         <div className="flex gap-4">
                             {step < totalSteps && (
-                                <Button 
-                                    onClick={handleNext} 
+                                <Button
+                                    onClick={handleNext}
                                     className="w-40 font-bold"
                                 >
                                     Siguiente
@@ -1021,14 +1013,14 @@ export function SalesCheckoutWizardContent({
                         </h4>
                         <p className="text-sm text-muted-foreground leading-relaxed">
                             Al finalizar el cobro, ten presente que marcaste la <b>Factura</b> para ser emitida posteriormente.
-                            <br/><br/>
+                            <br /><br />
                             No olvides emitirla externamente e ingresarle los folios al sistema una vez concluido el servicio.
                         </p>
                     </div>
                     <div className="w-full pt-4">
                         <Button
                             variant="default"
-                            className="w-full h-12 font-bold uppercase tracking-widest text-xs rounded-sm shadow-lg shadow-primary/20"
+                            className="w-full h-12 font-bold uppercase tracking-widest text-xs rounded-sm "
                             onClick={() => {
                                 setShowInvoiceReminder(false)
                                 if (isSessionHost) {

@@ -229,3 +229,14 @@ Los tests del hook están en [`frontend/hooks/useAutoSaveForm.test.ts`](../../fr
 - `enabled: false` no programa saves.
 
 > En tests, registrar los campos manualmente con `form.register('field')` antes de hacer `form.setValue(...)`. RHF v7 sólo emite `info.name` en watch para campos registrados.
+
+## Excepciones Ad-hoc Autorizadas
+
+Existen casos excepcionales justificados que no implementan `useAutoSaveForm` debido a su naturaleza híbrida o transaccional:
+
+1. **Terminal Punto de Venta (TPV) - [`POSClientView.tsx`](../../frontend/features/pos/components/POSClientView.tsx#L225-L229)**:
+   - **Mecanismo**: Utiliza un guardado de borrador con `setTimeout` (2000 ms) en un efecto directo sobre el carrito y el cliente seleccionado.
+   - **Justificación**: Es un flujo de trabajo transaccional en tiempo real, no un panel de configuración singleton. Coordina un sistema de concurrencia y bloqueos distribuidos de terminales (`useDraftSync`) que imposibilita el uso directo de un hook de formulario estándar.
+2. **Selector de Cuenta Capital en Socios - [`PartnerSettingsTab.tsx`](../../frontend/features/settings/components/PartnerSettingsTab.tsx#L68-L82)**:
+   - **Mecanismo**: Un selector de cuenta único (`partner_capital_social_account`) en una tarjeta de configuración. Al cambiar el valor del selector, se dispara una actualización contable directa PATCH mediante `accountingApi.updateSettings` con control de spinner local (`isUpdatingSettings`).
+   - **Justificación**: La pantalla no es un panel de configuración tradicional, sino un panel de control e historial societario (ledger de socios, KPIs y aportes/retiros modales). Introducir la sobrecarga estructural de un proveedor `react-hook-form` completo solo para un único selector de cuenta aislado se consideró sobre-ingeniería innecesaria. Es una excepción pragmática autorizada de campo único.

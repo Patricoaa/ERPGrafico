@@ -142,9 +142,9 @@ export function UniversalSearch() {
                 className="group relative flex w-12 items-center gap-2 rounded-xl border border-border bg-muted/30 px-3 py-2 text-sm text-muted-foreground transition-all hover:bg-muted/50 hover:ring-2 hover:ring-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 sm:w-full sm:max-w-[600px]"
             >
                 <Search className="size-4 transition-colors group-hover:text-foreground" aria-hidden />
-                <span className="hidden flex-1 text-left sm:inline">Buscar clientes, productos, órdenes o cualquier documento...</span>
+                <span className="hidden flex-1 text-left sm:inline">Busqueda global...</span>
                 <kbd className="pointer-events-none hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex">
-                    <span className="text-xs">⌘</span>K
+                    <span className="text-xs">ctrl</span>+<span className="text-xs">k</span>
                 </kbd>
             </button>
 
@@ -204,7 +204,7 @@ export function UniversalSearch() {
                                         className={cn(
                                             "flex shrink-0 items-center gap-2 rounded-lg px-4 py-2 text-xs font-medium transition-all",
                                             !selectedType
-                                                ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
+                                                ? "bg-primary text-primary-foreground "
                                                 : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
                                         )}
                                     >
@@ -217,7 +217,7 @@ export function UniversalSearch() {
                                             className={cn(
                                                 "flex shrink-0 items-center gap-2 rounded-lg px-4 py-2 text-xs font-medium transition-all",
                                                 selectedType === type.label
-                                                    ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
+                                                    ? "bg-primary text-primary-foreground "
                                                     : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
                                             )}
                                         >
@@ -252,117 +252,117 @@ export function UniversalSearch() {
                                 )}
 
                                 {!isLoading && filteredResults.length === 0 && debouncedQuery.length >= 2 && (
-                                <li className="flex h-full flex-col items-center justify-center py-20 text-center">
-                                    <div className="mb-4 rounded-full bg-muted/20 p-6">
-                                        <Search className="size-10 text-muted-foreground/30" />
-                                    </div>
-                                    <p className="text-base font-medium text-foreground">
-                                        No se encontraron coincidencias
-                                    </p>
-                                    <p className="text-sm text-muted-foreground">
-                                        Intenta con términos más generales
-                                    </p>
-                                </li>
-                            )}
+                                    <li className="flex h-full flex-col items-center justify-center py-20 text-center">
+                                        <div className="mb-4 rounded-full bg-muted/20 p-6">
+                                            <Search className="size-10 text-muted-foreground/30" />
+                                        </div>
+                                        <p className="text-base font-medium text-foreground">
+                                            No se encontraron coincidencias
+                                        </p>
+                                        <p className="text-sm text-muted-foreground">
+                                            Intenta con términos más generales
+                                        </p>
+                                    </li>
+                                )}
 
-                            {!isLoading && filteredResults.length === 0 && debouncedQuery.length < 2 && (
-                                <li className="flex flex-col items-center justify-center py-24 text-center">
-                                    <div className="relative mb-6 flex h-24 w-24 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 shadow-2xl">
-                                        <div className="absolute inset-0 animate-pulse rounded-2xl bg-primary/5 blur-xl" />
-                                        <span className="relative bg-gradient-to-br from-primary to-primary/50 bg-clip-text text-4xl font-black tracking-tighter text-transparent">
-                                            EG
-                                        </span>
-                                    </div>
-                                    <h3 className="mb-2 text-xl font-semibold tracking-tight text-foreground">
-                                        ERPGrafico
-                                    </h3>
-                                    <p className="max-w-[300px] text-sm text-muted-foreground">
-                                        Ingresa un número de documento, nombre de cliente o código de producto para comenzar.
-                                    </p>
-                                </li>
-                            )}
-
-                            {filteredResults.map((result, index) => (
-                                <li
-                                    key={`${result.label}-${result.id}`}
-                                    id={`search-result-${index}`}
-                                    role="option"
-                                    aria-selected={index === activeIndex}
-                                    onMouseEnter={() => setActiveIndex(index)}
-                                    onClick={() => navigate(result.detail_url)}
-                                    className={cn(
-                                        "group flex cursor-pointer items-center gap-4 px-4 py-3 transition-all",
-                                        index === activeIndex
-                                            ? "bg-white/5"
-                                            : "hover:bg-white/5"
-                                    )}
-                                >
-                                    <div className="relative">
-                                        <Avatar className="size-10 border border-white/10 transition-transform group-hover:scale-105">
-                                            <AvatarFallback className="bg-muted/50 text-xs font-semibold">
-                                                <DynamicIcon name={result.icon} className="size-4" />
-                                            </AvatarFallback>
-                                        </Avatar>
-                                        {index === activeIndex && (
-                                            <div className="absolute -left-1 top-1/2 h-4 w-1 -translate-y-1/2 rounded-full bg-primary" />
-                                        )}
-                                    </div>
-
-                                    <div className="flex flex-1 flex-col gap-0.5 overflow-hidden">
-                                        <div className="flex items-center gap-2">
-                                            <span className="truncate font-semibold text-foreground">
-                                                {result.display}
+                                {!isLoading && filteredResults.length === 0 && debouncedQuery.length < 2 && (
+                                    <li className="flex flex-col items-center justify-center py-24 text-center">
+                                        <div className="relative mb-6 flex h-24 w-24 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 shadow-2xl">
+                                            <div className="absolute inset-0 animate-pulse rounded-2xl bg-primary/5 blur-xl" />
+                                            <span className="relative bg-gradient-to-br from-primary to-primary/50 bg-clip-text text-4xl font-black tracking-tighter text-transparent">
+                                                EG
                                             </span>
-                                            {result.extra_info && (
-                                                <Badge variant="outline" className="hidden h-5 bg-primary/5 text-[10px] text-primary sm:flex">
-                                                    {result.extra_info}
-                                                </Badge>
+                                        </div>
+                                        <h3 className="mb-2 text-xl font-semibold tracking-tight text-foreground">
+                                            ERPGrafico
+                                        </h3>
+                                        <p className="max-w-[300px] text-sm text-muted-foreground">
+                                            Ingresa un número de documento, nombre de cliente o código de producto para comenzar.
+                                        </p>
+                                    </li>
+                                )}
+
+                                {filteredResults.map((result, index) => (
+                                    <li
+                                        key={`${result.label}-${result.id}`}
+                                        id={`search-result-${index}`}
+                                        role="option"
+                                        aria-selected={index === activeIndex}
+                                        onMouseEnter={() => setActiveIndex(index)}
+                                        onClick={() => navigate(result.detail_url)}
+                                        className={cn(
+                                            "group flex cursor-pointer items-center gap-4 px-4 py-3 transition-all",
+                                            index === activeIndex
+                                                ? "bg-white/5"
+                                                : "hover:bg-white/5"
+                                        )}
+                                    >
+                                        <div className="relative">
+                                            <Avatar className="size-10 border border-white/10 transition-transform group-hover:scale-105">
+                                                <AvatarFallback className="bg-muted/50 text-xs font-semibold">
+                                                    <DynamicIcon name={result.icon} className="size-4" />
+                                                </AvatarFallback>
+                                            </Avatar>
+                                            {index === activeIndex && (
+                                                <div className="absolute -left-1 top-1/2 h-4 w-1 -translate-y-1/2 rounded-full bg-primary" />
                                             )}
                                         </div>
-                                        <span className="truncate text-xs text-muted-foreground">
-                                            {result.subtitle || result.title}
-                                        </span>
-                                    </div>
 
-                                    <div className="flex items-center gap-3">
-                                        <span className="hidden text-[10px] font-medium uppercase tracking-wider text-muted-foreground/40 sm:block">
-                                            {result.title}
-                                        </span>
-                                        <ArrowRight className={cn(
-                                            "size-4 text-muted-foreground/20 transition-all",
-                                            index === activeIndex && "translate-x-1 text-primary"
-                                        )} />
-                                    </div>
-                                </li>
-                            ))}
-                        </ul>
-                    </ScrollArea>
+                                        <div className="flex flex-1 flex-col gap-0.5 overflow-hidden">
+                                            <div className="flex items-center gap-2">
+                                                <span className="truncate font-semibold text-foreground">
+                                                    {result.display}
+                                                </span>
+                                                {result.extra_info && (
+                                                    <Badge variant="outline" className="hidden h-5 bg-primary/5 text-[10px] text-primary sm:flex">
+                                                        {result.extra_info}
+                                                    </Badge>
+                                                )}
+                                            </div>
+                                            <span className="truncate text-xs text-muted-foreground">
+                                                {result.subtitle || result.title}
+                                            </span>
+                                        </div>
 
-                    {/* Footer */}
-                    <div className="flex items-center justify-between border-t border-white/5 bg-black/40 px-4 py-3 text-[10px]">
-                        <div className="flex items-center gap-4 text-muted-foreground">
-                            <span className="flex items-center gap-1.5">
-                                <kbd className="rounded bg-white/10 px-1 py-0.5 text-[9px] font-medium text-foreground">↑↓</kbd>
-                                Navegar
-                            </span>
-                            <span className="flex items-center gap-1.5">
-                                <kbd className="rounded bg-white/10 px-1 py-0.5 text-[9px] font-medium text-foreground flex items-center justify-center w-5">
-                                    <CornerDownLeft className="size-2.5" />
-                                </kbd>
-                                Seleccionar
-                            </span>
-                            <span className="flex items-center gap-1.5">
-                                <kbd className="rounded bg-white/10 px-2 py-0.5 text-[9px] font-medium text-foreground">⌘K</kbd>
-                                Cerrar
-                            </span>
-                        </div>
+                                        <div className="flex items-center gap-3">
+                                            <span className="hidden text-[10px] font-medium uppercase tracking-wider text-muted-foreground/40 sm:block">
+                                                {result.title}
+                                            </span>
+                                            <ArrowRight className={cn(
+                                                "size-4 text-muted-foreground/20 transition-all",
+                                                index === activeIndex && "translate-x-1 text-primary"
+                                            )} />
+                                        </div>
+                                    </li>
+                                ))}
+                            </ul>
+                        </ScrollArea>
 
-                        {filteredResults.length > 0 && (
-                            <div className="text-muted-foreground">
-                                <span className="font-medium text-foreground">{filteredResults.length}</span> resultados encontrados
+                        {/* Footer */}
+                        <div className="flex items-center justify-between border-t border-white/5 bg-black/40 px-4 py-3 text-[10px]">
+                            <div className="flex items-center gap-4 text-muted-foreground">
+                                <span className="flex items-center gap-1.5">
+                                    <kbd className="rounded bg-white/10 px-1 py-0.5 text-[9px] font-medium text-foreground">↑↓</kbd>
+                                    Navegar
+                                </span>
+                                <span className="flex items-center gap-1.5">
+                                    <kbd className="rounded bg-white/10 px-1 py-0.5 text-[9px] font-medium text-foreground flex items-center justify-center w-5">
+                                        <CornerDownLeft className="size-2.5" />
+                                    </kbd>
+                                    Seleccionar
+                                </span>
+                                <span className="flex items-center gap-1.5">
+                                    <kbd className="rounded bg-white/10 px-2 py-0.5 text-[9px] font-medium text-foreground">⌘K</kbd>
+                                    Cerrar
+                                </span>
                             </div>
-                        )}
-                    </div>
+
+                            {filteredResults.length > 0 && (
+                                <div className="text-muted-foreground">
+                                    <span className="font-medium text-foreground">{filteredResults.length}</span> resultados encontrados
+                                </div>
+                            )}
+                        </div>
                     </DialogContent>
                 </DialogPortal>
             </Dialog>

@@ -265,13 +265,14 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
                                         <div className="flex items-center gap-1.5 text-foreground font-medium">
                                             <span>{selectedMovements.length} ventas vinculadas</span>
                                             <span className="text-muted-foreground/30">•</span>
-                                            <button
+                                            <Button
                                                 type="button"
+                                                variant="link"
                                                 onClick={handleAutoCalculate}
-                                                className="text-primary hover:underline font-bold transition-all"
+                                                className="text-primary hover:underline font-bold transition-all p-0 h-auto"
                                             >
                                                 Modificar Ventas
-                                            </button>
+                                            </Button>
                                         </div>
                                     }
                                 />

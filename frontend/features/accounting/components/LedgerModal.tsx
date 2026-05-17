@@ -3,11 +3,8 @@
 import React, { useState, useEffect } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { useServerDate } from "@/hooks/useServerDate"
-import { BaseDrawer } from "@/components/shared"
-import { Button } from "@/components/ui/button"
 import { Book, ArrowUpRight, ArrowDownRight, Scale, Calculator, Eye, Trash2 } from "lucide-react"
-import { DataTable } from '@/components/shared'
-import { DataTableColumnHeader } from '@/components/shared'
+import { BaseDrawer, DataTable, DataTableColumnHeader, CardSkeleton, DataCell, createActionsColumn, IconButton } from "@/components/shared"
 import { ColumnDef } from "@tanstack/react-table"
 import { Card, CardContent } from "@/components/ui/card"
 import { DateRangeFilter } from "@/components/shared/DateRangeFilter"
@@ -19,8 +16,7 @@ import { useLedger } from "@/features/accounting/hooks/useLedger"
 import { useDeleteJournalEntry } from "@/features/accounting/hooks/useJournalEntries"
 import { es } from "date-fns/locale"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
-import { CardSkeleton } from "@/components/shared"
-import { DataCell, createActionsColumn } from '@/components/shared'
+
 
 import type { LedgerMovement } from "@/features/accounting/types"
 
@@ -67,15 +63,13 @@ export function LedgerModal({ accountId, accountName, accountCode, trigger }: Le
                     </div>
                 )
             ) : (
-                <Button
-                    variant="ghost"
-                    size="sm"
+                <IconButton
                     title="Ver Libro Mayor"
                     className="h-8 w-8 p-0"
                     onClick={() => setOpen(true)}
                 >
                     <Book className="h-4 w-4 text-primary" />
-                </Button>
+                </IconButton>
             )}
             <BaseDrawer
                 open={open}

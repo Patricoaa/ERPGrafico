@@ -22,17 +22,7 @@ import { UserCheck, DollarSign, AlertCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 import { toast } from "sonner"
-import { ExpandableTableRow, TableSkeleton } from "@/components/shared"
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+import { ExpandableTableRow, TableSkeleton, ActionConfirmModal } from "@/components/shared"
 import { Input } from "@/components/ui/input"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { DataCell } from '@/components/shared'
@@ -188,35 +178,28 @@ function ExpandableBlacklistRow({ row, onRefresh }: { row: Row<CreditContact>, o
                 <p className="text-[12px] text-muted-foreground italic text-center py-4">Sin registros de deudas castigadas.</p>
             )}
 
-            <AlertDialog open={showRecoveryDialog} onOpenChange={setShowRecoveryDialog}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle className="font-black">Recuperación de Deuda</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            Ingrese el monto recaudado para este cliente incobrable.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <div className="py-4">
-                        <Input
-                            type="number"
-                            placeholder="Ingrese monto..."
-                            value={recoveryAmount}
-                            onChange={(e) => setRecoveryAmount(e.target.value)}
-                            className="font-mono text-lg"
-                        />
+            <ActionConfirmModal
+                open={showRecoveryDialog}
+                onOpenChange={setShowRecoveryDialog}
+                onConfirm={handleRecover}
+                title="Recuperación de Deuda"
+                description={
+                    <div className="space-y-4">
+                        <p>Ingrese el monto recaudado para este cliente incobrable.</p>
+                        <div className="py-2">
+                            <Input
+                                type="number"
+                                placeholder="Ingrese monto..."
+                                value={recoveryAmount}
+                                onChange={(e) => setRecoveryAmount(e.target.value)}
+                                className="font-mono text-lg text-foreground bg-background"
+                            />
+                        </div>
                     </div>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel className="font-bold">Cancelar</AlertDialogCancel>
-                        <AlertDialogAction
-                            className="bg-primary font-bold"
-                            onClick={handleRecover}
-                            disabled={!recoveryAmount}
-                        >
-                            Registrar Pago
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
+                }
+                variant="default"
+                confirmText="Registrar Pago"
+            />
         </ExpandableTableRow>
     )
 }

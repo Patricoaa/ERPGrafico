@@ -123,12 +123,8 @@ export function UoMForm({ open: openProp, onOpenChange, initialData, onSuccess }
             size={initialData?.id ? "lg" : "sm"}
             hideScrollArea={true}
             contentClassName="p-0"
-            title={
-                <div className="flex items-center gap-3">
-                    <Ruler className="h-5 w-5 text-muted-foreground" />
-                    <span>{initialData?.id ? "Editar Unidad de Medida" : "Nueva Unidad de Medida"}</span>
-                </div>
-            }
+            icon={Ruler}
+            title={initialData?.id ? "Editar Unidad de Medida" : "Nueva Unidad de Medida"}
             description={initialData?.id ? "Modifique los parámetros de conversión y consulte el historial." : "Configure el nombre, categoría y ratio de conversión."}
             footer={
                 <FormFooter

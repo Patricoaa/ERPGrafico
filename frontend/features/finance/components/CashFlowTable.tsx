@@ -229,6 +229,7 @@ export const CashFlowTable: React.FC<CashFlowTableProps> = ({ data, embedded, sh
             <BaseModal
                 open={auditModalOpen}
                 onOpenChange={setAuditModalOpen}
+                icon={AlertCircle}
                 title="Auditoría de Integridad del Flujo"
                 description="Listado de cuentas contables con movimientos en el periodo que NO están mapeadas a una categoría de flujo de caja."
             >

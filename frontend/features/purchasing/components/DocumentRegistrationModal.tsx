@@ -6,7 +6,7 @@ import { BaseModal } from "@/components/shared/BaseModal"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { FileText, Loader2, Upload, ShieldAlert, Plus } from "lucide-react"
-import { FormFooter, LabeledInput, LabeledSelect, FormSection } from "@/components/shared"
+import { FormFooter, LabeledInput, LabeledSelect, FormSection, CancelButton } from "@/components/shared"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import api from "@/lib/api"
@@ -108,20 +108,14 @@ export function DocumentRegistrationModal({
             open={open}
             onOpenChange={onOpenChange}
             size="md"
-            title={
-                <div className="flex items-center gap-2">
-                    <FileText className="h-5 w-5" />
-                    Registrar Factura/Boleta - OCS-{orderNumber}
-                </div>
-            }
+            icon={FileText}
+            title={`Registrar Factura/Boleta - OCS-${orderNumber}`}
             description="Ingrese los datos del documento tributario recibido del proveedor."
             footer={
                 <FormFooter
                     actions={
                         <>
-                            <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>
-                                Cancelar
-                            </Button>
+                            <CancelButton onClick={() => onOpenChange(false)} disabled={submitting} />
                             <Button 
                                 onClick={handleSubmit} 
                                 disabled={submitting || (!isPending && (!isPeriodValid || !isFolioValid))}

@@ -256,25 +256,11 @@ export function AccountForm({
                 open={open}
                 onOpenChange={setOpen}
                 size={initialData ? "lg" : "md"}
+                icon={BookOpen}
+                title={initialData ? "Ficha de Cuenta" : "Nueva Cuenta Contable"}
+                description={initialData ? `${(initialData as any).code || ""} • ${form.watch("name") || ""}` : "Plan de Cuentas • Contabilidad General"}
                 hideScrollArea={true}
                 contentClassName="p-0"
-                title={
-                    <div className="flex items-center gap-3">
-                        <Tag className="h-5 w-5 text-muted-foreground" />
-                        <span>{initialData ? "Ficha de Cuenta" : "Nueva Cuenta Contable"}</span>
-                    </div>
-                }
-                description={
-                    <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                        {(initialData as any)?.code && (
-                            <>
-                                <span>{(initialData as any).code}</span>
-                                <span className="opacity-30">|</span>
-                            </>
-                        )}
-                        <span>{form.watch("name") || "Nueva Cuenta"}</span>
-                    </div>
-                }
                 footer={
                     !readonly ? (
                         <FormFooter

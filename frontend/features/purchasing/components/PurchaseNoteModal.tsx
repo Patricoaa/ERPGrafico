@@ -4,7 +4,6 @@ import { toast } from "sonner"
 import { showApiError } from "@/lib/errors"
 import { useState, useEffect } from "react"
 import { BaseModal } from "@/components/shared/BaseModal"
-import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import {
     ChevronRight,
@@ -18,7 +17,7 @@ import api from "@/lib/api"
 import { validateTaxPeriod } from '@/features/tax/actions'
 import { PurchaseOrderAPI, PurchaseNoteLine } from "../types"
 import { PricingUtils } from '@/features/inventory/utils/pricing'
-import { DocumentAttachmentDropzone, PeriodValidationDateInput, LoadingFallback } from "@/components/shared"
+import { DocumentAttachmentDropzone, PeriodValidationDateInput, LoadingFallback, FormFooter, CancelButton, SubmitButton, ActionSlideButton } from "@/components/shared"
 
 import { ShieldAlert } from "lucide-react"
 
@@ -256,70 +255,52 @@ export function PurchaseNoteModal({
         <BaseModal
             open={open}
             onOpenChange={onOpenChange}
+            variant="wizard"
+            icon={FileBadge}
+            title={noteType === 'NOTA_CREDITO' ? 'Registrar Nota de Crédito' : 'Registrar Nota de Débito'}
+            description={
+                orderNumber
+                    ? `Ref: OCS-${orderNumber}`
+                    : orderDetails?.number
+                    ? `Ref: OCS-${orderDetails.number}`
+                    : `Ref: Documento #${invoiceId}`
+            }
             size="full"
             hideScrollArea
             className="h-[90vh]"
             contentClassName="p-0"
-            title={
-                <div className="flex items-center gap-4">
-                    <div className={`p-3 rounded-lg ${noteType === 'NOTA_CREDITO' ? 'bg-warning/10' : 'bg-primary/10'}`}>
-                        <FileBadge className={`h-6 w-6 ${noteType === 'NOTA_CREDITO' ? 'text-warning' : 'text-primary'}`} />
-                    </div>
-                    <div>
-                        <span className="font-black tracking-tighter uppercase block text-lg">
-                            Registrar {noteType === 'NOTA_CREDITO' ? 'Nota de Crédito' : 'Nota de Débito'}
-                        </span>
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground font-mono">
-                            {orderNumber ? (
-                                <span>Ref: OCS-{orderNumber}</span>
-                            ) : orderDetails?.number ? (
-                                <span>Ref: OCS-{orderDetails.number}</span>
-                            ) : (
-                                <span>Ref: Documento #{invoiceId}</span>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            }
             footer={
-                <div className="w-full flex justify-between items-center">
-                    <Button
-                        variant="outline"
-                        onClick={handleBack}
-                        disabled={step === 1 || submitting}
-                        className="h-12 px-6 font-bold"
-                    >
-                        <ChevronLeft className="mr-2 h-4 w-4" />
-                        Atrás
-                    </Button>
-
-                    {step < totalSteps ? (
-                        <Button
-                            onClick={handleNext}
-                            disabled={step === 1 && (!isPeriodValid || !documentNumber || !attachment || !isFolioValid)}
-                            className="w-40 h-12 font-bold bg-primary text-primary-foreground shadow-sm hover:shadow transition-all"
-                        >
-                            Siguiente
-                            <ChevronRight className="ml-2 h-4 w-4" />
-                        </Button>
-                    ) : (
-                        <Button
-                            onClick={handleSubmit}
-                            className={`w-48 h-12 font-bold shadow-sm hover:shadow transition-all ${noteType === 'NOTA_CREDITO'
-                                ? 'bg-warning hover:bg-warning'
-                                : 'bg-primary hover:bg-primary'
-                                }`}
-                            disabled={submitting}
-                        >
-                            {submitting ? (
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            ) : (
-                                <Check className="mr-2 h-4 w-4" />
-                            )}
-                            Confirmar Registro
-                        </Button>
-                    )}
-                </div>
+                <FormFooter
+                    leftActions={
+                        step > 1 ? (
+                            <CancelButton onClick={handleBack} disabled={submitting}>
+                                <ChevronLeft className="mr-1.5 h-3.5 w-3.5" />
+                                Atrás
+                            </CancelButton>
+                        ) : undefined
+                    }
+                    actions={
+                        step < totalSteps ? (
+                            <SubmitButton
+                                onClick={handleNext}
+                                disabled={step === 1 && (!isPeriodValid || !documentNumber || !attachment || !isFolioValid)}
+                                icon={null}
+                            >
+                                Siguiente
+                                <ChevronRight className="ml-1.5 h-3.5 w-3.5" />
+                            </SubmitButton>
+                        ) : (
+                            <ActionSlideButton
+                                onClick={handleSubmit}
+                                variant={noteType === 'NOTA_CREDITO' ? 'destructive' : 'primary'}
+                                loading={submitting}
+                                icon={<Check className="h-3.5 w-3.5" />}
+                            >
+                                Confirmar Registro
+                            </ActionSlideButton>
+                        )
+                    }
+                />
             }
         >
             <div className="flex flex-1 overflow-hidden h-full">

@@ -184,8 +184,10 @@ export function ProductInsightsModal({ productId, productName, open, onOpenChang
             hideScrollArea={true}
             allowOverflow={true}
             className="max-w-5xl"
-            headerClassName="sr-only" // We are using a custom header inside for complex layout
-            title={`Insights del Producto: ${productName}`}
+            variant="form-tabs"
+            icon={BarChart3}
+            title="Insights del Producto"
+            description={productName || undefined}
         >
             <div className="flex flex-col h-full overflow-visible">
                 {loading ? (
@@ -201,21 +203,6 @@ export function ProductInsightsModal({ productId, productName, open, onOpenChang
                         value={activeTab}
                         onValueChange={setActiveTab}
                         orientation="vertical"
-                        header={
-                            <div className="p-6 pb-2 flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                    <BarChart3 className="h-5 w-5 text-muted-foreground" />
-                                    <div>
-                                        <h2 className="text-xl font-bold">Insights del Producto</h2>
-                                        {productName && (
-                                            <p className="text-sm text-muted-foreground font-medium">
-                                                {productName}
-                                            </p>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-                        }
                         items={[
                             { value: "overview", label: "Resumen", icon: LayoutDashboard },
                             { value: "history", label: "Precios", icon: History },

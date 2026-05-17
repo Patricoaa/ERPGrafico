@@ -695,7 +695,7 @@ export function ProductForm({ sidebar, open, onOpenChange, initialData, onSucces
                             value={activeTab}
                             onValueChange={setActiveTab}
                             orientation="vertical"
-                            header={tabHeader}
+                            header={inline ? tabHeader : undefined}
                             className="flex-1"
                             contentClassName="bg-transparent"
                         >
@@ -826,7 +826,6 @@ export function ProductForm({ sidebar, open, onOpenChange, initialData, onSucces
     return (
         <BaseModal
             open={open}
-            headerClassName="sr-only"
             onOpenChange={(newOpen) => {
                 if (!newOpen && Object.keys(form.formState.dirtyFields).length > 0) {
                     setConfirmCloseOpen(true)
@@ -836,6 +835,10 @@ export function ProductForm({ sidebar, open, onOpenChange, initialData, onSucces
             }}
             size="2xl"
             className="h-[90vh]"
+            variant="form-tabs"
+            icon={Package}
+            title={initialData ? "Editar Producto" : "Nuevo Producto"}
+            description={initialData ? form.watch("name") : "Maestro de Producto"}
             hideScrollArea={true}
             allowOverflow={true}
             contentClassName="p-0"

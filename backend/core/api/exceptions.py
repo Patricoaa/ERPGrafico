@@ -48,6 +48,7 @@ def erpgrafico_exception_handler(exc, context):
                 "status_code": response.status_code
             }
         }
+        print(f"DEBUG API ERROR RESPONSE: {response.data}")
     else:
         # Handle unexpected exceptions (500 Internal Server Error)
         logger.exception("Generando 500 error no controlado:")

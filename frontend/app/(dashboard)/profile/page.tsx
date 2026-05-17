@@ -13,8 +13,10 @@ import { CardSkeleton, FormSkeleton } from "@/components/shared"
 export default function ProfilePage() {
     const searchParams = useSearchParams()
     const activeTab = searchParams.get("tab") || "account"
+    const activeSubTab = searchParams.get("subtab") || "employee"
     const [profile, setProfile] = useState<MyProfile | null>(null)
     const [loading, setLoading] = useState(true)
+    const [panelOpen, setPanelOpen] = useState(true)
 
     const fetchProfile = useCallback(async () => {
         try {
@@ -44,7 +46,17 @@ export default function ProfilePage() {
 
     const tabs = [
         { value: "account", label: "Cuenta", iconName: "user-cog", href: "/profile?tab=account" },
-        { value: "personal", label: "Personal", iconName: "badge-check", href: "/profile?tab=personal" },
+        { 
+            value: "personal", 
+            label: "Personal", 
+            iconName: "badge-check", 
+            href: "/profile?tab=personal&subtab=employee",
+            subTabs: [
+                { value: "employee", label: "Ficha de Empleado", iconName: "badge-check", href: "/profile?tab=personal&subtab=employee" },
+                { value: "payrolls", label: "Liquidaciones", iconName: "file-text", href: "/profile?tab=personal&subtab=payrolls" },
+                { value: "payments", label: "Pagos y Anticipos", iconName: "credit-card", href: "/profile?tab=personal&subtab=payments" },
+            ]
+        },
     ]
     if (isPartner) {
         tabs.push({ value: "partner", label: "Socio", iconName: "briefcase", href: "/profile?tab=partner" })
@@ -79,7 +91,8 @@ export default function ProfilePage() {
 
     const navigation = {
         tabs,
-        activeValue: activeTab
+        activeValue: activeTab,
+        subActiveValue: activeTab === "personal" ? activeSubTab : undefined
     }
 
     return (
@@ -87,10 +100,10 @@ export default function ProfilePage() {
             <PageHeader title={title} description={description} iconName={iconName} variant="minimal" navigation={navigation} />
 
             <div className="pt-4">
-                <ProfileView activeTab={activeTab} initialProfile={profile ?? undefined} />
+                <ProfileView activeTab={activeTab} activeSubTab={activeSubTab} initialProfile={profile ?? undefined} />
             </div>
 
-            <ProfileSidePanel profile={profile} />
+            <ProfileSidePanel profile={profile} open={panelOpen} onOpenChange={setPanelOpen} />
         </PageContainer>
     )
 }

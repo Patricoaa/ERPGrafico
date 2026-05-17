@@ -4,16 +4,7 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { AlertTriangle, Loader2, Check, ArrowRight, Eye } from "lucide-react"
 import { cn } from "@/lib/utils"
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+import { ActionConfirmModal } from "@/components/shared"
 
 import type { WorkOrder, WorkOrderTask, WorkOrderStage } from "../types"
 
@@ -214,25 +205,19 @@ export function WizardStickyFooter({
                 )}
             </div>
 
-            <AlertDialog open={showAlert} onOpenChange={setShowAlert}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle className="flex items-center gap-2">
-                            <AlertTriangle className="h-5 w-5 text-warning" />
-                            {alertConfig?.title}
-                        </AlertDialogTitle>
-                        <AlertDialogDescription>
-                            {alertConfig?.description}
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction onClick={alertConfig?.onConfirm}>
-                            Continuar
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
+            <ActionConfirmModal
+                open={showAlert}
+                onOpenChange={setShowAlert}
+                title={
+                    <div className="flex items-center gap-2">
+                        <AlertTriangle className="h-5 w-5 text-warning" />
+                        <span>{alertConfig?.title}</span>
+                    </div>
+                }
+                description={alertConfig?.description}
+                onConfirm={alertConfig?.onConfirm || (() => {})}
+                confirmText="Continuar"
+            />
         </>
     )
 }

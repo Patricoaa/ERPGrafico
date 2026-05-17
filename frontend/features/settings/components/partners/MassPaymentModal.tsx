@@ -7,6 +7,7 @@ import { useQuery } from "@tanstack/react-query"
 import api from "@/lib/api"
 import { GenericWizard, WizardStep } from "@/components/shared/GenericWizard"
 import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
 import { LabeledSelect } from "@/components/shared"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
 import { toast } from "sonner"
@@ -42,7 +43,7 @@ export function MassPaymentModal({ open, onOpenChange, resolution, onSuccess }: 
         }).filter(l => l.pendingAmount > 0)
     }, [resolution])
 
-    const { data: treasuryAccounts = [] } = useQuery({
+    const { data: treasuryAccounts = [] } = useQuery<TreasuryAccount[]>({
         queryKey: ['treasuryAccounts'],
         queryFn: async () => {
             const res = await api.get('/treasury/accounts/')
@@ -98,22 +99,24 @@ export function MassPaymentModal({ open, onOpenChange, resolution, onSuccess }: 
                                 <p className="text-2xl font-mono font-bold text-success mt-1">{formatCurrency(totalToPay)}</p>
                             </div>
                             <div className="flex gap-4">
-                                <button
+                                <Button
+                                    variant="link"
                                     onClick={() => {
                                         const next: Record<number, number> = {}
                                         pendingLines.forEach(l => next[l.partner] = l.pendingAmount)
                                         setPayments(next)
                                     }}
-                                    className="text-[10px] font-bold text-primary underline hover:text-primary/80"
+                                    className="text-[10px] font-bold text-primary p-0 h-auto"
                                 >
                                     Pagar Totalidad
-                                </button>
-                                <button
+                                </Button>
+                                <Button
+                                    variant="link"
                                     onClick={() => setPayments({})}
-                                    className="text-[10px] font-bold text-muted-foreground underline hover:text-muted-foreground/80"
+                                    className="text-[10px] font-bold text-muted-foreground p-0 h-auto"
                                 >
                                     Limpiar Todo
-                                </button>
+                                </Button>
                             </div>
                         </div>
 

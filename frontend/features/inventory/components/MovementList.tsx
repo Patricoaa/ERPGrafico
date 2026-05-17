@@ -205,15 +205,9 @@ export function MovementList({ externalOpen, onExternalOpenChange, createAction 
                 size="lg"
                 hideScrollArea={true}
                 contentClassName="p-0"
-                title={
-                    <div className="flex items-center gap-4">
-                        <ArrowRightLeft className="h-6 w-6 text-muted-foreground" />
-                        <div className="flex flex-col">
-                            <span className="text-xl font-black uppercase tracking-tight">Nuevo Ajuste de Inventario</span>
-                            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Procedimiento táctico de rectificación</span>
-                        </div>
-                    </div>
-                }
+                icon={ArrowRightLeft}
+                title="Nuevo Ajuste de Inventario"
+                description="Procedimiento táctico de rectificación de stock físico."
                 footer={
                     <FormFooter
                         actions={

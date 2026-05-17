@@ -2,12 +2,11 @@
 
 import React, { useState, useEffect } from "react"
 import { notFound, useRouter } from "next/navigation"
-import { EntityDetailPage, FormSkeleton, FormFooter, CancelButton, ActionSlideButton } from "@/components/shared"
+import { EntityDetailPage, FormSkeleton, FormFooter, CancelButton, ActionSlideButton, Chip } from "@/components/shared"
 import { formatEntityDisplay } from "@/lib/entity-registry"
 import api from "@/lib/api"
 import type { Contact } from "@/features/contacts/types"
 import { formatRUT } from "@/lib/utils/format"
-import { StatusBadge } from "@/components/shared/StatusBadge"
 import ContactModal from "@/features/contacts/components/ContactModal"
 
 interface ContactDetailClientProps {
@@ -89,7 +88,7 @@ export function ContactDetailClient({ contactId }: ContactDetailClientProps) {
                     <div className="space-y-2">
                         <p className="text-sm text-muted-foreground">Tipo</p>
                         <div>
-                            <StatusBadge status={contact.contact_type} size="sm" />
+                            <Chip.Category domain="contact_type" value={contact.contact_type} size="sm" />
                         </div>
                     </div>
                     <div className="space-y-2">

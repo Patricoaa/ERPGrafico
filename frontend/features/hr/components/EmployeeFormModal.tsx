@@ -270,8 +270,10 @@ export function EmployeeFormModal({ open, onOpenChange, employee, onSaved, trigg
         <BaseModal
             open={open}
             onOpenChange={onOpenChange}
+            variant="form-tabs"
+            icon={UserCog}
             title={employee ? "Editar Empleado" : "Nuevo Empleado"}
-            headerClassName="sr-only"
+            description={employee ? `Ficha de Personal • ${employee.display_id} • ${employee.contact_detail?.name}` : "Ficha de Personal • Recursos Humanos"}
             size="2xl"
             className="h-[90vh]"
             hideScrollArea={true}
@@ -288,23 +290,6 @@ export function EmployeeFormModal({ open, onOpenChange, employee, onSaved, trigg
                         orientation="vertical"
                         className="flex-1"
                         contentClassName="bg-transparent"
-                        header={
-                            <div className="flex flex-col p-6 pb-2">
-                                <h1 className="text-lg font-black uppercase tracking-widest text-primary flex items-center gap-3">
-                                    <UserCog className="h-6 w-6 text-primary" />
-                                    {employee ? "Editar Empleado" : "Nuevo Empleado"}
-                                </h1>
-                                <div className="flex items-center gap-2 text-[10px] font-medium text-muted-foreground uppercase tracking-widest mt-1">
-                                    Ficha de Personal <span className="opacity-30">|</span> Recursos Humanos
-                                    {employee && (
-                                        <>
-                                            <span className="opacity-30">|</span>
-                                            {employee.display_id} • {employee.contact_detail?.name}
-                                        </>
-                                    )}
-                                </div>
-                            </div>
-                        }
                     >
                         <fieldset disabled={saving} className="flex-1 min-w-0 transition-opacity disabled:opacity-75 flex flex-col h-full min-h-0">
                             <FormTabsContent value="contratacion" className="h-full w-full flex-1 flex flex-col m-0 p-0 border-0 outline-none overflow-hidden">

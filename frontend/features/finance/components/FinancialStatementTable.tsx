@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/table";
 import { ChevronRight, ChevronDown, ShieldCheck, List, Landmark } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { MoneyDisplay } from "@/components/shared/MoneyDisplay";
+import { MoneyDisplay, IconButton } from "@/components/shared";
 
 interface AccountNode {
     id: number | string;
@@ -53,9 +53,13 @@ const AccountRow = ({ node, level = 0, showComparison }: { node: AccountNode, le
                 <TableCell className="py-2.5 px-4">
                     <div className="flex items-center" style={{ paddingLeft: `${paddingLeft}px` }}>
                         {hasChildren && (
-                            <button onClick={() => setExpanded(!expanded)} className="mr-2 text-primary hover:scale-110 transition-transform">
-                                {expanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                            </button>
+                            <IconButton
+                                onClick={() => setExpanded(!expanded)}
+                                className="mr-2 text-primary h-6 w-6"
+                                circular
+                            >
+                                {expanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+                            </IconButton>
                         )}
                         {!hasChildren && <div className="w-6 mr-1 flex justify-center"><div className="w-1 h-1 rounded-full bg-muted-foreground/30" /></div>}
                         <span className="mr-3 font-mono text-[10px] text-muted-foreground tabular-nums tracking-tighter opacity-70">{node.code}</span>

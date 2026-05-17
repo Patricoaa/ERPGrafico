@@ -195,20 +195,21 @@ class PayrollViewSet(viewsets.ModelViewSet):
         treasury_account_id = request.data.get('treasury_account_id')
         if not treasury_account_id:
             return Response({'detail': 'Se requiere la cuenta de tesorería (treasury_account_id).'}, status=status.HTTP_400_BAD_REQUEST)
+        amount = request.data.get('amount')
+        if amount is not None:
+            try: amount = Decimal(str(amount))
+            except (ValueError, TypeError): return Response({'detail': 'Monto inválido.'}, status=status.HTTP_400_BAD_REQUEST)
         try:
             payment = PayrollPaymentService.pay_previred(
-                self.get_object(),
-                treasury_account_id=int(treasury_account_id),
+                self.get_object(), treasury_account_id=int(treasury_account_id),
                 payment_date=request.data.get('documentDate') or request.data.get('date') or timezone.now().date().isoformat(),
                 payment_method=request.data.get('paymentMethod', 'TRANSFER'),
-                payment_method_id=request.data.get('payment_method_new'),
-                notes=request.data.get('notes', ''),
+                payment_method_id=request.data.get('payment_method_new'), notes=request.data.get('notes', ''),
                 transaction_number=request.data.get('transaction_number'),
                 is_pending_registration=request.data.get('is_pending_registration', False),
-                created_by=request.user,
+                created_by=request.user, amount=amount,
             )
-        except ValidationError as e:
-            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except ValidationError as e: return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         return Response(PayrollPaymentSerializer(payment).data, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=['post'])
@@ -216,20 +217,21 @@ class PayrollViewSet(viewsets.ModelViewSet):
         treasury_account_id = request.data.get('treasury_account_id')
         if not treasury_account_id:
             return Response({'detail': 'Se requiere la cuenta de tesorería (treasury_account_id).'}, status=status.HTTP_400_BAD_REQUEST)
+        amount = request.data.get('amount')
+        if amount is not None:
+            try: amount = Decimal(str(amount))
+            except (ValueError, TypeError): return Response({'detail': 'Monto inválido.'}, status=status.HTTP_400_BAD_REQUEST)
         try:
             payment = PayrollPaymentService.pay_salary(
-                self.get_object(),
-                treasury_account_id=int(treasury_account_id),
+                self.get_object(), treasury_account_id=int(treasury_account_id),
                 payment_date=request.data.get('documentDate') or request.data.get('date') or timezone.now().date().isoformat(),
                 payment_method=request.data.get('paymentMethod', 'TRANSFER'),
-                payment_method_id=request.data.get('payment_method_new'),
-                notes=request.data.get('notes', ''),
+                payment_method_id=request.data.get('payment_method_new'), notes=request.data.get('notes', ''),
                 transaction_number=request.data.get('transaction_number'),
                 is_pending_registration=request.data.get('is_pending_registration', False),
-                created_by=request.user,
+                created_by=request.user, amount=amount,
             )
-        except ValidationError as e:
-            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except ValidationError as e: return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         return Response(PayrollPaymentSerializer(payment).data, status=status.HTTP_201_CREATED)
 
     @action(detail=False, methods=['post'])

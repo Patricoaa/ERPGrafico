@@ -7,7 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { PurchaseOrderInitialData, PurchaseOrderLine } from "@/types/forms"
 import { ProductMinimal, UoM } from "@/types/entities"
 import * as z from "zod"
-import { Plus, DollarSign } from "lucide-react"
+import { Plus, DollarSign, ShoppingCart } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { BaseModal, ActionSlideButton, DataCell, MoneyDisplay, LabeledInput, FormSection, FormFooter, CancelButton } from "@/components/shared"
 import { Button } from "@/components/ui/button"
@@ -203,6 +203,7 @@ export function PurchaseOrderForm({ onSuccess, initialData, open: openProp, onOp
             open={open}
             onOpenChange={setOpen}
             size="xl"
+            icon={ShoppingCart}
             title="Editar Orden de Compra"
             description="Modifique los datos de la orden de compra."
             footer={

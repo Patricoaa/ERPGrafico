@@ -96,23 +96,9 @@ export function BankJournalForm({ auditSidebar,  onSuccess, initialData, open: o
             open={open}
             onOpenChange={setOpen}
             size={initialData ? "lg" : "md"}
-            title={
-                <div className="flex items-center gap-3">
-                    <WalletCards className="h-5 w-5 text-muted-foreground" />
-                    <span>{initialData ? "Ficha de Caja/Banco" : "Crear Caja o Banco"}</span>
-                </div>
-            }
-            description={
-                <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                    {(initialData as any)?.code && (
-                        <>
-                            <span>{(initialData as any).code}</span>
-                            <span className="opacity-30">|</span>
-                        </>
-                    )}
-                    <span>{form.watch("name") || "Nueva Cuenta de Tesorería"}</span>
-                </div>
-            }
+            icon={WalletCards}
+            title={initialData ? "Ficha de Caja/Banco" : "Crear Caja o Banco"}
+            description={initialData ? `${(initialData as any).code || ""} • ${form.watch("name") || ""}` : "Tesorería • Configuración de Caja o Banco"}
             footer={
                 <FormFooter
                     actions={

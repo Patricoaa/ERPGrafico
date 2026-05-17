@@ -179,7 +179,7 @@ export function SalesSettingsView({ activeTab = "income" }: { activeTab?: string
                 <form className="mt-6 space-y-6">
                     {activeTab === "income" && (
                         <div className="space-y-6 m-0 p-0 border-0 outline-none mt-4">
-                            <Card>
+                            <Card variant="transparent">
                                 <CardHeader>
                                     <CardTitle className="text-lg text-primary">Cuentas de Ingresos Naturales</CardTitle>
                                     <CardDescription>Cuentas contables para registrar los distintos tipos de ingresos por venta</CardDescription>
@@ -197,7 +197,7 @@ export function SalesSettingsView({ activeTab = "income" }: { activeTab?: string
 
                     {activeTab === "credit" && (
                         <div className="space-y-6 m-0 p-0 border-0 outline-none mt-4">
-                            <Card>
+                            <Card variant="transparent">
                                 <CardHeader>
                                     <CardTitle className="text-lg text-primary">Crédito y Cartera</CardTitle>
                                     <CardDescription>Configure políticas de crédito, bloqueos automáticos y cuentas de castigo</CardDescription>
@@ -276,7 +276,7 @@ export function SalesSettingsView({ activeTab = "income" }: { activeTab?: string
 
                     {activeTab === "config_pos" && (
                         <div className="space-y-6 m-0 p-0 border-0 outline-none mt-4">
-                            <Card>
+                            <Card variant="transparent">
                                 <CardHeader>
                                     <CardTitle className="text-lg text-primary">Parámetros Operativos POS</CardTitle>
                                     <CardDescription>Configure el comportamiento y permisos del punto de venta</CardDescription>
@@ -357,7 +357,7 @@ export function SalesSettingsView({ activeTab = "income" }: { activeTab?: string
 
                     {activeTab === "terminals" && (
                         <div className="space-y-6 m-0 p-0 border-0 outline-none mt-4">
-                            <Card>
+                            <Card variant="transparent">
                                 <CardHeader>
                                     <CardTitle className="text-lg text-primary">Cuentas Puente de Terminales</CardTitle>
                                     <CardDescription>Cuentas para comisiones de terminales de pago sin factura</CardDescription>

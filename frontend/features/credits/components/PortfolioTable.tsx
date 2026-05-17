@@ -14,19 +14,9 @@ import { cn } from "@/lib/utils"
 import {
     RefreshCw, ShieldAlert, Gavel
 } from "lucide-react"
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { Button } from "@/components/ui/button"
-import { TableSkeleton } from "@/components/shared"
+import { TableSkeleton, ActionConfirmModal } from "@/components/shared"
 import { DataTable } from '@/components/shared'
 import { type Table as ReactTable, type Row, type HeaderGroup, type Header, type Cell, flexRender, ColumnDef } from "@tanstack/react-table"
 
@@ -173,34 +163,26 @@ function ExpandableContactRow({ row, onRefresh }: { row: Row<CreditContact>, onR
                 </div>
             </div>
 
-            <AlertDialog open={showWriteOffDialog} onOpenChange={setShowWriteOffDialog}>
-                <AlertDialogContent className="max-w-md">
-                    <AlertDialogHeader>
-                        <ShieldAlert className="h-6 w-6" />
-                        <AlertDialogTitle className="text-xl font-black">¿Confirmar Castigo de Deuda?</AlertDialogTitle>
-                        <div className="space-y-3 pt-2">
-                            <AlertDialogDescription>
-                                Esta acción es **irreversible** y tiene las siguientes consecuencias:
-                            </AlertDialogDescription>
-                            <ul className="list-disc list-inside space-y-1 text-sm font-medium text-muted-foreground">
-                                <li>Se generará un asiento contable de pérdida por <span className="text-foreground font-bold">{fmt(totalDebt)}</span>.</li>
-                                <li>El cliente quedará bloqueado permanentemente.</li>
-                                <li>La clasificación de riesgo pasará a <span className="text-destructive font-bold uppercase tracking-wider text-[10px]">Crítico</span>.</li>
-                                <li>Se realizarán ajustes técnicos en tesorería para saldar los documentos pendientes.</li>
-                            </ul>
-                        </div>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter className="gap-2 mt-4">
-                        <AlertDialogCancel className="font-bold">Cancelar</AlertDialogCancel>
-                        <AlertDialogAction
-                            className="bg-destructive hover:bg-destructive/90 text-white font-bold"
-                            onClick={handleWriteOff}
-                        >
-                            Confirmar Castigo
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
+            <ActionConfirmModal
+                open={showWriteOffDialog}
+                onOpenChange={setShowWriteOffDialog}
+                onConfirm={handleWriteOff}
+                title="¿Confirmar Castigo de Deuda?"
+                description={
+                    <div className="space-y-3 pt-1 text-sm leading-relaxed">
+                        <p>Esta acción es <strong>irreversible</strong> y tiene las siguientes consecuencias:</p>
+                        <ul className="list-disc list-inside space-y-1 font-medium text-muted-foreground">
+                            <li>Se generará un asiento contable de pérdida por <span className="text-foreground font-bold">{fmt(totalDebt)}</span>.</li>
+                            <li>El cliente quedará bloqueado permanentemente.</li>
+                            <li>La clasificación de riesgo pasará a <span className="text-destructive font-bold uppercase tracking-wider text-[10px]">Crítico</span>.</li>
+                            <li>Se realizarán ajustes técnicos en tesorería para saldar los documentos pendientes.</li>
+                        </ul>
+                    </div>
+                }
+                variant="destructive"
+                icon={ShieldAlert}
+                confirmText="Confirmar Castigo"
+            />
 
             {loadingLedger ? (
                 <TableSkeleton rows={2} />
@@ -293,28 +275,20 @@ function ExpandableContactRow({ row, onRefresh }: { row: Row<CreditContact>, onR
                 <p className="text-[12px] text-muted-foreground italic text-center py-4">Sin documentos pendientes.</p>
             )}
 
-            <AlertDialog open={!!showWriteOffDocDialog} onOpenChange={(o) => !o && setShowWriteOffDocDialog(null)}>
-                <AlertDialogContent className="max-w-md">
-                    <AlertDialogHeader>
-                        <ShieldAlert className="h-6 w-6" />
-                        <AlertDialogTitle className="text-xl font-black">¿Castigar Documento NV-{showWriteOffDocDialog?.number}?</AlertDialogTitle>
-                        <div className="space-y-3 pt-2">
-                            <AlertDialogDescription>
-                                Se castigará el saldo pendiente de <strong>{fmt(showWriteOffDocDialog?.balance)}</strong> para este documento.
-                            </AlertDialogDescription>
-                        </div>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter className="gap-2 mt-4">
-                        <AlertDialogCancel className="font-bold">Cancelar</AlertDialogCancel>
-                        <AlertDialogAction
-                            className="bg-destructive hover:bg-destructive/90 text-white font-bold"
-                            onClick={() => showWriteOffDocDialog && handleWriteOffDoc(showWriteOffDocDialog.id)}
-                        >
-                            Confirmar Castigo
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
+            <ActionConfirmModal
+                open={!!showWriteOffDocDialog}
+                onOpenChange={(o) => !o && setShowWriteOffDocDialog(null)}
+                onConfirm={() => showWriteOffDocDialog && handleWriteOffDoc(showWriteOffDocDialog.id)}
+                title={`¿Castigar Documento NV-${showWriteOffDocDialog?.number}?`}
+                description={
+                    <div className="space-y-3 pt-1 text-sm leading-relaxed">
+                        <p>Se castigará el saldo pendiente de <strong>{fmt(showWriteOffDocDialog?.balance)}</strong> para este documento.</p>
+                    </div>
+                }
+                variant="destructive"
+                icon={ShieldAlert}
+                confirmText="Confirmar Castigo"
+            />
         </ExpandableTableRow>
     )
 }

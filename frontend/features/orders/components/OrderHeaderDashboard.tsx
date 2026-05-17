@@ -119,7 +119,7 @@ export function OrderHeaderDashboard({
                                     <div className={cn(
                                         "w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all duration-300 shadow-sm bg-background",
                                         getStepStatusColor(step.status),
-                                        isActive && "scale-110 shadow-lg shadow-primary/20",
+                                        isActive && "scale-110 ",
                                         step.status === 'not_applicable' && "bg-transparent border-dashed",
                                     )}>
                                         <step.icon className={cn("h-3.5 w-3.5", getStepIconColor(step.status))} />

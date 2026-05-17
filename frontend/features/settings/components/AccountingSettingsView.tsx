@@ -59,6 +59,8 @@ function StructureSettings() {
 
     useUnsavedChangesGuard(status)
 
+    const formValues = form.watch()
+
     const handlePopulateIFRS = async () => {
         if (!confirm("¿Está seguro de cargar el plan de cuentas IFRS? Esto creará las cuentas detalladas y configurará todos los mapeos predeterminados automáticamente.")) return
         setPopulating(true)
@@ -77,20 +79,7 @@ function StructureSettings() {
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between">
-                <div className="flex items-center justify-between bg-muted/30 p-4 rounded-lg border border-dashed border-primary/20 flex-1 mr-4">
-                    <div className="space-y-1">
-                        <p className="text-[10px] font-black uppercase text-primary/70 tracking-widest">Plan de Cuentas IFRS</p>
-                        <p className="text-[9px] text-muted-foreground uppercase font-bold">Poblar estructura recomendada automáticamente</p>
-                    </div>
-                    <PageHeaderButton
-                        onClick={handlePopulateIFRS}
-                        disabled={populating}
-                        iconName={populating ? "loader-2" : "database"}
-                        label={populating ? "Poblar IFRS" : "Poblar IFRS"}
-                        variant="outline"
-                    />
-                </div>
+            <div className="flex justify-end">
                 <AutoSaveStatusBadge
                     status={status}
                     invalidReason={invalidReason}
@@ -101,22 +90,30 @@ function StructureSettings() {
 
             <Form {...form}>
                 <form className="space-y-6">
-                    <Card className="border-primary/10 shadow-sm rounded-md border-2">
-                        <CardHeader className="pb-4">
-                            <CardTitle className="text-sm font-black uppercase text-primary tracking-widest">Estructura del Código</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-6">
-                            <div className="p-4 bg-primary/5 border border-primary/10 rounded-sm flex items-center justify-between gap-4">
-                                <div className="space-y-1">
-                                    <p className="text-[10px] font-black uppercase text-primary/80 tracking-tighter">Vista Previa del Formato</p>
-                                    <p className="text-[9px] text-muted-foreground uppercase opacity-70">Ejemplo nivel {form.watch("hierarchy_levels")}</p>
-                                </div>
-                                <div className="px-4 py-2 bg-background border-2 rounded-sm text-xl font-mono font-bold tracking-tighter text-primary">
-                                    {generatePreview(form.getValues())}
-                                </div>
-                            </div>
+                    {/* Fila 1: Dos columnas */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* Columna 1: Estructura del Código */}
+                        <Card variant="transparent" className="border-primary/10 border-2">
+                            <CardHeader className="pb-4">
+                                <CardTitle className="text-sm font-black uppercase text-primary tracking-widest">Estructura del Código</CardTitle>
+                                <CardDescription className="text-xs">Establezca los niveles de jerarquía y el formato del código para su Plan de Cuentas</CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-6">
+                                {/* Vista previa del formato */}
+                                <fieldset className="notched-field bg-primary/[0.03] border-primary/20 pointer-events-none select-none">
+                                    <legend className="px-1.5 text-[10px] font-black uppercase tracking-[0.15em] text-primary/80">
+                                        Vista Previa del Formato
+                                    </legend>
+                                    <div className="flex items-center justify-between w-full min-h-[2.5rem] py-1">
+                                        <p className="text-[10px] text-muted-foreground uppercase opacity-75 font-bold pl-2.5">
+                                            Ejemplo nivel {formValues.hierarchy_levels}
+                                        </p>
+                                        <div className="px-4 py-1.5 bg-background border border-primary/20 rounded-sm text-lg font-mono font-bold tracking-tighter text-primary mr-1">
+                                            {generatePreview(formValues)}
+                                        </div>
+                                    </div>
+                                </fieldset>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 <div className="space-y-4">
                                     <FormField
                                         control={form.control}
@@ -149,17 +146,47 @@ function StructureSettings() {
                                         )}
                                     />
                                 </div>
-                                <div className="space-y-4 p-4 bg-muted/20 rounded-sm border-2 border-dashed">
-                                    <h4 className="text-[10px] font-black uppercase opacity-60 mb-2">Prefijos (Nivel 1)</h4>
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <PrefixField form={form} name="asset_prefix" label="Activos" />
-                                        <PrefixField form={form} name="liability_prefix" label="Pasivos" />
-                                        <PrefixField form={form} name="equity_prefix" label="Patrimonio" />
-                                        <PrefixField form={form} name="income_prefix" label="Ingresos" />
+                            </CardContent>
+                        </Card>
+
+                        {/* Columna 2: Prefijos de Cuentas */}
+                        <Card variant="transparent" className="border-primary/10 border-2">
+                            <CardHeader className="pb-4">
+                                <CardTitle className="text-sm font-black uppercase text-primary tracking-widest">Prefijos de Cuentas</CardTitle>
+                                <CardDescription className="text-xs">Establezca los prefijos del Nivel 1 para clasificar cada tipo de cuenta contable</CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <PrefixField form={form} name="asset_prefix" label="Activos" />
+                                    <PrefixField form={form} name="liability_prefix" label="Pasivos" />
+                                    <PrefixField form={form} name="equity_prefix" label="Patrimonio" />
+                                    <PrefixField form={form} name="income_prefix" label="Ingresos" />
+                                    <div className="col-span-2 md:col-span-1">
                                         <PrefixField form={form} name="expense_prefix" label="Gastos" />
                                     </div>
                                 </div>
+                            </CardContent>
+                        </Card>
+                    </div>
+
+                    <Card variant="transparent" className="border-primary/10 border-2">
+                        <CardHeader className="pb-4">
+                            <CardTitle className="text-sm font-black uppercase text-primary tracking-widest">Plan de Cuentas IFRS</CardTitle>
+                            <CardDescription className="text-xs">Cargue el Plan de Cuentas oficial recomendado por la normativa IFRS para comenzar de inmediato</CardDescription>
+                        </CardHeader>
+                        <CardContent className="flex flex-col md:flex-row items-center justify-between gap-4 p-4 rounded-sm">
+                            <div className="space-y-1">
+                                <p className="text-[11px] font-bold uppercase text-primary/80">Generación Automática de Cuentas</p>
+                                <p className="text-[10px] text-muted-foreground uppercase">Esta acción creará las cuentas detalladas y configurará los mapeos contables por defecto de manera instantánea.</p>
                             </div>
+                            <PageHeaderButton
+                                onClick={handlePopulateIFRS}
+                                disabled={populating}
+                                iconName={populating ? "loader-2" : "database"}
+                                label={populating ? "Poblar Plan de Cuentas IFRS" : "Poblar Plan de Cuentas IFRS"}
+                                variant="outline"
+                                className="font-bold whitespace-nowrap px-4 py-2 rounded-sm"
+                            />
                         </CardContent>
                     </Card>
                 </form>
@@ -200,7 +227,7 @@ function DefaultsSettings() {
                     />
                 </div>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <Card className="border-2 rounded-md">
+                    <Card variant="transparent" className="border-2">
                         <CardHeader className="pb-4">
                             <CardTitle className="text-sm font-black uppercase text-primary tracking-widest flex items-center gap-2">
                                 <TrendingUp className="h-4 w-4" />
@@ -216,7 +243,7 @@ function DefaultsSettings() {
                         </CardContent>
                     </Card>
 
-                    <Card className="border-2 rounded-md">
+                    <Card variant="transparent" className="border-2">
                         <CardHeader className="pb-4">
                             <CardTitle className="text-sm font-black uppercase text-primary tracking-widest flex items-center gap-2">
                                 <Coins className="h-4 w-4" />
@@ -232,7 +259,7 @@ function DefaultsSettings() {
                         </CardContent>
                     </Card>
 
-                    <Card className="border-2 rounded-md lg:col-span-2">
+                    <Card variant="transparent" className="border-2 lg:col-span-2">
                         <CardHeader className="pb-4">
                             <CardTitle className="text-sm font-black uppercase text-primary tracking-widest flex items-center gap-2">
                                 <Settings2 className="h-4 w-4" />
@@ -245,7 +272,7 @@ function DefaultsSettings() {
                         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <DefaultsAccountField form={form} name="merchandise_cogs_account" label="Costo de Mercadería (CMV)" accountType="EXPENSE" />
                             <DefaultsAccountField form={form} name="manufactured_cogs_account" label="Costo de Producción Vendida" accountType="EXPENSE" />
-                            <Separator className="md:col-span-2" />
+
                             <DefaultsAccountField form={form} name="adjustment_income_account" label="Ingreso por Ajuste (Sobrantes)" accountType="INCOME" />
                             <DefaultsAccountField form={form} name="adjustment_expense_account" label="Gasto por Ajuste (Mermas)" accountType="EXPENSE" />
                         </CardContent>
@@ -288,7 +315,7 @@ function TaxSettings() {
                     />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <Card className="md:col-span-1 border-2 rounded-md">
+                    <Card variant="transparent" className="md:col-span-1 border-2">
                         <CardHeader>
                             <div className="flex items-center gap-2">
                                 <Percent className="h-5 w-5 text-primary" />
@@ -321,7 +348,7 @@ function TaxSettings() {
                     </Card>
 
                     <div className="md:col-span-2 space-y-6">
-                        <Card className="border-2 rounded-md">
+                        <Card variant="transparent" className="border-2">
                             <CardHeader>
                                 <div className="flex items-center gap-2">
                                     <Receipt className="h-5 w-5 text-warning" />
@@ -351,7 +378,7 @@ function TaxSettings() {
                             </CardContent>
                         </Card>
 
-                        <Card className="border-2 rounded-md">
+                        <Card variant="transparent" className="border-2">
                             <CardHeader>
                                 <div className="flex items-center gap-2">
                                     <Coins className="h-5 w-5 text-success" />

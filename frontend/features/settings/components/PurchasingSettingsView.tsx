@@ -47,7 +47,7 @@ export function PurchasingSettingsView() {
             </div>
             <Form {...form}>
                 <form className="space-y-6">
-                    <Card className="rounded-md border-2">
+                    <Card variant="transparent" className="border-2">
                         <CardHeader className="pb-4">
                             <CardTitle className="text-sm font-black uppercase text-primary tracking-widest">Cuentas de Gastos Predeterminadas</CardTitle>
                             <CardDescription className="text-[10px] uppercase font-bold text-muted-foreground italic">Configuración de contrapartidas contables para compras y gastos operativos</CardDescription>

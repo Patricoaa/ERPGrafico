@@ -7,43 +7,29 @@ import {
     Plus,
     ArrowRightLeft,
     AlertCircle,
-    PieChart,
-    Building2,
-    Info,
-    UserPlus,
-    MoreHorizontal,
-    Wallet,
-    LogOut,
     Banknote,
     History,
-    BarChart3,
-    BookOpen,
-    Layers,
-    Settings2,
-    ArrowDownToLine,
     MoveHorizontal
 } from "lucide-react"
 
 import {
-    DropdownMenu,
-    DropdownMenuContent,
     DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
+
 } from "@/components/ui/dropdown-menu"
-import { CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import {
-    TableRow,
-    TableCell
-} from "@/components/ui/table"
+
 
 import { partnersApi } from "@/features/contacts/api/partnersApi"
 import { Partner, PartnerSummary } from "@/features/contacts/types/partner"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
-import { CardSkeleton, TableSkeleton } from "@/components/shared"
+import {
+    CardSkeleton,
+    TableSkeleton,
+    DataTable,
+    DataCell,
+    createActionsColumn,
+    Chip
+} from "@/components/shared"
 import {
     SubscriptionMovementModal,
     EquityTransferModal,
@@ -56,9 +42,7 @@ import { InitialCapitalModal } from "@/features/settings/components/InitialCapit
 import { MobilizeEarningsWizard } from "@/features/settings/components/partners/MobilizeEarningsWizard"
 import { PartnerLedgerModal } from "@/features/settings/components/partners/PartnerLedgerModal"
 import { EquityStatsSheet } from "@/features/settings/components/partners/EquityStatsSheet"
-import { DataTable } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
-import { DataCell, createActionsColumn } from '@/components/shared'
 
 export function EquityCompositionTab({
     initialAddPartnerOpen = false,
@@ -165,7 +149,7 @@ export function EquityCompositionTab({
             header: () => <div className="text-right">Part. %</div>,
             cell: ({ row }) => (
                 <div className="text-right">
-                    <Chip size="xs" intent="primary" className="h-5 rounded-sm bg-primary/5">
+                    <Chip size="xs" intent="primary">
                         {row.getValue("partner_equity_percentage")}%
                     </Chip>
                 </div>
