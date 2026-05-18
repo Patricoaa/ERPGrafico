@@ -7,8 +7,8 @@ import { useSearchParams } from 'next/navigation'
 import { useQueryClient } from '@tanstack/react-query'
 import dynamic from 'next/dynamic'
 import { Button } from '@/components/ui/button'
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { StatusBadge } from '@/components/shared/StatusBadge'
+import { Card } from '@/components/ui/card'
+import { PrintableReceipt, BaseModal } from '@/components/shared'
 import { Loader2, LayoutGrid, FileText, ChevronDown, BarChart3, Save, Lock, ArrowRightLeft, LogOut, ShoppingCart, Wallet } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
@@ -16,7 +16,6 @@ import {
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuCheckboxItem,
-    DropdownMenuLabel,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
@@ -25,17 +24,17 @@ import api from '@/lib/api'
 import * as Validation from '@/features/pos/utils/validation'
 import { cn } from "@/lib/utils"
 import { Check, Printer } from 'lucide-react'
-import { PrintableReceipt } from '@/components/shared/transaction-modal/PrintableReceipt'
 
-import { POSProvider, usePOS } from '@/features/pos/contexts/POSContext'
+
+import { usePOS } from '@/features/pos/contexts/POSContext'
 import { useAuth } from '@/contexts/AuthContext'
-import { 
-    useProducts, 
-    useCart, 
-    useStockValidation, 
-    useDrafts, 
+import {
+    useProducts,
+    useCart,
+    useStockValidation,
+    useDrafts,
     useDraftSync,
-    type SyncDraft 
+    type SyncDraft
 } from '@/features/pos/hooks'
 import { type CheckoutResponse } from '@/features/sales/types'
 import type { Customer, Product, WizardState } from '@/types/pos'
@@ -100,7 +99,7 @@ export function POSClientView() {
 
 
     const { user } = useAuth()
-    
+
     // Stable onStateChange for the wizard to break feedback loops
     const handleWizardStateChange = useCallback((state: any) => {
         setWizardState(state)
@@ -121,7 +120,7 @@ export function POSClientView() {
         // Silently refresh — the list will update via sync
     }, [])
 
-    const { syncDrafts, acquireLock, releaseLock, isLockedByOther, getLockInfo, forceSync, browserSessionKey } = useDraftSync({
+    const { syncDrafts, acquireLock, releaseLock, getLockInfo, forceSync, browserSessionKey } = useDraftSync({
         posSessionId: (currentSession?.id ?? null) as number | null,
         enabled: !!currentSession?.id,
         onNewDraft: handleNewDraft,
@@ -291,12 +290,12 @@ export function POSClientView() {
 
     const handleConfirmSale = async () => {
         const check = canCheckout(); if (!check.valid) { toast.error(check.error); return }
-        
+
         // Pre-save draft if it doesn't exist yet to avoid the "flash" when auto-save assigns an ID later
         if (!currentDraftId) {
             await saveDraft(undefined, true)
         }
-        
+
         setWizardState({ step: 1, isQuickSale: false }); setPosMode('CHECKOUT')
     }
 
@@ -373,12 +372,12 @@ export function POSClientView() {
 
     const handleQuickSale = async () => {
         const check = Validation.canQuickSale(items, selectedCustomerId); if (!check.allowed) { toast.error(check.reason); return }
-        
+
         // Pre-save draft to stabilize ID before entering checkout flow
         if (!currentDraftId) {
             await saveDraft(undefined, true)
         }
-        
+
         if (!selectedCustomerId && defaultCustomerId) setSelectedCustomerId(defaultCustomerId)
         const isOnlyService = items.every(line => line.product_type === 'SERVICE')
         const hasMfg = items.some(line => line.product_type === 'MANUFACTURABLE' && line.requires_advanced_manufacturing)

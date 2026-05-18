@@ -249,7 +249,8 @@ export function UserForm({ auditSidebar, initialData, onSuccess, trigger, open: 
                             items={tabItems}
                             value={activeTab}
                             onValueChange={setActiveTab}
-                            orientation="vertical"
+                            orientation="horizontal"
+                            variant="underline"
                             header={headerSlot}
                             contentClassName="bg-transparent"
                             className="flex-1"

@@ -1,9 +1,8 @@
 "use client"
 
 import React from "react"
-import { BaseModal } from "@/components/shared/BaseModal"
+import { BaseModal, Chip, CancelButton, SubmitButton, FormFooter } from "@/components/shared"
 import { Button } from "@/components/ui/button"
-import { Chip, CancelButton, SubmitButton } from "@/components/shared"
 import { AlertCircle, ExternalLink, Package } from "lucide-react"
 import Link from "next/link"
 import { Loader2, RefreshCcw } from "lucide-react"

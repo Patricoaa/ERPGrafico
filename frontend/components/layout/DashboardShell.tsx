@@ -64,7 +64,7 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
         "production": "/production/orders",
         "treasury": "/treasury/movements",
         "purchasing": "/purchasing/orders?tab=orders",
-        "finances": "/finances",
+        "finances": "/finances/statements?tab=bs",
         "hr": "/hr/employees",
     }
 
@@ -181,7 +181,7 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                 {/* Railway-style Main Canvas */}
                 <main
                     id="main-content"
-                    className="flex-1 flex flex-col overflow-hidden dot-grid bg-card border border-border/10 rounded-xl"
+                    className="flex-1 flex flex-col overflow-hidden relative dot-grid bg-card border border-border/10 rounded-xl"
                 >
                     <AnimatePresence mode="wait">
                         <motion.div
@@ -189,9 +189,9 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                             initial={shouldReduceMotion ? { opacity: 0 } : { y: 8, opacity: 0 }}
                             animate={shouldReduceMotion ? { opacity: 1 } : { y: 0, opacity: 1 }}
                             exit={{ opacity: 0 }}
-                            transition={{ 
-                                duration: 0.35, 
-                                ease: [0.16, 1, 0.3, 1] 
+                            transition={{
+                                duration: 0.35,
+                                ease: [0.16, 1, 0.3, 1]
                             }}
                             className="w-full flex-1 flex flex-col min-h-0"
                         >

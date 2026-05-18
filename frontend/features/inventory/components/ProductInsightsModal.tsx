@@ -202,7 +202,8 @@ export function ProductInsightsModal({ productId, productName, open, onOpenChang
                     <FormTabs
                         value={activeTab}
                         onValueChange={setActiveTab}
-                        orientation="vertical"
+                        orientation="horizontal"
+                        variant="underline"
                         items={[
                             { value: "overview", label: "Resumen", icon: LayoutDashboard },
                             { value: "history", label: "Precios", icon: History },

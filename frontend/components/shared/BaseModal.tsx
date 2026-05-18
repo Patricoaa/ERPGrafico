@@ -92,7 +92,7 @@ export function BaseModal({
     if (icon) {
         if (typeof icon === "function" || (typeof icon === "object" && "render" in (icon as any))) {
             const IconComponent = icon as React.ComponentType<{ className?: string }>
-            IconElement = <IconComponent className={cn("h-4 w-4 flex-shrink-0 self-start mt-[5px]", isTransaction ? "text-white" : "text-muted-foreground")} />
+            IconElement = <IconComponent className={cn("h-9 w-9 flex-shrink-0", isTransaction ? "text-white" : "text-muted-foreground/80")} />
         } else {
             IconElement = icon as React.ReactNode
         }
@@ -125,7 +125,7 @@ export function BaseModal({
                 {(title || description || headerActions || icon) && (
                     <DialogHeader className={headerStyles}>
                         <div className="flex items-center justify-between gap-4 w-full">
-                            <div className="flex flex-row items-start gap-3 min-w-0 flex-1">
+                            <div className="flex flex-row items-center gap-4 min-w-0 flex-1">
                                 {IconElement}
                                 <div className="flex flex-col gap-0.5 min-w-0 flex-1">
                                     <DialogTitle className={titleStyles}>

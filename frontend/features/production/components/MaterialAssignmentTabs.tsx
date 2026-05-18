@@ -50,12 +50,14 @@ export function MaterialAssignmentTabs({
                 value={activeTab}
                 onValueChange={setActiveTab}
                 orientation="horizontal"
+                variant="underline"
+                headerClassName="px-0"
             >
-                <FormTabsContent value="stock" className="space-y-4 pt-4 animate-in fade-in-50 duration-300">
+                <FormTabsContent value="stock" className="space-y-4 pt-6 animate-in fade-in-50 duration-300">
                     {stockContent}
                 </FormTabsContent>
 
-                <FormTabsContent value="outsourced" className="space-y-4 pt-4 animate-in fade-in-50 duration-300">
+                <FormTabsContent value="outsourced" className="space-y-4 pt-6 animate-in fade-in-50 duration-300">
                     {outsourcedContent}
                 </FormTabsContent>
             </FormTabs>

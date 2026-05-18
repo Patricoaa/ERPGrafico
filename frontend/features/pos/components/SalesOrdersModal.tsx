@@ -7,7 +7,7 @@ import { ScrollArea as ScrollAreaUI } from "@/components/ui/scroll-area"
 import { useState, useEffect, Suspense } from "react"
 import { useWindowWidth } from "@/hooks/useWindowWidth"
 import { cn } from "@/lib/utils"
-import { BaseDrawer } from "@/components/shared"
+import { Drawer } from "@/components/shared"
 import { TableSkeleton } from "@/components/shared"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 
@@ -43,23 +43,27 @@ export function SalesOrdersModal({ open, onOpenChange, posSessionId }: SalesOrde
     }
 
     return (
-        <BaseDrawer
+        <Drawer
             open={open}
             onOpenChange={handleOpenChange}
             title={viewMode === 'orders' ? 'Notas de Ventas' : 'Notas Crédito / Débito'}
             subtitle={<>Historial <span className="opacity-30">|</span> Documentos emitidos</>}
             icon={viewMode === 'orders' ? ShoppingCart : FileText}
-            height="full"
+            side="bottom"
+            boundary="embedded"
+            defaultSize="90%"
             headerActions={
                 <FormTabs
                     value={viewMode}
                     onValueChange={(v) => setViewMode(v as 'orders' | 'notes')}
                     orientation="horizontal"
+                    variant="underline"
                     items={[
                         { value: 'orders', label: 'Ventas', icon: ShoppingCart },
                         { value: 'notes', label: 'Notas C/D', icon: FileText }
                     ]}
-                    className="w-auto"
+                    className="w-auto animate-in fade-in duration-300"
+                    headerClassName="border-b-0 px-0 h-auto"
                 >
                     <div className="hidden" />
                 </FormTabs>
@@ -79,6 +83,6 @@ export function SalesOrdersModal({ open, onOpenChange, posSessionId }: SalesOrde
                     </Suspense>
                 )}
             </div>
-        </BaseDrawer>
+        </Drawer>
     )
 }

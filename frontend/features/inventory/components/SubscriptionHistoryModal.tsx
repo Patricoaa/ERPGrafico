@@ -153,7 +153,8 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                         <FormTabs
                             value={activeTab}
                             onValueChange={setActiveTab}
-                            orientation="vertical"
+                            orientation="horizontal"
+                            variant="underline"
                             items={[
                                 { value: "historial", label: "Historial de Costos", icon: History },
                                 { value: "orders", label: "Órdenes de Compra (OCS)", icon: FileText },

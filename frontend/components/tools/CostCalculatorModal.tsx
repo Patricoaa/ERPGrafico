@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils"
 import { resolveMediaUrl } from "@/lib/api"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
-import { BaseDrawer } from "@/components/shared/BaseDrawer"
+import { Drawer } from "@/components/shared/Drawer"
 import {
     POSSearchSkeleton,
     POSGridSkeleton,
@@ -206,7 +206,7 @@ export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalP
     }
 
     return (
-        <BaseDrawer
+        <Drawer
             open={open}
             onOpenChange={handleOpenChangeProxy}
             icon={Calculator}
@@ -220,7 +220,10 @@ export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalP
                 </div>
             }
             subtitle="Simulación rápida de materiales para determinar costos de producción"
-            height="full"
+            side="bottom"
+            boundary="embedded"
+            resizable={true}
+            defaultSize="100%"
             contentClassName="p-0 flex flex-col overflow-hidden"
         >
 
@@ -444,6 +447,6 @@ export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalP
                     </Card>
                 </div>
             </div>
-        </BaseDrawer>
+        </Drawer>
     )
 }

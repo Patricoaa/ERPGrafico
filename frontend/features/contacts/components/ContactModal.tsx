@@ -34,7 +34,7 @@ import { DomainHubStatus } from "@/components/shared/HubStatus"
 import { ColumnDef } from "@tanstack/react-table"
 import { Card, CardContent } from "@/components/ui/card"
 import { getHubStatuses } from '@/features/orders/utils/status'
-import { TableSkeleton, LabeledInput, FormTabs, FormTabsContent, type FormTabItem, FormFooter, FormSection, FormSplitLayout } from "@/components/shared"
+import { TableSkeleton, LabeledInput, FormTabs, FormTabsContent, type FormTabItem, FormFooter, FormSection } from "@/components/shared"
 import { formatCurrency } from "@/lib/money"
 
 const contactSchema = z.object({
@@ -279,20 +279,23 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
             <Form {...form}>
 
                 <form id="contact-form" onSubmit={form.handleSubmit(onSubmit)} className="flex-1 w-full h-full flex flex-col min-h-0 overflow-visible">
-                    <FormTabs
-                        items={tabItems}
-                        value={activeTab}
-                        onValueChange={setActiveTab}
-                        orientation="vertical"
-                        className="flex-1"
-                        contentClassName="bg-transparent"
-                    >
-                        <FormTabsContent value="profile" className="h-full w-full flex-1 flex flex-col m-0 p-0 border-0 outline-none">
-                            <FormSplitLayout
-                                sidebar={contact?.id ? <ActivitySidebar entityId={contact.id.toString()} entityType="contact" /> : undefined}
-                                showSidebar={!!contact?.id}
+                    <div className="flex-1 flex overflow-hidden min-h-[400px] w-full">
+                        {/* Contenido Principal con Pestañas Horizontales */}
+                        <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
+                            <FormTabs
+                                items={tabItems}
+                                value={activeTab}
+                                onValueChange={setActiveTab}
+                                orientation="horizontal"
+                                variant="underline"
+                                className="flex-1"
+                                contentClassName="bg-transparent"
                             >
-                                <div className="space-y-6 px-4 pb-4 pt-2">
+                                <FormTabsContent
+                                    value="profile"
+                                    className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin"
+                                >
+                                    <div className="space-y-6">
                                     <div className="space-y-4">
                                         <FormSection title="Estado y Roles" icon={Scale} />
                                         <div className="flex items-center gap-8 p-6 bg-muted/5 rounded-md border border-primary/5">
@@ -458,9 +461,8 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                                             />
                                         </div>
                                     </div>
-                                </div>
-                            </FormSplitLayout>
-                        </FormTabsContent>
+                                    </div>
+                                </FormTabsContent>
 
                         <FormTabsContent value="sales" className="h-full w-full flex-1 m-0 border-0 outline-none overflow-hidden flex flex-col p-6">
                             <InsightsTable
@@ -494,7 +496,16 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                         <FormTabsContent value="credit" className="h-full w-full flex-1 m-0 border-0 outline-none overflow-hidden flex flex-col p-6">
                             <CreditLedgerTable data={ledgerData} loading={loadingLedger} onActionSuccess={handleActionSuccess} />
                         </FormTabsContent>
-                    </FormTabs>
+                            </FormTabs>
+                        </div>
+
+                        {/* Barra Lateral de Actividad persistente */}
+                        {!!contact?.id && (
+                            <aside className="w-72 border-l flex flex-col pt-4 hidden lg:flex shrink-0 bg-background/50">
+                                <ActivitySidebar entityId={contact.id.toString()} entityType="contact" />
+                            </aside>
+                        )}
+                    </div>
                 </form>
             </Form>
 
