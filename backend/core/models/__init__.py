@@ -50,10 +50,22 @@ class User(AbstractUser):
         related_name='system_user',
         help_text=_("Vínculo con la entidad física de Contacto")
     )
+    
+    THEME_CHOICES = [
+        ('light', 'Claro'),
+        ('dark', 'Oscuro'),
+        ('system', 'Sistema'),
+    ]
+    theme = models.CharField(
+        max_length=10,
+        choices=THEME_CHOICES,
+        default='system',
+        help_text=_("Preferencia de tema visual para el usuario")
+    )
     history = HistoricalRecords()
 
     class FormMeta:
-        exclude_fields = ['pos_pin', 'password', 'last_login', 'is_superuser', 'user_permissions', 'groups']
+        exclude_fields = ['pos_pin', 'password', 'last_login', 'is_superuser', 'user_permissions', 'groups', 'theme']
 class CompanySettings(models.Model):
     name = models.CharField(_("Razón Social"), max_length=255)
     trade_name = models.CharField(_("Nombre de Fantasía"), max_length=255, blank=True)

@@ -30,7 +30,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" className="dark" style={{ colorScheme: 'dark' }}>
+    <html lang="es" suppressHydrationWarning>
       <body
         className={`${syne.variable} ${onest.variable} font-sans antialiased bg-background text-foreground`}
       >

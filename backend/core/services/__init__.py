@@ -102,7 +102,7 @@ class ActionLoggingService:
         """
         Creates an ActionLog entry.
         """
-        from .models import ActionLog
+        from core.models import ActionLog
         
         ip_address = None
         if request:
