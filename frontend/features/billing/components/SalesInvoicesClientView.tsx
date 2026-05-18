@@ -7,7 +7,7 @@ import { DataTable } from '@/components/shared'
 import { DataCell } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
-import { IconButton, SmartSearchBar, useSmartSearch } from "@/components/shared"
+import { IconButton, SmartSearchBar, useSmartSearch, FadeIn } from "@/components/shared"
 import { invoiceSearchDef } from "@/features/billing/searchDef"
 import { ArrowRight, ArrowLeft } from "lucide-react"
 import { treasuryApi } from "@/features/treasury/api/treasuryApi"
@@ -159,24 +159,26 @@ export function SalesInvoicesClientView() {
     return (
         <div className="space-y-4 px-1">
 
-            <DataTable
-                columns={columns}
-                data={invoices}
-                isLoading={isLoading}
-                onRowClick={(row: Invoice) => toggleSelection(row)}
-                variant="embedded"
-                currentView={currentView}
-                onViewChange={handleViewChange}
-                viewOptions={viewOptions}
-                leftAction={<SmartSearchBar searchDef={invoiceSearchDef} placeholder="Buscar facturas..." />}
-                defaultPageSize={20}
-                renderCustomView={isCustomView ? createDomainCardView('billing.invoice', {
-                    onRowClick: (data) => toggleSelection(data),
-                    isSelected: (data) => hubConfig?.invoiceId === data.id,
-                    isHubOpen,
-                }) : undefined}
-                renderLoadingView={isCustomView ? createCardLoadingView('single-column') : undefined}
-            />
+            <FadeIn key={currentView}>
+                <DataTable
+                    columns={columns}
+                    data={invoices}
+                    isLoading={isLoading}
+                    onRowClick={(row: Invoice) => toggleSelection(row)}
+                    variant="embedded"
+                    currentView={currentView}
+                    onViewChange={handleViewChange}
+                    viewOptions={viewOptions}
+                    leftAction={<SmartSearchBar searchDef={invoiceSearchDef} placeholder="Buscar facturas..." />}
+                    defaultPageSize={20}
+                    renderCustomView={isCustomView ? createDomainCardView('billing.invoice', {
+                        onRowClick: (data) => toggleSelection(data),
+                        isSelected: (data) => hubConfig?.invoiceId === data.id,
+                        isHubOpen,
+                    }) : undefined}
+                    renderLoadingView={isCustomView ? createCardLoadingView('single-column') : undefined}
+                />
+            </FadeIn>
 
             {notingInvoice && (
                 <SaleNoteModal

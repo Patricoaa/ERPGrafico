@@ -13,7 +13,7 @@ import {
     Percent,
     Receipt,
 } from "lucide-react"
-import { AutoSaveStatusBadge, FormSkeleton, LabeledInput, LabeledSelect } from "@/components/shared"
+import { AutoSaveStatusBadge, FormSkeleton, LabeledInput, LabeledSelect, FadeIn } from "@/components/shared"
 import { PageHeaderButton } from "@/components/shared/PageHeader"
 import { Separator } from "@/components/ui/separator"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
@@ -27,9 +27,11 @@ import { accountingSchema, defaultsSchema, taxSchema, type AccountingFormValues,
 export function AccountingSettingsView({ activeTab = "structure" }: { activeTab?: string }) {
     return (
         <div className="space-y-6">
-            {activeTab === "structure" && <StructureSettings />}
-            {activeTab === "defaults" && <DefaultsSettings />}
-            {activeTab === "tax" && <TaxSettings />}
+            <FadeIn key={activeTab}>
+                {activeTab === "structure" && <StructureSettings />}
+                {activeTab === "defaults" && <DefaultsSettings />}
+                {activeTab === "tax" && <TaxSettings />}
+            </FadeIn>
         </div>
     )
 }

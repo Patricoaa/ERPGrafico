@@ -3,10 +3,9 @@ import { formatPlainDate } from "@/lib/utils";
 
 import React, { useEffect, useState, lazy, Suspense } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
-import { motion } from "framer-motion"
 import { toast } from "sonner"
 import { Card, CardContent } from "@/components/ui/card"
-import { Chip } from "@/components/shared"
+import { Chip, FadeIn } from "@/components/shared"
 import { DataTable } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { createActionsColumn, DataCell } from '@/components/shared'
@@ -175,7 +174,7 @@ export function PartnerProfileTab({ contactId }: Props) {
 
                 {/* Section 1: Metrics & Summary */}
                 <AccordionItem value="summary" className="border-none">
-                    <motion.div initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.4 }}>
+                    <FadeIn yOffset={10}>
                         <Card variant="transparent" className="border-2 overflow-hidden">
                             <AccordionTrigger className="hover:no-underline px-4 py-3 border-b bg-transparent [&[data-state=open]>div>svg]:rotate-180">
                                 <div className="flex items-center gap-3">
@@ -212,12 +211,12 @@ export function PartnerProfileTab({ contactId }: Props) {
                                 </CardContent>
                             </AccordionContent>
                         </Card>
-                    </motion.div>
+                    </FadeIn>
                 </AccordionItem>
 
                 {/* Section 2: Societal Info */}
                 <AccordionItem value="info" className="border-none">
-                    <motion.div initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.4, delay: 0.1 }}>
+                    <FadeIn delay={0.1} yOffset={10}>
                         <Card variant="transparent" className="border-2 overflow-hidden">
                             <AccordionTrigger className="hover:no-underline px-4 py-3 border-b bg-transparent [&[data-state=open]>div>svg]:rotate-180">
                                 <div className="flex items-center gap-3">
@@ -249,12 +248,12 @@ export function PartnerProfileTab({ contactId }: Props) {
                                 </CardContent>
                             </AccordionContent>
                         </Card>
-                    </motion.div>
+                    </FadeIn>
                 </AccordionItem>
 
                 {/* Section 3: History */}
                 <AccordionItem value="history" className="border-none">
-                    <motion.div initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.4, delay: 0.2 }}>
+                    <FadeIn delay={0.2} yOffset={10}>
                         <Card variant="transparent" className="border-2 overflow-hidden">
                             <AccordionTrigger className="hover:no-underline px-4 py-3 border-b bg-transparent [&[data-state=open]>div>svg]:rotate-180">
                                 <div className="flex items-center gap-3">
@@ -276,7 +275,7 @@ export function PartnerProfileTab({ contactId }: Props) {
                                 />
                             </AccordionContent>
                         </Card>
-                    </motion.div>
+                    </FadeIn>
                 </AccordionItem>
 
             </Accordion>

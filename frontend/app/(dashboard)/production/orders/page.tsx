@@ -15,7 +15,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
-import { BulkActionDock, Chip } from "@/components/shared"
+import { BulkActionDock, Chip, FadeIn } from "@/components/shared"
 import { isWorkOrderOverdue } from "@/features/production/utils"
 import { ToolbarCreateButton, SmartSearchBar, useSmartSearch } from "@/components/shared"
 import { translateProductionStage } from "@/lib/utils"
@@ -314,52 +314,54 @@ export default function WorkOrdersPage() {
             )}
 
             <div className="mt-2">
-                <DataTable
-                    columns={columns}
-                    data={orders}
-                    isLoading={loading}
-                    variant="embedded"
-                    defaultPageSize={50}
-                    leftAction={
-                        <div className="flex items-center gap-6">
-                            <SmartSearchBar searchDef={workOrderSearchDef} placeholder="Buscar OTs..." className="w-[300px]" />
-                            <div className="flex items-center gap-2 whitespace-nowrap bg-background p-1.5 px-3 rounded-md border border-border shadow-sm">
-                                <Switch id="my-tasks-mode" checked={myTasks} onCheckedChange={handleMyTasksChange} />
-                                <Label htmlFor="my-tasks-mode" className="text-sm cursor-pointer font-medium">Solo mis OTs</Label>
+                <FadeIn key={viewMode}>
+                    <DataTable
+                        columns={columns}
+                        data={orders}
+                        isLoading={loading}
+                        variant="embedded"
+                        defaultPageSize={50}
+                        leftAction={
+                            <div className="flex items-center gap-6">
+                                <SmartSearchBar searchDef={workOrderSearchDef} placeholder="Buscar OTs..." className="w-[300px]" />
+                                <div className="flex items-center gap-2 whitespace-nowrap bg-background p-1.5 px-3 rounded-md border border-border shadow-sm">
+                                    <Switch id="my-tasks-mode" checked={myTasks} onCheckedChange={handleMyTasksChange} />
+                                    <Label htmlFor="my-tasks-mode" className="text-sm cursor-pointer font-medium">Solo mis OTs</Label>
+                                </div>
                             </div>
-                        </div>
-                    }
-                    viewOptions={[
-                        { label: "Lista", value: "list", icon: List },
-                        { label: "Tablero", value: "kanban", icon: Columns },
-                        { label: "Cronograma", value: "timeline", icon: CalendarDays },
-                    ]}
-                    currentView={viewMode}
-                    onViewChange={setViewMode}
-                    renderCustomView={
-                        viewMode === "kanban" ? renderKanbanView :
-                            viewMode === "timeline" ? renderTimelineView :
-                                undefined
-                    }
-                    createAction={<ToolbarCreateButton label="Nueva OT" href="/production/orders?modal=new" />}
-                    bulkDock={(items, clear) => (
-                        <BulkActionDock selectedCount={items.length} onClear={clear}>
-                            <div className="flex items-center gap-2">
+                        }
+                        viewOptions={[
+                            { label: "Lista", value: "list", icon: List },
+                            { label: "Tablero", value: "kanban", icon: Columns },
+                            { label: "Cronograma", value: "timeline", icon: CalendarDays },
+                        ]}
+                        currentView={viewMode}
+                        onViewChange={setViewMode}
+                        renderCustomView={
+                            viewMode === "kanban" ? renderKanbanView :
+                                viewMode === "timeline" ? renderTimelineView :
+                                    undefined
+                        }
+                        createAction={<ToolbarCreateButton label="Nueva OT" href="/production/orders?modal=new" />}
+                        bulkDock={(items, clear) => (
+                            <BulkActionDock selectedCount={items.length} onClear={clear}>
+                                <div className="flex items-center gap-2">
 
-                                <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    disabled={isBulkPrinting}
-                                    className="h-8 rounded-full px-4 text-xs"
-                                    onClick={() => bulkPrint({ ids: items.map(o => o.id) })}
-                                >
-                                    <Printer className="h-3.5 w-3.5 mr-1.5" />
-                                    {isBulkPrinting ? 'Generando…' : 'Imprimir todas'}
-                                </Button>
-                            </div>
-                        </BulkActionDock>
-                    )}
-                />
+                                    <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        disabled={isBulkPrinting}
+                                        className="h-8 rounded-full px-4 text-xs"
+                                        onClick={() => bulkPrint({ ids: items.map(o => o.id) })}
+                                    >
+                                        <Printer className="h-3.5 w-3.5 mr-1.5" />
+                                        {isBulkPrinting ? 'Generando…' : 'Imprimir todas'}
+                                    </Button>
+                                </div>
+                            </BulkActionDock>
+                        )}
+                    />
+                </FadeIn>
             </div>
 
             <ActionConfirmModal

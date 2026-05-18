@@ -11,7 +11,7 @@ import { startOfYear, subYears } from "date-fns"
 import { useServerDate } from "@/hooks/useServerDate"
 import { CardSkeleton } from "@/components/shared"
 import { MappingConfigSheet } from "@/features/finance/components/MappingConfigSheet"
-import { PageContainer } from "@/components/shared"
+import { PageContainer, FadeIn } from "@/components/shared"
 import { Button } from "@/components/ui/button"
 import { SlidersHorizontal } from "lucide-react"
 
@@ -91,17 +91,19 @@ export function AnalysisView({ activeTab }: AnalysisViewProps) {
             </div>
 
             <div className="max-w-6xl mx-auto w-full pt-4">
-                <TabsContent value="ratios">
-                    {activeTab === "ratios" && (
-                        <RatiosView date={date} showComparison={showComparison} compDate={compDate} />
-                    )}
-                </TabsContent>
+                <FadeIn key={activeTab}>
+                    <TabsContent value="ratios">
+                        {activeTab === "ratios" && (
+                            <RatiosView date={date} showComparison={showComparison} compDate={compDate} />
+                        )}
+                    </TabsContent>
 
-                <TabsContent value="bi">
-                    {activeTab === "bi" && (
-                        <BIAnalyticsView date={date} />
-                    )}
-                </TabsContent>
+                    <TabsContent value="bi">
+                        {activeTab === "bi" && (
+                            <BIAnalyticsView date={date} />
+                        )}
+                    </TabsContent>
+                </FadeIn>
             </div>
             
             <MappingConfigSheet

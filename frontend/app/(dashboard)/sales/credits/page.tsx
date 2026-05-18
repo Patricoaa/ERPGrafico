@@ -4,6 +4,7 @@ import { LoadingFallback } from "@/components/shared/LoadingFallback"
 import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
 import { Tabs } from "@/components/ui/tabs"
 import { redirect } from "next/navigation"
+import { FadeIn } from "@/components/shared"
 
 const CreditPortfolioView = lazy(() =>
     import("@/features/credits").then(m => ({ default: m.CreditPortfolioView }))
@@ -43,15 +44,17 @@ export default async function CreditsPage({ searchParams }: PageProps) {
             <Tabs value={activeTab} className="space-y-4">
                 <div className="mt-0 outline-none">
                     <Suspense fallback={<LoadingFallback />}>
-                        {activeTab === 'blacklist' ? (
-                            <BlacklistView />
-                        ) : (
-                            <CreditPortfolioView
-                                activeTab={activeTab as 'portfolio' | 'history'}
-                                externalOpen={modalOpen}
-                                createAction={createAction}
-                            />
-                        )}
+                        <FadeIn key={activeTab}>
+                            {activeTab === 'blacklist' ? (
+                                <BlacklistView />
+                            ) : (
+                                <CreditPortfolioView
+                                    activeTab={activeTab as 'portfolio' | 'history'}
+                                    externalOpen={modalOpen}
+                                    createAction={createAction}
+                                />
+                            )}
+                        </FadeIn>
                     </Suspense>
                 </div>
             </Tabs>

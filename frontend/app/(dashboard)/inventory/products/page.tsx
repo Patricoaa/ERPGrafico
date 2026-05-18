@@ -3,7 +3,7 @@ import { Suspense } from "react"
 import { redirect } from "next/navigation"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { ProductList, CategoryList, PricingRuleList, SubscriptionsView } from "@/features/inventory"
-import { TableSkeleton, ToolbarCreateButton } from "@/components/shared"
+import { TableSkeleton, ToolbarCreateButton, FadeIn } from "@/components/shared"
 
 export const metadata: Metadata = {
     title: "Productos | ERPGrafico",
@@ -45,35 +45,43 @@ export default async function UnifiedProductsPage({ searchParams }: PageProps) {
             <div className="min-h-[400px]">
                 <TabsContent value="products" className="mt-0 outline-none">
                     <Suspense fallback={<TableSkeleton rows={10} columns={6} />}>
-                        <ProductList
-                            externalOpen={activeTab === 'products' && resolvedParams.modal === 'new'}
-                            createAction={activeTab === 'products' ? createAction : null}
-                        />
+                        <FadeIn>
+                            <ProductList
+                                externalOpen={activeTab === 'products' && resolvedParams.modal === 'new'}
+                                createAction={activeTab === 'products' ? createAction : null}
+                            />
+                        </FadeIn>
                     </Suspense>
                 </TabsContent>
                 <TabsContent value="categories" className="mt-0 outline-none">
                     <Suspense fallback={<TableSkeleton rows={10} columns={6} />}>
-                        <CategoryList
-                            externalOpen={activeTab === 'categories' && resolvedParams.modal === 'new'}
-                            createAction={activeTab === 'categories' ? createAction : null}
-                        />
+                        <FadeIn>
+                            <CategoryList
+                                externalOpen={activeTab === 'categories' && resolvedParams.modal === 'new'}
+                                createAction={activeTab === 'categories' ? createAction : null}
+                            />
+                        </FadeIn>
                     </Suspense>
                 </TabsContent>
                 <TabsContent value="pricing-rules" className="mt-0 outline-none">
                     <Suspense fallback={<TableSkeleton rows={10} columns={6} />}>
-                        <PricingRuleList
-                            externalOpen={activeTab === 'pricing-rules' && resolvedParams.modal === 'new'}
-                            createAction={activeTab === 'pricing-rules' ? createAction : null}
-                        />
+                        <FadeIn>
+                            <PricingRuleList
+                                externalOpen={activeTab === 'pricing-rules' && resolvedParams.modal === 'new'}
+                                createAction={activeTab === 'pricing-rules' ? createAction : null}
+                            />
+                        </FadeIn>
                     </Suspense>
                 </TabsContent>
                 <TabsContent value="subscriptions" className="mt-0 outline-none">
                     <Suspense fallback={<TableSkeleton rows={10} columns={6} />}>
-                        <SubscriptionsView
-                            hideHeader
-                            externalOpen={activeTab === 'subscriptions' && resolvedParams.modal === 'new'}
-                            createAction={activeTab === 'subscriptions' ? createAction : null}
-                        />
+                        <FadeIn>
+                            <SubscriptionsView
+                                hideHeader
+                                externalOpen={activeTab === 'subscriptions' && resolvedParams.modal === 'new'}
+                                createAction={activeTab === 'subscriptions' ? createAction : null}
+                            />
+                        </FadeIn>
                     </Suspense>
                 </TabsContent>
             </div>

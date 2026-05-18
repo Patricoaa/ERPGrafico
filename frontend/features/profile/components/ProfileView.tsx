@@ -13,7 +13,7 @@ import type { Payroll, SalaryAdvance, PayrollPayment } from "@/types/hr"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion"
 import { Button } from "@/components/ui/button"
-import { StatusBadge, Chip } from "@/components/shared"
+import { StatusBadge, Chip, FadeIn } from "@/components/shared"
 import { Card, CardContent } from "@/components/ui/card"
 import { DataTable } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
@@ -22,7 +22,6 @@ import { ColumnDef } from "@tanstack/react-table"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { Form, FormField } from "@/components/ui/form"
 import { cn } from "@/lib/utils"
-import { motion } from "framer-motion"
 import {
     Loader2, User, ShieldCheck, KeyRound, Mail, BadgeCheck,
     Building2, Briefcase, Calendar, CreditCard, Wallet,
@@ -163,22 +162,14 @@ function AccountTab({ user }: { user: MyProfile['user'] }) {
     return (
         <div className="w-full space-y-8">
             {/* Password Change Card */}
-            <motion.div
-                initial={{ y: 10, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ duration: 0.4, delay: 0.1 }}
-            >
+            <FadeIn delay={0.1} yOffset={10}>
                 <PasswordChangeCard />
-            </motion.div>
+            </FadeIn>
 
             {/* POS PIN Change Card */}
-            <motion.div
-                initial={{ y: 10, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ duration: 0.4, delay: 0.2 }}
-            >
+            <FadeIn delay={0.2} yOffset={10}>
                 <PinChangeCard />
-            </motion.div>
+            </FadeIn>
         </div>
     )
 }
@@ -513,7 +504,7 @@ function PersonalTab({
         <div className="w-full">
             {/* Sub-tab 1: Ficha de Empleado */}
             {activeSubTab === "employee" && (
-                <motion.div initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.4 }}>
+                <FadeIn yOffset={10}>
                     <Card variant="transparent" className="border-2 overflow-hidden">
                         <div className="px-4 py-3 border-b bg-transparent">
                             <div className="flex items-center gap-3">
@@ -573,12 +564,12 @@ function PersonalTab({
                             </div>
                         </CardContent>
                     </Card>
-                </motion.div>
+                </FadeIn>
             )}
 
             {/* Sub-tab 2: Liquidaciones */}
             {activeSubTab === "payrolls" && (
-                <motion.div initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.4, delay: 0.1 }}>
+                <FadeIn delay={0.1} yOffset={10}>
                     <Card variant="transparent" className="border-2 overflow-hidden">
                         <div className="px-4 py-3 border-b bg-transparent">
                             <div className="flex items-center justify-between w-full">
@@ -654,12 +645,12 @@ function PersonalTab({
                             </div>
                         </CardContent>
                     </Card>
-                </motion.div>
+                </FadeIn>
             )}
 
             {/* Sub-tab 3: Pagos */}
             {activeSubTab === "payments" && (
-                <motion.div initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.4, delay: 0.2 }}>
+                <FadeIn delay={0.2} yOffset={10}>
                     <Card variant="transparent" className="border-2 overflow-hidden">
                         <div className="px-4 py-3 border-b bg-transparent">
                             <div className="flex items-center gap-3">
@@ -698,7 +689,7 @@ function PersonalTab({
                             </div>
                         </CardContent>
                     </Card>
-                </motion.div>
+                </FadeIn>
             )}
 
             <EmployeePayrollPreview
@@ -788,7 +779,7 @@ function PinChangeCard() {
                         </div>
 
                         <div className="flex justify-end pt-2">
-                            <ActionSlideButton type="submit" disabled={saving} className="rounded-lg text-xs font-bold gap-2">
+                            <ActionSlideButton type="submit" disabled={saving} className="rounded-sm text-xs font-bold gap-2">
                                 {saving && <Loader2 className="h-4 w-4 animate-spin" />}
                                 <Wallet className="h-4 w-4" />
                                 Guardar PIN

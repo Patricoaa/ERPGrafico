@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, lazy, Suspense } from "react"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
-import { CardSkeleton, TableSkeleton } from "@/components/shared"
+import { CardSkeleton, TableSkeleton, FadeIn } from "@/components/shared"
 
 // Lazy load components
 const TerminalManagement = lazy(() => import("@/features/treasury/components/TerminalManagement"))
@@ -37,52 +37,62 @@ export const SalesTerminalsView: React.FC<SalesTerminalsViewProps> = ({ activeTa
         <Tabs value={activeTab} className="space-y-4">
             <TabsContent value="pos-terminals" className="mt-0 outline-none">
                 <Suspense fallback={<CardSkeleton variant="grid" count={3} />}>
-                    <TerminalManagement
-                        externalOpen={isTerminalModalOpen}
-                        onExternalOpenChange={setIsTerminalModalOpen}
-                        createAction={activeTab === "pos-terminals" ? createAction : undefined}
-                    />
+                    <FadeIn>
+                        <TerminalManagement
+                            externalOpen={isTerminalModalOpen}
+                            onExternalOpenChange={setIsTerminalModalOpen}
+                            createAction={activeTab === "pos-terminals" ? createAction : undefined}
+                        />
+                    </FadeIn>
                 </Suspense>
             </TabsContent>
 
             <TabsContent value="sessions" className="mt-0 outline-none">
                 <Suspense fallback={<TableSkeleton rows={8} columns={5} />}>
-                    <POSSessionsView hideHeader />
+                    <FadeIn>
+                        <POSSessionsView hideHeader />
+                    </FadeIn>
                 </Suspense>
             </TabsContent>
 
             <TabsContent value="batches" className="mt-0 outline-none">
                 <Suspense fallback={<TableSkeleton rows={8} columns={5} />}>
-                    <TerminalBatchesManagement
-                        showTitle={false}
-                        externalOpenBatch={isBatchModalOpen}
-                        onExternalOpenBatchChange={setIsBatchModalOpen}
-                        externalOpenInvoice={isInvoiceModalOpen}
-                        onExternalOpenInvoiceChange={setIsInvoiceModalOpen}
-                        createAction={activeTab === "batches" ? createAction : undefined}
-                    />
+                    <FadeIn>
+                        <TerminalBatchesManagement
+                            showTitle={false}
+                            externalOpenBatch={isBatchModalOpen}
+                            onExternalOpenBatchChange={setIsBatchModalOpen}
+                            externalOpenInvoice={isInvoiceModalOpen}
+                            onExternalOpenInvoiceChange={setIsInvoiceModalOpen}
+                            createAction={activeTab === "batches" ? createAction : undefined}
+                        />
+                    </FadeIn>
                 </Suspense>
             </TabsContent>
 
             <TabsContent value="devices" className="mt-0 outline-none">
                 <Suspense fallback={<CardSkeleton variant="grid" count={3} />}>
-                   <PaymentHardwareManagement
-                        externalDeviceOpen={isDeviceModalOpen}
-                        onExternalDeviceOpenChange={setIsDeviceModalOpen}
-                        activeTab="devices"
-                        createAction={activeTab === "devices" ? createAction : undefined}
-                   />
+                    <FadeIn>
+                       <PaymentHardwareManagement
+                            externalDeviceOpen={isDeviceModalOpen}
+                            onExternalDeviceOpenChange={setIsDeviceModalOpen}
+                            activeTab="devices"
+                            createAction={activeTab === "devices" ? createAction : undefined}
+                       />
+                    </FadeIn>
                 </Suspense>
             </TabsContent>
 
             <TabsContent value="providers" className="mt-0 outline-none">
                 <Suspense fallback={<CardSkeleton variant="grid" count={3} />}>
-                   <PaymentHardwareManagement
-                        externalProviderOpen={isProviderModalOpen}
-                        onExternalProviderOpenChange={setIsProviderModalOpen}
-                        activeTab="providers"
-                        createAction={activeTab === "providers" ? createAction : undefined}
-                   />
+                    <FadeIn>
+                       <PaymentHardwareManagement
+                            externalProviderOpen={isProviderModalOpen}
+                            onExternalProviderOpenChange={setIsProviderModalOpen}
+                            activeTab="providers"
+                            createAction={activeTab === "providers" ? createAction : undefined}
+                       />
+                    </FadeIn>
                 </Suspense>
             </TabsContent>
         </Tabs>
