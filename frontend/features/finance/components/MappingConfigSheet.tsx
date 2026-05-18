@@ -1,9 +1,7 @@
 "use client"
 
 import React from "react"
-import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet"
-import { SheetCloseButton } from "@/components/shared/SheetCloseButton"
-import { DataTable } from '@/components/shared'
+import { DataTable, BulkActionDock, ActionDock, Chip, DataCell, Drawer } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
 
@@ -17,7 +15,6 @@ import {
     Account
 } from "@/features/accounting/types"
 import { Checkbox } from "@/components/ui/checkbox"
-import { BulkActionDock, ActionDock, Chip } from "@/components/shared"
 import { cn } from "@/lib/utils"
 
 interface MappingConfigSheetProps {
@@ -33,12 +30,12 @@ export function MappingConfigSheet({
     mappingType,
     onSaveSuccess
 }: MappingConfigSheetProps) {
-    const { 
-        accounts, 
-        isLoading, 
-        isSaving, 
-        pendingChanges, 
-        updateMapping, 
+    const {
+        accounts,
+        isLoading,
+        isSaving,
+        pendingChanges,
+        updateMapping,
         saveAll,
         hasChanges
     } = useAccountMappings(mappingType)
@@ -155,7 +152,7 @@ export function MappingConfigSheet({
                         {!currentValue && (
                             <AlertCircle className="h-3.5 w-3.5 text-warning shrink-0" />
                         )}
-                        <Select 
+                        <Select
                             value={currentValue || "none"}
                             onValueChange={(val) => updateMapping(account.id, val)}
                         >
@@ -182,82 +179,64 @@ export function MappingConfigSheet({
     ]
 
     return (
-        <Sheet open={open} onOpenChange={onOpenChange}>
-            <SheetContent
-                side="bottom"
-                hideOverlay={true}
-                hideCloseButton={true}
-                className="h-[85vh] sm:h-[90vh] p-0 border-t-0 bg-background rounded-t-[2.5rem] shadow-[0_-20px_50px_-12px_rgba(0,0,0,0.25)] flex flex-col"
-            >
-                <SheetTitle className="sr-only">Configuración de Mapeo</SheetTitle>
-                {/* Visual Handle for "Drawer" feel */}
-                <div className="w-12 h-1.5 bg-muted-foreground/20 rounded-full mx-auto my-4 shrink-0 shadow-inner" />
-
-                <SheetCloseButton 
-                    onClick={() => onOpenChange(false)}
-                    className="absolute top-4 right-8 z-[60]"
+        <Drawer
+            open={open}
+            onOpenChange={onOpenChange}
+            side="bottom"
+            boundary="embedded"
+            resizable={false}
+            defaultSize="100%"
+            title={getTitle()}
+            subtitle={getSubtitle()}
+            icon={SlidersHorizontal}
+            contentClassName="flex flex-col min-h-0 px-8 pb-8"
+            headerActions={
+                <div className="flex items-center gap-3">
+                    {hasChanges && (
+                        <Chip intent="warning">Cambios Pendientes ({pendingChanges.size})</Chip>
+                    )}
+                    <Button
+                        onClick={handleSave}
+                        disabled={!hasChanges || isSaving}
+                        className="font-black tracking-widest uppercase text-[10px] h-9"
+                    >
+                        <Save className="mr-2 h-4 w-4" />
+                        {isSaving ? "Guardando..." : "Guardar Mapeo"}
+                    </Button>
+                </div>
+            }
+        >
+            <div className="flex-1 flex flex-col min-h-0">
+                <DataTable
+                    columns={columns}
+                    data={accounts}
+                    isLoading={isLoading}
+                    variant="standalone"
+                    searchPlaceholder="Filtrar por nombre de cuenta..."
+                    filterColumn="name"
+                    useAdvancedFilter={true}
+                    bulkDock={(items, clear) => (
+                        <BulkActionDock selectedCount={items.length} onClear={clear}>
+                            <ActionDock.Actions>
+                                <Select onValueChange={(value) => handleBulkUpdate(items, value, clear)}>
+                                    <SelectTrigger className="h-9 rounded-full border-border/40 bg-muted/30 text-[10px] font-black uppercase tracking-widest w-[200px] hover:bg-muted/50 transition-colors">
+                                        <Tag className="mr-2 h-3.5 w-3.5" />
+                                        <SelectValue placeholder="Asignar Categoría" />
+                                    </SelectTrigger>
+                                    <SelectContent className="w-[var(--radix-select-trigger-width)]">
+                                        <SelectItem value="none" className="text-muted-foreground italic">Quitar mapeo</SelectItem>
+                                        {getCategories().map(cat => (
+                                            <SelectItem key={cat.value} value={cat.value}>
+                                                {cat.label}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </ActionDock.Actions>
+                        </BulkActionDock>
+                    )}
                 />
-
-                <SheetTitle className="sr-only">{getTitle()}</SheetTitle>
-
-                <div className="px-8 pb-4 flex items-center justify-between shrink-0">
-                    <div className="flex items-center gap-4">
-                        <SlidersHorizontal className="h-5 w-5 text-muted-foreground" />
-                        <div className="flex flex-col">
-                            <span className="text-xl font-black tracking-tight text-foreground leading-none">{getTitle()}</span>
-                            <span className="text-[10px] font-black uppercase text-muted-foreground tracking-widest mt-1 opacity-60 flex items-center gap-1.5">
-                                {getSubtitle()}
-                            </span>
-                        </div>
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                        {hasChanges && (
-                            <Chip intent="warning">Cambios Pendientes ({pendingChanges.size})</Chip>
-                        )}
-                        <Button 
-                            onClick={handleSave} 
-                            disabled={!hasChanges || isSaving}
-                            className="font-black tracking-widest uppercase text-[10px] h-9"
-                        >
-                            <Save className="mr-2 h-4 w-4" />
-                            {isSaving ? "Guardando..." : "Guardar Mapeo"}
-                        </Button>
-                    </div>
-                </div>
-
-                <div className="flex-1 overflow-y-auto px-8 pb-8 flex flex-col min-h-0">
-                    <DataTable
-                        columns={columns}
-                        data={accounts}
-                        isLoading={isLoading}
-                        variant="standalone"
-                        searchPlaceholder="Filtrar por nombre de cuenta..."
-                        filterColumn="name"
-                        useAdvancedFilter={true}
-                        bulkDock={(items, clear) => (
-                            <BulkActionDock selectedCount={items.length} onClear={clear}>
-                                <ActionDock.Actions>
-                                    <Select onValueChange={(value) => handleBulkUpdate(items, value, clear)}>
-                                        <SelectTrigger className="h-9 rounded-full border-border/40 bg-muted/30 text-[10px] font-black uppercase tracking-widest w-[200px] hover:bg-muted/50 transition-colors">
-                                            <Tag className="mr-2 h-3.5 w-3.5" />
-                                            <SelectValue placeholder="Asignar Categoría" />
-                                        </SelectTrigger>
-                                        <SelectContent className="w-[var(--radix-select-trigger-width)]">
-                                            <SelectItem value="none" className="text-muted-foreground italic">Quitar mapeo</SelectItem>
-                                            {getCategories().map(cat => (
-                                                <SelectItem key={cat.value} value={cat.value}>
-                                                    {cat.label}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </ActionDock.Actions>
-                            </BulkActionDock>
-                        )}
-                    />
-                </div>
-            </SheetContent>
-        </Sheet>
+            </div>
+        </Drawer>
     )
 }

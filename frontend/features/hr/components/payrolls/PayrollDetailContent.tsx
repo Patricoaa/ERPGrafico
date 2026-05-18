@@ -295,7 +295,7 @@ export function PayrollDetailContent({ payrollId, onClose, onUpdate, isSheet = f
             </div>
 
             {/* Custom Close Button for Sheet (Top Right Corner) */}
-            {/* Removed: BaseDrawer already provides a close button */}
+            {/* Removed: Drawer already provides a close button */}
 
             {/* Scroll Area for Content */}
             <div className={cn("flex-1", isSheet ? "overflow-y-auto custom-scrollbar p-6 bg-muted/30" : "")}>
@@ -306,10 +306,10 @@ export function PayrollDetailContent({ payrollId, onClose, onUpdate, isSheet = f
                         isSalaryPaid={salaroPaid}
                         isPreviredPaid={previredPaid}
                         payments={payments}
-                        onEditItem={viewMode === 'admin' ? setEditingItem : undefined}
-                        onDeleteItem={viewMode === 'admin' ? handleDeleteItem : undefined}
-                        onAddItem={viewMode === 'admin' ? () => setEditingItem({ payroll: payrollId } as unknown as PayrollItem) : undefined}
-                        isReadOnly={viewMode === 'employee'}
+                        onEditItem={viewMode === 'admin' && !isPosted ? setEditingItem : undefined}
+                        onDeleteItem={viewMode === 'admin' && !isPosted ? handleDeleteItem : undefined}
+                        onAddItem={viewMode === 'admin' && !isPosted ? () => setEditingItem({ payroll: payrollId } as unknown as PayrollItem) : undefined}
+                        isReadOnly={viewMode === 'employee' || isPosted}
                         showEmployerContributions={viewMode === 'admin'}
                         className={isSheet ? "shadow-2xl shadow-border/20" : ""}
                     />
@@ -397,13 +397,13 @@ function PayrollItemDialog({ payrollId, item, concepts, onSaved, onEditCleared, 
     })
 
     useEffect(() => {
-        if (item) {
+        if (item && item.id) {
             form.reset({
-                concept: item.concept.toString(),
-                description: item.description,
-                amount: item.amount,
+                concept: item.concept?.toString() || "",
+                description: item.description || "",
+                amount: item.amount || "0",
             })
-        } else if (open) {
+        } else if (open || (item && !item.id)) {
             form.reset({ concept: concepts[0]?.id.toString() || "", description: "", amount: "0" })
         }
     }, [item, open, concepts, form])
@@ -412,7 +412,7 @@ function PayrollItemDialog({ payrollId, item, concepts, onSaved, onEditCleared, 
         setSaving(true)
         try {
             const payload = { ...data, concept: parseInt(data.concept), payroll: payrollId }
-            if (item) {
+            if (item && item.id) {
                 await updatePayrollItem(payrollId, item.id, payload as unknown as Partial<PayrollItem>)
             } else {
                 await createPayrollItem(payrollId, payload as unknown as Partial<PayrollItem>)
@@ -432,7 +432,7 @@ function PayrollItemDialog({ payrollId, item, concepts, onSaved, onEditCleared, 
             open={open}
             onOpenChange={(o) => { setOpen(o); if (!o) onEditCleared() }}
             icon={Sparkles}
-            title={item ? "Editar Línea" : "Nueva Línea"}
+            title={item && item.id ? "Editar Línea" : "Nueva Línea"}
             description="Itemización • Liquidación de Remuneraciones"
             footer={
                 <FormFooter
@@ -445,7 +445,7 @@ function PayrollItemDialog({ payrollId, item, concepts, onSaved, onEditCleared, 
                                 disabled={saving}
                             >
                                 {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                {item ? "Actualizar Item" : "Añadir a Liquidación"}
+                                {item && item.id ? "Actualizar Item" : "Añadir a Liquidación"}
                             </ActionSlideButton>
                         </>
                     }

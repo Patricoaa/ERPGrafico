@@ -10,7 +10,7 @@ import {
     Wallet,
     LogOut
 } from "lucide-react"
-import { BaseDrawer, DataTable, TableSkeleton, Chip } from "@/components/shared"
+import { Drawer, DataTable, TableSkeleton, Chip } from "@/components/shared"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
 import { PartnerStatement, PartnerTransaction } from "@/features/contacts/types/partner"
 import { toast } from "sonner"
@@ -166,12 +166,17 @@ export function PartnerLedgerModal({
     }, [data])
 
     return (
-        <BaseDrawer
+        <Drawer
             open={open}
             onOpenChange={onOpenChange}
             title="Libro Auxiliar de Socio"
             subtitle={partnerName}
             icon={History}
+            side="bottom"
+            boundary="embedded"
+            resizable={false}
+            showOverlay={true}
+            defaultSize="100%"
         >
             {loading ? (
                 <div className="mt-4">
@@ -220,6 +225,6 @@ export function PartnerLedgerModal({
                 onSuccess={fetchData}
                 initialPartnerId={partnerId?.toString()}
             />
-        </BaseDrawer>
+        </Drawer>
     )
 }

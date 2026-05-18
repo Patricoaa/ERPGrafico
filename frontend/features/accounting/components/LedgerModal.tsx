@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { useServerDate } from "@/hooks/useServerDate"
 import { Book, ArrowUpRight, ArrowDownRight, Scale, Calculator, Eye, Trash2 } from "lucide-react"
-import { BaseDrawer, DataTable, DataTableColumnHeader, CardSkeleton, DataCell, createActionsColumn, IconButton } from "@/components/shared"
+import { Drawer, DataTable, DataTableColumnHeader, CardSkeleton, DataCell, createActionsColumn, IconButton } from "@/components/shared"
 import { ColumnDef } from "@tanstack/react-table"
 import { Card, CardContent } from "@/components/ui/card"
 import { DateRangeFilter } from "@/components/shared/DateRangeFilter"
@@ -29,7 +29,23 @@ interface LedgerModalProps {
 
 export function LedgerModal({ accountId, accountName, accountCode, trigger }: LedgerModalProps) {
     const { serverDate } = useServerDate()
-    const [open, setOpen] = useState(false)
+    const router = useRouter()
+    const pathname = usePathname()
+    const searchParams = useSearchParams()
+
+    const ledgerAccountParam = searchParams.get("ledger_account")
+    const open = ledgerAccountParam === String(accountId)
+
+    const setOpen = (newOpen: boolean) => {
+        const params = new URLSearchParams(searchParams.toString())
+        if (newOpen) {
+            params.set("ledger_account", String(accountId))
+        } else {
+            params.delete("ledger_account")
+        }
+        router.push(`${pathname}?${params.toString()}`, { scroll: false })
+    }
+
     const [dateRange, setDateRange] = useState<{ from: Date; to: Date } | undefined>(undefined)
 
     useEffect(() => {
@@ -71,13 +87,17 @@ export function LedgerModal({ accountId, accountName, accountCode, trigger }: Le
                     <Book className="h-4 w-4 text-primary" />
                 </IconButton>
             )}
-            <BaseDrawer
+            <Drawer
                 open={open}
                 onOpenChange={setOpen}
                 title="Libro Mayor"
                 subtitle={`${accountCode} | ${accountName}`}
                 icon={Book}
-                height="full"
+                side="left"
+                boundary="embedded"
+                resizable={false}
+                showOverlay={true}
+                defaultSize="50%"
             >
                 {open && dateRange && (
                     <React.Suspense fallback={<CardSkeleton count={4} variant="grid" />}>
@@ -90,7 +110,7 @@ export function LedgerModal({ accountId, accountName, accountCode, trigger }: Le
                         />
                     </React.Suspense>
                 )}
-            </BaseDrawer>
+            </Drawer>
         </>
     )
 }
@@ -110,7 +130,7 @@ function LedgerContent({
 }) {
     const { serverDate } = useServerDate()
     const { data, isLoading, refetch } = useLedger(accountId, startDate, endDate)
-    
+
     const router = useRouter()
     const pathname = usePathname()
     const searchParams = useSearchParams()

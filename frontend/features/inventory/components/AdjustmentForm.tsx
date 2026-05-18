@@ -291,14 +291,14 @@ export function AdjustmentForm({
                     value={moveType}
                     onValueChange={(val) => form.setValue("type", val as "IN" | "OUT")}
                     orientation="horizontal"
+                    variant="underline"
                     listClassName={cn(
                         moveType === 'IN' 
-                            ? "[&_[data-state=active]]:text-success [&_[data-state=active]]:bg-success/5 [&_[data-state=active]]:border-success/20" 
-                            : "[&_[data-state=active]]:text-destructive [&_[data-state=active]]:bg-destructive/5 [&_[data-state=active]]:border-destructive/20"
+                            ? "[&_[data-state=active]]:text-success [&_[data-state=active]]:border-success" 
+                            : "[&_[data-state=active]]:text-destructive [&_[data-state=active]]:border-destructive"
                     )}
                     className="flex-1 flex flex-col min-h-0"
                     headerClassName="bg-transparent"
-                    pillClassName="bg-transparent border-none"
                     contentClassName="flex-1 flex flex-col overflow-hidden bg-background"
                 >
                     <div className="flex-1 overflow-y-auto space-y-8 pt-6 px-8 pb-8 scrollbar-thin">

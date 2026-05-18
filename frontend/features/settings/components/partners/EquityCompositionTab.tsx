@@ -11,6 +11,7 @@ import {
     History,
     MoveHorizontal
 } from "lucide-react"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 
 import {
     DropdownMenuItem,
@@ -63,6 +64,10 @@ export function EquityCompositionTab({
     const [isInitialSetupOpen, setIsInitialSetupOpen] = useState(false)
     const [isAddPartnerOpen, setIsAddPartnerOpen] = useState(false)
 
+    const router = useRouter()
+    const pathname = usePathname()
+    const searchParams = useSearchParams()
+
     // Custom action modals
     const [isContributionOpen, setIsContributionOpen] = useState(false)
     const [isWithdrawalOpen, setIsWithdrawalOpen] = useState(false)
@@ -112,6 +117,22 @@ export function EquityCompositionTab({
             setIsStatsOpen(true)
         }
     }, [initialStatsOpen])
+
+    useEffect(() => {
+        const ledgerParam = searchParams.get("ledger")
+        if (ledgerParam) {
+            const partnerId = parseInt(ledgerParam, 10)
+            const partner = partners.find(p => p.id === partnerId)
+            
+            setSelectedPartnerId(partnerId)
+            if (partner) {
+                setSelectedPartnerName(partner.name)
+            }
+            setIsLedgerOpen(true)
+        } else {
+            setIsLedgerOpen(false)
+        }
+    }, [searchParams, partners])
 
     if (loading) {
         return (
@@ -286,9 +307,9 @@ export function EquityCompositionTab({
                             title="Ver Libro Auxiliar"
                             className="text-primary font-black"
                             onClick={() => {
-                                setSelectedPartnerId(partner.id)
-                                setSelectedPartnerName(partner.name)
-                                setIsLedgerOpen(true)
+                                const params = new URLSearchParams(searchParams.toString())
+                                params.set("ledger", partner.id.toString())
+                                router.push(`${pathname}?${params.toString()}`, { scroll: false })
                             }}
                         />
                     </>
@@ -381,7 +402,13 @@ export function EquityCompositionTab({
             />
             <PartnerLedgerModal
                 open={isLedgerOpen}
-                onOpenChange={setIsLedgerOpen}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        const params = new URLSearchParams(searchParams.toString())
+                        params.delete("ledger")
+                        router.push(`${pathname}?${params.toString()}`, { scroll: false })
+                    }
+                }}
                 partnerId={selectedPartnerId}
                 partnerName={selectedPartnerName}
             />

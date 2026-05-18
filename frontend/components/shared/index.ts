@@ -18,7 +18,7 @@ export { useSchema } from './EntityForm/hooks/useSchema';
 // Modals & Sheets
 export * from './ActionConfirmModal';
 export * from './BaseModal';
-export * from './BaseDrawer';
+export * from './Drawer';
 export * from './CollapsibleSheet';
 export * from './DocumentCompletionModal';
 export * from './GenericWizard';

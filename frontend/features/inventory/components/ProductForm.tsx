@@ -690,36 +690,22 @@ export function ProductForm({ sidebar, open, onOpenChange, initialData, onSucces
             <Form {...form}>
                 <form id="product-form" onSubmit={form.handleSubmit(onSubmit, onSubmitError)} className="flex-1 w-full h-full flex flex-col min-h-0 overflow-visible">
                     <SkeletonShell isLoading={isFetchingInitialData} ariaLabel="Cargando ficha de producto" className="flex-1 flex flex-col h-full">
-                        <FormTabs
-                            items={tabItems}
-                            value={activeTab}
-                            onValueChange={setActiveTab}
-                            orientation="vertical"
-                            header={inline ? tabHeader : undefined}
-                            className="flex-1"
-                            contentClassName="bg-transparent"
-                        >
-                            <fieldset disabled={loading} className="flex-1 min-w-0 transition-opacity disabled:opacity-75 flex flex-col h-full min-h-0">
-                                <FormTabsContent value="general" className="h-full w-full flex-1 flex flex-col m-0 p-0 border-0 outline-none overflow-hidden">
-                                    <FormSplitLayout
-                                        sidebar={
-                                            initialData?.id ? (
-                                                <ActivitySidebar entityId={initialData.id.toString()} entityType="product" />
-                                            ) : (
-                                                <div className="h-full flex flex-col items-center justify-center text-center p-8 border-2 border-dashed rounded-xl bg-muted/5 m-4">
-                                                    <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                                                        <History className="h-6 w-6 text-primary" />
-                                                    </div>
-                                                    <h3 className="text-sm font-bold text-foreground">Historial de Actividad</h3>
-                                                    <p className="text-xs text-muted-foreground mt-2 max-w-[200px]">
-                                                        El registro de cambios estará disponible una vez que el producto sea creado.
-                                                    </p>
-                                                </div>
-                                            )
-                                        }
-                                        showSidebar={!!initialData?.id}
-                                    >
-                                        <div className="space-y-8 pr-2 pb-8">
+                        <div className="flex-1 flex overflow-hidden min-h-[400px] w-full">
+                        {/* Contenido Principal con Pestañas Horizontales */}
+                        <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
+                            <FormTabs
+                                items={tabItems}
+                                value={activeTab}
+                                onValueChange={setActiveTab}
+                                orientation="horizontal"
+                                variant="underline"
+                                header={inline ? tabHeader : undefined}
+                                className="flex-1"
+                                contentClassName="bg-transparent"
+                            >
+                                <fieldset disabled={loading} className="flex-1 min-w-0 transition-opacity disabled:opacity-75 flex flex-col h-full min-h-0">
+                                    <FormTabsContent value="general" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin">
+                                        <div className="space-y-8 pr-2">
                                             <ProductBasicInfo
                                                 form={form}
                                                 isEditing={!!initialData}
@@ -735,8 +721,7 @@ export function ProductForm({ sidebar, open, onOpenChange, initialData, onSucces
                                                 uoms={uoms}
                                             />
                                         </div>
-                                    </FormSplitLayout>
-                                </FormTabsContent>
+                                    </FormTabsContent>
 
                                 <FormTabsContent value="manufacturing" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin">
                                     <ProductManufacturingTab
@@ -783,8 +768,17 @@ export function ProductForm({ sidebar, open, onOpenChange, initialData, onSucces
                                     />
                                 </FormTabsContent>
                             </fieldset>
-                        </FormTabs>
-                    </SkeletonShell>
+                            </FormTabs>
+                        </div>
+
+                        {/* Barra Lateral de Actividad persistente */}
+                        {!!initialData?.id && (
+                            <aside className="w-72 border-l flex flex-col pt-4 hidden lg:flex shrink-0 bg-background/50">
+                                <ActivitySidebar entityId={initialData.id.toString()} entityType="product" />
+                            </aside>
+                        )}
+                    </div>
+                </SkeletonShell>
                 </form>
             </Form>
 

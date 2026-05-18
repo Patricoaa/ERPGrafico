@@ -19,7 +19,7 @@ import {
 import { Switch } from "@/components/ui/switch"
 import { cn } from "@/lib/utils"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
-import { BaseModal, LabeledInput, LabeledSelect, FormTabs, FormTabsContent, FormSection, FormSplitLayout, type FormTabItem, FormFooter, DatePicker, LabeledContainer } from "@/components/shared"
+import { BaseModal, LabeledInput, LabeledSelect, FormTabs, FormTabsContent, FormSection, type FormTabItem, FormFooter, DatePicker, LabeledContainer } from "@/components/shared"
 
 export const employeeSchema = z.object({
     contact: z.string().min(1, "Contacto requerido"),
@@ -283,21 +283,24 @@ export function EmployeeFormModal({ open, onOpenChange, employee, onSaved, trigg
         >
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit, onSubmitError)} className="flex-1 w-full h-full flex flex-col overflow-visible min-h-0">
-                    <FormTabs
-                        items={tabItems}
-                        value={activeTab}
-                        onValueChange={setActiveTab}
-                        orientation="vertical"
-                        className="flex-1"
-                        contentClassName="bg-transparent"
-                    >
-                        <fieldset disabled={saving} className="flex-1 min-w-0 transition-opacity disabled:opacity-75 flex flex-col h-full min-h-0">
-                            <FormTabsContent value="contratacion" className="h-full w-full flex-1 flex flex-col m-0 p-0 border-0 outline-none overflow-hidden">
-                                <FormSplitLayout
-                                    sidebar={employee?.id ? <ActivitySidebar entityId={employee.id} entityType="employee" /> : undefined}
-                                    showSidebar={!!employee?.id}
-                                >
-                                    <div className="space-y-8 pr-2 pb-8">
+                    <div className="flex-1 flex overflow-hidden min-h-[400px] w-full">
+                        {/* Contenido Principal con Pestañas Horizontales */}
+                        <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
+                            <FormTabs
+                                items={tabItems}
+                                value={activeTab}
+                                onValueChange={setActiveTab}
+                                orientation="horizontal"
+                                variant="underline"
+                                className="flex-1"
+                                contentClassName="bg-transparent"
+                            >
+                                <fieldset disabled={saving} className="flex-1 min-w-0 transition-opacity disabled:opacity-75 flex flex-col h-full min-h-0">
+                                    <FormTabsContent
+                                        value="contratacion"
+                                        className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin"
+                                    >
+                                        <div className="space-y-8">
                                         <div className="grid grid-cols-4 gap-6 items-start">
                                             <div className="col-span-4">
                                                 <FormField
@@ -397,8 +400,7 @@ export function EmployeeFormModal({ open, onOpenChange, employee, onSaved, trigg
                                             </div>
                                         </div>
                                     </div>
-                                </FormSplitLayout>
-                            </FormTabsContent>
+                                </FormTabsContent>
                             <FormTabsContent value="jornada" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin space-y-12">
                                 <div className="space-y-8">
                                     <FormSection title="Detalles de Jornada" icon={CalendarCheck2} />
@@ -581,7 +583,16 @@ export function EmployeeFormModal({ open, onOpenChange, employee, onSaved, trigg
                                 </div>
                             </FormTabsContent>
                         </fieldset>
-                    </FormTabs>
+                            </FormTabs>
+                        </div>
+
+                        {/* Barra Lateral de Actividad persistente */}
+                        {!!employee?.id && (
+                            <aside className="w-72 border-l flex flex-col pt-4 hidden lg:flex shrink-0 bg-background/50">
+                                <ActivitySidebar entityId={employee.id} entityType="employee" />
+                            </aside>
+                        )}
+                    </div>
                 </form>
             </Form>
         </BaseModal>
