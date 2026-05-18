@@ -13,7 +13,7 @@ import { CardSkeleton, FormSkeleton } from "@/components/shared"
 export default function ProfilePage() {
     const searchParams = useSearchParams()
     const activeTab = searchParams.get("tab") || "account"
-    const activeSubTab = searchParams.get("subtab") || "employee"
+    const activeSubTab = searchParams.get("subtab") || (activeTab === "account" ? "preferences" : "employee")
     const [profile, setProfile] = useState<MyProfile | null>(null)
     const [loading, setLoading] = useState(true)
     const [panelOpen, setPanelOpen] = useState(true)
@@ -45,7 +45,16 @@ export default function ProfilePage() {
     const isPartner = contactDetail?.is_partner
 
     const tabs = [
-        { value: "account", label: "Cuenta", iconName: "user-cog", href: "/profile?tab=account" },
+        { 
+            value: "account", 
+            label: "Cuenta", 
+            iconName: "user-cog", 
+            href: "/profile?tab=account&subtab=preferences",
+            subTabs: [
+                { value: "preferences", label: "Preferencias", iconName: "sliders", href: "/profile?tab=account&subtab=preferences" },
+                { value: "security", label: "Seguridad", iconName: "shield-check", href: "/profile?tab=account&subtab=security" },
+            ]
+        },
         { 
             value: "personal", 
             label: "Personal", 
@@ -92,7 +101,7 @@ export default function ProfilePage() {
     const navigation = {
         tabs,
         activeValue: activeTab,
-        subActiveValue: activeTab === "personal" ? activeSubTab : undefined
+        subActiveValue: (activeTab === "personal" || activeTab === "account") ? activeSubTab : undefined
     }
 
     return (

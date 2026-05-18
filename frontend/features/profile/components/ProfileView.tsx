@@ -26,7 +26,7 @@ import {
     Loader2, User, ShieldCheck, KeyRound, Mail, BadgeCheck,
     Building2, Briefcase, Calendar, CreditCard, Wallet,
     FileDown, Download, Eye, Clock, CheckCircle2, FileText,
-    ChevronDown, ChevronRight
+    ChevronDown, ChevronRight, Sun, Moon, Monitor
 } from "lucide-react"
 import { EmptyState, LabeledInput } from "@/components/shared"
 import { EmployeePayrollPreview } from "./EmployeePayrollPreview"
@@ -34,6 +34,8 @@ import { PartnerProfileTab } from "./PartnerProfileTab"
 import { DataCell, createActionsColumn } from '@/components/shared'
 import { CardSkeleton } from "@/components/shared"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
+import { useTheme } from "next-themes"
+import { useThemeSync } from "../hooks/useThemeSync"
 
 // --- Schemas ---
 const passwordSchema = z.object({
@@ -126,7 +128,7 @@ export function ProfileView({ activeTab, activeSubTab = "employee", initialProfi
         <Tabs value={activeTab} className="space-y-4">
             <div className="pt-0">
                 <TabsContent value="account" className="mt-0 outline-none space-y-6">
-                    <AccountTab user={profile.user} />
+                    <AccountTab user={profile.user} activeSubTab={activeSubTab} />
                 </TabsContent>
 
                 <TabsContent value="personal" className="mt-0 outline-none space-y-6">
@@ -154,23 +156,113 @@ export function ProfileView({ activeTab, activeSubTab = "employee", initialProfi
 // ============================================
 // TAB 1: ACCOUNT
 // ============================================
-function AccountTab({ user }: { user: MyProfile['user'] }) {
+function AccountTab({ user, activeSubTab }: { user: MyProfile['user']; activeSubTab?: string }) {
     const systemRoles = ['ADMIN', 'MANAGER', 'OPERATOR', 'READ_ONLY']
     const primaryRole = user.groups?.find(g => systemRoles.includes(g)) || 'Sin Rol'
     const functionalGroups = user.groups?.filter(g => !systemRoles.includes(g)) || []
 
     return (
         <div className="w-full space-y-8">
-            {/* Password Change Card */}
-            <FadeIn delay={0.1} yOffset={10}>
-                <PasswordChangeCard />
-            </FadeIn>
+            {activeSubTab === "preferences" && (
+                <FadeIn delay={0.1} yOffset={10}>
+                    <ThemeSelectionCard />
+                </FadeIn>
+            )}
 
-            {/* POS PIN Change Card */}
-            <FadeIn delay={0.2} yOffset={10}>
-                <PinChangeCard />
-            </FadeIn>
+            {activeSubTab === "security" && (
+                <>
+                    {/* Password Change Card */}
+                    <FadeIn delay={0.1} yOffset={10}>
+                        <PasswordChangeCard />
+                    </FadeIn>
+
+                    {/* POS PIN Change Card */}
+                    <FadeIn delay={0.2} yOffset={10}>
+                        <PinChangeCard />
+                    </FadeIn>
+                </>
+            )}
         </div>
+    )
+}
+
+function ThemeSelectionCard() {
+    const { theme } = useTheme()
+    const { changeTheme, isSyncing } = useThemeSync()
+
+    return (
+        <Card className="border-2 overflow-hidden relative rounded-xl">
+            <div className="px-4 py-3 border-b flex justify-between items-center">
+                <div className="flex items-center gap-3">
+                    <Monitor className="h-5 w-5 text-primary" />
+                    <div>
+                        <h3 className="text-sm font-bold tracking-tight">Tema & Apariencia</h3>
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-black">
+                            Personalice su entorno de trabajo visual
+                        </p>
+                    </div>
+                </div>
+                {isSyncing && (
+                    <span className="text-[9px] uppercase tracking-widest font-black text-primary animate-pulse">
+                        Sincronizando...
+                    </span>
+                )}
+            </div>
+            <CardContent className="p-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* Opción Claro */}
+                    <div
+                        onClick={() => changeTheme('light')}
+                        className={cn(
+                            "cursor-pointer border-2 p-5 rounded-xl flex flex-col items-center justify-center gap-3 transition-all duration-normal ease-premium",
+                            theme === 'light'
+                                ? "border-primary bg-primary/5 scale-[1.01] shadow-sm"
+                                : "border-border hover:border-muted-foreground/30 bg-muted/5"
+                        )}
+                    >
+                        <Sun className={cn("h-8 w-8 transition-transform duration-normal ease-premium", theme === 'light' ? "text-amber-500 scale-110" : "text-muted-foreground")} />
+                        <div className="text-center space-y-1">
+                            <span className="font-black text-xs uppercase tracking-wider block">Modo Claro</span>
+                            <span className="text-[9px] text-muted-foreground block font-bold leading-snug">Colores limpios y legibilidad óptima para luz diurna</span>
+                        </div>
+                    </div>
+
+                    {/* Opción Oscuro */}
+                    <div
+                        onClick={() => changeTheme('dark')}
+                        className={cn(
+                            "cursor-pointer border-2 p-5 rounded-xl flex flex-col items-center justify-center gap-3 transition-all duration-normal ease-premium",
+                            theme === 'dark'
+                                ? "border-primary bg-primary/5 scale-[1.01] shadow-sm"
+                                : "border-border hover:border-muted-foreground/30 bg-muted/5"
+                        )}
+                    >
+                        <Moon className={cn("h-8 w-8 transition-transform duration-normal ease-premium", theme === 'dark' ? "text-primary scale-110" : "text-muted-foreground")} />
+                        <div className="text-center space-y-1">
+                            <span className="font-black text-xs uppercase tracking-wider block">Modo Oscuro</span>
+                            <span className="text-[9px] text-muted-foreground block font-bold leading-snug">Gris industrial desaturado para reducir fatiga visual</span>
+                        </div>
+                    </div>
+
+                    {/* Opción Sistema */}
+                    <div
+                        onClick={() => changeTheme('system')}
+                        className={cn(
+                            "cursor-pointer border-2 p-5 rounded-xl flex flex-col items-center justify-center gap-3 transition-all duration-normal ease-premium",
+                            theme === 'system'
+                                ? "border-primary bg-primary/5 scale-[1.01] shadow-sm"
+                                : "border-border hover:border-muted-foreground/30 bg-muted/5"
+                        )}
+                    >
+                        <Monitor className={cn("h-8 w-8 transition-transform duration-normal ease-premium", theme === 'system' ? "text-primary scale-110" : "text-muted-foreground")} />
+                        <div className="text-center space-y-1">
+                            <span className="font-black text-xs uppercase tracking-wider block">Preferencia del Sistema</span>
+                            <span className="text-[9px] text-muted-foreground block font-bold leading-snug">Sincroniza automáticamente según su sistema operativo</span>
+                        </div>
+                    </div>
+                </div>
+            </CardContent>
+        </Card>
     )
 }
 

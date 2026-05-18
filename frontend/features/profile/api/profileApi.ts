@@ -6,6 +6,11 @@ export async function getMyProfile(): Promise<MyProfile> {
   return res.data
 }
 
+export async function updateThemePreference(theme: 'light' | 'dark' | 'system'): Promise<MyProfile['user']> {
+  const res = await api.patch('/core/auth/me/', { theme })
+  return res.data
+}
+
 export async function getEmployeePayrollPreview(payrollId: number | string): Promise<any> {
     const res = await api.get(`/core/auth/my-profile/payrolls/${payrollId}/preview/`)
     return res.data

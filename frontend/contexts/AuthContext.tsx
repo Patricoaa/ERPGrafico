@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import api from "@/lib/api";
+import { useTheme } from "next-themes";
 
 interface User {
     id: number;
@@ -13,6 +14,7 @@ interface User {
     is_superuser: boolean;
     groups: string[];
     permissions: string[];
+    theme: 'light' | 'dark' | 'system';
 }
 
 interface AuthContextType {
@@ -22,6 +24,7 @@ interface AuthContextType {
     login: (token: string) => Promise<void>;
     logout: () => void;
     hasPermission: (permission: string) => boolean;
+    updateUser: (updatedFields: Partial<User>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -32,6 +35,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [isLoading, setIsLoading] = useState(true);
     const router = useRouter();
     const pathname = usePathname();
+    const { setTheme } = useTheme();
 
     const fetchUser = async () => {
         try {
@@ -47,6 +51,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 const userData = res.data;
                 setUser(userData);
                 setIsAuthenticated(true);
+                
+                // Automatically synchronize theme with server-persisted preference
+                if (userData.theme) {
+                    setTheme(userData.theme);
+                }
             } else {
                 localStorage.removeItem("access_token");
                 localStorage.removeItem("refresh_token");
@@ -92,8 +101,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return user.permissions?.includes(permission) || false;
     };
 
+    const updateUser = (updatedFields: Partial<User>) => {
+        setUser(prev => prev ? { ...prev, ...updatedFields } : null);
+    };
+
     return (
-        <AuthContext.Provider value={{ user, isAuthenticated, isLoading, login, logout, hasPermission }}>
+        <AuthContext.Provider value={{ user, isAuthenticated, isLoading, login, logout, hasPermission, updateUser }}>
             {children}
         </AuthContext.Provider>
     );

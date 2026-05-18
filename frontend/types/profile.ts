@@ -11,6 +11,7 @@ export interface ProfileUser {
   groups: string[]
   permissions: string[]
   contact: number | null
+  theme: 'light' | 'dark' | 'system'
 }
 
 export interface MyProfile {

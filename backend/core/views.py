@@ -74,6 +74,23 @@ class CurrentUserView(APIView):
         serializer = UserSerializer(request.user)
         return Response(serializer.data)
 
+    def patch(self, request):
+        user = request.user
+        serializer = UserSerializer(user, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        # Log visual preference updates in system log
+        if 'theme' in request.data:
+            ActionLoggingService.log_action(
+                user=user,
+                action_type=ActionLog.Type.SETTINGS_CHANGE,
+                description=f"Usuario {user.username} cambió su preferencia de tema a '{request.data['theme']}'.",
+                request=request
+            )
+
+        return Response(serializer.data)
+
 
 class MyProfileView(APIView):
     """Returns the authenticated user's full profile: user data, linked employee, payrolls, advances, and payments."""
