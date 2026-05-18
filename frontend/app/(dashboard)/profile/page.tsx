@@ -96,14 +96,16 @@ export default function ProfilePage() {
     }
 
     return (
-        <PageContainer>
-            <PageHeader title={title} description={description} iconName={iconName} variant="minimal" navigation={navigation} />
+        <>
+            <PageContainer>
+                <PageHeader title={title} description={description} iconName={iconName} variant="minimal" navigation={navigation} />
 
-            <div className="pt-4">
-                <ProfileView activeTab={activeTab} activeSubTab={activeSubTab} initialProfile={profile ?? undefined} />
-            </div>
+                <div className="pt-4">
+                    <ProfileView activeTab={activeTab} activeSubTab={activeSubTab} initialProfile={profile ?? undefined} />
+                </div>
+            </PageContainer>
 
             <ProfileSidePanel profile={profile} open={panelOpen} onOpenChange={setPanelOpen} />
-        </PageContainer>
+        </>
     )
 }

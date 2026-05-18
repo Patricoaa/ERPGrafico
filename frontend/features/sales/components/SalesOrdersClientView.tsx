@@ -4,7 +4,7 @@ import { useState, useEffect, lazy, Suspense } from "react"
 import api from "@/lib/api"
 import { useVatRate } from "@/hooks/useVatRate"
 import { SalesOrdersView } from "./SalesOrdersView"
-import { FormSkeleton } from "@/components/shared"
+import { FormSkeleton, FadeIn } from "@/components/shared"
 import { SaleOrder, SaleOrderLine } from "../types"
 import { Invoice } from "@/features/billing/types"
 
@@ -41,7 +41,9 @@ export function SalesOrdersClientView({ viewMode, isCreateModalOpen, setCreateMo
 
     return (
         <>
-            <SalesOrdersView viewMode={viewMode} />
+            <FadeIn key={viewMode}>
+                <SalesOrdersView viewMode={viewMode} />
+            </FadeIn>
 
             {/* Modals & Forms */}
             {(payingOrder || checkoutData) && (

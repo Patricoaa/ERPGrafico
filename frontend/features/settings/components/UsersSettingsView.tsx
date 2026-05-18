@@ -8,6 +8,7 @@ import { DataTableColumnHeader } from '@/components/shared'
 import { DataCell, createActionsColumn } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
 import { StatusBadge } from "@/components/shared/StatusBadge"
+import { FadeIn } from "@/components/shared"
 import { Edit } from "lucide-react"
 import { UserForm } from "@/features/users/components/UserForm"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
@@ -171,46 +172,48 @@ export function UsersSettingsView({ activeTab }: UsersSettingsViewProps) {
     return (
         <div className="pt-4">
             <Tabs value={activeTab} className="space-y-4">
-                <TabsContent value="users" className="mt-0 outline-none space-y-4">
-                    <DataTable
-                        columns={columns}
-                        data={users}
-                        variant="embedded"
-                        isLoading={isLoading}
-                        globalFilterFields={["username", "email", "first_name", "last_name"]}
-                        searchPlaceholder="Buscar usuario por nombre, email o username..."
-                        useAdvancedFilter={true}
-                        facetedFilters={roleFilters}
-                        createAction={usersCreateAction}
-                    />
-                    {isUserModalOpen && (
-                        <UserForm
-                            open={isUserModalOpen}
-                            onOpenChange={(open) => {
-                                setIsUserModalOpen(open)
-                                if (!open) {
+                <FadeIn key={activeTab}>
+                    <TabsContent value="users" className="mt-0 outline-none space-y-4">
+                        <DataTable
+                            columns={columns}
+                            data={users}
+                            variant="embedded"
+                            isLoading={isLoading}
+                            globalFilterFields={["username", "email", "first_name", "last_name"]}
+                            searchPlaceholder="Buscar usuario por nombre, email o username..."
+                            useAdvancedFilter={true}
+                            facetedFilters={roleFilters}
+                            createAction={usersCreateAction}
+                        />
+                        {isUserModalOpen && (
+                            <UserForm
+                                open={isUserModalOpen}
+                                onOpenChange={(open) => {
+                                    setIsUserModalOpen(open)
+                                    if (!open) {
+                                        setUserToEdit(null)
+                                        clearSelection()
+                                    }
+                                }}
+                                initialData={userToEdit || undefined}
+                                onSuccess={() => {
+                                    refetch()
+                                    setIsUserModalOpen(false)
                                     setUserToEdit(null)
                                     clearSelection()
-                                }
-                            }}
-                            initialData={userToEdit || undefined}
-                            onSuccess={() => {
-                                refetch()
-                                setIsUserModalOpen(false)
-                                setUserToEdit(null)
-                                clearSelection()
-                            }}
-                        />
-                    )}
-                </TabsContent>
+                                }}
+                            />
+                        )}
+                    </TabsContent>
 
-                <TabsContent value="groups" className="mt-0 outline-none">
-                    <GroupManagement
-                        externalOpen={isGroupModalOpen}
-                        onExternalOpenChange={setIsGroupModalOpen}
-                        createAction={groupsCreateAction}
-                    />
-                </TabsContent>
+                    <TabsContent value="groups" className="mt-0 outline-none">
+                        <GroupManagement
+                            externalOpen={isGroupModalOpen}
+                            onExternalOpenChange={setIsGroupModalOpen}
+                            createAction={groupsCreateAction}
+                        />
+                    </TabsContent>
+                </FadeIn>
             </Tabs>
         </div>
     )

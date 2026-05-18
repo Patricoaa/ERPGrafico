@@ -50,7 +50,7 @@ interface PurchasingOrdersClientViewProps {
 }
 
 import { usePurchasingOrders, usePurchasingNotes } from "@/features/purchasing/hooks/usePurchasing"
-import { SmartSearchBar, useSmartSearch } from "@/components/shared"
+import { SmartSearchBar, useSmartSearch, FadeIn } from "@/components/shared"
 import { purchaseOrderSearchDef } from "@/features/purchasing/searchDef"
 
 export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, createAction }: PurchasingOrdersClientViewProps) {
@@ -401,30 +401,32 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
             )}
 
             <Tabs value={viewMode} className="w-full">
-                <DataTable
-                    columns={(viewMode === 'orders' ? columns : noteColumns) as any}
-                    data={(viewMode === 'orders' ? filteredOrders : filteredNotes) as any}
-                    onRowClick={(row: any) => toggleSelection(row.id)}
-                    variant="embedded"
-                    isLoading={viewMode === 'orders' ? isLoadingOrders : isLoadingNotes}
-                    currentView={currentView}
-                    onViewChange={handleViewChange}
-                    viewOptions={viewOptions}
-                    leftAction={<SmartSearchBar searchDef={purchaseOrderSearchDef} placeholder="Buscar por proveedor..." className="w-full" />}
-                    showToolbarSort={true}
-                    renderCustomView={isCustomView ? createDomainCardView(
-                        viewMode === 'orders' ? 'purchasing.purchaseorder' : 'billing.invoice',
-                        {
-                            onRowClick: (data) => toggleSelection(data.id),
-                            isSelected: (data) => viewMode === 'orders'
-                                ? hubConfig?.orderId === data.id
-                                : hubConfig?.invoiceId === data.id,
-                            isHubOpen,
-                        }
-                    ) : undefined}
-                    renderLoadingView={isCustomView ? createCardLoadingView('single-column') : undefined}
-                    createAction={createAction}
-                />
+                <FadeIn key={viewMode + "_" + currentView}>
+                    <DataTable
+                        columns={(viewMode === 'orders' ? columns : noteColumns) as any}
+                        data={(viewMode === 'orders' ? filteredOrders : filteredNotes) as any}
+                        onRowClick={(row: any) => toggleSelection(row.id)}
+                        variant="embedded"
+                        isLoading={viewMode === 'orders' ? isLoadingOrders : isLoadingNotes}
+                        currentView={currentView}
+                        onViewChange={handleViewChange}
+                        viewOptions={viewOptions}
+                        leftAction={<SmartSearchBar searchDef={purchaseOrderSearchDef} placeholder="Buscar por proveedor..." className="w-full" />}
+                        showToolbarSort={true}
+                        renderCustomView={isCustomView ? createDomainCardView(
+                            viewMode === 'orders' ? 'purchasing.purchaseorder' : 'billing.invoice',
+                            {
+                                onRowClick: (data) => toggleSelection(data.id),
+                                isSelected: (data) => viewMode === 'orders'
+                                    ? hubConfig?.orderId === data.id
+                                    : hubConfig?.invoiceId === data.id,
+                                isHubOpen,
+                            }
+                        ) : undefined}
+                        renderLoadingView={isCustomView ? createCardLoadingView('single-column') : undefined}
+                        createAction={createAction}
+                    />
+                </FadeIn>
             </Tabs>
 
             {

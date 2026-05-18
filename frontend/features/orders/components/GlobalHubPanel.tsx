@@ -8,10 +8,9 @@ import { ActionCategory } from "@/features/orders/components/ActionCategory"
 import { saleOrderActions } from '@/features/sales/actions'
 import { purchaseOrderActions } from '@/features/purchasing/actions'
 import { useOrderHubData } from "@/hooks/useOrderHubData"
-import { motion, AnimatePresence } from "framer-motion"
 import { cn } from "@/lib/utils"
-
-import { LucideIcon } from "lucide-react"
+import { LucideIcon, LayoutGrid } from "lucide-react"
+import { CollapsibleSheet } from "@/components/shared"
 
 export function GlobalHubPanel() {
     const { isHubOpen, hubConfig, closeHub, actionEngineRef, isHubEffectivelyOpen } = useHubPanel()
@@ -62,35 +61,28 @@ export function GlobalHubPanel() {
                 </div>
             )}
 
-            <AnimatePresence mode="wait">
-                {/* Hub Panel (Right/Fixed Overlay) */}
-                {showPanel && (
-                    <motion.div 
-                        key="global-hub-fixed-panel"
-                        ref={panelRef}
-                        initial={{ x: "120%", opacity: 0 }}
-                        animate={{ x: 0, opacity: 1 }}
-                        exit={{ x: "120%", opacity: 0 }}
-                        transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                        className={cn(
-                            "fixed top-20 h-[calc(100vh-6rem)] w-[360px] max-w-[calc(100vw-2rem)] z-[60] border border-white/5 bg-sidebar dark flex flex-col pointer-events-auto rounded-lg shadow-2xl overflow-hidden transition-all duration-500 ease-[var(--ease-premium)]",
-                            isInboxOpen ? "right-[calc(320px+2rem)]" : "right-4"
-                        )}
-                    >
-                        {hubConfig && (
-                            <OrderHubPanel
-                                orderId={hubConfig.orderId}
-                                invoiceId={hubConfig.invoiceId}
-                                type={hubConfig.type}
-                                onClose={closeHub}
-                                onActionSuccess={hubConfig.onActionSuccess}
-                                posSessionId={hubConfig.posSessionId}
-                                showHeader={true}
-                            />
-                        )}
-                    </motion.div>
+            <CollapsibleSheet
+                sheetId="global-hub-panel"
+                open={showPanel}
+                onOpenChange={(open) => !open && closeHub()}
+                tabLabel="HUB"
+                tabIcon={LayoutGrid}
+                variant="global"
+                fullWidth={320}
+                priority={10}
+            >
+                {hubConfig && (
+                    <OrderHubPanel
+                        orderId={hubConfig.orderId}
+                        invoiceId={hubConfig.invoiceId}
+                        type={hubConfig.type}
+                        onClose={closeHub}
+                        onActionSuccess={hubConfig.onActionSuccess}
+                        posSessionId={hubConfig.posSessionId}
+                        showHeader={true}
+                    />
                 )}
-            </AnimatePresence>
+            </CollapsibleSheet>
         </>
     )
 }

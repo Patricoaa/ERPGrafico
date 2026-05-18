@@ -23,9 +23,22 @@ function SheetClose({
 }
 
 function SheetPortal({
+  container,
   ...props
-}: React.ComponentProps<typeof SheetPrimitive.Portal>) {
-  return <SheetPrimitive.Portal data-slot="sheet-portal" {...props} />
+}: React.ComponentProps<typeof SheetPrimitive.Portal> & { container?: HTMLElement }) {
+  const [target, setTarget] = React.useState<HTMLElement | null>(null)
+
+  React.useEffect(() => {
+    setTarget(document.getElementById("module-sheets-portal-container") || document.body)
+  }, [])
+
+  return (
+    <SheetPrimitive.Portal 
+      container={container || target || undefined} 
+      data-slot="sheet-portal" 
+      {...props} 
+    />
+  )
 }
 
 function SheetOverlay({

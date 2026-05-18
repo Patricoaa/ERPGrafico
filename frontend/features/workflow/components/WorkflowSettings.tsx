@@ -14,7 +14,7 @@ import {
     Settings, AlertCircle, CheckCircle2, User, Users, Loader2,
     CalendarClock, BellRing, UserCheck,
 } from "lucide-react"
-import { Chip } from "@/components/shared"
+import { Chip, FadeIn } from "@/components/shared"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
@@ -611,95 +611,96 @@ export function WorkflowSettings({ activeTab }: WorkflowSettingsProps) {
     return (
         <div className="space-y-4">
             <Tabs value={activeTab} className="space-y-4">
-
-                <TabsContent value="approvals">
-                    <div className="grid gap-2">
-                        {TASK_TYPES.map((type) => (
-                            <AssignmentRuleRow key={type.id} taskType={type} rule={ruleByType[type.id]} />
-                        ))}
-                    </div>
-                    <Card className="border-dashed border-2 bg-muted/5 mt-4">
-                        <CardHeader>
-                            <CardTitle className="text-sm">Nota sobre Asignaciones</CardTitle>
-                            <CardDescription className="text-xs">
-                                Si se selecciona un <strong>Usuario</strong>, la tarea se asignará directamente a él.
-                                <br />
-                                Si se selecciona un <strong>Grupo</strong>, la tarea quedará en un &quot;Pool&quot; visible para todos los miembros de ese grupo, y cualquiera podrá tomarla.
-                            </CardDescription>
-                        </CardHeader>
-                    </Card>
-                </TabsContent>
-
-                <TabsContent value="tasks" className="space-y-6">
-                    <div>
-                        <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2 px-1">Tareas por Etapa (HUB)</h4>
+                <FadeIn key={activeTab}>
+                    <TabsContent value="approvals">
                         <div className="grid gap-2">
-                            {HUB_TASK_TYPES.map((type) => (
+                            {TASK_TYPES.map((type) => (
                                 <AssignmentRuleRow key={type.id} taskType={type} rule={ruleByType[type.id]} />
                             ))}
                         </div>
-                    </div>
+                        <Card className="border-dashed border-2 bg-muted/5 mt-4">
+                            <CardHeader>
+                                <CardTitle className="text-sm">Nota sobre Asignaciones</CardTitle>
+                                <CardDescription className="text-xs">
+                                    Si se selecciona un <strong>Usuario</strong>, la tarea se asignará directamente a él.
+                                    <br />
+                                    Si se selecciona un <strong>Grupo</strong>, la tarea quedará en un &quot;Pool&quot; visible para todos los miembros de ese grupo, y cualquiera podrá tomarla.
+                                </CardDescription>
+                            </CardHeader>
+                        </Card>
+                    </TabsContent>
 
-                    <div className="pt-4 border-t border-border/50">
-                        <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2 px-1">Tareas Recurrentes mensuales</h4>
-                        <div className="grid gap-2">
-                            {RECURRENT_TASK_TYPES.map((type) => (
-                                <RecurrentRuleRow
+                    <TabsContent value="tasks" className="space-y-6">
+                        <div>
+                            <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2 px-1">Tareas por Etapa (HUB)</h4>
+                            <div className="grid gap-2">
+                                {HUB_TASK_TYPES.map((type) => (
+                                    <AssignmentRuleRow key={type.id} taskType={type} rule={ruleByType[type.id]} />
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="pt-4 border-t border-border/50">
+                            <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2 px-1">Tareas Recurrentes mensuales</h4>
+                            <div className="grid gap-2">
+                                {RECURRENT_TASK_TYPES.map((type) => (
+                                    <RecurrentRuleRow
+                                        key={type.id}
+                                        taskType={type}
+                                        rule={ruleByType[type.id]}
+                                        dayValue={recurrentSettings?.[type.dayField]}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+
+                        <Card className="border-dashed border-2 bg-muted/5 mt-4">
+                            <CardHeader className="py-4">
+                                <CardTitle className="text-xs">Automatización de Tareas</CardTitle>
+                                <CardDescription className="text-[10px]">
+                                    Las tareas se generan y completan automáticamente según el flujo del sistema.
+                                    <br />
+                                    Para tareas recurrentes, el <strong>Día Gen</strong> indica cuándo se creará la tarea para el periodo anterior.
+                                </CardDescription>
+                            </CardHeader>
+                        </Card>
+                    </TabsContent>
+
+                    <TabsContent value="notif" className="space-y-6">
+                        <div className="space-y-1 px-1">
+                            <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Reglas de Notificación</h4>
+                            <p className="text-xs text-muted-foreground">Configure quién recibe las alertas de campana para eventos clave del sistema.</p>
+                        </div>
+
+                        <div className="grid gap-4">
+                            {NOTIFICATION_TYPES.map((type) => (
+                                <NotificationRuleRow
                                     key={type.id}
-                                    taskType={type}
-                                    rule={ruleByType[type.id]}
-                                    dayValue={recurrentSettings?.[type.dayField]}
+                                    type={type}
+                                    rule={notifByType[type.id]}
+                                    recurrentSettings={recurrentSettings}
                                 />
                             ))}
                         </div>
-                    </div>
 
-                    <Card className="border-dashed border-2 bg-muted/5 mt-4">
-                        <CardHeader className="py-4">
-                            <CardTitle className="text-xs">Automatización de Tareas</CardTitle>
-                            <CardDescription className="text-[10px]">
-                                Las tareas se generan y completan automáticamente según el flujo del sistema.
-                                <br />
-                                Para tareas recurrentes, el <strong>Día Gen</strong> indica cuándo se creará la tarea para el periodo anterior.
-                            </CardDescription>
-                        </CardHeader>
-                    </Card>
-                </TabsContent>
-
-                <TabsContent value="notif" className="space-y-6">
-                    <div className="space-y-1 px-1">
-                        <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Reglas de Notificación</h4>
-                        <p className="text-xs text-muted-foreground">Configure quién recibe las alertas de campana para eventos clave del sistema.</p>
-                    </div>
-
-                    <div className="grid gap-4">
-                        {NOTIFICATION_TYPES.map((type) => (
-                            <NotificationRuleRow
-                                key={type.id}
-                                type={type}
-                                rule={notifByType[type.id]}
-                                recurrentSettings={recurrentSettings}
-                            />
-                        ))}
-                    </div>
-
-                    <Card className="border-dashed border-2 bg-muted/5 mt-4">
-                        <CardHeader className="py-4">
-                            <CardTitle className="text-xs flex items-center gap-2">
-                                <UserCheck className="h-4 w-4 text-primary" />
-                                Lógica de Notificaciones
-                            </CardTitle>
-                            <CardDescription className="text-[10px] space-y-2">
-                                <p>
-                                    Si activa <strong>Notificar Creador</strong>, el usuario que inició el proceso recibirá la respuesta (ej: el cajero que solicitó crédito).
-                                </p>
-                                <p>
-                                    Los <strong>Notificadores Extra</strong> permiten que supervisores o equipos completos (vía Grupos) estén al tanto de lo que sucede, ideal para monitoreo o auditoría.
-                                </p>
-                            </CardDescription>
-                        </CardHeader>
-                    </Card>
-                </TabsContent>
+                        <Card className="border-dashed border-2 bg-muted/5 mt-4">
+                            <CardHeader className="py-4">
+                                <CardTitle className="text-xs flex items-center gap-2">
+                                    <UserCheck className="h-4 w-4 text-primary" />
+                                    Lógica de Notificaciones
+                                </CardTitle>
+                                <CardDescription className="text-[10px] space-y-2">
+                                    <p>
+                                        Si activa <strong>Notificar Creador</strong>, el usuario que inició el proceso recibirá la respuesta (ej: el cajero que solicitó crédito).
+                                    </p>
+                                    <p>
+                                        Los <strong>Notificadores Extra</strong> permiten que supervisores o equipos completos (vía Grupos) estén al tanto de lo que sucede, ideal para monitoreo o auditoría.
+                                    </p>
+                                </CardDescription>
+                            </CardHeader>
+                        </Card>
+                    </TabsContent>
+                </FadeIn>
             </Tabs>
         </div>
     )

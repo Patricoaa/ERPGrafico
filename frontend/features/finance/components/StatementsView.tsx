@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react"
 import { TabsContent } from "@/components/ui/tabs"
 import { Card, CardContent } from "@/components/ui/card"
-import { TableSkeleton, MoneyDisplay } from "@/components/shared"
+import { TableSkeleton, MoneyDisplay, FadeIn } from "@/components/shared"
 import { PageContainer } from "@/components/shared"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
@@ -177,156 +177,158 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
     return (
         <PageContainer>
             <div className="max-w-5xl mx-auto w-full pt-4">
-                <TabsContent value="bs" className="mt-0 outline-none">
-                    {activeTab === "bs" && (
-                        <Card className="rounded-none shadow-2xl ring-1 ring-border bg-card shadow-xl border-t-primary overflow-hidden">
-                            <CardContent className="p-10 pt-10">
-                                <ReportHeader title="Situación Financiera" dateRange={date} />
-                                <RenderToolbar />
-                                {bsData ? (
-                                    <div className="space-y-10">
-                                        {!showComparison && renderBSDistribution()}
+                <FadeIn key={activeTab}>
+                    <TabsContent value="bs" className="mt-0 outline-none">
+                        {activeTab === "bs" && (
+                            <Card className="rounded-none shadow-2xl ring-1 ring-border bg-card border-t-primary overflow-hidden">
+                                <CardContent className="p-10 pt-10">
+                                    <ReportHeader title="Situación Financiera" dateRange={date} />
+                                    <RenderToolbar />
+                                    {bsData ? (
+                                        <div className="space-y-10">
+                                            {!showComparison && renderBSDistribution()}
+                                            <div className="space-y-8">
+                                                {(() => {
+                                                    const d = bsData as any;
+                                                    return (
+                                                        <>
+                                                            <ReportTable
+                                                                title="Activos"
+                                                                data={d.assets}
+                                                                totalLabel="Total Activos"
+                                                                totalValue={d.total_assets}
+                                                                totalValueComp={d.total_assets_comp}
+                                                                compPeriodLabel={compPeriodLabel}
+                                                                periodLabel={periodLabel}
+                                                                showComparison={showComparison}
+                                                                accentColor="success"
+                                                                embedded
+                                                            />
+                                                            <ReportTable
+                                                                title="Pasivos"
+                                                                data={d.liabilities}
+                                                                totalLabel="Total Pasivos"
+                                                                totalValue={d.total_liabilities}
+                                                                totalValueComp={d.total_liabilities_comp}
+                                                                compPeriodLabel={compPeriodLabel}
+                                                                periodLabel={periodLabel}
+                                                                showComparison={showComparison}
+                                                                accentColor="destructive"
+                                                                embedded
+                                                            />
+                                                            <ReportTable
+                                                                title="Patrimonio"
+                                                                data={d.equity}
+                                                                totalLabel="Total Patrimonio"
+                                                                totalValue={d.total_equity}
+                                                                totalValueComp={d.total_equity_comp}
+                                                                compPeriodLabel={compPeriodLabel}
+                                                                periodLabel={periodLabel}
+                                                                showComparison={showComparison}
+                                                                accentColor="primary"
+                                                                embedded
+                                                            />
+                                                        </>
+                                                    )
+                                                })()}
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="p-8">
+                                            <TableSkeleton rows={8} columns={4} />
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        )}
+                    </TabsContent>
+
+                    <TabsContent value="pl" className="mt-0 outline-none">
+                        {activeTab === "pl" && (
+                            <Card className="rounded-none shadow-2xl ring-1 ring-border bg-card border-t-success overflow-hidden">
+                                <CardContent className="p-10 pt-10">
+                                    <ReportHeader title="Estado de Resultados" dateRange={date} />
+                                    <RenderToolbar />
+                                    {plData ? (
                                         <div className="space-y-8">
                                             {(() => {
-                                                const d = bsData as any;
-                                                return (
-                                                    <>
+                                                const d = plData as any;
+                                                return (d.sections || []).map((section: any, idx: number) => (
+                                                    section.is_total ? (
+                                                        <div key={idx} className={cn(
+                                                            "py-6 px-4 flex justify-between items-center rounded-lg my-4 transition-colors",
+                                                            idx === (d.sections?.length || 0) - 1
+                                                                ? "bg-primary text-primary-foreground shadow-lg"
+                                                                : "bg-muted/50 border"
+                                                        )}>
+                                                            <span className="text-lg font-bold uppercase tracking-tight">{section.name}</span>
+                                                            <div className="flex space-x-12 items-center">
+                                                                <div className="text-right">
+                                                                    <div className={cn("text-[10px] uppercase font-bold opacity-70", idx === (d.sections?.length || 0) - 1 ? "text-primary-foreground" : "text-muted-foreground")}>{periodLabel || 'Actual'}</div>
+                                                                    <div className="text-2xl font-black font-mono">
+                                                                        <MoneyDisplay amount={section.total} digits={0} />
+                                                                    </div>
+                                                                </div>
+                                                                {showComparison && (
+                                                                    <div className={cn("text-right border-l pl-12", idx === (d.sections?.length || 0) - 1 ? "border-primary-foreground/30" : "border")}>
+                                                                        <div className={cn("text-[10px] uppercase font-bold opacity-70", idx === (d.sections?.length || 0) - 1 ? "text-primary-foreground" : "text-muted-foreground")}>{compPeriodLabel || 'Anterior'}</div>
+                                                                        <div className={cn("text-2xl font-black font-mono opacity-80", idx === (d.sections?.length || 0) - 1 ? "text-primary-foreground" : "")}>
+                                                                             <MoneyDisplay amount={section.total_comp} digits={0} />
+                                                                         </div>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    ) : (
                                                         <ReportTable
-                                                            title="Activos"
-                                                            data={d.assets}
-                                                            totalLabel="Total Activos"
-                                                            totalValue={d.total_assets}
-                                                            totalValueComp={d.total_assets_comp}
-                                                            compPeriodLabel={compPeriodLabel}
-                                                            periodLabel={periodLabel}
+                                                            key={idx}
+                                                            title={section.name}
+                                                            data={section.tree}
+                                                            totalLabel={`Total ${section.name}`}
+                                                            totalValue={section.total}
+                                                            totalValueComp={section.total_comp}
                                                             showComparison={showComparison}
-                                                            accentColor="success"
+                                                            accentColor={section.name.toLowerCase().includes('ingreso') ? 'success' : section.name.toLowerCase().includes('gasto') || section.name.toLowerCase().includes('costo') ? 'destructive' : 'primary'}
                                                             embedded
                                                         />
-                                                        <ReportTable
-                                                            title="Pasivos"
-                                                            data={d.liabilities}
-                                                            totalLabel="Total Pasivos"
-                                                            totalValue={d.total_liabilities}
-                                                            totalValueComp={d.total_liabilities_comp}
-                                                            compPeriodLabel={compPeriodLabel}
-                                                            periodLabel={periodLabel}
-                                                            showComparison={showComparison}
-                                                            accentColor="destructive"
-                                                            embedded
-                                                        />
-                                                        <ReportTable
-                                                            title="Patrimonio"
-                                                            data={d.equity}
-                                                            totalLabel="Total Patrimonio"
-                                                            totalValue={d.total_equity}
-                                                            totalValueComp={d.total_equity_comp}
-                                                            compPeriodLabel={compPeriodLabel}
-                                                            periodLabel={periodLabel}
-                                                            showComparison={showComparison}
-                                                            accentColor="primary"
-                                                            embedded
-                                                        />
-                                                    </>
-                                                )
+                                                    )
+                                                ))
                                             })()}
                                         </div>
-                                    </div>
-                                ) : (
-                                    <div className="p-8">
-                                        <TableSkeleton rows={8} columns={4} />
-                                    </div>
-                                )}
-                            </CardContent>
-                        </Card>
-                    )}
-                </TabsContent>
+                                    ) : (
+                                        <div className="p-8">
+                                            <TableSkeleton rows={8} columns={4} />
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        )}
+                    </TabsContent>
 
-                <TabsContent value="pl" className="mt-0 outline-none">
-                    {activeTab === "pl" && (
-                        <Card className="rounded-none shadow-2xl ring-1 ring-border bg-card shadow-xl border-t-success overflow-hidden">
-                            <CardContent className="p-10 pt-10">
-                                <ReportHeader title="Estado de Resultados" dateRange={date} />
-                                <RenderToolbar />
-                                {plData ? (
-                                    <div className="space-y-8">
-                                        {(() => {
-                                            const d = plData as any;
-                                            return (d.sections || []).map((section: any, idx: number) => (
-                                                section.is_total ? (
-                                                    <div key={idx} className={cn(
-                                                        "py-6 px-4 flex justify-between items-center rounded-lg my-4 transition-colors",
-                                                        idx === (d.sections?.length || 0) - 1
-                                                            ? "bg-primary text-primary-foreground shadow-lg"
-                                                            : "bg-muted/50 border"
-                                                    )}>
-                                                        <span className="text-lg font-bold uppercase tracking-tight">{section.name}</span>
-                                                        <div className="flex space-x-12 items-center">
-                                                            <div className="text-right">
-                                                                <div className={cn("text-[10px] uppercase font-bold opacity-70", idx === (d.sections?.length || 0) - 1 ? "text-primary-foreground" : "text-muted-foreground")}>{periodLabel || 'Actual'}</div>
-                                                                <div className="text-2xl font-black font-mono">
-                                                                    <MoneyDisplay amount={section.total} digits={0} />
-                                                                </div>
-                                                            </div>
-                                                            {showComparison && (
-                                                                <div className={cn("text-right border-l pl-12", idx === (d.sections?.length || 0) - 1 ? "border-primary-foreground/30" : "border")}>
-                                                                    <div className={cn("text-[10px] uppercase font-bold opacity-70", idx === (d.sections?.length || 0) - 1 ? "text-primary-foreground" : "text-muted-foreground")}>{compPeriodLabel || 'Anterior'}</div>
-                                                                    <div className={cn("text-2xl font-black font-mono opacity-80", idx === (d.sections?.length || 0) - 1 ? "text-primary-foreground" : "")}>
-                                                                         <MoneyDisplay amount={section.total_comp} digits={0} />
-                                                                     </div>
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                ) : (
-                                                    <ReportTable
-                                                        key={idx}
-                                                        title={section.name}
-                                                        data={section.tree}
-                                                        totalLabel={`Total ${section.name}`}
-                                                        totalValue={section.total}
-                                                        totalValueComp={section.total_comp}
-                                                        showComparison={showComparison}
-                                                        accentColor={section.name.toLowerCase().includes('ingreso') ? 'success' : section.name.toLowerCase().includes('gasto') || section.name.toLowerCase().includes('costo') ? 'destructive' : 'primary'}
-                                                        embedded
-                                                    />
-                                                )
-                                            ))
-                                        })()}
-                                    </div>
-                                ) : (
-                                    <div className="p-8">
-                                        <TableSkeleton rows={8} columns={4} />
-                                    </div>
-                                )}
-                            </CardContent>
-                        </Card>
-                    )}
-                </TabsContent>
-
-                <TabsContent value="cf" className="mt-0 outline-none">
-                    {activeTab === "cf" && (
-                        <Card className="rounded-none shadow-2xl ring-1 ring-border bg-card shadow-xl border-t-info overflow-hidden">
-                            <CardContent className="p-10 pt-10">
-                                <ReportHeader title="Estado de Flujo de Efectivo" dateRange={date} />
-                                <RenderToolbar />
-                                {cfData ? (
-                                    <CashFlowTable
-                                        data={cfData as any}
-                                        embedded
-                                        showComparison={showComparison}
-                                        periodLabel={periodLabel}
-                                        compPeriodLabel={compPeriodLabel}
-                                    />
-                                ) : (
-                                    <div className="p-8">
-                                        <TableSkeleton rows={8} columns={4} />
-                                    </div>
-                                )}
-                            </CardContent>
-                        </Card>
-                    )}
-                </TabsContent>
+                    <TabsContent value="cf" className="mt-0 outline-none">
+                        {activeTab === "cf" && (
+                            <Card className="rounded-none shadow-2xl ring-1 ring-border bg-card border-t-info overflow-hidden">
+                                <CardContent className="p-10 pt-10">
+                                    <ReportHeader title="Estado de Flujo de Efectivo" dateRange={date} />
+                                    <RenderToolbar />
+                                    {cfData ? (
+                                        <CashFlowTable
+                                            data={cfData as any}
+                                            embedded
+                                            showComparison={showComparison}
+                                            periodLabel={periodLabel}
+                                            compPeriodLabel={compPeriodLabel}
+                                        />
+                                    ) : (
+                                        <div className="p-8">
+                                            <TableSkeleton rows={8} columns={4} />
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        )}
+                    </TabsContent>
+                </FadeIn>
             </div>
 
             <MappingConfigSheet

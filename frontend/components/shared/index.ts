@@ -79,6 +79,9 @@ export * from './FormSection';
 // Loading States
 export * from './LoadingFallback';
 
+// Animations
+export * from './FadeIn';
+
 // Smart Search
 export { SmartSearchBar, useSmartSearch, useClientSearch } from './SmartSearchBar';
 export type { FilterState } from './SmartSearchBar';

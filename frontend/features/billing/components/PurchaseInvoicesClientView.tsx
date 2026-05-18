@@ -4,7 +4,7 @@ import { showApiError, getErrorMessage } from "@/lib/errors"
 import React, { useState } from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { ColumnDef } from "@tanstack/react-table"
-import { SmartSearchBar, useSmartSearch } from "@/components/shared"
+import { SmartSearchBar, useSmartSearch, FadeIn } from "@/components/shared"
 import { purchaseInvoiceSearchDef } from '../searchDef'
 import { FileBadge } from "lucide-react"
 import { formatCurrency } from "@/lib/money"
@@ -211,43 +211,45 @@ export function PurchaseInvoicesClientView() {
 
     return (
         <div className="space-y-4 px-1">
-            <DataTable
-                columns={columns}
-                data={documents}
-                isLoading={isLoading}
-                onRowClick={(row: Invoice) => {
-                    const isSelected = hubConfig?.invoiceId === row.id
-                    if (isSelected && isHubOpen) {
-                        closeHub()
-                    } else {
-                        openHub({
-                            orderId: row.purchase_order || null,
-                            invoiceId: ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(row.dte_type) ? row.id : null,
-                            type: 'purchase',
-                            onActionSuccess: fetchDocuments
-                        })
-                    }
-                }}
-                variant="embedded"
-                currentView={currentView}
-                onViewChange={handleViewChange}
-                viewOptions={viewOptions}
-                leftAction={<SmartSearchBar searchDef={purchaseInvoiceSearchDef} placeholder="Buscar facturas de compra..." className="w-80" />}
-                defaultPageSize={20}
-                renderCustomView={isCustomView ? createDomainCardView('billing.invoice', {
-                    onRowClick: (inv) => {
-                        const isSelected = hubConfig?.invoiceId === inv.id
+            <FadeIn key={currentView}>
+                <DataTable
+                    columns={columns}
+                    data={documents}
+                    isLoading={isLoading}
+                    onRowClick={(row: Invoice) => {
+                        const isSelected = hubConfig?.invoiceId === row.id
                         if (isSelected && isHubOpen) {
                             closeHub()
                         } else {
-                            openHub({ orderId: inv.purchase_order || null, invoiceId: inv.id, type: 'purchase', onActionSuccess: fetchDocuments })
+                            openHub({
+                                orderId: row.purchase_order || null,
+                                invoiceId: ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(row.dte_type) ? row.id : null,
+                                type: 'purchase',
+                                onActionSuccess: fetchDocuments
+                            })
                         }
-                    },
-                    isSelected: (inv) => hubConfig?.invoiceId === inv.id,
-                    isHubOpen,
-                }) : undefined}
-                renderLoadingView={isCustomView ? createCardLoadingView('single-column') : undefined}
-            />
+                    }}
+                    variant="embedded"
+                    currentView={currentView}
+                    onViewChange={handleViewChange}
+                    viewOptions={viewOptions}
+                    leftAction={<SmartSearchBar searchDef={purchaseInvoiceSearchDef} placeholder="Buscar facturas de compra..." className="w-80" />}
+                    defaultPageSize={20}
+                    renderCustomView={isCustomView ? createDomainCardView('billing.invoice', {
+                        onRowClick: (inv) => {
+                            const isSelected = hubConfig?.invoiceId === inv.id
+                            if (isSelected && isHubOpen) {
+                                closeHub()
+                            } else {
+                                openHub({ orderId: inv.purchase_order || null, invoiceId: inv.id, type: 'purchase', onActionSuccess: fetchDocuments })
+                            }
+                        },
+                        isSelected: (inv) => hubConfig?.invoiceId === inv.id,
+                        isHubOpen,
+                    }) : undefined}
+                    renderLoadingView={isCustomView ? createCardLoadingView('single-column') : undefined}
+                />
+            </FadeIn>
             {payingDoc && <PaymentModal open={!!payingDoc} onOpenChange={(open) => !open && setPayingDoc(null)} onConfirm={handlePayment} isPurchase={true} total={parseFloat(payingDoc.total)} pendingAmount={payingDoc.pending_amount ?? parseFloat(payingDoc.total)} hideDteFields={true} isRefund={payingDoc.dte_type === 'NOTA_CREDITO'} existingInvoice={{ dte_type: payingDoc.dte_type, number: payingDoc.number, document_attachment: null }} />}
             {receivingDoc && receivingDoc.purchase_order && <ReceiptModal open={!!receivingDoc} onOpenChange={(open) => !open && setReceivingDoc(null)} orderId={receivingDoc.purchase_order} onSuccess={fetchDocuments} isRefund={receivingDoc.dte_type === 'NOTA_CREDITO'} />}
             {notingDoc && <PurchaseNoteModal open={!!notingDoc} onOpenChange={(open) => !open && setNotingDoc(null)} orderId={notingDoc.purchase_order} orderNumber={notingDoc.purchase_order_number || notingDoc.purchase_order?.toString()} invoiceId={notingDoc.id} onSuccess={fetchDocuments} />}

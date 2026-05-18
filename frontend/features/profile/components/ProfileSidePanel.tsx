@@ -26,7 +26,7 @@ export function ProfileSidePanel({ profile, open = true, onOpenChange }: Profile
                 onOpenChange={handleOpenChange}
                 tabLabel="Perfil"
                 tabIcon={User}
-                fullWidth={360}
+                fullWidth={320}
             >
                 <div className="flex-1 overflow-y-auto overflow-x-hidden p-6">
                     <HubSkeleton />
@@ -62,7 +62,7 @@ export function ProfileSidePanel({ profile, open = true, onOpenChange }: Profile
             onOpenChange={handleOpenChange}
             tabLabel="Perfil"
             tabIcon={User}
-            fullWidth={360}
+            fullWidth={320}
         >
             <div className="flex-1 overflow-y-auto overflow-x-hidden text-foreground">
                 {/* Header / Avatar Area */}

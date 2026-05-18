@@ -3,6 +3,7 @@ import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { redirect } from "next/navigation"
 import { WarehouseList, MovementList, StockReport } from "@/features/inventory"
 import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
+import { FadeIn } from "@/components/shared"
 
 export const metadata: Metadata = {
     title: "Stock e Inventario | ERPGrafico",
@@ -26,29 +27,35 @@ export default async function UnifiedStockPage({ searchParams }: PageProps) {
         <div className="pt-2">
             <Tabs value={activeTab} className="space-y-4">
                 <TabsContent value="report" className="mt-0 outline-none">
-                    <StockReport />
+                    <FadeIn>
+                        <StockReport />
+                    </FadeIn>
                 </TabsContent>
                 <TabsContent value="movements" className="mt-0 outline-none">
-                    <MovementList
-                        externalOpen={activeTab === 'movements' && modal === 'adjustment'}
-                        createAction={
-                            <ToolbarCreateButton
-                                label="Nuevo Ajuste"
-                                href="/inventory/stock?tab=movements&modal=adjustment"
-                            />
-                        }
-                    />
+                    <FadeIn>
+                        <MovementList
+                            externalOpen={activeTab === 'movements' && modal === 'adjustment'}
+                            createAction={
+                                <ToolbarCreateButton
+                                    label="Nuevo Ajuste"
+                                    href="/inventory/stock?tab=movements&modal=adjustment"
+                                />
+                            }
+                        />
+                    </FadeIn>
                 </TabsContent>
                 <TabsContent value="warehouses" className="mt-0 outline-none">
-                    <WarehouseList
-                        externalOpen={activeTab === 'warehouses' && modal === 'new'}
-                        createAction={
-                            <ToolbarCreateButton
-                                label="Nuevo Almacén"
-                                href="/inventory/stock?tab=warehouses&modal=new"
-                            />
-                        }
-                    />
+                    <FadeIn>
+                        <WarehouseList
+                            externalOpen={activeTab === 'warehouses' && modal === 'new'}
+                            createAction={
+                                <ToolbarCreateButton
+                                    label="Nuevo Almacén"
+                                    href="/inventory/stock?tab=warehouses&modal=new"
+                                />
+                            }
+                        />
+                    </FadeIn>
                 </TabsContent>
             </Tabs>
         </div>
