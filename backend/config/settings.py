@@ -404,7 +404,36 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'production.tasks.notify_overdue_work_orders',
         'schedule': crontab(minute=15),          # Hourly at XX:15
     },
+
+    # ── Observability ────────────────────────────────────────────────────────
+    # Sends a liveness ping to Healthchecks.io (or compatible). No-op if
+    # HEALTHCHECK_PING_URL is unset. Ver docs/50-audit/observability/.
+    'observability_healthcheck_ping': {
+        'task': 'core.tasks.ping_healthcheck',
+        'schedule': crontab(minute='*/5'),       # Every 5 minutes
+    },
 }
+
+# ── Observability: Sentry (errores y trazas) ────────────────────────────────
+# Opt-in: si SENTRY_DSN no está definido, Sentry no se inicializa y no se envía
+# telemetría. Estrategia completa en docs/50-audit/observability/strategy.md.
+SENTRY_DSN = os.environ.get('SENTRY_DSN', '').strip()
+if SENTRY_DSN:
+    import sentry_sdk
+    from sentry_sdk.integrations.django import DjangoIntegration
+    from sentry_sdk.integrations.celery import CeleryIntegration
+    from sentry_sdk.integrations.redis import RedisIntegration
+
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        environment=os.environ.get('SENTRY_ENVIRONMENT', 'production' if not DEBUG else 'development'),
+        release=os.environ.get('GIT_HASH', 'unknown'),
+        integrations=[DjangoIntegration(), CeleryIntegration(), RedisIntegration()],
+        # Performance: bajo por defecto para no exceder el free tier
+        traces_sample_rate=float(os.environ.get('SENTRY_TRACES_SAMPLE_RATE', '0.05')),
+        # Privacidad: no enviar PII por defecto (emails, IPs, headers de auth)
+        send_default_pii=False,
+    )
 
 # --- TIME TRAVEL PATCH FOR TESTING ---
 # Para simular otra fecha, descomenta el bloque de abajo y cambia MOCK_DATE.

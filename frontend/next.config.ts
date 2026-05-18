@@ -49,5 +49,26 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+// Sentry: solo se aplica si SENTRY_DSN + SENTRY_ORG + SENTRY_PROJECT están definidos.
+// Sin esas vars (caso por defecto) el wrap es no-op y no requiere la dependencia.
+async function applySentry(config: NextConfig): Promise<NextConfig> {
+  if (!process.env.SENTRY_DSN || !process.env.SENTRY_ORG || !process.env.SENTRY_PROJECT) {
+    return config;
+  }
+  try {
+    const { withSentryConfig } = await import("@sentry/nextjs");
+    return withSentryConfig(config, {
+      org: process.env.SENTRY_ORG,
+      project: process.env.SENTRY_PROJECT,
+      authToken: process.env.SENTRY_AUTH_TOKEN,
+      silent: true,
+      widenClientFileUpload: true,
+      disableLogger: true,
+    });
+  } catch {
+    return config;
+  }
+}
+
+export default applySentry(nextConfig);
 

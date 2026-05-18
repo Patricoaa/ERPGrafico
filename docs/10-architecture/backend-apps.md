@@ -114,6 +114,65 @@ class SaleOrderViewSet(ModelViewSet):
 - Never edit an applied migration — add a new one.
 - See [playbooks/add-migration.md](../30-playbooks/add-migration.md).
 
+## Auditoría / historial (simple-history)
+
+La auditoría de cambios usa `django-simple-history`. Hay **dos formas** de activarla — elegir la correcta evita el error más común (`MultipleRegistrationsError` al duplicar registros).
+
+### Vía herencia (preferida para documentos transaccionales)
+
+`core/models/abstracts.py` define dos bases abstractas con history **ya incluida**:
+
+| Base abstracta | Hereda de | Qué aporta |
+|---|---|---|
+| `AuditedModel` | `TimeStampedModel` | `created_at`, `updated_at` + `history = HistoricalRecords(inherit=True)` |
+| `TransactionalDocument` | `AuditedModel` | Lo anterior + `number`, `status`, `notes`, `journal_entry`, totales |
+
+Cualquier modelo que extiende una de estas **ya está auditado** — no agregar `HistoricalRecords()` adicional. Cubre hoy: `Invoice`, `SaleOrder`, `SaleDelivery`, `SaleReturn`, `PurchaseOrder`, etc.
+
+```python
+# ✅ correcto — history viene heredada
+class Invoice(TransactionalDocument):
+    dte_type = models.CharField(...)
+    # NO declarar history aquí
+
+# ❌ duplicación → MultipleRegistrationsError en startup
+class Invoice(TransactionalDocument):
+    history = HistoricalRecords()  # ya existe vía herencia
+```
+
+### Vía declaración explícita (modelos no transaccionales)
+
+Para entidades que no son documentos transaccionales (catálogos, settings, masters) y quieren auditoría, declarar el campo localmente:
+
+```python
+from simple_history.models import HistoricalRecords
+
+class Product(models.Model):
+    name = models.CharField(...)
+    history = HistoricalRecords()
+```
+
+Apps que usan este patrón: `inventory`, `treasury`, `accounting`, `hr`, `contacts`, `production`, `tax`.
+
+### Cómo verificar si un modelo está auditado
+
+`grep HistoricalRecords` no es confiable porque puede venir por herencia. Verificar en runtime:
+
+```python
+from sales.models import SaleOrder
+hasattr(SaleOrder, 'history')                    # True si está auditado
+SaleOrder.history.model._meta.db_table           # nombre de la tabla histórica
+```
+
+### Consumidores
+
+- **UI**: `frontend/features/audit/components/ActivitySidebar.tsx` consume `useEntityHistory` y renderiza un timeline con diff campo a campo.
+- **Backend**: `core.views.GlobalAuditLogView` combina `ActionLog` (acciones privilegiadas) con los historiales por modelo.
+
+### Estrategia general
+
+Ver [docs/50-audit/observability/strategy.md](../50-audit/observability/strategy.md) para la decisión de arquitectura completa (audit log de negocio, SIEM, APM, analítica).
+
 ## Per-app quick reference
 
 | App | Key entities | Owns Celery? |
