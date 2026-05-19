@@ -88,7 +88,17 @@ export function DateRangeFilter({
                         )}
                     </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0 rounded-lg border-sidebar-border/30 overflow-hidden shadow-2xl" align="start">
+                <PopoverContent 
+                    className="w-auto p-0 rounded-lg border-sidebar-border/30 overflow-hidden shadow-2xl" 
+                    align="start"
+                    onInteractOutside={(e) => {
+                        // Prevent closing when clicking elements that get unmounted during navigation (like month arrows)
+                        const target = e.target as HTMLElement;
+                        if (target && !document.body.contains(target)) {
+                            e.preventDefault();
+                        }
+                    }}
+                >
                     <Calendar
                         initialFocus
                         mode="range"
@@ -97,6 +107,9 @@ export function DateRangeFilter({
                         onSelect={handleSelect}
                         numberOfMonths={2}
                         locale={es}
+                        captionLayout="dropdown"
+                        startMonth={new Date(new Date().getFullYear() - 10, 0)}
+                        endMonth={new Date(new Date().getFullYear() + 10, 11)}
                     />
                 </PopoverContent>
             </Popover>

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
+import Link from "next/link"
 import { toast } from "sonner"
 import { CreatePayrollModal, PayrollDetailSheet } from "@/features/hr"
 import { deletePayroll, paySalary, payPrevired, createAdvance } from '@/features/hr/api/hrApi'
@@ -11,8 +12,15 @@ import { DataTable } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { createActionsColumn, DataCell } from '@/components/shared'
 import { StatusBadge } from "@/components/shared/StatusBadge"
-import { Eye, Trash2, Coins, CreditCard, Wallet } from "lucide-react"
+import { Eye, Trash2, Coins, CreditCard, Wallet, FileText } from "lucide-react"
 import { PaymentModal } from "@/features/treasury"
+import { Button } from "@/components/ui/button"
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip"
 import { ToolbarCreateButton, SmartSearchBar, useSmartSearch } from "@/components/shared"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { usePayrolls } from "@/features/hr/hooks/usePayrolls"
@@ -21,7 +29,29 @@ import { payrollSearchDef } from "@/features/hr/searchDef"
 // Schema and dialog moved to features/hr/components/CreatePayrollDialog
 
 export default function PayrollsPage() {
-    const createAction = <ToolbarCreateButton label="Generar Liquidaciones" href="/hr/payrolls?modal=new" />
+    const createAction = (
+        <div className="flex items-center gap-2">
+            <ToolbarCreateButton label="Generar Liquidaciones" href="/hr/payrolls?modal=new" />
+            <TooltipProvider delayDuration={0}>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Link href="/hr/payrolls?action=generate_drafts" scroll={false}>
+                            <Button
+                                variant="outline"
+                                size="icon"
+                                className="h-9 w-9 p-0 bg-background hover:bg-muted"
+                            >
+                                <FileText className="h-4 w-4" />
+                            </Button>
+                        </Link>
+                    </TooltipTrigger>
+                    <TooltipContent side="top">
+                        Generar borradores
+                    </TooltipContent>
+                </Tooltip>
+            </TooltipProvider>
+        </div>
+    )
     const router = useRouter()
     const pathname = usePathname()
     const searchParams = useSearchParams()

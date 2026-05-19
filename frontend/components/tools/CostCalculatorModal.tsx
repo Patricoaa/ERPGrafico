@@ -12,7 +12,6 @@ import { SearchBar } from "@/features/pos/components/SearchBar"
 import { CategoryFilter } from "@/features/pos/components/CategoryFilter"
 import { toast } from "sonner"
 import { formatCurrency } from "@/lib/money"
-import { cn } from "@/lib/utils"
 import { resolveMediaUrl } from "@/lib/api"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
@@ -208,23 +207,18 @@ export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalP
     return (
         <Drawer
             open={open}
-            onOpenChange={handleOpenChangeProxy}
-            icon={Calculator}
-            title={
-                <div className="flex items-center gap-3">
-                    <span>Calculadora de Costos</span>
-                    <span className="bg-primary/10 text-primary border border-primary/20 gap-1 px-2 py-0 text-[10px] sm:text-xs font-bold animate-pulse shrink-0 uppercase tracking-widest h-5 rounded-sm flex items-center mt-1">
-                        <Info className="h-3 w-3 mr-1" />
-                        Modo Simulación
-                    </span>
-                </div>
-            }
+            onOpenChange={onOpenChange}
+
+            title="Calculadora de Costos"
             subtitle="Simulación rápida de materiales para determinar costos de producción"
+            icon={Calculator}
             side="bottom"
             boundary="embedded"
-            resizable={true}
+            resizable={false}
+            showOverlay={true}
             defaultSize="100%"
             contentClassName="p-0 flex flex-col overflow-hidden"
+
         >
 
             <div className="flex-1 overflow-hidden flex divide-x">

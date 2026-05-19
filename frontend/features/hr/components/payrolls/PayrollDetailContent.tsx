@@ -59,9 +59,23 @@ interface PayrollDetailContentProps {
     isSheet?: boolean
     viewMode?: 'admin' | 'employee'
     employee?: EmployeeBasic
+    onHeaderDataChange?: (data: {
+        title: React.ReactNode | string
+        subtitle: React.ReactNode | string
+        icon?: any
+        headerActions?: React.ReactNode
+    }) => void
 }
 
-export function PayrollDetailContent({ payrollId, onClose, onUpdate, isSheet = false, viewMode = 'admin', employee }: PayrollDetailContentProps) {
+export function PayrollDetailContent({
+    payrollId,
+    onClose,
+    onUpdate,
+    isSheet = false,
+    viewMode = 'admin',
+    employee,
+    onHeaderDataChange
+}: PayrollDetailContentProps) {
     const router = useRouter()
 
     const [posting, setPosting] = useState(false)
@@ -181,15 +195,105 @@ export function PayrollDetailContent({ payrollId, onClose, onUpdate, isSheet = f
     const totalPreviredPaid = payments.filter((p: PayrollPayment) => p.payment_type === 'PREVIRED').reduce((s: number, p: PayrollPayment) => s + parseFloat(p.amount), 0)
     const pendingPrevired = Math.max(0, totalPreviredRequired - totalPreviredPaid)
 
+    useEffect(() => {
+        if (isSheet && onHeaderDataChange && payroll) {
+            onHeaderDataChange({
+                title: (
+                    <div className="flex items-center gap-2">
+                        <span>{isPosted ? "Liquidación" : "Borrador de Liquidación"}</span>
+                        <StatusBadge
+                            status={isPosted ? "posted" : "draft"}
+                            size="md"
+                        />
+                    </div>
+                ),
+                subtitle: (
+                    <div className="flex items-center gap-3 text-[10px] sm:text-xs font-semibold text-muted-foreground uppercase tracking-widest mt-0.5">
+                        <span className="font-bold text-primary/80">{payroll.display_id}</span>
+                        <span className="opacity-30">|</span>
+                        <span className="hidden sm:inline">{payroll.period_label}</span>
+                        <span className="opacity-30 hidden sm:inline">|</span>
+                        <span>{payroll.employee_name}</span>
+                    </div>
+                ),
+                icon: FileText,
+                headerActions: (
+                    <div className="flex items-center gap-2 sm:gap-3">
+                        {viewMode === 'admin' && !isPosted && (
+                            <>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="rounded-sm text-[10px] sm:text-xs font-bold gap-1.5 border-primary/20 text-primary hover:bg-primary/5 px-2 sm:px-4 h-8 sm:h-9"
+                                    onClick={handleGenerateProforma}
+                                    disabled={generating}
+                                >
+                                    {generating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                                    <span className="hidden sm:inline">Propuesta Inicial</span>
+                                    <span className="sm:hidden">Propuesta</span>
+                                </Button>
+
+                                <Button
+                                    size="sm"
+                                    className="rounded-sm text-[10px] sm:text-xs font-bold gap-1.5 px-2 sm:px-4 h-8 sm:h-9 "
+                                    disabled={posting}
+                                    onClick={() => setPostConfirmOpen(true)}
+                                >
+                                    {posting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <BookOpen className="h-3.5 w-3.5" />}
+                                    Contabilizar
+                                </Button>
+                            </>
+                        )}
+                        {viewMode === 'admin' && isPosted && (
+                            <>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className={cn(
+                                        "rounded-sm text-[10px] sm:text-xs font-bold gap-1.5 px-2 sm:px-4 h-8 sm:h-9 transition-all",
+                                        salaroPaid
+                                            ? "bg-success/10 text-success border-success/20"
+                                            : "bg-warning/10 text-warning border-warning/20 hover:bg-warning/10"
+                                    )}
+                                    onClick={() => !salaroPaid && setSalaryDialog(true)}
+                                    disabled={salaroPaid}
+                                >
+                                    {salaroPaid ? <CheckCircle2 className="h-3.5 w-3.5" /> : <DollarSign className="h-3.5 w-3.5" />}
+                                    {salaroPaid ? "Pagado" : "Pagar Sueldo"}
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className={cn(
+                                        "rounded-sm text-[10px] sm:text-xs font-bold gap-1.5 px-2 sm:px-4 h-8 sm:h-9 transition-all",
+                                        previredPaid
+                                            ? "bg-success/10 text-success border-success/20"
+                                            : "bg-destructive/10 text-destructive border-destructive/20 hover:bg-destructive/20"
+                                    )}
+                                    onClick={() => !previredPaid && setPreviredDialog(true)}
+                                    disabled={previredPaid}
+                                >
+                                    {previredPaid ? <CheckCircle2 className="h-3.5 w-3.5" /> : <ShieldCheck className="h-3.5 w-3.5" />}
+                                    {previredPaid ? "Previred" : "Pagar Previred"}
+                                </Button>
+                            </>
+                        )}
+
+                        {viewMode === 'admin' && !isPosted && (
+                            <DataCell.Action action="delete" onClick={handleDeletePayroll} />
+                        )}
+                    </div>
+                )
+            })
+        }
+    }, [isSheet, payroll, isPosted, generating, posting, salaroPaid, previredPaid, viewMode, onHeaderDataChange])
+
     return (
         <div className={cn("flex-1 flex flex-col min-h-0", isSheet ? "w-full" : "space-y-6")}>
             {/* Header Section */}
-            <div className={cn(
-                "flex items-center justify-between",
-                isSheet ? "px-6 py-4 border-b bg-background sticky top-0 z-50 rounded-tr-3xl" : "px-0"
-            )}>
-                <div className="flex items-center gap-4">
-                    {!isSheet && (
+            {!isSheet && (
+                <div className="flex items-center justify-between px-0">
+                    <div className="flex items-center gap-4">
                         <Button
                             variant="ghost"
                             size="icon"
@@ -198,107 +302,102 @@ export function PayrollDetailContent({ payrollId, onClose, onUpdate, isSheet = f
                         >
                             <ArrowLeft className="h-5 w-5" />
                         </Button>
-                    )}
-                    <div className="flex items-center gap-4">
-                        <FileText className="h-6 w-6" />
-                        <div className="flex flex-col">
-                            <div className="flex items-center gap-2">
-                                <h1 className={cn("font-bold tracking-tight text-foreground", isSheet ? "text-xl" : "text-2xl")}>
-                                    {isPosted ? "Liquidación" : "Borrador de Liquidación"}
-                                </h1>
-                                <StatusBadge
-                                    status={isPosted ? "posted" : "draft"}
-                                    size="md"
-                                />
-                            </div>
-                            <div className="flex items-center gap-3 text-[10px] sm:text-xs font-semibold text-muted-foreground uppercase tracking-widest mt-0.5">
-                                <span className="font-bold text-primary/80">{payroll.display_id}</span>
-                                <span className="opacity-30">|</span>
-                                <span className="hidden sm:inline">{payroll.period_label}</span>
-                                <span className="opacity-30 hidden sm:inline">|</span>
-                                <span>{payroll.employee_name}</span>
+                        <div className="flex items-center gap-4">
+                            <FileText className="h-6 w-6" />
+                            <div className="flex flex-col">
+                                <div className="flex items-center gap-2">
+                                    <h1 className="font-bold tracking-tight text-foreground text-2xl">
+                                        {isPosted ? "Liquidación" : "Borrador de Liquidación"}
+                                    </h1>
+                                    <StatusBadge
+                                        status={isPosted ? "posted" : "draft"}
+                                        size="md"
+                                    />
+                                </div>
+                                <div className="flex items-center gap-3 text-[10px] sm:text-xs font-semibold text-muted-foreground uppercase tracking-widest mt-0.5">
+                                    <span className="font-bold text-primary/80">{payroll.display_id}</span>
+                                    <span className="opacity-30">|</span>
+                                    <span className="hidden sm:inline">{payroll.period_label}</span>
+                                    <span className="opacity-30 hidden sm:inline">|</span>
+                                    <span>{payroll.employee_name}</span>
+                                </div>
                             </div>
                         </div>
                     </div>
+
+                    <div className="flex items-center gap-2 sm:gap-3">
+                        {viewMode === 'admin' && !isPosted && (
+                            <>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="rounded-sm text-[10px] sm:text-xs font-bold gap-1.5 border-primary/20 text-primary hover:bg-primary/5 px-2 sm:px-4 h-8 sm:h-9"
+                                    onClick={handleGenerateProforma}
+                                    disabled={generating}
+                                >
+                                    {generating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                                    <span className="hidden sm:inline">Propuesta Inicial</span>
+                                    <span className="sm:hidden">Propuesta</span>
+                                </Button>
+
+                                <Button
+                                    size="sm"
+                                    className="rounded-sm text-[10px] sm:text-xs font-bold gap-1.5 px-2 sm:px-4 h-8 sm:h-9 "
+                                    disabled={posting}
+                                    onClick={() => setPostConfirmOpen(true)}
+                                >
+                                    {posting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <BookOpen className="h-3.5 w-3.5" />}
+                                    Contabilizar
+                                </Button>
+                            </>
+                        )}
+                        {viewMode === 'admin' && isPosted && (
+                            <>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className={cn(
+                                        "rounded-sm text-[10px] sm:text-xs font-bold gap-1.5 px-2 sm:px-4 h-8 sm:h-9 transition-all",
+                                        salaroPaid
+                                            ? "bg-success/10 text-success border-success/20"
+                                            : "bg-warning/10 text-warning border-warning/20 hover:bg-warning/10"
+                                    )}
+                                    onClick={() => !salaroPaid && setSalaryDialog(true)}
+                                    disabled={salaroPaid}
+                                >
+                                    {salaroPaid ? <CheckCircle2 className="h-3.5 w-3.5" /> : <DollarSign className="h-3.5 w-3.5" />}
+                                    {salaroPaid ? "Pagado" : "Pagar Sueldo"}
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className={cn(
+                                        "rounded-sm text-[10px] sm:text-xs font-bold gap-1.5 px-2 sm:px-4 h-8 sm:h-9 transition-all",
+                                        previredPaid
+                                            ? "bg-success/10 text-success border-success/20"
+                                            : "bg-destructive/10 text-destructive border-destructive/20 hover:bg-destructive/20"
+                                    )}
+                                    onClick={() => !previredPaid && setPreviredDialog(true)}
+                                    disabled={previredPaid}
+                                >
+                                    {previredPaid ? <CheckCircle2 className="h-3.5 w-3.5" /> : <ShieldCheck className="h-3.5 w-3.5" />}
+                                    {previredPaid ? "Previred" : "Pagar Previred"}
+                                </Button>
+                            </>
+                        )}
+
+                        {viewMode === 'admin' && !isPosted && (
+                            <DataCell.Action action="delete" onClick={handleDeletePayroll} />
+                        )}
+                    </div>
                 </div>
-
-                <div className="flex items-center gap-2 sm:gap-3">
-                    {viewMode === 'admin' && !isPosted && (
-                        <>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                className="rounded-sm text-[10px] sm:text-xs font-bold gap-1.5 border-primary/20 text-primary hover:bg-primary/5 px-2 sm:px-4 h-8 sm:h-9"
-                                onClick={handleGenerateProforma}
-                                disabled={generating}
-                            >
-                                {generating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
-                                <span className="hidden sm:inline">Propuesta Inicial</span>
-                                <span className="sm:hidden">Propuesta</span>
-                            </Button>
-
-                            <Button
-                                size="sm"
-                                className="rounded-sm text-[10px] sm:text-xs font-bold gap-1.5 px-2 sm:px-4 h-8 sm:h-9 "
-                                disabled={posting}
-                                onClick={() => setPostConfirmOpen(true)}
-                            >
-                                {posting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <BookOpen className="h-3.5 w-3.5" />}
-                                Contabilizar
-                            </Button>
-                        </>
-                    )}
-                    {viewMode === 'admin' && isPosted && (
-                        <>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                className={cn(
-                                    "rounded-sm text-[10px] sm:text-xs font-bold gap-1.5 px-2 sm:px-4 h-8 sm:h-9 transition-all",
-                                    salaroPaid
-                                        ? "bg-success/10 text-success border-success/20"
-                                        : "bg-warning/10 text-warning border-warning/20 hover:bg-warning/10"
-                                )}
-                                onClick={() => !salaroPaid && setSalaryDialog(true)}
-                                disabled={salaroPaid}
-                            >
-                                {salaroPaid ? <CheckCircle2 className="h-3.5 w-3.5" /> : <DollarSign className="h-3.5 w-3.5" />}
-                                {salaroPaid ? "Pagado" : "Pagar Sueldo"}
-                            </Button>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                className={cn(
-                                    "rounded-sm text-[10px] sm:text-xs font-bold gap-1.5 px-2 sm:px-4 h-8 sm:h-9 transition-all",
-                                    previredPaid
-                                        ? "bg-success/10 text-success border-success/20"
-                                        : "bg-destructive/10 text-destructive border-destructive/20 hover:bg-destructive/20"
-                                )}
-                                onClick={() => !previredPaid && setPreviredDialog(true)}
-                                disabled={previredPaid}
-                            >
-                                {previredPaid ? <CheckCircle2 className="h-3.5 w-3.5" /> : <ShieldCheck className="h-3.5 w-3.5" />}
-                                {previredPaid ? "Previred" : "Pagar Previred"}
-                            </Button>
-                        </>
-                    )}
-
-                    {viewMode === 'admin' && !isPosted && (
-                        <DataCell.Action action="delete" onClick={handleDeletePayroll} />
-                    )}
-
-                    {isSheet && (
-                        <div className="flex items-center gap-2 ml-4 pr-10">
-                        </div>
-                    )}
-                </div>
-            </div>
+            )}
 
             {/* Custom Close Button for Sheet (Top Right Corner) */}
             {/* Removed: Drawer already provides a close button */}
 
             {/* Scroll Area for Content */}
-            <div className={cn("flex-1", isSheet ? "overflow-y-auto custom-scrollbar p-6 bg-muted/30" : "")}>
+            <div className={cn("flex-1", isSheet ? "overflow-y-auto custom-scrollbar p-6" : "")}>
                 <div className={cn(isSheet ? "max-w-4xl mx-auto pb-12" : "")}>
                     <PayrollCard
                         payroll={payroll}
@@ -311,7 +410,7 @@ export function PayrollDetailContent({ payrollId, onClose, onUpdate, isSheet = f
                         onAddItem={viewMode === 'admin' && !isPosted ? () => setEditingItem({ payroll: payrollId } as unknown as PayrollItem) : undefined}
                         isReadOnly={viewMode === 'employee' || isPosted}
                         showEmployerContributions={viewMode === 'admin'}
-                        className={isSheet ? "shadow-2xl shadow-border/20" : ""}
+                        className={isSheet ? "" : ""}
                     />
                 </div>
             </div>
