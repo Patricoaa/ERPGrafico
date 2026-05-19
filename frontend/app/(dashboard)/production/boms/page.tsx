@@ -109,6 +109,7 @@ export default function BOMsPage() {
                     </div>
                 );
             },
+            meta: { title: "Producto" },
         },
         {
             accessorKey: "name",
@@ -116,6 +117,7 @@ export default function BOMsPage() {
                 <DataTableColumnHeader column={column} title="Nombre / Versión" className="justify-center" />
             ),
             cell: ({ row }) => <div className="text-center">{row.getValue("name")}</div>,
+            meta: { title: "Nombre / Versión" },
         },
         {
             accessorKey: "lines_count",
@@ -130,6 +132,7 @@ export default function BOMsPage() {
                     </Chip>
                 </div>
             ),
+            meta: { title: "Componentes" },
         },
         {
             accessorKey: "total_cost",
@@ -142,6 +145,7 @@ export default function BOMsPage() {
                     {formatCurrency(amount)}
                 </div>
             },
+            meta: { title: "Costo Total" },
         },
         {
             accessorKey: "active",
@@ -156,6 +160,7 @@ export default function BOMsPage() {
                     />
                 </div>
             ),
+            meta: { title: "Estado" },
         },
         createActionsColumn<BOMListItem>({
             renderActions: (bom) => (

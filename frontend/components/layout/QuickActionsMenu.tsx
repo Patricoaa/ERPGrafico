@@ -123,7 +123,7 @@ export function QuickActionsMenu({ isInboxOpen, onInboxToggle }: QuickActionsMen
                                             )}
                                         </Link>
                                     </TooltipTrigger>
-                                    <TooltipContent side="top" className="bg-foreground text-background font-medium">
+                                    <TooltipContent side="top">
                                         {action.title}
                                     </TooltipContent>
                                 </Tooltip>
@@ -155,7 +155,7 @@ export function QuickActionsMenu({ isInboxOpen, onInboxToggle }: QuickActionsMen
                                 )}
                             </button>
                         </TooltipTrigger>
-                        <TooltipContent side="top" className="bg-foreground text-background font-medium">
+                        <TooltipContent side="top">
                             Bandeja de Entrada {pendingCount > 0 && `(${pendingCount})`}
                         </TooltipContent>
                     </Tooltip>
@@ -178,7 +178,7 @@ export function QuickActionsMenu({ isInboxOpen, onInboxToggle }: QuickActionsMen
                                 )}
                             </button>
                         </TooltipTrigger>
-                        <TooltipContent side="top" className="bg-foreground text-background font-medium">
+                        <TooltipContent side="top">
                             Calculadora de Costos
                         </TooltipContent>
                     </Tooltip>

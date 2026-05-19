@@ -180,8 +180,7 @@ export function CollapsibleSheet({
 
             {/* Standard Wrapper for Content to handle opacity/grayscale */}
             <div className={cn(
-                "flex flex-col h-full rounded-xl overflow-hidden transition-opacity duration-300 bleed-guides",
-                variant === "module" ? "bg-card" : "bg-sidebar dark",
+                "flex flex-col h-full rounded-xl overflow-hidden transition-opacity duration-300 bg-card",
                 allowOverflow ? "overflow-visible" : "overflow-hidden",
                 ((!open || isCollapsed) && !forceCollapse) ? "opacity-0 pointer-events-none" : "opacity-100",
                 (isHidden && !forceCollapse) && "hidden" // Only prune from DOM after 500ms exit transition finishes

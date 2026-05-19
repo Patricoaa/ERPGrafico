@@ -6,7 +6,7 @@ import { DataTable } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { createActionsColumn, DataCell } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
-import { List, Columns, CalendarDays, Printer } from "lucide-react"
+import { List, Columns, CalendarDays, Printer, User } from "lucide-react"
 import { WorkOrderForm } from "@/features/production/components/forms/WorkOrderForm"
 import { WorkOrderWizard } from "@/features/production/components/WorkOrderWizard"
 import { WorkOrderKanban } from "@/features/production/components/WorkOrderKanban"
@@ -18,7 +18,7 @@ import { Button } from "@/components/ui/button"
 import { BulkActionDock, Chip, FadeIn } from "@/components/shared"
 import { isWorkOrderOverdue } from "@/features/production/utils"
 import { ToolbarCreateButton, SmartSearchBar, useSmartSearch } from "@/components/shared"
-import { translateProductionStage } from "@/lib/utils"
+import { cn, translateProductionStage } from "@/lib/utils"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
@@ -151,6 +151,7 @@ export default function WorkOrdersPage() {
                     />
                 </div>
             ),
+            meta: { title: "Folio" },
         },
         {
             id: "sale_order_number",
@@ -171,6 +172,7 @@ export default function WorkOrdersPage() {
                     </div>
                 )
             },
+            meta: { title: "NV Asociada" },
         },
         {
             accessorKey: "start_date",
@@ -178,6 +180,7 @@ export default function WorkOrdersPage() {
                 <DataTableColumnHeader column={column} title="Fecha Inicio" className="justify-center" />
             ),
             cell: ({ row }) => <div className="flex justify-center"><DataCell.Date value={row.getValue("start_date")} /></div>,
+            meta: { title: "Fecha Inicio" },
         },
         {
             accessorKey: "description",
@@ -189,6 +192,7 @@ export default function WorkOrdersPage() {
                     <DataCell.Text className="text-center">{row.getValue("description")}</DataCell.Text>
                 </div>
             ),
+            meta: { title: "Descripción" },
         },
         {
             accessorKey: "status",
@@ -206,6 +210,7 @@ export default function WorkOrdersPage() {
             filterFn: (row, id, value) => {
                 return value.includes(row.getValue(id))
             },
+            meta: { title: "Estado" },
         },
         {
             accessorKey: "current_stage",
@@ -217,6 +222,7 @@ export default function WorkOrdersPage() {
                     {translateProductionStage(row.original.current_stage)}
                 </DataCell.Text>
             ),
+            meta: { title: "Etapa" },
         },
         {
             accessorKey: "due_date",
@@ -224,6 +230,7 @@ export default function WorkOrdersPage() {
                 <DataTableColumnHeader column={column} title="Fecha Entrega" className="justify-center" />
             ),
             cell: ({ row }) => <div className="flex justify-center"><DataCell.Date value={row.getValue("due_date")} /></div>,
+            meta: { title: "Fecha Entrega" },
         },
         createActionsColumn<WorkOrder>({
             renderActions: (order) => {
@@ -322,13 +329,20 @@ export default function WorkOrdersPage() {
                         variant="embedded"
                         defaultPageSize={50}
                         leftAction={
-                            <div className="flex items-center gap-6">
-                                <SmartSearchBar searchDef={workOrderSearchDef} placeholder="Buscar OTs..." className="w-[300px]" />
-                                <div className="flex items-center gap-2 whitespace-nowrap bg-background p-1.5 px-3 rounded-md border border-border shadow-sm">
-                                    <Switch id="my-tasks-mode" checked={myTasks} onCheckedChange={handleMyTasksChange} />
-                                    <Label htmlFor="my-tasks-mode" className="text-sm cursor-pointer font-medium">Solo mis OTs</Label>
-                                </div>
-                            </div>
+                            <SmartSearchBar searchDef={workOrderSearchDef} placeholder="Buscar OTs..." className="w-full" />
+                        }
+                        rightButtonGroupAction={
+                            <Button
+                                variant="ghost"
+                                className={cn(
+                                    "h-full px-3 rounded-none text-[10px] font-black uppercase tracking-widest hover:bg-muted/50 transition-all border-0 ring-0 focus-visible:ring-0",
+                                    myTasks && "bg-primary/5 text-primary hover:bg-primary/10"
+                                )}
+                                onClick={() => handleMyTasksChange(!myTasks)}
+                            >
+                                <User className={cn("h-3.5 w-3.5 mr-2", myTasks ? "text-primary" : "opacity-50")} />
+                                Mis OTs
+                            </Button>
                         }
                         viewOptions={[
                             { label: "Lista", value: "list", icon: List },

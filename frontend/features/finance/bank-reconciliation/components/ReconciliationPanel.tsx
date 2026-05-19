@@ -1493,7 +1493,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                 <X className="h-4 w-4" />
                             </Button>
                         </div>
-                        <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+                        <div className="flex-1 overflow-y-auto p-4 custom-scrollbar canvas-prepress">
                             <ReconciliationIntelligence />
                         </div>
                     </div>

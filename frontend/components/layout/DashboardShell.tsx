@@ -181,7 +181,7 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                 {/* Railway-style Main Canvas */}
                 <main
                     id="main-content"
-                    className="flex-1 flex flex-col overflow-hidden relative canvas-prepress bg-card border border-border/10 rounded-xl"
+                    className="flex-1 flex flex-col overflow-hidden relative canvas-prepress bg-card border border-border/10 rounded-xl shadow-2xl"
                 >
                     <AnimatePresence mode="wait">
                         <motion.div

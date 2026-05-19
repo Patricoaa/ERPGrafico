@@ -9,6 +9,12 @@ import type { TransactionType, TransactionData } from "@/types/transactions"
 import { getEntityMetadata, formatEntityDisplay, ENTITY_REGISTRY } from "@/lib/entity-registry"
 
 import { EntityHeader } from "../EntityHeader"
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 export interface TransactionHeaderProps {
     /** @deprecated Use entityLabel instead */
@@ -86,9 +92,18 @@ export function TransactionHeader({
         >
             <div className="flex items-center gap-4 w-full md:w-auto mt-4 md:mt-0">
                 {canGoBack && (
-                    <Button variant="ghost" size="icon" onClick={onGoBack} className="h-9 w-9 rounded-full bg-background shadow-sm hover:bg-muted border border-border/50 print:hidden" title="Volver">
-                        <ArrowLeft className="h-5 w-5 text-foreground" />
-                    </Button>
+                    <TooltipProvider delayDuration={0}>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button variant="ghost" size="icon" onClick={onGoBack} className="h-9 w-9 rounded-full bg-background shadow-sm hover:bg-muted border border-border/50 print:hidden">
+                                    <ArrowLeft className="h-5 w-5 text-foreground" />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent side="bottom">
+                                Volver
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
                 )}
                 
                 <div className="flex-1 md:flex-none"></div>
