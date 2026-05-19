@@ -24,7 +24,7 @@ const NoteCheckoutWizard = dynamic(() => import("@/features/billing/components/N
 const DocumentListModal = dynamic(() => import("./DocumentListModal").then(m => m.DocumentListModal))
 const TransactionViewModal = dynamic(() => import("@/components/shared/TransactionViewModal").then(m => m.TransactionViewModal))
 const NoteLogisticsModal = dynamic(() => import("./NoteLogisticsModal").then(m => m.NoteLogisticsModal))
-const WorkOrderForm = dynamic(() => import("@/features/production/components/forms/WorkOrderForm").then(m => m.WorkOrderForm))
+const WorkOrderWizard = dynamic(() => import("@/features/production").then(m => m.WorkOrderWizard))
 import api from "@/lib/api"
 
 import { useRouter } from "next/navigation"
@@ -522,17 +522,21 @@ export const ActionCategory = forwardRef(({
             )}
 
             {activeModal === 'create-work-order' && (
-                <WorkOrderForm
+                <WorkOrderWizard
                     open={true}
                     onOpenChange={closeModal}
-                    initialData={{
-                        sale_order: order?.id?.toString(),
-                        // Find the first manufacturable line that doesn't have an active OT
-                        sale_line: (order.lines || order.items || []).find((l: OrderLine) =>
-                            l.product_type === 'MANUFACTURABLE' &&
-                            l.requires_advanced_manufacturing &&
-                            !((l as any).work_order_summary)
-                        )?.id?.toString()
+                    mode={{
+                        kind: 'create',
+                        defaultOtType: 'LINKED',
+                        initialData: {
+                            sale_order: order?.id?.toString(),
+                            // Find the first manufacturable line that doesn't have an active OT
+                            sale_line: (order.lines || order.items || []).find((l: OrderLine) =>
+                                l.product_type === 'MANUFACTURABLE' &&
+                                l.requires_advanced_manufacturing &&
+                                !((l as any).work_order_summary)
+                            )?.id?.toString()
+                        }
                     }}
                     onSuccess={() => {
                         closeModal()

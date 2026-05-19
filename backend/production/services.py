@@ -321,8 +321,19 @@ class WorkOrderService:
             except (json.JSONDecodeError, TypeError):
                 stage_data = {}
 
+        initial_materials_raw = data.get('initial_materials')
+        if isinstance(initial_materials_raw, str):
+            try:
+                initial_materials = json.loads(initial_materials_raw)
+            except (json.JSONDecodeError, TypeError):
+                initial_materials = []
+        else:
+            initial_materials = initial_materials_raw or []
+
         product_id   = data.get('product_id')
         sale_line_id = data.get('sale_line')
+        
+        work_order = None
 
         # Branch 1: Manual
         if product_id and (not sale_line_id or sale_line_id in _EMPTY_SALE_LINE):
@@ -338,7 +349,7 @@ class WorkOrderService:
                 raise ValidationError("La unidad de medida es requerida para fabricaciones manuales.")
             uom = UoM.objects.get(pk=uom_id)
 
-            return WorkOrderService.create_manual(
+            work_order = WorkOrderService.create_manual(
                 product=product, quantity=quantity, description=desc,
                 warehouse=warehouse, uom=uom, stage_data=stage_data,
             )
@@ -364,7 +375,32 @@ class WorkOrderService:
                 if serializer.is_valid():
                     work_order = serializer.save()
 
-            return work_order
+        if work_order and initial_materials:
+            from .serializers import WorkOrderInitialMaterialSerializer
+            from .models import WorkOrderMaterial
+            for m in initial_materials:
+                serializer = WorkOrderInitialMaterialSerializer(data=m)
+                serializer.is_valid(raise_exception=True)
+                
+                v_data = serializer.validated_data
+                comp_id = v_data['component_id']
+                uom_id = v_data.get('uom_id')
+                if not uom_id:
+                    comp_product = Product.objects.get(pk=comp_id)
+                    uom_id = comp_product.uom_id
+
+                WorkOrderMaterial.objects.create(
+                    work_order=work_order,
+                    component_id=comp_id,
+                    quantity_planned=v_data['quantity_planned'],
+                    is_outsourced=v_data.get('is_outsourced', False),
+                    supplier_id=v_data.get('supplier_id'),
+                    unit_price=v_data.get('unit_price') or 0,
+                    uom_id=uom_id,
+                    source='MANUAL',
+                )
+
+        return work_order
 
         # Branch 3: Fallback
         return None

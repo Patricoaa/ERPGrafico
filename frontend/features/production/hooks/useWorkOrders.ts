@@ -29,3 +29,15 @@ export function useWorkOrders(filters?: FilterState & { my_tasks?: boolean }) {
 
     return { orders: data ?? [], isLoading, refetch, invalidateList }
 }
+
+export function useWorkOrder(id: string | number) {
+    const { data, isLoading, error, refetch } = useQuery({
+        queryKey: ['workOrder', String(id)],
+        queryFn: async (): Promise<WorkOrder> => {
+            const res = await api.get(`/production/orders/${id}/`)
+            return res.data
+        },
+        enabled: !!id,
+    })
+    return { order: data, isLoading, error, refetch }
+}

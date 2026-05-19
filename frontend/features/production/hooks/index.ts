@@ -1,5 +1,10 @@
 export { useBOMs, useAllBOMs, useProductionVariants, BOMS_QUERY_KEY, VARIANTS_QUERY_KEY, ALL_BOMS_QUERY_KEY } from './useBOMs'
-export { useWorkOrders } from './useWorkOrders'
+export { useUoMs, UOMS_QUERY_KEY } from './useUoMs'
+export { useProductDetail } from './useProductDetail'
+export { useActiveBom } from './useActiveBom'
+export type { BomSuggestion } from './useActiveBom'
+export { useSaleOrderManufacturableLines } from './useSaleOrderManufacturableLines'
+export { useWorkOrders, useWorkOrder } from './useWorkOrders'
 export { useWorkOrderSearch } from './useWorkOrderSearch'
 export {
   useWorkOrderMutations,
@@ -11,7 +16,6 @@ export type {
   RectifyPayload,
   AddMaterialPayload,
   UpdateMaterialPayload,
-  AddCommentPayload,
 } from './useWorkOrderMutations'
 export { useWorkOrderListActions } from './useWorkOrderListActions'
 export { useWorkOrderComments } from './useWorkOrderComments'

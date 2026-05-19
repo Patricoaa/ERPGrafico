@@ -4,7 +4,7 @@ import React, { createContext, useContext, useState, ReactNode, useCallback, use
 import dynamic from "next/dynamic"
 import { FormSkeleton } from "@/components/shared"
 
-const WorkOrderWizard = dynamic(() => import("@/features/production/components/WorkOrderWizard").then(mod => mod.WorkOrderWizard), {
+const WorkOrderWizard = dynamic(() => import("@/features/production").then(mod => mod.WorkOrderWizard), {
     ssr: false,
     loading: () => <FormSkeleton />
 })
@@ -190,7 +190,7 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
             {children}
             {woId !== null && (
                 <WorkOrderWizard
-                    orderId={woId}
+                    mode={{ kind: 'manage', orderId: woId }}
                     open={woId !== null}
                     onOpenChange={(open) => !open && setWoId(null)}
                 />

@@ -1,5 +1,5 @@
 import * as z from "zod"
-import type { Account, AccountType, Product, ProductBOM, ProductCustomField } from "./entities"
+import type { AccountType, Product } from "./entities"
 
 // ─── Form Infrastructure ─────────────────────────────────
 
@@ -7,28 +7,38 @@ export type FormMode = 'create' | 'edit'
 
 // ─── WorkOrder Form ──────────────────────────────────────
 
-export const workOrderSchema = z.object({
-    description: z.string().min(1, "La descripción es requerida"),
-    sale_order: z.string().optional().or(z.literal("")),
+const workOrderBaseFields = {
     start_date: z.date().optional().nullable(),
     due_date: z.date().optional().nullable(),
-    product_description: z.string().optional(),
-    internal_notes: z.string().optional(),
-    contact_id: z.string().optional().or(z.literal("")),
-    sale_line: z.string().optional().or(z.literal("")),
-    product_id: z.string().optional().or(z.literal("")),
-    quantity: z.string().optional(),
-    uom_id: z.string().optional().or(z.literal("")),
-}).superRefine((data, ctx) => {
-    if (data.product_id && !data.uom_id) {
-        ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: "La unidad de medida es requerida para producción manual",
-            path: ["uom_id"],
-        })
-    }
+    internal_notes: z.string().optional().default(""),
+}
+
+const workOrderLinkedSchema = z.object({
+    otType: z.literal("LINKED"),
+    description: z.string().min(1, "La descripción es requerida"),
+    sale_order: z.string().optional().default(""),
+    sale_line: z.string().optional().default(""),
+    product_description: z.string().optional().default(""),
+    contact_id: z.string().optional().default(""),
+    ...workOrderBaseFields,
 })
 
+const workOrderNoneSchema = z.object({
+    otType: z.literal("NONE"),
+    description: z.string().optional().default(""),
+    product_id: z.string().min(1, "El producto es requerido"),
+    quantity: z.string().min(1, "La cantidad es requerida"),
+    uom_id: z.string().min(1, "La unidad de medida es requerida"),
+    ...workOrderBaseFields,
+})
+
+export const workOrderSchema = z.discriminatedUnion("otType", [
+    workOrderLinkedSchema,
+    workOrderNoneSchema,
+])
+
+export type WorkOrderLinkedValues = z.infer<typeof workOrderLinkedSchema>
+export type WorkOrderNoneValues = z.infer<typeof workOrderNoneSchema>
 export type WorkOrderFormValues = z.infer<typeof workOrderSchema>
 
 export interface WorkOrderInitialData {
@@ -39,14 +49,14 @@ export interface WorkOrderInitialData {
     start_date?: string | Date
     estimated_completion_date?: string | Date
     sale_order_delivery_date?: string | Date
-    sale_line?: string | number | { 
+    sale_line?: string | number | {
         id: string | number
         product?: { name: string }
         description?: string
         quantity?: number
-        uom?: { name: string } 
+        uom?: { name: string }
     }
-    product?: { 
+    product?: {
         id: string | number
         name: string
         requires_bom_validation?: boolean
@@ -58,7 +68,7 @@ export interface WorkOrderInitialData {
     current_stage?: string
     production_progress?: number
     sale_order_number?: string | number
-    
+
     stage_data?: {
         product_description?: string
         internal_notes?: string

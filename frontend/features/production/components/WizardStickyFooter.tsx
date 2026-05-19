@@ -25,6 +25,13 @@ interface WizardStickyFooterProps {
     hasMaterials: boolean
     isRectificationStep?: boolean
     onRectifyAndFinish?: () => void
+    // Step 0 (BASIC_INFO) props
+    isBasicInfoStep?: boolean
+    isCreating?: boolean
+    isBasicInfoEditable?: boolean
+    isOriginSelectionStep?: boolean
+    chosenOtType?: 'LINKED' | 'NONE' | null
+    onStepChange?: (index: number) => void
 }
 
 export function WizardStickyFooter({
@@ -43,7 +50,13 @@ export function WizardStickyFooter({
     isMaterialApprovalIncomplete,
     hasMaterials,
     isRectificationStep = false,
-    onRectifyAndFinish
+    onRectifyAndFinish,
+    isBasicInfoStep = false,
+    isCreating = false,
+    isBasicInfoEditable = false,
+    isOriginSelectionStep = false,
+    chosenOtType = null,
+    onStepChange,
 }: WizardStickyFooterProps) {
     const [showAlert, setShowAlert] = useState(false)
     const [alertConfig, setAlertConfig] = useState<{
@@ -98,7 +111,88 @@ export function WizardStickyFooter({
     return (
         <>
             <div className="sticky bottom-0 border-t py-3 px-6 flex items-center justify-between z-10">
-                {isViewingCurrentStage ? (
+                {/* ── Origen de Fabricación ──────────────────────────────── */}
+                {isOriginSelectionStep ? (
+                    <>
+                        <Button variant="outline" size="sm" onClick={onClose}>
+                            Cerrar
+                        </Button>
+                        <Button
+                            disabled={!chosenOtType}
+                            onClick={() => onStepChange?.(1)}
+                            className="gap-2"
+                        >
+                            Siguiente
+                            <ArrowRight className="h-4 w-4" />
+                        </Button>
+                    </>
+                ) : isBasicInfoStep ? (
+                    <>
+                        <Button variant="outline" size="sm" onClick={onClose}>
+                            Cerrar
+                        </Button>
+                        <div className="flex items-center gap-2">
+                            {isCreating ? (
+                                <>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => onStepChange?.(0)}
+                                        className="text-muted-foreground hover:text-foreground mr-2"
+                                    >
+                                        Anterior
+                                    </Button>
+                                    <Button
+                                        type="submit"
+                                        form="wizard-basic-form"
+                                        disabled={transitioning}
+                                        aria-label="Crear orden de trabajo"
+                                    >
+                                        {transitioning ? (
+                                            <><Loader2 className="h-4 w-4 animate-spin" />Creando...</>
+                                        ) : (
+                                            <>Crear orden<ArrowRight className="ml-2 h-4 w-4" /></>
+                                        )}
+                                    </Button>
+                                </>
+                            ) : isBasicInfoEditable ? (
+                                <>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={onBackToCurrent}
+                                        className="gap-1.5"
+                                    >
+                                        <Eye className="h-4 w-4" />
+                                        Ir a etapa actual
+                                    </Button>
+                                    <Button
+                                        type="submit"
+                                        form="wizard-basic-form"
+                                        disabled={transitioning}
+                                        aria-label="Guardar cambios de información básica"
+                                    >
+                                        {transitioning ? (
+                                            <><Loader2 className="h-4 w-4 animate-spin" />Guardando...</>
+                                        ) : (
+                                            <>Guardar cambios<Check className="ml-2 h-4 w-4" /></>
+                                        )}
+                                    </Button>
+                                </>
+                            ) : (
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={onBackToCurrent}
+                                    className="gap-1.5"
+                                >
+                                    <Eye className="h-4 w-4" />
+                                    Ir a etapa actual
+                                </Button>
+                            )}
+                        </div>
+                    </>
+                ) : isViewingCurrentStage ? (
                     <>
                         <div className="flex items-center gap-2">
                             <Button
@@ -208,12 +302,7 @@ export function WizardStickyFooter({
             <ActionConfirmModal
                 open={showAlert}
                 onOpenChange={setShowAlert}
-                title={
-                    <div className="flex items-center gap-2">
-                        <AlertTriangle className="h-5 w-5 text-warning" />
-                        <span>{alertConfig?.title}</span>
-                    </div>
-                }
+                title={alertConfig?.title ?? ''}
                 description={alertConfig?.description}
                 onConfirm={alertConfig?.onConfirm || (() => {})}
                 confirmText="Continuar"

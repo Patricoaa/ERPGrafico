@@ -2,13 +2,10 @@
 import { formatPlainDate } from "@/lib/utils";
 
 import React, { useState } from "react"
-import { useQuery } from "@tanstack/react-query"
 import { notFound, useRouter } from "next/navigation"
 import { EntityDetailPage, FormSkeleton, FormFooter, CancelButton, ActionSlideButton } from "@/components/shared"
-import api from "@/lib/api"
-import type { WorkOrder } from "@/features/production/types"
-import { WorkOrderForm } from "@/features/production/components/forms/WorkOrderForm"
-import { WorkOrderWizard } from "@/features/production/components/WorkOrderWizard"
+import type { WorkOrder, StageId } from "@/features/production/types"
+import { WorkOrderWizard, useWorkOrder } from "@/features/production"
 import { translateProductionStage } from "@/lib/utils"
 import { formatEntityDisplay } from "@/lib/entity-registry"
 
@@ -18,16 +15,10 @@ interface ProductionOrderDetailClientProps {
 
 export function ProductionOrderDetailClient({ orderId }: ProductionOrderDetailClientProps) {
     const router = useRouter()
-    const [formOpen, setFormOpen] = useState(false)
     const [wizardOpen, setWizardOpen] = useState(false)
+    const [targetStage, setTargetStage] = useState<StageId | 'BASIC_INFO' | undefined>(undefined)
 
-    const { data: order, isLoading: loading, error: queryError, refetch: fetchOrder } = useQuery({
-        queryKey: ['workOrder', orderId],
-        queryFn: async () => {
-            const response = await api.get(`/production/orders/${orderId}/`)
-            return response.data as WorkOrder
-        }
-    })
+    const { order, isLoading: loading, error: queryError, refetch: fetchOrder } = useWorkOrder(orderId)
 
     const error = queryError ? (queryError as any).response?.status || 500 : null
 
@@ -63,11 +54,22 @@ export function ProductionOrderDetailClient({ orderId }: ProductionOrderDetailCl
                     actions={
                         <>
                             <CancelButton onClick={() => router.push("/production/orders")}>Volver</CancelButton>
-                            <ActionSlideButton onClick={() => setWizardOpen(true)} className="ml-2 bg-secondary text-secondary-foreground hover:bg-secondary/80">
+                            <ActionSlideButton
+                                onClick={() => {
+                                    setTargetStage(undefined)
+                                    setWizardOpen(true)
+                                }}
+                                className="ml-2 bg-secondary text-secondary-foreground hover:bg-secondary/80"
+                            >
                                 Gestionar Workflow
                             </ActionSlideButton>
                             {isEditable && (
-                                <ActionSlideButton onClick={() => setFormOpen(true)}>
+                                <ActionSlideButton
+                                    onClick={() => {
+                                        setTargetStage('BASIC_INFO')
+                                        setWizardOpen(true)
+                                    }}
+                                >
                                     Editar OT
                                 </ActionSlideButton>
                             )}
@@ -102,24 +104,12 @@ export function ProductionOrderDetailClient({ orderId }: ProductionOrderDetailCl
                     </div>
                 </div>
 
-                {formOpen && (
-                    <WorkOrderForm
-                        initialData={order as any}
-                        open={formOpen}
-                        onOpenChange={setFormOpen}
-                        onSuccess={() => {
-                            fetchOrder()
-                            setFormOpen(false)
-                        }}
-                    />
-                )}
-
                 {wizardOpen && (
                     <WorkOrderWizard
-                        orderId={parseInt(orderId)}
+                        mode={{ kind: 'manage', orderId: parseInt(orderId), targetStage }}
                         open={wizardOpen}
                         onOpenChange={setWizardOpen}
-                        onSuccess={fetchOrder}
+                        onSuccess={() => fetchOrder()}
                     />
                 )}
             </div>

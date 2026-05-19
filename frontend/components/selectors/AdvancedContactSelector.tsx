@@ -33,6 +33,7 @@ interface AdvancedContactSelectorProps {
     required?: boolean
     className?: string
     icon?: React.ReactNode
+    variant?: 'standalone' | 'inline'
 }
 
 export function AdvancedContactSelector({

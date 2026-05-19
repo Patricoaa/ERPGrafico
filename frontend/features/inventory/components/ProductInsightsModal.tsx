@@ -32,7 +32,7 @@ import { formatEntityDisplay } from "@/lib/entity-registry"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { FormTabs, FormTabsContent } from "@/components/shared"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
-import { WorkOrderWizard } from "@/features/production/components/WorkOrderWizard"
+import { WorkOrderWizard } from "@/features/production"
 import {
     ResponsiveContainer,
     XAxis,
@@ -502,7 +502,7 @@ export function ProductInsightsModal({ productId, productName, open, onOpenChang
 
             {activeWorkOrderId && (
                 <WorkOrderWizard
-                    orderId={activeWorkOrderId}
+                    mode={{ kind: 'manage', orderId: activeWorkOrderId }}
                     open={!!activeWorkOrderId}
                     onOpenChange={(open) => !open && closeWorkOrder()}
                     onSuccess={() => fetchInsights()}

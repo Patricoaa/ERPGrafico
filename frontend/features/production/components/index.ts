@@ -8,5 +8,6 @@ export * from './WizardStickyFooter';
 export * from './WorkOrderKanban';
 export * from './WorkOrderWizard';
 export * from './steps';
-export * from './forms/WorkOrderForm';
+export { WorkOrderBasicStep } from './forms/WorkOrderBasicStep';
+export type { WorkOrderBasicStepProps } from './forms/WorkOrderBasicStep/types';
 export * from './shared';

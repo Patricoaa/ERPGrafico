@@ -1,7 +1,8 @@
-import { render, screen, waitFor } from "@testing-library/react"
+import { render, screen } from "@testing-library/react"
 import { vi, describe, it, expect } from "vitest"
-import { WorkOrderForm } from "../index"
+import { WorkOrderBasicStep } from "../index"
 import React from "react"
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 
 // Mock API
 vi.mock("@/lib/api", () => ({
@@ -32,19 +33,27 @@ window.HTMLElement.prototype.scrollIntoView = function() {}
 window.HTMLElement.prototype.hasPointerCapture = function() { return false }
 window.HTMLElement.prototype.releasePointerCapture = function() {}
 
-describe("WorkOrderForm Unit and Rendering Tests", () => {
-    
-    it("renders the trigger button when not open by default", () => {
-        render(<WorkOrderForm />)
-        expect(screen.getByRole("button", { name: /Nueva Orden de Trabajo/i })).toBeInTheDocument()
-    })
+const queryClient = new QueryClient({
+    defaultOptions: {
+        queries: {
+            retry: false,
+        },
+    },
+})
 
-    it("renders the creation modal completely (Basic Info + Materials) when forced open", () => {
-        // The modal content might be lazy-loaded or animated, we use RTL's waitFor if necessary
-        render(<WorkOrderForm open={true} onOpenChange={() => {}} />)
-        
-        // At the beginning, it asks for the type: Linked or Manual
-        expect(screen.getByText(/¿Qué tipo de orden desea crear?/i)).toBeInTheDocument()
+const renderWithProviders = (ui: React.ReactElement) => {
+    return render(
+        <QueryClientProvider client={queryClient}>
+            {ui}
+        </QueryClientProvider>
+    )
+}
+
+describe("WorkOrderBasicStep Unit and Rendering Tests", () => {
+    
+    it("renders the type chooser in create mode when defaultOtType is not provided", () => {
+        renderWithProviders(<WorkOrderBasicStep mode="create" formId="test-form" />)
+        expect(screen.getByText(/Configuración de Flujo/i)).toBeInTheDocument()
     })
 
     it("renders the LINKED view when initialData has a sale_order", async () => {
@@ -62,10 +71,7 @@ describe("WorkOrderForm Unit and Rendering Tests", () => {
             }
         }
 
-        render(<WorkOrderForm open={true} initialData={mockData} onOpenChange={() => {}} />)
-        
-        // Should show the title with the Number
-        expect(await screen.findByText(/Orden de Trabajo #OT-100/i)).toBeInTheDocument()
+        renderWithProviders(<WorkOrderBasicStep mode="edit" initialData={mockData} formId="test-form" />)
         
         // Should show the "Vínculo de Venta" header
         expect(await screen.findByText("Vínculo de Venta")).toBeInTheDocument()

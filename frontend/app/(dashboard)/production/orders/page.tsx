@@ -7,10 +7,13 @@ import { DataTableColumnHeader } from '@/components/shared'
 import { createActionsColumn, DataCell } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
 import { List, Columns, CalendarDays, Printer, User } from "lucide-react"
-import { WorkOrderForm } from "@/features/production/components/forms/WorkOrderForm"
-import { WorkOrderWizard } from "@/features/production/components/WorkOrderWizard"
-import { WorkOrderKanban } from "@/features/production/components/WorkOrderKanban"
-import { WorkOrderTimelineView } from "@/features/production/components/WorkOrderTimelineView"
+import {
+    WorkOrderWizard,
+    WorkOrderKanban,
+    WorkOrderTimelineView,
+    useWorkOrders,
+    useWorkOrderListActions,
+} from "@/features/production"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
@@ -21,18 +24,12 @@ import { ToolbarCreateButton, SmartSearchBar, useSmartSearch } from "@/component
 import { cn, translateProductionStage } from "@/lib/utils"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
-import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { usePathname } from "next/navigation"
-import { useWorkOrders } from "@/features/production/hooks/useWorkOrders"
-import { useWorkOrderListActions } from "@/features/production/hooks"
 import { workOrderSearchDef } from "@/features/production/searchDef"
 
-import type { WorkOrder } from "@/features/production/types"
+import type { WorkOrder, WizardMode, StageId } from "@/features/production/types"
 
-export default function WorkOrdersPage() {
-    const [editingOrder, setEditingOrder] = useState<WorkOrder | null>(null)
-    const [isFormOpen, setIsFormOpen] = useState(false)
-    const [activeWizardId, setActiveWizardId] = useState<number | null>(null)
+function WorkOrdersClient() {
     const [viewMode, setViewMode] = useState<string>("list")
     const searchParams = useSearchParams()
     const router = useRouter()
@@ -58,41 +55,42 @@ export default function WorkOrdersPage() {
     })
     const { deleteOrder, annulOrder, duplicateOrder, bulkPrint, isBulkPrinting } = useWorkOrderListActions({ onSuccess: refetchOrders })
 
-    const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<WorkOrder>({
-        endpoint: '/production/orders'
-    })
+    const isNew = searchParams.get('new') === 'true' || searchParams.get('modal') === 'new'
+    const selectedId = searchParams.get('selected')
+    const requestedType = searchParams.get('type')
+    const requestedProductId = searchParams.get('product_id') || undefined
+    const requestedStage = searchParams.get('step') || undefined
 
-    useEffect(() => {
-        if (selectedFromUrl) {
-            setActiveWizardId(selectedFromUrl.id)
-        }
-    }, [selectedFromUrl])
-
-    const isNewModalOpen = searchParams.get("modal") === "new"
-    const requestedType = searchParams.get("type")
-    const requestedProductId = searchParams.get("product_id") || undefined
-    const [requestedStage, setRequestedStage] = useState<string | undefined>()
-
-    useEffect(() => {
-        if (isNewModalOpen || requestedType === "stock") {
-            setIsFormOpen(true)
-            setEditingOrder(null)
-        }
-    }, [isNewModalOpen, requestedType])
-
-    const handleFormClose = (open: boolean) => {
-        setIsFormOpen(open)
-        if (!open) {
-            setEditingOrder(null)
-            if (isNewModalOpen || requestedType || requestedProductId) {
-                const params = new URLSearchParams(searchParams.toString())
-                params.delete("modal")
-                params.delete("type")
-                params.delete("product_id")
-                router.push(`?${params.toString()}`, { scroll: false })
+    const wizardMode = useMemo((): WizardMode | null => {
+        if (isNew) {
+            return {
+                kind: 'create',
+                defaultOtType: requestedType === 'stock' ? 'NONE' : requestedType === 'sale' ? 'LINKED' : undefined,
+                defaultProductId: requestedProductId ? String(requestedProductId) : undefined,
             }
         }
-    }
+        if (selectedId) {
+            return {
+                kind: 'manage',
+                orderId: Number(selectedId),
+                targetStage: requestedStage as StageId | undefined,
+            }
+        }
+        return null
+    }, [isNew, selectedId, requestedType, requestedProductId, requestedStage])
+
+    const handleManage = useCallback((id: number) => {
+        const params = new URLSearchParams(searchParams.toString())
+        params.set('selected', String(id))
+        router.push(`${pathname}?${params.toString()}`, { scroll: false })
+    }, [router, pathname, searchParams])
+
+    const closeWizard = useCallback(() => {
+        const params = new URLSearchParams(searchParams.toString())
+            ;['new', 'modal', 'selected', 'type', 'product_id', 'step'].forEach(p => params.delete(p))
+        router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+    }, [router, pathname, searchParams])
+
 
     const deleteConfirm = useConfirmAction<number>(async (id) => {
         await deleteOrder({ id })
@@ -203,7 +201,7 @@ export default function WorkOrdersPage() {
                 <div className="flex justify-center gap-1.5 items-center flex-wrap">
                     <DataCell.Status status={row.original.status} />
                     {isWorkOrderOverdue(row.original) && (
-                        <Chip size="xs" intent="destructive">Atrasada</Chip>
+                        <Chip size="sm" intent="destructive">Atrasada</Chip>
                     )}
                 </div>
             ),
@@ -255,8 +253,10 @@ export default function WorkOrdersPage() {
                             <DataCell.Action
                                 action="edit"
                                 onClick={() => {
-                                    setEditingOrder(order)
-                                    setIsFormOpen(true)
+                                    const params = new URLSearchParams(searchParams.toString())
+                                    params.set('selected', String(order.id))
+                                    params.set('step', 'BASIC_INFO')
+                                    router.push(`${pathname}?${params.toString()}`, { scroll: false })
                                 }}
                             />
                         )}
@@ -272,7 +272,7 @@ export default function WorkOrdersPage() {
             <div className="min-h-[600px]">
                 <WorkOrderKanban
                     orders={table.getFilteredRowModel().rows.map((row: import("@tanstack/react-table").Row<WorkOrder>) => row.original)}
-                    onManage={(id) => setActiveWizardId(id)}
+                    onManage={handleManage}
                     onDuplicate={handleDuplicate}
                     onAnnul={handleCancel}
                     onDelete={handleDelete}
@@ -280,45 +280,33 @@ export default function WorkOrdersPage() {
                 />
             </div>
         </div>
-    ), [loading])
+    ), [loading, handleManage, handleDuplicate, handleCancel, handleDelete])
 
     const renderTimelineView = useCallback((table: import("@tanstack/react-table").Table<WorkOrder>) => (
         <WorkOrderTimelineView
             orders={table.getFilteredRowModel().rows.map((row: import("@tanstack/react-table").Row<WorkOrder>) => row.original)}
-            onManage={(id) => setActiveWizardId(id)}
+            onManage={handleManage}
             isLoading={loading}
         />
-    ), [loading])
+    ), [loading, handleManage])
 
     return (
         <div className="space-y-4">
 
-            {/* Hidden Forms */}
-            {editingOrder || isFormOpen ? (
-                <WorkOrderForm
-                    initialData={editingOrder as any}
-                    open={isFormOpen}
-                    onOpenChange={handleFormClose}
-                    onSuccess={refetchOrders}
-                    defaultOtType={requestedType === "stock" ? "NONE" : undefined}
-                    defaultProductId={requestedType === "stock" ? requestedProductId : undefined}
-                />
-            ) : null}
-            {activeWizardId && (
+            {/* Unified WorkOrderWizard */}
+            {wizardMode && (
                 <WorkOrderWizard
-                    orderId={activeWizardId}
-                    open={!!activeWizardId}
+                    mode={wizardMode}
+                    open={true}
                     onOpenChange={(open) => {
-                        if (!open) {
-                            setActiveWizardId(null)
-                            setRequestedStage(undefined)
-                            clearSelection()
-                        }
+                        if (!open) closeWizard()
                     }}
-                    onSuccess={refetchOrders}
-                    targetStage={requestedStage}
+                    onSuccess={() => {
+                        refetchOrders()
+                    }}
                 />
             )}
+
 
             <div className="mt-2">
                 <FadeIn key={viewMode}>
@@ -405,5 +393,16 @@ export default function WorkOrdersPage() {
                 variant="default"
             />
         </div >
+    )
+}
+
+import { Suspense } from "react"
+import { TableSkeleton } from "@/components/shared"
+
+export default function WorkOrdersPage() {
+    return (
+        <Suspense fallback={<TableSkeleton rows={10} columns={6} />}>
+            <WorkOrdersClient />
+        </Suspense>
     )
 }
