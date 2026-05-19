@@ -15,6 +15,12 @@ interface PayrollDetailSheetProps {
 }
 
 export function PayrollDetailSheet({ payrollId, open, onOpenChange, onUpdate, viewMode = 'admin', employee }: PayrollDetailSheetProps) {
+    const [headerData, setHeaderData] = useState<{
+        title?: React.ReactNode | string
+        subtitle?: React.ReactNode | string
+        icon?: any
+        headerActions?: React.ReactNode
+    }>({})
 
     return (
             <Drawer
@@ -23,7 +29,11 @@ export function PayrollDetailSheet({ payrollId, open, onOpenChange, onUpdate, vi
                 side="left"
                 boundary="embedded"
                 defaultSize="60%"
-                contentClassName="p-0"
+                contentClassName="p-0 flex flex-col overflow-hidden"
+                title={headerData.title}
+                subtitle={headerData.subtitle}
+                icon={headerData.icon || FileText}
+                headerActions={headerData.headerActions}
             >
                 {payrollId && (
                     <PayrollDetailContent 
@@ -33,6 +43,7 @@ export function PayrollDetailSheet({ payrollId, open, onOpenChange, onUpdate, vi
                         isSheet={true}
                         viewMode={viewMode}
                         employee={employee}
+                        onHeaderDataChange={setHeaderData}
                     />
                 )}
             </Drawer>

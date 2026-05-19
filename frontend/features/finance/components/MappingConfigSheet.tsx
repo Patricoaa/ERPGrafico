@@ -1,11 +1,13 @@
 "use client"
 
-import React from "react"
-import { DataTable, BulkActionDock, ActionDock, Chip, DataCell, Drawer } from '@/components/shared'
+import React, { useEffect, useCallback } from "react"
+import { DataTable, BulkActionDock, ActionDock, Chip, DataCell, Drawer, AutoSaveStatusBadge } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
-import { Button } from "@/components/ui/button"
+import { useForm, Controller } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import * as z from "zod"
 
-import { SlidersHorizontal, AlertCircle, Save, Tag } from "lucide-react"
+import { SlidersHorizontal, AlertCircle, Tag } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useAccountMappings, MappingType } from "@/features/finance/hooks/useAccountMappings"
 import {
@@ -16,6 +18,8 @@ import {
 } from "@/features/accounting/types"
 import { Checkbox } from "@/components/ui/checkbox"
 import { cn } from "@/lib/utils"
+import { useAutoSaveForm } from "@/hooks/useAutoSaveForm"
+import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard"
 
 interface MappingConfigSheetProps {
     open: boolean
@@ -23,6 +27,9 @@ interface MappingConfigSheetProps {
     mappingType: MappingType
     onSaveSuccess?: () => void
 }
+
+const mappingSchema = z.record(z.string(), z.string().nullable())
+type MappingValues = z.infer<typeof mappingSchema>
 
 export function MappingConfigSheet({
     open,
@@ -33,12 +40,28 @@ export function MappingConfigSheet({
     const {
         accounts,
         isLoading,
-        isSaving,
-        pendingChanges,
-        updateMapping,
-        saveAll,
-        hasChanges
+        fieldName,
+        saveAll
     } = useAccountMappings(mappingType)
+
+    const form = useForm<MappingValues>({
+        resolver: zodResolver(mappingSchema),
+        defaultValues: {}
+    })
+
+    // Pre-register and reset form values when relevant accounts are loaded
+    useEffect(() => {
+        if (accounts.length > 0) {
+            const defaults: MappingValues = {}
+            accounts.forEach(a => {
+                const val = (a[fieldName as keyof Account] as string | null) || "none"
+                defaults[a.id.toString()] = val
+                form.register(a.id.toString())
+            })
+            form.reset(defaults)
+        }
+    }, [accounts, fieldName, form])
+
     const getCategories = () => {
         switch (mappingType) {
             case 'is': return IS_CATEGORIES
@@ -46,16 +69,6 @@ export function MappingConfigSheet({
             case 'bs': return BS_CATEGORIES
         }
     }
-
-    const getField = () => {
-        switch (mappingType) {
-            case 'is': return 'is_category'
-            case 'cf': return 'cf_category'
-            case 'bs': return 'bs_category'
-        }
-    }
-
-    const fieldName = getField()
 
     const getTitle = () => {
         switch (mappingType) {
@@ -73,16 +86,52 @@ export function MappingConfigSheet({
         }
     }
 
-    const handleSave = async () => {
-        const success = await saveAll()
-        if (success) {
+    // Central onSave handler for the autosave hook
+    const onSave = useCallback(async (values: MappingValues) => {
+        const updates: { id: number; field: string; value: string | null }[] = []
+        accounts.forEach(a => {
+            const val = values[a.id.toString()] as string | null | undefined
+            const originalVal = (a[fieldName as keyof Account] as string | null) || "none"
+            if (val !== originalVal) {
+                updates.push({
+                    id: a.id,
+                    field: fieldName,
+                    value: val === "none" ? null : (val ?? null)
+                })
+            }
+        })
+        
+        if (updates.length > 0) {
+            await saveAll(updates)
             onSaveSuccess?.()
-            onOpenChange(false)
         }
-    }
+    }, [accounts, fieldName, saveAll, onSaveSuccess])
+
+    const { status, invalidReason, lastSavedAt, retry, flush } = useAutoSaveForm({
+        form,
+        onSave,
+        enabled: !isLoading && open,
+        debounceMs: 500
+    })
+
+    useUnsavedChangesGuard(status)
+
+    // Flush any pending changes immediately when drawer is closing
+    const handleOpenChange = useCallback((newOpen: boolean) => {
+        if (!newOpen) {
+            void flush()
+        }
+        onOpenChange(newOpen)
+    }, [flush, onOpenChange])
 
     const handleBulkUpdate = (items: Account[], value: string, clear: () => void) => {
-        items.forEach(item => updateMapping(item.id, value === "none" ? null : value))
+        items.forEach(item => {
+            form.setValue(item.id.toString(), value === "none" ? "none" : value, {
+                shouldDirty: true,
+                shouldTouch: true,
+                shouldValidate: true,
+            })
+        })
         clear()
     }
 
@@ -141,38 +190,45 @@ export function MappingConfigSheet({
             header: "Categoría Asignada",
             cell: ({ row }) => {
                 const account = row.original
-                const originalValue = account[fieldName as keyof Account] as string | null
-                const pendingValue = pendingChanges.get(account.id)
-                const currentValue = pendingValue !== undefined ? pendingValue : originalValue
-
-                const isModified = pendingValue !== undefined
-
                 return (
-                    <div className="flex items-center gap-2">
-                        {!currentValue && (
-                            <AlertCircle className="h-3.5 w-3.5 text-warning shrink-0" />
-                        )}
-                        <Select
-                            value={currentValue || "none"}
-                            onValueChange={(val) => updateMapping(account.id, val)}
-                        >
-                            <SelectTrigger className={cn(
-                                "h-8 text-[11px] font-medium w-[200px]",
-                                isModified && "ring-1 ring-primary/50 border-primary/50 bg-primary/5",
-                                !currentValue && !isModified && "text-warning border-warning/30 bg-warning/5"
-                            )}>
-                                <SelectValue placeholder="Sin mapeo" />
-                            </SelectTrigger>
-                            <SelectContent className="w-[var(--radix-select-trigger-width)]">
-                                <SelectItem value="none" className="text-muted-foreground italic">Sin mapeo</SelectItem>
-                                {getCategories().map(cat => (
-                                    <SelectItem key={cat.value} value={cat.value}>
-                                        {cat.label}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
+                    <Controller
+                        control={form.control}
+                        name={account.id.toString()}
+                        render={({ field }) => {
+                            const fieldValue = field.value as string | null | undefined
+                            const currentValue = fieldValue ?? "none"
+                            const originalValue = account[fieldName as keyof Account] as string | null
+                            const isModified = currentValue !== (originalValue || "none")
+
+                            return (
+                                <div className="flex items-center gap-2">
+                                    {(!fieldValue || fieldValue === "none") && (
+                                        <AlertCircle className="h-3.5 w-3.5 text-warning shrink-0" />
+                                    )}
+                                    <Select
+                                        value={currentValue}
+                                        onValueChange={field.onChange}
+                                    >
+                                        <SelectTrigger className={cn(
+                                            "h-8 text-[11px] font-medium w-[200px]",
+                                            isModified && "ring-1 ring-primary/50 border-primary/50 bg-primary/5",
+                                            (!fieldValue || fieldValue === "none") && !isModified && "text-warning border-warning/30 bg-warning/5"
+                                        )}>
+                                            <SelectValue placeholder="Sin mapeo" />
+                                        </SelectTrigger>
+                                        <SelectContent className="w-[var(--radix-select-trigger-width)]">
+                                            <SelectItem value="none" className="text-muted-foreground italic">Sin mapeo</SelectItem>
+                                            {getCategories().map(cat => (
+                                                <SelectItem key={cat.value} value={cat.value}>
+                                                    {cat.label}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            )
+                        }}
+                    />
                 )
             }
         }
@@ -181,7 +237,7 @@ export function MappingConfigSheet({
     return (
         <Drawer
             open={open}
-            onOpenChange={onOpenChange}
+            onOpenChange={handleOpenChange}
             side="bottom"
             boundary="embedded"
             resizable={false}
@@ -192,17 +248,12 @@ export function MappingConfigSheet({
             contentClassName="flex flex-col min-h-0 px-8 pb-8"
             headerActions={
                 <div className="flex items-center gap-3">
-                    {hasChanges && (
-                        <Chip intent="warning">Cambios Pendientes ({pendingChanges.size})</Chip>
-                    )}
-                    <Button
-                        onClick={handleSave}
-                        disabled={!hasChanges || isSaving}
-                        className="font-black tracking-widest uppercase text-[10px] h-9"
-                    >
-                        <Save className="mr-2 h-4 w-4" />
-                        {isSaving ? "Guardando..." : "Guardar Mapeo"}
-                    </Button>
+                    <AutoSaveStatusBadge
+                        status={status}
+                        invalidReason={invalidReason}
+                        lastSavedAt={lastSavedAt}
+                        onRetry={retry}
+                    />
                 </div>
             }
         >
@@ -240,3 +291,4 @@ export function MappingConfigSheet({
         </Drawer>
     )
 }
+

@@ -14,7 +14,6 @@ import {
 } from "@/components/ui/tooltip"
 import { motion, AnimatePresence } from "framer-motion"
 import { useBranding } from "@/contexts/BrandingProvider"
-import { CropFrame } from "@/components/shared/CropFrame"
 
 interface MiniSidebarProps {
     activeCategory: string | null

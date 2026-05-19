@@ -30,7 +30,7 @@ interface CashFlowItem {
     amount_comp?: number;
 }
 
-interface CashFlowData {
+export interface CashFlowData {
     // Activities
     operating: CashFlowItem[];
     total_operating: number;

@@ -121,7 +121,7 @@ export function CollapsibleSheet({
     if (!isMounted || !shouldMount) return null
 
     return (
-        <Sheet open={true} modal={false}>
+        <Sheet open={open || isCollapsed} modal={false}>
             <SheetContent
             side={side}
             data-sheet-id={sheetId}

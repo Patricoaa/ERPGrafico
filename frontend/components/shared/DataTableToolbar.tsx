@@ -132,7 +132,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                 )}
 
                 {/* Button Group & Actions — fixed on the right */}
-                <div className="flex items-center gap-3 shrink-0">
+                <div className="flex items-center gap-3 shrink-0 ml-auto">
                     {rightAction && (
                         <div className="flex items-center gap-2">
                             {rightAction}

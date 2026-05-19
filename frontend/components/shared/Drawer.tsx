@@ -15,7 +15,8 @@ export interface DrawerProps {
     onOpenChange: (open: boolean) => void
     title?: React.ReactNode | string
     subtitle?: React.ReactNode | string
-    icon?: React.ElementType
+    description?: React.ReactNode | string
+    icon?: React.ComponentType<{ className?: string }> | React.ReactNode
     headerActions?: React.ReactNode
     children: React.ReactNode
     
@@ -47,8 +48,12 @@ export interface DrawerProps {
     minSize?: number | string
     maxSize?: number | string
     
+    modal?: boolean
     className?: string
     contentClassName?: string
+    headerClassName?: string
+    titleClassName?: string
+    descriptionClassName?: string
 }
 
 export function Drawer({
@@ -56,23 +61,30 @@ export function Drawer({
     onOpenChange,
     title,
     subtitle,
-    icon: Icon,
+    description,
+    icon,
     headerActions,
     children,
     side = "bottom",
     boundary = "embedded",
     resizable = false,
-    showOverlay = false,
+    showOverlay,
     defaultSize,
     minSize,
     maxSize,
     className,
-    contentClassName
+    contentClassName,
+    headerClassName,
+    titleClassName,
+    descriptionClassName,
+    modal
 }: DrawerProps) {
     const isHorizontal = side === "left" || side === "right"
     const [size, setSize] = useState<number | string>(
         defaultSize ?? (isHorizontal ? "400px" : "75vh")
     )
+    const finalShowOverlay = showOverlay ?? (boundary === "embedded")
+    const finalModal = modal ?? (boundary !== "embedded")
 
     // Synchronize default size if it changes dynamically
     useEffect(() => {
@@ -81,17 +93,21 @@ export function Drawer({
         }
     }, [defaultSize])
 
-    const containerRef = useRef<HTMLElement | null>(null)
+    const [containerElement, setContainerElement] = useState<HTMLElement | null>(null)
     const uniqueId = useId()
     const contentId = `drawer-content-${uniqueId.replace(/:/g, '')}`
     
     useEffect(() => {
         if (boundary === "screen") {
-            containerRef.current = document.body
+            setContainerElement(document.body)
         } else {
-            containerRef.current = document.getElementById("main-content") || document.getElementById("module-sheets-portal-container") || document.body
+            setContainerElement(
+                document.getElementById("main-content") || 
+                document.getElementById("module-sheets-portal-container") || 
+                document.body
+            )
         }
-    }, [boundary])
+    }, [boundary, open])
 
     // Resizing logic
     const isResizing = useRef(false)
@@ -158,15 +174,25 @@ export function Drawer({
         left: "rounded-r-xl border-r-0 !h-full !left-0 !right-auto !top-0 !bottom-0 sm:max-w-none",
     }
 
+    let IconElement: React.ReactNode = null
+    if (icon) {
+        if (typeof icon === "function" || (typeof icon === "object" && "render" in (icon as any))) {
+            const IconComponent = icon as React.ComponentType<{ className?: string }>
+            IconElement = <IconComponent className="h-8 w-8 text-primary flex-shrink-0" />
+        } else {
+            IconElement = icon as React.ReactNode
+        }
+    }
+
     return (
-        <Sheet open={open} onOpenChange={onOpenChange}>
+        <Sheet open={open} onOpenChange={onOpenChange} modal={finalModal}>
             <SheetContent
                 id={contentId}
                 side={side}
-                hideOverlay={!showOverlay}
-                overlayClassName={cn(boundary === "embedded" ? "absolute inset-0 rounded-xl" : "fixed inset-0")}
+                hideOverlay={!finalShowOverlay}
+                overlayClassName={cn(boundary === "embedded" ? "!absolute !inset-0 rounded-xl" : "!fixed !inset-0")}
                 hideCloseButton={true}
-                container={containerRef.current || undefined}
+                container={containerElement || undefined}
                 style={{
                     [isHorizontal ? 'width' : 'height']: size,
                     minWidth: isHorizontal ? minSize : undefined,
@@ -218,28 +244,28 @@ export function Drawer({
                     className="absolute top-4 right-4 z-[60]"
                 />
 
-                {(title || subtitle) && (
-                    <SheetHeader className={cn("px-8 pb-2 space-y-0 shrink-0", side === "top" ? "pt-8" : "pt-8")}>
-                        <SheetTitle>
-                            <div className="flex items-center gap-4">
-                                {Icon && <Icon className="h-6 w-6 text-primary" />}
-                                <div className="flex flex-col text-left">
-                                    <span className="text-xl font-black tracking-tight text-foreground leading-none pr-8">
+                {(title || subtitle || description || headerActions || icon) && (
+                    <SheetHeader className={cn("px-8 pb-4 pt-8 border-b shrink-0", headerClassName)}>
+                        <div className="flex items-center justify-between gap-4 w-full">
+                            <div className="flex flex-row items-center gap-4 min-w-0 flex-1">
+                                {IconElement}
+                                <div className="flex flex-col gap-1 text-left min-w-0 flex-1">
+                                    <SheetTitle className={cn("text-xl font-black tracking-tight text-foreground leading-none pr-8", titleClassName)}>
                                         {title}
-                                    </span>
-                                    {subtitle && (
-                                        <span className="text-[10px] font-black uppercase text-muted-foreground tracking-widest mt-1 opacity-60">
-                                            {subtitle}
+                                    </SheetTitle>
+                                    {(subtitle || description) && (
+                                        <span className={cn("text-[10px] font-black uppercase text-muted-foreground tracking-widest mt-0.5 opacity-60 truncate", descriptionClassName)}>
+                                            {subtitle || description}
                                         </span>
                                     )}
                                 </div>
                             </div>
                             {headerActions && (
-                                <div className="ml-auto mt-4">
+                                <div className="flex items-center gap-2 flex-shrink-0 pr-8">
                                     {headerActions}
                                 </div>
                             )}
-                        </SheetTitle>
+                        </div>
                     </SheetHeader>
                 )}
 
