@@ -171,6 +171,21 @@ export function PayrollDetailContent({
         }
     }
 
+    const isPosted = payroll?.status === 'POSTED'
+    const salaroPaid = payments.some((p: PayrollPayment) => p.payment_type === 'SALARIO')
+    const previredPaid = payments.some((p: PayrollPayment) => p.payment_type === 'PREVIRED')
+
+    const netSalary = parseFloat(payroll?.net_salary || "0")
+    const totalAdvances = payroll?.advances?.reduce((s: number, a: SalaryAdvance) => s + parseFloat(a.amount), 0) || 0
+    const totalSalaryPaid = payments.filter((p: PayrollPayment) => p.payment_type === 'SALARIO').reduce((s: number, p: PayrollPayment) => s + parseFloat(p.amount), 0)
+    const pendingSalary = Math.max(0, netSalary - totalAdvances - totalSalaryPaid)
+
+    const workerLegalDiscounts = payroll?.items?.filter((i: PayrollItem) => i.concept_detail?.category === 'DESCUENTO_LEGAL_TRABAJADOR') || []
+    const employerContributions = payroll?.items?.filter((i: PayrollItem) => i.concept_detail?.category === 'DESCUENTO_LEGAL_EMPLEADOR') || []
+    const totalPreviredRequired = (workerLegalDiscounts.reduce((s: number, i: PayrollItem) => s + parseFloat(i.amount), 0)) + employerContributions.reduce((s: number, i: PayrollItem) => s + parseFloat(i.amount), 0)
+    const totalPreviredPaid = payments.filter((p: PayrollPayment) => p.payment_type === 'PREVIRED').reduce((s: number, p: PayrollPayment) => s + parseFloat(p.amount), 0)
+    const pendingPrevired = Math.max(0, totalPreviredRequired - totalPreviredPaid)
+
     if (loading) return <TableSkeleton rows={8} columns={5} className="flex-1 p-6" />
 
     if (!payroll) return (
@@ -179,21 +194,6 @@ export function PayrollDetailContent({
             <p className="font-medium uppercase tracking-widest text-xs opacity-50">Liquidación no encontrada</p>
         </div>
     )
-
-    const isPosted = payroll.status === 'POSTED'
-    const salaroPaid = payments.some((p: PayrollPayment) => p.payment_type === 'SALARIO')
-    const previredPaid = payments.some((p: PayrollPayment) => p.payment_type === 'PREVIRED')
-
-    const netSalary = parseFloat(payroll.net_salary || "0")
-    const totalAdvances = payroll.advances?.reduce((s: number, a: SalaryAdvance) => s + parseFloat(a.amount), 0) || 0
-    const totalSalaryPaid = payments.filter((p: PayrollPayment) => p.payment_type === 'SALARIO').reduce((s: number, p: PayrollPayment) => s + parseFloat(p.amount), 0)
-    const pendingSalary = Math.max(0, netSalary - totalAdvances - totalSalaryPaid)
-
-    const workerLegalDiscounts = payroll.items?.filter((i: PayrollItem) => i.concept_detail?.category === 'DESCUENTO_LEGAL_TRABAJADOR') || []
-    const employerContributions = payroll.items?.filter((i: PayrollItem) => i.concept_detail?.category === 'DESCUENTO_LEGAL_EMPLEADOR') || []
-    const totalPreviredRequired = (workerLegalDiscounts.reduce((s: number, i: PayrollItem) => s + parseFloat(i.amount), 0)) + employerContributions.reduce((s: number, i: PayrollItem) => s + parseFloat(i.amount), 0)
-    const totalPreviredPaid = payments.filter((p: PayrollPayment) => p.payment_type === 'PREVIRED').reduce((s: number, p: PayrollPayment) => s + parseFloat(p.amount), 0)
-    const pendingPrevired = Math.max(0, totalPreviredRequired - totalPreviredPaid)
 
     useEffect(() => {
         if (isSheet && onHeaderDataChange && payroll) {

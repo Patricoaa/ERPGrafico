@@ -105,7 +105,7 @@ export function OutsourcingAssignmentStep({
                 <TooltipTrigger asChild>
                   <Info className="h-3.5 w-3.5 text-info/50 cursor-help" />
                 </TooltipTrigger>
-                <TooltipContent className="max-w-xs bg-info text-white border-info">
+                <TooltipContent className="max-w-xs">
                   <p className="text-xs">
                     Los servicios tercerizados generarán automáticamente Órdenes de Compra en estado Confirmado que deberán procesarse desde el Hub de la OC.
                   </p>

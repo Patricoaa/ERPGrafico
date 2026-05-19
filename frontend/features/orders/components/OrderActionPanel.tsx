@@ -161,7 +161,7 @@ export function OrderActionPanel({
 
                 <Separator />
 
-                <ScrollArea className="flex-1 px-6">
+                <ScrollArea className="flex-1 px-6 canvas-prepress">
                     {loading ? (
                         <div className="py-6">
                             <CardSkeleton count={3} variant="list" />

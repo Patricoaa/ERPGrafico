@@ -19,23 +19,23 @@ export interface DrawerProps {
     icon?: React.ComponentType<{ className?: string }> | React.ReactNode
     headerActions?: React.ReactNode
     children: React.ReactNode
-    
+
     /**
      * Desde qué borde aparece el Drawer
      */
     side?: "top" | "right" | "bottom" | "left"
-    
+
     /**
      * Si 'screen', se ancla a toda la pantalla (document.body).
      * Si 'embedded', se ancla al contenedor del portal principal (ideal para layouts dentro de shells).
      */
     boundary?: "screen" | "embedded"
-    
+
     /**
      * Si se permite redimensionar arrastrando el borde exterior.
      */
     resizable?: boolean
-    
+
     /**
      * Si se debe mostrar un fondo oscuro difuminado detrás del Drawer.
      */
@@ -47,7 +47,7 @@ export interface DrawerProps {
     defaultSize?: number | string
     minSize?: number | string
     maxSize?: number | string
-    
+
     modal?: boolean
     className?: string
     contentClassName?: string
@@ -83,7 +83,15 @@ export function Drawer({
     const [size, setSize] = useState<number | string>(
         defaultSize ?? (isHorizontal ? "400px" : "75vh")
     )
-    const finalShowOverlay = showOverlay ?? (boundary === "embedded")
+    // Embedded drawers always show an overlay (blocks mini-sidebar and other areas outside the
+    // drawer), EXCEPT when the drawer is non-resizable and fills 100% of the container — in
+    // that case there is nothing visible outside it, so no overlay is needed.
+    const isFullSize = defaultSize === "100%" || defaultSize === "100vw" || defaultSize === "100vh"
+    const embeddedNeedsOverlay = boundary === "embedded" && !(isFullSize && !resizable)
+    const finalShowOverlay = showOverlay ?? (boundary === "screen" ? false : embeddedNeedsOverlay)
+
+    // For embedded drawers keep modal=false so Radix does not trap focus outside the portal
+    // container; the visual overlay is handled by SheetContent's overlayClassName instead.
     const finalModal = modal ?? (boundary !== "embedded")
 
     // Synchronize default size if it changes dynamically
@@ -96,14 +104,14 @@ export function Drawer({
     const [containerElement, setContainerElement] = useState<HTMLElement | null>(null)
     const uniqueId = useId()
     const contentId = `drawer-content-${uniqueId.replace(/:/g, '')}`
-    
+
     useEffect(() => {
         if (boundary === "screen") {
             setContainerElement(document.body)
         } else {
             setContainerElement(
-                document.getElementById("main-content") || 
-                document.getElementById("module-sheets-portal-container") || 
+                document.getElementById("main-content") ||
+                document.getElementById("module-sheets-portal-container") ||
                 document.body
             )
         }
@@ -124,12 +132,12 @@ export function Drawer({
     useEffect(() => {
         const handleMouseMove = (e: MouseEvent) => {
             if (!isResizing.current) return
-            
+
             const element = document.getElementById(contentId)
             if (!element) return
-            
+
             const rect = element.getBoundingClientRect()
-            
+
             if (isHorizontal) {
                 const currentWidth = rect.width
                 // Si movemos a la izquierda (negative movementX) y estamos en right side, aumenta el ancho.
@@ -190,7 +198,7 @@ export function Drawer({
                 id={contentId}
                 side={side}
                 hideOverlay={!finalShowOverlay}
-                overlayClassName={cn(boundary === "embedded" ? "!absolute !inset-0 rounded-xl" : "!fixed !inset-0")}
+                overlayClassName="!fixed !inset-0"
                 hideCloseButton={true}
                 container={containerElement || undefined}
                 style={{
@@ -271,6 +279,7 @@ export function Drawer({
 
                 <div className={cn("flex-1 overflow-y-auto px-8 pb-8 scrollbar-thin scrollbar-thumb-primary/10 scrollbar-track-transparent", contentClassName)}>
                     {children}
+
                 </div>
             </SheetContent>
         </Sheet>

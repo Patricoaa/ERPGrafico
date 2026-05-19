@@ -5,7 +5,7 @@ import Link from "next/link"
 import { ReactNode, HTMLAttributes } from "react"
 import type { ColumnDef } from "@tanstack/react-table"
 
-import { MoneyDisplay, StatusBadge, EntityBadge, CropFrame } from "@/components/shared"
+import { MoneyDisplay, StatusBadge, EntityBadge } from "@/components/shared"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { Button } from "@/components/ui/button"
 import {
@@ -315,27 +315,22 @@ export const DataCell = {
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <div className="flex justify-center items-center">
-                            <CropFrame variant={compact ? "compact" : "default"} thickness={1}>
-                                <Button
-                                    variant={variant}
-                                    size="icon"
-                                    className={cn("h-7 w-7 rounded-none transition-all duration-300 hover:bg-transparent hover:scale-105 active:scale-95", className)}
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        onClick?.(e);
-                                    }}
-                                    {...props}
-                                >
-                                    <Icon className={cn("h-4 w-4", resolvedColor)} />
-                                </Button>
-                            </CropFrame>
+                            <Button
+                                variant={variant}
+                                size="icon"
+                                className={cn("h-7 w-7 rounded-full transition-all duration-200 hover:scale-105 active:scale-95 hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50", className)}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onClick?.(e);
+                                }}
+                                {...props}
+                            >
+                                <Icon className={cn("h-4 w-4", resolvedColor)} />
+                            </Button>
                         </div>
                     </TooltipTrigger>
                     {title && (
-                        <TooltipContent
-                            side="top"
-                            className="text-[9px] font-black uppercase tracking-[0.2em] bg-sidebar text-sidebar-foreground border-sidebar-border px-2 py-1 shadow-xl rounded-none animate-in fade-in zoom-in-95 duration-200"
-                        >
+                        <TooltipContent side="top" className="text-[9px] font-black uppercase tracking-[0.2em] px-2 py-1 shadow-xl rounded-none animate-in fade-in zoom-in-95 duration-200">
                             {title}
                         </TooltipContent>
                     )}
@@ -383,17 +378,15 @@ export const DataCell = {
                     <TooltipTrigger asChild>
                         <DropdownMenuTrigger asChild>
                             <div className="flex justify-center items-center">
-                                <CropFrame variant={compact ? "compact" : "default"} thickness={1}>
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className={cn("h-7 w-7 rounded-none transition-all duration-300 hover:bg-transparent hover:scale-105 active:scale-95", className)}
-                                        onClick={(e) => e.stopPropagation()}
-                                        aria-label={title}
-                                    >
-                                        <MoreVertical className="h-4 w-4" />
-                                    </Button>
-                                </CropFrame>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className={cn("h-7 w-7 rounded-md transition-all duration-200 hover:scale-105 active:scale-95", className)}
+                                    onClick={(e) => e.stopPropagation()}
+                                    aria-label={title}
+                                >
+                                    <MoreVertical className="h-4 w-4" />
+                                </Button>
                             </div>
                         </DropdownMenuTrigger>
                     </TooltipTrigger>
@@ -431,10 +424,7 @@ export const DataCell = {
                         })}
                     </DropdownMenuContent>
                 </DropdownMenu>
-                <TooltipContent
-                    side="top"
-                    className="text-[9px] font-black uppercase tracking-[0.2em] bg-sidebar text-sidebar-foreground border-sidebar-border px-2 py-1 shadow-xl rounded-none animate-in fade-in zoom-in-95 duration-200"
-                >
+                <TooltipContent side="top" className="text-[9px] font-black uppercase tracking-[0.2em] px-2 py-1 shadow-xl rounded-none animate-in fade-in zoom-in-95 duration-200">
                     {title}
                 </TooltipContent>
             </Tooltip>

@@ -19,7 +19,7 @@ import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 import { useOrderHubData } from "@/hooks/useOrderHubData"
 import { OrderHubIntegrated } from "./OrderHubIntegrated"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { StatusBadge, HubSkeleton, SheetCloseButton } from "@/components/shared"
+import { StatusBadge, HubSkeleton, SheetCloseButton, PanelHeader } from "@/components/shared"
 
 export interface OrderHubPanelProps {
     orderId?: number | null
@@ -126,50 +126,31 @@ export function OrderHubPanel({
             <div className="flex flex-col h-full overflow-hidden">
                 {/* ── Panel Header (only in panel context) ──────────────────── */}
                 {showHeader && (
-                    <div className="flex items-center justify-between gap-3 shrink-0 px-4 pt-1 pb-4 border-b border-white/5 bg-sidebar backdrop-blur-md">
-                        <div className="flex items-center gap-3 min-w-0">
-                            {/* Unified Minimalist Icon Container */}
-                            <TopLeftIcon className="h-5 w-5 text-muted-foreground" />
-
-                            <div className="flex flex-col gap-0.5 min-w-0">
-                                <div className="flex items-center gap-2">
-                                    <span className="font-heading font-black text-[15px] text-foreground leading-tight truncate">
-                                        {activeDoc.display_id || activeDoc.folio || `#${activeDoc.id}`}
-                                    </span>
-                                    {/* Global status badge */}
-                                    <StatusBadge
-                                        status={globalStatus.status === 'success' ? 'SUCCESS' : globalStatus.status === 'active' ? 'IN_PROGRESS' : globalStatus.status === 'cancelled' ? 'CANCELLED' : 'NEUTRAL'}
-                                        label={globalStatus.label}
-                                        icon={StatusIcon}
-                                        size="sm"
-                                        className="rounded-md"
-                                    />
-                                </div>
-                                {/* Partner name */}
+                    <PanelHeader
+                        title={activeDoc.display_id || activeDoc.folio || `#${activeDoc.id}`}
+                        description={
+                            <>
                                 {(activeDoc.customer_name || activeDoc.supplier_name) && (
-                                    <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-widest leading-none mt-1 truncate max-w-[200px]">
+                                    <span className="text-xs text-muted-foreground font-medium leading-none truncate max-w-[240px]">
                                         {activeDoc.customer_name || activeDoc.supplier_name}
                                     </span>
                                 )}
-                            </div>
-                        </div>
-
-                        {/* Close button Area */}
-                        {onClose && (
-                            <div className="flex items-center gap-1 shrink-0">
-                                <SheetCloseButton
-                                    onClick={onClose}
-                                    showTooltip
-                                    tooltipText="Cerrar Hub"
+                                <StatusBadge
+                                    status={globalStatus.status === 'success' ? 'SUCCESS' : globalStatus.status === 'active' ? 'IN_PROGRESS' : globalStatus.status === 'cancelled' ? 'CANCELLED' : 'NEUTRAL'}
+                                    label={globalStatus.label}
+                                    icon={StatusIcon}
+                                    size="xs"
+                                    className="rounded-md shrink-0"
                                 />
-                            </div>
-                        )}
-
-
-                    </div>
+                            </>
+                        }
+                        icon={TopLeftIcon}
+                        onClose={onClose}
+                        closeTooltipText="Cerrar Hub"
+                    />
                 )}
                 {/* ── Scrollable Phase Content ──────────────────────── */}
-                <ScrollArea className="flex-1 w-full">
+                <ScrollArea className="flex-1 w-full canvas-prepress">
                     <div className="px-4 pt-5 pb-4">
                         <OrderHubIntegrated
                             data={hubData as any}

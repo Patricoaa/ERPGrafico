@@ -9,11 +9,11 @@ import { useState, useEffect, useCallback } from "react"
 import dynamic from "next/dynamic"
 import Link from "next/link"
 import { useNotifications, NotificationPayload } from "@/features/notifications/hooks/useNotifications"
-import { 
-    getNotifications, 
-    getUnreadNotificationCount, 
-    markNotificationRead, 
-    markAllNotificationsRead, 
+import {
+    getNotifications,
+    getUnreadNotificationCount,
+    markNotificationRead,
+    markAllNotificationsRead,
     Notification,
     getTasks
 } from '@/features/workflow/api/workflowApi'
@@ -59,7 +59,7 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
     const { socketConnected } = useNotifications((newNotification: NotificationPayload) => {
         setNotifications(prev => [newNotification as any, ...prev].slice(0, 20))
         setUnreadCount(prev => prev + 1)
-        
+
         // If it's a task related notification, we might want to refresh tasks too
         if (newNotification.notification_type?.startsWith('TASK')) {
             fetchData()
@@ -74,10 +74,10 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                 getTasks({ category: 'APPROVAL', status: 'PENDING' }),
                 getTasks({ category: 'TASK', status: 'PENDING' })
             ])
-            
+
             setNotifications(data.results || data)
             setUnreadCount(count)
-            
+
             const approvals = Array.isArray(approvalsRes) ? approvalsRes : (approvalsRes.results || [])
             const tasks = Array.isArray(tasksRes) ? tasksRes : (tasksRes.results || [])
             setPendingTasksCount(approvals.length + tasks.length)
@@ -132,15 +132,15 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                 <PermissionGuard permission="sales.view_dashboard_sales">
                     <Tooltip>
                         <TooltipTrigger asChild>
-                            <Link 
-                                href="/pos" 
+                            <Link
+                                href="/pos"
                                 target="_blank"
                                 className="h-8 w-8 flex items-center justify-center rounded-md text-foreground/50 hover:bg-accent hover:text-accent-foreground transition-all duration-200"
                             >
                                 <Store className="h-5 w-5" />
                             </Link>
                         </TooltipTrigger>
-                        <TooltipContent side="bottom" className="font-bold uppercase tracking-widest text-[10px] bg-sidebar text-sidebar-foreground border-sidebar-border">
+                        <TooltipContent side="bottom">
                             Punto de Venta (POS)
                         </TooltipContent>
                     </Tooltip>
@@ -157,7 +157,7 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                             <Calculator className="h-5 w-5" />
                         </motion.button>
                     </TooltipTrigger>
-                    <TooltipContent side="bottom" className="font-bold uppercase tracking-widest text-[10px] bg-sidebar text-sidebar-foreground border-sidebar-border">
+                    <TooltipContent side="bottom">
                         Calculadora de Costos
                     </TooltipContent>
                 </Tooltip>
@@ -185,7 +185,7 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                             )}
                         </motion.button>
                     </TooltipTrigger>
-                    <TooltipContent side="bottom" className="font-bold uppercase tracking-widest text-[10px] bg-sidebar text-sidebar-foreground border-sidebar-border">
+                    <TooltipContent side="bottom">
                         Bandeja de Entrada {pendingTasksCount > 0 && `(${pendingTasksCount})`}
                     </TooltipContent>
                 </Tooltip>
@@ -211,7 +211,7 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                                 </motion.button>
                             </DropdownMenuTrigger>
                         </TooltipTrigger>
-                        <TooltipContent side="bottom" className="font-bold uppercase tracking-widest text-[10px] bg-sidebar text-sidebar-foreground border-sidebar-border">
+                        <TooltipContent side="bottom">
                             Notificaciones
                         </TooltipContent>
                     </Tooltip>
@@ -248,7 +248,7 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <DropdownMenuTrigger asChild>
-                                <motion.button 
+                                <motion.button
                                     whileTap={{ scale: 0.95 }}
                                     className="relative h-8 w-8 flex items-center justify-center rounded-md text-foreground/50 hover:bg-accent hover:text-accent-foreground transition-all duration-200 bg-transparent border-none shadow-none"
                                 >
@@ -260,7 +260,7 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                                 </motion.button>
                             </DropdownMenuTrigger>
                         </TooltipTrigger>
-                        <TooltipContent side="bottom" className="font-bold text-[10px] uppercase bg-sidebar text-sidebar-foreground border-sidebar-border">
+                        <TooltipContent side="bottom">
                             {user?.username || 'Usuario'}
                         </TooltipContent>
                     </Tooltip>

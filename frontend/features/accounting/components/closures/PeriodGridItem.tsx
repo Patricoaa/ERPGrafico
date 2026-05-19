@@ -72,7 +72,7 @@ export function PeriodGridItem({ period, onClose, onReopen, isActionLoading }: P
                                             F29 Cerrado
                                         </Chip>
                                     </TooltipTrigger>
-                                    <TooltipContent side="top" className="max-w-[200px] bg-popover border-border">
+                                    <TooltipContent side="top" className="max-w-[200px]">
                                         <p className="text-xs font-medium">El periodo tributario (F29) está oficialmente cerrado ante el SII. Se bloquea la reapertura contable para garantizar integridad fiscal.</p>
                                     </TooltipContent>
                                 </Tooltip>

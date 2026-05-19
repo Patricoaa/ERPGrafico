@@ -11,7 +11,7 @@
    */
 
   /* 60% - DOMINANT (Neutrals & Backgrounds) */
-  --background-raw: 0.99 0.005 240;
+  --background-raw: 0.96 0.005 240;
   --background: oklch(var(--background-raw));
   --foreground-raw: 0.12 0.02 240;
   --foreground: oklch(var(--foreground-raw));
@@ -101,16 +101,16 @@
   --ring-raw: 0.65 0.25 301;
   --ring: oklch(var(--ring-raw) / 0.4);
 
-  --sidebar-raw: 0.10 0.02 240;
+  --sidebar-raw: 0.96 0.005 240;
   --sidebar: oklch(var(--sidebar-raw));
-  --sidebar-foreground-raw: 0.90 0.02 240;
+  --sidebar-foreground-raw: 0.12 0.02 240;
   --sidebar-foreground: oklch(var(--sidebar-foreground-raw));
   --sidebar-primary: var(--primary);
   --sidebar-primary-foreground: var(--primary-foreground);
-  --sidebar-accent-raw: 1 0 0;
+  --sidebar-accent-raw: 0.12 0.02 240;
   --sidebar-accent: oklch(var(--sidebar-accent-raw) / 0.05);
   --sidebar-accent-foreground: oklch(var(--sidebar-accent-raw));
-  --sidebar-border-raw: 1 0 0;
+  --sidebar-border-raw: 0.12 0.02 240;
   --sidebar-border: oklch(var(--sidebar-border-raw) / 0.1);
   --sidebar-ring: var(--primary);
 
@@ -139,6 +139,11 @@
   /* Se funde con el background para un look "seamless" */
   --sidebar-foreground-raw: 0.85 0.0 0;
   /* Texto ligeramente más apagado para no distraer */
+  --sidebar-accent-raw: 0.95 0.0 0;
+  --sidebar-accent: oklch(var(--sidebar-accent-raw) / 0.05);
+  --sidebar-accent-foreground: oklch(var(--sidebar-accent-raw));
+  --sidebar-border-raw: 0.95 0.0 0;
+  --sidebar-border: oklch(var(--sidebar-border-raw) / 0.1);
 
   /* 3. NEUTRALS & UI ELEMENTS (Bordes tenues y fondos secundarios) */
   --muted-raw: 0.22 0.008 240;
@@ -744,6 +749,29 @@ table [data-notched-field] {
   }
 
   /*
+   * Clean header support: Keeps any header elements inside prepress panels flat and free of grid/marks
+   */
+  .canvas-prepress [data-slot="sheet-header"],
+  .canvas-prepress [data-slot="dialog-header"],
+  .canvas-prepress header,
+  .canvas-prepress .sheet-header,
+  .canvas-prepress .panel-header {
+    position: relative;
+    z-index: 10;
+    /* Ensure a solid background to cover parent canvas-prepress elements */
+    background-color: var(--color-card);
+  }
+
+  /* When the panel itself has a sidebar variant, use the sidebar background */
+  .canvas-prepress.bg-sidebar [data-slot="sheet-header"],
+  .canvas-prepress.bg-sidebar [data-slot="dialog-header"],
+  .canvas-prepress.bg-sidebar header,
+  .canvas-prepress.bg-sidebar .sheet-header,
+  .canvas-prepress.bg-sidebar .panel-header {
+    background-color: var(--color-sidebar);
+  }
+
+  /*
    * GRAPHIC INDUSTRY — Die-Cut Separator
    * A dashed line that evokes die-cut or perforation guides.
    * Usage: <hr className="die-cut-separator" />
@@ -804,11 +832,13 @@ table [data-notched-field] {
   }
 
   body[data-inbox-open="true"] {
-    --inbox-width: calc(320px + 1rem); /* Width (320px) + Gap (16px) */
+    --inbox-width: calc(320px + 1rem);
+    /* Width (320px) + Gap (16px) */
   }
 
   body[data-hub-open="true"] {
-    --hub-width: calc(320px + 1rem); /* Width (320px) + Gap (16px) */
+    --hub-width: calc(320px + 1rem);
+    /* Width (320px) + Gap (16px) */
   }
 
   /* 
@@ -1019,5 +1049,35 @@ table [data-notched-field] {
   [data-slot="sheet-overlay"][data-state="closed"] {
     animation-duration: 300ms !important;
     animation-name: sheet-fade-out !important;
+  }
+
+  /* 
+   * PREMIUM SHEET & DIALOG HEADER OVERRIDES
+   * 1. Ensures drawer/sheet and modal/dialog headers inherit the exact background color of their container's body,
+   *    maintaining a seamless, unified background instead of a separate card/sidebar color.
+   * 2. Dynamically inherits top corner rounded-radii from the parent content container to prevent sharp,
+   *    square headers from overflowing and breaking premium rounded corners.
+   */
+  [data-slot="sheet-content"] [data-slot="sheet-header"] {
+    background-color: inherit !important;
+  }
+
+  [data-slot="sheet-content"].rounded-r-xl [data-slot="sheet-header"] {
+    border-top-right-radius: inherit !important;
+  }
+  
+  [data-slot="sheet-content"].rounded-l-xl [data-slot="sheet-header"] {
+    border-top-left-radius: inherit !important;
+  }
+  
+  [data-slot="sheet-content"].rounded-t-xl [data-slot="sheet-header"] {
+    border-top-left-radius: inherit !important;
+    border-top-right-radius: inherit !important;
+  }
+
+  [data-slot="dialog-content"] [data-slot="dialog-header"] {
+    background-color: inherit !important;
+    border-top-left-radius: inherit !important;
+    border-top-right-radius: inherit !important;
   }
 }

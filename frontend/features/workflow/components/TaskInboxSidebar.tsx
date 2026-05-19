@@ -1,7 +1,7 @@
 "use client"
 
 import { Inbox } from "lucide-react"
-import { SheetCloseButton, CollapsibleSheet } from "@/components/shared"
+import { SheetCloseButton, CollapsibleSheet, PanelHeader } from "@/components/shared"
 import { TaskInbox } from "@/features/workflow/components/TaskInbox"
 import { cn } from "@/lib/utils"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
@@ -26,16 +26,15 @@ export function TaskInboxSidebar({ isOpen, onClose }: TaskInboxSidebarProps) {
                 priority={0}
             >
                 {/* Header */}
-                <div className="flex items-center justify-between px-4 pt-1 pb-4 border-b border-white/5 bg-sidebar backdrop-blur-md">
-                    <div className="flex items-center gap-3">
-                        <Inbox className="h-5 w-5 text-muted-foreground" />
-                        <h2 className="text-lg font-bold tracking-tight text-white">Bandeja de Entrada</h2>
-                    </div>
-                    <SheetCloseButton onClick={onClose} />
-                </div>
+                <PanelHeader
+                    title="Bandeja de Entrada"
+                    description="Gestión de aprobaciones y tareas"
+                    icon={Inbox}
+                    onClose={onClose}
+                />
 
                 {/* Task Inbox Content */}
-                <div className="flex-1 overflow-y-auto p-4">
+                <div className="flex-1 overflow-y-auto p-4 canvas-prepress">
                     {isOpen && <TaskInbox />}
                 </div>
             </CollapsibleSheet>

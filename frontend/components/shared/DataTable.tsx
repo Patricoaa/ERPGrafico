@@ -90,6 +90,8 @@ interface DataTableProps<TData, TValue> {
     initialColumnFilters?: { id: string; value: unknown }[]
     /** Primary create action rendered at the right-most end of the toolbar, after the button group */
     createAction?: React.ReactNode
+    /** Custom actions/buttons rendered inside the main toolbar button group */
+    rightButtonGroupAction?: React.ReactNode
     emptyState?: {
         title?: string
         description?: string
@@ -150,6 +152,7 @@ export function DataTable<TData, TValue>({
     getSubRows,
     autoExpand,
     createAction,
+    rightButtonGroupAction,
     emptyState: customEmptyState,
     initialColumnFilters = EMPTY_ARRAY,
     renderRow,
@@ -386,6 +389,7 @@ export function DataTable<TData, TValue>({
                             isCustomFiltered={isCustomFiltered}
                             customFilterCount={customFilterCount}
                             createAction={createAction}
+                            rightButtonGroupAction={rightButtonGroupAction}
                         />
                     </div>
                 )}
@@ -475,6 +479,7 @@ export function DataTable<TData, TValue>({
                         isCustomFiltered={isCustomFiltered}
                         customFilterCount={customFilterCount}
                         createAction={createAction}
+                        rightButtonGroupAction={rightButtonGroupAction}
                     />
                 </div>
             )}

@@ -5,7 +5,7 @@ import { ArrowUpDown, ArrowUp, ArrowDown, MoreHorizontal } from "lucide-react"
 import { Table } from "@tanstack/react-table"
 
 import { Button } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
+import { cn, translateFieldName } from "@/lib/utils"
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -44,48 +44,26 @@ interface DataTableToolbarProps<TData> {
     leftAction?: React.ReactNode
     /** Primary create action rendered to the right of the button group */
     createAction?: React.ReactNode
+    /** Custom actions/buttons rendered inside the main toolbar button group */
+    rightButtonGroupAction?: React.ReactNode
 }
 
 function translateColumnId(id: string): string {
+    // Specific DataTable UI shortcuts/abbreviations for cleaner column lists
     const translations: Record<string, string> = {
-        name: "Nombre",
         code: "SKU",
         internal_code: "Cód. Interno",
-        category_name: "Categoría",
-        status: "Estado",
-        active: "Activo",
-        product_type: "Tipo",
-        sale_price: "Precio",
-        tax: "Impuesto",
-        total: "Total",
-        actions: "Acciones",
-        attributes: "Atributos",
-        availability: "Disponible para",
-        select: "Selección",
         created_at: "Fec. Creación",
         updated_at: "Últ. Actualización",
-        // Extended module fields
-        date: "Fecha",
-        number: "Folio",
         partner_name: "Proveedor/Cliente",
         customer_name: "Cliente",
         supplier_name: "Proveedor",
-        dte_type: "Tipo Doc",
-        dte_type_display: "Tipo Doc",
-        payment_status: "Estado Pago",
+        contact_name: "Contacto",
         pending_amount: "Mto Pendiente",
         payment_method: "M. de Pago",
-        reference: "Referencia",
-        description: "Descripción",
-        quantity: "Cantidad",
-        warehouse: "Bodega",
-        contact_name: "Contacto",
-        is_active: "Activo",
-        due_date: "Fec. Vencimiento",
-        balance: "Saldo",
-        currency: "Moneda"
+        prevision: "Previsión / Salud",
     }
-    return translations[id] || id
+    return translations[id] || translateFieldName(id) || id
 }
 
 export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
@@ -109,6 +87,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
         customFilterCount,
         leftAction,
         createAction,
+        rightButtonGroupAction,
     } = props
 
     // Get all columns that are sortable
@@ -206,6 +185,12 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                                             ))}
                                     </DropdownMenuContent>
                                 </DropdownMenu>
+                            </div>
+                        )}
+
+                        {rightButtonGroupAction && (
+                            <div className="border-r border-border/50 last:border-r-0 flex items-center h-full">
+                                {rightButtonGroupAction}
                             </div>
                         )}
 

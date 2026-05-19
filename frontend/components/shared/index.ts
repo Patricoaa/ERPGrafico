@@ -121,3 +121,4 @@ export * from './DataTableCells';
 export * from './DynamicIcon';
 export * from './ErrorBoundary';
 export * from './Numpad';
+export * from './PanelHeader'
