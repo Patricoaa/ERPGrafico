@@ -1,5 +1,13 @@
 import { LucideIcon } from "lucide-react"
 import type { WorkOrderStageData } from './schemas'
+import type { StageId } from './constants/stages'
+export type { StageId }
+
+import type { WorkOrderInitialData } from '@/types/forms'
+
+export type WizardMode =
+    | { kind: 'create'; defaultOtType?: 'LINKED' | 'NONE'; defaultProductId?: string; initialData?: WorkOrderInitialData }
+    | { kind: 'manage'; orderId: number; targetStage?: StageId | 'BASIC_INFO' }
 
 export interface WorkOrderMaterial {
     id: number

@@ -137,6 +137,39 @@ class WorkOrderMaterialSerializer(serializers.ModelSerializer):
         total = qty * cost
         return float(total)
 
+class WorkOrderInitialMaterialSerializer(serializers.Serializer):
+    component_id = serializers.IntegerField()
+    quantity_planned = serializers.DecimalField(max_digits=12, decimal_places=4)
+    is_outsourced = serializers.BooleanField(default=False)
+    supplier_id = serializers.IntegerField(required=False, allow_null=True)
+    unit_price = serializers.DecimalField(max_digits=12, decimal_places=2, required=False, allow_null=True)
+    uom_id = serializers.IntegerField(required=False, allow_null=True)
+
+    def validate(self, data):
+        try:
+            Product.objects.get(pk=data['component_id'])
+        except Product.DoesNotExist:
+            raise serializers.ValidationError({"component_id": "El componente no existe."})
+
+        if data.get('is_outsourced') and not data.get('supplier_id'):
+            raise serializers.ValidationError("Material tercerizado requiere supplier_id.")
+
+        if data.get('supplier_id'):
+            from contacts.models import Contact
+            try:
+                Contact.objects.get(pk=data['supplier_id'])
+            except Contact.DoesNotExist:
+                raise serializers.ValidationError({"supplier_id": "El proveedor no existe."})
+
+        if data.get('uom_id'):
+            try:
+                UoM.objects.get(pk=data['uom_id'])
+            except UoM.DoesNotExist:
+                raise serializers.ValidationError({"uom_id": "La unidad de medida no existe."})
+
+        return data
+
+
 class WorkOrderSerializer(serializers.ModelSerializer):
     consumptions = ProductionConsumptionSerializer(many=True, read_only=True)
     materials = WorkOrderMaterialSerializer(many=True, read_only=True)

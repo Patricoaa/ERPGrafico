@@ -8,7 +8,7 @@ import type { WorkOrder } from "../types"
 import { formatEntityDisplay } from "@/lib/entity-registry"
 
 interface WizardHeaderProps {
-    order: WorkOrder
+    order: WorkOrder | null
     currentStageLabel: string
     onEdit: () => void
     onOpenCommandCenter: (id: number, type: 'sale' | 'purchase') => void
@@ -34,18 +34,33 @@ export function WizardHeader({
     isDeleting,
     isDuplicating
 }: WizardHeaderProps) {
-    const canEditOrDelete = ['MATERIAL_ASSIGNMENT', 'MATERIAL_APPROVAL', 'PREPRESS'].includes(order?.current_stage)
+    const canEditOrDelete = order
+        ? ['MATERIAL_ASSIGNMENT', 'MATERIAL_APPROVAL', 'PREPRESS'].includes(order.current_stage)
+        : false
     const customerName = order?.sale_customer_name || "Manual"
-    const creationDate = formatPlainDate(order?.created_at)
+    const creationDate = order?.created_at ? formatPlainDate(order.created_at) : ''
+
+    if (!order) {
+        return (
+            <div className="flex items-center w-full pr-8">
+                <div className="space-y-1 flex-1">
+                    <h2 className="text-xl font-bold tracking-tight">Crear Orden de Trabajo</h2>
+                    <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
+                        Planificación de Producción • Nueva OT
+                    </p>
+                </div>
+            </div>
+        )
+    }
 
     return (
         <div className="flex items-center justify-between w-full pr-8">
             <div className="space-y-1 flex-1">
                 <div className="flex items-center gap-2">
                     <h2 className="text-xl font-bold tracking-tight">Gestión de orden de trabajo</h2>
-                    <StatusBadge status={order?.status || 'PENDING'} size="md" />
+                    <StatusBadge status={order.status || 'PENDING'} size="md" />
                     <Chip size="xs">{currentStageLabel}</Chip>
-                    <Chip size="xs">{formatCurrency(order?.total_price || 0)}</Chip>
+                    <Chip size="xs">{formatCurrency(order.total_price || 0)}</Chip>
                 </div>
                 <div className="flex items-center gap-2 text-xs text-muted-foreground font-medium uppercase tracking-wider">
                     <span>{formatEntityDisplay('production.workorder', order)}</span>
@@ -66,8 +81,8 @@ export function WizardHeader({
                 <DataCell.Action
                     action="hub"
                     title="Configuración de Venta"
-                    onClick={() => order?.sale_order && onOpenCommandCenter(order.sale_order.id, 'sale')}
-                    disabled={!order?.sale_order}
+                    onClick={() => order.sale_order && onOpenCommandCenter(order.sale_order.id, 'sale')}
+                    disabled={!order.sale_order}
                 />
                 <div className="w-[1px] h-4 bg-border/60 mx-1" />
                 <DataCell.Action
@@ -84,9 +99,9 @@ export function WizardHeader({
                 )}
                 <DataCell.Action
                     action="annul"
-                    title={order?.is_cancellable === false ? "Anulación no permitida en esta etapa" : "Anular OT"}
+                    title={order.is_cancellable === false ? "Anulación no permitida en esta etapa" : "Anular OT"}
                     onClick={onAnnul}
-                    disabled={isAnnuling || order?.status === 'CANCELLED' || order?.is_cancellable === false}
+                    disabled={isAnnuling || order.status === 'CANCELLED' || order.is_cancellable === false}
                 />
                 {canEditOrDelete && (
                     <DataCell.Action

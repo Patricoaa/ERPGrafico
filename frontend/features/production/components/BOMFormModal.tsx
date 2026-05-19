@@ -109,8 +109,8 @@ export function BOMFormModal({
 
 
     const getEffectiveCost = (baseCost: number, productUomId: string | number, targetUomId: string | number) => {
-        const productUom = uoms.find(u => u.id.toString() === productUomId.toString())
-        const targetUom = uoms.find(u => u.id.toString() === targetUomId.toString())
+        const productUom = uoms.find((u: any) => u.id.toString() === productUomId.toString())
+        const targetUom = uoms.find((u: any) => u.id.toString() === targetUomId.toString())
 
         if (!productUom || !targetUom) return baseCost
 
@@ -431,11 +431,11 @@ export function BOMFormModal({
                                                     placeholder="Variante..."
                                                     value={selectedVariant?.id?.toString() || ""}
                                                     onChange={(val) => {
-                                                        const v = variants.find(varnt => varnt.id.toString() === val)
+                                                        const v = variants.find((varnt: any) => varnt.id.toString() === val)
                                                         setSelectedVariant(v || null)
                                                     }}
                                                     disabled={!!bomToEdit || loadingVariants}
-                                                    options={variants.map(v => ({
+                                                    options={variants.map((v: any) => ({
                                                         value: v.id.toString(),
                                                         label: `${v.variant_display_name || v.name} (${v.internal_code || v.code})`
                                                     }))}
@@ -668,7 +668,7 @@ export function BOMFormModal({
                                                                         form.setValue(`lines.${index}.base_cost`, baseCost)
                                                                         form.setValue(`lines.${index}.base_uom`, baseUomId)
 
-                                                                        if (v.uom_category) form.setValue(`lines.${index}.component_uom_category`, p.uom_category)
+                                                                        if (v.uom_category) form.setValue(`lines.${index}.component_uom_category` as any, v.uom_category)
 
                                                                         const currentLineUom = form.getValues(`lines.${index}.uom`)
                                                                         const effectiveCost = getEffectiveCost(baseCost, baseUomId, currentLineUom)
@@ -873,7 +873,7 @@ export function BOMFormModal({
                                                                     const v = lineVars.find((vr: { id: string | number }) => vr.id.toString() === val)
                                                                     if (v) {
                                                                         form.setValue(`service_lines.${index}.component_name`, v.variant_display_name || v.name)
-                                                                        if (v.uom_category) form.setValue(`service_lines.${index}.component_uom_category`, v.uom_category)
+                                                                        // Service lines do not have component_uom_category
                                                                     }
                                                                 }}
                                                                 placeholder="V..."
@@ -894,12 +894,14 @@ export function BOMFormModal({
                                                 render={({ field, fieldState }) => (
                                                     <AdvancedContactSelector
                                                         value={field.value}
-                                                        onChange={(val, contact) => {
+                                                        onChange={(val: string | null) => {
                                                             field.onChange(val)
+                                                        }}
+                                                        onSelectContact={(contact) => {
                                                             if (contact) form.setValue(`service_lines.${index}.supplier_name`, contact.name)
                                                         }}
                                                         placeholder="Proveedor..."
-                                                        allowedTypes={['SUPPLIER']}
+                                                        contactType="SUPPLIER"
                                                         variant="inline"
                                                         className={cn(tableInputClass, "text-left font-normal", fieldState.error && "border-destructive/50 ring-1 ring-destructive/10")}
                                                     />
@@ -968,7 +970,7 @@ export function BOMFormModal({
                                                         onChange={field.onChange}
                                                         variant="inline"
                                                         className={tableInputClass}
-                                                        options={allowedDteTypes.map(t => ({ value: t, label: t }))}
+                                                        options={allowedDteTypes.map((t: any) => ({ value: t, label: t }))}
                                                     />
                                                 )}
                                             />

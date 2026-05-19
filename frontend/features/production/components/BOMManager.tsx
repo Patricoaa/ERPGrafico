@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import {
-    Plus, Edit, Trash2, Workflow, Box, Layers, Copy
+    Plus, Edit, Trash2, Workflow, Box, Layers, Copy, History
 } from "lucide-react"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { BOMFormModal } from "./BOMFormModal"
