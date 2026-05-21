@@ -148,9 +148,9 @@ export default function AdvancesPage() {
     ]
 
     return (
-        <div className="space-y-4">
-
-            <DataTable
+        <div className="space-y-4 h-full flex flex-col">
+            <div className="flex-1 min-h-0">
+                <DataTable
                 columns={columns}
                 data={advances}
                 isLoading={loading}
@@ -159,6 +159,7 @@ export default function AdvancesPage() {
                 defaultPageSize={20}
                 createAction={createAction}
             />
+            </div>
 
             <AdvanceFormModal
                 open={dialogOpen}

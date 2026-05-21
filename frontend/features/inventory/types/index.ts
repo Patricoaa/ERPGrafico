@@ -1,3 +1,60 @@
+// ─── Shared product selector foundation types ────────────────────────────────
+// These types are used by @/components/shared/ProductSelector and can be safely
+// imported by any feature without pulling in POS-specific context.
+
+/**
+ * Minimal category shape used by ProductSelector.
+ * Features that need richer category data should extend this.
+ */
+export interface ProductCategory {
+    id: number
+    name: string
+    icon?: string | null
+}
+
+/**
+ * Minimal product shape required by ProductSelector components
+ * (SearchBar, CategoryFilter, ProductGrid, VariantSelectorModal).
+ *
+ * - POS: uses the full Product from @/types/pos (which has POS-specific fields).
+ * - Other consumers (cost calculator, purchasing…): can pass BaseProduct directly.
+ */
+export interface ProductAttributeValueDisplay {
+    id: number
+    attribute_name: string
+    value: string
+}
+
+export interface BaseProduct {
+    id: number
+    code: string
+    internal_code?: string
+    name: string
+    sale_price: string | number
+    sale_price_gross?: string | number
+    product_type?: 'STORABLE' | 'CONSUMABLE' | 'SERVICE' | 'MANUFACTURABLE' | 'SUBSCRIPTION' | string
+    image?: string | null
+    /** Category as object OR as numeric FK */
+    category?: { id: number; name: string; icon?: string | null } | number
+    uom?: number
+    uom_name?: string
+    is_favorite?: boolean
+    has_variants?: boolean
+    variants_count?: number
+    // Display fields used by ProductGrid and VariantSelectorModal visual badges
+    qty_available?: number
+    manufacturable_quantity?: number | null
+    has_bom?: boolean
+    has_active_bom?: boolean
+    requires_advanced_manufacturing?: boolean
+    mfg_auto_finalize?: boolean
+    is_dynamic_pricing?: boolean
+    variant_display_name?: string
+    attribute_values_data?: ProductAttributeValueDisplay[]
+}
+
+// ─── Existing inventory types ─────────────────────────────────────────────────
+
 export interface Restriction {
     type: string
     label: string
@@ -34,6 +91,9 @@ export interface Product {
     is_dynamic_pricing?: boolean
     cost_price?: string
     uom_category?: number
+    price_inheritance_mode?: 'INHERIT' | 'OVERRIDE' | 'SURCHARGE'
+    price_surcharge?: string | number | null
+    effective_price_net?: string | number
     qty_on_hand?: number
     has_variants?: boolean
     variants?: Product[]
@@ -50,6 +110,14 @@ export interface Product {
     mfg_press_digital?: boolean
     mfg_press_special?: boolean
     mfg_auto_finalize?: boolean
+    uom_prices?: ProductUoMPrice[]
+}
+
+export interface ProductUoMPrice {
+    id?: number
+    uom: number
+    price_net: number | string
+    price_gross: number | string
 }
 
 export interface ProductFilters {

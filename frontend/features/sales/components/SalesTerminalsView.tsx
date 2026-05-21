@@ -34,8 +34,8 @@ export const SalesTerminalsView: React.FC<SalesTerminalsViewProps> = ({ activeTa
     }, [modal])
 
     return (
-        <Tabs value={activeTab} className="space-y-4">
-            <TabsContent value="pos-terminals" className="mt-0 outline-none">
+        <Tabs value={activeTab} className="space-y-4 h-full flex flex-col">
+            <TabsContent value="pos-terminals" className="mt-0 outline-none flex-1 min-h-0">
                 <Suspense fallback={<CardSkeleton variant="grid" count={3} />}>
                     <FadeIn>
                         <TerminalManagement
@@ -47,7 +47,7 @@ export const SalesTerminalsView: React.FC<SalesTerminalsViewProps> = ({ activeTa
                 </Suspense>
             </TabsContent>
 
-            <TabsContent value="sessions" className="mt-0 outline-none">
+            <TabsContent value="sessions" className="mt-0 outline-none flex-1 min-h-0">
                 <Suspense fallback={<TableSkeleton rows={8} columns={5} />}>
                     <FadeIn>
                         <POSSessionsView hideHeader />
@@ -55,7 +55,7 @@ export const SalesTerminalsView: React.FC<SalesTerminalsViewProps> = ({ activeTa
                 </Suspense>
             </TabsContent>
 
-            <TabsContent value="batches" className="mt-0 outline-none">
+            <TabsContent value="batches" className="mt-0 outline-none flex-1 min-h-0">
                 <Suspense fallback={<TableSkeleton rows={8} columns={5} />}>
                     <FadeIn>
                         <TerminalBatchesManagement
@@ -70,7 +70,7 @@ export const SalesTerminalsView: React.FC<SalesTerminalsViewProps> = ({ activeTa
                 </Suspense>
             </TabsContent>
 
-            <TabsContent value="devices" className="mt-0 outline-none">
+            <TabsContent value="devices" className="mt-0 outline-none flex-1 min-h-0">
                 <Suspense fallback={<CardSkeleton variant="grid" count={3} />}>
                     <FadeIn>
                        <PaymentHardwareManagement
@@ -83,7 +83,7 @@ export const SalesTerminalsView: React.FC<SalesTerminalsViewProps> = ({ activeTa
                 </Suspense>
             </TabsContent>
 
-            <TabsContent value="providers" className="mt-0 outline-none">
+            <TabsContent value="providers" className="mt-0 outline-none flex-1 min-h-0">
                 <Suspense fallback={<CardSkeleton variant="grid" count={3} />}>
                     <FadeIn>
                        <PaymentHardwareManagement

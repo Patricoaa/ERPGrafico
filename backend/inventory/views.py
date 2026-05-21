@@ -5,12 +5,12 @@ from .serializers import (
     ProductSerializer, ProductSimpleSerializer, ProductCategorySerializer, WarehouseSerializer,
     StockMoveSerializer, UoMSerializer, UoMCategorySerializer, PricingRuleSerializer,
     CustomFieldTemplateSerializer, ProductCustomFieldSerializer, SubscriptionSerializer,
-    ProductAttributeSerializer, ProductAttributeValueSerializer
+    ProductAttributeSerializer, ProductAttributeValueSerializer, ProductUoMPriceSerializer
 )
 from .models import (
     Product, ProductCategory, Warehouse, StockMove, UoM, UoMCategory, PricingRule,
     CustomFieldTemplate, ProductCustomField, Subscription,
-    ProductAttribute, ProductAttributeValue, ProductFavorite
+    ProductAttribute, ProductAttributeValue, ProductFavorite, ProductUoMPrice
 )
 from django.shortcuts import get_object_or_404
 from .services import StockService, UoMService
@@ -378,6 +378,116 @@ class ProductViewSet(BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
             "skipped": skipped_count
         })
 
+    @action(detail=True, methods=['post'], url_path='sync-variant-prices')
+    def sync_variant_prices(self, request, pk=None):
+        """Establece price_inheritance_mode=INHERIT en todas las variantes activas del template."""
+        template = self.get_object()
+        if not template.has_variants:
+            return Response(
+                {"error": "Este producto no es un template de variantes."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        updated = template.variants.filter(active=True).update(
+            price_inheritance_mode=Product.PriceInheritance.INHERIT,
+            price_surcharge=None,
+        )
+        return Response({"updated": updated})
+
+    @action(detail=True, methods=['post'], url_path='bulk-clone-bom')
+    def bulk_clone_bom(self, request, pk=None):
+        """
+        Clona la BOM activa del template a las variantes indicadas.
+        Si variant_ids está vacío, aplica a todas las variantes activas.
+        """
+        template = self.get_object()
+        variant_ids = request.data.get('variant_ids', [])  # [] = todas
+
+        if not template.has_variants:
+            return Response(
+                {"error": "Este producto no es un template de variantes."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        from production.models import BillOfMaterials, BillOfMaterialsLine
+        from django.db import transaction
+
+        source_bom = template.boms.filter(active=True).first()
+        if not source_bom:
+            return Response(
+                {"error": "El template no tiene una Lista de Materiales activa para clonar."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        variants_qs = template.variants.filter(active=True)
+        if variant_ids:
+            variants_qs = variants_qs.filter(id__in=variant_ids)
+
+        cloned_count = 0
+        with transaction.atomic():
+            for variant in variants_qs:
+                # Remove existing BOMs on this variant before cloning
+                variant.boms.all().delete()
+
+                new_bom = BillOfMaterials.objects.create(
+                    product=variant,
+                    name=source_bom.name,
+                    active=True,
+                    yield_quantity=source_bom.yield_quantity,
+                    yield_uom=source_bom.yield_uom,
+                )
+                for line in source_bom.lines.all():
+                    BillOfMaterialsLine.objects.create(
+                        bom=new_bom,
+                        component=line.component,
+                        quantity=line.quantity,
+                        uom=line.uom,
+                        is_outsourced=line.is_outsourced,
+                        supplier=line.supplier,
+                        unit_price=line.unit_price,
+                        document_type=line.document_type,
+                    )
+                variant.has_bom = True
+                variant.product_type = Product.Type.MANUFACTURABLE
+                variant.save(update_fields=['has_bom', 'product_type'])
+                cloned_count += 1
+
+        return Response({
+            "message": f"BOM clonada en {cloned_count} variante(s).",
+            "cloned": cloned_count,
+        })
+
+    @action(detail=True, methods=['post'], url_path='bulk-set-surcharge')
+    def bulk_set_surcharge(self, request, pk=None):
+        """
+        Asigna un sobrecargo a las variantes indicadas (o todas si variant_ids está vacío).
+        Cambia el price_inheritance_mode a SURCHARGE y aplica el valor.
+        """
+        template = self.get_object()
+        variant_ids = request.data.get('variant_ids', [])
+        surcharge = request.data.get('surcharge')
+
+        if surcharge is None:
+            return Response(
+                {"error": "Debe proporcionar el campo 'surcharge'."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if not template.has_variants:
+            return Response(
+                {"error": "Este producto no es un template de variantes."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        from decimal import Decimal
+        variants_qs = template.variants.filter(active=True)
+        if variant_ids:
+            variants_qs = variants_qs.filter(id__in=variant_ids)
+
+        updated = variants_qs.update(
+            price_inheritance_mode=Product.PriceInheritance.SURCHARGE,
+            price_surcharge=Decimal(str(surcharge)),
+        )
+        return Response({"updated": updated})
+
     @action(detail=True, methods=['get'])
     def variants(self, request, pk=None):
         template = self.get_object()
@@ -689,3 +799,14 @@ class SubscriptionViewSet(viewsets.ModelViewSet):
         sub.status = Subscription.Status.ACTIVE
         sub.save()
         return Response({'status': 'active'})
+
+
+class ProductUoMPriceViewSet(viewsets.ModelViewSet):
+    serializer_class = ProductUoMPriceSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['product', 'uom']
+
+    def get_queryset(self):
+        return ProductUoMPrice.objects.select_related('uom').filter(
+            product__active=True
+        )

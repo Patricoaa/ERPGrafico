@@ -117,6 +117,11 @@ export const STATUS_MAP: Record<string, StatusStyle> = {
     BOTH:     { label: 'Ambos',      intent: 'success' },
     RELATED:  { label: 'Relacionado',intent: 'warning' },
 
+    // ── Pricing Rules ─────────────────────────────────────────────────────
+    RULE_ACTIVE:   { label: 'Activa',   intent: 'success' },
+    RULE_EXPIRED:  { label: 'Vencida',  intent: 'neutral' },
+    RULE_INACTIVE: { label: 'Inactiva', intent: 'neutral' },
+
     // ── Lowercase fallbacks (legacy support) ──────────────────────────────
     active:   { label: 'Activo',   intent: 'primary' },
     inactive: { label: 'Inactivo', intent: 'neutral' },

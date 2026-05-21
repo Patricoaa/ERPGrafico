@@ -153,8 +153,9 @@ export function BudgetsListView({ externalOpen, onExternalOpenChange, createActi
     ]
 
     return (
-        <div className="space-y-6">
-            <DataTable
+        <div className="space-y-6 h-full flex flex-col">
+            <div className="flex-1 min-h-0">
+                <DataTable
                 columns={columns}
                 data={budgets}
                 variant="embedded"
@@ -164,6 +165,7 @@ export function BudgetsListView({ externalOpen, onExternalOpenChange, createActi
                 useAdvancedFilter={true}
                 createAction={createAction}
             />
+            </div>
 
             {/* Create Modal */}
             <BaseModal

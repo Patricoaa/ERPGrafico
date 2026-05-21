@@ -291,7 +291,7 @@ function WorkOrdersClient() {
     ), [loading, handleManage])
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-4 h-full flex flex-col">
 
             {/* Unified WorkOrderWizard */}
             {wizardMode && (
@@ -308,8 +308,8 @@ function WorkOrdersClient() {
             )}
 
 
-            <div className="mt-2">
-                <FadeIn key={viewMode}>
+            <div className="mt-2 flex-1 min-h-0">
+                <FadeIn key={viewMode} className="h-full">
                     <DataTable
                         columns={columns}
                         data={orders}

@@ -24,6 +24,7 @@ import api from '@/lib/api'
 import * as Validation from '@/features/pos/utils/validation'
 import { cn } from "@/lib/utils"
 import { Check, Printer } from 'lucide-react'
+import { isPOSProductDisabled } from '@/features/pos/utils/product-availability'
 
 
 import { usePOS } from '@/features/pos/contexts/POSContext'
@@ -37,13 +38,17 @@ import {
     type SyncDraft
 } from '@/features/pos/hooks'
 import { type CheckoutResponse } from '@/features/sales/types'
-import type { Customer, Product, WizardState } from '@/types/pos'
+import type { Product } from '@/types/pos'
 import type { TransactionData } from '@/types/transactions'
 import { type DraftCart } from './DraftCartsList'
 import type { CheckoutWizardState } from '@/features/sales/components/checkout/SalesCheckoutWizardContent'
 
-// UI Components from Feature
-import { SearchBar, CategoryFilter, ProductGrid, Cart, POSCheckoutHeader, POSLayoutSkeleton } from '@/features/pos/components'
+import { SearchBar } from './SearchBar'
+import { CategoryFilter } from './CategoryFilter'
+import { ProductGrid } from './ProductGrid'
+import { Cart } from './Cart'
+import { POSCheckoutHeader } from './POSCheckoutHeader'
+import { POSLayoutSkeleton } from './skeletons/POSLayoutSkeleton'
 import { SalesCheckoutWizardContent } from '@/features/sales/components/checkout/SalesCheckoutWizardContent'
 
 // Shared components
@@ -392,7 +397,7 @@ export function POSClientView() {
 
     return (
         <div className="flex-1 p-4 pt-2 flex flex-col gap-2 overflow-hidden animate-in fade-in duration-500">
-            <div className="flex items-center justify-between py-1 px-1 mb-2 relative min-h-[56px] border-b pb-2">
+            <div className="flex items-center justify-between py-1 px-1 mb-2 relative min-h-[56px] pb-2">
                 {/* Left: Terminal & Session Info */}
                 <div className="flex items-center gap-4 flex-1">
                     <h2 className="text-xl font-bold tracking-tight">
@@ -400,10 +405,10 @@ export function POSClientView() {
                     </h2>
                     {currentSession?.status === 'OPEN' && (
                         <div className="hidden sm:flex items-center gap-2">
-                            <span className="border border-primary/20 bg-primary/5 text-primary tracking-widest px-2 py-0.5 text-[10px] h-6 font-bold uppercase transition-colors rounded-sm">
+                            <span className="border border-primary/20 bg-primary/5 text-primary tracking-widest px-2 py-1 h-6 flex items-center text-[10px] font-bold uppercase transition-colors rounded-sm">
                                 Sesión #{currentSession.id}
                             </span>
-                            <span className="border border-success/30 bg-success/5 text-success px-2 py-0.5 text-[10px] h-6 font-medium uppercase rounded-sm">
+                            <span className="border border-success/30 bg-success/5 text-success px-2 py-1 h-6 flex items-center text-[10px] font-medium uppercase rounded-sm">
                                 {user?.first_name} {user?.last_name}
                             </span>
                         </div>
@@ -447,7 +452,7 @@ export function POSClientView() {
                                             variant="outline"
                                             size="sm"
                                             className={cn(
-                                                "h-10 min-w-[40px] px-3 text-[10px] font-mono font-bold transition-all duration-300 gap-1.5 relative rounded-sm",
+                                                "h-7 min-w-[40px] px-2 text-[10px] font-mono font-bold transition-all duration-300 gap-1.5 relative rounded-sm",
                                                 currentDraftId === d.id ? "bg-primary/5 border-primary text-primary shadow-sm border-solid ring-1 ring-primary/20" : "border-dashed text-muted-foreground",
                                                 isSaving && currentDraftId === d.id && "animate-pulse opacity-70",
                                                 lockedByOther && "border-destructive/40 opacity-60",
@@ -470,7 +475,7 @@ export function POSClientView() {
                                     )
                                 })}
                                 {currentDraftId === null && items.length > 0 && (
-                                    <span className="h-10 border border-dashed border-muted-foreground/30 text-[9px] px-3 opacity-50 bg-muted/20 flex items-center justify-center rounded-sm text-muted-foreground uppercase font-bold tracking-widest">
+                                    <span className="h-7 border border-dashed border-muted-foreground/30 text-[9px] px-2 opacity-50 bg-muted/20 flex items-center justify-center rounded-sm text-muted-foreground uppercase font-bold tracking-widest">
                                         Nuevo...
                                     </span>
                                 )}
@@ -479,8 +484,8 @@ export function POSClientView() {
                     })()}
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="outline" size="sm" className="gap-2 h-10 px-4">
-                                <LayoutGrid className="h-4 w-4" />
+                            <Button variant="outline" size="sm" className="gap-2 h-7 px-3 text-xs">
+                                <LayoutGrid className="h-3.5 w-3.5" />
                                 <span className="hidden sm:inline">Menú</span>
                                 <ChevronDown className="h-3 w-3 opacity-50" />
                             </Button>
@@ -542,12 +547,12 @@ export function POSClientView() {
                     <AnimatePresence mode="wait">
                         {posMode === 'SHOPPING' ? (
                             <motion.div key="shop" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, scale: 0.98 }} className="flex-1 flex flex-col min-h-0">
-                                <Card className="flex-1 flex flex-col overflow-hidden bg-muted/10 border">
-                                    <div className="p-4 border-b bg-background/50 space-y-4">
+                                <Card className="flex-1 flex flex-col overflow-hidden bg-muted/10 border py-2">
+                                    <div className="px-2 pt-2 pb-2 border-b bg-background/50 space-y-3">
                                         <SearchBar value={searchTerm} onChange={setSearchTerm} onEnter={handleSearchEnter} />
                                         <CategoryFilter categories={categories} selectedCategoryId={selectedCategoryId} onSelectCategory={setSelectedCategoryId} />
                                     </div>
-                                    <div className="flex-1 p-4"><ProductGrid products={filteredProducts} categories={categories} limits={stockLimits} onProductClick={handleProductClick} onToggleFavorite={toggleFavorite} /></div>
+                                    <div className="flex-1 px-2 pt-2 pb-0"><ProductGrid products={filteredProducts} categories={categories} limits={stockLimits} isProductDisabled={(p) => isPOSProductDisabled(p as unknown as Product)} onProductClick={(p) => handleProductClick(p as unknown as Product)} onToggleFavorite={toggleFavorite} /></div>
                                 </Card>
                             </motion.div>
                         ) : (

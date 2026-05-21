@@ -166,16 +166,18 @@ export function UoMList({ externalOpen, onExternalOpenChange, createAction }: Uo
 
 
     return (
-        <div className="space-y-4">
-            <DataTable
-                columns={columns}
-                data={uoms}
-                isLoading={isLoading}
-                variant="embedded"
-                leftAction={<SmartSearchBar searchDef={uomSearchDef} placeholder="Buscar unidad..." className="w-80" />}
-                bulkActions={bulkActions}
-                createAction={createAction}
-            />
+        <div className="space-y-4 h-full flex flex-col">
+            <div className="flex-1 min-h-0">
+                <DataTable
+                    columns={columns}
+                    data={uoms}
+                    isLoading={isLoading}
+                    variant="embedded"
+                    leftAction={<SmartSearchBar searchDef={uomSearchDef} placeholder="Buscar unidad..." className="w-80" />}
+                    bulkActions={bulkActions}
+                    createAction={createAction}
+                />
+            </div>
 
             {/* Unified Modal — UoMForm keeps rich FK + audit widgets for both create and edit.
                 Edit mode driven by ?selected={id} (ADR-0020); create mode driven by externalOpen. */}

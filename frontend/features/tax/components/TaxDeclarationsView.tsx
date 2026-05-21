@@ -309,7 +309,7 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange, create
     ]
 
     return (
-        <div className="space-y-6 pt-4">
+        <div className="space-y-6 pt-4 h-full flex flex-col">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {isLoading ? (
                     <CardSkeleton count={3} variant="grid" />
@@ -368,11 +368,12 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange, create
                 )}
             </div>
 
-            <DataTable
-                columns={columns}
-                data={filteredPeriods}
-                isLoading={isLoading}
-                variant="embedded"
+            <div className="flex-1 min-h-0">
+                <DataTable
+                    columns={columns}
+                    data={filteredPeriods}
+                    isLoading={isLoading}
+                    variant="embedded"
                 leftAction={<SmartSearchBar searchDef={taxPeriodSearchDef} placeholder="Buscar período..." />}
                 showToolbarSort={true}
                 createAction={createAction}
@@ -468,6 +469,7 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange, create
                     )
                 }}
             />
+            </div>
             <DeclarationWizard
                 isOpen={isWizardOpen || !!externalOpen}
                 onOpenChange={handleWizardOpenChange}

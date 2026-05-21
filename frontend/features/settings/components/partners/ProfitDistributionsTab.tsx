@@ -261,8 +261,9 @@ export function ProfitDistributionsTab({ initialFlowOpen = false, onModalClose, 
     ], [])
 
     return (
-        <div className="space-y-6">
-            <DataTable
+        <div className="space-y-6 h-full flex flex-col">
+            <div className="flex-1 min-h-0">
+                <DataTable
                 columns={columns}
                 data={state.distributions}
                 isLoading={state.loading}
@@ -271,6 +272,7 @@ export function ProfitDistributionsTab({ initialFlowOpen = false, onModalClose, 
                 filterColumn="fiscal_year"
                 createAction={createAction}
             />
+            </div>
 
             {/* Modal Flows */}
             {state.isFlowOpen && (

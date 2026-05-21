@@ -126,7 +126,7 @@ export function PartnerSettingsTab() {
     ]
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 h-full flex flex-col">
             <div className="flex justify-between items-center bg-muted/30 p-4 rounded-lg border">
                 <div className="flex items-center gap-3">
                     <Building2 className="h-5 w-5" />
@@ -227,7 +227,7 @@ export function PartnerSettingsTab() {
                 </Card>
             </div>
 
-            <div className="border bg-card rounded-lg shadow-sm">
+            <div className="border bg-card rounded-lg shadow-sm flex-1 min-h-0">
                 <DataTable
                     columns={columns}
                     data={partners}

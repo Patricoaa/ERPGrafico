@@ -127,8 +127,9 @@ export function TerminalBatchesManagement({
     ], [])
 
     return (
-        <div className="space-y-4">
-            <DataTable
+        <div className="space-y-4 h-full flex flex-col">
+            <div className="flex-1 min-h-0">
+                <DataTable
                 columns={columns}
                 data={batches}
                 isLoading={isLoading}
@@ -136,6 +137,7 @@ export function TerminalBatchesManagement({
                 leftAction={<SmartSearchBar searchDef={terminalBatchSearchDef} placeholder="Filtrar liquidaciones..." className="w-80" />}
                 createAction={createAction}
             />
+            </div>
 
             <Suspense fallback={<FormSkeleton />}>
                 <TerminalBatchModal

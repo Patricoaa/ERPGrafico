@@ -40,9 +40,6 @@ const nextConfig: NextConfig = {
     ],
   },
   experimental: {
-    // Importa solo los módulos utilizados de estas librerías pesadas
-    // → evita que el compilador procese toda la librería en cada build
-    optimizePackageImports: ["lucide-react", "date-fns", "recharts", "framer-motion"],
   },
   transpilePackages: ["react-day-picker"],
   devIndicators: {
@@ -52,7 +49,12 @@ const nextConfig: NextConfig = {
 // Sentry: solo se aplica si SENTRY_DSN + SENTRY_ORG + SENTRY_PROJECT están definidos.
 // Sin esas vars (caso por defecto) el wrap es no-op y no requiere la dependencia.
 async function applySentry(config: NextConfig): Promise<NextConfig> {
-  if (!process.env.SENTRY_DSN || !process.env.SENTRY_ORG || !process.env.SENTRY_PROJECT) {
+  if (
+    process.env.NODE_ENV === "development" ||
+    !process.env.SENTRY_DSN ||
+    !process.env.SENTRY_ORG ||
+    !process.env.SENTRY_PROJECT
+  ) {
     return config;
   }
   try {

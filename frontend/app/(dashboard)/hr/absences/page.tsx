@@ -107,7 +107,7 @@ export default function AbsencesPage() {
     ]
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-4 h-full flex flex-col">
 
             <AbsenceFormModal
                 open={dialogOpen}
@@ -117,7 +117,8 @@ export default function AbsencesPage() {
                 onSaved={() => { setDialogOpen(false); fetchAbsences() }}
             />
 
-            <DataTable
+            <div className="flex-1 min-h-0">
+                <DataTable
                 columns={columns}
                 data={absences}
                 isLoading={loading}
@@ -127,6 +128,7 @@ export default function AbsencesPage() {
                 onRowClick={(row: Absence) => { setEditingAbsence(row); setDialogOpen(true) }}
                 createAction={createAction}
             />
+            </div>
         </div>
     )
 }

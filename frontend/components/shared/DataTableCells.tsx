@@ -323,6 +323,7 @@ export const DataCell = {
                                     e.stopPropagation();
                                     onClick?.(e);
                                 }}
+                                type={props.type || "button"}
                                 {...props}
                             >
                                 <Icon className={cn("h-4 w-4", resolvedColor)} />

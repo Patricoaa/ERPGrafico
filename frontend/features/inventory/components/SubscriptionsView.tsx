@@ -388,7 +388,7 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false, cr
     ], [fetchSubscriptions, fetchStats])
 
     return (
-        <PageContainer className={cn(hideHeader && "pt-0")}>
+        <PageContainer className={cn("h-full flex flex-col", hideHeader && "pt-0")}>
             {!hideHeader && (
                 <PageHeader
                     title="Suscripciones y Recurrentes"
@@ -411,9 +411,9 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false, cr
                 </PageHeader>
             )}
 
-            <div className="space-y-4">
+            <div className="flex-1 min-h-0 flex flex-col space-y-4">
 
-                <div className="space-y-6">
+                <div className="flex-1 min-h-0 flex flex-col space-y-6">
                 {/* Industrial Stats Panel */}
                 {stats && (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -437,16 +437,18 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false, cr
                         </div>
                     </div>
                 )}
-                <DataTable
-                    columns={columns}
-                    data={subscriptions}
-                    isLoading={loading}
-                    variant="embedded"
-                    leftAction={<SmartSearchBar searchDef={subscriptionSearchDef} placeholder="Buscar suscripciones..." className="w-80" />}
-                    defaultPageSize={20}
-                    bulkActions={bulkActions}
-                    createAction={createAction}
-                />
+                <div className="flex-1 min-h-0">
+                    <DataTable
+                        columns={columns}
+                        data={subscriptions}
+                        isLoading={loading}
+                        variant="embedded"
+                        leftAction={<SmartSearchBar searchDef={subscriptionSearchDef} placeholder="Buscar suscripciones..." className="w-80" />}
+                        defaultPageSize={20}
+                        bulkActions={bulkActions}
+                        createAction={createAction}
+                    />
+                </div>
             </div>
             </div>
 

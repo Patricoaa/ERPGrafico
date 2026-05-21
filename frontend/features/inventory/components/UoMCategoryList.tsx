@@ -137,17 +137,19 @@ export function UoMCategoryList({ externalOpen, onExternalOpenChange, createActi
 
 
     return (
-        <div className="space-y-4">
-            <DataTable
-                columns={columns}
-                data={filterFn(categories)}
-                isLoading={isLoading}
-                variant="embedded"
-                leftAction={<SmartSearchBar searchDef={uomCategorySearchDef} placeholder="Buscar categoría..." />}
-                pageSizeOptions={[10, 20]}
-                bulkActions={bulkActions}
-                createAction={createAction}
-            />
+        <div className="space-y-4 h-full flex flex-col">
+            <div className="flex-1 min-h-0">
+                <DataTable
+                    columns={columns}
+                    data={filterFn(categories)}
+                    isLoading={isLoading}
+                    variant="embedded"
+                    leftAction={<SmartSearchBar searchDef={uomCategorySearchDef} placeholder="Buscar categoría..." />}
+                    pageSizeOptions={[10, 20]}
+                    bulkActions={bulkActions}
+                    createAction={createAction}
+                />
+            </div>
 
             <UoMCategoryForm
                 open={isModalOpen || !!externalOpen}

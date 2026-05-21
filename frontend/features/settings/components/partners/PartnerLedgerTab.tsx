@@ -203,8 +203,9 @@ export function PartnerLedgerTab() {
     ]
 
     return (
-        <div className="space-y-4">
-            <DataTable
+        <div className="space-y-4 h-full flex flex-col">
+            <div className="flex-1 min-h-0">
+                <DataTable
                 columns={columns}
                 data={txsWithBalance}
                 isLoading={loading}
@@ -280,7 +281,7 @@ export function PartnerLedgerTab() {
                                     </span>
                                 </div>
                             </TableCell>
-                            <TableCell className="text-right pr-6 py-4">
+                            <TableCell className="text-right py-4">
                                 <div className="flex flex-col items-end">
                                     <span className="text-[9px] font-black uppercase text-primary tracking-[0.2em] mb-1.5 opacity-60">Running Balance</span>
                                     <div className="bg-primary text-primary-foreground px-3 py-1.5 rounded text-sm font-black tracking-tighter shadow-lg shadow-primary/10">
@@ -292,6 +293,7 @@ export function PartnerLedgerTab() {
                     )
                 }}
             />
+            </div>
 
             {/* Movement Wizard Modals */}
             <PartnerContributionWizard

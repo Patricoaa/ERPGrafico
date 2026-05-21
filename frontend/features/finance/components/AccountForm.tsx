@@ -4,26 +4,17 @@ import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-
 import { Plus, BookOpen, Tag } from "lucide-react"
 import { BaseModal } from "@/components/shared/BaseModal"
-
-// ... imports remain mostly the same, removing Dialog specific ones
 import {
     Form,
-    FormControl,
     FormField,
-    FormItem,
-    FormMessage,
 } from "@/components/ui/form"
-
 import { Button } from "@/components/ui/button"
-import api from "@/lib/api"
-
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { useAccounts } from "@/features/accounting/hooks/useAccounts"
 import { AccountPayload } from "@/features/accounting/types"
-import { LabeledInput, LabeledSelect, FormSection, FormFooter, CancelButton, FormSplitLayout, ActionSlideButton } from "@/components/shared"
+import { LabeledInput, LabeledSelect, FormFooter, CancelButton, FormSplitLayout, ActionSlideButton } from "@/components/shared"
 
 const accountSchema = z.object({
     code: z.string().optional().or(z.literal("")),

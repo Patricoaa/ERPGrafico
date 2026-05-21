@@ -240,8 +240,9 @@ export function BlacklistView() {
     ]
 
     return (
-        <div className="space-y-6">
-            <DataTable
+        <div className="space-y-6 h-full flex flex-col">
+            <div className="flex-1 min-h-0">
+                <DataTable
                 columns={columns}
                 data={contacts}
                 variant="embedded"
@@ -283,6 +284,7 @@ export function BlacklistView() {
                     )
                 }}
             />
+            </div>
         </div>
     )
 }

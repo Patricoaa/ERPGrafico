@@ -118,7 +118,7 @@ export function BankManagement({ externalOpen, onOpenChange, createAction }: Ban
     ]
 
     return (
-        <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+        <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300 h-full flex flex-col">
             <div className="flex justify-between items-center bg-muted/30 p-4 rounded-lg border border-primary/10 hidden">
                 <div>
                     <h2 className="text-xl font-bold tracking-tight text-primary flex items-center gap-2">
@@ -128,13 +128,15 @@ export function BankManagement({ externalOpen, onOpenChange, createAction }: Ban
                 </div>
             </div>
 
-            <DataTable
+            <div className="flex-1 min-h-0">
+                <DataTable
                 columns={columns}
                 data={filterBanks(banks)}
                 variant="embedded"
                 leftAction={<SmartSearchBar searchDef={bankSearchDef} placeholder="Buscar banco..." />}
                 createAction={createAction}
             />
+            </div>
 
             <BankModal
                 open={dialogOpen || !!externalOpen}
@@ -426,7 +428,7 @@ export function PaymentMethodManagement({ externalOpen, onOpenChange, createActi
     ]
 
     return (
-        <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+        <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300 h-full flex flex-col">
             <div className="flex justify-between items-center bg-muted/30 p-4 rounded-lg border border-primary/10 hidden">
                 <div>
                     <h2 className="text-xl font-bold tracking-tight text-primary flex items-center gap-2">
@@ -439,13 +441,15 @@ export function PaymentMethodManagement({ externalOpen, onOpenChange, createActi
                 </Button>
             </div>
 
-            <DataTable
+            <div className="flex-1 min-h-0">
+                <DataTable
                 columns={columns}
                 data={filterMethods(methods)}
                 variant="embedded"
                 leftAction={<SmartSearchBar searchDef={paymentMethodSearchDef} placeholder="Buscar método de pago..." />}
                 createAction={createAction}
             />
+            </div>
 
             <PaymentMethodModal
                 open={dialogOpen || !!externalOpen}

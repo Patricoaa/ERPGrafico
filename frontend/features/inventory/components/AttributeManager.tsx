@@ -282,17 +282,18 @@ export function AttributeManager({ externalOpen, createAction }: AttributeManage
 
 
     return (
-        <div className="space-y-4">
-
-            <DataTable
-                columns={columns}
-                data={attributes}
-                isLoading={isLoading}
-                variant="embedded"
-                bulkActions={bulkActions}
-                createAction={createAction}
-                leftAction={<SmartSearchBar searchDef={attributeSearchDef} placeholder="Buscar atributo..." />}
-            />
+        <div className="space-y-4 h-full flex flex-col">
+            <div className="flex-1 min-h-0">
+                <DataTable
+                    columns={columns}
+                    data={attributes}
+                    isLoading={isLoading}
+                    variant="embedded"
+                    bulkActions={bulkActions}
+                    createAction={createAction}
+                    leftAction={<SmartSearchBar searchDef={attributeSearchDef} placeholder="Buscar atributo..." />}
+                />
+            </div>
 
             {/* Modal para Atributo */}
             <BaseModal

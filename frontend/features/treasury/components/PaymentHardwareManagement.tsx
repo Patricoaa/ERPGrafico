@@ -219,14 +219,15 @@ export function PaymentHardwareManagement({
 
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 h-full flex flex-col">
             {createAction && (
                 <div className="flex items-center justify-end">
                     {createAction}
                 </div>
             )}
             {activeTab === "providers" ? (
-                <DataTable
+                <div className="flex-1 min-h-0">
+                    <DataTable
                     columns={providerColumns}
                     data={filterProviders(providers)}
                     isLoading={isLoadingProviders}
@@ -294,8 +295,10 @@ export function PaymentHardwareManagement({
                         </div>
                     ) : undefined}
                 />
+                </div>
             ) : (
-                <DataTable
+                <div className="flex-1 min-h-0">
+                    <DataTable
                     columns={deviceColumns}
                     data={devices}
                     isLoading={isLoadingDevices}
@@ -375,6 +378,7 @@ export function PaymentHardwareManagement({
                         </div>
                     ) : undefined}
                 />
+                </div>
             )}
 
             {/* Dialogs */}

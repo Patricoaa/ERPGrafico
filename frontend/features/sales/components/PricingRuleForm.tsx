@@ -221,6 +221,8 @@ export function PricingRuleForm({ auditSidebar, initialData, onSuccess, open, on
                                 onSelect={(p) => setSelectedProductObj(p)}
                                 disabled={!!productId}
                                 placeholder="Si no se selecciona, aplica a todos"
+                                shouldResolveVariants={false}
+                                customFilter={(p: any) => !p.parent_template}
                             />
                         )}
                     />

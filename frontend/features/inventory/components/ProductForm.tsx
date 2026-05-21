@@ -8,7 +8,7 @@ import { useForm, FieldErrors, UseFormReturn } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
 import api, { resolveMediaUrl } from "@/lib/api"
-import { ShoppingCart, Package, Scale, Truck, Layers, Factory, Loader2, History, DollarSign, Fingerprint } from "lucide-react"
+import { ShoppingCart, Package, Truck, Layers, Factory, Loader2, History, DollarSign, Fingerprint } from "lucide-react"
 import { showApiError } from "@/lib/errors"
 import { Form } from "@/components/ui/form"
 
@@ -114,10 +114,18 @@ export function ProductForm({ sidebar, open, onOpenChange, initialData, onSucces
         const tabErrors: { [key: string]: number } = {}
 
         // General tab fields
-        const generalFields = ['name', 'category', 'product_type', 'sale_price', 'can_be_sold', 'can_be_purchased', 'sale_uom', 'code']
+        const generalFields = ['name', 'category', 'product_type', 'can_be_sold', 'can_be_purchased', 'code']
         generalFields.forEach(field => {
             if (errors[field as keyof typeof errors]) {
                 tabErrors['general'] = (tabErrors['general'] || 0) + 1
+            }
+        })
+
+        // Pricing tab fields
+        const pricingFields = ['sale_price', 'sale_price_gross', 'sale_uom']
+        pricingFields.forEach(field => {
+            if (errors[field as keyof typeof errors]) {
+                tabErrors['pricing'] = (tabErrors['pricing'] || 0) + 1
             }
         })
 
@@ -175,12 +183,10 @@ export function ProductForm({ sidebar, open, onOpenChange, initialData, onSucces
             }
         } else if (productType === "CONSUMABLE") {
             if (form.getValues("track_inventory")) form.setValue("track_inventory", false, opts)
-            if (form.getValues("can_be_sold")) form.setValue("can_be_sold", false, opts)
         } else if (productType === "SERVICE") {
             if (form.getValues("track_inventory")) form.setValue("track_inventory", false, opts)
         } else if (productType === "SUBSCRIPTION") {
             if (form.getValues("track_inventory")) form.setValue("track_inventory", false, opts)
-            if (form.getValues("can_be_sold")) form.setValue("can_be_sold", false, opts)
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [productType])
@@ -356,6 +362,12 @@ export function ProductForm({ sidebar, open, onOpenChange, initialData, onSucces
                     product_custom_fields: initialData.product_custom_fields?.map((f: any) => ({
                         template: f.template,
                         order: f.order || 0
+                    })) || [],
+                    uom_prices: initialData.uom_prices?.map((p: any) => ({
+                        id: p.id,
+                        uom: typeof p.uom === 'object' ? p.uom.id : Number(p.uom),
+                        price_net: Number(p.price_net) || 0,
+                        price_gross: Number(p.price_gross) || 0,
                     })) || [],
                     recurrence_period: initialData.recurrence_period || "MONTHLY",
                     renewal_notice_days: initialData.renewal_notice_days || 30,
@@ -541,6 +553,9 @@ export function ProductForm({ sidebar, open, onOpenChange, initialData, onSucces
             if (data.variant_updates && data.variant_updates.length > 0) {
                 formData.append('variant_updates', JSON.stringify(data.variant_updates))
             }
+            if (data.uom_prices && data.uom_prices.length > 0) {
+                formData.append('uom_prices', JSON.stringify(data.uom_prices))
+            }
 
             // Append Subscription fields
             if (data.product_type === 'SUBSCRIPTION') {
@@ -642,8 +657,8 @@ export function ProductForm({ sidebar, open, onOpenChange, initialData, onSucces
         },
         {
             value: "pricing",
-            label: "Reglas",
-            icon: Scale,
+            label: "Precios",
+            icon: DollarSign,
             hidden: !canBeSold || productType === 'SUBSCRIPTION',
             hasErrors: !!tabErrors['pricing'],
         },
@@ -713,13 +728,6 @@ export function ProductForm({ sidebar, open, onOpenChange, initialData, onSucces
                                                 setImagePreview={setImagePreview}
                                                 lockedType={lockedType}
                                             />
-
-                                            <ProductPricingSection
-                                                form={form}
-                                                initialData={initialData}
-                                                canBeSold={canBeSold}
-                                                uoms={uoms}
-                                            />
                                         </div>
                                     </FormTabsContent>
 
@@ -733,12 +741,15 @@ export function ProductForm({ sidebar, open, onOpenChange, initialData, onSucces
                                     />
                                 </FormTabsContent>
 
-                                <FormTabsContent value="variants" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin">
+                                <FormTabsContent forceMount value="variants" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 data-[state=inactive]:hidden overflow-y-auto scrollbar-thin">
                                     <ProductVariantsTab
                                         key={variantsRefreshKey}
                                         form={form}
                                         initialData={initialData}
                                         onTabChange={(tab: string) => setActiveTab(tab)}
+                                        onEditVariant={(v) => {
+                                            window.open(`/inventory/products?selected=${v.id}`, '_blank');
+                                        }}
                                     />
                                 </FormTabsContent>
 
@@ -757,15 +768,25 @@ export function ProductForm({ sidebar, open, onOpenChange, initialData, onSucces
                                 </FormTabsContent>
 
                                 <FormTabsContent value="pricing" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin">
-                                    <ProductPricingTab
-                                        initialData={initialData}
-                                        pricingRules={pricingRules}
-                                        fetchPricingRules={fetchPricingRules}
-                                        onOpenRuleDialog={(rule) => {
-                                            setSelectedPricingRule(rule || null)
-                                            setPricingRuleDialogOpen(true)
-                                        }}
-                                    />
+                                    <div className="space-y-8 pr-2">
+                                        <ProductPricingSection
+                                            form={form}
+                                            initialData={initialData}
+                                            canBeSold={canBeSold}
+                                            uoms={uoms}
+                                        />
+                                        <ProductPricingTab
+                                            initialData={initialData}
+                                            pricingRules={pricingRules}
+                                            fetchPricingRules={fetchPricingRules}
+                                            onOpenRuleDialog={(rule) => {
+                                                setSelectedPricingRule(rule || null)
+                                                setPricingRuleDialogOpen(true)
+                                            }}
+                                            isDynamicPricing={form.watch('is_dynamic_pricing')}
+                                            isVariant={!!initialData?.parent_template}
+                                        />
+                                    </div>
                                 </FormTabsContent>
                             </fieldset>
                             </FormTabs>

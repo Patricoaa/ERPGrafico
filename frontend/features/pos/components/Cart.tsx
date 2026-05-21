@@ -100,7 +100,7 @@ export function Cart({
     }
 
     return (
-        <Card className="flex-1 flex flex-col overflow-hidden border bg-background/50 shadow-sm rounded-md">
+        <Card className="py-2 flex-1 flex flex-col overflow-hidden border bg-background/50 shadow-sm rounded-md">
             <CardContent className="p-0 flex-1 flex flex-col overflow-hidden">
                 {/* Header */}
                 <div className="px-6 pt-4 pb-4 border-b bg-background/50 flex flex-col justify-center rounded-t-md h-[88px] shrink-0 gap-1.5">

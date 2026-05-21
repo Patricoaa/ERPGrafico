@@ -78,6 +78,12 @@ export const productSchema = z.object({
         template: z.preprocess((v) => Number(v), z.number()),
         order: z.number().default(0)
     })).default([]),
+    uom_prices: z.array(z.object({
+        id: z.number().optional(),
+        uom: z.preprocess((v) => Number(v), z.number().min(1, "UoM requerida")),
+        price_net: z.preprocess((v) => Number(v) || 0, z.number().min(0)),
+        price_gross: z.preprocess((v) => Number(v) || 0, z.number().min(0)),
+    })).default([]),
 }).refine((data) => {
     // If has_variants is true, skip sale_price validation (price is per variant)
     if (data.has_variants) {

@@ -202,8 +202,9 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
     }
 
     return (
-        <Tabs value={viewMode} className="w-full flex flex-col h-full">
-            <DataTable
+        <div className="h-full flex flex-col">
+            <div className="flex-1 min-h-0">
+                <DataTable
                 columns={(viewMode === 'orders' ? columns : noteColumns) as any}
                 data={(viewMode === 'orders' ? orders : filteredNotes) as any}
                 onRowClick={(row: any) => toggleSelection(row.original.id)}
@@ -226,7 +227,7 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
                 }) : undefined}
                 renderLoadingView={isCustomView ? createCardLoadingView('single-column') : undefined}
             />
-
-        </Tabs>
+            </div>
+        </div>
     )
 }

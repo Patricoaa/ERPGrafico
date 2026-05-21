@@ -388,7 +388,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
     ]
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 h-full flex flex-col">
             {editingOrder && (
                 <PurchaseOrderForm
                     initialData={editingOrder as unknown as any}
@@ -400,8 +400,8 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                 />
             )}
 
-            <Tabs value={viewMode} className="w-full">
-                <FadeIn key={viewMode + "_" + currentView}>
+            <Tabs value={viewMode} className="w-full h-full flex flex-col">
+                <div className="flex-1 min-h-0">
                     <DataTable
                         columns={(viewMode === 'orders' ? columns : noteColumns) as any}
                         data={(viewMode === 'orders' ? filteredOrders : filteredNotes) as any}
@@ -426,7 +426,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                         renderLoadingView={isCustomView ? createCardLoadingView('single-column') : undefined}
                         createAction={createAction}
                     />
-                </FadeIn>
+                </div>
             </Tabs>
 
             {

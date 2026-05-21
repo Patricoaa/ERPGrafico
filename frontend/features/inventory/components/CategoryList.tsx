@@ -133,15 +133,17 @@ export function CategoryList({ externalOpen, onExternalOpenChange, createAction 
 
 
     return (
-        <div className="space-y-4">
-            <DataTable
-                columns={columns}
-                data={filterFn(categories)}
-                isLoading={isLoading}
-                variant="embedded"
-                leftAction={<SmartSearchBar searchDef={categorySearchDef} placeholder="Buscar categoría..." />}
-                createAction={createAction}
-            />
+        <div className="space-y-4 h-full flex flex-col">
+            <div className="flex-1 min-h-0">
+                <DataTable
+                    columns={columns}
+                    data={filterFn(categories)}
+                    isLoading={isLoading}
+                    variant="embedded"
+                    leftAction={<SmartSearchBar searchDef={categorySearchDef} placeholder="Buscar categoría..." />}
+                    createAction={createAction}
+                />
+            </div>
 
             {/* Unified Modal — CategoryForm keeps rich selectors + audit for both create and edit */}
             <CategoryForm

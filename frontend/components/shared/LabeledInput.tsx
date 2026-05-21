@@ -147,7 +147,7 @@ export const LabeledInput = forwardRef<
                             {icon}
                         </div>
                     )}
-                    
+
                     {isTextarea ? (
                         <textarea
                             ref={ref as React.ForwardedRef<HTMLTextAreaElement>}

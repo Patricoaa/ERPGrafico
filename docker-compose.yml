@@ -177,8 +177,8 @@ services:
       # Dentro de la red Docker, el backend se llama directamente
       BACKEND_INTERNAL_URL: http://backend:8100
       # Chokidar fix para file watching en Windows/WSL
-      WATCHPACK_POLLING: "true"
-      CHOKIDAR_USEPOLLING: "true"
+      # WATCHPACK_POLLING: "true"
+      # CHOKIDAR_USEPOLLING: "true"
     volumes:
       # Código fuente bind-montado → HMR real sin rebuild
       - ./frontend:/app

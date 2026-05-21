@@ -178,26 +178,21 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                     marginRight: `${totalSheetsWidth}px`
                 }}
             >
-                {/* Railway-style Main Canvas */}
                 <main
                     id="main-content"
                     className="flex-1 flex flex-col overflow-hidden relative canvas-prepress bg-card border border-border/10 rounded-xl shadow-2xl"
                 >
-                    <AnimatePresence mode="wait">
-                        <motion.div
-                            key={pathname}
-                            initial={shouldReduceMotion ? { opacity: 0 } : { y: 8, opacity: 0 }}
-                            animate={shouldReduceMotion ? { opacity: 1 } : { y: 0, opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            transition={{
-                                duration: 0.35,
-                                ease: [0.16, 1, 0.3, 1]
-                            }}
-                            className="w-full flex-1 flex flex-col min-h-0"
-                        >
-                            {children}
-                        </motion.div>
-                    </AnimatePresence>
+                    <motion.div
+                        initial={shouldReduceMotion ? { opacity: 0 } : { y: 8, opacity: 0 }}
+                        animate={shouldReduceMotion ? { opacity: 1 } : { y: 0, opacity: 1 }}
+                        transition={{
+                            duration: 0.35,
+                            ease: [0.16, 1, 0.3, 1]
+                        }}
+                        className="w-full flex-1 flex flex-col min-h-0"
+                    >
+                        {children}
+                    </motion.div>
                 </main>
             </div>
 

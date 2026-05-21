@@ -386,8 +386,9 @@ export default function PurchaseInvoicesPage() {
     ]
 
     return (
-        <div className="">
-            <DataTable
+        <div className="h-full flex flex-col">
+            <div className="flex-1 min-h-0">
+                <DataTable
                 columns={columns}
                 data={invoices}
                 variant="embedded"
@@ -450,6 +451,7 @@ export default function PurchaseInvoicesPage() {
                     )
                 }}
             />
+            </div>
 
             {
                 viewingTransaction && (
