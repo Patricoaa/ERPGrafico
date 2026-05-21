@@ -93,22 +93,24 @@ export function DashboardPendingTable({ data, loading }: DashboardPendingTablePr
     ], [router])
 
     return (
-        <div className="col-span-4 lg:col-span-3">
-            <DataTable
-                columns={columns}
-                data={data}
-                isLoading={loading}
-                variant="embedded"
-                searchPlaceholder="Filtrar sin conciliar..."
-                globalFilterFields={["description", "account"]}
-                rightAction={
-                    <Button variant="ghost" size="sm" className="h-8 text-xs font-black uppercase tracking-widest border border-border/40" asChild>
-                        <Link href="/treasury/reconciliation?tab=statements&filter=in_progress">
-                            Ver Todo
-                        </Link>
-                    </Button>
-                }
-            />
+        <div className="col-span-4 lg:col-span-3 h-full flex flex-col">
+            <div className="flex-1 min-h-0">
+                <DataTable
+                    columns={columns}
+                    data={data}
+                    isLoading={loading}
+                    variant="embedded"
+                    searchPlaceholder="Buscar sin conciliar..."
+                    globalFilterFields={["description", "account"]}
+                    rightAction={
+                        <Button variant="ghost" size="sm" className="h-8 text-xs font-black uppercase tracking-widest border border-border/40" asChild>
+                            <Link href="/treasury/reconciliation?tab=statements&filter=in_progress">
+                                Ver Todo
+                            </Link>
+                        </Button>
+                    }
+                />
+            </div>
         </div>
     )
 }

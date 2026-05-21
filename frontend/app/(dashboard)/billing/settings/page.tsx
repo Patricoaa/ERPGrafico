@@ -11,8 +11,10 @@ export default async function BillingSettingsPage({ searchParams }: PageProps) {
     const configTab = tab || "accounts"
 
     return (
-        <Suspense fallback={<TableSkeleton rows={10} columns={6} />}>
-            <BillingSettingsView activeTab={configTab} />
-        </Suspense>
+        <div className="flex-1 min-h-0 flex flex-col">
+            <Suspense fallback={<TableSkeleton rows={10} columns={6} />}>
+                <BillingSettingsView activeTab={configTab} />
+            </Suspense>
+        </div>
     )
 }

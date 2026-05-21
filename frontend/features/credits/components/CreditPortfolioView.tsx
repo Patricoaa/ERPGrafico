@@ -75,7 +75,7 @@ export function CreditPortfolioView({
                             isLoading={isLoading}
                             onRefresh={refetch}
                             createAction={createAction}
-                            leftAction={<SmartSearchBar searchDef={creditContactSearchDef} placeholder="Cliente o RUT..." />}
+                            leftAction={<SmartSearchBar searchDef={creditContactSearchDef} placeholder="Cliente o RUT..." className="w-full" />}
                         />
                     </div>
                 </div>
@@ -86,7 +86,7 @@ export function CreditPortfolioView({
                         data={history ?? EMPTY_HISTORY}
                         variant="embedded"
                         isLoading={loadingHistory}
-                        leftAction={<SmartSearchBar searchDef={creditHistorySearchDef} placeholder="Cliente o folio..." />}
+                        leftAction={<SmartSearchBar searchDef={creditHistorySearchDef} placeholder="Cliente o folio..." className="w-full" />}
                     />
                 </div>
             )}

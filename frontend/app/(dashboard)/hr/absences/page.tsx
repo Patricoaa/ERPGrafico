@@ -119,15 +119,15 @@ export default function AbsencesPage() {
 
             <div className="flex-1 min-h-0">
                 <DataTable
-                columns={columns}
-                data={absences}
-                isLoading={loading}
-                variant="embedded"
-                leftAction={<SmartSearchBar searchDef={absenceSearchDef} placeholder="Filtrar inasistencias..." className="w-full" />}
-                defaultPageSize={20}
-                onRowClick={(row: Absence) => { setEditingAbsence(row); setDialogOpen(true) }}
-                createAction={createAction}
-            />
+                    columns={columns}
+                    data={absences}
+                    isLoading={loading}
+                    variant="embedded"
+                    leftAction={<SmartSearchBar searchDef={absenceSearchDef} placeholder="Buscar inasistencias..." className="w-full" />}
+                    defaultPageSize={20}
+                    onRowClick={(row: Absence) => { setEditingAbsence(row); setDialogOpen(true) }}
+                    createAction={createAction}
+                />
             </div>
         </div>
     )

@@ -120,7 +120,7 @@ export default function PartnersPage() {
     ) : null
 
     return (
-        <div className="space-y-6">
+        <div className="pt-2 h-[calc(100vh-140px)] flex flex-col">
             <PageHeader
                 title={headerConfig.title}
                 description={headerConfig.description}
@@ -137,7 +137,7 @@ export default function PartnersPage() {
                 )}
             </PageHeader>
 
-            <div className="pt-4">
+            <div className="pt-4 flex-1 min-h-0 flex flex-col">
                 <Suspense fallback={<LoadingFallback message="Cargando configuración de socios..." />}>
                     {(activeTab === 'composition' || activeTab === 'distributions') && (
                         <PartnersSettingsView

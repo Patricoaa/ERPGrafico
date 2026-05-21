@@ -243,47 +243,47 @@ export function BlacklistView() {
         <div className="space-y-6 h-full flex flex-col">
             <div className="flex-1 min-h-0">
                 <DataTable
-                columns={columns}
-                data={contacts}
-                variant="embedded"
-                isLoading={loading}
-                leftAction={<SmartSearchBar searchDef={creditContactSearchDef} placeholder="Cliente o RUT..." />}
-                renderCustomView={(table: ReactTable<CreditContact>) => {
-                    const rows = table.getRowModel().rows
-                    if (rows.length === 0 && !loading) {
+                    columns={columns}
+                    data={contacts}
+                    variant="embedded"
+                    isLoading={loading}
+                    leftAction={<SmartSearchBar searchDef={creditContactSearchDef} placeholder="Cliente o RUT..." className="w-full" />}
+                    renderCustomView={(table: ReactTable<CreditContact>) => {
+                        const rows = table.getRowModel().rows
+                        if (rows.length === 0 && !loading) {
+                            return (
+                                <EmptyState
+                                    context="search"
+                                    title="Lista Negra Vacía"
+                                    description="No hay clientes bloqueados o en historial de castigos actualmente."
+                                />
+                            )
+                        }
                         return (
-                            <EmptyState
-                                context="search"
-                                title="Lista Negra Vacía"
-                                description="No hay clientes bloqueados o en historial de castigos actualmente."
-                            />
+                            <div className="overflow-x-auto pb-4">
+                                <table className="w-full text-left">
+                                    <thead className="border-b border-border/50">
+                                        {table.getHeaderGroups().map((headerGroup: HeaderGroup<CreditContact>) => (
+                                            <tr key={headerGroup.id}>
+                                                {headerGroup.headers.map((header: Header<CreditContact, unknown>) => (
+                                                    <th key={header.id} className="px-4 py-3 text-muted-foreground font-black text-[10px] uppercase tracking-widest whitespace-nowrap">
+                                                        {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                                                    </th>
+                                                ))}
+                                                <th className="px-3 py-3 w-12" />
+                                            </tr>
+                                        ))}
+                                    </thead>
+                                    <tbody className="divide-y divide-border/50">
+                                        {rows.map((row: Row<CreditContact>) => (
+                                            <ExpandableBlacklistRow key={row.id} row={row} onRefresh={fetchData} />
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
                         )
-                    }
-                    return (
-                        <div className="overflow-x-auto pb-4">
-                            <table className="w-full text-left">
-                                <thead className="border-b border-border/50">
-                                    {table.getHeaderGroups().map((headerGroup: HeaderGroup<CreditContact>) => (
-                                        <tr key={headerGroup.id}>
-                                            {headerGroup.headers.map((header: Header<CreditContact, unknown>) => (
-                                                <th key={header.id} className="px-4 py-3 text-muted-foreground font-black text-[10px] uppercase tracking-widest whitespace-nowrap">
-                                                    {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
-                                                </th>
-                                            ))}
-                                            <th className="px-3 py-3 w-12" />
-                                        </tr>
-                                    ))}
-                                </thead>
-                                <tbody className="divide-y divide-border/50">
-                                    {rows.map((row: Row<CreditContact>) => (
-                                        <ExpandableBlacklistRow key={row.id} row={row} onRefresh={fetchData} />
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    )
-                }}
-            />
+                    }}
+                />
             </div>
         </div>
     )

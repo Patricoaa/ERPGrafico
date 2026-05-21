@@ -210,7 +210,7 @@ export function PurchaseInvoicesClientView() {
     ]
 
     return (
-        <div className="space-y-4 px-1 h-full flex flex-col">
+        <div className="px-1 h-full flex flex-col">
             <div className="flex-1 min-h-0">
                 <DataTable
                     columns={columns}
@@ -233,7 +233,7 @@ export function PurchaseInvoicesClientView() {
                     currentView={currentView}
                     onViewChange={handleViewChange}
                     viewOptions={viewOptions}
-                    leftAction={<SmartSearchBar searchDef={purchaseInvoiceSearchDef} placeholder="Buscar facturas de compra..." className="w-80" />}
+                    leftAction={<SmartSearchBar searchDef={purchaseInvoiceSearchDef} placeholder="Buscar facturas de compra..." className="w-full" />}
                     defaultPageSize={20}
                     renderCustomView={isCustomView ? createDomainCardView('billing.invoice', {
                         onRowClick: (inv) => {

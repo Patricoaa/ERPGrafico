@@ -741,14 +741,14 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
 
     return (
         <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-            <Tabs defaultValue="unreconciled" className="space-y-4 w-full">
+            <Tabs defaultValue="unreconciled" className="h-full flex flex-col w-full min-h-0">
                 {/* ─── Unified Workbench Toolbar ─── */}
                 <div className="flex items-center justify-between gap-4 w-full mb-3 h-9">
                     {/* Left: Smart Search Bar (Unified Filtering for Both Tables) */}
                     <div className="flex-1 min-w-0 h-9">
                         <SmartSearchBar
                             searchDef={reconciliationSearchDef}
-                            placeholder="Filtrar movimientos y pagos por descripción, monto, tipo (type:IN/OUT) o rango de fechas..."
+                            placeholder="Buscar movimientos y pagos por descripción, monto, tipo (type:IN/OUT) o rango de fechas..."
                             className="w-full"
                         />
                     </div>
@@ -797,14 +797,14 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
 
 
 
-                <TabsContent value="unreconciled">
-                    <div className="flex gap-6 relative min-h-[600px] items-start pb-24">
+                <TabsContent value="unreconciled" className="flex-1 min-h-0 flex flex-col mt-0 data-[state=inactive]:hidden">
+                    <div className="flex-1 min-h-0 flex gap-6 relative items-start pb-24">
                         {/* Tables Container */}
-                        <div className="flex-1 transition-all duration-500 ease-[var(--ease-premium)] min-w-0">
+                        <div className="flex-1 h-full min-h-0 transition-all duration-500 ease-[var(--ease-premium)] min-w-0">
                             {/* ─── Grid with Section Headers ─── */}
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 h-full min-h-0">
                                 {/* Left: Bank */}
-                                <div className="space-y-2">
+                                <div className="h-full flex flex-col min-h-0 space-y-2">
                                     <div className="flex items-center justify-between px-1">
                                         <div className="flex items-center gap-2">
                                             <div className="h-2 w-2 rounded-full bg-info" />
@@ -820,52 +820,54 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                         </div>
                                         <span className="text-[10px] font-mono text-muted-foreground">{bankData?.count || 0} pendientes</span>
                                     </div>
-                                    <DataTable
-                                        columns={bankColumns}
-                                        data={unreconciledLines}
-                                        variant="embedded"
-                                        searchPlaceholder="Buscar movimiento..."
-                                        rowSelection={bankRowSelection}
-                                        onRowSelectionChange={handleLineSelectionChange}
-                                        skeletonRows={10}
-                                        pageSizeOptions={[50, 100]}
-                                        defaultPageSize={50}
-                                        renderRow={(row, children) => {
-                                            const line = row.original as BankStatementLine
-                                            const isSuggested = lineSuggestions.some((s: any) => s.line_data?.id === line.id)
-                                            const isExcluded = line.reconciliation_status === 'EXCLUDED' || (line as any).reconciliation_state === 'EXCLUDED'
+                                    <div className="flex-1 min-h-0">
+                                        <DataTable
+                                            columns={bankColumns}
+                                            data={unreconciledLines}
+                                            variant="embedded"
+                                            searchPlaceholder="Buscar movimiento..."
+                                            rowSelection={bankRowSelection}
+                                            onRowSelectionChange={handleLineSelectionChange}
+                                            skeletonRows={10}
+                                            pageSizeOptions={[50, 100]}
+                                            defaultPageSize={50}
+                                            renderRow={(row, children) => {
+                                                const line = row.original as BankStatementLine
+                                                const isSuggested = lineSuggestions.some((s: any) => s.line_data?.id === line.id)
+                                                const isExcluded = line.reconciliation_status === 'EXCLUDED' || (line as any).reconciliation_state === 'EXCLUDED'
 
-                                            if (!React.isValidElement(children)) return children as any
+                                                if (!React.isValidElement(children)) return children as any
 
-                                            return (
-                                                <DroppableBankLine id={line.id}>
-                                                    {React.cloneElement(children as React.ReactElement<any>, {
-                                                        className: cn(
-                                                            (children.props as any).className,
-                                                            "group transition-all duration-300",
-                                                            isSuggested && "[&_td]:!bg-warning/[0.08] [&_td]:!border-y [&_td]:!border-warning/40 shadow-[inset_0_0_20px_rgba(245,158,11,0.05)]",
-                                                            isExcluded && "opacity-40 grayscale-[0.5] [&_td]:!bg-muted/30"
-                                                        )
-                                                    })}
-                                                </DroppableBankLine>
-                                            )
-                                        }}
-                                        onPaginationChange={(updater: Updater<PaginationState>) => {
-                                            if (typeof updater === 'function') {
-                                                const newState = updater({ pageIndex: (bankParams.page || 1) - 1, pageSize: bankParams.pageSize || 50 })
-                                                setBankParams(p => ({ ...p, page: newState.pageIndex + 1, pageSize: newState.pageSize }))
-                                            } else {
-                                                setBankParams(p => ({ ...p, page: updater.pageIndex + 1, pageSize: updater.pageSize }))
-                                            }
-                                        }}
-                                        manualPagination
-                                        pageCount={Math.ceil((bankData?.count || 0) / (bankParams.pageSize || 50))}
-                                        pagination={{ pageIndex: (bankParams.page || 1) - 1, pageSize: bankParams.pageSize || 50 }}
-                                    />
+                                                return (
+                                                    <DroppableBankLine id={line.id}>
+                                                        {React.cloneElement(children as React.ReactElement<any>, {
+                                                            className: cn(
+                                                                (children.props as any).className,
+                                                                "group transition-all duration-300",
+                                                                isSuggested && "[&_td]:!bg-warning/[0.08] [&_td]:!border-y [&_td]:!border-warning/40 shadow-[inset_0_0_20px_rgba(245,158,11,0.05)]",
+                                                                isExcluded && "opacity-40 grayscale-[0.5] [&_td]:!bg-muted/30"
+                                                            )
+                                                        })}
+                                                    </DroppableBankLine>
+                                                )
+                                            }}
+                                            onPaginationChange={(updater: Updater<PaginationState>) => {
+                                                if (typeof updater === 'function') {
+                                                    const newState = updater({ pageIndex: (bankParams.page || 1) - 1, pageSize: bankParams.pageSize || 50 })
+                                                    setBankParams(p => ({ ...p, page: newState.pageIndex + 1, pageSize: newState.pageSize }))
+                                                } else {
+                                                    setBankParams(p => ({ ...p, page: updater.pageIndex + 1, pageSize: updater.pageSize }))
+                                                }
+                                            }}
+                                            manualPagination
+                                            pageCount={Math.ceil((bankData?.count || 0) / (bankParams.pageSize || 50))}
+                                            pagination={{ pageIndex: (bankParams.page || 1) - 1, pageSize: bankParams.pageSize || 50 }}
+                                        />
+                                    </div>
                                 </div>
 
                                 {/* Right: Treasury (Renamed from System) */}
-                                <div className="space-y-2">
+                                <div className="h-full flex flex-col min-h-0 space-y-2">
                                     <div className="flex items-center justify-between px-1">
                                         <div className="flex items-center gap-2">
                                             <div className="h-2 w-2 rounded-full bg-primary" />
@@ -882,57 +884,59 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                         </div>
                                         <span className="text-[10px] font-mono text-muted-foreground">{systemData?.count || 0} disponibles</span>
                                     </div>
-                                    <DataTable
-                                        columns={paymentColumns}
-                                        data={unreconciledPayments}
-                                        variant="embedded"
-                                        searchPlaceholder="Buscar pago..."
-                                        rowSelection={systemRowSelection}
-                                        onRowSelectionChange={handlePaymentSelectionChange}
-                                        skeletonRows={10}
-                                        pageSizeOptions={[50, 100]}
-                                        defaultPageSize={50}
-                                        renderRow={(row, children) => {
-                                            const item = row.original as ReconciliationSystemItem
-                                            const isSuggested = suggestions.some((s: any) => {
-                                                if (s.is_batch) {
-                                                    return s.batch_data?.id === item.terminal_batch_id
-                                                }
-                                                return s.payment_data?.id === item.id
-                                            })
-                                            if (!React.isValidElement(children)) return children as any
+                                    <div className="flex-1 min-h-0">
+                                        <DataTable
+                                            columns={paymentColumns}
+                                            data={unreconciledPayments}
+                                            variant="embedded"
+                                            searchPlaceholder="Buscar pago..."
+                                            rowSelection={systemRowSelection}
+                                            onRowSelectionChange={handlePaymentSelectionChange}
+                                            skeletonRows={10}
+                                            pageSizeOptions={[50, 100]}
+                                            defaultPageSize={50}
+                                            renderRow={(row, children) => {
+                                                const item = row.original as ReconciliationSystemItem
+                                                const isSuggested = suggestions.some((s: any) => {
+                                                    if (s.is_batch) {
+                                                        return s.batch_data?.id === item.terminal_batch_id
+                                                    }
+                                                    return s.payment_data?.id === item.id
+                                                })
+                                                if (!React.isValidElement(children)) return children as any
 
-                                            return (
-                                                <DraggablePayment id={item.id}>
-                                                    {React.cloneElement(children as React.ReactElement<any>, {
-                                                        className: cn(
-                                                            (children.props as any).className,
-                                                            "group transition-all duration-300",
-                                                            isSuggested && "[&_td]:!bg-warning/[0.12] [&_td]:!border-y [&_td]:!border-warning/50 shadow-[inset_0_0_20px_rgba(245,158,11,0.08)]"
-                                                        )
-                                                    })}
-                                                </DraggablePayment>
-                                            )
-                                        }}
-                                        onPaginationChange={(updater: Updater<PaginationState>) => {
-                                            if (typeof updater === 'function') {
-                                                const newState = updater({ pageIndex: (systemParams.page || 1) - 1, pageSize: systemParams.pageSize || 50 })
-                                                setSystemParams(p => ({ ...p, page: newState.pageIndex + 1, pageSize: newState.pageSize }))
-                                            } else {
-                                                setSystemParams(p => ({ ...p, page: updater.pageIndex + 1, pageSize: updater.pageSize }))
-                                            }
-                                        }}
-                                        manualPagination
-                                        pageCount={Math.ceil((systemData?.count || 0) / (systemParams.pageSize || 50))}
-                                        pagination={{ pageIndex: (systemParams.page || 1) - 1, pageSize: systemParams.pageSize || 50 }}
-                                    />
+                                                return (
+                                                    <DraggablePayment id={item.id}>
+                                                        {React.cloneElement(children as React.ReactElement<any>, {
+                                                            className: cn(
+                                                                (children.props as any).className,
+                                                                "group transition-all duration-300",
+                                                                isSuggested && "[&_td]:!bg-warning/[0.12] [&_td]:!border-y [&_td]:!border-warning/50 shadow-[inset_0_0_20px_rgba(245,158,11,0.08)]"
+                                                            )
+                                                        })}
+                                                    </DraggablePayment>
+                                                )
+                                            }}
+                                            onPaginationChange={(updater: Updater<PaginationState>) => {
+                                                if (typeof updater === 'function') {
+                                                    const newState = updater({ pageIndex: (systemParams.page || 1) - 1, pageSize: systemParams.pageSize || 50 })
+                                                    setSystemParams(p => ({ ...p, page: newState.pageIndex + 1, pageSize: newState.pageSize }))
+                                                } else {
+                                                    setSystemParams(p => ({ ...p, page: updater.pageIndex + 1, pageSize: updater.pageSize }))
+                                                }
+                                            }}
+                                            manualPagination
+                                            pageCount={Math.ceil((systemData?.count || 0) / (systemParams.pageSize || 50))}
+                                            pagination={{ pageIndex: (systemParams.page || 1) - 1, pageSize: systemParams.pageSize || 50 }}
+                                        />
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </TabsContent>
 
-                <TabsContent value="reconciled">
+                <TabsContent value="reconciled" className="flex-1 min-h-0 overflow-y-auto mt-0 data-[state=inactive]:hidden custom-scrollbar">
                     <div className="grid grid-cols-1 gap-4 pb-24">
                         {reconciledGroups.map((groupItem) => {
                             const { group, lines } = groupItem;

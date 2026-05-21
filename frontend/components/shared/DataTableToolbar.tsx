@@ -71,7 +71,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
         table,
         filterColumn,
         globalFilterFields,
-        searchPlaceholder = "Filtrar...",
+        searchPlaceholder = "Buscar...",
         facetedFilters = [],
         toolbarAction,
         useAdvancedFilter = false,

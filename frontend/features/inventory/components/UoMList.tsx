@@ -139,7 +139,7 @@ export function UoMList({ externalOpen, onExternalOpenChange, createAction }: Uo
         createActionsColumn<UoM>({
             renderActions: (item) => (
                 <>
-                    <DataCell.Action action="edit"   onClick={() => openSelected(item.id)} />
+                    <DataCell.Action action="edit" onClick={() => openSelected(item.id)} />
                     <DataCell.Action action="delete" onClick={() => handleDelete(item.id)} />
                 </>
             ),
@@ -173,7 +173,7 @@ export function UoMList({ externalOpen, onExternalOpenChange, createAction }: Uo
                     data={uoms}
                     isLoading={isLoading}
                     variant="embedded"
-                    leftAction={<SmartSearchBar searchDef={uomSearchDef} placeholder="Buscar unidad..." className="w-80" />}
+                    leftAction={<SmartSearchBar searchDef={uomSearchDef} placeholder="Buscar unidad..." className="w-full" />}
                     bulkActions={bulkActions}
                     createAction={createAction}
                 />

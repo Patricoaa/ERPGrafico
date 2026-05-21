@@ -309,8 +309,8 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange, create
     ]
 
     return (
-        <div className="space-y-6 pt-4 h-full flex flex-col">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="h-full flex flex-col">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 shrink-0">
                 {isLoading ? (
                     <CardSkeleton count={3} variant="grid" />
                 ) : (
@@ -374,101 +374,101 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange, create
                     data={filteredPeriods}
                     isLoading={isLoading}
                     variant="embedded"
-                leftAction={<SmartSearchBar searchDef={taxPeriodSearchDef} placeholder="Buscar período..." />}
-                showToolbarSort={true}
-                createAction={createAction}
-                renderLoadingView={() => (
-                    <div className="grid gap-3 pt-2">
-                        {Array.from({ length: 6 }).map((_, i) => (
-                            <EntityCard.Skeleton key={i} variant="compact" />
-                        ))}
-                    </div>
-                )}
-                renderCustomView={(table) => {
-                    const rows = table.getRowModel().rows
-
-                    if (rows.length === 0) {
-                        return (
-                            <div className="flex flex-col items-center justify-center py-12 bg-muted/30 rounded-md border-2 border-dashed">
-                                <Package className="h-12 w-12 text-muted-foreground mb-4 opacity-20" />
-                                <p className="text-muted-foreground font-medium">No se encontraron períodos</p>
-                            </div>
-                        )
-                    }
-                    return (
+                    leftAction={<SmartSearchBar searchDef={taxPeriodSearchDef} placeholder="Buscar período..." className="w-full" />}
+                    showToolbarSort={true}
+                    createAction={createAction}
+                    renderLoadingView={() => (
                         <div className="grid gap-3 pt-2">
-                            {rows.map((row: Row<TaxPeriod>) => {
-                                const period = row.original
-                                const summary = period.declaration_summary
-                                const isFullyPaid = summary?.is_fully_paid
-                                const showPaymentButton = !!summary || period.status === 'CLOSED'
-                                const canOpenChecklist = period.status === 'OPEN'
+                            {Array.from({ length: 6 }).map((_, i) => (
+                                <EntityCard.Skeleton key={i} variant="compact" />
+                            ))}
+                        </div>
+                    )}
+                    renderCustomView={(table) => {
+                        const rows = table.getRowModel().rows
 
-                                return (
-                                    <EntityCard
-                                        key={period.id}
-                                        variant="compact"
-                                        className={cn(
-                                            "flex flex-row items-center justify-between",
-                                            canOpenChecklist ? "cursor-pointer" : "cursor-default"
-                                        )}
-                                        onClick={() => canOpenChecklist ? handleOpenWizard(period) : null}
-                                    >
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-sm bg-primary/5 flex flex-col items-center justify-center border border-primary/10 shrink-0">
-                                                <span className="text-[9px] font-bold text-primary/60">{period.year}</span>
-                                                <span className="text-xs font-bold text-primary">{period.month_display?.substring(0, 3).toUpperCase() || ''}</span>
-                                            </div>
-                                            <div className="flex flex-col">
-                                                <span className="text-sm font-semibold">{period.month_display} {period.year}</span>
-                                                <div className="flex items-center gap-2 mt-0.5">
-                                                    <StatusBadge status={period.status} size="sm" />
-                                                    {summary && (
-                                                        <span className="text-[10px] text-muted-foreground font-medium">
-                                                            {formatCurrency(summary.vat_to_pay)}
-                                                        </span>
-                                                    )}
+                        if (rows.length === 0) {
+                            return (
+                                <div className="flex flex-col items-center justify-center py-12 bg-muted/30 rounded-md border-2 border-dashed">
+                                    <Package className="h-12 w-12 text-muted-foreground mb-4 opacity-20" />
+                                    <p className="text-muted-foreground font-medium">No se encontraron períodos</p>
+                                </div>
+                            )
+                        }
+                        return (
+                            <div className="grid gap-3 pt-2">
+                                {rows.map((row: Row<TaxPeriod>) => {
+                                    const period = row.original
+                                    const summary = period.declaration_summary
+                                    const isFullyPaid = summary?.is_fully_paid
+                                    const showPaymentButton = !!summary || period.status === 'CLOSED'
+                                    const canOpenChecklist = period.status === 'OPEN'
+
+                                    return (
+                                        <EntityCard
+                                            key={period.id}
+                                            variant="compact"
+                                            className={cn(
+                                                "flex flex-row items-center justify-between",
+                                                canOpenChecklist ? "cursor-pointer" : "cursor-default"
+                                            )}
+                                            onClick={() => canOpenChecklist ? handleOpenWizard(period) : null}
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 rounded-sm bg-primary/5 flex flex-col items-center justify-center border border-primary/10 shrink-0">
+                                                    <span className="text-[9px] font-bold text-primary/60">{period.year}</span>
+                                                    <span className="text-xs font-bold text-primary">{period.month_display?.substring(0, 3).toUpperCase() || ''}</span>
+                                                </div>
+                                                <div className="flex flex-col">
+                                                    <span className="text-sm font-semibold">{period.month_display} {period.year}</span>
+                                                    <div className="flex items-center gap-2 mt-0.5">
+                                                        <StatusBadge status={period.status} size="sm" />
+                                                        {summary && (
+                                                            <span className="text-[10px] text-muted-foreground font-medium">
+                                                                {formatCurrency(summary.vat_to_pay)}
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
 
-                                        <div className="flex items-center gap-2">
-                                            {showPaymentButton && (
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className={cn("h-8 w-8 rounded-sm", isFullyPaid ? "text-success hover:bg-success/10 hover:text-success" : "text-success hover:bg-success/10")}
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handleOpenPayment(period);
-                                                    }}
-                                                    title={isFullyPaid ? "Ver Pagos" : "Pagar"}
-                                                >
-                                                    {isFullyPaid ? <HistoryIcon className="h-4 w-4" /> : <DollarSign className="h-4 w-4" />}
-                                                </Button>
-                                            )}
-                                            {canOpenChecklist && (
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="h-8 w-8 rounded-sm"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handleOpenWizard(period);
-                                                    }}
-                                                    title="Iniciar declaración/cierre F29"
-                                                >
-                                                    <ArrowRight className="h-4 w-4 text-primary" />
-                                                </Button>
-                                            )}
-                                        </div>
-                                    </EntityCard>
-                                )
-                            })}
-                        </div>
-                    )
-                }}
-            />
+                                            <div className="flex items-center gap-2">
+                                                {showPaymentButton && (
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className={cn("h-8 w-8 rounded-sm", isFullyPaid ? "text-success hover:bg-success/10 hover:text-success" : "text-success hover:bg-success/10")}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleOpenPayment(period);
+                                                        }}
+                                                        title={isFullyPaid ? "Ver Pagos" : "Pagar"}
+                                                    >
+                                                        {isFullyPaid ? <HistoryIcon className="h-4 w-4" /> : <DollarSign className="h-4 w-4" />}
+                                                    </Button>
+                                                )}
+                                                {canOpenChecklist && (
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-8 w-8 rounded-sm"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleOpenWizard(period);
+                                                        }}
+                                                        title="Iniciar declaración/cierre F29"
+                                                    >
+                                                        <ArrowRight className="h-4 w-4 text-primary" />
+                                                    </Button>
+                                                )}
+                                            </div>
+                                        </EntityCard>
+                                    )
+                                })}
+                            </div>
+                        )
+                    }}
+                />
             </div>
             <DeclarationWizard
                 isOpen={isWizardOpen || !!externalOpen}

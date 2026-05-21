@@ -171,14 +171,14 @@ export function StockReport() {
         <PageContainer className="space-y-6 h-full flex flex-col">
             <div className="flex-1 min-h-0">
                 <DataTable
-                columns={columns}
-                data={filteredReport}
-                isLoading={isLoading}
-                variant="embedded"
-                leftAction={<SmartSearchBar searchDef={stockReportSearchDef} placeholder="Filtrar por producto, SKU o categoría..." />}
-                useAdvancedFilter={true}
-                defaultPageSize={50}
-            />
+                    columns={columns}
+                    data={filteredReport}
+                    isLoading={isLoading}
+                    variant="embedded"
+                    leftAction={<SmartSearchBar searchDef={stockReportSearchDef} placeholder="Buscar por producto, SKU o categoría..." className="w-full" />}
+                    useAdvancedFilter={true}
+                    defaultPageSize={50}
+                />
             </div>
 
             <BaseModal

@@ -27,9 +27,9 @@ export default async function ReconciliationPage({ searchParams }: PageProps) {
     )
 
     return (
-        <div className="pt-2">
-            <Tabs value={activeTab} className="space-y-4">
-                <TabsContent value="statements" className="mt-0 outline-none">
+        <div className="pt-2 flex-1 min-h-0 flex flex-col">
+            <Tabs value={activeTab} className="space-y-4 h-full flex flex-col">
+                <TabsContent value="statements" className="mt-0 outline-none flex-1 min-h-0">
                     <FadeIn>
                         <StatementsList externalOpen={modalOpen} createAction={statementsCreateAction} />
                     </FadeIn>

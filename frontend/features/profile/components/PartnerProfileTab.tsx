@@ -169,7 +169,8 @@ export function PartnerProfileTab({ contactId }: Props) {
     const { contact, summary } = statement
 
     return (
-        <div className="w-full space-y-6">
+
+        <div className="flex flex-col w-full h-full space-y-6">
             <Accordion type="multiple" defaultValue={["summary", "history"]} className="w-full space-y-6">
 
                 {/* Section 1: Metrics & Summary */}

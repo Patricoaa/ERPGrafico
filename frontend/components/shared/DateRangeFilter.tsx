@@ -28,7 +28,7 @@ export function DateRangeFilter({
     className,
     date: controlledDate,
     onDateChange,
-    label = "Filtrar por fecha",
+    label = "Buscar por fecha",
     defaultRange,
     variant = 'outline',
 }: DateRangeFilterProps) {
@@ -56,8 +56,8 @@ export function DateRangeFilter({
                         size="sm"
                         className={cn(
                             "w-full justify-start text-left font-bold uppercase tracking-wider text-[10px] transition-all group",
-                            variant === 'outline' 
-                                ? "bg-background/50 backdrop-blur-sm border-border/60 rounded-md hover:bg-muted/50 h-9 px-3" 
+                            variant === 'outline'
+                                ? "bg-background/50 backdrop-blur-sm border-border/60 rounded-md hover:bg-muted/50 h-9 px-3"
                                 : "h-[1.5rem] border-0 bg-transparent hover:bg-transparent shadow-none px-3",
                             !date && "text-muted-foreground",
                             className
@@ -88,8 +88,8 @@ export function DateRangeFilter({
                         )}
                     </Button>
                 </PopoverTrigger>
-                <PopoverContent 
-                    className="w-auto p-0 rounded-lg border-sidebar-border/30 overflow-hidden shadow-2xl" 
+                <PopoverContent
+                    className="w-auto p-0 rounded-lg border-sidebar-border/30 overflow-hidden shadow-2xl"
                     align="start"
                     onInteractOutside={(e) => {
                         // Prevent closing when clicking elements that get unmounted during navigation (like month arrows)

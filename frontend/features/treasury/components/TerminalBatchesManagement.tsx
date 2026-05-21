@@ -102,8 +102,8 @@ export function TerminalBatchesManagement({
                 const amount = row.original.commission_total
                 return (
                     <div className="flex justify-center w-full">
-                        <DataCell.Currency 
-                            value={amount ? -Math.abs(parseFloat(amount)) : 0} 
+                        <DataCell.Currency
+                            value={amount ? -Math.abs(parseFloat(amount)) : 0}
                         />
                     </div>
                 )
@@ -127,16 +127,16 @@ export function TerminalBatchesManagement({
     ], [])
 
     return (
-        <div className="space-y-4 h-full flex flex-col">
+        <div className="h-full flex flex-col">
             <div className="flex-1 min-h-0">
                 <DataTable
-                columns={columns}
-                data={batches}
-                isLoading={isLoading}
-                variant="embedded"
-                leftAction={<SmartSearchBar searchDef={terminalBatchSearchDef} placeholder="Filtrar liquidaciones..." className="w-80" />}
-                createAction={createAction}
-            />
+                    columns={columns}
+                    data={batches}
+                    isLoading={isLoading}
+                    variant="embedded"
+                    leftAction={<SmartSearchBar searchDef={terminalBatchSearchDef} placeholder="Buscar liquidaciones..." className="w-full" />}
+                    createAction={createAction}
+                />
             </div>
 
             <Suspense fallback={<FormSkeleton />}>

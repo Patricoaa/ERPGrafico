@@ -315,7 +315,7 @@ function LedgerContent({
                 variant="embedded"
                 useAdvancedFilter={true}
                 globalFilterFields={["description", "partner", "reference"]}
-                searchPlaceholder="Filtrar movimientos..."
+                searchPlaceholder="Buscar movimientos..."
                 defaultPageSize={100}
                 customFilters={
                     <div className="px-1 py-1">

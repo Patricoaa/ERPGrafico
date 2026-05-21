@@ -12,7 +12,7 @@ import { formatEntityDisplay } from '@/lib/entity-registry'
 import { Chip } from '@/components/shared'
 import { Separator } from '@/components/ui/separator'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Skeleton, CardSkeleton, StatusBadge } from '@/components/shared'
+import { Skeleton, CardSkeleton, StatusBadge, EmptyState } from '@/components/shared'
 import { Progress } from '@/components/ui/progress'
 import { SheetCloseButton } from '@/components/shared/SheetCloseButton'
 import api from '@/lib/api'
@@ -248,14 +248,13 @@ export function OrderActionPanel({
                                     />
                                 ))}
 
-                                {Object.keys(filteredActions).length === 0 && (
-                                    <div className="text-center py-12 text-muted-foreground">
-                                        <p className="text-sm">No hay acciones disponibles para esta orden</p>
-                                        <p className="text-xs mt-1">
-                                            Verifica el estado de la orden o tus permisos
-                                        </p>
-                                    </div>
-                                )}
+                                 {Object.keys(filteredActions).length === 0 && (
+                                     <EmptyState 
+                                         context="generic" 
+                                         title="Sin acciones disponibles" 
+                                         description="Verifica el estado de la orden o tus permisos"
+                                     />
+                                 )}
                             </div>
                         </div>
                     )}

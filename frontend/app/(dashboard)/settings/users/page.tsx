@@ -17,10 +17,12 @@ export default function UsersSettingsPage() {
     const activeTab = searchParams.get("tab") || "users"
 
     return (
-        <Suspense fallback={<TableSkeleton rows={10} columns={5} />}>
-            <UsersSettingsView 
-                activeTab={activeTab} 
-            />
-        </Suspense>
+        <div className="pt-2 h-[calc(100vh-140px)] flex flex-col">
+            <Suspense fallback={<TableSkeleton rows={10} columns={5} />}>
+                <UsersSettingsView 
+                    activeTab={activeTab} 
+                />
+            </Suspense>
+        </div>
     )
 }

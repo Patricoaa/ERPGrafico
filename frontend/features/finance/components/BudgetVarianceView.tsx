@@ -19,6 +19,7 @@ import {
     SelectValue 
 } from "@/components/ui/select";
 import { BudgetVarianceTable, BudgetVarianceNode } from "./BudgetVarianceTable";
+import { EmptyState } from "@/components/shared";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay";
@@ -167,53 +168,61 @@ export function BudgetVarianceView() {
                 }
             />
 
-            {summary && (
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <Card className="border-l-4 border-l-primary">
-                        <CardContent className="pt-6">
-                            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Margen Mes</p>
-                            <MoneyDisplay amount={summary.month_actual} className="text-2xl font-heading font-black tracking-tighter" />
-                            <div className="mt-2 flex items-center gap-1.5">
-                                {summary.month_variance >= 0 ? <TrendingUp className="text-success" /> : <TrendingDown className="text-destructive" />}
-                                <span className={cn("text-xs font-bold", summary.month_variance >= 0 ? "text-success" : "text-destructive")}>
-                                    {summary.month_perc.toFixed(1)}% ejecución
-                                </span>
-                            </div>
-                        </CardContent>
-                    </Card>
-                    
-                    <Card>
-                        <CardContent className="pt-6">
-                            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Presupuesto Mes</p>
-                            <MoneyDisplay amount={summary.month_budget} showColor={false} className="text-2xl font-heading font-black tracking-tighter opacity-80" />
-                            <p className="text-[10px] text-muted-foreground mt-2">Projection objetivos periodo</p>
-                        </CardContent>
-                    </Card>
+             {summary && (
+                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                     <Card className="border-l-4 border-l-primary">
+                         <CardContent className="pt-6">
+                             <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Margen Mes</p>
+                             <MoneyDisplay amount={summary.month_actual} className="text-2xl font-heading font-black tracking-tighter" />
+                             <div className="mt-2 flex items-center gap-1.5">
+                                 {summary.month_variance >= 0 ? <TrendingUp className="text-success" /> : <TrendingDown className="text-destructive" />}
+                                 <span className={cn("text-xs font-bold", summary.month_variance >= 0 ? "text-success" : "text-destructive")}>
+                                     {summary.month_perc.toFixed(1)}% ejecución
+                                 </span>
+                             </div>
+                         </CardContent>
+                     </Card>
+                     
+                     <Card>
+                         <CardContent className="pt-6">
+                             <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Presupuesto Mes</p>
+                             <MoneyDisplay amount={summary.month_budget} showColor={false} className="text-2xl font-heading font-black tracking-tighter opacity-80" />
+                             <p className="text-[10px] text-muted-foreground mt-2">Projection objetivos periodo</p>
+                         </CardContent>
+                     </Card>
 
-                    <Card className="border-l-4 border-l-primary bg-primary/5">
-                        <CardContent className="pt-6">
-                            <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-1">Margen YTD (Acum.)</p>
-                            <MoneyDisplay amount={summary.ytd_actual} className="text-2xl font-heading font-black tracking-tighter" />
-                            <div className="mt-2 flex items-center gap-1.5">
-                                {summary.ytd_variance >= 0 ? <TrendingUp className="text-success" /> : <TrendingDown className="text-destructive" />}
-                                <span className={cn("text-xs font-bold", summary.ytd_variance >= 0 ? "text-success" : "text-destructive")}>
-                                    {summary.ytd_perc.toFixed(1)}% objetivos YTD
-                                </span>
-                            </div>
-                        </CardContent>
-                    </Card>
+                     <Card className="border-l-4 border-l-primary bg-primary/5">
+                         <CardContent className="pt-6">
+                             <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-1">Margen YTD (Acum.)</p>
+                             <MoneyDisplay amount={summary.ytd_actual} className="text-2xl font-heading font-black tracking-tighter" />
+                             <div className="mt-2 flex items-center gap-1.5">
+                                 {summary.ytd_variance >= 0 ? <TrendingUp className="text-success" /> : <TrendingDown className="text-destructive" />}
+                                 <span className={cn("text-xs font-bold", summary.ytd_variance >= 0 ? "text-success" : "text-destructive")}>
+                                     {summary.ytd_perc.toFixed(1)}% objetivos YTD
+                                 </span>
+                             </div>
+                         </CardContent>
+                     </Card>
 
-                    <Card>
-                        <CardContent className="pt-6">
-                            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Desviación Neta YTD</p>
-                            <MoneyDisplay amount={summary.ytd_variance} className="text-2xl font-heading font-black tracking-tighter" />
-                            <p className="text-[10px] text-muted-foreground mt-2">Diferencia acumulada anual</p>
-                        </CardContent>
-                    </Card>
-                </div>
-            )}
+                     <Card>
+                         <CardContent className="pt-6">
+                             <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Desviación Neta YTD</p>
+                             <MoneyDisplay amount={summary.ytd_variance} className="text-2xl font-heading font-black tracking-tighter" />
+                             <p className="text-[10px] text-muted-foreground mt-2">Diferencia acumulada anual</p>
+                         </CardContent>
+                     </Card>
+                 </div>
+             )}
 
-            <BudgetVarianceTable data={data} loading={loading} />
+             {!loading && data.length === 0 ? (
+                 <EmptyState 
+                     context="finance" 
+                     title="Sin datos presupuestarios" 
+                     description="No se encontraron datos para el periodo seleccionado." 
+                 />
+             ) : (
+                 <BudgetVarianceTable data={data} loading={loading} />
+             )}
         </div>
     );
 }

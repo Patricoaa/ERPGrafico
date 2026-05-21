@@ -189,7 +189,7 @@ export function PartnerLedgerModal({
                         data={transactionsWithBalance}
                         isLoading={loading}
                         variant="standalone"
-                        searchPlaceholder="Filtrar por concepto (ej: aporte, retiro)..."
+                        searchPlaceholder="Buscar por concepto (ej: aporte, retiro)..."
                         filterColumn="description"
                         toolbarAction={
                             <>

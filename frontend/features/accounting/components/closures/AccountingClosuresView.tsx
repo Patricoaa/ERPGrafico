@@ -214,7 +214,7 @@ export function AccountingClosuresView({ externalOpen, onExternalOpenChange }: A
                 if (status === 'OPEN') { token = 'success'; label = 'Abierto'; }
                 else if (status === 'CLOSING') { token = 'warning'; label = 'En Cierre'; }
                 else if (status === 'CLOSED') { token = 'info'; label = 'Cerrado'; }
-                
+
                 return <StatusBadge status={token} label={label} />;
             },
         },
@@ -262,47 +262,47 @@ export function AccountingClosuresView({ externalOpen, onExternalOpenChange }: A
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500 h-full flex flex-col">
             <div className="flex-1 min-h-0">
                 <DataTable
-                columns={columns}
-                data={filterFn(groupedData.map(r => ({ ...r, status: r.fiscalYear?.status ?? 'OPEN' })))}
-                isLoading={actionLoadingYr || actionLoadingPeriod}
-                variant="standalone"
-                leftAction={<SmartSearchBar searchDef={fiscalYearSearchDef} placeholder="Buscar ejercicio..." />}
-                currentView={viewMode}
-                onViewChange={handleViewChange}
-                defaultPageSize={10}
-                viewOptions={[
-                    { label: "Lista", value: "list", icon: List },
-                    { label: "Tarjeta", value: "card", icon: LayoutGrid }
-                ]}
-                createAction={
-                    <ToolbarCreateButton 
-                        href="/accounting/closures?modal=fy" 
-                        label="Nuevo Año Fiscal" 
-                    />
-                }
-                renderCustomView={isCustomView ? (table) => (
-                    <div className="space-y-6 pt-4">
-                        {table.getRowModel().rows.map(row => {
-                            const { year, periods: yearPeriods, fiscalYear } = row.original;
-                            return (
-                                <FiscalYearCard
-                                    key={`year-${year}`}
-                                    year={year}
-                                    fiscalYear={fiscalYear}
-                                    periods={yearPeriods}
-                                    onClosePeriod={closePeriod}
-                                    onReopenPeriod={reopenPeriod}
-                                    isPeriodActionLoading={actionLoadingPeriod}
-                                    onPreviewClosing={handlePreviewClosing}
-                                    onReopenFiscalYear={reopenFiscalYear}
-                                    onGenerateOpening={generateOpeningEntry}
-                                    isFiscalYearLoading={actionLoadingYr}
-                                />
-                            );
-                        })}
-                    </div>
-                ) : undefined}
-            />
+                    columns={columns}
+                    data={filterFn(groupedData.map(r => ({ ...r, status: r.fiscalYear?.status ?? 'OPEN' })))}
+                    isLoading={actionLoadingYr || actionLoadingPeriod}
+                    variant="standalone"
+                    leftAction={<SmartSearchBar searchDef={fiscalYearSearchDef} placeholder="Buscar ejercicio..." className="w-full" />}
+                    currentView={viewMode}
+                    onViewChange={handleViewChange}
+                    defaultPageSize={10}
+                    viewOptions={[
+                        { label: "Lista", value: "list", icon: List },
+                        { label: "Tarjeta", value: "card", icon: LayoutGrid }
+                    ]}
+                    createAction={
+                        <ToolbarCreateButton
+                            href="/accounting/closures?modal=fy"
+                            label="Nuevo Año Fiscal"
+                        />
+                    }
+                    renderCustomView={isCustomView ? (table) => (
+                        <div className="space-y-6 pt-4">
+                            {table.getRowModel().rows.map(row => {
+                                const { year, periods: yearPeriods, fiscalYear } = row.original;
+                                return (
+                                    <FiscalYearCard
+                                        key={`year-${year}`}
+                                        year={year}
+                                        fiscalYear={fiscalYear}
+                                        periods={yearPeriods}
+                                        onClosePeriod={closePeriod}
+                                        onReopenPeriod={reopenPeriod}
+                                        isPeriodActionLoading={actionLoadingPeriod}
+                                        onPreviewClosing={handlePreviewClosing}
+                                        onReopenFiscalYear={reopenFiscalYear}
+                                        onGenerateOpening={generateOpeningEntry}
+                                        isFiscalYearLoading={actionLoadingYr}
+                                    />
+                                );
+                            })}
+                        </div>
+                    ) : undefined}
+                />
             </div>
 
             <FiscalYearClosingWizard

@@ -1,11 +1,12 @@
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import React, { useState, useEffect, lazy, Suspense } from "react"
 import { ColumnDef } from "@tanstack/react-table"
-import { Edit, Trash2, Building2, User as UserIcon, Banknote } from "lucide-react"
+import { Building2, User as UserIcon, Banknote } from "lucide-react"
 
 import { formatRUT } from "@/lib/utils/format"
 import { DataTable } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
+import { EmptyState } from '@/components/shared'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { DataCell, createActionsColumn, Chip } from '@/components/shared'
 import { useContacts, type Contact } from "@/features/contacts"
@@ -14,7 +15,6 @@ import { contactSearchDef } from "@/features/contacts/searchDef"
 import type { ContactFilters } from "@/features/contacts/types"
 import { formatCurrency } from "@/lib/money"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
-import { formatEntityDisplay } from "@/lib/entity-registry"
 import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
 
 // Lazy load heavy components
@@ -211,17 +211,22 @@ export function ContactsClientView({ isNewModalOpen = false, createAction }: Con
     ]
 
     return (
+
         <div className="h-full flex flex-col">
             <div className="flex-1 min-h-0">
-                <DataTable
-                columns={columns}
-                data={contacts}
-                isLoading={isLoading}
-                variant="embedded"
-                leftAction={<SmartSearchBar searchDef={contactSearchDef} placeholder="Buscar por nombre, RUT o tipo..." />}
-                defaultPageSize={20}
-                createAction={createAction}
-            />
+                {!isLoading && contacts.length === 0 ? (
+                    <EmptyState context="users" title="No hay contactos" description="No se encontraron contactos con los criterios de búsqueda actuales." />
+                ) : (
+                    <DataTable
+                        columns={columns}
+                        data={contacts}
+                        isLoading={isLoading}
+                        variant="embedded"
+                        leftAction={<SmartSearchBar searchDef={contactSearchDef} placeholder="Buscar por nombre, RUT o tipo..." className="w-full" />}
+                        defaultPageSize={20}
+                        createAction={createAction}
+                    />
+                )}
 
             </div>
 

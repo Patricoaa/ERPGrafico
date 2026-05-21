@@ -27,7 +27,7 @@ import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { ShoppingCart, Package, Wand2, User, Banknote, Scale, Truck, Receipt, ClipboardList, LayoutDashboard, Calendar, ArrowRight, Mail, MapPin } from "lucide-react"
 import { DomainCard } from "@/components/shared/DomainCard"
-import { DataCell, createActionsColumn } from '@/components/shared'
+import { DataCell, createActionsColumn, EmptyState } from '@/components/shared'
 import { Separator } from "@/components/ui/separator"
 import { DataTable } from '@/components/shared'
 import { DomainHubStatus } from "@/components/shared/HubStatus"
@@ -800,9 +800,11 @@ function CreditLedgerTable({ data, loading, onActionSuccess }: { data: Order[], 
 
     if (data.length === 0) {
         return (
-            <div className="text-center py-12 bg-muted/5 rounded-lg border border-dashed">
-                <p className="text-sm text-muted-foreground">No hay documentos con deuda pendiente.</p>
-            </div>
+            <EmptyState 
+                context="finance" 
+                title="Sin documentos pendientes" 
+                description="No hay documentos con deuda pendiente para este contacto."
+            />
         )
     }
 

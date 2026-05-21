@@ -171,13 +171,13 @@ export function MovementList({ externalOpen, onExternalOpenChange, createAction 
         <div className="space-y-6 h-full flex flex-col">
             <div className="flex-1 min-h-0">
                 <DataTable
-                columns={columns}
-                data={moves}
-                isLoading={isLoading}
-                variant="embedded"
-                leftAction={<SmartSearchBar searchDef={stockMoveSearchDef} placeholder="Filtrar movimientos..." className="w-80" />}
-                createAction={createAction}
-            />
+                    columns={columns}
+                    data={moves}
+                    isLoading={isLoading}
+                    variant="embedded"
+                    leftAction={<SmartSearchBar searchDef={stockMoveSearchDef} placeholder="Buscar movimientos..." className="w-full" />}
+                    createAction={createAction}
+                />
             </div>
 
             {viewingTransaction && (

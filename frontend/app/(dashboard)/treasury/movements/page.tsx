@@ -25,7 +25,7 @@ export default async function TreasuryMovementsPage({ searchParams }: PageProps)
     )
 
     return (
-        <div className="pt-2">
+        <div className="flex-1 min-h-0 flex flex-col">
             <Suspense fallback={<TableSkeleton rows={10} columns={6} />}>
                 <TreasuryMovementsClientView externalOpen={modalOpen} createAction={createAction} />
             </Suspense>

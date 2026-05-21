@@ -254,17 +254,17 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
         <div className="space-y-4 h-full flex flex-col">
             <div className="flex-1 min-h-0">
                 <DataTable
-                columns={columns}
-                data={accounts}
-                isLoading={isLoading}
-                variant="embedded"
-                defaultPageSize={500}
-                getSubRows={(row: Account & { children?: unknown[] }) => row.children as (Account & { children?: unknown[] })[] | undefined}
-                autoExpand={true}
-                rightAction={null}
-                createAction={createAction}
-                leftAction={<SmartSearchBar searchDef={accountSearchDef} placeholder="Cuenta o código..." />}
-            />
+                    columns={columns}
+                    data={accounts}
+                    isLoading={isLoading}
+                    variant="embedded"
+                    defaultPageSize={500}
+                    getSubRows={(row: Account & { children?: unknown[] }) => row.children as (Account & { children?: unknown[] })[] | undefined}
+                    autoExpand={true}
+                    rightAction={null}
+                    createAction={createAction}
+                    leftAction={<SmartSearchBar searchDef={accountSearchDef} placeholder="Buscar por cuenta o código..." className="w-full" />}
+                />
             </div>
 
             <AccountForm

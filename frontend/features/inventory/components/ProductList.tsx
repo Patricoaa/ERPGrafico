@@ -444,7 +444,7 @@ export function ProductList({ externalOpen, onExternalOpenChange, createAction }
                     data={displayProducts}
                     isLoading={isLoading}
                     variant="embedded"
-                    leftAction={<SmartSearchBar searchDef={productSearchDef} placeholder="Buscar por nombre, SKU o tipo..." />}
+                    leftAction={<SmartSearchBar searchDef={productSearchDef} placeholder="Buscar por nombre, SKU o tipo..." className="w-full" />}
                     initialColumnVisibility={initialColumnVisibility}
                     viewOptions={viewOptions}
                     currentView={view}
