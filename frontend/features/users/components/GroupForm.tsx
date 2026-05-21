@@ -153,8 +153,8 @@ export function GroupForm({
                 }
             >
                 <Form {...form}>
-                    <form id="group-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pr-6 pl-1 pb-4 pt-4">
-                        
+                    <form id="group-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-4 pb-4 pt-4">
+
                         <div className="grid grid-cols-4 gap-4">
                             <div className="col-span-4">
                                 <FormField

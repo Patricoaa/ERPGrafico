@@ -102,7 +102,7 @@ export function AccountingLinesTable({ control, name, isLoading }: AccountingLin
                                 render={({ field }) => (
                                     <FormItem className="space-y-0">
                                         <FormControl>
-                                            <AccountSelector value={field.value} onChange={field.onChange} className={cn(tableInputClass, "font-normal")} />
+                                            <AccountSelector value={field.value} onChange={field.onChange} className="w-full" />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>

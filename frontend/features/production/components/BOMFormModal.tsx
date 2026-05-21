@@ -259,11 +259,6 @@ export function BOMFormModal({
             return
         }
 
-        if (selectedProduct.has_variants && !selectedVariant) {
-            toast.error("Debe seleccionar una variante específica para asignar la Lista de Materiales")
-            return
-        }
-
         setLoading(true)
         try {
             const targetProductId = selectedVariant?.id || selectedProduct.id || selectedProduct
@@ -324,16 +319,21 @@ export function BOMFormModal({
         <BaseModal
             open={open}
             onOpenChange={onOpenChange}
+            onEscapeKeyDown={(e) => e.stopPropagation()}
+            onPointerDownOutside={(e) => e.stopPropagation()}
+            onInteractOutside={(e) => e.stopPropagation()}
             size="full"
             className="max-w-[1200px]"
             icon={Workflow}
             title={bomToEdit ? "Editar Lista de Materiales" : "Nueva Lista de Materiales"}
             description={
                 selectedVariant
-                    ? `Lista de Materiales • V: ${selectedVariant.variant_display_name || selectedVariant.name}`
-                    : selectedProduct
-                    ? `Lista de Materiales • P: ${selectedProduct.name}`
-                    : "Lista de Materiales • Receta de Fabricación"
+                    ? `Lista de Materiales • Variante: ${selectedVariant.variant_display_name || selectedVariant.name}`
+                    : (selectedProduct && selectedProduct.has_variants)
+                        ? `Lista de Materiales • Plantilla Base: ${selectedProduct.name}`
+                        : selectedProduct
+                            ? `Lista de Materiales • P: ${selectedProduct.name}`
+                            : "Lista de Materiales • Receta de Fabricación"
             }
             footer={
                 <FormFooter
@@ -357,10 +357,10 @@ export function BOMFormModal({
             <div className="px-1">
                 <Form {...form}>
                     <form id="bom-form"
-                        onSubmit={form.handleSubmit(onSubmit as any, (errors) => {
+                        onSubmit={(e) => { e.stopPropagation(); form.handleSubmit(onSubmit as any, (errors) => {
                             console.log("Validation errors:", errors)
                             toast.error("Por favor, verifique los campos marcados en rojo")
-                        })}
+                        })(e) }}
                         className="space-y-8 pt-4"
                     >
                         {/* 📋 HEADER: IDENTIFICACIÓN Y CONFIGURACIÓN */}
@@ -426,19 +426,25 @@ export function BOMFormModal({
                                         {selectedProduct?.has_variants && (
                                             <div className="sm:col-span-1 animate-in fade-in slide-in-from-left-2">
                                                 <LabeledSelect
-                                                    label="Variante"
-                                                    required
-                                                    placeholder="Variante..."
-                                                    value={selectedVariant?.id?.toString() || ""}
+                                                    label="Variante (Opcional)"
+                                                    placeholder="Plantilla Base..."
+                                                    value={selectedVariant?.id?.toString() || "template"}
                                                     onChange={(val) => {
+                                                        if (!val || val === "template") {
+                                                            setSelectedVariant(null)
+                                                            return
+                                                        }
                                                         const v = variants.find((varnt: any) => varnt.id.toString() === val)
                                                         setSelectedVariant(v || null)
                                                     }}
                                                     disabled={!!bomToEdit || loadingVariants}
-                                                    options={variants.map((v: any) => ({
-                                                        value: v.id.toString(),
-                                                        label: `${v.variant_display_name || v.name} (${v.internal_code || v.code})`
-                                                    }))}
+                                                    options={[
+                                                        { value: "template", label: "-- Plantilla Base --" },
+                                                        ...variants.map((v: any) => ({
+                                                            value: v.id.toString(),
+                                                            label: `${v.variant_display_name || v.name} (${v.internal_code || v.code})`
+                                                        }))
+                                                    ]}
                                                 />
                                             </div>
                                         )}
@@ -449,7 +455,9 @@ export function BOMFormModal({
                                             <Box className="h-3.5 w-3.5 text-primary" />
                                         </div>
                                         <div className="flex flex-col min-w-0">
-                                            <span className="text-[9px] font-black uppercase text-primary/60 tracking-widest leading-none mb-0.5">Producto</span>
+                                            <span className="text-[9px] font-black uppercase text-primary/60 tracking-widest leading-none mb-0.5">
+                                                {selectedVariant ? "Variante" : (selectedProduct?.has_variants ? "Plantilla Base" : "Producto")}
+                                            </span>
                                             <span className="text-[10px] font-black text-foreground truncate uppercase">
                                                 {selectedVariant ? (selectedVariant.variant_display_name || selectedVariant.name) : (selectedProduct?.name || "")}
                                             </span>
@@ -468,7 +476,8 @@ export function BOMFormModal({
                                             required
                                             value={field.value || ""}
                                             onChange={field.onChange}
-                                            categoryId={selectedProduct?.uom_category}
+                                            context="sale"
+                                            product={(selectedVariant ?? selectedProduct ?? undefined) as any}
                                             uoms={uoms}
                                             error={fieldState.error?.message}
                                         />
@@ -494,32 +503,6 @@ export function BOMFormModal({
                                     )}
                                 />
                             </div>
-                        </div>
-
-                        {/* Tiempos estimados por etapa (TASK-314) */}
-                        <div className="grid grid-cols-3 gap-4">
-                            {(['prepress', 'press', 'postpress'] as const).map((stage) => {
-                                const fieldName = `estimated_${stage}_min` as const
-                                const labels = { prepress: 'Min. Pre-Impresión', press: 'Min. Impresión', postpress: 'Min. Post-Impresión' }
-                                return (
-                                    <FormField
-                                        key={stage}
-                                        control={form.control as any}
-                                        name={fieldName}
-                                        render={({ field, fieldState }) => (
-                                            <LabeledInput
-                                                label={labels[stage]}
-                                                type="number"
-                                                min="0"
-                                                step="1"
-                                                placeholder="0"
-                                                error={fieldState.error?.message}
-                                                {...field}
-                                            />
-                                        )}
-                                    />
-                                )
-                            })}
                         </div>
 
                         {/* ═══════════════════════════════════════════════════════════════ */}

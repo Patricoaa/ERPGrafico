@@ -221,8 +221,9 @@ export default function AuditHubPage() {
     ];
 
     return (
-        <div className="pt-4 space-y-8">
-            <DataTable
+        <div className="pt-4 space-y-8 h-full flex flex-col">
+            <div className="flex-1 min-h-0">
+                <DataTable
                 columns={columns}
                 data={logs}
                 isLoading={loading}
@@ -234,6 +235,7 @@ export default function AuditHubPage() {
                 hiddenColumns={["source"]}
                 defaultPageSize={50}
             />
+            </div>
 
             <div
                 className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-8"

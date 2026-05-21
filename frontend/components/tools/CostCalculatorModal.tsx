@@ -8,8 +8,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Card, CardContent } from "@/components/ui/card"
 import { Trash2, Plus, Loader2, Calculator, Info, Package } from "lucide-react"
 import { DynamicIcon } from '@/components/shared'
-import { SearchBar } from "@/features/pos/components/SearchBar"
-import { CategoryFilter } from "@/features/pos/components/CategoryFilter"
+import { ProductSelector } from "@/components/shared"
 import { toast } from "sonner"
 import { formatCurrency } from "@/lib/money"
 import { resolveMediaUrl } from "@/lib/api"
@@ -40,11 +39,8 @@ interface Product {
     category?: number | { id: number; name: string; icon?: string | null }
 }
 
-interface Category {
-    id: number
-    name: string
-    icon?: string | null
-}
+// ProductCategory is imported via useQuery → inventoryApi.getCategories() return type
+// Shape: { id: number; name: string; icon?: string | null } — matches ProductCategory from inventory types
 
 interface SelectedItem {
     id: string
@@ -224,94 +220,34 @@ export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalP
             <div className="flex-1 overflow-hidden flex divide-x">
                 {/* Panel Izquierdo: Catálogo */}
                 <div className="w-[60%] flex flex-col p-4 gap-4 bg-muted/20 min-h-0">
-                    <Card className="flex-1 flex flex-col overflow-hidden shadow-none border bg-background">
-                        {loading ? (
+                    {loading ? (
+                        <Card className="flex-1 flex flex-col overflow-hidden shadow-none border bg-background">
                             <POSSearchSkeleton />
-                        ) : (
-                            <div className="p-4 border-b bg-background/50 space-y-3">
-                                <SearchBar
-                                    value={searchTerm}
-                                    onChange={setSearchTerm}
-                                    placeholder="Buscar por nombre, código o código de barras..."
-                                    autoFocus={false}
-                                />
-
-                                <CategoryFilter
-                                    categories={categories}
-                                    selectedCategoryId={selectedCategoryId}
-                                    onSelectCategory={setSelectedCategoryId}
-                                />
+                            <div className="p-6">
+                                <POSGridSkeleton count={8} />
                             </div>
-                        )}
-
-                        <ScrollArea className="flex-1">
-                            <CardContent className="p-6">
-                                {loading ? (
-                                    <POSGridSkeleton count={8} />
-                                ) : (
-                                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                                        {filteredProducts.map(product => (
-                                            <Card
-                                                key={product.id}
-                                                className="group cursor-pointer hover:shadow-md transition-all border-2 active:scale-95 relative flex flex-col overflow-hidden h-full"
-                                                onClick={() => addItem(product)}
-                                            >
-                                                <div className="aspect-square bg-muted/50 flex items-center justify-center relative">
-                                                    {product.image ? (
-                                                        <img
-                                                            src={resolveMediaUrl(product.image) ?? undefined}
-                                                            alt={product.name}
-                                                            className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                                                        />
-                                                    ) : (
-                                                        <DynamicIcon
-                                                            name={(typeof product.category === 'object' ? product.category?.icon : categories.find((c: any) => c.id === product.category)?.icon) || "Package"}
-                                                            className="h-12 w-12 text-muted-foreground/20 group-hover:scale-110 transition-transform"
-                                                        />
-                                                    )}
-                                                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                                                        <span className="bg-primary text-primary-foreground shadow-lg text-[9px] font-bold uppercase px-2 py-1 rounded border border-primary/20 flex items-center gap-1">
-                                                            <Plus className="h-3 w-3" /> Agregar
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                                <CardContent className="p-3 text-center flex-1 flex flex-col justify-center gap-1.5">
-                                                    <div className="flex justify-center gap-1">
-                                                        {product.internal_code && (
-                                                            <span className="text-[9px] h-3.5 px-1 font-mono uppercase opacity-70 border border-muted-foreground/30 rounded-sm text-muted-foreground flex items-center">
-                                                                {product.internal_code}
-                                                            </span>
-                                                        )}
-                                                        {product.code && product.code !== product.internal_code && (
-                                                            <span className="text-[9px] h-3.5 px-1 font-mono uppercase opacity-70 bg-secondary text-secondary-foreground rounded-sm flex items-center">
-                                                                {product.code}
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                    <p className="text-sm font-bold leading-tight line-clamp-2">
-                                                        {product.name}
-                                                    </p>
-                                                    <div className="mt-0.5">
-                                                        <span className="text-base font-black text-primary">
-                                                            {formatCurrency(product.cost_price || 0)}
-                                                        </span>
-                                                        <span className="text-[10px] text-muted-foreground ml-1 uppercase">
-                                                            /{product.uom_name}
-                                                        </span>
-                                                    </div>
-                                                </CardContent>
-                                            </Card>
-                                        ))}
-                                        {filteredProducts.length === 0 && (
-                                            <div className="col-span-full py-12 text-center text-muted-foreground italic">
-                                                No se encontraron productos.
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-                            </CardContent>
-                        </ScrollArea>
-                    </Card>
+                        </Card>
+                    ) : (
+                        <ProductSelector 
+                            products={filteredProducts as any}
+                            categories={categories as any}
+                            searchTerm={searchTerm}
+                            onSearchChange={setSearchTerm}
+                            selectedCategoryId={selectedCategoryId}
+                            onSelectCategory={setSelectedCategoryId}
+                            onProductClick={(p) => addItem(p as any)}
+                            priceRenderer={(product) => (
+                                <>
+                                    <span className="text-base font-black text-primary">
+                                        {formatCurrency((product as any).cost_price || 0)}
+                                    </span>
+                                    <span className="text-[10px] text-muted-foreground ml-1 uppercase">
+                                        /{(product as any).uom_name || "UN"}
+                                    </span>
+                                </>
+                            )}
+                        />
+                    )}
                 </div>
 
                 {/* Panel Derecho: Selección */}
@@ -350,7 +286,7 @@ export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalP
                                                         <img src={resolveMediaUrl(item.product.image) ?? undefined} className="w-full h-full object-cover" />
                                                     ) : (
                                                         <DynamicIcon
-                                                            name={(typeof item.product.category === 'object' ? item.product.category?.icon : categories.find((c: any) => c.id === item.product.category)?.icon) || "Package"}
+                                                            name={(typeof item.product.category === 'object' ? item.product.category?.icon : categories.find(c => c.id === item.product.category)?.icon) || "Package"}
                                                             className="h-4 w-4 text-muted-foreground/20"
                                                         />
                                                     )}

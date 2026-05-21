@@ -161,8 +161,9 @@ export function WarehouseList({ externalOpen, onExternalOpenChange, createAction
     ], [deleteWarehouse])
 
     return (
-        <div className="space-y-6">
-            <DataTable
+        <div className="space-y-6 h-full flex flex-col">
+            <div className="flex-1 min-h-0">
+                <DataTable
                 columns={columns}
                 data={filterFn(warehouses)}
                 isLoading={isLoading}
@@ -171,6 +172,7 @@ export function WarehouseList({ externalOpen, onExternalOpenChange, createAction
                 bulkActions={bulkActions}
                 createAction={createAction}
             />
+            </div>
 
             <WarehouseForm
                 onSuccess={refetch}

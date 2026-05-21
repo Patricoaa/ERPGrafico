@@ -157,9 +157,9 @@ export function SalesInvoicesClientView() {
     ]
 
     return (
-        <div className="space-y-4 px-1">
+        <div className="space-y-4 px-1 h-full flex flex-col">
 
-            <FadeIn key={currentView}>
+            <div className="flex-1 min-h-0">
                 <DataTable
                     columns={columns}
                     data={invoices}
@@ -178,7 +178,7 @@ export function SalesInvoicesClientView() {
                     }) : undefined}
                     renderLoadingView={isCustomView ? createCardLoadingView('single-column') : undefined}
                 />
-            </FadeIn>
+            </div>
 
             {notingInvoice && (
                 <SaleNoteModal

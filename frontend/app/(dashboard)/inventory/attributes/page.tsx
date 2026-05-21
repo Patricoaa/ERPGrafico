@@ -10,7 +10,7 @@ export default async function AttributesPage({ searchParams }: PageProps) {
     const isModalOpen = modal === "new"
 
     return (
-        <div className="pt-2">
+        <div className="pt-2 h-[calc(100vh-140px)] flex flex-col">
             <AttributeManager
                 externalOpen={isModalOpen}
                 createAction={

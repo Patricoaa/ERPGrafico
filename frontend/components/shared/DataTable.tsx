@@ -361,11 +361,11 @@ export function DataTable<TData, TValue>({
 
 
         return (
-            <div ref={containerRef} className="relative space-y-1">
+            <div ref={containerRef} className="relative flex flex-col h-full space-y-1 min-h-0">
                 {/* Toolbar Section (Outside) */}
                 {showToolbar && (
                     <div className={cn(
-                        "px-1",
+                        "px-1 shrink-0",
                         !isInModal && "sticky top-0 z-20 bg-transparent py-2",
                         toolbarClassName
                     )}>
@@ -394,16 +394,16 @@ export function DataTable<TData, TValue>({
                     </div>
                 )}
 
-                <div className={cn(renderCustomView ? "overflow-x-auto" : "overflow-visible")}>
+                <div className={cn("flex-1 min-h-0", renderCustomView ? "overflow-x-auto" : "flex flex-col overflow-hidden")}>
                     {renderCustomView ? (
-                        <div className="py-0">
+                        <div className="py-0 h-full overflow-y-auto custom-scrollbar">
                             {isLoading 
                                 ? (renderLoadingView ? renderLoadingView() : <SharedTableSkeleton rows={skeletonRows} columns={columns.length} className="pt-4" />)
                                 : renderCustomView(table)}
                         </div>
                     ) : (
                         <Table containerClassName={cn(
-                            !isInModal && "max-h-[calc(100vh-260px)] overflow-y-auto custom-scrollbar"
+                            !isInModal && "flex-1 overflow-y-auto custom-scrollbar"
                         )}>
                             <TableHeader className={cn(!isInModal ? "sticky top-0 bg-background z-10 shadow-sm border-b" : "bg-transparent")}>
                                 {table.getHeaderGroups().map((headerGroup) => (
@@ -441,7 +441,7 @@ export function DataTable<TData, TValue>({
 
                 {/* Pagination Section (Outside) */}
                 {!hidePagination && (
-                    <div className="px-1">
+                    <div className="px-1 shrink-0">
                         <DataTablePagination table={table} pageSizeOptions={pageSizeOptions} />
                     </div>
                 )}

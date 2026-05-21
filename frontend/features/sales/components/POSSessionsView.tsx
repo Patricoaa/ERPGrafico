@@ -182,8 +182,8 @@ export const POSSessionsView = ({ hideHeader = false }: POSSessionsViewProps) =>
     ]
 
     return (
-        <div className="flex-1 space-y-4">
-            <div className="mt-4">
+        <div className="flex-1 space-y-4 h-full flex flex-col">
+            <div className="mt-4 flex-1 min-h-0">
                 <DataTable
                     columns={columns}
                     data={sessions}

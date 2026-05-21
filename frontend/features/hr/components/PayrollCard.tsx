@@ -62,10 +62,10 @@ function ItemRow({ item, type, isReadOnly, onEdit, onDeleteRequest }: {
                 {type === 'DESCUENTO' && <DataCell.Currency value={item.amount} className="text-[11px] font-black text-expense" />}
             </TableCell>
             {!isReadOnly && (
-                <TableCell className="w-[80px] p-0 pr-6 text-right">
+                <TableCell className="w-[80px] p-0 text-right">
                     <div className="opacity-0 group-hover:opacity-100 transition-opacity">
                         <DataCell.ActionGroup className="justify-end">
-                            <DataCell.Action action="edit"   compact onClick={() => onEdit?.(item)} />
+                            <DataCell.Action action="edit" compact onClick={() => onEdit?.(item)} />
                             <DataCell.Action action="delete" compact onClick={() => onDeleteRequest?.(item)} />
                         </DataCell.ActionGroup>
                     </div>
@@ -409,7 +409,7 @@ export function PayrollCard({
 
             <ActionConfirmModal
                 open={itemDeleteConfirm.isOpen}
-                onOpenChange={(open) => { 
+                onOpenChange={(open) => {
                     if (!open) {
                         itemDeleteConfirm.cancel()
                         setItemToDelete(null)

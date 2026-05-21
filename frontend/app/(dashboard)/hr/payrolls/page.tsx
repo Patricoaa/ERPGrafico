@@ -329,14 +329,15 @@ export default function PayrollsPage() {
     ]
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-4 h-full flex flex-col">
             <CreatePayrollModal
                 open={dialogOpen}
                 onOpenChange={handleOpenChange}
                 onSaved={(id) => { handleOpenChange(false); openDetail(id) }}
             />
 
-            <DataTable
+            <div className="flex-1 min-h-0">
+                <DataTable
                 columns={columns}
                 data={payrolls}
                 isLoading={loading}
@@ -346,6 +347,7 @@ export default function PayrollsPage() {
                 onRowClick={(row: Payroll) => openDetail(row.id)}
                 createAction={createAction}
             />
+            </div>
 
             <PayrollDetailSheet
                 payrollId={activePayrollId}

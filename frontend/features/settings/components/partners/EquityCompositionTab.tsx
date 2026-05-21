@@ -319,9 +319,9 @@ export function EquityCompositionTab({
     ]
 
     return (
-        <div className="space-y-6">
-            {/* Main Content with DataTable */}
-            <DataTable
+        <div className="space-y-6 h-full flex flex-col">
+            <div className="flex-1 min-h-0">
+                <DataTable
                 columns={columns}
                 data={partners}
                 isLoading={loading}
@@ -358,6 +358,7 @@ export function EquityCompositionTab({
                     </>
                 }
             />
+            </div>
 
 
             {/* Modals remain the same */}

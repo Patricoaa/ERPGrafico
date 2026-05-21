@@ -15,6 +15,7 @@ import { PricingUtils } from '@/features/inventory/utils/pricing'
 import { useDeviceContext, MIN_TOUCH_TARGET } from '@/hooks/useDeviceContext'
 import { useTouchMode } from '@/hooks/useTouchMode'
 import type { CartItem as CartItemType, Product, UoM } from '@/types/pos'
+import type { UoM as EntityUoM } from '@/types/entities'
 
 interface CartItemProps {
     item: CartItemType
@@ -49,13 +50,16 @@ function CartItemComponent({
     const { isTouchMode } = useTouchMode()
     const itemUom = uoms.find(u => u.id === item.uom)
 
-    const productForSelector = originalProduct
-        ? originalProduct
-        : (itemUom ? { id: 0, name: item.name, uom: itemUom.id, category: itemUom.category } : null)
-    const categoryIdFallback = !originalProduct && itemUom ? itemUom.category : undefined
-    const hasMultipleUoms = productForSelector
-        ? (originalProduct?.allowed_sale_uoms?.length ?? 0) > 0 || uoms.filter(u => u.category === itemUom?.category).length > 1
-        : false
+    const allowedUomIds = originalProduct?.allowed_sale_uoms
+    const filteredUoms: UoM[] = allowedUomIds?.length
+        ? uoms.filter(u => allowedUomIds.includes(u.id))
+        : uoms.filter(u => u.category === itemUom?.category)
+
+    const availableUoms: EntityUoM[] = filteredUoms.map(u => ({
+        id: u.id, name: u.name, category: u.category, ratio: Number(u.ratio)
+    }))
+
+    const hasMultipleUoms = availableUoms.length > 1
 
     const handleUomChange = async (newUomId: string) => {
         const newUom = uoms.find(u => u.id.toString() === newUomId)
@@ -134,14 +138,13 @@ function CartItemComponent({
             {/* UoM */}
             <TableCell className="py-2 align-top">
                 <div className="flex justify-center">
-                    {hasMultipleUoms && productForSelector ? (
+                    {hasMultipleUoms ? (
                         <UoMSelector
-                            product={(originalProduct ?? null) as any}
-                            categoryId={categoryIdFallback}
-                            context="sale"
+                            product={null}
+                            context="stock"
                             value={item.uom?.toString() ?? ''}
                             onChange={handleUomChange}
-                            uoms={uoms as any}
+                            uoms={availableUoms}
                             variant="inline"
                             className="h-6 text-[10px]"
                         />

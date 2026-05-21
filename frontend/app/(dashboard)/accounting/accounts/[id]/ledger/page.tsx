@@ -116,8 +116,8 @@ export default function AccountLedgerPage() {
     }
 
     return (
-        <div className="space-y-6">
-            <div className="flex items-center gap-4">
+        <div className="space-y-6 h-full flex flex-col">
+            <div className="flex items-center gap-4 shrink-0">
                 <Button variant="ghost" size="icon" onClick={() => router.back()}>
                     <ArrowLeft className="h-4 w-4" />
                 </Button>
@@ -129,15 +129,17 @@ export default function AccountLedgerPage() {
                 </div>
             </div>
 
-            <DataTable
-                columns={columns}
-                data={movements}
-                variant="embedded"
+            <div className="flex-1 min-h-0">
+                <DataTable
+                    columns={columns}
+                    data={movements}
+                    variant="embedded"
                 useAdvancedFilter={true}
                 globalFilterFields={["date", "description", "partner"]}
                 searchPlaceholder="Buscar por fecha, descripción o tercero..."
                 defaultPageSize={50}
             />
+            </div>
         </div>
     )
 }

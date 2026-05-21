@@ -25,15 +25,16 @@ export default async function UnifiedStockPage({ searchParams }: PageProps) {
 
     return (
         <div className="pt-2">
-            <Tabs value={activeTab} className="space-y-4">
-                <TabsContent value="report" className="mt-0 outline-none">
-                    <FadeIn>
-                        <StockReport />
-                    </FadeIn>
-                </TabsContent>
-                <TabsContent value="movements" className="mt-0 outline-none">
-                    <FadeIn>
-                        <MovementList
+            <Tabs value={activeTab} className="space-y-4 flex flex-col h-[calc(100vh-140px)]">
+                <div className="flex-1 min-h-0">
+                    <TabsContent value="report" className="h-full mt-0 outline-none">
+                        <FadeIn className="h-full">
+                            <StockReport />
+                        </FadeIn>
+                    </TabsContent>
+                    <TabsContent value="movements" className="h-full mt-0 outline-none">
+                        <FadeIn className="h-full">
+                            <MovementList
                             externalOpen={activeTab === 'movements' && modal === 'adjustment'}
                             createAction={
                                 <ToolbarCreateButton
@@ -44,9 +45,9 @@ export default async function UnifiedStockPage({ searchParams }: PageProps) {
                         />
                     </FadeIn>
                 </TabsContent>
-                <TabsContent value="warehouses" className="mt-0 outline-none">
-                    <FadeIn>
-                        <WarehouseList
+                    <TabsContent value="warehouses" className="h-full mt-0 outline-none">
+                        <FadeIn className="h-full">
+                            <WarehouseList
                             externalOpen={activeTab === 'warehouses' && modal === 'new'}
                             createAction={
                                 <ToolbarCreateButton
@@ -57,6 +58,7 @@ export default async function UnifiedStockPage({ searchParams }: PageProps) {
                         />
                     </FadeIn>
                 </TabsContent>
+                </div>
             </Tabs>
         </div>
     )

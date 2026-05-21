@@ -302,7 +302,7 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
     ], [openTreasuryAccount, handleViewDetails])
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 h-full flex flex-col">
             <Suspense fallback={<FormSkeleton />}>
                 <CashMovementModal
                     open={openModal}
@@ -311,7 +311,8 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                 />
             </Suspense>
 
-            <DataTable
+            <div className="flex-1 min-h-0">
+                <DataTable
                 columns={columns}
                 data={movements}
                 isLoading={isLoading}
@@ -390,6 +391,7 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                     }
                 }) : undefined}
             />
+            </div>
 
             <Suspense fallback={<FormSkeleton />}>
                 <TransactionViewModal

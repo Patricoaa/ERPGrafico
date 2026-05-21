@@ -437,8 +437,8 @@ export function ProductList({ externalOpen, onExternalOpenChange, createAction }
 
 
     return (
-        <div className="space-y-4">
-            <div className="">
+        <div className="space-y-4 h-full flex flex-col">
+            <div className="flex-1 min-h-0">
                 <DataTable
                     columns={columns}
                     data={displayProducts}

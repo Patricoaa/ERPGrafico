@@ -41,11 +41,11 @@ export default async function UnifiedProductsPage({ searchParams }: PageProps) {
     const createAction = getCreateAction(activeTab)
 
     return (
-        <Tabs value={activeTab} className="space-y-4 pt-2">
-            <div className="min-h-[400px]">
-                <TabsContent value="products" className="mt-0 outline-none">
+        <Tabs value={activeTab} className="space-y-4 pt-2 flex flex-col h-[calc(100vh-140px)]">
+            <div className="flex-1 min-h-0">
+                <TabsContent value="products" className="h-full mt-0 outline-none">
                     <Suspense fallback={<TableSkeleton rows={10} columns={6} />}>
-                        <FadeIn>
+                        <FadeIn className="h-full">
                             <ProductList
                                 externalOpen={activeTab === 'products' && resolvedParams.modal === 'new'}
                                 createAction={activeTab === 'products' ? createAction : null}
@@ -53,9 +53,9 @@ export default async function UnifiedProductsPage({ searchParams }: PageProps) {
                         </FadeIn>
                     </Suspense>
                 </TabsContent>
-                <TabsContent value="categories" className="mt-0 outline-none">
+                <TabsContent value="categories" className="h-full mt-0 outline-none">
                     <Suspense fallback={<TableSkeleton rows={10} columns={6} />}>
-                        <FadeIn>
+                        <FadeIn className="h-full">
                             <CategoryList
                                 externalOpen={activeTab === 'categories' && resolvedParams.modal === 'new'}
                                 createAction={activeTab === 'categories' ? createAction : null}
@@ -63,9 +63,9 @@ export default async function UnifiedProductsPage({ searchParams }: PageProps) {
                         </FadeIn>
                     </Suspense>
                 </TabsContent>
-                <TabsContent value="pricing-rules" className="mt-0 outline-none">
+                <TabsContent value="pricing-rules" className="h-full mt-0 outline-none">
                     <Suspense fallback={<TableSkeleton rows={10} columns={6} />}>
-                        <FadeIn>
+                        <FadeIn className="h-full">
                             <PricingRuleList
                                 externalOpen={activeTab === 'pricing-rules' && resolvedParams.modal === 'new'}
                                 createAction={activeTab === 'pricing-rules' ? createAction : null}
@@ -73,9 +73,9 @@ export default async function UnifiedProductsPage({ searchParams }: PageProps) {
                         </FadeIn>
                     </Suspense>
                 </TabsContent>
-                <TabsContent value="subscriptions" className="mt-0 outline-none">
+                <TabsContent value="subscriptions" className="h-full mt-0 outline-none">
                     <Suspense fallback={<TableSkeleton rows={10} columns={6} />}>
-                        <FadeIn>
+                        <FadeIn className="h-full">
                             <SubscriptionsView
                                 hideHeader
                                 externalOpen={activeTab === 'subscriptions' && resolvedParams.modal === 'new'}

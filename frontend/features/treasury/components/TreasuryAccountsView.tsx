@@ -212,10 +212,11 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
     ]
 
     return (
-        <Tabs value={activeTab} className="space-y-4">
-            <TabsContent value="accounts" className="space-y-6">
-                <FadeIn>
-                    <DataTable
+        <Tabs value={activeTab} className="space-y-4 h-full flex flex-col">
+            <TabsContent value="accounts" className="space-y-6 flex-1 min-h-0">
+                <div className="h-full flex flex-col">
+                    <div className="flex-1 min-h-0">
+                        <DataTable
                         columns={columns}
                         data={accounts}
                         isLoading={isLoading}
@@ -258,10 +259,11 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
                             }
                         }) : undefined}
                     />
-                </FadeIn>
+                    </div>
+                </div>
             </TabsContent>
 
-            <TabsContent value="banks">
+            <TabsContent value="banks" className="flex-1 min-h-0">
                 <FadeIn>
                     <BankManagement
                         externalOpen={isBankModalOpen || (activeTab === "banks" && !!externalOpen)}
@@ -277,7 +279,7 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
                 </FadeIn>
             </TabsContent>
 
-            <TabsContent value="methods">
+            <TabsContent value="methods" className="flex-1 min-h-0">
                 <FadeIn>
                     <PaymentMethodManagement
                         externalOpen={isMethodModalOpen || (activeTab === "methods" && !!externalOpen)}
@@ -293,7 +295,7 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
                 </FadeIn>
             </TabsContent>
 
-            <TabsContent value="terminals">
+            <TabsContent value="terminals" className="flex-1 min-h-0">
                 <FadeIn>
                     <TerminalManagement
                         externalOpen={activeTab === "terminals" && !!externalOpen}

@@ -62,6 +62,8 @@ export interface FormLineItemsTableProps {
     addButtonText?: string
     /** When true, the add button is not rendered */
     hideAddButton?: boolean
+    /** When true, the add button is rendered but disabled */
+    disabledAdd?: boolean
 
     // ── Footer slot ──────────────────────────────────────
     /**
@@ -136,6 +138,7 @@ export function FormLineItemsTable({
     onAdd,
     addButtonText = "Agregar Línea",
     hideAddButton = false,
+    disabledAdd = false,
     footer,
     className,
     isLoading = false,
@@ -164,7 +167,7 @@ export function FormLineItemsTable({
             )}
 
             {/* ── Table shell — always rendered ── */}
-            <div className="border rounded-xl overflow-hidden bg-card/30">
+            <div className="border rounded-md overflow-hidden bg-card/30">
                 <SkeletonShell isLoading={isLoading} ariaLabel="Cargando tabla de líneas" className="w-full">
                     <Table>
                         <TableHeader>
@@ -215,7 +218,7 @@ export function FormLineItemsTable({
                                 size="sm"
                                 className="text-[10px] font-bold uppercase tracking-widest text-primary hover:bg-primary/5 h-7 px-2"
                                 onClick={onAdd}
-                                disabled={isLoading}
+                                disabled={isLoading || disabledAdd}
                             >
                                 <Plus className="mr-1.5 h-3.5 w-3.5" />
                                 {addButtonText}

@@ -170,11 +170,12 @@ export function UsersSettingsView({ activeTab }: UsersSettingsViewProps) {
     ], [])
 
     return (
-        <div className="pt-4">
-            <Tabs value={activeTab} className="space-y-4">
-                <FadeIn key={activeTab}>
-                    <TabsContent value="users" className="mt-0 outline-none space-y-4">
-                        <DataTable
+        <div className="pt-4 h-full flex flex-col">
+            <Tabs value={activeTab} className="space-y-4 h-full flex flex-col">
+                <FadeIn key={activeTab} className="flex-1 min-h-0">
+                    <TabsContent value="users" className="mt-0 outline-none space-y-4 h-full flex flex-col">
+                        <div className="flex-1 min-h-0">
+                            <DataTable
                             columns={columns}
                             data={users}
                             variant="embedded"
@@ -185,6 +186,7 @@ export function UsersSettingsView({ activeTab }: UsersSettingsViewProps) {
                             facetedFilters={roleFilters}
                             createAction={usersCreateAction}
                         />
+                        </div>
                         {isUserModalOpen && (
                             <UserForm
                                 open={isUserModalOpen}
@@ -206,7 +208,7 @@ export function UsersSettingsView({ activeTab }: UsersSettingsViewProps) {
                         )}
                     </TabsContent>
 
-                    <TabsContent value="groups" className="mt-0 outline-none">
+                    <TabsContent value="groups" className="mt-0 outline-none flex-1 min-h-0">
                         <GroupManagement
                             externalOpen={isGroupModalOpen}
                             onExternalOpenChange={setIsGroupModalOpen}

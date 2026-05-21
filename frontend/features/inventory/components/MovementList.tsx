@@ -168,8 +168,9 @@ export function MovementList({ externalOpen, onExternalOpenChange, createAction 
     ], [])
 
     return (
-        <div className="space-y-6">
-            <DataTable
+        <div className="space-y-6 h-full flex flex-col">
+            <div className="flex-1 min-h-0">
+                <DataTable
                 columns={columns}
                 data={moves}
                 isLoading={isLoading}
@@ -177,6 +178,7 @@ export function MovementList({ externalOpen, onExternalOpenChange, createAction 
                 leftAction={<SmartSearchBar searchDef={stockMoveSearchDef} placeholder="Filtrar movimientos..." className="w-80" />}
                 createAction={createAction}
             />
+            </div>
 
             {viewingTransaction && (
                 <TransactionViewModal

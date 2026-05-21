@@ -168,8 +168,9 @@ export function StockReport() {
 
 
     return (
-        <PageContainer className="space-y-6">
-            <DataTable
+        <PageContainer className="space-y-6 h-full flex flex-col">
+            <div className="flex-1 min-h-0">
+                <DataTable
                 columns={columns}
                 data={filteredReport}
                 isLoading={isLoading}
@@ -178,6 +179,7 @@ export function StockReport() {
                 useAdvancedFilter={true}
                 defaultPageSize={50}
             />
+            </div>
 
             <BaseModal
                 open={!!adjustingProduct}

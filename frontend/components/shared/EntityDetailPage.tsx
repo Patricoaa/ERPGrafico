@@ -1,14 +1,10 @@
 "use client"
 
 import React from "react"
-import Link from "next/link"
-import { ChevronRight } from "lucide-react"
-import { DynamicIcon } from '@/components/shared'
 import { cn } from "@/lib/utils"
 import { FormSplitLayout } from "@/components/shared/FormSplitLayout"
 import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 import { getEntityMetadata, ENTITY_REGISTRY } from "@/lib/entity-registry"
-import { Package } from "lucide-react"
 import { EntityHeader } from "@/components/shared/EntityHeader"
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -107,12 +103,12 @@ export function EntityDetailPage({
     children,
 }: EntityDetailPageProps) {
     const metadata = getEntityMetadata(entityLabel || (entityType as string));
-    
+
     // Resolve ActivitySidebar entityType: explicit > derived from label suffix
     const resolvedEntityType = (entityType ||
         (entityLabel ? entityLabel.split('.')[1] as ActivityEntityType : undefined)
     ) as ActivityEntityType | undefined;
-    
+
     // Resolve identity from registry if available
     const resolvedTitle = title || metadata?.title || "Detalle";
     const RegistryIcon = metadata?.icon;

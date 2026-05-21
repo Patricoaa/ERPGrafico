@@ -57,7 +57,7 @@ export function CreditPortfolioView({
     }, [refetch, clearSelection])
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 h-full flex flex-col">
             <CreditAssignmentModal
                 open={!!selectedContact || isLoadingSelected || externalOpen}
                 onOpenChange={(open) => { if (!open) clearSelection() }}
@@ -66,9 +66,9 @@ export function CreditPortfolioView({
             />
 
             {activeTab === 'portfolio' ? (
-                <>
+                <div className="flex-1 min-h-0 flex flex-col">
                     <PortfolioKpiGrid data={data} />
-                    <div className="mt-6">
+                    <div className="mt-6 flex-1 min-h-0">
                         <PortfolioTable
                             columns={portfolioCols}
                             data={contacts}
@@ -78,9 +78,9 @@ export function CreditPortfolioView({
                             leftAction={<SmartSearchBar searchDef={creditContactSearchDef} placeholder="Cliente o RUT..." />}
                         />
                     </div>
-                </>
+                </div>
             ) : (
-                <div className="mt-2">
+                <div className="mt-2 flex-1 min-h-0">
                     <DataTable
                         columns={historyColumns}
                         data={history ?? EMPTY_HISTORY}

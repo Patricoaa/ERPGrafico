@@ -259,8 +259,9 @@ export function AccountingClosuresView({ externalOpen, onExternalOpenChange }: A
     ];
 
     return (
-        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
-            <DataTable
+        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500 h-full flex flex-col">
+            <div className="flex-1 min-h-0">
+                <DataTable
                 columns={columns}
                 data={filterFn(groupedData.map(r => ({ ...r, status: r.fiscalYear?.status ?? 'OPEN' })))}
                 isLoading={actionLoadingYr || actionLoadingPeriod}
@@ -302,6 +303,7 @@ export function AccountingClosuresView({ externalOpen, onExternalOpenChange }: A
                     </div>
                 ) : undefined}
             />
+            </div>
 
             <FiscalYearClosingWizard
                 isOpen={previewModalOpen}

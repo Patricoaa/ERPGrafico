@@ -1280,7 +1280,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                 <ActionDock isVisible={selectedLines.length > 0 || selectedPayments.length > 0}>
                     {/* Suggestions Section */}
                     {selectedLines.length === 1 && selectedPayments.length === 0 && suggestions.length > 0 ? (
-                        <ActionDock.Section className="mr-6 flex items-center gap-4 border-r pr-6 border-border/40">
+                        <ActionDock.Section className="mr-6 flex items-center gap-4 border-r px-4 border-border/40">
                             <div className="flex flex-col items-start gap-1">
                                 <div className="flex items-center gap-1.5">
                                     <Sparkles className="h-3 w-3 text-warning animate-pulse" />
@@ -1322,7 +1322,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                             </div>
                         </ActionDock.Section>
                     ) : selectedPayments.length === 1 && selectedLines.length === 0 && lineSuggestions.length > 0 ? (
-                        <ActionDock.Section className="mr-6 flex items-center gap-4 border-r pr-6 border-border/40">
+                        <ActionDock.Section className="mr-6 flex items-center gap-4 border-r px-4 border-border/40">
                             <div className="flex flex-col items-start gap-1">
                                 <div className="flex items-center gap-1.5">
                                     <Sparkles className="h-3 w-3 text-warning animate-pulse" />

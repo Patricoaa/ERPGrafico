@@ -210,8 +210,8 @@ export function PurchaseInvoicesClientView() {
     ]
 
     return (
-        <div className="space-y-4 px-1">
-            <FadeIn key={currentView}>
+        <div className="space-y-4 px-1 h-full flex flex-col">
+            <div className="flex-1 min-h-0">
                 <DataTable
                     columns={columns}
                     data={documents}
@@ -249,7 +249,7 @@ export function PurchaseInvoicesClientView() {
                     }) : undefined}
                     renderLoadingView={isCustomView ? createCardLoadingView('single-column') : undefined}
                 />
-            </FadeIn>
+            </div>
             {payingDoc && <PaymentModal open={!!payingDoc} onOpenChange={(open) => !open && setPayingDoc(null)} onConfirm={handlePayment} isPurchase={true} total={parseFloat(payingDoc.total)} pendingAmount={payingDoc.pending_amount ?? parseFloat(payingDoc.total)} hideDteFields={true} isRefund={payingDoc.dte_type === 'NOTA_CREDITO'} existingInvoice={{ dte_type: payingDoc.dte_type, number: payingDoc.number, document_attachment: null }} />}
             {receivingDoc && receivingDoc.purchase_order && <ReceiptModal open={!!receivingDoc} onOpenChange={(open) => !open && setReceivingDoc(null)} orderId={receivingDoc.purchase_order} onSuccess={fetchDocuments} isRefund={receivingDoc.dte_type === 'NOTA_CREDITO'} />}
             {notingDoc && <PurchaseNoteModal open={!!notingDoc} onOpenChange={(open) => !open && setNotingDoc(null)} orderId={notingDoc.purchase_order} orderNumber={notingDoc.purchase_order_number || notingDoc.purchase_order?.toString()} invoiceId={notingDoc.id} onSuccess={fetchDocuments} />}
