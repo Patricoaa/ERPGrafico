@@ -71,7 +71,6 @@ interface PurchasePaymentData {
 }
 
 export default function PurchaseInvoicesPage() {
-    // Search & Filters State (ADR-0010 / SmartSearchBar)
     const { filters, clearAll } = useSmartSearch(purchaseInvoiceSearchDef)
 
     // Data Fetching (TanStack Query)
@@ -386,71 +385,71 @@ export default function PurchaseInvoicesPage() {
     ]
 
     return (
-        <div className="h-full flex flex-col">
+        <div className="flex-1 min-h-0 flex flex-col">
             <div className="flex-1 min-h-0">
                 <DataTable
-                columns={columns}
-                data={invoices}
-                variant="embedded"
-                isLoading={isDataLoading}
-                // Smart Search Integration
-                leftAction={
-                    <SmartSearchBar
-                        searchDef={purchaseInvoiceSearchDef}
-                        placeholder="Buscar por proveedor, folio o fecha..."
-                    />
-                }
-                onReset={clearAll}
-                facetedFilters={[
-                    {
-                        column: "status",
-                        title: "Estado",
-                        options: [
-                            { label: "Folio Pendiente", value: "DRAFT" },
-                            { label: "Publicado", value: "POSTED" },
-                            { label: "Pagado", value: "PAID" },
-                            { label: "Anulado", value: "CANCELLED" },
-                        ],
-                    },
-                ]}
-                useAdvancedFilter={true}
-                defaultPageSize={20}
-                renderCustomView={(table) => {
-                    const rows = table.getRowModel().rows
-                    if (rows.length === 0) {
-                        return (
-                            <EmptyState
-                                context="inventory"
-                                variant="full"
-                                title="No se encontraron documentos"
-                                className="bg-muted/30 rounded-lg border-2 border-dashed"
-                            />
-                        )
+                    columns={columns}
+                    data={invoices}
+                    variant="embedded"
+                    isLoading={isDataLoading}
+                    // Smart Search Integration
+                    leftAction={
+                        <SmartSearchBar
+                            searchDef={purchaseInvoiceSearchDef}
+                            placeholder="Buscar por proveedor, folio o fecha..."
+                        />
                     }
-                    return (
-                        <div className="grid gap-3 pt-2">
-                            {rows.map((row: { original: PurchaseDocument }) => {
-                                const doc: PurchaseDocument = row.original
-                                return (
-                                    <DomainCard
-                                        key={doc.id}
-                                        label="billing.invoice"
-                                        data={doc}
-                                        onClick={() => {
-                                            openHub({
-                                                orderId: doc.purchase_order || null,
-                                                invoiceId: doc.id,
-                                                type: 'purchase',
-                                                onActionSuccess: refetch
-                                            })
-                                        }}
-                                    />
-                                )
-                            })}
-                        </div>
-                    )
-                }}
-            />
+                    onReset={clearAll}
+                    facetedFilters={[
+                        {
+                            column: "status",
+                            title: "Estado",
+                            options: [
+                                { label: "Folio Pendiente", value: "DRAFT" },
+                                { label: "Publicado", value: "POSTED" },
+                                { label: "Pagado", value: "PAID" },
+                                { label: "Anulado", value: "CANCELLED" },
+                            ],
+                        },
+                    ]}
+                    useAdvancedFilter={true}
+                    defaultPageSize={20}
+                    renderCustomView={(table) => {
+                        const rows = table.getRowModel().rows
+                        if (rows.length === 0) {
+                            return (
+                                <EmptyState
+                                    context="inventory"
+                                    variant="full"
+                                    title="No se encontraron documentos"
+                                    className="bg-muted/30 rounded-lg border-2 border-dashed"
+                                />
+                            )
+                        }
+                        return (
+                            <div className="grid gap-3 pt-2">
+                                {rows.map((row: { original: PurchaseDocument }) => {
+                                    const doc: PurchaseDocument = row.original
+                                    return (
+                                        <DomainCard
+                                            key={doc.id}
+                                            label="billing.invoice"
+                                            data={doc}
+                                            onClick={() => {
+                                                openHub({
+                                                    orderId: doc.purchase_order || null,
+                                                    invoiceId: doc.id,
+                                                    type: 'purchase',
+                                                    onActionSuccess: refetch
+                                                })
+                                            }}
+                                        />
+                                    )
+                                })}
+                            </div>
+                        )
+                    }}
+                />
             </div>
 
             {

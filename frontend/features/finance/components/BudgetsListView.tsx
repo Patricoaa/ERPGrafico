@@ -153,18 +153,20 @@ export function BudgetsListView({ externalOpen, onExternalOpenChange, createActi
     ]
 
     return (
-        <div className="space-y-6 h-full flex flex-col">
+
+
+        <div className="h-full flex flex-col">
             <div className="flex-1 min-h-0">
                 <DataTable
-                columns={columns}
-                data={budgets}
-                variant="embedded"
-                isLoading={isLoading}
-                globalFilterFields={["name"]}
-                searchPlaceholder="Buscar presupuestos..."
-                useAdvancedFilter={true}
-                createAction={createAction}
-            />
+                    columns={columns}
+                    data={budgets}
+                    variant="embedded"
+                    isLoading={isLoading}
+                    globalFilterFields={["name"]}
+                    searchPlaceholder="Buscar presupuestos..."
+                    useAdvancedFilter={true}
+                    createAction={createAction}
+                />
             </div>
 
             {/* Create Modal */}

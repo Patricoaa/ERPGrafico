@@ -103,13 +103,13 @@ export function GroupManagement({ externalOpen, onExternalOpenChange, createActi
         <div className="space-y-4 h-full flex flex-col">
             <div className="flex-1 min-h-0">
                 <DataTable
-                columns={columns}
-                data={filterFn(groups)}
-                isLoading={loading}
-                variant="embedded"
-                leftAction={<SmartSearchBar searchDef={groupSearchDef} placeholder="Buscar grupo..." />}
-                createAction={createAction}
-            />
+                    columns={columns}
+                    data={filterFn(groups)}
+                    isLoading={loading}
+                    variant="embedded"
+                    leftAction={<SmartSearchBar searchDef={groupSearchDef} placeholder="Buscar grupo..." className="w-full" />}
+                    createAction={createAction}
+                />
             </div>
 
             <GroupForm

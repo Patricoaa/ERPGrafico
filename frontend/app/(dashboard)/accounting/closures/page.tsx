@@ -9,7 +9,7 @@ export default async function ClosuresPage({ searchParams }: PageProps) {
     const { modal } = await searchParams
 
     return (
-        <div className="pt-2">
+        <div className="pt-2 flex-1 min-h-0 flex flex-col">
             <Suspense fallback={<ClosuresSkeleton />}>
                 <AccountingClosuresView externalOpen={modal === 'fy'} />
             </Suspense>

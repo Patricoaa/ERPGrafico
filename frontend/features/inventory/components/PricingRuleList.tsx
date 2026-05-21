@@ -234,7 +234,7 @@ export function PricingRuleList({ externalOpen, onExternalOpenChange, createActi
                     data={rules}
                     isLoading={isLoading}
                     variant="embedded"
-                    leftAction={<SmartSearchBar searchDef={pricingRuleSearchDef} placeholder="Buscar reglas de precio..." className="w-80" />}
+                    leftAction={<SmartSearchBar searchDef={pricingRuleSearchDef} placeholder="Buscar reglas de precio..." className="w-full" />}
                     createAction={createAction}
                 />
             </div>

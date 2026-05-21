@@ -40,9 +40,9 @@ export default async function CreditsPage({ searchParams }: PageProps) {
     ) : null
 
     return (
-        <div className="pt-2">
-            <Tabs value={activeTab} className="space-y-4">
-                <div className="mt-0 outline-none">
+        <div className="pt-2 flex-1 min-h-0 flex flex-col">
+            <Tabs value={activeTab} className="space-y-4 h-full flex flex-col">
+                <div className="mt-0 outline-none flex-1 min-h-0">
                     <Suspense fallback={<LoadingFallback />}>
                         <FadeIn key={activeTab}>
                             {activeTab === 'blacklist' ? (

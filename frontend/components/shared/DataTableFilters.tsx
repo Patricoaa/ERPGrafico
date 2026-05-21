@@ -41,7 +41,7 @@ export function DataTableFilters<TData>({
     facetedFilters = [],
     filterColumn,
     globalFilterFields,
-    searchPlaceholder = "Filtrar...",
+    searchPlaceholder = "Buscar...",
     toolbarAction,
     customFilters,
     customFilterCount = 0,

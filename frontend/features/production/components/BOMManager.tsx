@@ -215,7 +215,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
 
     return (
         <>
-            <div className={cn("w-full space-y-0 rounded-l border bg-muted/5 overflow-hidden", variantMode && "bg-transparent")}>
+            <div className={cn("w-full h-full flex flex-col space-y-0 rounded-l border bg-muted/5 overflow-hidden", variantMode && "bg-transparent")}>
                 {!variantMode && (
                     <div className="pb-6 px-6 pt-6 border-b bg-background/50">
                         <div className="flex items-center justify-between gap-4">
@@ -307,7 +307,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
                     </div>
                 )}
 
-                <div className="p-0 overflow-hidden">
+                <div className="p-0 flex-1 min-h-0">
                     {!isBOMsLoading && boms.length === 0 ? (
                         <div className="py-16 flex flex-col items-center justify-center text-center gap-5 border-2 border-dashed border-primary/20 rounded-b-md bg-muted/5">
                             <div className="bg-primary/10 p-5 rounded-full ring-4 ring-primary/5">

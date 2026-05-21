@@ -72,14 +72,18 @@ export default function SalesOrdersPage() {
     }
 
     return (
-        <Tabs value={viewMode} className="w-full pt-2">
-            <Suspense fallback={<TableSkeleton rows={10} columns={6} />}>
-                <SalesOrdersClientView
-                    viewMode={viewMode}
-                    isCreateModalOpen={isCreateModalOpen}
-                    setCreateModalOpen={setIsCreateModalOpen}
-                />
-            </Suspense>
-        </Tabs>
+        <div className="pt-2 h-[calc(100vh-140px)] flex flex-col">
+            <Tabs value={viewMode} className="w-full flex flex-col h-full gap-4">
+                <div className="flex-1 min-h-0">
+                    <Suspense fallback={<TableSkeleton rows={10} columns={6} />}>
+                        <SalesOrdersClientView
+                            viewMode={viewMode}
+                            isCreateModalOpen={isCreateModalOpen}
+                            setCreateModalOpen={setIsCreateModalOpen}
+                        />
+                    </Suspense>
+                </div>
+            </Tabs>
+        </div>
     )
 }

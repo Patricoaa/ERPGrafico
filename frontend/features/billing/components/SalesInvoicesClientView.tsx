@@ -157,7 +157,7 @@ export function SalesInvoicesClientView() {
     ]
 
     return (
-        <div className="space-y-4 px-1 h-full flex flex-col">
+        <div className="px-1 h-full flex flex-col">
 
             <div className="flex-1 min-h-0">
                 <DataTable
@@ -169,7 +169,7 @@ export function SalesInvoicesClientView() {
                     currentView={currentView}
                     onViewChange={handleViewChange}
                     viewOptions={viewOptions}
-                    leftAction={<SmartSearchBar searchDef={invoiceSearchDef} placeholder="Buscar facturas..." />}
+                    leftAction={<SmartSearchBar searchDef={invoiceSearchDef} placeholder="Buscar facturas..." className="w-full" />}
                     defaultPageSize={20}
                     renderCustomView={isCustomView ? createDomainCardView('billing.invoice', {
                         onRowClick: (data) => toggleSelection(data),

@@ -94,7 +94,7 @@ El trigger Button debe usar `h-[1.5rem] p-0` (igual que todos los triggers en no
 | prop | type | required | default | notes |
 |------|------|----------|---------|-------|
 | `onRangeChange` | `(range: DateRange \| undefined) => void` | ✅ | — | |
-| `label` | `string` | ❌ | `"Filtrar por fecha"` | Texto del trigger |
+| `label` | `string` | ❌ | `"Buscar por fecha"` | Texto del trigger |
 | `defaultRange` | `DateRange` | ❌ | — | |
 | `className` | `string` | ❌ | — | |
 

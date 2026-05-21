@@ -39,7 +39,7 @@ export default async function TerminalsPage({ searchParams }: PageProps) {
     }
 
     return (
-        <div className="pt-2">
+        <div className="pt-2 flex-1 min-h-0 flex flex-col">
             <Suspense fallback={<LoadingFallback message="Cargando terminales..." />}>
                 <SalesTerminalsView
                     activeTab={activeTab}

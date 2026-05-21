@@ -313,84 +313,84 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
 
             <div className="flex-1 min-h-0">
                 <DataTable
-                columns={columns}
-                data={movements}
-                isLoading={isLoading}
-                variant="embedded"
-                leftAction={<SmartSearchBar searchDef={treasuryMovementsSearchDef} placeholder="Filtrar movimientos..." />}
-                createAction={createAction}
-                emptyState={{
-                    context: "finance",
-                    title: "No hay movimientos",
-                    description: "Aún no se han registrado ingresos o egresos de fondos en el sistema para el periodo actual.",
+                    columns={columns}
+                    data={movements}
+                    isLoading={isLoading}
+                    variant="embedded"
+                    leftAction={<SmartSearchBar searchDef={treasuryMovementsSearchDef} placeholder="Buscar movimientos..." className="w-full" />}
+                    createAction={createAction}
+                    emptyState={{
+                        context: "finance",
+                        title: "No hay movimientos",
+                        description: "Aún no se han registrado ingresos o egresos de fondos en el sistema para el periodo actual.",
 
-                }}
-                currentView={currentView}
-                onViewChange={handleViewChange}
-                viewOptions={viewOptions}
-                renderLoadingView={isCustomView ? createCardLoadingView('single-column', 5) : undefined}
-                renderCustomView={isCustomView ? createEntityCardView('treasury.treasurymovement', {
-                    renderCard: (m) => {
-                        const type = m.movement_type
-                        const isWriteOff = m.payment_method === 'WRITE_OFF'
-                        
-                        let status = "info" as any
-                        let label = m.movement_type_display
+                    }}
+                    currentView={currentView}
+                    onViewChange={handleViewChange}
+                    viewOptions={viewOptions}
+                    renderLoadingView={isCustomView ? createCardLoadingView('single-column', 5) : undefined}
+                    renderCustomView={isCustomView ? createEntityCardView('treasury.treasurymovement', {
+                        renderCard: (m) => {
+                            const type = m.movement_type
+                            const isWriteOff = m.payment_method === 'WRITE_OFF'
 
-                        if (isWriteOff) {
-                            status = "voided"
-                            label = "Castigo"
-                        } else if (type === 'INBOUND') {
-                            status = "received"
-                            label = "Depósito"
-                        } else if (type === 'OUTBOUND') {
-                            status = "sent"
-                            label = "Retiro"
-                        } else if (type === 'TRANSFER' || type === 'ADJUSTMENT') {
-                            status = "in_progress"
-                            label = type === 'TRANSFER' ? "Traspaso" : "Ajuste"
+                            let status = "info" as any
+                            let label = m.movement_type_display
+
+                            if (isWriteOff) {
+                                status = "voided"
+                                label = "Castigo"
+                            } else if (type === 'INBOUND') {
+                                status = "received"
+                                label = "Depósito"
+                            } else if (type === 'OUTBOUND') {
+                                status = "sent"
+                                label = "Retiro"
+                            } else if (type === 'TRANSFER' || type === 'ADJUSTMENT') {
+                                status = "in_progress"
+                                label = type === 'TRANSFER' ? "Traspaso" : "Ajuste"
+                            }
+
+                            let sourceLabel = m.partner_name || m.from_account_name || 'Origen'
+                            let destLabel = m.to_account_name || m.partner_name || 'Destino'
+
+                            if (type === 'INBOUND') {
+                                sourceLabel = m.partner_name || 'Particular'
+                                destLabel = m.to_account_name || 'Caja'
+                            } else if (type === 'OUTBOUND') {
+                                sourceLabel = m.from_account_name || 'Caja'
+                                destLabel = m.partner_name || 'Particular'
+                            } else if (type === 'TRANSFER' || type === 'ADJUSTMENT') {
+                                sourceLabel = m.from_account_name || 'Origen'
+                                destLabel = m.to_account_name || 'Destino'
+                            }
+
+                            const amount = typeof m.amount === 'string' ? parseFloat(m.amount) : m.amount
+                            const signedAmount = type === 'OUTBOUND' ? -amount : amount
+
+                            return (
+                                <EntityCard key={m.id} onClick={() => handleViewDetails(m.id)}>
+                                    <EntityCard.Header
+                                        title={`Movimiento ${m.display_id}`}
+                                        subtitle={m.date}
+                                        trailing={
+                                            <div className="flex flex-col items-end gap-2">
+                                                <StatusBadge status={status} label={label} size="sm" className="uppercase font-bold tracking-tight" />
+                                                <DataCell.Currency value={signedAmount} className="font-bold text-base" />
+                                            </div>
+                                        }
+                                    />
+                                    <EntityCard.Body>
+                                        <EntityCard.Field label="Origen" value={sourceLabel} />
+                                        <EntityCard.Field label="Destino" value={destLabel} />
+                                        <EntityCard.Field label="Método" value={m.payment_method_display} />
+                                        <EntityCard.Field label="Usuario" value={m.created_by_name} />
+                                    </EntityCard.Body>
+                                </EntityCard>
+                            )
                         }
-
-                        let sourceLabel = m.partner_name || m.from_account_name || 'Origen'
-                        let destLabel = m.to_account_name || m.partner_name || 'Destino'
-
-                        if (type === 'INBOUND') {
-                            sourceLabel = m.partner_name || 'Particular'
-                            destLabel = m.to_account_name || 'Caja'
-                        } else if (type === 'OUTBOUND') {
-                            sourceLabel = m.from_account_name || 'Caja'
-                            destLabel = m.partner_name || 'Particular'
-                        } else if (type === 'TRANSFER' || type === 'ADJUSTMENT') {
-                            sourceLabel = m.from_account_name || 'Origen'
-                            destLabel = m.to_account_name || 'Destino'
-                        }
-
-                        const amount = typeof m.amount === 'string' ? parseFloat(m.amount) : m.amount
-                        const signedAmount = type === 'OUTBOUND' ? -amount : amount
-
-                        return (
-                            <EntityCard key={m.id} onClick={() => handleViewDetails(m.id)}>
-                                <EntityCard.Header
-                                    title={`Movimiento ${m.display_id}`}
-                                    subtitle={m.date}
-                                    trailing={
-                                        <div className="flex flex-col items-end gap-2">
-                                            <StatusBadge status={status} label={label} size="sm" className="uppercase font-bold tracking-tight" />
-                                            <DataCell.Currency value={signedAmount} className="font-bold text-base" />
-                                        </div>
-                                    }
-                                />
-                                <EntityCard.Body>
-                                    <EntityCard.Field label="Origen" value={sourceLabel} />
-                                    <EntityCard.Field label="Destino" value={destLabel} />
-                                    <EntityCard.Field label="Método" value={m.payment_method_display} />
-                                    <EntityCard.Field label="Usuario" value={m.created_by_name} />
-                                </EntityCard.Body>
-                            </EntityCard>
-                        )
-                    }
-                }) : undefined}
-            />
+                    }) : undefined}
+                />
             </div>
 
             <Suspense fallback={<FormSkeleton />}>

@@ -164,14 +164,14 @@ export function WarehouseList({ externalOpen, onExternalOpenChange, createAction
         <div className="space-y-6 h-full flex flex-col">
             <div className="flex-1 min-h-0">
                 <DataTable
-                columns={columns}
-                data={filterFn(warehouses)}
-                isLoading={isLoading}
-                variant="embedded"
-                leftAction={<SmartSearchBar searchDef={warehouseSearchDef} placeholder="Buscar almacén..." />}
-                bulkActions={bulkActions}
-                createAction={createAction}
-            />
+                    columns={columns}
+                    data={filterFn(warehouses)}
+                    isLoading={isLoading}
+                    variant="embedded"
+                    leftAction={<SmartSearchBar searchDef={warehouseSearchDef} placeholder="Buscar almacén..." className="w-full" />}
+                    bulkActions={bulkActions}
+                    createAction={createAction}
+                />
             </div>
 
             <WarehouseForm

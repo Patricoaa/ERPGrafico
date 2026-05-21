@@ -137,10 +137,11 @@ export function TerminalManagement({ externalOpen, onExternalOpenChange, createA
     ]
 
     return (
-        <div className="space-y-4">
-            <DataTable
-                columns={columns}
-                data={terminals}
+        <div className="space-y-4 h-full flex flex-col">
+            <div className="flex-1 min-h-0">
+                <DataTable
+                    columns={columns}
+                    data={terminals}
                 isLoading={isLoading}
                 variant="embedded"
                 filterColumn="name"
@@ -242,6 +243,7 @@ export function TerminalManagement({ externalOpen, onExternalOpenChange, createA
                     </div>
                 ) : undefined}
             />
+            </div>
 
             <TerminalModal
                 open={dialogOpen}

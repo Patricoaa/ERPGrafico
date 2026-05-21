@@ -151,14 +151,14 @@ export default function AdvancesPage() {
         <div className="space-y-4 h-full flex flex-col">
             <div className="flex-1 min-h-0">
                 <DataTable
-                columns={columns}
-                data={advances}
-                isLoading={loading}
-                variant="embedded"
-                leftAction={<SmartSearchBar searchDef={salaryAdvanceSearchDef} placeholder="Filtrar anticipos..." className="w-full" />}
-                defaultPageSize={20}
-                createAction={createAction}
-            />
+                    columns={columns}
+                    data={advances}
+                    isLoading={loading}
+                    variant="embedded"
+                    leftAction={<SmartSearchBar searchDef={salaryAdvanceSearchDef} placeholder="Buscar anticipos..." className="w-full" />}
+                    defaultPageSize={20}
+                    createAction={createAction}
+                />
             </div>
 
             <AdvanceFormModal

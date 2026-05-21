@@ -41,7 +41,7 @@ export default async function UnifiedProductsPage({ searchParams }: PageProps) {
     const createAction = getCreateAction(activeTab)
 
     return (
-        <Tabs value={activeTab} className="space-y-4 pt-2 flex flex-col h-[calc(100vh-140px)]">
+        <Tabs value={activeTab} className="space-y-4 pt-2 flex flex-col flex-1 min-h-0">
             <div className="flex-1 min-h-0">
                 <TabsContent value="products" className="h-full mt-0 outline-none">
                     <Suspense fallback={<TableSkeleton rows={10} columns={6} />}>

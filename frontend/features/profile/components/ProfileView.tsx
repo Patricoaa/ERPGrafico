@@ -593,7 +593,7 @@ function PersonalTab({
     const contact = employee.contact_detail
 
     return (
-        <div className="w-full">
+        <div className="flex flex-col w-full h-full space-y-6">
             {/* Sub-tab 1: Ficha de Empleado */}
             {activeSubTab === "employee" && (
                 <FadeIn yOffset={10}>
@@ -691,7 +691,7 @@ function PersonalTab({
                                     </Button>
                                 </div>
                             )}
-                            <div className="px-0">
+                            <div className="flex-1 min-h-0">
                                 {payrolls.length > 0 ? (
                                     <DataTable
                                         columns={payrollColumns}

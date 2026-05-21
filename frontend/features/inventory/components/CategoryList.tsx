@@ -140,7 +140,7 @@ export function CategoryList({ externalOpen, onExternalOpenChange, createAction 
                     data={filterFn(categories)}
                     isLoading={isLoading}
                     variant="embedded"
-                    leftAction={<SmartSearchBar searchDef={categorySearchDef} placeholder="Buscar categoría..." />}
+                    leftAction={<SmartSearchBar searchDef={categorySearchDef} placeholder="Buscar categoría..." className="w-full" />}
                     createAction={createAction}
                 />
             </div>

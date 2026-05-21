@@ -100,7 +100,7 @@ export function MappingConfigSheet({
                 })
             }
         })
-        
+
         if (updates.length > 0) {
             await saveAll(updates)
             onSaveSuccess?.()
@@ -263,7 +263,7 @@ export function MappingConfigSheet({
                     data={accounts}
                     isLoading={isLoading}
                     variant="standalone"
-                    searchPlaceholder="Filtrar por nombre de cuenta..."
+                    searchPlaceholder="Buscar por nombre de cuenta..."
                     filterColumn="name"
                     useAdvancedFilter={true}
                     bulkDock={(items, clear) => (

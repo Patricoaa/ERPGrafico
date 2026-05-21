@@ -34,10 +34,10 @@ export const SalesTerminalsView: React.FC<SalesTerminalsViewProps> = ({ activeTa
     }, [modal])
 
     return (
-        <Tabs value={activeTab} className="space-y-4 h-full flex flex-col">
+        <Tabs value={activeTab} className="h-full flex flex-col">
             <TabsContent value="pos-terminals" className="mt-0 outline-none flex-1 min-h-0">
                 <Suspense fallback={<CardSkeleton variant="grid" count={3} />}>
-                    <FadeIn>
+                    <FadeIn className="h-full">
                         <TerminalManagement
                             externalOpen={isTerminalModalOpen}
                             onExternalOpenChange={setIsTerminalModalOpen}
@@ -49,7 +49,7 @@ export const SalesTerminalsView: React.FC<SalesTerminalsViewProps> = ({ activeTa
 
             <TabsContent value="sessions" className="mt-0 outline-none flex-1 min-h-0">
                 <Suspense fallback={<TableSkeleton rows={8} columns={5} />}>
-                    <FadeIn>
+                    <FadeIn className="h-full">
                         <POSSessionsView hideHeader />
                     </FadeIn>
                 </Suspense>
@@ -57,7 +57,7 @@ export const SalesTerminalsView: React.FC<SalesTerminalsViewProps> = ({ activeTa
 
             <TabsContent value="batches" className="mt-0 outline-none flex-1 min-h-0">
                 <Suspense fallback={<TableSkeleton rows={8} columns={5} />}>
-                    <FadeIn>
+                    <FadeIn className="h-full">
                         <TerminalBatchesManagement
                             showTitle={false}
                             externalOpenBatch={isBatchModalOpen}
@@ -72,7 +72,7 @@ export const SalesTerminalsView: React.FC<SalesTerminalsViewProps> = ({ activeTa
 
             <TabsContent value="devices" className="mt-0 outline-none flex-1 min-h-0">
                 <Suspense fallback={<CardSkeleton variant="grid" count={3} />}>
-                    <FadeIn>
+                    <FadeIn className="h-full">
                        <PaymentHardwareManagement
                             externalDeviceOpen={isDeviceModalOpen}
                             onExternalDeviceOpenChange={setIsDeviceModalOpen}
@@ -85,7 +85,7 @@ export const SalesTerminalsView: React.FC<SalesTerminalsViewProps> = ({ activeTa
 
             <TabsContent value="providers" className="mt-0 outline-none flex-1 min-h-0">
                 <Suspense fallback={<CardSkeleton variant="grid" count={3} />}>
-                    <FadeIn>
+                    <FadeIn className="h-full">
                        <PaymentHardwareManagement
                             externalProviderOpen={isProviderModalOpen}
                             onExternalProviderOpenChange={setIsProviderModalOpen}

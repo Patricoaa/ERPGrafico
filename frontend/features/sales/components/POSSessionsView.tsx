@@ -182,14 +182,14 @@ export const POSSessionsView = ({ hideHeader = false }: POSSessionsViewProps) =>
     ]
 
     return (
-        <div className="flex-1 space-y-4 h-full flex flex-col">
-            <div className="mt-4 flex-1 min-h-0">
+        <div className="h-full flex flex-col">
+            <div className="flex-1 min-h-0">
                 <DataTable
                     columns={columns}
                     data={sessions}
                     variant="embedded"
                     isLoading={isLoading}
-                    leftAction={<SmartSearchBar searchDef={posSessionSearchDef} placeholder="Buscar sesiones..." className="w-80" />}
+                    leftAction={<SmartSearchBar searchDef={posSessionSearchDef} placeholder="Buscar sesiones..." className="w-full" />}
                     defaultPageSize={10}
                 />
             </div>

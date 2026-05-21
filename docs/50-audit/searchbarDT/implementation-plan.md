@@ -200,7 +200,7 @@ Keyboard nav: `↓ ↑` navegan la lista activa, `Enter` selecciona, `Escape` ci
 const { filters } = useSmartSearch(invoiceSearchDef)
 const { invoices, isLoading } = useInvoices({ filters: { ...filters, mode: 'sale' } })
 // ...
-<SmartSearchBar searchDef={invoiceSearchDef} placeholder="..." className="w-80" />
+<SmartSearchBar searchDef={invoiceSearchDef} placeholder="..." className="w-full" />
 ```
 
 El componente se pasa como `leftAction` al `DataTable` — se integra en la zona izquierda del toolbar sin modificar el componente DataTable.

@@ -76,7 +76,7 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false, cr
     const handleCloseModal = () => {
         setIsFormOpen(false)
         setEditingProduct(null)
-        
+
         if (externalOpen || searchParams.get("modal")) {
             const params = new URLSearchParams(searchParams.toString())
             params.delete("modal")
@@ -238,8 +238,8 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false, cr
             ),
             cell: ({ row }) => (
                 <div className="flex justify-center w-full">
-                    <DataCell.ContactLink 
-                        contactId={row.original.supplier_id} 
+                    <DataCell.ContactLink
+                        contactId={row.original.supplier_id}
                     >
                         {row.getValue("supplier_name")}
                     </DataCell.ContactLink>
@@ -411,45 +411,47 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false, cr
                 </PageHeader>
             )}
 
-            <div className="flex-1 min-h-0 flex flex-col space-y-4">
+
+            <div className="flex-1 h-full flex flex-col">
+
 
                 <div className="flex-1 min-h-0 flex flex-col space-y-6">
-                {/* Industrial Stats Panel */}
-                {stats && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <div className="p-4 rounded-md border bg-card/50 shadow-sm flex flex-col gap-1 items-center md:items-start">
-                            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Suscripciones Activas</span>
-                            <span className="text-2xl font-black text-foreground tabular-nums">{stats.active_subscriptions}</span>
-                        </div>
-                        <div className="p-4 rounded-md border bg-card/50 shadow-sm flex flex-col gap-1 items-center md:items-start">
-                            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Costo Mensual Total</span>
-                            <div className="text-2xl font-black text-foreground tabular-nums">
-                                <DataCell.Currency value={stats.total_monthly_cost} />
+                    {/* Industrial Stats Panel */}
+                    {stats && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <div className="p-4 rounded-md border bg-card/50 shadow-sm flex flex-col gap-1 items-center md:items-start">
+                                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Suscripciones Activas</span>
+                                <span className="text-2xl font-black text-foreground tabular-nums">{stats.active_subscriptions}</span>
+                            </div>
+                            <div className="p-4 rounded-md border bg-card/50 shadow-sm flex flex-col gap-1 items-center md:items-start">
+                                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Costo Mensual Total</span>
+                                <div className="text-2xl font-black text-foreground tabular-nums">
+                                    <DataCell.Currency value={stats.total_monthly_cost} />
+                                </div>
+                            </div>
+                            <div className="p-4 rounded-md border bg-card/50 shadow-sm flex flex-col gap-1 items-center md:items-start">
+                                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Próximas Renovaciones</span>
+                                <span className="text-2xl font-black text-warning tabular-nums">{stats.upcoming_renewals_30_days}</span>
+                            </div>
+                            <div className="p-4 rounded-md border bg-card/50 shadow-sm flex flex-col gap-1 items-center md:items-start">
+                                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Estado Pausadas</span>
+                                <span className="text-2xl font-black text-muted-foreground tabular-nums">{stats.paused_subscriptions}</span>
                             </div>
                         </div>
-                        <div className="p-4 rounded-md border bg-card/50 shadow-sm flex flex-col gap-1 items-center md:items-start">
-                            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Próximas Renovaciones</span>
-                            <span className="text-2xl font-black text-warning tabular-nums">{stats.upcoming_renewals_30_days}</span>
-                        </div>
-                        <div className="p-4 rounded-md border bg-card/50 shadow-sm flex flex-col gap-1 items-center md:items-start">
-                            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Estado Pausadas</span>
-                            <span className="text-2xl font-black text-muted-foreground tabular-nums">{stats.paused_subscriptions}</span>
-                        </div>
+                    )}
+                    <div className="flex-1 min-h-0">
+                        <DataTable
+                            columns={columns}
+                            data={subscriptions}
+                            isLoading={loading}
+                            variant="embedded"
+                            leftAction={<SmartSearchBar searchDef={subscriptionSearchDef} placeholder="Buscar suscripciones..." className="w-full" />}
+                            defaultPageSize={20}
+                            bulkActions={bulkActions}
+                            createAction={createAction}
+                        />
                     </div>
-                )}
-                <div className="flex-1 min-h-0">
-                    <DataTable
-                        columns={columns}
-                        data={subscriptions}
-                        isLoading={loading}
-                        variant="embedded"
-                        leftAction={<SmartSearchBar searchDef={subscriptionSearchDef} placeholder="Buscar suscripciones..." className="w-80" />}
-                        defaultPageSize={20}
-                        bulkActions={bulkActions}
-                        createAction={createAction}
-                    />
                 </div>
-            </div>
             </div>
 
             <ProductForm

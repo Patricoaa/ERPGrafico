@@ -144,7 +144,7 @@ export function UoMCategoryList({ externalOpen, onExternalOpenChange, createActi
                     data={filterFn(categories)}
                     isLoading={isLoading}
                     variant="embedded"
-                    leftAction={<SmartSearchBar searchDef={uomCategorySearchDef} placeholder="Buscar categoría..." />}
+                    leftAction={<SmartSearchBar searchDef={uomCategorySearchDef} placeholder="Buscar categoría..." className="w-full" />}
                     pageSizeOptions={[10, 20]}
                     bulkActions={bulkActions}
                     createAction={createAction}

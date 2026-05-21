@@ -325,14 +325,16 @@ export function HRSettingsView({ activeTab = "global" }: { activeTab?: string })
                             <ConceptDialog onSaved={fetchData} />
                         </div>
 
-                        <DataTable
-                            columns={conceptColumns}
-                            data={concepts}
-                            filterColumn="name"
-                            searchPlaceholder="Buscar concepto..."
-                            isLoading={loading}
-                            variant="embedded"
-                        />
+                        <div className="flex-1 min-h-0">
+                            <DataTable
+                                columns={conceptColumns}
+                                data={concepts}
+                                filterColumn="name"
+                                searchPlaceholder="Buscar concepto..."
+                                isLoading={loading}
+                                variant="embedded"
+                            />
+                        </div>
                     </div>
                 )}
 

@@ -219,7 +219,7 @@ export function PaymentHardwareManagement({
 
 
     return (
-        <div className="space-y-6 h-full flex flex-col">
+        <div className="h-full flex flex-col">
             {createAction && (
                 <div className="flex items-center justify-end">
                     {createAction}
@@ -228,156 +228,156 @@ export function PaymentHardwareManagement({
             {activeTab === "providers" ? (
                 <div className="flex-1 min-h-0">
                     <DataTable
-                    columns={providerColumns}
-                    data={filterProviders(providers)}
-                    isLoading={isLoadingProviders}
-                    variant="embedded"
-                    leftAction={<SmartSearchBar searchDef={providerSearchDef} placeholder="Buscar proveedor..." />}
-                    defaultPageSize={20}
-                    currentView={viewMode}
-                    onViewChange={handleViewChange}
-                    viewOptions={[
-                        { label: "Lista", value: "list", icon: List },
-                        { label: "Tarjeta", value: "card", icon: LayoutGrid }
-                    ]}
-                    createAction={createAction || (
-                        <Button onClick={handleCreateProvider} className="h-9">
-                            Configurar proveedor
-                        </Button>
-                    )}
-                    renderLoadingView={isCustomView ? () => (
-                        <div className="flex flex-col gap-4 pt-2">
-                            {Array.from({ length: 3 }).map((_, i) => (
-                                <EntityCard.Skeleton key={i} />
-                            ))}
-                        </div>
-                    ) : undefined}
-                    renderCustomView={isCustomView ? (table) => (
-                        <div className="flex flex-col gap-4 pt-2">
-                            {table.getRowModel().rows.map(row => {
-                                const provider = row.original
-                                return (
-                                    <EntityCard key={provider.id}>
-                                        <EntityCard.Header
-                                            title={
-                                                <div className="flex items-center gap-2">
-                                                    <Building2 className="h-4 w-4 text-primary" />
-                                                    {provider.name}
-                                                </div>
-                                            }
-                                            trailing={
-                                                <div className="flex flex-col items-end gap-2">
-                                                    <StatusBadge status={provider.is_active ? "active" : "inactive"} size="sm" />
-                                                    <div className="flex items-center gap-1">
-                                                        <IconButton onClick={() => handleEditProvider(provider)} className="h-7 w-7"><Settings className="h-3 w-3" /></IconButton>
-                                                        <IconButton onClick={() => deleteProviderConfirm.requestConfirm(provider)} className="h-7 w-7 text-destructive hover:bg-destructive/10 hover:text-destructive"><Trash2 className="h-3 w-3" /></IconButton>
+                        columns={providerColumns}
+                        data={filterProviders(providers)}
+                        isLoading={isLoadingProviders}
+                        variant="embedded"
+                        leftAction={<SmartSearchBar searchDef={providerSearchDef} placeholder="Buscar proveedor..." className="w-full" />}
+                        defaultPageSize={20}
+                        currentView={viewMode}
+                        onViewChange={handleViewChange}
+                        viewOptions={[
+                            { label: "Lista", value: "list", icon: List },
+                            { label: "Tarjeta", value: "card", icon: LayoutGrid }
+                        ]}
+                        createAction={createAction || (
+                            <Button onClick={handleCreateProvider} className="h-9">
+                                Configurar proveedor
+                            </Button>
+                        )}
+                        renderLoadingView={isCustomView ? () => (
+                            <div className="flex flex-col gap-4 pt-2">
+                                {Array.from({ length: 3 }).map((_, i) => (
+                                    <EntityCard.Skeleton key={i} />
+                                ))}
+                            </div>
+                        ) : undefined}
+                        renderCustomView={isCustomView ? (table) => (
+                            <div className="flex flex-col gap-4 pt-2">
+                                {table.getRowModel().rows.map(row => {
+                                    const provider = row.original
+                                    return (
+                                        <EntityCard key={provider.id}>
+                                            <EntityCard.Header
+                                                title={
+                                                    <div className="flex items-center gap-2">
+                                                        <Building2 className="h-4 w-4 text-primary" />
+                                                        {provider.name}
                                                     </div>
-                                                </div>
-                                            }
-                                        />
-                                        <EntityCard.Body>
-                                            <EntityCard.Field
-                                                label="Recaudación"
-                                                value={provider.receivable_account_name || "No configurada"}
-                                                icon={Building2}
+                                                }
+                                                trailing={
+                                                    <div className="flex flex-col items-end gap-2">
+                                                        <StatusBadge status={provider.is_active ? "active" : "inactive"} size="sm" />
+                                                        <div className="flex items-center gap-1">
+                                                            <IconButton onClick={() => handleEditProvider(provider)} className="h-7 w-7"><Settings className="h-3 w-3" /></IconButton>
+                                                            <IconButton onClick={() => deleteProviderConfirm.requestConfirm(provider)} className="h-7 w-7 text-destructive hover:bg-destructive/10 hover:text-destructive"><Trash2 className="h-3 w-3" /></IconButton>
+                                                        </div>
+                                                    </div>
+                                                }
                                             />
-                                            {provider.supplier_name && (
+                                            <EntityCard.Body>
                                                 <EntityCard.Field
-                                                    label="Contacto"
-                                                    value={provider.supplier_name}
-                                                    icon={UserIcon}
+                                                    label="Recaudación"
+                                                    value={provider.receivable_account_name || "No configurada"}
+                                                    icon={Building2}
                                                 />
-                                            )}
-                                        </EntityCard.Body>
-                                    </EntityCard>
-                                )
-                            })}
-                        </div>
-                    ) : undefined}
-                />
+                                                {provider.supplier_name && (
+                                                    <EntityCard.Field
+                                                        label="Contacto"
+                                                        value={provider.supplier_name}
+                                                        icon={UserIcon}
+                                                    />
+                                                )}
+                                            </EntityCard.Body>
+                                        </EntityCard>
+                                    )
+                                })}
+                            </div>
+                        ) : undefined}
+                    />
                 </div>
             ) : (
                 <div className="flex-1 min-h-0">
                     <DataTable
-                    columns={deviceColumns}
-                    data={devices}
-                    isLoading={isLoadingDevices}
-                    variant="embedded"
-                    leftAction={<SmartSearchBar searchDef={deviceSearchDef} placeholder="Buscar dispositivo..." className="w-80" />}
-                    defaultPageSize={20}
-                    currentView={viewMode}
-                    onViewChange={handleViewChange}
-                    viewOptions={[
-                        { label: "Lista", value: "list", icon: List },
-                        { label: "Tarjeta", value: "card", icon: LayoutGrid }
-                    ]}
-                    createAction={createAction || (
-                        <Button onClick={handleCreateDevice} className="h-9">
-                            Registrar dispositivo
-                        </Button>
-                    )}
-                    renderLoadingView={isCustomView ? () => (
-                        <div className="flex flex-col gap-4 pt-2">
-                            {Array.from({ length: 3 }).map((_, i) => (
-                                <EntityCard.Skeleton key={i} />
-                            ))}
-                        </div>
-                    ) : undefined}
-                    renderCustomView={isCustomView ? (table) => (
-                        <div className="flex flex-col gap-4 pt-2">
-                            {table.getRowModel().rows.map(row => {
-                                const device = row.original
-                                return (
-                                    <EntityCard key={device.id}>
-                                        <EntityCard.Header
-                                            title={
-                                                <div className="flex items-center gap-2">
-                                                    <Smartphone className="h-4 w-4 text-info" />
-                                                    {device.name}
-                                                </div>
-                                            }
-                                            trailing={
-                                                <div className="flex flex-col items-end gap-2">
-                                                    <StatusBadge status={device.is_active ? "active" : "inactive"} size="sm" />
-                                                    <div className="flex items-center gap-1">
-                                                        <IconButton onClick={() => handleEditDevice(device)} className="h-7 w-7"><Settings className="h-3 w-3" /></IconButton>
-                                                        <IconButton onClick={() => deleteDeviceConfirm.requestConfirm(device)} className="h-7 w-7 text-destructive hover:bg-destructive/10 hover:text-destructive"><Trash2 className="h-3 w-3" /></IconButton>
+                        columns={deviceColumns}
+                        data={devices}
+                        isLoading={isLoadingDevices}
+                        variant="embedded"
+                        leftAction={<SmartSearchBar searchDef={deviceSearchDef} placeholder="Buscar dispositivo..." className="w-full" />}
+                        defaultPageSize={20}
+                        currentView={viewMode}
+                        onViewChange={handleViewChange}
+                        viewOptions={[
+                            { label: "Lista", value: "list", icon: List },
+                            { label: "Tarjeta", value: "card", icon: LayoutGrid }
+                        ]}
+                        createAction={createAction || (
+                            <Button onClick={handleCreateDevice} className="h-9">
+                                Registrar dispositivo
+                            </Button>
+                        )}
+                        renderLoadingView={isCustomView ? () => (
+                            <div className="flex flex-col gap-4 pt-2">
+                                {Array.from({ length: 3 }).map((_, i) => (
+                                    <EntityCard.Skeleton key={i} />
+                                ))}
+                            </div>
+                        ) : undefined}
+                        renderCustomView={isCustomView ? (table) => (
+                            <div className="flex flex-col gap-4 pt-2">
+                                {table.getRowModel().rows.map(row => {
+                                    const device = row.original
+                                    return (
+                                        <EntityCard key={device.id}>
+                                            <EntityCard.Header
+                                                title={
+                                                    <div className="flex items-center gap-2">
+                                                        <Smartphone className="h-4 w-4 text-info" />
+                                                        {device.name}
                                                     </div>
+                                                }
+                                                trailing={
+                                                    <div className="flex flex-col items-end gap-2">
+                                                        <StatusBadge status={device.is_active ? "active" : "inactive"} size="sm" />
+                                                        <div className="flex items-center gap-1">
+                                                            <IconButton onClick={() => handleEditDevice(device)} className="h-7 w-7"><Settings className="h-3 w-3" /></IconButton>
+                                                            <IconButton onClick={() => deleteDeviceConfirm.requestConfirm(device)} className="h-7 w-7 text-destructive hover:bg-destructive/10 hover:text-destructive"><Trash2 className="h-3 w-3" /></IconButton>
+                                                        </div>
+                                                    </div>
+                                                }
+                                            />
+                                            <EntityCard.Body>
+                                                <EntityCard.Field
+                                                    label="Proveedor"
+                                                    value={device.provider_name || "Sin proveedor"}
+                                                    icon={Building2}
+                                                />
+                                                <EntityCard.Field
+                                                    label="N° Serie"
+                                                    value={<span className="font-mono">{device.serial_number}</span>}
+                                                    icon={CreditCard}
+                                                />
+                                            </EntityCard.Body>
+                                            <EntityCard.Footer className="justify-between items-center bg-muted/10 px-4 py-2 border-t">
+                                                <div className="flex items-center gap-1.5 w-full">
+                                                    <span className="text-[10px] font-bold text-muted-foreground uppercase mr-2">Soporta:</span>
+                                                    {device.supported_payment_methods?.includes(2) && (
+                                                        <span className="px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest bg-primary/10 text-primary border border-primary/20 rounded-sm">DÉBITO</span>
+                                                    )}
+                                                    {device.supported_payment_methods?.includes(1) && (
+                                                        <span className="px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest bg-primary/10 text-primary border border-primary/20 rounded-sm">CRÉDITO</span>
+                                                    )}
+                                                    {(!device.supported_payment_methods || device.supported_payment_methods.length === 0) && (
+                                                        <span className="text-[10px] italic opacity-50">SIN CONFIG</span>
+                                                    )}
                                                 </div>
-                                            }
-                                        />
-                                        <EntityCard.Body>
-                                            <EntityCard.Field
-                                                label="Proveedor"
-                                                value={device.provider_name || "Sin proveedor"}
-                                                icon={Building2}
-                                            />
-                                            <EntityCard.Field
-                                                label="N° Serie"
-                                                value={<span className="font-mono">{device.serial_number}</span>}
-                                                icon={CreditCard}
-                                            />
-                                        </EntityCard.Body>
-                                        <EntityCard.Footer className="justify-between items-center bg-muted/10 px-4 py-2 border-t">
-                                            <div className="flex items-center gap-1.5 w-full">
-                                                <span className="text-[10px] font-bold text-muted-foreground uppercase mr-2">Soporta:</span>
-                                                {device.supported_payment_methods?.includes(2) && (
-                                                    <span className="px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest bg-primary/10 text-primary border border-primary/20 rounded-sm">DÉBITO</span>
-                                                )}
-                                                {device.supported_payment_methods?.includes(1) && (
-                                                    <span className="px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-widest bg-primary/10 text-primary border border-primary/20 rounded-sm">CRÉDITO</span>
-                                                )}
-                                                {(!device.supported_payment_methods || device.supported_payment_methods.length === 0) && (
-                                                    <span className="text-[10px] italic opacity-50">SIN CONFIG</span>
-                                                )}
-                                            </div>
-                                        </EntityCard.Footer>
-                                    </EntityCard>
-                                )
-                            })}
-                        </div>
-                    ) : undefined}
-                />
+                                            </EntityCard.Footer>
+                                        </EntityCard>
+                                    )
+                                })}
+                            </div>
+                        ) : undefined}
+                    />
                 </div>
             )}
 

@@ -345,14 +345,18 @@ export function PortfolioTable({
     }, [isLoading, onRefresh])
 
     return (
-        <DataTable
-            columns={columns}
-            data={data}
-            variant="embedded"
-            isLoading={isLoading}
-            renderCustomView={renderPortfolioCustomView}
-            createAction={createAction}
-            leftAction={leftAction}
-        />
+        <div className="h-full flex flex-col">
+            <div className="flex-1 min-h-0">
+                <DataTable
+                    columns={columns}
+                    data={data}
+                    variant="embedded"
+                    isLoading={isLoading}
+                    renderCustomView={renderPortfolioCustomView}
+                    createAction={createAction}
+                    leftAction={leftAction}
+                />
+            </div>
+        </div>
     )
 }

@@ -130,12 +130,12 @@ export function BankManagement({ externalOpen, onOpenChange, createAction }: Ban
 
             <div className="flex-1 min-h-0">
                 <DataTable
-                columns={columns}
-                data={filterBanks(banks)}
-                variant="embedded"
-                leftAction={<SmartSearchBar searchDef={bankSearchDef} placeholder="Buscar banco..." />}
-                createAction={createAction}
-            />
+                    columns={columns}
+                    data={filterBanks(banks)}
+                    variant="embedded"
+                    leftAction={<SmartSearchBar searchDef={bankSearchDef} placeholder="Buscar banco..." className="w-full" />}
+                    createAction={createAction}
+                />
             </div>
 
             <BankModal
@@ -443,12 +443,12 @@ export function PaymentMethodManagement({ externalOpen, onOpenChange, createActi
 
             <div className="flex-1 min-h-0">
                 <DataTable
-                columns={columns}
-                data={filterMethods(methods)}
-                variant="embedded"
-                leftAction={<SmartSearchBar searchDef={paymentMethodSearchDef} placeholder="Buscar método de pago..." />}
-                createAction={createAction}
-            />
+                    columns={columns}
+                    data={filterMethods(methods)}
+                    variant="embedded"
+                    leftAction={<SmartSearchBar searchDef={paymentMethodSearchDef} placeholder="Buscar método de pago..." className="w-full" />}
+                    createAction={createAction}
+                />
             </div>
 
             <PaymentMethodModal
