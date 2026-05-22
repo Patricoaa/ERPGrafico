@@ -52,6 +52,12 @@ export function useUoMs(filters?: FilterState) {
         queryFn: async (): Promise<UoM[]> => {
             const params = new URLSearchParams()
             if (filters?.search) params.append('search', filters.search)
+            // Filtro por categoría (uom_category de un producto). FilterState
+            // no lo declara pero el backend lo acepta — leemos como índice.
+            const categoryFilter = (filters as unknown as { category?: number | string } | undefined)?.category
+            if (categoryFilter !== undefined && categoryFilter !== null && categoryFilter !== '') {
+                params.append('category', String(categoryFilter))
+            }
             const response = await api.get('/inventory/uoms/', { params })
             return response.data.results || response.data
         },
