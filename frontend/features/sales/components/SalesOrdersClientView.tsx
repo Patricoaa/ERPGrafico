@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, lazy } from "react"
-import api from "@/lib/api"
+import { useState, lazy, Suspense } from "react"
+import { useInvoices } from "@/features/billing"
 import { useVatRate } from "@/hooks/useVatRate"
 import { SalesOrdersView } from "./SalesOrdersView"
 import { FadeIn, SkeletonShell } from "@/components/shared"
@@ -24,6 +24,7 @@ interface SalesOrdersClientViewProps {
 
 export function SalesOrdersClientView({ viewMode }: SalesOrdersClientViewProps) {
     const { multiplier: vatMultiplier } = useVatRate()
+    const { confirmInvoice } = useInvoices()
 
     // Remote-change / cross-tab refresh — see ADR-0026.
     useEntitySubscription('sales.saleorder', [...SALES_ORDER_LIST_KEYS])
@@ -94,9 +95,9 @@ export function SalesOrdersClientView({ viewMode }: SalesOrdersClientViewProps) 
                          contactId={completingFolio?.customer}
                          isPurchase={false}
                          onComplete={async (invoiceId, formData) => {
-                             await api.post(`/billing/invoices/${invoiceId}/confirm/`, formData, {
-                                 headers: { 'Content-Type': 'multipart/form-data' }
-                             })
+                             // confirmInvoice invalida INVOICES_QUERY_KEY + SALES_KEYS.all
+                             // → lista de invoices y orden de venta padre se refrescan.
+                             await confirmInvoice({ id: invoiceId, payload: formData })
                          }}
                          onSuccess={() => setCompletingFolio(null)}
                      />
