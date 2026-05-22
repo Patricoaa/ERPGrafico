@@ -23,10 +23,14 @@ import { toast } from "sonner"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Separator } from "@/components/ui/separator"
-import api from "@/lib/api"
 import { Product, UoM, Warehouse } from "@/types/entities"
 import { cn } from "@/lib/utils"
 import { validateAccountingPeriod } from '@/features/accounting/actions'
+import { useWarehouses } from "../hooks/useWarehouses"
+import { useUoMs } from "../hooks/useUoMs"
+import { useProduct } from "../hooks/useProducts"
+import { useStockAdjustment } from "../hooks/useStockMoves"
+import { usePartners } from "@/features/contacts"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
 import { LabeledInput, LabeledSelect, FormTabs, type FormTabItem, FormFooter, SubmitButton } from "@/components/shared"
 import { FormSection } from "@/components/shared/FormSection"
@@ -79,16 +83,19 @@ export function AdjustmentForm({
     onCancel,
     onLoadingChange 
 }: AdjustmentFormProps) {
-    const [warehouses, setWarehouses] = useState<Warehouse[]>([])
-    const [productUoMs, setProductUoMs] = useState<UoM[]>([])
+    // Reads reactivos vía hooks.
+    const { warehouses } = useWarehouses()
+    const { data: partnersData } = usePartners()
+    const partners = (partnersData ?? []) as { id: number, name: string }[]
+
+    const { adjustStock } = useStockAdjustment()
+
     const [baseUoM, setBaseUoM] = useState<UoM | null>(null)
     const [isLoading, setIsLoading] = useState(false)
 
     useEffect(() => {
         onLoadingChange?.(isLoading)
     }, [isLoading, onLoadingChange])
-    const [productDetails, setProductDetails] = useState<Product | null>(null)
-    const [partners, setPartners] = useState<{ id: number, name: string }[]>([])
     const [periodStatus, setPeriodStatus] = useState<{ is_closed: boolean; period_name?: string; date?: string; error?: string } | null>(null)
 
     const form = useForm<z.infer<typeof adjustmentSchema>>({
@@ -117,24 +124,8 @@ export function AdjustmentForm({
 
     const isPartnerReason = adjustmentReason === 'PARTNER_CONTRIBUTION' || adjustmentReason === 'PARTNER_WITHDRAWAL'
 
-    // 1. Fetch Warehouses
-    useEffect(() => {
-        const fetchWarehouses = async () => {
-            try {
-                const [whRes, partnersRes] = await Promise.all([
-                    api.get('/inventory/warehouses/'),
-                    api.get('/contacts/partners/')
-                ])
-                const whData = whRes.data.results || whRes.data
-                setWarehouses(Array.isArray(whData) ? whData : [])
-                setPartners(Array.isArray(partnersRes.data) ? partnersRes.data : [])
-            } catch (err) {
-                console.error("Error fetching data", err)
-                showApiError(err, "Error al cargar datos")
-            }
-        }
-        fetchWarehouses()
-    }, [])
+    // warehouses + partners se reciben reactivamente de useWarehouses / usePartners
+    // (declarados al inicio del componente). Cero fetch imperativo aquí.
 
     // Check period status for today
     useEffect(() => {
@@ -146,48 +137,38 @@ export function AdjustmentForm({
         checkPeriod()
     }, [])
 
-    // 2. Fetch Product Details
+    // Producto seleccionado — detalle reactivo vía useProduct.
+    const numericProductId = selectedProductId ? Number(selectedProductId) : null
+    const { data: productDetailRaw } = useProduct(numericProductId)
+    const productDetails = productDetailRaw as (Product & { cost_price?: number, uom_category?: number }) | null | undefined
+
+    // UoMs filtradas por categoría del producto.
+    const { uoms: productUoMs } = useUoMs({ category: productDetails?.uom_category } as never)
+
+    // Cuando llega productDetails: cargar unit_cost en el form (efecto side-channel
+    // controlado, dispara una sola vez por producto).
     useEffect(() => {
-        if (selectedProductId) {
-            setProductUoMs([]) // Reset UoMs while loading
-            api.get(`/inventory/products/${selectedProductId}/`)
-                .then(res => {
-                    const data = res.data
-                    setProductDetails(data)
-
-                    if (data.cost_price !== undefined) {
-                        form.setValue("unit_cost", data.cost_price.toString())
-                    }
-
-                    // Fetch UoMs using the new uom_category field
-                    if (data.uom_category) {
-                        return api.get(`/inventory/uoms/?category=${data.uom_category}`)
-                            .then(uomRes => {
-                                const uoms = uomRes.data.results || uomRes.data
-                                setProductUoMs(uoms)
-
-                                // Identify Base UoM
-                                const baseId = typeof data.uom === 'object' ? data.uom.id : data.uom
-                                const base = uoms.find((u: UoM) => u.id === baseId)
-                                setBaseUoM(base || null)
-
-                                // Auto-select Base UoM if not set
-                                if (!form.getValues("uom_id") && base) {
-                                    form.setValue("uom_id", base.id.toString())
-                                }
-                            })
-                    }
-                })
-                .catch(err => {
-                    console.error("Error fetching product details", err)
-                    showApiError(err, "Error cargando detalles del producto")
-                })
-        } else {
-            setProductUoMs([])
-            setBaseUoM(null)
-            setProductDetails(null)
+        if (productDetails?.cost_price !== undefined) {
+            form.setValue("unit_cost", String(productDetails.cost_price))
         }
-    }, [selectedProductId, form])
+    }, [productDetails?.id, productDetails?.cost_price, form])
+
+    // Identificar baseUoM y auto-seleccionarlo si no hay uom_id en el form.
+    useEffect(() => {
+        if (!productDetails) {
+            setBaseUoM(null)
+            return
+        }
+        const productUom = productDetails.uom as unknown
+        const baseId = typeof productUom === 'object' && productUom !== null
+            ? (productUom as { id: number }).id
+            : (productUom as number | undefined)
+        const base = productUoMs.find((u: UoM) => u.id === baseId) || null
+        setBaseUoM(base)
+        if (base && !form.getValues("uom_id")) {
+            form.setValue("uom_id", base.id.toString())
+        }
+    }, [productDetails, productUoMs, form])
 
 
     const onSubmit = async (values: z.infer<typeof adjustmentSchema>) => {
@@ -222,7 +203,9 @@ export function AdjustmentForm({
                 payload.partner_contact_id = values.partner_contact_id
             }
 
-            await api.post('/inventory/moves/adjust/', payload)
+            // adjustStock invalida STOCK_MOVES + PRODUCTS_KEYS.all → lista de
+            // movimientos y detalles de producto reflejan el ajuste sin recargar.
+            await adjustStock(payload)
 
             toast.success("Ajuste registrado correctamente")
             form.reset()

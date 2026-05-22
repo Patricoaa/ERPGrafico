@@ -1,5 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
+import { useRealtime } from '@/features/realtime'
+import { PRODUCTS_KEYS } from './queryKeys'
 
 export interface StockMove {
     id: number
@@ -66,5 +68,44 @@ export function useStockMovesList(filters: StockMoveFilters = {}) {
         totalCount: query.data?.count ?? 0,
         isLoading: query.isLoading,
         refetch: query.refetch,
+    }
+}
+
+export interface StockAdjustmentPayload {
+    product_id: number | string
+    warehouse_id: number | string
+    quantity: number
+    uom_id: number | string
+    unit_cost: number
+    adjustment_reason: string
+    description?: string
+    partner_contact_id?: number | string
+}
+
+/**
+ * Mutación del endpoint custom POST /inventory/moves/adjust/.
+ * Cambia stock + costo del producto y crea un journal entry asociado.
+ * Por eso invalida tanto STOCK_MOVES como PRODUCTS (qty_available/cost_price)
+ * para que listas y detalles abiertos reflejen el ajuste inmediatamente.
+ */
+export function useStockAdjustment() {
+    const queryClient = useQueryClient()
+    const { markLocalMutation } = useRealtime()
+
+    const adjustMutation = useMutation({
+        mutationFn: async (payload: StockAdjustmentPayload) => {
+            const res = await api.post('/inventory/moves/adjust/', payload)
+            return res.data
+        },
+        onSuccess: () => {
+            markLocalMutation()
+            queryClient.invalidateQueries({ queryKey: STOCK_MOVES_QUERY_KEY })
+            queryClient.invalidateQueries({ queryKey: PRODUCTS_KEYS.all })
+        },
+    })
+
+    return {
+        adjustStock: adjustMutation.mutateAsync,
+        isAdjusting: adjustMutation.isPending,
     }
 }
