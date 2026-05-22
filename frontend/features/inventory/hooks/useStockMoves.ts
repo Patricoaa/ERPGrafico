@@ -40,6 +40,24 @@ export interface PaginatedStockMoves {
 
 export const STOCK_MOVES_QUERY_KEY = ['inventory', 'stockMoves'] as const
 
+/**
+ * Fetch a single stock move by id (vista de detalle, modal de inspección).
+ * Devuelve un superset de StockMove: la respuesta del endpoint incluye
+ * `product_details`, `warehouse_details`, `uom_details`, `unit_cost`,
+ * `adjustment_reason`, `journal_entry` que no están en el shape de la lista.
+ * Tipado genérico para que el caller refine sin acoplar.
+ */
+export function useStockMove<T = StockMove>(id: string | number | null | undefined) {
+    return useQuery<T>({
+        queryKey: id ? [...STOCK_MOVES_QUERY_KEY, 'detail', id] : [...STOCK_MOVES_QUERY_KEY, 'detail', 'noop'],
+        queryFn: async () => {
+            const res = await api.get<T>(`/inventory/stock_moves/${id}/`)
+            return res.data
+        },
+        enabled: id !== null && id !== undefined && id !== '',
+    })
+}
+
 export function useStockMoves(filters: StockMoveFilters = {}) {
     const { page = 1, page_size = 50, ...rest } = filters
 

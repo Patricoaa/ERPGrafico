@@ -1,13 +1,21 @@
 "use client"
 
 import React from "react"
-import { useQuery } from "@tanstack/react-query"
 import { notFound } from "next/navigation"
-import api from "@/lib/api"
 import { EntityDetailPage, LabeledContainer, SkeletonShell, Chip, MoneyDisplay } from "@/components/shared"
 import { formatPlainDate } from "@/lib/utils"
 import { formatEntityDisplay } from "@/lib/entity-registry"
-import type { StockMove } from "@/features/inventory/hooks/useStockMoves"
+import { useStockMove, type StockMove } from "@/features/inventory/hooks/useStockMoves"
+
+// Forma extendida del detalle (incluye campos no presentes en el shape de la lista).
+type StockMoveDetail = StockMove & {
+    product_details?: { name: string }
+    warehouse_details?: { name: string }
+    uom_details?: { name: string }
+    unit_cost?: number | string
+    adjustment_reason?: string
+    journal_entry?: string
+}
 
 interface StockMoveDetailClientProps {
     moveId: string
@@ -33,15 +41,12 @@ const STOCK_MOVE_SKELETON: StockMove = {
 }
 
 export function StockMoveDetailClient({ moveId }: StockMoveDetailClientProps) {
-    const { data: move, isLoading: loading, error: queryError } = useQuery({
-        queryKey: ['stockMove', moveId],
-        queryFn: async () => {
-            const res = await api.get(`/inventory/stock_moves/${moveId}/`)
-            return res.data
-        }
-    })
+    // useStockMove cachea por STOCK_MOVES_QUERY_KEY + ['detail', id] → cualquier
+    // mutación que invalide STOCK_MOVES_QUERY_KEY (p.ej. useStockAdjustment)
+    // refresca también este detalle.
+    const { data: move, isLoading: loading, error: queryError } = useStockMove<StockMoveDetail>(moveId)
 
-    const error = queryError ? (queryError as any).response?.status || 500 : null
+    const error = queryError ? (queryError as { response?: { status?: number } })?.response?.status ?? 500 : null
 
     if (error === 404) return notFound()
     if (error) return <div className="p-8 text-destructive">Error al cargar el movimiento de stock</div>
