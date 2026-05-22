@@ -8,10 +8,8 @@ import { DataTable } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { DataCell, createActionsColumn } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
-import api from "@/lib/api"
+// useDeletePricingRule consumido vía usePricingRules.
 import { PricingRuleForm } from "@/features/sales/components/PricingRuleForm"
-import { Pencil, Trash2 } from "lucide-react"
-
 import { toast } from "sonner"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 
@@ -55,7 +53,7 @@ import { pricingRuleSearchDef } from "@/features/inventory/searchDef"
 
 export function PricingRuleList({ externalOpen, onExternalOpenChange, createAction }: PricingRuleListProps) {
     const { filters } = useSmartSearch(pricingRuleSearchDef)
-    const { rules, isLoading, refetch } = usePricingRules(filters)
+    const { rules, isLoading, refetch, deletePricingRule } = usePricingRules(filters)
     const [editingRule, setEditingRule] = useState<PricingRule | null>(null)
     const [isFormOpen, setIsFormOpen] = useState(false)
 
@@ -77,9 +75,10 @@ export function PricingRuleList({ externalOpen, onExternalOpenChange, createActi
 
     const deleteConfirm = useConfirmAction<number>(async (id) => {
         try {
-            await api.delete(`/inventory/pricing-rules/${id}/`)
+            // deletePricingRule invalida PRICING_RULES + PRODUCTS_KEYS;
+            // refetch local opcional (la invalidación dispara re-fetch del listado).
+            await deletePricingRule(id)
             toast.success("Regla eliminada correctamente.")
-            refetch()
         } catch (error) {
             console.error("Error deleting rule:", error)
             showApiError(error, "Error al eliminar la regla.")
@@ -205,8 +204,8 @@ export function PricingRuleList({ externalOpen, onExternalOpenChange, createActi
         createActionsColumn<PricingRule>({
             renderActions: (item) => (
                 <>
-                    <DataCell.Action icon={Pencil} title="Editar" onClick={() => { setEditingRule(item); setIsFormOpen(true) }} />
-                    <DataCell.Action icon={Trash2} title="Eliminar" className="text-destructive" onClick={() => handleDelete(item.id)} />
+                    <DataCell.Action action="edit" onClick={() => { setEditingRule(item); setIsFormOpen(true) }} />
+                    <DataCell.Action action="delete" onClick={() => handleDelete(item.id)} />
                 </>
             ),
         }),
