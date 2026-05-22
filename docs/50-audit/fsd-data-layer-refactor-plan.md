@@ -198,33 +198,26 @@ Cero `import api from '@/lib/api'`. Cero `useMutation` directo. Las toasts y la 
 
 ## Prerrequisito mecánico — ESLint rule
 
-Antes del primer feature, agregar dos reglas a [frontend/.eslintrc.json](../../frontend/.eslintrc.json) (o equivalente):
+El config actual ([frontend/eslint.config.mjs](../../frontend/eslint.config.mjs)) **ya bloquea como `error`**:
 
-```jsonc
-{
-  "rules": {
-    "no-restricted-imports": ["error", {
-      "patterns": [{
-        "group": ["@/lib/api"],
-        "message": "Importar API client solo desde features/*/api/ — invariante #5.",
-        "importNames": ["default"]
-      }]
-    }],
-    // Opcional pero recomendable:
-    "@typescript-eslint/no-restricted-imports": ["error", {
-      "paths": [{
-        "name": "@tanstack/react-query",
-        "importNames": ["useQuery", "useMutation"],
-        "message": "Envolver en un hook de feature — invariante #4."
-      }]
-    }]
-  }
-}
-```
+- `useQuery`/`useMutation`/`useSuspenseQuery` directos en `features/*/components/**` (invariante #4).
+- Imports de `@/lib/api` en `components/shared/**` y `components/ui/**` (no-restricted-imports `warn` para shared, además `boundaries/dependencies` `error` cierra acceso a `lib/*`).
 
-Con overrides para que `features/*/api/`, `features/*/hooks/`, y `hooks/` sí puedan importar.
+Lo que **falta** es bloquear el `import api from '@/lib/api'` (default-only) en `features/*/components/**`. Esto no se puede añadir trivialmente: ESLint flat-config **sobrescribe** la regla `no-restricted-imports` entre bloques que matchean los mismos files (no mergea). Si se añade un segundo bloque con `no-restricted-imports` en `warn` para el api default, **se pierde** la restricción `error` de tanstack en esos files.
 
-**Sin esto el refactor no es durable**: las violaciones reaparecen apenas alguien escribe código nuevo.
+Caminos viables (elegir uno antes de empezar):
+
+1. **Plugin custom** (recomendado a futuro). Un rule custom `fsd/no-api-in-component` que se compone con las otras restricciones sin colisión de nombre. Esfuerzo: 1-2h escribir el plugin local.
+2. **Big-bang error**. Cuando todas las features estén migradas, añadir `@/lib/api` como entrada en el `paths[]` existente de `no-restricted-imports` (severidad `error`). Esto no es viable mientras quedan 119 violaciones.
+3. **Manual review en PR**. Revisión humana hasta que (1) o (2) sea posible. Frágil pero suficiente si el refactor avanza rápido.
+
+**Mientras tanto**, el barrier mecánico real es:
+
+- `boundaries/dependencies` ya prohíbe que `components/shared/**` toque `lib/api`.
+- `no-restricted-imports` ya prohíbe `useQuery`/`useMutation` en feature components.
+- Un PR template / checklist con `grep -rn "import api from" features/<feature>/components/` antes de mergear.
+
+Documentar en cada PR de migración cuántas violaciones quedan; cuando llegue a 0 globalmente, ejecutar el camino (2).
 
 ## Orden de migración
 
