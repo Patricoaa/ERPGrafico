@@ -1,3 +1,12 @@
+---
+layer: 90-governance
+doc: import-rules
+status: active
+owner: core-team
+last_review: 2026-05-21
+stability: stable
+---
+
 # Reglas de Importación
 
 Este documento establece las políticas obligatorias para la importación de módulos en el proyecto ERPGrafico.

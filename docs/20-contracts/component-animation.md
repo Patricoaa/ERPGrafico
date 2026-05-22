@@ -1,3 +1,12 @@
+---
+layer: 20-contracts
+doc: component-animation
+status: active
+owner: frontend-team
+last_review: 2026-05-21
+stability: stable
+---
+
 # Contrato de Arquitectura: Animaciones y Transiciones de Vista
 
 Este contrato define las reglas de gobernanza, criterios de uso, especificaciones técnicas y la guía de referencia módulo por módulo para la aplicación de animaciones de entrada locales en todo el ecosistema de **ERPGrafico** (excluyendo vistas del POS).

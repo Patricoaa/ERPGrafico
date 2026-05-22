@@ -1,3 +1,12 @@
+---
+layer: 30-playbooks
+doc: bank-reconciliation-roadmap
+status: active
+owner: core-team
+last_review: 2026-05-21
+kind: roadmap
+---
+
 # Bank Reconciliation — Roadmap LLM-Executable
 
 **Audiencia:** agente LLM (Claude Code u otro) ejecutando tareas atómicas.

@@ -1,3 +1,12 @@
+---
+layer: 20-contracts
+doc: component-product-selector
+status: active
+owner: frontend-team
+last_review: 2026-05-21
+stability: stable
+---
+
 # Contrato: ProductSelector
 
 El componente `ProductSelector` y sus subcomponentes conforman la familia de selección de productos en catálogo dentro de `@/components/shared`. 

@@ -1,3 +1,12 @@
+---
+layer: 30-playbooks
+doc: home-server-setup
+status: active
+owner: core-team
+last_review: 2026-05-21
+kind: setup
+---
+
 # Playbook: Setup de Home Server (Proxmox + Cloudflare R2)
 
 Este manual guía la creación de un entorno de desarrollo profesional en hardware propio.
