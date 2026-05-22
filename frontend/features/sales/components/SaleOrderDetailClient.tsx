@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useMemo, useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { notFound, useRouter } from "next/navigation"
 import api from "@/lib/api"
@@ -8,6 +8,7 @@ import { EntityDetailPage, FormFooter, SubmitButton, CancelButton, FormSkeleton 
 import { SaleOrderForm } from "./forms/SaleOrderForm"
 import { toast } from "sonner"
 import { SaleOrderSidebar } from "./SaleOrderSidebar"
+import { useEntitySubscription } from "@/features/realtime"
 
 interface SaleOrderDetailClientProps {
     orderId: string
@@ -16,9 +17,15 @@ interface SaleOrderDetailClientProps {
 export function SaleOrderDetailClient({ orderId }: SaleOrderDetailClientProps) {
     const [isSaving, setIsSaving] = useState(false)
     const router = useRouter()
-    
+
+    const detailQueryKey = useMemo(() => ['saleOrder', orderId] as const, [orderId])
+    const detailKeys = useMemo(() => [detailQueryKey], [detailQueryKey])
+
+    // Remote-change / cross-tab refresh for THIS sale order — see ADR-0026.
+    useEntitySubscription(`sales.saleorder.${orderId}`, detailKeys)
+
     const { data: order, isLoading: loading, error: queryError } = useQuery({
-        queryKey: ['saleOrder', orderId],
+        queryKey: detailQueryKey,
         queryFn: async () => {
             const res = await api.get(`/sales/orders/${orderId}/`)
             return res.data
