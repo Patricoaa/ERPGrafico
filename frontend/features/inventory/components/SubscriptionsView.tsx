@@ -2,7 +2,7 @@
 
 import { showApiError } from "@/lib/errors"
 
-import { useState, useEffect, useMemo, useCallback } from "react"
+import { useState, useMemo, useCallback } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import {
     ColumnDef
@@ -17,7 +17,6 @@ import {
     Archive,
     History
 } from "lucide-react"
-import api from "@/lib/api"
 import { toast } from "sonner"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { StatusBadge, Chip } from "@/components/shared"
@@ -32,7 +31,8 @@ import { PageHeader, PageHeaderButton, SmartSearchBar, useSmartSearch } from "@/
 import { Restriction } from "@/features/inventory/types"
 import { PageContainer } from "@/components/shared"
 import { cn } from "@/lib/utils"
-import { useSubscriptions, type Subscription } from "@/features/inventory/hooks/useSubscriptions"
+import { useSubscriptions, useSubscriptionStats, type Subscription } from "@/features/inventory/hooks/useSubscriptions"
+import { useProducts } from "@/features/inventory/hooks/useProducts"
 import { subscriptionSearchDef } from "@/features/inventory/searchDef"
 
 // Subscription type imported from useSubscriptions hook
@@ -53,8 +53,9 @@ interface SubscriptionsViewProps {
 
 export function SubscriptionsView({ hideHeader = false, externalOpen = false, createAction }: SubscriptionsViewProps) {
     const { filters } = useSmartSearch(subscriptionSearchDef)
-    const { subscriptions, isLoading: loading, refetch: fetchSubscriptions } = useSubscriptions(filters)
-    const [stats, setStats] = useState<Stats | null>(null)
+    const { subscriptions, isLoading: loading, refetch: fetchSubscriptions, pauseSubscription, resumeSubscription } = useSubscriptions(filters)
+    const { data: stats } = useSubscriptionStats<Stats>()
+    const { updateProduct, fetchProductById } = useProducts()
 
     // Form & Actions state
     const [isFormOpen, setIsFormOpen] = useState(false)
@@ -84,29 +85,17 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false, cr
         }
     }
 
-    const fetchStats = useCallback(async () => {
-        try {
-            const response = await api.get('/inventory/subscriptions/stats/')
-            setStats(response.data)
-        } catch (error) {
-            console.error("Error fetching stats:", error)
-        }
-    }, [])
-
-    useEffect(() => {
-        fetchStats()
-    }, [])
+    // stats viene reactivo de useSubscriptionStats (declarado al inicio).
+    // pause/resume invalidan SUBSCRIPTIONS + PRODUCTS_KEYS automáticamente.
 
     const handlePause = useCallback(async (id: number) => {
         try {
-            await api.post(`/inventory/subscriptions/${id}/pause/`)
+            await pauseSubscription(id)
             toast.success("Suscripción pausada")
-            fetchSubscriptions()
-            fetchStats()
         } catch (error: unknown) {
             showApiError(error, "Error al pausar suscripción")
         }
-    }, [fetchSubscriptions, fetchStats])
+    }, [pauseSubscription])
 
     const handleArchive = useCallback(async () => {
         if (!currentArchivingProduct) return
@@ -116,9 +105,8 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false, cr
         }
 
         try {
-            await api.patch(`/inventory/products/${currentArchivingProduct.id}/`, { active: false })
+            await updateProduct({ id: currentArchivingProduct.id, payload: { active: false } as never })
             toast.success("Producto archivado correctamente")
-            fetchSubscriptions()
             setIsConfirmModalOpen(false)
             setIsRestrictionsDialogOpen(false)
         } catch (error: unknown) {
@@ -136,31 +124,30 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false, cr
         } finally {
             setIsRetrying(false)
         }
-    }, [currentArchivingProduct, isRestrictionsDialogOpen, fetchSubscriptions])
+    }, [currentArchivingProduct, isRestrictionsDialogOpen, updateProduct])
 
     const openEditForm = useCallback(async (productId: number) => {
         try {
-            const response = await api.get(`/inventory/products/${productId}/`)
-            setEditingProduct(response.data)
+            // fetchProductById usa cache de TanStack Query si está fresh, fetch en otro caso.
+            const product = await fetchProductById(productId)
+            setEditingProduct(product as Product)
             setIsFormOpen(true)
         } catch (error) {
             console.error("Error fetching product details:", error)
             showApiError(error, "Error al cargar detalles del producto")
         }
-    }, [])
+    }, [fetchProductById])
 
 
 
     const handleResume = useCallback(async (id: number) => {
         try {
-            await api.post(`/inventory/subscriptions/${id}/resume/`)
+            await resumeSubscription(id)
             toast.success("Suscripción reactivada")
-            fetchSubscriptions()
-            fetchStats()
         } catch (error: unknown) {
             showApiError(error, "Error al reactivar suscripción")
         }
-    }, [fetchSubscriptions, fetchStats])
+    }, [resumeSubscription])
 
     const getPaymentScheduleText = (sub: Subscription) => {
         if (sub.payment_day_type === "FIXED_DAY" && sub.payment_day) {
@@ -343,10 +330,8 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false, cr
             disabled: (items) => items.length === 0 || !items.every(s => s.status === "ACTIVE"),
             onClick: async (items) => {
                 try {
-                    await Promise.all(items.map(s => api.post(`/inventory/subscriptions/${s.id}/pause/`)))
+                    await Promise.all(items.map(s => pauseSubscription(s.id)))
                     toast.success(`${items.length} suscripciones pausadas`)
-                    fetchSubscriptions()
-                    fetchStats()
                 } catch (error) {
                     showApiError(error, "Error al pausar suscripciones")
                 }
@@ -360,10 +345,8 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false, cr
             disabled: (items) => items.length === 0 || !items.every(s => s.status === "PAUSED"),
             onClick: async (items) => {
                 try {
-                    await Promise.all(items.map(s => api.post(`/inventory/subscriptions/${s.id}/resume/`)))
+                    await Promise.all(items.map(s => resumeSubscription(s.id)))
                     toast.success(`${items.length} suscripciones reactivadas`)
-                    fetchSubscriptions()
-                    fetchStats()
                 } catch (error) {
                     showApiError(error, "Error al reactivar suscripciones")
                 }
@@ -377,15 +360,14 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false, cr
             disabled: (items) => items.length === 0 || !items.every(s => s.status === "ACTIVE" || s.status === "PAUSED"),
             onClick: async (items) => {
                 try {
-                    await Promise.all(items.map(s => api.patch(`/inventory/products/${s.product}/`, { active: false })))
+                    await Promise.all(items.map(s => updateProduct({ id: s.product, payload: { active: false } as never })))
                     toast.success(`${items.length} productos de suscripción archivados`)
-                    fetchSubscriptions()
                 } catch (error) {
                     showApiError(error, "Error al archivar suscripciones")
                 }
             },
         },
-    ], [fetchSubscriptions, fetchStats])
+    ], [pauseSubscription, resumeSubscription, updateProduct])
 
     return (
         <PageContainer className={cn("h-full flex flex-col", hideHeader && "pt-0")}>
