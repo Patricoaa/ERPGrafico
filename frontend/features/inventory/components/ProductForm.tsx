@@ -7,8 +7,11 @@ import { BaseModal } from "@/components/shared/BaseModal"
 import { useForm, FieldErrors, UseFormReturn } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
-import api, { resolveMediaUrl } from "@/lib/api"
+import { resolveMediaUrl } from "@/lib/api"
 import { useProducts } from "../hooks/useProducts"
+import { useUoMs } from "../hooks/useUoMs"
+import { useWarehouses } from "../hooks/useWarehouses"
+import { useProductPricingRules } from "../hooks/usePricingRules"
 import { ShoppingCart, Package, Truck, Layers, Factory, Loader2, History, DollarSign, Fingerprint } from "lucide-react"
 import { showApiError } from "@/lib/errors"
 import { Form } from "@/components/ui/form"
@@ -45,20 +48,21 @@ interface ProductFormProps {
 }
 
 export function ProductForm({ sidebar, open, onOpenChange, initialData, onSuccess, lockedType, variantMode = false, inline = false, onLoadingChange }: ProductFormProps) {
-    const { saveProduct } = useProducts()
+    const { saveProduct, products, isLoading: isLoadingProducts } = useProducts()
+    const { uoms, isUoMsLoading: isLoadingUoMs } = useUoMs()
+    const { warehouses, isLoading: isLoadingWarehouses } = useWarehouses()
+    const { rules: pricingRules, isLoading: isLoadingPricingRules, refetch: refetchPricingRules } = useProductPricingRules(initialData?.id ?? null)
+
     const [loading, setLoading] = useState(false)
-    const [uoms, setUoms] = useState<UoM[]>([])
-    const [warehouses, setWarehouses] = useState<Warehouse[]>([])
     const [imagePreview, setImagePreview] = useState<string | null>(null)
-    const [products, setProducts] = useState<Product[]>([])
-    const [pricingRules, setPricingRules] = useState<any[]>([])
     const [selectedPricingRule, setSelectedPricingRule] = useState<any | null>(null)
     const [pricingRuleDialogOpen, setPricingRuleDialogOpen] = useState(false)
     const [variantsRefreshKey, setVariantsRefreshKey] = useState(0)
     const [confirmCloseOpen, setConfirmCloseOpen] = useState(false)
 
-    // UI UX Pro Max: Track initial load for advanced skeletons
-    const [isFetchingInitialData, setIsFetchingInitialData] = useState(false)
+    // Compuesto desde los hooks de reads — el padre lo expone como prop para
+    // que paneles internos (tabs) reaccionen al boot.
+    const isFetchingInitialData = open && (isLoadingUoMs || isLoadingWarehouses || isLoadingProducts || (initialData?.id ? isLoadingPricingRules : false))
 
     const [activeTab, setActiveTab] = useState("general")
 
@@ -248,63 +252,14 @@ export function ProductForm({ sidebar, open, onOpenChange, initialData, onSucces
     }, [stockUomId, uoms])
 
 
-    const fetchUoMs = async () => {
-        try {
-            const res = await api.get("/inventory/uoms/")
-            setUoms(res.data.results || res.data)
-        } catch (error) {
-            console.error("Error fetching UoMs:", error)
-        }
-    }
-
-    const fetchWarehouses = async () => {
-        try {
-            const res = await api.get('/inventory/warehouses/')
-            setWarehouses(res.data.results || res.data)
-        } catch (error) {
-            console.error("Error fetching Warehouses", error)
-        }
-    }
-
-    const fetchProducts = async () => {
-        try {
-            const res = await api.get('/inventory/products/')
-            setProducts(res.data.results || res.data)
-        } catch (error) {
-            console.error("Error fetching products", error)
-        }
-    }
-
-    const fetchPricingRules = async () => {
-        if (!initialData?.id) return
-        try {
-            const res = await api.get(`/inventory/pricing-rules/?product=${initialData.id}`)
-            setPricingRules(res.data.results || res.data)
-        } catch (error) {
-            console.error("Error fetching pricing rules", error)
-        }
-    }
-
-
+    // uoms / warehouses / products / pricingRules vienen de hooks reactivos
+    // (useUoMs / useWarehouses / useProducts / useProductPricingRules) declarados
+    // arriba. No hace falta fetch imperativo ni Promise.all — TanStack Query
+    // re-fetchea automáticamente cuando productId / initialData.id cambia.
 
     useEffect(() => {
         if (open) {
             setActiveTab("general")
-            setIsFetchingInitialData(true)
-
-            const initOperations = [
-                fetchUoMs(),
-                fetchProducts(),
-                fetchWarehouses()
-            ];
-
-            if (initialData?.id) {
-                initOperations.push(fetchPricingRules())
-            }
-
-            Promise.all(initOperations).finally(() => {
-                setIsFetchingInitialData(false)
-            });
 
             if (initialData) {
                 const getId = (val: unknown): string => {
@@ -431,7 +386,8 @@ export function ProductForm({ sidebar, open, onOpenChange, initialData, onSucces
                     preferred_supplier: "",
                 })
                 setImagePreview(null)
-                setPricingRules([])
+                // pricingRules viene de useProductPricingRules — al crear un
+                // producto nuevo (sin initialData.id) el hook ya devuelve [].
             }
         }
     }, [open, initialData])
@@ -760,7 +716,7 @@ export function ProductForm({ sidebar, open, onOpenChange, initialData, onSucces
                                         <ProductPricingTab
                                             initialData={initialData}
                                             pricingRules={pricingRules}
-                                            fetchPricingRules={fetchPricingRules}
+                                            fetchPricingRules={refetchPricingRules}
                                             onOpenRuleDialog={(rule) => {
                                                 setSelectedPricingRule(rule || null)
                                                 setPricingRuleDialogOpen(true)
@@ -793,7 +749,7 @@ export function ProductForm({ sidebar, open, onOpenChange, initialData, onSucces
                     if (!open) setSelectedPricingRule(null)
                 }}
                 initialData={selectedPricingRule}
-                onSuccess={fetchPricingRules}
+                onSuccess={refetchPricingRules}
                 productId={initialData?.id}
                 productName={initialData?.name}
             />
