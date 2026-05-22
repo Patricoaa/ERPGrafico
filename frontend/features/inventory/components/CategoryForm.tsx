@@ -14,7 +14,7 @@ import {
     Form,
     FormField
 } from "@/components/ui/form"
-import api from "@/lib/api"
+import { useCategories } from "../hooks/useCategories"
 import { AccountSelector, CategorySelector } from "@/components/selectors"
 import * as LucideIcons from "lucide-react"
 import { Check } from "lucide-react"
@@ -182,6 +182,7 @@ export function CategoryForm({
     const open = openProp !== undefined ? openProp : openState
     const setOpen = onOpenChange || setOpenState
 
+    const { saveCategory } = useCategories()
     const [loading, setLoading] = useState(false)
 
     const form = useForm<CategoryFormValues>({
@@ -258,15 +259,12 @@ export function CategoryForm({
                 expense_account: (data.has_custom_accounting && data.expense_account && data.expense_account !== "__none__" && data.expense_account !== "none") ? data.expense_account : null,
             }
 
-            let response;
-            if (initialData) {
-                response = await api.put(`/inventory/categories/${initialData.id}/`, payload)
-            } else {
-                response = await api.post('/inventory/categories/', payload)
-            }
+            // saveCategory invalida CATEGORIES_KEYS.all (lista + detalle) y
+            // emite toast + markLocalMutation desde el hook.
+            const response = await saveCategory({ id: initialData?.id ?? null, payload })
             form.reset()
             setOpen(false)
-            if (onSuccess) onSuccess(response.data)
+            if (onSuccess) onSuccess(response)
         } catch (error: unknown) {
             console.error("Error saving category:", error)
         } finally {
