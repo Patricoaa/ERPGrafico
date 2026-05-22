@@ -4,7 +4,7 @@ doc: fsd-data-layer-audit
 status: active
 owner: core-team
 last_review: 2026-05-22
-stability: snapshot-of-codebase-state
+stability: snapshot-updated-as-features-migrate
 ---
 
 # FSD Data Layer Audit — estado real de mutaciones y caché
@@ -48,66 +48,60 @@ Snapshot tomado el 2026-05-22 sobre el commit `874fc7bd` (rama `feat/Nuevo-siste
 
 ## Resumen ejecutivo
 
-| Estado | Definición | Count | % |
+| Estado | Definición | Snapshot 2026-05-22 | Tras inventory sweep |
 |---|---|---|---|
-| **Compliant** | Tiene `queryKeys.ts` (o no muta) + 0 violaciones de #4/#5 | 5 | 22% |
-| **Mostly compliant** | <5 violaciones combinadas, infraestructura FSD presente | 6 | 26% |
-| **Anti-pattern** | ≥5 violaciones o ausencia de infraestructura FSD | 12 | 52% |
+| **Compliant** | Tiene `queryKeys.ts` (o no muta) + 0 violaciones de #4/#5 | 5 (22%) | **6 (26%)** |
+| **Mostly compliant** | <5 violaciones combinadas, infraestructura FSD presente | 6 (26%) | 5 (22%) |
+| **Anti-pattern** | ≥5 violaciones o ausencia de infraestructura FSD | 12 (52%) | 12 (52%) |
 
 Violaciones agregadas:
 
-- **#5 (api directo en componentes):** 119 ocurrencias en 20 features.
-- **#4 (useQuery/Mutation en componentes):** 33 ocurrencias en 11 features.
-- **Sin `queryKeys.ts`:** 15 de 23 features (65%).
-- **Sin `api/` folder:** 9 de 23 features (39%).
+| Métrica | Snapshot 2026-05-22 | Tras inventory sweep |
+|---|---|---|
+| #5 (api directo en componentes) | 119 en 20 features | **95 en 19 features** |
+| #4 (useQuery/Mutation en componentes) | 33 en 11 features | **29 en 10 features** |
+| Sin `queryKeys.ts` | 15 de 23 (65%) | 15 de 23 (65%) |
+| Sin `api/` folder | 9 de 23 (39%) | 9 de 23 (39%) |
+
+Inventory cerró su 21 + 4 violaciones en 22 commits incrementales. Sales recibe sweep
+parcial vía piloto realtime (11 → 10 #5). Resto sin cambios.
 
 ## Tabla maestra por feature
 
-| Feature | `queryKeys.ts` | `api/` folder | Archivos en `hooks/` | Violaciones #5 | Violaciones #4 | Estado |
-|---|:---:|:---:|:---:|:---:|:---:|---|
-| accounting | ✓ | ✓ | 8 | 1 | 1 | Mostly compliant |
-| audit | ✗ | ✗ | 1 | 0 | 0 | Compliant (read-only) |
-| auth | ✗ | ✗ | 0 | 1 | 0 | Anti-pattern |
-| billing | ✓ | ✓ | 3 | 5 | 1 | Anti-pattern |
-| contacts | ✓ | ✓ | 3 | 2 | 1 | Mostly compliant |
-| credits | ✗ | ✓ | 1 | 0 | 0 | Compliant (read-only) |
-| finance | ✗ | ✗ | 3 | 8 | 1 | Anti-pattern |
-| hr | ✗ | ✓ | 4 | 0 | 3 | Mostly compliant |
-| **inventory** | ✓ | ✓ | 12 | **21** | 4 | **Anti-pattern (peor ofensor)** |
-| notifications | ✗ | ✗ | 1 | 0 | 0 | Compliant |
-| orders | ✗ | ✗ | 1 | 8 | 0 | Anti-pattern |
-| pos | ✗ | ✗ | 8 | 4 | 1 | Anti-pattern |
-| production | ✗ | ✗ | 11 | 4 | 3 | Anti-pattern |
-| profile | ✗ | ✓ | 1 | 0 | 0 | Compliant |
-| purchasing | ✓ | ✗ | 2 | 9 | 1 | Anti-pattern |
-| realtime | ✗ | ✗ | 0 | 0 | 0 | Compliant (infra-only) |
-| **sales** | ✓ | ✓ | 4 | **11** | 4 | Anti-pattern |
-| search | ✗ | ✓ | 1 | 0 | 0 | Compliant (aggregator) |
-| **settings** | ✗ | ✓ | 8 | **11** | 1 | Anti-pattern |
-| tax | ✗ | ✗ | 0 | 4 | 0 | Anti-pattern |
-| **treasury** | ✓ | ✓ | 7 | **12** | 3 | Anti-pattern |
-| users | ✗ | ✗ | 3 | 3 | 0 | Anti-pattern |
-| workflow | ✗ | ✓ | 1 | 3 | 1 | Anti-pattern |
+Las columnas #5 y #4 muestran `inicial → actual` cuando hubo cambio. Estado refleja el actual.
 
-## Top 4 ofensores — archivos exactos
+| Feature | `queryKeys.ts` | `api/` folder | Violaciones #5 | Violaciones #4 | Estado |
+|---|:---:|:---:|:---:|:---:|---|
+| accounting | ✓ | ✓ | 1 | 1 | Mostly compliant |
+| audit | ✗ | ✗ | 0 | 0 | Compliant (read-only) |
+| auth | ✗ | ✗ | 1 | 0 | Anti-pattern |
+| billing | ✓ | ✓ | 5 | 1 | Anti-pattern |
+| contacts | ✓ | ✓ | 2 | 1 | Mostly compliant |
+| credits | ✗ | ✓ | 0 | 0 | Compliant (read-only) |
+| finance | ✗ | ✗ | 8 | 1 | Anti-pattern |
+| hr | ✗ | ✓ | 0 | 3 | Mostly compliant |
+| **inventory** | ✓ | ✓ | **21 → 0** ✅ | **4 → 0** ✅ | **Compliant (sweep completado)** |
+| notifications | ✗ | ✗ | 0 | 0 | Compliant |
+| orders | ✗ | ✗ | 8 | 0 | Anti-pattern |
+| pos | ✗ | ✗ | 4 | 0 → 1 | Anti-pattern |
+| production | ✗ | ✗ | 4 | 3 | Anti-pattern |
+| profile | ✗ | ✓ | 0 | 0 | Compliant |
+| purchasing | ✓ | ✗ | 9 | 1 | Anti-pattern |
+| realtime | ✗ | ✗ | 0 | 0 | Compliant (infra-only) |
+| **sales** | ✓ | ✓ | **11 → 10** | 4 | Anti-pattern (próximo en cola) |
+| search | ✗ | ✓ | 0 | 0 | Compliant (aggregator) |
+| **settings** | ✗ | ✓ | **11** | 1 | Anti-pattern |
+| tax | ✗ | ✗ | 4 | 0 | Anti-pattern |
+| **treasury** | ✓ | ✓ | **12** | 3 | Anti-pattern |
+| users | ✗ | ✗ | 3 | 0 | Anti-pattern |
+| workflow | ✗ | ✓ | 3 | 0 | Anti-pattern |
 
-### inventory (21 violaciones #5)
+## Top ofensores actuales — archivos exactos
 
-```
-SubscriptionHistoryModal.tsx        AdjustmentForm.tsx
-CategoryForm.tsx                    ProductInsightsModal.tsx
-UoMCategoryForm.tsx                 ProductForm.tsx
-CategoryDetailClient.tsx            PricingRuleList.tsx
-UoMCategoryList.tsx                 product/ProductPricingTab.tsx
-WarehouseDetailClient.tsx           product/VariantQuickEditForm.tsx
-ProductDetailClient.tsx             product/BulkVariantEditFormV2.tsx
-WarehouseForm.tsx                   product/ProductVariantsTab.tsx
-AttributeManager.tsx                product/BulkVariantEditForm.tsx
-StockMoveDetailClient.tsx           SubscriptionsView.tsx
-ProductList.tsx
-```
+### inventory — completado (21 → 0)
 
-Sub-entidades involucradas: `Product` (+ variants), `Category`, `Warehouse`, `UoMCategory`, `StockMove`, `PricingRule`, `Attribute`, `Adjustment`, `Subscription`.
+✅ Sweep completado en 22 commits incrementales. Detalle de hooks creados y patrones
+aplicados en [fsd-data-layer-refactor-plan.md](fsd-data-layer-refactor-plan.md).
 
 ### treasury (12 violaciones #5)
 
@@ -122,16 +116,19 @@ TransferModal.tsx                   MasterDataManagement.tsx
 
 Sub-entidades: `Terminal`, `TerminalBatch`, `POSSession`, `TreasuryMovement`, `BankStatement`, `Payment`, `PaymentReference`, `MonthlyInvoice`, `Transfer`, `CashMovement`.
 
-### sales (11 violaciones #5)
+### sales (10 violaciones #5 — siguiente en cola)
 
 ```
-checkout/Step3_Delivery.tsx                checkout/SalesCheckoutWizardContent.tsx
-SalesOrdersClientView.tsx                  forms/SaleOrderForm.tsx
-SaleReturnDetailClient.tsx                 SaleNoteModal.tsx
-SaleOrderDetailClient.tsx                  POSSessionsView.tsx
-DeliveryDetailClient.tsx                   DeliveryModal.tsx
-PricingRuleForm.tsx
+SalesOrdersClientView.tsx                  checkout/SalesCheckoutWizardContent.tsx
+SaleOrderDetailClient.tsx                  checkout/Step3_Delivery.tsx
+SaleReturnDetailClient.tsx                 PricingRuleForm.tsx
+DeliveryDetailClient.tsx                   POSSessionsView.tsx
+DeliveryModal.tsx                          SaleNoteModal.tsx
 ```
+
+`forms/SaleOrderForm.tsx` ya no existe (removido en otra rama). Sub-entidades activas
+en el sweep: `SaleOrder`, `SaleDelivery`, `SaleReturn`, `SaleNote`, `POSSession`,
+`PricingRule` (este último compartido con inventory — ya tiene hook).
 
 Nota: `useSalesOrders` ya existe con la mayoría de las mutaciones bien hechas (commit del piloto realtime). El gap está en `SaleOrderForm.tsx` (usa `api.put` directo) y los wizards de checkout.
 
