@@ -1,12 +1,15 @@
-# ADR-0019: Schema-Driven Forms - Reversión y Expansión
+---
+id: 0025
+title: Schema-Driven Forms — Reversión y Expansión (Phase 4 revert + blacklist)
+status: Accepted
+date: 2026-05-09
+author: core-team
+---
 
-**Fecha:** 2026-05-09
-**Estado:** Parcialmente superseded — ver nota abajo
-**Fase:** F8
-**Firmas Stakeholder:** @pato
+# 0025 — Schema-Driven Forms: Reversión y Expansión
 
 > [!WARNING]
-> **Vigencia parcial (2026-05-09):** Las secciones §2.1 (reverts de Phase 4) y §2.3 (lista negra) de este ADR **siguen vigentes**. La sección §2.2 (expansión schema-driven: vocabulario `FormMeta`, Widget Registry frontend) quedó **superseded por [ADR-0020](./0020-modal-on-list-edit-ux.md)**. La expansión schema-driven queda indefinidamente postergada; los formularios ricos existentes son el estándar canónico de edición. Ver ADR-0020 §5 para contexto completo.
+> **Vigencia parcial:** Las secciones §2.1 (reverts de Phase 4) y §2.3 (lista negra) de este ADR **siguen vigentes**. La sección §2.2 (expansión schema-driven: vocabulario `FormMeta`, Widget Registry frontend) quedó **supersedida por [ADR-0020](./0020-modal-on-list-edit-ux.md)**. La expansión schema-driven queda indefinidamente postergada; los formularios ricos existentes son el estándar canónico de edición. Ver ADR-0020 §5 para contexto completo.
 
 ## 1. Contexto y Origen del Problema
 

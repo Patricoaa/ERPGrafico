@@ -1,10 +1,14 @@
-# ADR-0016: Arquitectura Post-Refactor — F5 GenericForeignKey + ProductTypeStrategy
+---
+id: 0016
+title: Arquitectura Post-Refactor — F5 GenericForeignKey + ProductTypeStrategy
+status: Accepted
+date: 2026-05-08
+author: architecture-team
+---
 
-**Status:** Accepted  
-**Date:** 2026-05-08  
-**Authors:** Architecture team  
-**Supersedes:** N/A  
-**Related:** ADR-0011 (Strategy Pattern), ADR-0015 (DocumentService + Metadata Schema)
+# 0016 — Arquitectura Post-Refactor: F5 GenericForeignKey + ProductTypeStrategy
+
+**Related:** ADR-0024 (Strategy Pattern), ADR-0015 (DocumentService + Metadata Schema)
 
 ---
 

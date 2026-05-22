@@ -1,7 +1,12 @@
-# ADR 0005: Bank Reconciliation Routing Strategy
+---
+id: 0021
+title: Bank Reconciliation Routing Strategy
+status: Accepted
+date: 2026-05-07
+author: core-team
+---
 
-## Status
-Accepted
+# 0021 — Bank Reconciliation Routing Strategy
 
 ## Context
 During Sprint 7 (S7.1) of the Bank Reconciliation feature implementation, we identified a convoluted routing patterns with four different ways to access the "Workbench" (reconciliation engine) for a given bank statement:

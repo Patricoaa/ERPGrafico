@@ -35,7 +35,6 @@ frontend/
 │   ├── api.ts                 # Axios instance — features/ and hooks/ only
 │   ├── utils.ts               # Generic helpers (`cn`, formatters)
 │   └── auth.ts                # JWT helpers
-├── docs/architecture/         # Legacy — migrating to /docs/
 └── app/globals.css            # Tailwind 4 theme — single visual source
 ```
 
