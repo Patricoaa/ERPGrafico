@@ -4,13 +4,13 @@ import { showApiError } from "@/lib/errors"
 
 import React, { useEffect, useState, useMemo } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
-import api from "@/lib/api"
+// deleteUoMCategory consumido vía useUoMs.
 import { DataTable } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { DataCell, createActionsColumn } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Pencil, Trash2 } from "lucide-react"
+import { Trash2 } from "lucide-react"
 import type { BulkAction } from "@/components/shared"
 import { UoMCategoryForm } from "./UoMCategoryForm"
 import { toast } from "sonner"
@@ -34,7 +34,7 @@ import { SmartSearchBar, useClientSearch } from "@/components/shared"
 import { uomCategorySearchDef } from "@/features/inventory/searchDef"
 
 export function UoMCategoryList({ externalOpen, onExternalOpenChange, createAction }: UoMCategoryListProps) {
-    const { categories, isLoading, refetch } = useUoMs()
+    const { categories, isLoading, refetch, deleteUoMCategory } = useUoMs()
     const { filterFn } = useClientSearch<UoMCategory>(uomCategorySearchDef)
 
     // Modal State
@@ -66,9 +66,9 @@ export function UoMCategoryList({ externalOpen, onExternalOpenChange, createActi
 
     const deleteConfirm = useConfirmAction<number>(async (id) => {
         try {
-            await api.delete(`/inventory/uom-categories/${id}/`)
-            toast.success("Categoría eliminada")
-            refetch()
+            // deleteUoMCategory invalida UOM_CATEGORIES + UOMS (category_name derivado)
+            // y emite el toast desde el hook.
+            await deleteUoMCategory(id)
         } catch (error) {
             showApiError(error, "Error al eliminar (puede estar en uso)")
         }
@@ -109,8 +109,8 @@ export function UoMCategoryList({ externalOpen, onExternalOpenChange, createActi
         createActionsColumn<UoMCategory>({
             renderActions: (item) => (
                 <>
-                    <DataCell.Action icon={Pencil} title="Editar" onClick={() => { setCurrentCategory(item); setIsModalOpen(true) }} />
-                    <DataCell.Action icon={Trash2} title="Eliminar" className="text-destructive" onClick={() => handleDelete(item.id)} />
+                    <DataCell.Action action="edit" onClick={() => { setCurrentCategory(item); setIsModalOpen(true) }} />
+                    <DataCell.Action action="delete" onClick={() => handleDelete(item.id)} />
                 </>
             ),
         }),
@@ -125,15 +125,14 @@ export function UoMCategoryList({ externalOpen, onExternalOpenChange, createActi
             onClick: async (items) => {
                 if (!confirm(`¿Está seguro de que desea eliminar ${items.length} categorías de unidades?`)) return
                 try {
-                    await Promise.all(items.map(c => api.delete(`/inventory/uom-categories/${c.id}/`)))
+                    await Promise.all(items.map(c => deleteUoMCategory(c.id)))
                     toast.success(`${items.length} categorías eliminadas`)
-                    refetch()
                 } catch (error) {
                     showApiError(error, "Error al eliminar las categorías (pueden tener unidades asociadas)")
                 }
             },
         },
-    ], [])
+    ], [deleteUoMCategory])
 
 
     return (
