@@ -48,9 +48,9 @@ export function useProducts({ filters }: UseProductsProps = {}) {
             toast.success(vars.id === null ? 'Producto creado' : 'Producto actualizado')
             invalidateProductsAndBoms()
         },
-        onError: (e: Error) => {
-            toast.error(`Error al guardar el producto: ${e.message}`)
-        },
+        // Sin onError genérico aquí — el caller (ProductForm) muestra errores
+        // de validación con showApiError, que es más rico que un toast plano.
+        // Si mutateAsync rechaza, el .catch() del caller toma el control.
     })
 
     const deleteProductMutation = useMutation({
