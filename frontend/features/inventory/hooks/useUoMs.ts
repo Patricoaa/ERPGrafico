@@ -41,6 +41,27 @@ export const UOMS_QUERY_KEY = UOMS_KEYS.all
 /** @deprecated */
 export const UOM_CATEGORIES_QUERY_KEY = UOM_CATEGORIES_KEYS.all
 
+/**
+ * Endpoint `/inventory/uoms/allowed/?product_id=<id>&context=<sale|purchase>`.
+ * Devuelve sólo las UoMs permitidas para vender/comprar el producto, ya
+ * filtradas por restricciones del producto (allowed_sale_uoms, etc.).
+ */
+export function useAllowedUoMs(productId: number | string | null | undefined, context: 'sale' | 'purchase') {
+    return useQuery<{ id: number, name: string }[]>({
+        queryKey: productId
+            ? [...UOMS_KEYS.all, 'allowed', context, productId]
+            : [...UOMS_KEYS.all, 'allowed', context, 'noop'],
+        queryFn: async () => {
+            const res = await api.get<{ id: number, name: string }[]>(
+                `/inventory/uoms/allowed/?product_id=${productId}&context=${context}`,
+            )
+            return res.data
+        },
+        enabled: !!productId,
+        staleTime: 30 * 60 * 1000, // 30 min — datos quasi-estáticos por producto
+    })
+}
+
 // ─── Hook principal ──────────────────────────────────────────────────────────
 
 export function useUoMs(filters?: FilterState) {
