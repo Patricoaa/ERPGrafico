@@ -10,11 +10,10 @@ import { ColumnDef } from "@tanstack/react-table"
 import { DataCell, createActionsColumn } from '@/components/shared'
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { FileText, Lock } from "lucide-react"
-import api from "@/lib/api"
 import { toast } from "sonner"
-
 import { POSReport } from "@/features/pos/components/POSReport"
 import { SessionCloseModal } from "@/features/pos/components/SessionCloseModal"
+import { fetchPOSSessionSummary } from "@/features/pos/hooks/usePOSSessions"
 
 interface POSSession {
     id: number
@@ -76,8 +75,8 @@ export const POSSessionsView = ({ hideHeader = false }: POSSessionsViewProps) =>
 
     const handleShowReport = async (session: POSSession, type: "X" | "Z") => {
         try {
-            const response = await api.get(`/treasury/pos-sessions/${session.id}/summary/`)
-            setReportData(response.data)
+            const data = await fetchPOSSessionSummary<Record<string, unknown>>(session.id)
+            setReportData(data)
             setReportType(type)
             setReportDialogOpen(true)
         } catch (error) {
@@ -89,8 +88,8 @@ export const POSSessionsView = ({ hideHeader = false }: POSSessionsViewProps) =>
     const handleCloseSuccess = async () => {
         if (!selectedSession) return
         try {
-            const summaryResponse = await api.get(`/treasury/pos-sessions/${selectedSession.id}/summary/`)
-            setReportData(summaryResponse.data)
+            const data = await fetchPOSSessionSummary<Record<string, unknown>>(selectedSession.id)
+            setReportData(data)
             setReportType("Z")
             setReportDialogOpen(true)
             refetch()
