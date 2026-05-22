@@ -2,9 +2,9 @@
 import { formatCurrency } from "@/lib/money";
 import { formatPlainDate } from "@/lib/utils";
 
-import { FormSkeleton } from "@/components/shared"
+import { SkeletonShell } from "@/components/shared"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useMemo } from "react"
 import { BaseModal } from "@/components/shared/BaseModal"
 import {
     Table,
@@ -19,7 +19,7 @@ import {
     FileText,
     Receipt
 } from "lucide-react"
-import api from "@/lib/api"
+import { useSubscriptionHistory } from "../hooks/useSubscriptions"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { format, isWithinInterval, startOfDay, endOfDay } from "date-fns"
 import { es } from "date-fns/locale"
@@ -83,30 +83,26 @@ interface SubscriptionHistory {
     supplier_name: string
 }
 
+// Placeholder tipado para el esqueleto - sigue el patrón del contrato
+const SUBSCRIPTION_HISTORY_SKELETON: SubscriptionHistory = {
+    orders: [],
+    price_history: [],
+    notes: [],
+    product_name: "————————————",
+    supplier_name: "————————————"
+}
+
 export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }: SubscriptionHistoryModalProps) {
-    const [data, setData] = useState<SubscriptionHistory | null>(null)
-    const [loading, setLoading] = useState(false)
+    // useSubscriptionHistory cachea por subscriptionId; al cerrar y reabrir
+    // misma sub dentro del staleTime devuelve cache. refetch se usa como
+    // callback de éxito desde acciones del Hub que mutan datos vinculados.
+    const { data, isLoading: loading, refetch: refetchHistory } = useSubscriptionHistory<SubscriptionHistory>(open ? subscriptionId : null)
     const { openHub } = useHubPanel()
     const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date } | undefined>()
     const [activeTab, setActiveTab] = useState("historial")
 
-    useEffect(() => {
-        if (open && subscriptionId) {
-            fetchHistory()
-        }
-    }, [open, subscriptionId])
-
-    const fetchHistory = async () => {
-        setLoading(true)
-        try {
-            const res = await api.get(`/inventory/subscriptions/${subscriptionId}/history/`)
-            setData(res.data)
-        } catch (error) {
-            console.error("Error fetching subscription history:", error)
-        } finally {
-            setLoading(false)
-        }
-    }
+    // El fetch lo dispara useSubscriptionHistory automáticamente cuando
+    // (open && subscriptionId). No hace falta efecto imperativo.
 
     const filteredPriceHistory = useMemo(() => {
         if (!data) return []
@@ -141,15 +137,13 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                 description={data ? `${data.product_name} | ${data.supplier_name}` : undefined}
             >
                 <div className="flex flex-col h-full overflow-visible">
-                    {loading ? (
-                        <div className="p-6">
-                            <FormSkeleton hasTabs tabs={3} cards={1} fields={6} />
-                        </div>
-                    ) : !data ? (
-                        <div className="flex-1 flex items-center justify-center py-20">
-                            <p className="text-muted-foreground">Error al cargar datos.</p>
-                        </div>
-                    ) : (
+                    {(!open || !subscriptionId) ? null : (
+                        <SkeletonShell isLoading={loading} ariaLabel="Cargando historial de suscripción">
+                            {!data ? (
+                                <div className="flex-1 flex items-center justify-center py-20">
+                                    <p className="text-muted-foreground">Error al cargar datos.</p>
+                                </div>
+                            ) : (
                         <FormTabs
                             value={activeTab}
                             onValueChange={setActiveTab}
@@ -280,7 +274,7 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                                                                     onClick={() => openHub({
                                                                         orderId: order.id,
                                                                         type: 'purchase',
-                                                                        onActionSuccess: fetchHistory
+                                                                        onActionSuccess: () => refetchHistory()
                                                                     })}
                                                                 />
                                                             </DataCell.ActionGroup>
@@ -354,34 +348,37 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                                                                     onClick={() => openHub({
                                                                         invoiceId: note.id,
                                                                         type: 'purchase',
-                                                                        onActionSuccess: fetchHistory
+                                                                        onActionSuccess: () => refetchHistory()
                                                                     })}
                                                                 />
                                                             </DataCell.ActionGroup>
                                                         </TableCell>
                                                     </TableRow>
                                                 ))}
-                                                {data.notes.length === 0 && (
-                                                    <TableRow>
-                                                        <TableCell colSpan={6} className="py-12">
-                                                            <EmptyState
-                                                                context="search"
-                                                                variant="compact"
-                                                                title="Sin notas"
-                                                                description="No se encontraron notas asociadas a este producto."
-                                                            />
-                                                        </TableCell>
-                                                    </TableRow>
-                                                )}
-                                            </TableBody>
-                                        </Table>
-                                    </div>
-                                </FormTabsContent>
-                            </div>
-                        </FormTabs>
-                    )}
-                </div>
-            </BaseModal>
+                                                 {data.notes.length === 0 && (
+                                                     <TableRow>
+                                                         <TableCell colSpan={6} className="py-12">
+                                                             <EmptyState
+                                                                 context="search"
+                                                                 variant="compact"
+                                                                 title="Sin notas"
+                                                                 description="No se encontraron notas asociadas a este producto."
+                                                             />
+                                                         </TableCell>
+                                                     </TableRow>
+                                                 )}
+                                             </TableBody>
+                                         </Table>
+                                     </div>
+                                 </FormTabsContent>
+                             </div>
+                         </FormTabs>
+                     )}
+                 </div>
+             </BaseModal>
+         </SkeletonShell>
+     )
+ }
 
         </>
     )

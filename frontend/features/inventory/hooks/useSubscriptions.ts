@@ -90,3 +90,21 @@ export function useSubscriptionStats<T = SubscriptionStats>() {
         staleTime: 5 * 60 * 1000,
     })
 }
+
+/**
+ * Historial completo de una suscripción (price_history, payment_history, etc.).
+ * Forma local del SubscriptionHistoryModal; tipo genérico.
+ */
+export function useSubscriptionHistory<T = unknown>(subscriptionId: number | null | undefined) {
+    return useQuery<T | null>({
+        queryKey: subscriptionId
+            ? [...SUBSCRIPTIONS_QUERY_KEY, 'history', subscriptionId]
+            : [...SUBSCRIPTIONS_QUERY_KEY, 'history', 'noop'],
+        queryFn: async () => {
+            if (!subscriptionId) return null
+            const response = await api.get<T>(`/inventory/subscriptions/${subscriptionId}/history/`)
+            return response.data
+        },
+        enabled: !!subscriptionId,
+    })
+}
