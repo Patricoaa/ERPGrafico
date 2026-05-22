@@ -1,3 +1,12 @@
+---
+layer: 30-playbooks
+doc: dev-cloud-local-setup
+status: active
+owner: core-team
+last_review: 2026-05-21
+kind: setup
+---
+
 # Dev con Cloud + Local Nativo
 
 Stack de desarrollo optimizado para máquinas con recursos limitados.

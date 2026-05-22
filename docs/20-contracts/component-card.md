@@ -1,9 +1,15 @@
+---
+layer: 20-contracts
+doc: component-card
+status: active
+owner: frontend-team
+last_review: 2026-05-21
+stability: stable
+---
+
 # Card
 
 El componente `Card` es el contenedor lógico principal utilizado para agrupar información relacionada en vistas de detalle, formularios y dashboards del ERP. Es parte del sistema de diseño (shadcn/ui) y garantiza la uniformidad estructural de las tarjetas.
-
-**Layer**: 20-contracts  
-**Owner**: frontend-team  
 **Status**: active  
 
 ---

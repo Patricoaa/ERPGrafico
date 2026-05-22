@@ -1,3 +1,12 @@
+---
+layer: 99-walkthroughs
+doc: mutagen-remote-dev
+status: active
+owner: core-team
+last_review: 2026-05-21
+kind: setup-procedure
+---
+
 # Walkthrough: Entorno de Desarrollo Remoto con Mutagen (Live Sync)
 
 Este documento detalla el procedimiento para configurar un entorno de desarrollo remoto donde la **edición de código ocurre en la PC Local** (con IDEs como Antigravity), pero la **ejecución y el hot-reload suceden en un servidor dedicado de 4GB** mediante Docker Compose.

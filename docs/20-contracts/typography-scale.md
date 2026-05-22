@@ -1,7 +1,15 @@
+---
+layer: 20-contracts
+doc: typography-scale
+status: active
+owner: frontend-team
+last_review: 2026-05-21
+stability: contract-changes-require-ADR
+---
+
 # Typography Scale — ERPGrafico
 
-> Canon definitivo del sistema tipográfico. Toda decisión de tamaño, peso y espaciado debe referenciarse aquí.  
-> **Última actualización:** 2026-05-15 (Audit de tipografía)
+> Canon definitivo del sistema tipográfico. Toda decisión de tamaño, peso y espaciado debe referenciarse aquí. Última audit de tipografía: 2026-05-15.
 
 ---
 

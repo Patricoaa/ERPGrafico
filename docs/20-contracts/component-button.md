@@ -1,9 +1,15 @@
+---
+layer: 20-contracts
+doc: component-button
+status: active
+owner: frontend-team
+last_review: 2026-05-21
+stability: contract-changes-require-ADR
+---
+
 # Button
 
 El sistema de botones de ERPGrafico es una **jerarquía de 3 capas**. Pertenecen al nivel **Atomic Elements** de la jerarquía de radios (`rounded-sm`), con la excepción documentada de los botones de toolbar como `ToolbarCreateButton` que usan `rounded-md` para alinearse visualmente con los inputs de filtros compactos. Elegir la capa correcta es obligatorio; crear un botón ad-hoc con estilos en línea está **prohibido**.
-
-**Layer**: 20-contracts
-**Owner**: frontend-team
 **Status**: active
 **Last review**: 2026-05-17
 

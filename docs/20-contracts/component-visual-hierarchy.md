@@ -1,3 +1,12 @@
+---
+layer: 20-contracts
+doc: component-visual-hierarchy
+status: active
+owner: frontend-team
+last_review: 2026-05-21
+stability: contract-changes-require-ADR
+---
+
 # Visual Hierarchy & Information Layers
 
 This contract defines the structural and typographic hierarchy for all forms in ERPGrafico. Its goal is to maintain a high-density while ensuring clear information architecture.
