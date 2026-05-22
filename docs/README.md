@@ -65,9 +65,15 @@
 | "ProductSelector", "selector de productos shared", "migrar POS selector", "CategoryFilter shared", "ProductGrid shared", "VariantSelectorModal shared" | [50-audit/POSSelector/README.md](50-audit/POSSelector/README.md) | 50 |
 | "delete entity", "borrar", "anular", "archivar", "soft delete", "hard delete", "archive vs annul", "is_active", "status=cancelled" | [deletion-policy.md](20-contracts/deletion-policy.md) | 20 |
 | "realtime", "WebSocket", "SSE", "EventSource", "Django Channels", "live update", "push notification", "useDraftSync", "useNotifications" | [realtime-channels.md](20-contracts/realtime-channels.md) | 20 |
-| "idempotency", "Idempotency-Key", "double-click", "duplicate request", "retry safe", "PaymentRequest duplicado", "doble pago" | [idempotency.md](20-contracts/idempotency.md) | 20 |
+| "idempotency", "Idempotency-Key", "double-click", "duplicate request", "retry safe" | [idempotency.md](20-contracts/idempotency.md) | 20 |
 | "export PDF", "export Excel", "export CSV", "WeasyPrint", "openpyxl", "generar reporte descargable", "libro de ventas xlsx" | [export-formats.md](20-contracts/export-formats.md) | 20 |
 | "import CSV", "import Excel", "bulk upload", "importar contactos/productos", "column mapping", "preview import", "DataManagement" | [import-csv-xlsx.md](20-contracts/import-csv-xlsx.md) | 20 |
+| "agregar realtime", "nuevo consumer WS", "nuevo endpoint SSE", "implementar notificación live" | [add-realtime-channel.md](30-playbooks/add-realtime-channel.md) | 30 |
+| "agregar export PDF/Excel", "generar factura PDF", "implementar libro xlsx", "descarga de reporte" | [add-export-pdf-excel.md](30-playbooks/add-export-pdf-excel.md) | 30 |
+| "agregar import CSV/XLSX", "implementar bulk upload", "preview + commit import" | [add-bulk-import.md](30-playbooks/add-bulk-import.md) | 30 |
+| "backup Postgres", "pg_dump", "restore", "subir backup a R2", "test mensual de backup" | [backup-and-restore-postgres.md](30-playbooks/backup-and-restore-postgres.md) | 30 |
+| "disaster recovery", "el ERP no levanta", "runbook incidente", "DB corrupta", "host caído", "restore en emergencia" | [disaster-recovery-pyme.md](30-playbooks/disaster-recovery-pyme.md) | 30 |
+| "aggregator", "features/orders", "feature sin barrel root", "hub de visualización", "agregar varias entities" | [frontend-fsd.md#aggregator-pattern](10-architecture/frontend-fsd.md#aggregator-pattern-read-only-feature-without-root-barrel) | 10 |
 
 ## Global invariants (violate = PR rejected)
 

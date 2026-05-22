@@ -44,6 +44,11 @@ Task routing — common intents:
 | Idempotency-Key for write endpoints / double-click safety | [idempotency.md](docs/20-contracts/idempotency.md) |
 | Export PDF / Excel / CSV (WeasyPrint / openpyxl) | [export-formats.md](docs/20-contracts/export-formats.md) |
 | Bulk import (CSV / XLSX) / preview + commit | [import-csv-xlsx.md](docs/20-contracts/import-csv-xlsx.md) |
+| Implement new realtime channel (WS or SSE) | [add-realtime-channel.md](docs/30-playbooks/add-realtime-channel.md) |
+| Implement new export PDF/Excel/CSV | [add-export-pdf-excel.md](docs/30-playbooks/add-export-pdf-excel.md) |
+| Implement new bulk import | [add-bulk-import.md](docs/30-playbooks/add-bulk-import.md) |
+| Postgres backup / restore / disaster recovery | [backup-and-restore-postgres.md](docs/30-playbooks/backup-and-restore-postgres.md) + [disaster-recovery-pyme.md](docs/30-playbooks/disaster-recovery-pyme.md) |
+| Feature aggregator pattern (no root barrel, no own backend) | [frontend-fsd.md#aggregator-pattern](docs/10-architecture/frontend-fsd.md#aggregator-pattern-read-only-feature-without-root-barrel) |
 
 Full routing table in [docs/README.md](docs/README.md).
 
