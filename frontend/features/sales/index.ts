@@ -9,5 +9,3 @@ export { default as SaleNoteModal, SaleNoteForm } from './components/SaleNoteMod
 export { default as SalesTerminalsView } from './components/SalesTerminalsView'
 export { POSSessionsView } from './components/POSSessionsView'
 export { AdvancedManufacturingModal } from './components/forms/AdvancedManufacturingModal'
-export * from './components/DeliveryDetailClient'
-export * from './components/SaleReturnDetailClient'
