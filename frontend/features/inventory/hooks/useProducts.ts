@@ -65,6 +65,20 @@ export function useProducts({ filters }: UseProductsProps = {}) {
         },
     })
 
+    const generateVariantsMutation = useMutation({
+        mutationFn: async ({ templateId, selection }: {
+            templateId: number
+            selection: Array<{ attribute: number, values: number[] }>
+        }) => inventoryApi.generateVariants(templateId, selection),
+        onSuccess: () => {
+            markLocalMutation()
+            // Genera N nuevos productos hijos — invalida lista, detalle y BOMs.
+            // También invalida las queries de variants (parent_template-filtradas).
+            invalidateProductsAndBoms()
+            queryClient.invalidateQueries({ queryKey: ['inventory', 'variants'] })
+        },
+    })
+
     return {
         products: products ?? [],
         isLoading,
@@ -75,6 +89,8 @@ export function useProducts({ filters }: UseProductsProps = {}) {
         isSaving: saveProductMutation.isPending,
         deleteProduct: deleteProductMutation.mutateAsync,
         isDeleting: deleteProductMutation.isPending,
+        generateVariants: generateVariantsMutation.mutateAsync,
+        isGeneratingVariants: generateVariantsMutation.isPending,
     }
 }
 
