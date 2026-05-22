@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
 import type { FilterState } from '@/components/shared'
+import { useRealtime } from '@/features/realtime'
 import { PRODUCTS_QUERY_KEY } from './queryKeys'
 
 export interface PricingRule {
@@ -32,6 +33,7 @@ export const PRICING_RULES_QUERY_KEY = ['pricingRules']
 
 export function usePricingRules(filters?: FilterState) {
     const queryClient = useQueryClient()
+    const { markLocalMutation } = useRealtime()
 
     const { data: rules, isLoading, refetch } = useQuery({
         queryKey: [...PRICING_RULES_QUERY_KEY, filters],
@@ -42,7 +44,6 @@ export function usePricingRules(filters?: FilterState) {
             const response = await api.get('/inventory/pricing-rules/', { params })
             return response.data.results || response.data
         },
-        staleTime: 5 * 60 * 1000, // 5 min
     })
 
     const deleteMutation = useMutation({
@@ -50,6 +51,7 @@ export function usePricingRules(filters?: FilterState) {
             return api.delete(`/inventory/pricing-rules/${id}/`)
         },
         onSuccess: () => {
+            markLocalMutation()
             queryClient.invalidateQueries({ queryKey: PRICING_RULES_QUERY_KEY })
             // A deleted rule can change computed prices shown in the product list
             queryClient.invalidateQueries({ queryKey: PRODUCTS_QUERY_KEY })
