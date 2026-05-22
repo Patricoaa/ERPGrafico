@@ -5,13 +5,13 @@ import { TableBody, TableCell, TableRow } from "@/components/ui/table"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { Percent, Pencil, Info } from "lucide-react"
 import { cn } from "@/lib/utils"
-import api from "@/lib/api"
 import { toast } from "sonner"
 import { formatCurrency } from "@/lib/money"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { Product, PricingRule } from "@/types/entities"
 import { ProductInitialData } from "@/types/forms"
+import { usePricingRules } from "../../hooks/usePricingRules"
 
 function getRuleStatus(rule: PricingRule): 'RULE_ACTIVE' | 'RULE_EXPIRED' | 'RULE_INACTIVE' {
     if (!rule.active) return 'RULE_INACTIVE'
@@ -38,10 +38,15 @@ const COLUMNS = [
 ]
 
 export function ProductPricingTab({ initialData, pricingRules, fetchPricingRules, onOpenRuleDialog, isDynamicPricing, isVariant }: ProductPricingTabProps) {
+    const { deletePricingRule } = usePricingRules()
     const deleteConfirm = useConfirmAction<number>(async (id) => {
         try {
-            await api.delete(`/inventory/pricing-rules/${id}/`)
+            await deletePricingRule(id)
             toast.success("Regla eliminada")
+            // El hook invalida PRICING_RULES_QUERY_KEY automáticamente. Llamamos
+            // fetchPricingRules para que el padre (ProductForm) refresque su
+            // estado local imperativo. Cuando ProductForm migre a usePricingRules
+            // este callback puede removerse.
             fetchPricingRules()
         } catch (error) {
             showApiError(error, "Error al eliminar la regla")

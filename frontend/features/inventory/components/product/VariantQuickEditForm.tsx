@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { createPortal } from "react-dom"
-import { Product, UoM } from "@/types/entities"
+import { Product } from "@/types/entities"
 import { useForm, UseFormReturn } from "react-hook-form"
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -13,12 +13,14 @@ import { LabeledInput, LabeledSelect } from "@/components/shared"
 import { Factory, Barcode, AlertCircle, Copy, CheckCircle2, PlusCircle, Pencil, Trash2, DollarSign } from "lucide-react"
 import { Chip } from "@/components/shared"
 import { cn } from "@/lib/utils"
-import api from "@/lib/api"
 import { showApiError } from "@/lib/errors"
 import { toast } from "sonner"
 import { BarcodeModal } from "@/features/inventory/components/BarcodeModal"
 import { BOMFormModal } from "@/features/production/components/BOMFormModal"
 import type { BOM, ProductMinimal } from "@/features/production/types"
+import { useUoMs } from "../../hooks/useUoMs"
+import { useBOMs } from "@/features/production"
+import { useProducts } from "../../hooks/useProducts"
 
 const ALL_PRICE_INHERITANCE_OPTIONS = [
   { label: 'Hereda del template', value: 'INHERIT' },
@@ -55,8 +57,9 @@ export function VariantQuickEditForm({
   onTabChange,
 }: VariantQuickEditFormProps) {
   const [mounted, setMounted] = useState(false)
-  const [uoms, setUoms] = useState<UoM[]>([])
-  const [availableBOMs, setAvailableBOMs] = useState<BOM[]>([])
+  const { uoms } = useUoMs()
+  const { boms: availableBOMs, deleteBom, refetch: refetchVariantBOMs } = useBOMs({ product_id: variant.id })
+  const { updateProduct } = useProducts()
   const [isBarcodeModalOpen, setIsBarcodeModalOpen] = useState(false)
   const [cloneSourceId, setCloneSourceId] = useState<string>('none')
   const [activeTab, setActiveTab] = useState<string>('precios')
@@ -89,38 +92,21 @@ export function VariantQuickEditForm({
       price_inheritance_mode: hasUomPrices ? 'INHERIT' : ((variant.price_inheritance_mode ?? 'INHERIT') as 'INHERIT' | 'OVERRIDE' | 'SURCHARGE'),
       price_surcharge: variant.price_surcharge ? Number(variant.price_surcharge) : undefined,
     })
-    fetchVariantBOMs()
-    fetchUoms()
     setCloneSourceId('none')
+    // uoms y availableBOMs se mantienen reactivos vía useUoMs / useBOMs —
+    // ya no hace falta refetchear manualmente al cambiar de variant porque
+    // el queryKey del useBOMs incluye variant.id (se re-fetchea solo).
   }, [variant])
-
-  const fetchUoms = async () => {
-    try {
-      const res = await api.get("/inventory/uoms/")
-      setUoms(res.data.results || res.data)
-    } catch (e) {
-      console.error("Failed to fetch UOMs", e)
-    }
-  }
-
-  const fetchVariantBOMs = async () => {
-    try {
-      const res = await api.get(`/production/boms/?product_id=${variant.id}`)
-      setAvailableBOMs(res.data.results || res.data)
-    } catch (e) {
-      console.error("Failed to fetch variant boms", e)
-    }
-  }
 
   const handleDeleteBOM = async (bomId: number) => {
     if (!confirm("¿Eliminar esta lista de materiales? Esta acción no se puede deshacer.")) return
     try {
-      await api.delete(`/production/boms/${bomId}/`)
-      toast.success("Lista de materiales eliminada.")
-      fetchVariantBOMs()
+      // deleteBom invalida BOMS_QUERY_KEY + PRODUCTS_QUERY_KEY internamente
+      // y emite su propio toast.
+      await deleteBom(bomId)
     } catch (e) {
       console.error(e)
-      toast.error("Error al eliminar la lista de materiales.")
+      // El hook emite toast.error, pero registramos por si fuera otra causa.
     }
   }
 
@@ -134,9 +120,9 @@ export function VariantQuickEditForm({
       price_surcharge: mode === 'SURCHARGE' ? (data.price_surcharge ?? null) : null,
     }
     try {
-      const res = await api.patch(`/inventory/products/${variant.id}/`, payload)
+      const res = await updateProduct({ id: variant.id, payload })
       toast.success("Variante guardada")
-      onSaved({ ...variant, ...payload, ...(res.data || {}) } as Product)
+      onSaved({ ...variant, ...payload, ...res } as Product)
     } catch (e) {
       showApiError(e, "Error al guardar variante")
     }
@@ -168,12 +154,18 @@ export function VariantQuickEditForm({
   const handleCloneBOM = async () => {
     if (cloneSourceId === 'none' || !templateData?.id) return
     try {
-      await api.patch(`/inventory/products/${templateData.id}/`, {
-        variant_updates: [{ id: variant.id, copy_bom_from: cloneSourceId }],
+      await updateProduct({
+        id: templateData.id,
+        payload: {
+          variant_updates: [{ id: variant.id, copy_bom_from: cloneSourceId }],
+        } as never,
       })
       toast.success("LDM clonada correctamente.")
       setCloneSourceId('none')
-      fetchVariantBOMs()
+      // updateProduct invalida PRODUCTS_KEYS.all (cubre lista y detalle).
+      // Forzamos refetch del BOMs para que el chip "tiene LDM activa" del
+      // variant se actualice inmediatamente sin esperar al staleTime.
+      refetchVariantBOMs()
       onSaved({ ...variant, has_active_bom: true, product_type: 'MANUFACTURABLE' } as Product)
     } catch (e) {
       showApiError(e, "Error al clonar LDM")
@@ -514,7 +506,7 @@ export function VariantQuickEditForm({
         product={variantAsProductMinimal}
         bomToEdit={bomToEdit}
         onSuccess={() => {
-          fetchVariantBOMs()
+          refetchVariantBOMs()
           setBomModalOpen(false)
           setBomToEdit(undefined)
         }}
