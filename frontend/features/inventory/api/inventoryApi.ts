@@ -84,6 +84,19 @@ export const inventoryApi = {
     },
 
     /**
+     * Custom action: generate technical variants of a product template
+     * from a cartesian product of attribute → values selections.
+     * Used by ProductVariantsTab when the parent template already exists.
+     */
+    generateVariants: async (
+        templateId: number,
+        selection: Array<{ attribute: number, values: number[] }>,
+    ): Promise<unknown> => {
+        const { data } = await api.post(`inventory/products/${templateId}/generate_variants/`, { selection })
+        return data
+    },
+
+    /**
      * Fetch product categories
      */
     getCategories: async (): Promise<Array<{ id: number; name: string; icon?: string | null }>> => {

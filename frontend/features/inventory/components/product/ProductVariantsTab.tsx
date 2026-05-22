@@ -8,7 +8,6 @@ import { ProductFormValues } from "./schema"
 import { Button } from "@/components/ui/button"
 import { Layers, Wand2, X, Archive } from "lucide-react"
 import { Checkbox } from "@/components/ui/checkbox"
-import api from "@/lib/api"
 import { toast } from "sonner"
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table"
 import { cn } from "@/lib/utils"
@@ -21,6 +20,9 @@ import { VariantQuickEditForm } from "./VariantQuickEditForm"
 import { BulkVariantEditFormV2 } from "./BulkVariantEditFormV2"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+import { useAttributes } from "../../hooks/useAttributes"
+import { useVariants } from "../../hooks/useVariants"
+import { useProducts } from "../../hooks/useProducts"
 interface ProductVariantsTabProps {
     form: UseFormReturn<ProductFormValues>
     initialData?: ProductInitialData | Partial<Product>
@@ -40,52 +42,28 @@ interface AttributeValue {
 }
 
 export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChange }: ProductVariantsTabProps) {
-    const [availableAttributes, setAvailableAttributes] = useState<Attribute[]>([])
+    // Attributes y attribute-values vienen unidos por useAttributes.
+    // Cast: el hook tipa AttributeValue con name/code pero el serializer
+    // del backend usa { value } — el componente trabaja con la forma runtime.
+    const { attributes: hookAttributes } = useAttributes()
+    const availableAttributes = hookAttributes as unknown as Attribute[]
+
+    // Variants del template (incluye archivadas — la vista admin las muestra grises).
+    const { data: variantsData, refetch: refetchVariants } = useVariants({
+        productId: initialData?.id,
+        activeOnly: false,
+    })
+    const variants = (variantsData ?? []) as Product[]
+
+    const { updateProduct, generateVariants, isGeneratingVariants: isGenerating } = useProducts()
+    const { createAttributeValue } = useAttributes()
+
     const [selectedValues, setSelectedValues] = useState<Record<number, number[]>>({})
-    const [isGenerating, setIsGenerating] = useState(false)
-    const [variants, setVariants] = useState<Product[]>([])
     const [isPendingGeneration, setIsPendingGeneration] = useState(false)
 
     // Master-Detail State
     const [selectedVariantIds, setSelectedVariantIds] = useState<number[]>([])
     const [variantToDelete, setVariantToDelete] = useState<Product | null>(null)
-
-    // Bulk action state (removed old buttons, keeping UI clean)
-
-    useEffect(() => {
-        fetchAttributes()
-        if (initialData?.id) {
-            fetchVariants()
-        }
-    }, [initialData])
-
-    const fetchAttributes = async () => {
-        try {
-            const [attrRes, valRes] = await Promise.all([
-                api.get("/inventory/attributes/"),
-                api.get("/inventory/attribute-values/")
-            ])
-            const attrs = attrRes.data.results || attrRes.data
-            const vals = valRes.data.results || valRes.data
-
-            const enriched = attrs.map((a: Attribute) => ({
-                ...a,
-                values: vals.filter((v: AttributeValue & { attribute: number }) => v.attribute === a.id)
-            }))
-            setAvailableAttributes(enriched)
-        } catch (error) {
-            console.error("Failed to fetch attributes", error)
-        }
-    }
-
-    const fetchVariants = async () => {
-        try {
-            const res = await api.get(`/inventory/products/?parent_template=${initialData?.id}&show_technical_variants=true`)
-            setVariants(res.data.results || res.data)
-        } catch (error) {
-            console.error("Failed to fetch variants", error)
-        }
-    }
 
     const handleMultiSelectChange = (attrId: number, selectedValueStrs: string[]) => {
         setSelectedValues(prev => ({
@@ -96,21 +74,13 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
 
     const handleCreateAttributeValue = async (attrId: number, value: string) => {
         try {
-            const res = await api.post("/inventory/attribute-values/", {
-                attribute: attrId,
-                value: value
-            })
-            const newVal = res.data
+            const newVal = await createAttributeValue({ attribute: attrId, value })
             toast.success(`Valor "${value}" creado`)
-            setAvailableAttributes(prev => prev.map(a => {
-                if (a.id === attrId) {
-                    return { ...a, values: [...a.values, newVal] }
-                }
-                return a
-            }))
+            // useAttributes invalida ATTRIBUTES_QUERY_KEY → el listado de
+            // attributes+values se recompone solo. Auto-seleccionamos el nuevo.
             setSelectedValues(prev => {
                 const current = prev[attrId] || []
-                return { ...prev, [attrId]: [...current, newVal.id] }
+                return { ...prev, [attrId]: [...current, (newVal as { id: number }).id] }
             })
         } catch (error) {
             showApiError(error, "Error al crear valor de atributo")
@@ -121,10 +91,13 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
         if (!variantToDelete) return
         const variant = variantToDelete
         try {
-            await api.patch(`/inventory/products/${variant.id}/`, { active: false })
+            await updateProduct({ id: variant.id, payload: { active: false } as never })
             toast.success("Variante archivada exitosamente")
             setSelectedVariantIds(prev => prev.filter(id => id !== variant.id))
-            fetchVariants()
+            // updateProduct invalida PRODUCTS_KEYS.all → variants list incluida.
+            // Forzamos refetch explícito para reflejar el cambio en la tabla local
+            // sin esperar al stale time.
+            refetchVariants()
         } catch (error) {
             console.error("Failed to archive variant", error)
             showApiError(error, "Error al archivar variante")
@@ -161,20 +134,15 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
             return
         }
 
-        // Case: Existing Product Workflow
-        setIsGenerating(true)
+        // Case: Existing Product Workflow.
+        // generateVariants invalida PRODUCTS_KEYS.all + ['inventory','variants']
+        // → la tabla se refresca automáticamente. isGenerating viene del hook.
         try {
-            await api.post(`/inventory/products/${initialData.id}/generate_variants/`, {
-                selection
-            })
-
+            await generateVariants({ templateId: initialData.id, selection })
             toast.success("Variantes generadas con éxito")
-            fetchVariants()
             setSelectedValues({})
         } catch (error: unknown) {
             showApiError(error, "Error al generar variantes")
-        } finally {
-            setIsGenerating(false)
         }
     }
 

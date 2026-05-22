@@ -56,11 +56,25 @@ export function useAttributes({ filters }: { filters?: AttributeFilters } = {}) 
         },
     })
 
+    const createValueMutation = useMutation({
+        mutationFn: async ({ attribute, value }: { attribute: number, value: string }) => {
+            const res = await api.post('/inventory/attribute-values/', { attribute, value })
+            return res.data as AttributeValue & { value: string }
+        },
+        onSuccess: () => {
+            // Invalidación amplia: el join de attributes + values se recompone
+            // de cero porque useAttributes une los dos endpoints en su queryFn.
+            queryClient.invalidateQueries({ queryKey: ATTRIBUTES_QUERY_KEY })
+        },
+    })
+
     return {
         attributes: attributes ?? [],
         isLoading,
         refetch,
         deleteAttribute: deleteMutation.mutateAsync,
-        isDeleting: deleteMutation.isPending
+        isDeleting: deleteMutation.isPending,
+        createAttributeValue: createValueMutation.mutateAsync,
+        isCreatingValue: createValueMutation.isPending,
     }
 }

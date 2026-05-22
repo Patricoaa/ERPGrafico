@@ -5,8 +5,14 @@ import type { BaseProduct } from '@/features/inventory/types'
 export interface UseVariantsOptions {
     productId?: number
     enabled?: boolean
-    /** 
-     * Optional extra params, e.g., pos_session_id 
+    /**
+     * When false, includes archived (active=false) variants.
+     * Default: true (POS/sales selection scenarios want active-only).
+     * ProductVariantsTab admin uses `false` to display archived variants too.
+     */
+    activeOnly?: boolean
+    /**
+     * Optional extra params, e.g., pos_session_id
      */
     extraParams?: Record<string, string | number | boolean>
 }
@@ -14,16 +20,18 @@ export interface UseVariantsOptions {
 /**
  * Fetch variants for a given product template.
  */
-export function useVariants({ productId, enabled = true, extraParams = {} }: UseVariantsOptions = {}) {
+export function useVariants({ productId, enabled = true, activeOnly = true, extraParams = {} }: UseVariantsOptions = {}) {
     return useQuery({
-        queryKey: ['inventory', 'variants', productId, extraParams],
+        queryKey: ['inventory', 'variants', productId, { activeOnly, ...extraParams }],
         queryFn: async () => {
             if (!productId) return []
             const params = new URLSearchParams()
             params.append('parent_template', productId.toString())
             params.append('show_technical_variants', 'true')
-            params.append('active', 'true')
-            
+            if (activeOnly) {
+                params.append('active', 'true')
+            }
+
             Object.entries(extraParams).forEach(([key, value]) => {
                 if (value !== undefined && value !== null) {
                     params.append(key, value.toString())
