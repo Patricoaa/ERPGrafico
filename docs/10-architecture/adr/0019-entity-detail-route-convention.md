@@ -1,9 +1,13 @@
-# ADR-0019: Convención "Searchable Entity Detail Route"
+---
+id: 0019
+title: Convención "Searchable Entity Detail Route"
+status: Accepted
+date: 2026-05-08
+author: architecture-team
+---
 
-**Status:** Accepted  
-**Date:** 2026-05-08  
-**Authors:** Architecture team  
-**Supersedes:** N/A  
+# 0019 — Convención "Searchable Entity Detail Route"
+
 **Related:** ADR-0016 (Post-Refactor F5), T-68 (F7 — Detail routes para Universal Search)
 
 ---

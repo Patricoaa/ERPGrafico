@@ -1,10 +1,14 @@
-# ADR-0020: Modal-on-List Edit UX (URL-State Pattern)
+---
+id: 0020
+title: Modal-on-List Edit UX (URL-State Pattern)
+status: Accepted
+date: 2026-05-09
+author: core-team
+---
 
-**Fecha:** 2026-05-09
-**Estado:** Aceptado
-**Fase:** F8
-**Supersede parcialmente:** ADR-0019 (los reverts de Phase 4 siguen vigentes; la expansión schema-driven queda superseded)
-**Firmas Stakeholder:** @pato
+# 0020 — Modal-on-List Edit UX (URL-State Pattern)
+
+> **Supersede parcialmente:** ADR-0025 — los reverts de Phase 4 siguen vigentes; la expansión schema-driven queda supersedida por este ADR. Firmas Stakeholder: @pato.
 
 ---
 
@@ -12,7 +16,7 @@
 
 Durante F7 se implementó el shell `EntityDetailPage` y las rutas `[id]/page.tsx` para las 26 entidades registradas en el `UniversalRegistry`. Esta implementación produjo una segunda UI de edición que coexiste con el modal local de la lista, generando duplicación de código y superficie de mantenimiento.
 
-Tras completar T-80..T-84 (reverts de Phase 4 y ADR-0019), el problema de fondo quedó expuesto con claridad:
+Tras completar T-80..T-84 (reverts de Phase 4 y ADR-0025), el problema de fondo quedó expuesto con claridad:
 
 - Los formularios ricos existentes (`CategoryForm`, `BudgetEditor`, `ProductForm`, etc.) ya cumplen plenamente los contratos UI del proyecto.
 - El shell `EntityDetailPage` + `*DetailClient` produce una segunda ruta de edición completa que en la práctica no aporta valor UX diferencial respecto al modal.
@@ -78,9 +82,9 @@ El contrato completo se formaliza en [`list-modal-edit-pattern.md`](../../20-con
 
 ---
 
-## 5. Relación con ADR-0019
+## 5. Relación con ADR-0025
 
-ADR-0019 documentó dos decisiones separadas:
+ADR-0025 documentó dos decisiones separadas:
 
 1. **Reverts de Phase 4** (Budget, ProductCategory, UoM create → form rico unificado) — **siguen vigentes**.
 2. **Expansión schema-driven** (nuevo vocabulario `FormMeta`, Widget Registry frontend) — **supersedida por este ADR**.

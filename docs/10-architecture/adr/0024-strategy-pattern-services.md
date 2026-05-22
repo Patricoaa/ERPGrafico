@@ -1,8 +1,12 @@
-# ADR 0011: Adopción del Patrón Strategy y Service Layer (Refactor Fase 3)
+---
+id: 0024
+title: Strategy Pattern + Service Layer (Refactor Fase 3)
+status: Accepted
+date: 2026-05-07
+author: architecture-team
+---
 
-**Fecha:** 2026-05-07  
-**Estado:** Propuesto / Aceptado  
-**Autores:** Equipo de Arquitectura ERPGrafico  
+# 0024 — Adopción del Patrón Strategy y Service Layer (Refactor Fase 3)
 
 ## Contexto y Problema
 
