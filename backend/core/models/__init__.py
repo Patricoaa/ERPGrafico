@@ -11,6 +11,7 @@ from core.storages import PublicMediaStorage, PrivateMediaStorage
 
 from .abstracts import TimeStampedModel, AuditedModel, TransactionalDocument
 from .search import GlobalSearchIndex
+from .idempotency import IdempotencyRecord
 
 __all__ = [
     'User',
@@ -22,6 +23,7 @@ __all__ = [
     'AuditedModel',
     'TransactionalDocument',
     'GlobalSearchIndex',
+    'IdempotencyRecord',
 ]
 
 
