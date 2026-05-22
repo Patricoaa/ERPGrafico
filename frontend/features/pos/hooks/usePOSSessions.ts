@@ -46,3 +46,36 @@ export function usePOSSessions(filters?: FilterState) {
         refetch,
     }
 }
+
+/**
+ * Imperative one-shot fetch del summary de una sesión POS.
+ * Útil cuando el caller necesita el dato antes de abrir un modal y no
+ * quiere reestructurar el flujo en un hook reactivo. Mantiene la llamada
+ * a `api` dentro de la capa de hooks (cumple invariante #5).
+ */
+export async function fetchPOSSessionSummary<T = Record<string, unknown>>(sessionId: number): Promise<T> {
+    const response = await api.get<T>(`/treasury/pos-sessions/${sessionId}/summary/`)
+    return response.data
+}
+
+/**
+ * Resumen agregado de una sesión POS (totales por método de pago, cash diff,
+ * documentos asociados). Usado para generar reportes X (sesión abierta) y
+ * Z (sesión cerrada).
+ *
+ * Forma exacta del response es consumida localmente por POSReport;
+ * tipo genérico para no acoplar.
+ */
+export function usePOSSessionSummary<T = Record<string, unknown>>(sessionId: number | null | undefined) {
+    return useQuery<T | null>({
+        queryKey: sessionId ? [...POS_SESSIONS_QUERY_KEY, 'summary', sessionId] : [...POS_SESSIONS_QUERY_KEY, 'summary', 'noop'],
+        queryFn: async () => {
+            if (!sessionId) return null
+            const response = await api.get<T>(`/treasury/pos-sessions/${sessionId}/summary/`)
+            return response.data
+        },
+        enabled: !!sessionId,
+        // Summary se computa server-side y es relativamente costoso; sin staleTime
+        // explícito → vuelve a fetchear según el global staleTime (5min).
+    })
+}
