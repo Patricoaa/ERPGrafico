@@ -8,6 +8,7 @@ import { useForm, FieldErrors, UseFormReturn } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
 import api, { resolveMediaUrl } from "@/lib/api"
+import { useProducts } from "../hooks/useProducts"
 import { ShoppingCart, Package, Truck, Layers, Factory, Loader2, History, DollarSign, Fingerprint } from "lucide-react"
 import { showApiError } from "@/lib/errors"
 import { Form } from "@/components/ui/form"
@@ -44,6 +45,7 @@ interface ProductFormProps {
 }
 
 export function ProductForm({ sidebar, open, onOpenChange, initialData, onSuccess, lockedType, variantMode = false, inline = false, onLoadingChange }: ProductFormProps) {
+    const { saveProduct } = useProducts()
     const [loading, setLoading] = useState(false)
     const [uoms, setUoms] = useState<UoM[]>([])
     const [warehouses, setWarehouses] = useState<Warehouse[]>([])
@@ -592,30 +594,10 @@ export function ProductForm({ sidebar, open, onOpenChange, initialData, onSucces
                 formData.append('image', '')
             }
 
-            if (initialData) {
-                await api.put(`/inventory/products/${initialData.id}/`, formData, {
-                    headers: { 'Content-Type': 'multipart/form-data' }
-                })
-                toast.success("Producto actualizado")
-            } else {
-                const res = await api.post('/inventory/products/', formData, {
-                    headers: { 'Content-Type': 'multipart/form-data' }
-                })
-                toast.success("Producto creado")
-                // If it has variants, we don't close the modal, instead we "promote" it to edit mode
-                if (data.has_variants) {
-                    onSuccess() // Refresh list in background
-                    // Re-fetch or use response to update initialData in parent is tricky
-                    // But we can just call onSuccess and maybe NOT close?
-                    // The safest is to signal the parent to re-open this product or just keep it active.
-                    // However, we don't have the new product ID easily here unless we reload.
-                    // Let's at least allow the user to stay if they want to generate combos.
-                    // But without initialData, the tabs might still be restricted.
-                    // Let's just close as usual for now BUT ensure validation doesn't block them.
-                    // WAIT: If I don't close, the user can generate? NO, they need the ID.
-                    // Let's stick to the validation fix first, it's the biggest blocker.
-                }
-            }
+            // saveProduct invalida PRODUCTS_KEYS.all (cubre listado, detalle, etc.)
+            // y lanza markLocalMutation() para que el entity bus descarte el eco propio.
+            // El toast de éxito lo emite el hook.
+            await saveProduct({ id: initialData?.id ?? null, payload: formData })
             onSuccess()
             onOpenChange(false)
         } catch (error: unknown) {
