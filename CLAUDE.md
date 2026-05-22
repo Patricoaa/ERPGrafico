@@ -39,6 +39,11 @@ Task routing — common intents:
 | Module layout / navigation tabs / dynamic header | [module-layout-navigation.md](docs/20-contracts/module-layout-navigation.md) |
 | TypeScript error / `any` escape hatch | [resolve-type-errors.md](docs/30-playbooks/resolve-type-errors.md) |
 | Loading state / skeleton / refetch CLS / loading.tsx | [component-skeleton.md](docs/20-contracts/component-skeleton.md) |
+| Deletion / annul / archive / soft-delete / hard delete | [deletion-policy.md](docs/20-contracts/deletion-policy.md) |
+| Realtime (WebSocket / SSE / Django Channels / push) | [realtime-channels.md](docs/20-contracts/realtime-channels.md) |
+| Idempotency-Key for write endpoints / double-click safety | [idempotency.md](docs/20-contracts/idempotency.md) |
+| Export PDF / Excel / CSV (WeasyPrint / openpyxl) | [export-formats.md](docs/20-contracts/export-formats.md) |
+| Bulk import (CSV / XLSX) / preview + commit | [import-csv-xlsx.md](docs/20-contracts/import-csv-xlsx.md) |
 
 Full routing table in [docs/README.md](docs/README.md).
 
