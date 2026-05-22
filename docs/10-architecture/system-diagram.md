@@ -3,10 +3,12 @@ layer: 10-architecture
 doc: system-diagram
 status: active
 owner: core-team
-last_review: 2026-04-21
+last_review: 2026-05-21
 ---
 
 # System Diagram
+
+> **Topología:** single-node sobre home-server (Proxmox + VM Ubuntu + Docker Compose). Sin balanceador delante, sin réplicas de DB, sin clusters. Escalar verticalmente (más RAM/CPU/disco) antes de considerar multi-node — ver §"Deployment units".
 
 ## Runtime topology
 
@@ -76,15 +78,19 @@ DRF view enqueues: task.delay(args)
 
 ## Deployment units
 
-| Unit | Containerized | Scalable |
-|------|---------------|----------|
-| Next.js | Yes | Horizontal |
-| Django | Yes | Horizontal (stateless) |
-| Celery worker | Yes | Horizontal |
-| Celery beat | Yes | Singleton (lock-based) |
-| Postgres | Yes (dev); managed (prod) | Vertical + read replicas |
-| Redis | Yes | Sentinel cluster (prod) |
-| MinIO | Yes | Multi-node |
+Todos los componentes corren como contenedores Docker en un único host. La estrategia de escalado real es **vertical** (aumentar recursos del host) o **mover servicios al cloud por separado** (R2 ya en uso para media) antes de plantear cualquier topología multi-node.
+
+| Unit | Contenedor | Estrategia de escalado (v1) | Si presión sostenida |
+|------|-----------|-----------------------------|----------------------|
+| Next.js | Sí | Single instance | Subir RAM del host; ya hace SSR cacheado |
+| Django | Sí (gunicorn N workers) | Subir workers/threads del proceso | Considerar Cloudflare en frente |
+| Celery worker | Sí | Single contenedor con concurrencia configurable | Separar queues (sales / billing / heavy) |
+| Celery beat | Sí | Singleton (no se replica por diseño) | — |
+| Postgres | Sí | Single instance + `CONN_MAX_AGE` + tuning vía PgTune | Migrar a managed (Supabase / Neon free tier) antes que replicación on-prem |
+| Redis | Sí | Single instance, AOF persistence opcional | — |
+| MinIO | Sí (local) | Single node; media de baja frecuencia delegada a Cloudflare R2 | R2 ya cubre HA de archivos críticos |
+
+**Lo que NO está en scope para v1:** Postgres read replicas, Redis Sentinel/Cluster, Nginx load balancer, MinIO multi-node, autoscaling. Ver [observability.md#roadmap](../40-quality/observability.md#roadmap-cuando-deje-de-aplicar-pyme) para las condiciones que disparan revisar esto.
 
 ## Trust boundaries
 
