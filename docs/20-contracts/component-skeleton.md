@@ -25,7 +25,7 @@ Controla los **estados de carga** de la aplicación. Existen tres estrategias bi
 │       ├─ Página con formulario                      → PageLayoutSkeleton contentType="form"
 │       ├─ Tabla de datos                             → TableSkeleton
 │       ├─ Tarjetas en grilla                         → CardSkeleton variant="grid"|"product"
-│       └─ Formulario                                 → FormSkeleton
+│       └─ Formulario                                 → PageLayoutSkeleton contentType="form"
 │
 ├─ Datos ya visibles, el usuario filtra / pagina / mutates (refetch)
 │   └─ SkeletonShell isLoading={isFetching} + datos placeholder tipados
@@ -159,18 +159,7 @@ Nunca importar directamente desde `@/components/ui/skeleton`.
 
 ---
 
-### `FormSkeleton`
 
-| prop | type | default | notas |
-|------|------|---------|-------|
-| `fields` | `number` | `4` | Campos por bloque |
-| `cards` | `number` | `1` | Bloques lado a lado (1–4) |
-| `hasTabs` | `boolean` | `false` | Tab-bar encima del formulario |
-| `tabs` | `number` | `3` | Cantidad de tabs |
-| `className` | `string` | — | Clase del contenedor |
-| `ariaLabel` | `string` | `'Cargando formulario'` | Label para lectores de pantalla |
-
----
 
 ### `SkeletonShell`
 
@@ -240,7 +229,7 @@ Esta regla está aplicada por ESLint (`no-restricted-imports` en `eslint.config.
 
 ## Accesibilidad
 
-- Todos los wrappers compuestos (`TableSkeleton`, `CardSkeleton`, `FormSkeleton`, `PageLayoutSkeleton`, `HubSkeleton`, `AppShellSkeleton`) llevan `role="status"` + `aria-label`.
+- Todos los wrappers compuestos (`TableSkeleton`, `CardSkeleton`, `PageLayoutSkeleton`, `HubSkeleton`, `AppShellSkeleton`) llevan `role="status"` + `aria-label`.
 - Los sub-componentes (`PageTabsSkeleton`, `ToolbarSkeleton`, `PageHeaderSkeleton`) **no** llevan `role="status"` para evitar regiones live anidadas.
 - `SkeletonShell` usa `aria-busy="true"` + `aria-live="polite"` cuando activo.
 - `prefers-reduced-motion: reduce` desactiva todas las animaciones shimmer (`animation: none; opacity: 0.5`). Definido en `globals.css`.

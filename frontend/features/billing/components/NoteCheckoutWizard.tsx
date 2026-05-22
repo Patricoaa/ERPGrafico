@@ -17,7 +17,7 @@ import { Step4_Payment } from "@/features/billing/components/checkout/Step4_Paym
 import { Step2_ManufacturingDetails } from "@/features/sales/components/checkout/Step2_ManufacturingDetails"
 import { NoteProcessSidebar } from "@/features/billing/components/checkout/NoteProcessSidebar"
 import { NoteItemsSummary } from "@/features/billing/components/checkout/NoteItemsSummary"
-import { Chip, FormSkeleton } from "@/components/shared"
+import { Chip, SkeletonShell } from "@/components/shared"
 
 
 interface NoteCheckoutWizardProps {
@@ -311,13 +311,15 @@ export function NoteCheckoutWizard({
     }
 
     const renderStep = () => {
-        if (initializing) {
-            return (
-                <div className="h-[400px]">
-                    <FormSkeleton fields={4} />
-                </div>
-            )
-        }
+         if (initializing) {
+             return (
+                 <div className="h-[400px]">
+                     <SkeletonShell isLoading={true} ariaLabel="Cargando wizard de nota">
+                         <div className="p-6" />
+                     </SkeletonShell>
+                 </div>
+             )
+         }
 
         switch (step) {
             case 1:

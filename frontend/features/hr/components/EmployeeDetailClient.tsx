@@ -3,7 +3,7 @@
 import React, { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { notFound, useRouter } from "next/navigation"
-import { EntityDetailPage, FormSkeleton, FormFooter, CancelButton, ActionSlideButton } from "@/components/shared"
+import { EntityDetailPage, SkeletonShell, FormFooter, CancelButton, ActionSlideButton } from "@/components/shared"
 import { formatEntityDisplay } from "@/lib/entity-registry"
 import { getEmployee, updateEmployee, getAFPs, getPayrollConcepts } from "@/features/hr/api/hrApi"
 import type { Employee, AFP, PayrollConcept } from "@/types/hr"
@@ -35,12 +35,12 @@ export function EmployeeDetailClient({ employeeId }: EmployeeDetailClientProps) 
     )
 
     if (loading || !employee) {
-        return (
-            <div className="flex-1 p-8">
-                <FormSkeleton />
-            </div>
-        )
-    }
+         return (
+             <div className="flex-1 p-8">
+                 <SkeletonShell isLoading={loading || !employee} ariaLabel="Cargando detalle de empleado" />
+             </div>
+         )
+     }
 
     const displayId = formatEntityDisplay('hr.employee', employee)
 

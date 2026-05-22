@@ -10,7 +10,7 @@ import { getActionBadgeCount } from '@/lib/action-utils'
 import dynamic from "next/dynamic"
 import { toast } from "sonner"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
-import { FormSkeleton } from "@/components/shared"
+import { SkeletonShell } from "@/components/shared"
 
 // Lazy Loaded Modals to satisfy PERF-01 (Prevent massive bundle on Hub Engine)
 // Lazy Loaded Modals - More robust import pattern to handle default/named exports and prevent load failures
@@ -406,28 +406,29 @@ export const ActionCategory = forwardRef(({
                 </div>
             )}
 
-            {/* Modals with Suspense to prevent layout unmount on first load */}
-            <Suspense fallback={<FormSkeleton />}>
-                {activeModal === 'complete-folio' && (
-                <DocumentCompletionModal
-                    open={true}
-                    onOpenChange={closeModal}
-                    invoiceId={(tempInvoiceId || resolvedInvoices?.find((inv: any) => inv.status === 'DRAFT' || inv.number === 'Draft' || !inv.number)?.id) as number || 0}
-                    invoiceType={(tempInvoiceId ? "FACTURA_ELECTRONICA" : (resolvedInvoices?.find((inv: any) => inv.status === 'DRAFT' || inv.number === 'Draft' || !inv.number) as any)?.dte_type as string) || "FACTURA_ELECTRONICA"}
-                    contactId={(((order?.customer || order?.supplier) as Record<string, unknown>)?.id as number || (isSale ? (order as any).customer_id : (order as any).supplier_id)) as number || 0}
-                    isPurchase={isPurchase}
-                    onComplete={async (invoiceId, formData) => {
-                        if (!invoiceId) {
-                            toast.error("Error: No se pudo identificar el borrador de la factura.")
-                            throw new Error("Missing invoice ID")
-                        }
-                        await api.post(`/billing/invoices/${invoiceId}/confirm/`, formData, {
-                            headers: { 'Content-Type': 'multipart/form-data' }
-                        })
-                    }}
-                    onSuccess={() => { closeModal(); onActionSuccess?.() }}
-                />
-            )}
+             {/* Modals with Suspense to prevent layout unmount on first load */}
+             <SkeletonShell isLoading={!!activeModal} ariaLabel="Cargando modal de acción">
+                 <Suspense fallback={<div />}>
+                     {activeModal === 'complete-folio' && (
+                     <DocumentCompletionModal
+                         open={true}
+                         onOpenChange={closeModal}
+                         invoiceId={(tempInvoiceId || resolvedInvoices?.find((inv: any) => inv.status === 'DRAFT' || inv.number === 'Draft' || !inv.number)?.id) as number || 0}
+                         invoiceType={(tempInvoiceId ? "FACTURA_ELECTRONICA" : (resolvedInvoices?.find((inv: any) => inv.status === 'DRAFT' || inv.number === 'Draft' || !inv.number) as any)?.dte_type as string) || "FACTURA_ELECTRONICA"}
+                         contactId={(((order?.customer || order?.supplier) as Record<string, unknown>)?.id as number || (isSale ? (order as any).customer_id : (order as any).supplier_id)) as number || 0}
+                         isPurchase={isPurchase}
+                         onComplete={async (invoiceId, formData) => {
+                             if (!invoiceId) {
+                                 toast.error("Error: No se pudo identificar el borrador de la factura.")
+                                 throw new Error("Missing invoice ID")
+                             }
+                             await api.post(`/billing/invoices/${invoiceId}/confirm/`, formData, {
+                                 headers: { 'Content-Type': 'multipart/form-data' }
+                             })
+                         }}
+                         onSuccess={() => { closeModal(); onActionSuccess?.() }}
+                     />
+                 )}
 
             {(activeModal === 'register-delivery' || activeModal === 'register-reception' || activeModal === 'confirm-service-delivery' || activeModal === 'register-merchandise-return') && (
                 order?.dte_type ? (
@@ -543,17 +544,60 @@ export const ActionCategory = forwardRef(({
                         onActionSuccess?.()
                     }}
                 />
-            )}
-            <ActionConfirmModal
-                open={confirmModal.open}
-                onOpenChange={(open) => setConfirmModal(prev => ({ ...prev, open }))}
-                title={confirmModal.title}
-                description={confirmModal.description}
-                onConfirm={confirmModal.onConfirm}
-                variant={confirmModal.variant}
-                confirmText={confirmModal.confirmText}
-            />
-            </Suspense>
+             )}
+             {activeModal === 'transaction-view' && viewConfig && (
+                 <TransactionViewModal
+                     open={true}
+                     onOpenChange={(open) => !open && closeTransaction()}
+                     type={viewConfig.type as any}
+                     id={viewConfig.id as any}
+                 />
+             )}
+             {activeModal === 'view-work-orders' && (
+                 <DocumentListModal
+                     open={true}
+                     onOpenChange={closeModal}
+                     type="work_orders"
+                     data={(order?.work_orders || []) as any}
+                     onItemClick={(type, id) => {
+                         openTransaction(type, id)
+                     }}
+                 />
+             )}
+             {activeModal === 'create-work-order' && (
+                 <WorkOrderWizard
+                     open={true}
+                     onOpenChange={closeModal}
+                     mode={{
+                         kind: 'create',
+                         defaultOtType: 'LINKED',
+                         initialData: {
+                             sale_order: order?.id?.toString(),
+                             // Find the first manufacturable line that doesn't have an active OT
+                             sale_line: (order.lines || order.items || []).find((l: OrderLine) =>
+                                 l.product_type === 'MANUFACTURABLE' &&
+                                 l.requires_advanced_manufacturing &&
+                                 !((l as any).work_order_summary)
+                             )?.id?.toString()
+                         }
+                     }}
+                     onSuccess={() => {
+                         closeModal()
+                         onActionSuccess?.()
+                     }}
+                 />
+             )}
+             <ActionConfirmModal
+                 open={confirmModal.open}
+                 onOpenChange={(open) => setConfirmModal(prev => ({ ...prev, open }))}
+                 title={confirmModal.title}
+                 description={confirmModal.description}
+                 onConfirm={confirmModal.onConfirm}
+                 variant={confirmModal.variant}
+                 confirmText={confirmModal.confirmText}
+             />
+             </Suspense>
+         </SkeletonShell>
         </>
     )
 })

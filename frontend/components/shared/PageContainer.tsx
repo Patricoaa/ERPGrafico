@@ -32,8 +32,8 @@ export function PageContainer({
   return (
     <div
       className={cn(
-        "flex-1 space-y-6 p-8 pt-6",
-        scrollable && "overflow-y-auto min-h-0 h-full",
+        "flex-1 min-h-0 space-y-6 p-8 pt-6",
+        scrollable && "overflow-y-auto h-full",
         animate && "animate-in fade-in duration-500",
         className
       )}

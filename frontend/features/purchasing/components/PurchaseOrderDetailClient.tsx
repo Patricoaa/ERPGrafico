@@ -4,7 +4,7 @@ import React, { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { notFound, useRouter } from "next/navigation"
 import api from "@/lib/api"
-import { EntityDetailPage, FormFooter, SubmitButton, CancelButton, FormSkeleton } from "@/components/shared"
+import { EntityDetailPage, FormFooter, SubmitButton, CancelButton, SkeletonShell } from "@/components/shared"
 import { PurchaseOrderForm } from "./PurchaseOrderForm"
 
 interface PurchaseOrderDetailClientProps {
@@ -26,12 +26,12 @@ export function PurchaseOrderDetailClient({ orderId }: PurchaseOrderDetailClient
     if (error) return <div className="p-8 text-destructive">Error al cargar la orden de compra</div>
     
     if (loading || !order) {
-        return (
-            <div className="flex-1 p-8">
-                <FormSkeleton />
-            </div>
-        )
-    }
+         return (
+             <div className="flex-1 p-8">
+                 <SkeletonShell isLoading={loading || !order} ariaLabel="Cargando detalle de orden de compra" />
+             </div>
+         )
+     }
 
     return (
         <EntityDetailPage

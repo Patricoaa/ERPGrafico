@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react"
 import { notFound, useRouter } from "next/navigation"
-import { EntityDetailPage, FormSkeleton, FormFooter, CancelButton, ActionSlideButton } from "@/components/shared"
+import { EntityDetailPage, SkeletonShell, FormFooter, CancelButton, ActionSlideButton } from "@/components/shared"
 import { formatEntityDisplay } from "@/lib/entity-registry"
 import api from "@/lib/api"
 import { StatusBadge } from "@/components/shared/StatusBadge"
@@ -41,12 +41,12 @@ export function UserDetailClient({ userId }: UserDetailClientProps) {
     )
 
     if (loading || !user) {
-        return (
-            <div className="flex-1 p-8">
-                <FormSkeleton />
-            </div>
-        )
-    }
+         return (
+             <div className="flex-1 p-8">
+                 <SkeletonShell isLoading={loading || !user} ariaLabel="Cargando detalle de usuario" />
+             </div>
+         )
+     }
 
     const displayId = formatEntityDisplay('core.user', user)
 

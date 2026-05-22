@@ -5,7 +5,7 @@ import React from "react"
 import { useQuery } from "@tanstack/react-query"
 import { notFound } from "next/navigation"
 import api from "@/lib/api"
-import { EntityDetailPage, FormSkeleton } from "@/components/shared"
+import { EntityDetailPage, SkeletonShell } from "@/components/shared"
 import { formatEntityDisplay } from "@/lib/entity-registry"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
@@ -81,12 +81,12 @@ export function BankStatementDetailClient({ statementId }: BankStatementDetailCl
     )
 
     if (loading || !data) {
-        return (
-            <div className="flex-1 p-8">
-                <FormSkeleton />
-            </div>
-        )
-    }
+         return (
+             <div className="flex-1 p-8">
+                 <SkeletonShell isLoading={loading || !data} ariaLabel="Cargando detalle de cartola bancaria" />
+             </div>
+         )
+     }
 
     const displayId = formatEntityDisplay('treasury.bankstatement', data)
     const openingBalance = typeof data.opening_balance === "string"

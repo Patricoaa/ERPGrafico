@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react"
-import { FormSkeleton, PageHeader } from "@/components/shared"
+import { SkeletonShell, PageHeader } from "@/components/shared"
 import { Metadata } from "next"
 
 export const metadata: Metadata = {
@@ -23,7 +23,7 @@ export default async function CompanySettingsPage({ searchParams }: PageProps) {
     const activeTab = params.tab || "general"
 
     return (
-        <Suspense fallback={<FormSkeleton fields={6} />}>
+        <Suspense fallback={<SkeletonShell isLoading={true} ariaLabel="Cargando configuración de empresa" />}>
             <CompanySettingsView activeTab={activeTab} />
         </Suspense>
     )

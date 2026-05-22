@@ -100,7 +100,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
     const currentSortColumn = currentSort ? table.getColumn(currentSort.id) : null
 
     return (
-        <div className="w-full mb-0">
+        <div className="w-full space-y-2">
             <div className="flex items-center gap-3 h-9 w-full">
 
                 {/* Search — fills all available space */}

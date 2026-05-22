@@ -268,6 +268,7 @@ export interface AppUser {
     last_name?: string
     is_active?: boolean
     groups?: AppGroup[]
+    contact?: number
 }
 
 // ─── Group ───────────────────────────────────────────────

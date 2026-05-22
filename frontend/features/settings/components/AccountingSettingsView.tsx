@@ -13,7 +13,7 @@ import {
     Percent,
     Receipt,
 } from "lucide-react"
-import { AutoSaveStatusBadge, FormSkeleton, LabeledInput, LabeledSelect, FadeIn } from "@/components/shared"
+import { AutoSaveStatusBadge, LabeledInput, LabeledSelect, FadeIn } from "@/components/shared"
 import { PageHeaderButton } from "@/components/shared/PageHeader"
 import { Separator } from "@/components/ui/separator"
 import { AccountSelector } from "@/components/selectors/AccountSelector"

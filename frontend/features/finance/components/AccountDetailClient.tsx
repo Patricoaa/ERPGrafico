@@ -4,7 +4,7 @@ import React, { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { notFound, useRouter } from "next/navigation"
 import api from "@/lib/api"
-import { EntityDetailPage, FormFooter, SubmitButton, CancelButton, FormSkeleton } from "@/components/shared"
+import { EntityDetailPage, FormFooter, SubmitButton, CancelButton, SkeletonShell } from "@/components/shared"
 import { AccountForm } from "@/features/finance/components/AccountForm"
 import { useAccounts } from "@/features/accounting/hooks/useAccounts"
 import { Button } from "@/components/ui/button"
@@ -29,12 +29,12 @@ export function AccountDetailClient({ accountId }: AccountDetailClientProps) {
     if (error) return <div className="p-8 text-destructive">Error al cargar la cuenta</div>
     
     if (loading || !account) {
-        return (
-            <div className="flex-1 p-8">
-                <FormSkeleton />
-            </div>
-        )
-    }
+         return (
+             <div className="flex-1 p-8">
+                 <SkeletonShell isLoading={loading || !account} ariaLabel="Cargando detalle de cuenta contable" />
+             </div>
+         )
+     }
 
     return (
         <EntityDetailPage

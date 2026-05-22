@@ -7,7 +7,7 @@ import { DataTable } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
 import { DataCell, createActionsColumn } from '@/components/shared'
-import { Edit, Trash2, Users } from "lucide-react"
+import { Users } from "lucide-react"
 import { GroupForm } from "@/features/users/components/GroupForm"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { SmartSearchBar, useClientSearch } from "@/components/shared"
@@ -86,12 +86,10 @@ export function GroupManagement({ externalOpen, onExternalOpenChange, createActi
                     <GroupForm
                         initialData={group as { id: number; name: string }}
                         onSuccess={fetchGroups}
-                        trigger={<DataCell.Action icon={Edit} title="Editar" />}
+                        trigger={<DataCell.Action action="edit" />}
                     />
                     <DataCell.Action
-                        icon={Trash2}
-                        title="Eliminar"
-                        className="text-destructive hover:text-destructive"
+                        action="delete"
                         onClick={() => setDeleteId(group.id as number)}
                     />
                 </>

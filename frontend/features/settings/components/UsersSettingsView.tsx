@@ -8,14 +8,15 @@ import { DataTableColumnHeader } from '@/components/shared'
 import { DataCell, createActionsColumn } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
 import { StatusBadge } from "@/components/shared/StatusBadge"
-import { FadeIn } from "@/components/shared"
-import { Edit } from "lucide-react"
+import { FadeIn, Chip } from "@/components/shared"
+import { SmartSearchBar } from '@/components/shared/SmartSearchBar'
+import { Edit, Shield, Users } from "lucide-react"
 import { UserForm } from "@/features/users/components/UserForm"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { GroupManagement } from "@/features/settings/components/GroupManagement"
 import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
 import { type AppUser } from "@/types/entities"
-import { cn } from "@/lib/utils"
+import { userSearchDef } from "@/features/users/searchDef"
 
 interface UsersSettingsViewProps {
     activeTab: string
@@ -65,11 +66,17 @@ export function UsersSettingsView({ activeTab }: UsersSettingsViewProps) {
             ),
         },
         {
-            id: "fullName",
-            header: "Nombre Completo",
-            cell: ({ row }) => (
-                <div>{`${row.original.first_name || ''} ${row.original.last_name || ''}`}</div>
-            ),
+            id: "contact",
+            header: "Contacto",
+            cell: ({ row }) => {
+                const contactId = row.original.contact
+                const fullName = `${row.original.first_name || ''} ${row.original.last_name || ''}`.trim()
+                const displayName = fullName || row.original.username
+
+                if (!contactId) return <div className="text-muted-foreground text-[13px] font-bold text-center">{displayName}</div>
+
+                return <DataCell.ContactLink contactId={contactId}>{displayName}</DataCell.ContactLink>
+            },
         },
         {
             accessorKey: "groups",
@@ -82,14 +89,24 @@ export function UsersSettingsView({ activeTab }: UsersSettingsViewProps) {
                 const roles = ['ADMIN', 'MANAGER', 'OPERATOR', 'READ_ONLY']
                 const systemRole = groups.find(g => roles.includes(g))
 
-                return systemRole ? (
-                    <span className={cn(
-                        "text-[10px] font-bold uppercase px-1.5 py-0.5 rounded border leading-none",
-                        systemRole === 'ADMIN' ? "border-primary/30 text-primary bg-primary/5" : "border-muted-foreground/20 text-muted-foreground bg-muted/30"
-                    )}>
+                if (!systemRole) return null
+
+                const roleIntent: Record<string, 'primary' | 'warning' | 'info' | 'neutral'> = {
+                    ADMIN: 'primary',
+                    MANAGER: 'warning',
+                    OPERATOR: 'info',
+                    READ_ONLY: 'neutral',
+                }
+
+                return (
+                    <Chip
+                        size="xs"
+                        intent={roleIntent[systemRole] || 'neutral'}
+                        icon={Shield}
+                    >
                         {systemRole}
-                    </span>
-                ) : null
+                    </Chip>
+                )
             },
         },
         {
@@ -103,12 +120,14 @@ export function UsersSettingsView({ activeTab }: UsersSettingsViewProps) {
                 const roles = ['ADMIN', 'MANAGER', 'OPERATOR', 'READ_ONLY']
                 const functionalGroups = groups.filter(g => !roles.includes(g))
 
+                if (functionalGroups.length === 0) return null
+
                 return (
                     <div className="flex flex-wrap gap-1">
                         {functionalGroups.map(g => (
-                            <span key={g} className="text-[9px] font-bold uppercase text-muted-foreground/60 px-1 py-0.5 rounded border border-muted-foreground/10 bg-muted/10 leading-none">
+                            <Chip key={g} size="xs" intent="neutral" icon={Users}>
                                 {g}
-                            </span>
+                            </Chip>
                         ))}
                     </div>
                 )
@@ -126,9 +145,9 @@ export function UsersSettingsView({ activeTab }: UsersSettingsViewProps) {
         createActionsColumn<AppUser>({
             renderActions: (user) => {
                 return (
-                    <DataCell.Action 
-                        icon={Edit} 
-                        title="Editar" 
+                    <DataCell.Action
+                        icon={Edit}
+                        title="Editar"
                         onClick={() => {
                             const params = new URLSearchParams(searchParams.toString())
                             params.set('selected', String(user.id))
@@ -156,19 +175,6 @@ export function UsersSettingsView({ activeTab }: UsersSettingsViewProps) {
         />
     ), [])
 
-    const roleFilters = useMemo(() => [
-        {
-            column: "role",
-            title: "Rol",
-            options: [
-                { label: "Admin", value: "ADMIN" },
-                { label: "Gerente", value: "MANAGER" },
-                { label: "Operador", value: "OPERATOR" },
-                { label: "Lectura", value: "READ_ONLY" },
-            ],
-        },
-    ], [])
-
     return (
         <div className="pt-4 h-full flex flex-col">
             <Tabs value={activeTab} className="space-y-4 h-full flex flex-col">
@@ -176,16 +182,13 @@ export function UsersSettingsView({ activeTab }: UsersSettingsViewProps) {
                     <TabsContent value="users" className="mt-0 outline-none space-y-4 h-full flex flex-col">
                         <div className="flex-1 min-h-0">
                             <DataTable
-                            columns={columns}
-                            data={users}
-                            variant="embedded"
-                            isLoading={isLoading}
-                            globalFilterFields={["username", "email", "first_name", "last_name"]}
-                            searchPlaceholder="Buscar usuario por nombre, email o username..."
-                            useAdvancedFilter={true}
-                            facetedFilters={roleFilters}
-                            createAction={usersCreateAction}
-                        />
+                                columns={columns}
+                                data={users}
+                                variant="embedded"
+                                isLoading={isLoading}
+                                leftAction={<SmartSearchBar searchDef={userSearchDef} placeholder="Buscar usuario por nombre, email o username..." className="w-full" />}
+                                createAction={usersCreateAction}
+                            />
                         </div>
                         {isUserModalOpen && (
                             <UserForm

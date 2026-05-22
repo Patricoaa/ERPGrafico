@@ -8,7 +8,7 @@ import { useState, useEffect, useCallback } from "react"
 import { getMyProfile } from '@/features/profile/api/profileApi'
 import { toast } from "sonner"
 import type { MyProfile } from "@/types/profile"
-import { CardSkeleton, FormSkeleton } from "@/components/shared"
+import { SkeletonShell } from "@/components/shared"
 
 export default function ProfilePage() {
     const searchParams = useSearchParams()
@@ -32,14 +32,16 @@ export default function ProfilePage() {
     useEffect(() => { fetchProfile() }, [fetchProfile])
 
     if (loading) {
-        return (
-            <PageContainer>
-                <CardSkeleton variant="compact" count={1} className="mb-6 border-0 bg-transparent p-0" />
-                <FormSkeleton hasTabs tabs={2} fields={4} className="pt-0" />
-                <ProfileSidePanel profile={null} />
-            </PageContainer>
-        )
-    }
+         return (
+             <PageContainer>
+                 <SkeletonShell isLoading={loading} ariaLabel="Cargando perfil de usuario">
+                     <div className="mb-6 border-0 bg-transparent p-0" />
+                     <div className="pt-0" />
+                     <ProfileSidePanel profile={null} />
+                 </SkeletonShell>
+             </PageContainer>
+         )
+     }
 
     const contactDetail = profile?.contact_detail || profile?.employee?.contact_detail
     const isPartner = contactDetail?.is_partner

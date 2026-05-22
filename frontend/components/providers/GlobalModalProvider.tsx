@@ -2,22 +2,22 @@
 
 import React, { createContext, useContext, useState, ReactNode, useCallback, useMemo, useEffect } from "react"
 import dynamic from "next/dynamic"
-import { FormSkeleton } from "@/components/shared"
+import { SkeletonShell } from "@/components/shared"
 
 const WorkOrderWizard = dynamic(() => import("@/features/production").then(mod => mod.WorkOrderWizard), {
-    ssr: false,
-    loading: () => <FormSkeleton />
-})
+     ssr: false,
+     loading: () => <SkeletonShell isLoading={true} ariaLabel="Cargando asistente de orden de trabajo" />
+ })
 
 const ContactModal = dynamic(() => import("@/features/contacts/components/ContactModal"), {
-    ssr: false,
-    loading: () => <FormSkeleton />
-})
+     ssr: false,
+     loading: () => <SkeletonShell isLoading={true} ariaLabel="Cargando modal de contacto" />
+ })
 
 const TreasuryAccountModal = dynamic(() => import("@/features/treasury/components/TreasuryAccountModal").then(mod => mod.TreasuryAccountModal), {
-    ssr: false,
-    loading: () => <FormSkeleton />
-})
+     ssr: false,
+     loading: () => <SkeletonShell isLoading={true} ariaLabel="Cargando modal de cuenta de tesorería" />
+ })
 
 interface GlobalModalActionsContextType {
     openWorkOrder: (id: number) => void

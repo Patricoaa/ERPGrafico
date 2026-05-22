@@ -9,7 +9,7 @@ import { DataCell, createActionsColumn } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
 import { Checkbox } from "@/components/ui/checkbox"
 import { WarehouseForm } from "./WarehouseForm"
-import { Pencil, Trash2 } from "lucide-react"
+import { Trash2 } from "lucide-react"
 import { toast } from "sonner"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import type { BulkAction } from "@/components/shared"
@@ -131,12 +131,12 @@ export function WarehouseList({ externalOpen, onExternalOpenChange, createAction
         createActionsColumn<Warehouse>({
             renderActions: (item) => (
                 <>
-                    <DataCell.Action icon={Pencil} title="Editar" onClick={() => {
+                    <DataCell.Action action="edit" onClick={() => {
                         const params = new URLSearchParams(searchParams.toString())
                         params.set('selected', String(item.id))
                         router.push(`${pathname}?${params.toString()}`, { scroll: false })
                     }} />
-                    <DataCell.Action icon={Trash2} title="Eliminar" className="text-destructive" onClick={() => handleDelete(item)} />
+                    <DataCell.Action action="delete" onClick={() => handleDelete(item)} />
                 </>
             ),
         }),

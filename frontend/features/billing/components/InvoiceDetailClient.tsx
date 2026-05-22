@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query"
 import { notFound } from "next/navigation"
 import api from "@/lib/api"
-import { EntityDetailPage, FormSkeleton } from "@/components/shared"
+import { EntityDetailPage, SkeletonShell } from "@/components/shared"
 import { DomainCard } from "@/components/shared/DomainCard"
 
 interface InvoiceDetailClientProps {
@@ -26,12 +26,12 @@ export function InvoiceDetailClient({ invoiceId, type }: InvoiceDetailClientProp
     if (error) return <div className="p-8 text-destructive">Error al cargar la factura</div>
 
     if (loading || !invoice) {
-        return (
-            <div className="flex-1 p-8">
-                <FormSkeleton />
-            </div>
-        )
-    }
+         return (
+             <div className="flex-1 p-8">
+                 <SkeletonShell isLoading={loading || !invoice} ariaLabel="Cargando detalle de factura" />
+             </div>
+         )
+     }
 
     const title = type === 'sale' ? 'Factura de Venta' : 'Factura de Compra'
     const breadcrumbRoot = type === 'sale'

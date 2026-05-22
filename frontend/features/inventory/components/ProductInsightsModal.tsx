@@ -1,7 +1,7 @@
 "use client"
 import { formatCurrency } from "@/lib/money";
 
-import { FormSkeleton } from "@/components/shared"
+import { SkeletonShell } from "@/components/shared"
 
 import { useState, useEffect } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
@@ -174,15 +174,13 @@ export function ProductInsightsModal({ productId, productName, open, onOpenChang
             description={productName || undefined}
         >
             <div className="flex flex-col h-full overflow-visible">
-                {loading ? (
-                    <div className="p-6">
-                        <FormSkeleton hasTabs tabs={4} cards={1} fields={6} />
-                    </div>
-                ) : !data ? (
-                    <div className="flex-1 flex items-center justify-center py-20">
-                        <p className="text-muted-foreground">Error al cargar datos.</p>
-                    </div>
-                ) : (
+                 {loading || !data ? (
+                     <SkeletonShell isLoading={loading || !data} ariaLabel="Cargando insights del producto">
+                         <div className="p-6">
+                             {/* Content will be rendered by SkeletonShell when loading */}
+                         </div>
+                     </SkeletonShell>
+                 ) : (
                     <FormTabs
                         value={activeTab}
                         onValueChange={setActiveTab}

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react"
 import { notFound, useRouter } from "next/navigation"
-import { EntityDetailPage, FormSkeleton, FormFooter, CancelButton } from "@/components/shared"
+import { EntityDetailPage, SkeletonShell, FormFooter, CancelButton } from "@/components/shared"
 import api from "@/lib/api"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 
@@ -38,12 +38,12 @@ export function F29DeclarationDetailClient({ f29Id }: F29DeclarationDetailClient
     )
 
     if (loading || !declaration) {
-        return (
-            <div className="flex-1 p-8">
-                <FormSkeleton />
-            </div>
-        )
-    }
+         return (
+             <div className="flex-1 p-8">
+                 <SkeletonShell isLoading={loading || !declaration} ariaLabel="Cargando detalle de declaración F29" />
+             </div>
+         )
+     }
 
     const displayId = declaration.folio_number || `#${f29Id}`
 
