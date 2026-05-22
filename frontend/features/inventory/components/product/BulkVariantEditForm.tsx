@@ -1,8 +1,8 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { useForm, SubmitHandler, UseFormReturn } from "react-hook-form"
-import { Product, UoM } from "@/types/entities"
+import { Product } from "@/types/entities"
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Form, FormField } from "@/components/ui/form"
@@ -10,7 +10,7 @@ import { LabeledInput, LabeledSelect, FormSection } from "@/components/shared"
 import { CancelButton, SubmitButton, IconButton } from "@/components/shared"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Save, X, Sparkles, DollarSign, AlertCircle } from "lucide-react"
-import api from "@/lib/api"
+import { useUoMs } from "../../hooks/useUoMs"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 
@@ -47,26 +47,13 @@ interface BulkVariantEditFormProps {
 
 export function BulkVariantEditForm({ selectedVariants, availableVariants = [], templateData, onSaved, onCancel }: BulkVariantEditFormProps) {
     const [loading, setLoading] = useState(false)
-    const [uoms, setUoms] = useState<UoM[]>([])
+    const { uoms } = useUoMs()
 
     // If template has UoM-specific prices, only INHERIT is allowed
     const hasUomPrices = Array.isArray((templateData as any)?.uom_prices)
         ? (templateData as any).uom_prices.length > 0
         : false
     const priceModeOptions = hasUomPrices ? INHERIT_ONLY_MODE_OPTIONS : ALL_PRICE_MODE_OPTIONS
-
-    useEffect(() => {
-        fetchUoms()
-    }, [])
-
-    const fetchUoms = async () => {
-        try {
-            const res = await api.get("/inventory/uoms/")
-            setUoms(res.data.results || res.data)
-        } catch (e) {
-            console.error("Failed to fetch UOMs", e)
-        }
-    }
 
     const form = useForm<BulkEditValues>({
         resolver: zodResolver(bulkEditSchema) as any,
