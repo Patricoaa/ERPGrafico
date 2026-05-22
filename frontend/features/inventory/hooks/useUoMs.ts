@@ -1,5 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
+import { toast } from 'sonner'
+import { useRealtime } from '@/features/realtime'
 import type { FilterState } from '@/components/shared'
 
 export interface UoMCategory {
@@ -18,14 +20,35 @@ export interface UoM {
     active: boolean
 }
 
-export const UOMS_QUERY_KEY = ['uoms']
-export const UOM_CATEGORIES_QUERY_KEY = ['uomCategories']
+export type UoMCategoryPayload = Omit<UoMCategory, 'id'>
+
+// ─── Hierarchical query keys ──────────────────────────────────────────────────
+
+export const UOMS_KEYS = {
+    all: ['uoms'] as const,
+    lists: () => [...UOMS_KEYS.all, 'list'] as const,
+    details: () => [...UOMS_KEYS.all, 'detail'] as const,
+    detail: (id: number) => [...UOMS_KEYS.details(), id] as const,
+}
+
+export const UOM_CATEGORIES_KEYS = {
+    all: ['uomCategories'] as const,
+    lists: () => [...UOM_CATEGORIES_KEYS.all, 'list'] as const,
+}
+
+/** @deprecated Use UOMS_KEYS.* / UOM_CATEGORIES_KEYS.* */
+export const UOMS_QUERY_KEY = UOMS_KEYS.all
+/** @deprecated */
+export const UOM_CATEGORIES_QUERY_KEY = UOM_CATEGORIES_KEYS.all
+
+// ─── Hook principal ──────────────────────────────────────────────────────────
 
 export function useUoMs(filters?: FilterState) {
     const queryClient = useQueryClient()
+    const { markLocalMutation } = useRealtime()
 
     const { data: uoms, isLoading: isUoMsLoading, refetch } = useQuery({
-        queryKey: [...UOMS_QUERY_KEY, filters],
+        queryKey: [...UOMS_KEYS.all, filters],
         queryFn: async (): Promise<UoM[]> => {
             const params = new URLSearchParams()
             if (filters?.search) params.append('search', filters.search)
@@ -36,7 +59,7 @@ export function useUoMs(filters?: FilterState) {
     })
 
     const { data: categories, isLoading: isCategoriesLoading } = useQuery({
-        queryKey: UOM_CATEGORIES_QUERY_KEY,
+        queryKey: UOM_CATEGORIES_KEYS.all,
         queryFn: async (): Promise<UoMCategory[]> => {
             const response = await api.get('/inventory/uom-categories/')
             return response.data.results || response.data
@@ -45,24 +68,53 @@ export function useUoMs(filters?: FilterState) {
     })
 
     const deleteMutation = useMutation({
-        mutationFn: async (id: number) => {
-            return api.delete(`/inventory/uoms/${id}/`)
-        },
+        mutationFn: async (id: number) => api.delete(`/inventory/uoms/${id}/`),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: UOMS_QUERY_KEY })
+            markLocalMutation()
+            queryClient.invalidateQueries({ queryKey: UOMS_KEYS.all })
         },
     })
 
     const saveMutation = useMutation({
         mutationFn: async (uom: Partial<UoM>) => {
-            if (uom.id) {
-                return api.put(`/inventory/uoms/${uom.id}/`, uom)
-            } else {
-                return api.post('/inventory/uoms/', uom)
-            }
+            const res = uom.id
+                ? await api.put<UoM>(`/inventory/uoms/${uom.id}/`, uom)
+                : await api.post<UoM>('/inventory/uoms/', uom)
+            return res.data
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: UOMS_QUERY_KEY })
+            markLocalMutation()
+            queryClient.invalidateQueries({ queryKey: UOMS_KEYS.all })
+        },
+    })
+
+    const saveCategoryMutation = useMutation({
+        mutationFn: async ({ id, payload }: { id: number | null, payload: UoMCategoryPayload }) => {
+            const res = id !== null
+                ? await api.put<UoMCategory>(`/inventory/uom-categories/${id}/`, payload)
+                : await api.post<UoMCategory>('/inventory/uom-categories/', payload)
+            return res.data
+        },
+        onSuccess: (_, vars) => {
+            markLocalMutation()
+            toast.success(vars.id === null ? 'Categoría creada' : 'Categoría actualizada')
+            // Cambia el conjunto de categorías Y puede afectar `category_name`
+            // en cada UoM derivada → invalidar ambos.
+            queryClient.invalidateQueries({ queryKey: UOM_CATEGORIES_KEYS.all })
+            queryClient.invalidateQueries({ queryKey: UOMS_KEYS.all })
+        },
+    })
+
+    const deleteCategoryMutation = useMutation({
+        mutationFn: async (id: number) => api.delete(`/inventory/uom-categories/${id}/`),
+        onSuccess: () => {
+            markLocalMutation()
+            toast.success('Categoría eliminada')
+            queryClient.invalidateQueries({ queryKey: UOM_CATEGORIES_KEYS.all })
+            queryClient.invalidateQueries({ queryKey: UOMS_KEYS.all })
+        },
+        onError: (e: Error) => {
+            toast.error(`Error al eliminar la categoría: ${e.message}`)
         },
     })
 
@@ -70,9 +122,13 @@ export function useUoMs(filters?: FilterState) {
         uoms: uoms ?? [],
         categories: categories ?? [],
         isLoading: isUoMsLoading || isCategoriesLoading,
+        isUoMsLoading,
         refetch,
         deleteUoM: deleteMutation.mutateAsync,
         saveUoM: saveMutation.mutateAsync,
-        isSaving: saveMutation.isPending
+        isSaving: saveMutation.isPending,
+        saveUoMCategory: saveCategoryMutation.mutateAsync,
+        isSavingCategory: saveCategoryMutation.isPending,
+        deleteUoMCategory: deleteCategoryMutation.mutateAsync,
     }
 }
