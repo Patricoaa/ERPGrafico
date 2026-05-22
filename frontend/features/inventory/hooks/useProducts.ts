@@ -79,10 +79,22 @@ export function useProducts({ filters }: UseProductsProps = {}) {
         },
     })
 
+    /**
+     * Imperative on-demand fetch del detalle. Útil para flujos donde el
+     * componente necesita esperar a tener los datos antes de abrir un modal.
+     * Reusa el cache de PRODUCTS_KEYS.detail(id) — no dispara red si está fresh.
+     */
+    const fetchProductById = (id: number) =>
+        queryClient.fetchQuery({
+            queryKey: PRODUCTS_KEYS.detail(id),
+            queryFn: () => inventoryApi.getProduct(id),
+        })
+
     return {
         products: products ?? [],
         isLoading,
         refetch,
+        fetchProductById,
         updateProduct: updateProductMutation.mutateAsync,
         isUpdating: updateProductMutation.isPending,
         saveProduct: saveProductMutation.mutateAsync,

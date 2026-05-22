@@ -1,5 +1,7 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
+import { useRealtime } from '@/features/realtime'
+import { PRODUCTS_KEYS } from './queryKeys'
 import type { FilterState } from '@/components/shared'
 
 export interface Subscription {
@@ -29,6 +31,9 @@ export interface Subscription {
 export const SUBSCRIPTIONS_QUERY_KEY = ['subscriptions']
 
 export function useSubscriptions(filters?: FilterState) {
+    const queryClient = useQueryClient()
+    const { markLocalMutation } = useRealtime()
+
     const { data: subscriptions, isLoading, refetch } = useQuery({
         queryKey: [...SUBSCRIPTIONS_QUERY_KEY, filters],
         queryFn: async (): Promise<Subscription[]> => {
@@ -41,9 +46,47 @@ export function useSubscriptions(filters?: FilterState) {
         staleTime: 2 * 60 * 1000,
     })
 
+    const invalidate = () => {
+        queryClient.invalidateQueries({ queryKey: SUBSCRIPTIONS_QUERY_KEY })
+        // pause/resume cambian el status del producto-suscripción → invalida products.
+        queryClient.invalidateQueries({ queryKey: PRODUCTS_KEYS.all })
+    }
+
+    const pauseMutation = useMutation({
+        mutationFn: async (id: number) => api.post(`/inventory/subscriptions/${id}/pause/`),
+        onSuccess: () => { markLocalMutation(); invalidate() },
+    })
+
+    const resumeMutation = useMutation({
+        mutationFn: async (id: number) => api.post(`/inventory/subscriptions/${id}/resume/`),
+        onSuccess: () => { markLocalMutation(); invalidate() },
+    })
+
     return {
         subscriptions: subscriptions ?? [],
         isLoading,
         refetch,
+        pauseSubscription: pauseMutation.mutateAsync,
+        resumeSubscription: resumeMutation.mutateAsync,
     }
+}
+
+export interface SubscriptionStats {
+    [key: string]: unknown
+}
+
+/**
+ * Stats agregadas de subscriptions (counts por status, MRR, etc.).
+ * Forma exacta consumida localmente por SubscriptionsView; tipo genérico
+ * para no acoplar.
+ */
+export function useSubscriptionStats<T = SubscriptionStats>() {
+    return useQuery<T>({
+        queryKey: [...SUBSCRIPTIONS_QUERY_KEY, 'stats'],
+        queryFn: async () => {
+            const response = await api.get<T>('/inventory/subscriptions/stats/')
+            return response.data
+        },
+        staleTime: 5 * 60 * 1000,
+    })
 }
