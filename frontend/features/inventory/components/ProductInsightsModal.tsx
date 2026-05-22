@@ -24,7 +24,7 @@ import {
     ArrowDownRight,
     LayoutDashboard
 } from "lucide-react"
-import api from "@/lib/api"
+import { useProductInsights } from "../hooks/useProducts"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { DataCell } from '@/components/shared'
@@ -99,8 +99,10 @@ interface ProductInsights {
 }
 
 export function ProductInsightsModal({ productId, productName, open, onOpenChange }: ProductInsightsModalProps) {
-    const [data, setData] = useState<ProductInsights | null>(null)
-    const [loading, setLoading] = useState(false)
+    // useProductInsights cachea por PRODUCTS_KEYS.detail(id) + 'insights'.
+    // Cualquier mutación del producto invalida también este bundle vía
+    // prefix match en PRODUCTS_KEYS.all.
+    const { data, isLoading: loading, refetch: refetchInsights } = useProductInsights<ProductInsights>(open ? productId : null)
     const [activeTab, setActiveTab] = useState("overview")
 
     const router = useRouter()
@@ -149,24 +151,6 @@ export function ProductInsightsModal({ productId, productName, open, onOpenChang
         params.delete('workOrder')
         router.replace(`${pathname}?${params.toString()}`, { scroll: false })
         setActiveWorkOrderId(null)
-    }
-
-    useEffect(() => {
-        if (open && productId) {
-            fetchInsights()
-        }
-    }, [open, productId])
-
-    const fetchInsights = async () => {
-        setLoading(true)
-        try {
-            const res = await api.get(`/inventory/products/${productId}/insights/`)
-            setData(res.data)
-        } catch (error) {
-            console.error("Error fetching product insights:", error)
-        } finally {
-            setLoading(false)
-        }
     }
 
     if (!open) return null
@@ -505,7 +489,7 @@ export function ProductInsightsModal({ productId, productName, open, onOpenChang
                     mode={{ kind: 'manage', orderId: activeWorkOrderId }}
                     open={!!activeWorkOrderId}
                     onOpenChange={(open) => !open && closeWorkOrder()}
-                    onSuccess={() => fetchInsights()}
+                    onSuccess={() => refetchInsights()}
                 />
             )}
         </BaseModal>
