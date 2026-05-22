@@ -66,3 +66,32 @@ export function usePricingRules(filters?: FilterState) {
         isDeleting: deleteMutation.isPending
     }
 }
+
+/**
+ * Pricing rules scoped to a single product. Returns null/empty while the
+ * productId is missing (creating a new product, before save).
+ *
+ * El queryKey usa el formato product-aware [PRICING_RULES_QUERY_KEY, 'byProduct', id]
+ * de modo que las invalidaciones masivas de PRICING_RULES_QUERY_KEY también
+ * lo cubren, y las mutaciones de un producto pueden invalidar selectivamente
+ * sólo este sub-conjunto si fuera necesario.
+ */
+export function useProductPricingRules(productId: number | null | undefined) {
+    const { data: rules, isLoading, refetch } = useQuery({
+        queryKey: productId
+            ? [...PRICING_RULES_QUERY_KEY, 'byProduct', productId]
+            : [...PRICING_RULES_QUERY_KEY, 'byProduct', 'noop'],
+        queryFn: async (): Promise<PricingRule[]> => {
+            if (!productId) return []
+            const response = await api.get(`/inventory/pricing-rules/?product=${productId}`)
+            return response.data.results || response.data
+        },
+        enabled: !!productId,
+    })
+
+    return {
+        rules: rules ?? [],
+        isLoading,
+        refetch,
+    }
+}
