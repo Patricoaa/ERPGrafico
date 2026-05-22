@@ -29,11 +29,48 @@ export const inventoryApi = {
     },
 
     /**
-     * Update a product (partial update)
+     * Fetch a single product by id (detail view).
+     */
+    getProduct: async (id: number): Promise<Product> => {
+        const { data } = await api.get<Product>(`inventory/products/${id}/`)
+        return data
+    },
+
+    /**
+     * Update a product (partial — PATCH). Use for inline edits (toggle active,
+     * change a single field). For full-form submits with potential file uploads,
+     * use `saveProduct` instead.
      */
     updateProduct: async (id: number, payload: ProductUpdatePayload): Promise<Product> => {
         const { data } = await api.patch<Product>(`inventory/products/${id}/`, payload)
         return data
+    },
+
+    /**
+     * Create or replace a product. Accepts a JSON payload or FormData (for
+     * image uploads). `id === null` → POST (create); otherwise PUT (full
+     * replacement). This is the path used by ProductForm.
+     */
+    saveProduct: async (
+        id: number | null,
+        payload: ProductUpdatePayload | FormData,
+    ): Promise<Product> => {
+        const isFormData = typeof FormData !== 'undefined' && payload instanceof FormData
+        const config = isFormData
+            ? { headers: { 'Content-Type': 'multipart/form-data' as const } }
+            : undefined
+        const { data } = id !== null
+            ? await api.put<Product>(`inventory/products/${id}/`, payload, config)
+            : await api.post<Product>('inventory/products/', payload, config)
+        return data
+    },
+
+    /**
+     * Delete a product. Backend is responsible for cascading or refusing
+     * if the product is referenced by transactions.
+     */
+    deleteProduct: async (id: number): Promise<void> => {
+        await api.delete(`inventory/products/${id}/`)
     },
 
     /**
