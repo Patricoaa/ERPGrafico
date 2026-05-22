@@ -3,7 +3,7 @@ layer: 40-quality
 doc: ci-cd
 status: active
 owner: platform-team
-last_review: 2026-04-21
+last_review: 2026-05-21
 ---
 
 # CI / CD
@@ -61,13 +61,62 @@ Every stage is a hard gate. No merge if any stage red.
 ## Release flow
 
 ```
-master merge → auto-deploy staging → smoke tests → manual promote → prod
+master merge → smoke tests (local + pre-deploy) → manual prod deploy → smoke tests (post-deploy)
 ```
 
 - Tag `v[semver]` on prod release.
-- Changelog auto-generated from Conventional Commits.
-- Sentry release created + source maps uploaded.
-- Grafana annotation.
+- Changelog auto-generated from Conventional Commits (ver [versioning-policy.md](../90-governance/versioning-policy.md)).
+- Sentry release created + source maps uploaded (sustituye annotations de Grafana — no hay Grafana en stack PYME, ver [observability.md](observability.md)).
+
+## Smoke tests
+
+Bash mínimo que se corre **antes** de tagear y **después** de levantar contenedores en prod. Valida que los endpoints críticos respondan con auth real, no solo `/healthz`.
+
+Vive en `scripts/smoke.sh` (a crear) y se invoca:
+
+```bash
+SMOKE_USER=smoke SMOKE_PASS=xxx ./scripts/smoke.sh https://erp.tudominio.local
+```
+
+Esqueleto canónico:
+
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
+BASE="${1:?usage: smoke.sh <base-url>}"
+USER="${SMOKE_USER:?env SMOKE_USER required}"
+PASS="${SMOKE_PASS:?env SMOKE_PASS required}"
+
+step() { printf '\n→ %s\n' "$*"; }
+
+step "healthz"
+curl -fsS "$BASE/api/healthz/" | grep -q '"status":"ok"'
+
+step "auth"
+TOKEN=$(curl -fsS -X POST "$BASE/api/token/" \
+  -H 'Content-Type: application/json' \
+  -d "{\"username\":\"$USER\",\"password\":\"$PASS\"}" | jq -r .access)
+[ "$TOKEN" != "null" ] && [ -n "$TOKEN" ]
+
+# Endpoints críticos: lectura barata, valida queryset + permisos.
+for path in \
+  "/api/sales/orders/?page_size=1" \
+  "/api/purchasing/orders/?page_size=1" \
+  "/api/billing/invoices/?page_size=1" \
+  "/api/treasury/movements/?page_size=1" \
+  "/api/accounting/entries/?page_size=1"; do
+  step "GET $path"
+  curl -fsS "$BASE$path" -H "Authorization: Bearer $TOKEN" \
+    | jq -e 'has("results") or has("count")' > /dev/null
+done
+
+step "smoke OK"
+```
+
+**Reglas:**
+- Cualquier endpoint cuyo fallo dejaría al usuario "sin trabajar" debe estar en `smoke.sh`. Agregar uno es 2 líneas.
+- El usuario `smoke` es un User real con rol `read-only`, sembrado por migración o `setup_demo_data`.
+- Si `smoke.sh` falla post-deploy: rollback inmediato (ver §Rollback). No debugging en caliente.
 
 ## Rollback
 

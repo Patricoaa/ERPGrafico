@@ -3,7 +3,7 @@ layer: 00-context
 doc: project-overview
 status: active
 owner: core-team
-last_review: 2026-04-21
+last_review: 2026-05-21
 ---
 
 # Project Overview
@@ -56,14 +56,17 @@ User → Nginx :80 → Next.js :3000 (SSR/App Router)
 - Multi-tenant SaaS (single-org deployment).
 - Offline-first / PWA.
 - Mobile-native apps.
+- HA / multi-region / horizontal scaling (ver [system-diagram.md](../10-architecture/system-diagram.md#deployment-units)).
+- Stack enterprise de observability (Prometheus/Grafana/Jaeger) — ver [observability.md](../40-quality/observability.md).
 
 ## Environments
 
-| Env | URL pattern | Data |
-|-----|-------------|------|
-| Local | `localhost` | Seeded via `setup_demo_data` |
-| Staging | TBD | Anonymized prod snapshot |
-| Prod | TBD | Real data |
+| Env | Host | Data |
+|-----|------|------|
+| Local | `localhost` (docker compose hybrid) | Sembrada vía `setup_demo_data` |
+| Prod | Home-server (Proxmox VM Ubuntu + docker compose) | Real, single-org |
+
+Sin entorno staging dedicado: pre-producción se valida vía rama feature local + tests + smoke. Cuando exista presupuesto para una VM staging, esta tabla debe agregarla.
 
 ## Further reading
 
