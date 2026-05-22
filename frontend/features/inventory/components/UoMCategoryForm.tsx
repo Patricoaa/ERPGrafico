@@ -14,8 +14,7 @@ import { Ruler } from "lucide-react"
 import { SubmitButton } from "@/components/shared/ActionButtons"
 import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 import { showApiError } from "@/lib/errors"
-import api from "@/lib/api"
-import { toast } from "sonner"
+import { useUoMs } from "../hooks/useUoMs"
 import { FormSplitLayout } from "@/components/shared"
 
 export interface UoMCategory {
@@ -40,6 +39,7 @@ export function UoMCategoryForm({ open: openProp, onOpenChange, initialData, onS
     const [openState, setOpenState] = useState(false)
     const open = openProp !== undefined ? openProp : openState
     const setOpen = onOpenChange || setOpenState
+    const { saveUoMCategory } = useUoMs()
     const [isSaving, setIsSaving] = useState(false)
 
     const form = useForm<CategoryFormValues>({
@@ -80,17 +80,13 @@ export function UoMCategoryForm({ open: openProp, onOpenChange, initialData, onS
     async function onSubmit(data: CategoryFormValues) {
         setIsSaving(true)
         try {
-            let res;
-            if (initialData?.id) {
-                res = await api.put(`/inventory/uom-categories/${initialData.id}/`, data)
-                toast.success("Categoría actualizada")
-            } else {
-                res = await api.post('/inventory/uom-categories/', data)
-                toast.success("Categoría creada")
-            }
+            // saveUoMCategory invalida UOM_CATEGORIES_KEYS + UOMS_KEYS
+            // (los UoMs muestran category_name derivado). Toast + markLocalMutation
+            // a cargo del hook.
+            const res = await saveUoMCategory({ id: initialData?.id ?? null, payload: data })
             form.reset()
             setOpen(false)
-            if (onSuccess) onSuccess(res.data)
+            if (onSuccess) onSuccess(res)
         } catch (error: unknown) {
             console.error("Error saving Category:", error)
             showApiError(error, "Error al guardar la categoría")
