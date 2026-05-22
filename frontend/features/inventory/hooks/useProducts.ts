@@ -89,3 +89,23 @@ export function useProduct(id: number | null | undefined) {
         enabled: !!id,
     })
 }
+
+/**
+ * Fetch the insights bundle (price history, kardex, sales analysis,
+ * production usage) for a product. The shape is consumer-defined via the
+ * generic — pass your local `ProductInsights` interface as <T>.
+ *
+ * queryKey extiende PRODUCTS_KEYS.detail(id) → cualquier mutación del
+ * producto invalida también este insights bundle (vía prefix match en
+ * PRODUCTS_KEYS.all).
+ */
+export function useProductInsights<T = unknown>(id: number | null | undefined) {
+    return useQuery<T | null>({
+        queryKey: id ? [...PRODUCTS_KEYS.detail(id), 'insights'] : ['products', 'insights', 'noop'],
+        queryFn: async () => {
+            if (!id) return null
+            return inventoryApi.getProductInsights<T>(id)
+        },
+        enabled: !!id,
+    })
+}
