@@ -110,6 +110,9 @@ export function useSelectedEntity<T = unknown>({
                 throw err
             }
         },
+        // Always fetch fresh when a panel opens — overrides the 5-min global
+        // staleTime so edits in another tab/user are visible immediately on reopen.
+        staleTime: 0,
         // Only run when there is an id to fetch
         enabled: !!selectedId,
         // Don't retry on 404/403 — they are definitive answers

@@ -98,18 +98,18 @@ describe('useSelectedEntity', () => {
         expect(result.current.isLoading).toBe(false)
     })
 
-    // ── 3. Cache hit — no re-fetcha ───────────────────────────────────────
-    // Usa un QueryClient compartido con staleTime: Infinity para que el segundo
-    // subscriber use la cache sin re-fetch (comportamiento production equivalente
-    // cuando la lista ya cargó el item en su propia query).
+    // ── 3. Cache hit — devuelve datos inmediatos pero re-fetchea en background ──
+    // staleTime: 0 (forzado en el hook) garantiza que al reabrir un panel
+    // siempre se obtienen datos frescos, incluso si ya había una entrada en cache.
+    // Tradeoff aceptado: 1 GET extra por reapertura a cambio de nunca mostrar
+    // datos obsoletos tras una mutación remota o de otro tab.
 
-    it('reutiliza la cache si la entidad ya fue fetcheada (mismo queryKey)', async () => {
+    it('devuelve datos de cache inmediatamente y re-fetchea en background (staleTime: 0)', async () => {
         mockGet.mockReturnValue('7')
         apiGetMock.mockResolvedValue({ data: { id: 7, name: 'Herramientas' } })
 
-        // Shared QueryClient — staleTime: Infinity simula cache caliente
         const queryClient = new QueryClient({
-            defaultOptions: { queries: { retry: false, staleTime: Infinity } },
+            defaultOptions: { queries: { retry: false } },
         })
         const wrapper = ({ children }: { children: React.ReactNode }) =>
             React.createElement(QueryClientProvider, { client: queryClient }, children)
@@ -122,16 +122,17 @@ describe('useSelectedEntity', () => {
         await waitFor(() => expect(r1.current.entity).not.toBeNull())
         expect(apiGetMock).toHaveBeenCalledTimes(1)
 
-        // Segundo hook — misma instancia de QueryClient con staleTime: Infinity
-        // → datos no son stale → NO hace fetch adicional
+        // Segundo hook — misma queryKey. Con staleTime: 0 los datos son
+        // inmediatamente stale → devuelve cache al instante pero dispara
+        // un refetch en background (no loading state visible para el usuario).
         const { result: r2 } = renderHook(
             () => useSelectedEntity({ endpoint: '/api/inventory/categories' }),
             { wrapper }
         )
-        await waitFor(() => expect(r2.current.entity).not.toBeNull())
-
-        // api.get debe haberse llamado exactamente 1 vez (no 2)
-        expect(apiGetMock).toHaveBeenCalledTimes(1)
+        // Dato disponible de inmediato desde cache (sin flash de loading)
+        expect(r2.current.entity).toEqual({ id: 7, name: 'Herramientas' })
+        // Background refetch ocurre: 2 llamadas en total
+        await waitFor(() => expect(apiGetMock).toHaveBeenCalledTimes(2))
     })
 
     // ── 4. 404 → toast + clearSelection ──────────────────────────────────
