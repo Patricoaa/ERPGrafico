@@ -15,7 +15,7 @@ import {
     AlertCircle
 } from "lucide-react"
 import { BaseModal } from "@/components/shared/BaseModal"
-import { AutoSaveStatusBadge, Chip, FormSkeleton, LabeledInput, LabeledSelect, ToolbarCreateButton, FadeIn } from "@/components/shared"
+import { AutoSaveStatusBadge, Chip, SkeletonShell, LabeledInput, LabeledSelect, ToolbarCreateButton, FadeIn } from "@/components/shared"
 import { useAutoSaveForm } from "@/hooks/useAutoSaveForm"
 import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
@@ -194,7 +194,7 @@ export function HRSettingsView({ activeTab = "global" }: { activeTab?: string })
         })
     ]
 
-    if (loading) return <FormSkeleton hasTabs tabs={3} fields={4} />
+    if (loading) return <SkeletonShell isLoading={loading} ariaLabel="Cargando configuración de RRHH" />
 
     return (
         <div className="max-w-6xl mx-auto space-y-6">

@@ -19,7 +19,7 @@ import {
 } from "@tanstack/react-table"
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table"
-import { TableSkeleton as SharedTableSkeleton } from "@/components/shared/TableSkeleton"
+import { SkeletonShell } from "@/components/shared/SkeletonShell"
 import { cn } from "@/lib/utils"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { SearchX, LucideIcon } from "lucide-react"
@@ -170,10 +170,10 @@ export function DataTable<TData, TValue>({
 
     React.useEffect(() => {
         if (containerRef.current) {
-            const hasDialogParent = !!containerRef.current.closest('[role="dialog"]') || 
-                                    !!containerRef.current.closest('.dialog') || 
-                                    !!containerRef.current.closest('[data-state*="open"]') ||
-                                    !!containerRef.current.closest('.modal');
+            const hasDialogParent = !!containerRef.current.closest('[role="dialog"]') ||
+                !!containerRef.current.closest('.dialog') ||
+                !!containerRef.current.closest('[data-state*="open"]') ||
+                !!containerRef.current.closest('.modal');
             setIsInModal(hasDialogParent)
         }
     }, [])
@@ -396,20 +396,20 @@ export function DataTable<TData, TValue>({
 
                 <div className={cn("flex-1 min-h-0", renderCustomView ? "overflow-x-auto" : "flex flex-col overflow-hidden")}>
                     {renderCustomView ? (
-                        <div className="py-0 h-full overflow-y-auto custom-scrollbar">
-                            {isLoading 
+                        <div className="py-0 h-full overflow-y-scroll custom-scrollbar">
+                            {isLoading
                                 ? (renderLoadingView ? renderLoadingView() : <SharedTableSkeleton rows={skeletonRows} columns={columns.length} className="pt-4" />)
                                 : renderCustomView(table)}
                         </div>
                     ) : (
                         <Table containerClassName={cn(
-                            !isInModal && "flex-1 overflow-y-auto custom-scrollbar"
+                            !isInModal && "flex-1 overflow-y-scroll custom-scrollbar"
                         )}>
-                            <TableHeader className={cn(!isInModal ? "sticky top-0 bg-background z-10 shadow-sm border-b" : "bg-transparent")}>
+                            <TableHeader className={cn(!isInModal ? "sticky top-0 bg-card z-10 border-b" : "bg-transparent")}>
                                 {table.getHeaderGroups().map((headerGroup) => (
                                     <TableRow
                                         key={headerGroup.id}
-                                        className="border-b-2 border-border/60 hover:bg-transparent"
+                                        className="border-none hover:bg-transparent"
                                     >
                                         {headerGroup.headers.map((header) => (
                                             <TableHead
@@ -441,7 +441,7 @@ export function DataTable<TData, TValue>({
 
                 {/* Pagination Section (Outside) */}
                 {!hidePagination && (
-                    <div className="px-1 shrink-0">
+                    <div className="px-1 shrink-0 border-t border-border/40 py-1">
                         <DataTablePagination table={table} pageSizeOptions={pageSizeOptions} />
                     </div>
                 )}
@@ -484,7 +484,7 @@ export function DataTable<TData, TValue>({
                 </div>
             )}
             {renderCustomView ? (
-                isLoading 
+                isLoading
                     ? (renderLoadingView ? renderLoadingView() : <SharedTableSkeleton rows={skeletonRows} columns={columns.length} className="pt-4" />)
                     : renderCustomView(table)
             ) : (

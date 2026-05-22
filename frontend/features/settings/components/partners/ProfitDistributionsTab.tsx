@@ -11,9 +11,7 @@ import { ProfitDistribution, ProfitDistributionLine } from "@/features/contacts/
 import { formatPlainDate, cn } from "@/lib/utils"
 import {
     Calendar,
-
     Wallet,
-    Eye,
     Wand2,
     Play
 } from "lucide-react"
@@ -232,12 +230,12 @@ export function ProfitDistributionsTab({ initialFlowOpen = false, onModalClose, 
         createActionsColumn<ProfitDistribution>({
             renderActions: (dist) => {
                 if (dist.status === 'CANCELLED') return (
-                    <DataCell.Action icon={Eye} title="Ver Detalle" onClick={() => setState(prev => ({ ...prev, viewingDist: dist }))} />
+                    <DataCell.Action action="detail" onClick={() => setState(prev => ({ ...prev, viewingDist: dist }))} />
                 )
 
                 return (
                     <>
-                        <DataCell.Action icon={Eye} title="Ver Detalle" onClick={() => setState(prev => ({ ...prev, viewingDist: dist }))} />
+                        <DataCell.Action action="detail" onClick={() => setState(prev => ({ ...prev, viewingDist: dist }))} />
 
                         {dist.status === 'DRAFT' && (
                             <DataCell.Action icon={Wand2} title="Retomar Proceso" className="text-success" onClick={() => {

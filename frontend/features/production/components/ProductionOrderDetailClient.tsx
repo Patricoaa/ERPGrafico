@@ -3,11 +3,61 @@ import { formatPlainDate } from "@/lib/utils";
 
 import React, { useState } from "react"
 import { notFound, useRouter } from "next/navigation"
-import { EntityDetailPage, FormSkeleton, FormFooter, CancelButton, ActionSlideButton } from "@/components/shared"
+import { EntityDetailPage, FormFooter, CancelButton, ActionSlideButton, SkeletonShell } from "@/components/shared"
 import type { WorkOrder, StageId } from "@/features/production/types"
 import { WorkOrderWizard, useWorkOrder } from "@/features/production"
 import { translateProductionStage } from "@/lib/utils"
 import { formatEntityDisplay } from "@/lib/entity-registry"
+
+// Placeholder tipado para el esqueleto - sigue el patrón del contrato
+const WORK_ORDER_SKELETON: WorkOrder = {
+    id: 0,
+    display_id: "————————————",
+    number: "————————————",
+    main_product_id: 0,
+    product_name: "————————————",
+    status: "draft",
+    current_stage: "BASIC_INFO",
+    requires_prepress: false,
+    requires_press: false,
+    requires_postpress: false,
+    is_manual: false,
+    description: "————————————",
+    product_description: "————————————",
+    specifications: "————————————",
+    specifications_prepress: "————————————",
+    specifications_press: "————————————",
+    specifications_postpress: "————————————",
+    prepress_archive: "————————————",
+    start_date: "",
+    sale_order_delivery_date: "",
+    sale_customer_name: "————————————",
+    sale_customer_rut: "————————————",
+    sale_order_date: "",
+    sale_order_number: null,
+    due_date: "",
+    outsourcing_status: "none",
+    warehouse_name: "————————————",
+    materials: [],
+    workflow_tasks: [],
+    stage_data: null,
+    product: {
+        id: 0,
+        name: "————————————",
+        track_inventory: true,
+        requires_bom_validation: false,
+        uom: {
+            name: "————————————"
+        }
+    },
+    sale_line: null,
+    sale_order: null,
+    total_price: 0,
+    created_at: "",
+    checkout_files: [],
+    attachments: [],
+    production_discrepancy: null
+}
 
 interface ProductionOrderDetailClientProps {
     orderId: string
@@ -30,12 +80,12 @@ export function ProductionOrderDetailClient({ orderId }: ProductionOrderDetailCl
     )
 
     if (loading || !order) {
-        return (
-            <div className="flex-1 p-8">
-                <FormSkeleton />
-            </div>
-        )
-    }
+         return (
+             <div className="flex-1 p-8">
+                 <SkeletonShell isLoading={loading || !order} ariaLabel="Cargando orden de producción" />
+             </div>
+         )
+     }
 
     const isEditable = ['MATERIAL_ASSIGNMENT', 'MATERIAL_APPROVAL', 'PREPRESS'].includes(order.current_stage)
 

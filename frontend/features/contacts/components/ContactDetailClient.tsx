@@ -2,15 +2,30 @@
 
 import React, { useState, useEffect } from "react"
 import { notFound, useRouter } from "next/navigation"
-import { EntityDetailPage, FormSkeleton, FormFooter, CancelButton, ActionSlideButton, Chip } from "@/components/shared"
+import { EntityDetailPage, FormFooter, CancelButton, ActionSlideButton, Chip, SkeletonShell } from "@/components/shared"
 import { formatEntityDisplay } from "@/lib/entity-registry"
 import api from "@/lib/api"
 import type { Contact } from "@/features/contacts/types"
-import { formatRUT } from "@/lib/utils/format"
-import ContactModal from "@/features/contacts/components/ContactModal"
 
 interface ContactDetailClientProps {
     contactId: string
+}
+
+// Placeholder tipado para el esqueleto - sigue el patrón del contrato
+const CONTACT_DETAIL_SKELETON: Contact = {
+    id: 0,
+    code: "————————————",
+    display_id: "————————————",
+    name: "————————————",
+    tax_id: "————————————",
+    contact_type: 'CUSTOMER', // valor por defecto válido
+    email: "————————————",
+    phone: "————————————",
+    address: "————————————",
+    city: "————————————",
+    payment_terms: "————————————",
+    is_default_customer: false,
+    is_default_vendor: false,
 }
 
 export function ContactDetailClient({ contactId }: ContactDetailClientProps) {
@@ -42,84 +57,90 @@ export function ContactDetailClient({ contactId }: ContactDetailClientProps) {
         </div>
     )
 
-    if (loading || !contact) {
-        return (
-            <div className="flex-1 p-8">
-                <FormSkeleton />
-            </div>
-        )
-    }
-
-    const displayId = formatEntityDisplay('contacts.contact', contact)
 
     return (
-        <EntityDetailPage
-            entityLabel="contacts.contact"
-            displayId={displayId}
-            breadcrumb={[
-                { label: "Contactos", href: "/contacts" },
-                { label: displayId, href: `/contacts/${contactId}` },
-            ]}
-            instanceId={parseInt(contactId)}
-            readonly={true}
-            footer={
-                <FormFooter
-                    actions={
-                        <>
-                            <CancelButton onClick={() => router.push("/contacts")}>Volver</CancelButton>
-                            <ActionSlideButton onClick={() => setModalOpen(true)}>
-                                Editar Contacto
-                            </ActionSlideButton>
-                        </>
-                    }
-                />
-            }
-        >
-            <div className="max-w-5xl mx-auto w-full p-6 space-y-6">
-                <div className="grid grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                        <p className="text-sm text-muted-foreground">Nombre / Razón Social</p>
-                        <p className="font-semibold">{contact.name}</p>
-                    </div>
-                    <div className="space-y-2">
-                        <p className="text-sm text-muted-foreground">RUT</p>
-                        <p className="font-semibold">{contact.tax_id ? formatRUT(contact.tax_id) : '—'}</p>
-                    </div>
-                    <div className="space-y-2">
-                        <p className="text-sm text-muted-foreground">Tipo</p>
-                        <div>
-                            <Chip.Category domain="contact_type" value={contact.contact_type} size="sm" />
+        <SkeletonShell isLoading={loading || !contact} ariaLabel="Cargando detalle de contacto">
+            <EntityDetailPage
+                entityLabel="contacts.contact"
+                displayId={formatEntityDisplay('contacts.contact', contact ?? CONTACT_DETAIL_SKELETON)}
+                breadcrumb={[
+                    { label: "Contactos", href: "/contacts" },
+                    { label: formatEntityDisplay('contacts.contact', contact ?? CONTACT_DETAIL_SKELETON), href: `/contacts/${contactId}` },
+                ]}
+                instanceId={contact?.id ?? 0}
+                readonly={true}
+                footer={
+                    <FormFooter
+                        actions={
+                            <>
+                                <CancelButton onClick={() => router.push("/contacts")}>Volver</CancelButton>
+                                <ActionSlideButton onClick={() => setModalOpen(true)}>
+                                    Editar Contacto
+                                </ActionSlideButton>
+                            </>
+                        }
+                    />
+                }
+            >
+                <div className="max-w-5xl mx-auto w-full p-6 space-y-6">
+                    <div className="grid grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                            <p className="text-sm text-muted-foreground">Nombre / Razón Social</p>
+                            <p className="font-semibold">{contact?.name ?? CONTACT_DETAIL_SKELETON.name}</p>
+                        </div>
+                        <div className="space-y-2">
+                            <p className="text-sm text-muted-foreground">RUT</p>
+                            <p className="font-semibold">
+                                {contact?.tax_id ? formatRUT(contact.tax_id) : 
+                                 CONTACT_DETAIL_SKELETON.tax_id ? formatRUT(CONTACT_DETAIL_SKELETON.tax_id) : '—'}
+                            </p>
+                        </div>
+                        <div className="space-y-2">
+                            <p className="text-sm text-muted-foreground">Tipo</p>
+                            <div>
+                                <Chip.Category 
+                                    domain="contact_type" 
+                                    value={contact?.contact_type ?? CONTACT_DETAIL_SKELETON.contact_type} 
+                                    size="sm" 
+                                />
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            <p className="text-sm text-muted-foreground">Email</p>
+                            <p className="font-semibold">{contact?.email ?? CONTACT_DETAIL_SKELETON.email}</p>
+                        </div>
+                        <div className="space-y-2">
+                            <p className="text-sm text-muted-foreground">Teléfono</p>
+                            <p className="font-semibold">{contact?.phone ?? CONTACT_DETAIL_SKELETON.phone}</p>
+                        </div>
+                        <div className="space-y-2 col-span-2">
+                            <p className="text-sm text-muted-foreground">Dirección</p>
+                            <p className="font-semibold">
+                                {{
+                                    ...(contact?.address || CONTACT_DETAIL_SKELETON.address),
+                                    ...(contact?.city || CONTACT_DETAIL_SKELETON.city) && {
+                                        toString: () => 
+                                            `${contact?.address || CONTACT_DETAIL_SKELETON.address}${contact?.city || CONTACT_DETAIL_SKELETON.city ? `, ${contact?.city || CONTACT_DETAIL_SKELETON.city}` : ''}`
+                                    }
+                                }.toString()}
+                            </p>
                         </div>
                     </div>
-                    <div className="space-y-2">
-                        <p className="text-sm text-muted-foreground">Email</p>
-                        <p className="font-semibold">{contact.email || "—"}</p>
-                    </div>
-                    <div className="space-y-2">
-                        <p className="text-sm text-muted-foreground">Teléfono</p>
-                        <p className="font-semibold">{contact.phone || "—"}</p>
-                    </div>
-                    <div className="space-y-2 col-span-2">
-                        <p className="text-sm text-muted-foreground">Dirección</p>
-                        <p className="font-semibold">
-                            {contact.address ? `${contact.address}${contact.city ? `, ${contact.city}` : ''}` : '—'}
-                        </p>
-                    </div>
-                </div>
 
-                {modalOpen && (
-                    <ContactModal 
-                        open={modalOpen} 
-                        onOpenChange={setModalOpen} 
-                        contact={contact} 
-                        onSuccess={() => {
-                            setModalOpen(false)
-                            fetchContact()
-                            router.refresh()
-                        }} 
-                    />
-                )}
-            </div>
-        </EntityDetailPage>
+                    {modalOpen && (
+                        <ContactModal 
+                            open={modalOpen} 
+                            onOpenChange={setModalOpen} 
+                            contact={contact} 
+                            onSuccess={() => {
+                                setModalOpen(false)
+                                fetchContact()
+                                router.refresh()
+                            }} 
+                        />
+                    )}
+                </div>
+            </EntityDetailPage>
+        </SkeletonShell>
     )
 }

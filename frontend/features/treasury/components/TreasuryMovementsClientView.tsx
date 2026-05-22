@@ -9,7 +9,7 @@ import { ArrowDown, Eye } from "lucide-react"
 import { DataCell, createActionsColumn } from '@/components/shared'
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 import { StatusBadge } from "@/components/shared/StatusBadge"
-import { FormSkeleton, SmartSearchBar, useSmartSearch } from "@/components/shared"
+import { SkeletonShell, SmartSearchBar, useSmartSearch } from "@/components/shared"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { useTreasuryMovementsList, type TreasuryMovementFilters } from "@/features/treasury/hooks/useTreasuryMovements"
 import { treasuryMovementsSearchDef } from "@/features/treasury/searchDef"
@@ -303,13 +303,15 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
 
     return (
         <div className="space-y-6 h-full flex flex-col">
-            <Suspense fallback={<FormSkeleton />}>
-                <CashMovementModal
-                    open={openModal}
-                    onOpenChange={(open: boolean) => setOpenModal(open)}
-                    onSuccess={refetch}
-                />
-            </Suspense>
+             <SkeletonShell isLoading={isLoading} ariaLabel="Cargando modal de movimiento de tesorería">
+                 <Suspense fallback={<div />}>
+                     <CashMovementModal
+                     open={openModal}
+                     onOpenChange={(open: boolean) => setOpenModal(open)}
+                     onSuccess={refetch}
+                 />
+                 </Suspense>
+             </SkeletonShell>
 
             <div className="flex-1 min-h-0">
                 <DataTable
@@ -393,18 +395,20 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                 />
             </div>
 
-            <Suspense fallback={<FormSkeleton />}>
-                <TransactionViewModal
-                    open={detailsOpen}
-                    onOpenChange={(open) => {
-                        setDetailsOpen(open)
-                        if (!open) clearSelection()
-                    }}
-                    type="payment"
-                    id={selectedMovementId!}
-                    view="details"
-                />
-            </Suspense>
+             <SkeletonShell isLoading={isLoading} ariaLabel="Cargando vista de detalle de movimiento">
+                 <Suspense fallback={<div />}>
+                     <TransactionViewModal
+                     open={detailsOpen}
+                     onOpenChange={(open) => {
+                         setDetailsOpen(open)
+                         if (!open) clearSelection()
+                     }}
+                     type="payment"
+                     id={selectedMovementId!}
+                     view="details"
+                 />
+                 </Suspense>
+             </SkeletonShell>
         </div>
     )
 }

@@ -12,15 +12,15 @@ import { Loader2, Landmark, CreditCard, Lock } from "lucide-react"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { useTreasuryAccounts, treasuryApi } from "@/features/treasury"
 import {
-    CancelButton,
-    LabeledInput,
-    LabeledSelect,
-    FormSection,
-    FormFooter,
-    FormSkeleton,
-    ActionSlideButton,
-    EntityDetailPage,
-} from "@/components/shared"
+     CancelButton,
+     LabeledInput,
+     LabeledSelect,
+     FormSection,
+     FormFooter,
+     SkeletonShell,
+     ActionSlideButton,
+     EntityDetailPage,
+ } from "@/components/shared"
 import { Form, FormField } from "@/components/ui/form"
 
 const schema = z.object({
@@ -121,13 +121,13 @@ export function TreasuryAccountDetailClient({ accountId }: TreasuryAccountDetail
         </div>
     )
 
-    if (loading) {
-        return (
-            <div className="flex-1 p-8">
-                <FormSkeleton />
-            </div>
-        )
-    }
+     if (loading) {
+         return (
+             <div className="flex-1 p-8">
+                 <SkeletonShell isLoading={loading} ariaLabel="Cargando detalle de cuenta de tesorería" />
+             </div>
+         )
+     }
 
     const accountName = form.getValues("name")
 

@@ -10,7 +10,7 @@ import { BaseModal } from "@/components/shared/BaseModal"
 import { useTerminalBatches } from "@/features/treasury"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { DataCell, createActionsColumn } from '@/components/shared'
-import { FormSkeleton, SmartSearchBar, useSmartSearch } from "@/components/shared"
+import { SkeletonShell, SmartSearchBar, useSmartSearch } from "@/components/shared"
 import { terminalBatchSearchDef } from "@/features/treasury/searchDef"
 
 // Lazy load feature components
@@ -139,30 +139,34 @@ export function TerminalBatchesManagement({
                 />
             </div>
 
-            <Suspense fallback={<FormSkeleton />}>
-                <TerminalBatchModal
-                    open={openCreate}
-                    onOpenChange={(open: boolean) => {
-                        setOpenCreate(open)
-                        if (!open) onExternalOpenBatchChange?.(false)
-                    }}
-                    onSuccess={() => {
-                        setOpenCreate(false)
-                        onExternalOpenBatchChange?.(false)
-                        refetch()
-                    }}
-                />
-            </Suspense>
+             <SkeletonShell isLoading={isLoading} ariaLabel="Cargando modal de lote de terminal">
+                 <Suspense fallback={<div />}>
+                     <TerminalBatchModal
+                     open={openCreate}
+                     onOpenChange={(open: boolean) => {
+                         setOpenCreate(open)
+                         if (!open) onExternalOpenBatchChange?.(false)
+                     }}
+                     onSuccess={() => {
+                         setOpenCreate(false)
+                         onExternalOpenBatchChange?.(false)
+                         refetch()
+                     }}
+                 />
+                 </Suspense>
+             </SkeletonShell>
 
-            <Suspense fallback={<FormSkeleton />}>
-                <MonthlyInvoiceModal
-                    open={openInvoice}
-                    onOpenChange={(open: boolean) => {
-                        setOpenInvoice(open)
-                        if (!open) onExternalOpenInvoiceChange?.(false)
-                    }}
-                />
-            </Suspense>
+             <SkeletonShell isLoading={isLoading} ariaLabel="Cargando modal de factura mensual">
+                 <Suspense fallback={<div />}>
+                     <MonthlyInvoiceModal
+                     open={openInvoice}
+                     onOpenChange={(open: boolean) => {
+                         setOpenInvoice(open)
+                         if (!open) onExternalOpenInvoiceChange?.(false)
+                     }}
+                 />
+                 </Suspense>
+             </SkeletonShell>
         </div>
     )
 }
@@ -180,11 +184,13 @@ function TerminalBatchModal({ open, onOpenChange, onSuccess }: { open: boolean, 
                 </div>
             }
             description="Ingrese los datos de la liquidación diaria informada por el proveedor del terminal de cobro."
-        >
-            <Suspense fallback={<FormSkeleton />}>
-                <LazyTerminalBatchForm onSuccess={onSuccess} onCancel={() => onOpenChange(false)} />
-            </Suspense>
-        </BaseModal>
+         >
+             <SkeletonShell isLoading={true} ariaLabel="Cargando formulario de lote de terminal">
+                 <Suspense fallback={<div />}>
+                     <LazyTerminalBatchForm onSuccess={onSuccess} onCancel={() => onOpenChange(false)} />
+                 </Suspense>
+             </SkeletonShell>
+         </BaseModal>
     )
 }
 

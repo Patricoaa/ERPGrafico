@@ -8,8 +8,6 @@ export { default as DeliveryModal, DeliveryForm } from './components/DeliveryMod
 export { default as SaleNoteModal, SaleNoteForm } from './components/SaleNoteModal'
 export { default as SalesTerminalsView } from './components/SalesTerminalsView'
 export { POSSessionsView } from './components/POSSessionsView'
-export { default as SaleOrderModal, SaleOrderForm } from './components/forms/SaleOrderForm'
 export { AdvancedManufacturingModal } from './components/forms/AdvancedManufacturingModal'
-export * from './components/SaleOrderDetailClient'
 export * from './components/DeliveryDetailClient'
 export * from './components/SaleReturnDetailClient'

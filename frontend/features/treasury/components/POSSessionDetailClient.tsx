@@ -4,7 +4,7 @@ import React from "react"
 import { useQuery } from "@tanstack/react-query"
 import { notFound } from "next/navigation"
 import api from "@/lib/api"
-import { EntityDetailPage, FormSkeleton } from "@/components/shared"
+import { EntityDetailPage, SkeletonShell } from "@/components/shared"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { formatPlainDate } from "@/lib/utils"
@@ -71,12 +71,12 @@ export function POSSessionDetailClient({ sessionId }: POSSessionDetailClientProp
     )
 
     if (loading || !data) {
-        return (
-            <div className="flex-1 p-8">
-                <FormSkeleton />
-            </div>
-        )
-    }
+         return (
+             <div className="flex-1 p-8">
+                 <SkeletonShell isLoading={loading || !data} ariaLabel="Cargando detalle de sesión POS" />
+             </div>
+         )
+     }
 
     const displayId = `SES-${String(data.id).padStart(6, "0")}`
 

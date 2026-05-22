@@ -4,7 +4,7 @@ import React, { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { notFound, useRouter } from "next/navigation"
 import api from "@/lib/api"
-import { EntityDetailPage, FormFooter, SubmitButton, CancelButton, FormSkeleton } from "@/components/shared"
+import { EntityDetailPage, FormFooter, SubmitButton, CancelButton, SkeletonShell } from "@/components/shared"
 import { JournalEntryForm } from "./JournalEntryForm"
 
 interface JournalEntryDetailClientProps {
@@ -29,12 +29,12 @@ export function JournalEntryDetailClient({ entryId }: JournalEntryDetailClientPr
     if (error) return <div className="p-8 text-destructive">Error al cargar el asiento</div>
     
     if (loading || !entry) {
-        return (
-            <div className="flex-1 p-8">
-                <FormSkeleton />
-            </div>
-        )
-    }
+         return (
+             <div className="flex-1 p-8">
+                 <SkeletonShell isLoading={loading || !entry} ariaLabel="Cargando asiento contable" />
+             </div>
+         )
+     }
 
     const isPosted = entry.state === 'POSTED'
 

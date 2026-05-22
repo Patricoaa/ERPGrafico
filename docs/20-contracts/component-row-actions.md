@@ -74,7 +74,7 @@ registry — they are passed inline via `icon` + `title` props.
 - Default colors come from the registry (read = `ghost`, write = `ghost`, destructive = `ghost`
   with `text-destructive` on hover). Never override `color` for actions already in the registry.
 - Module-specific actions: only the semantic tokens `text-primary`, `text-success`,
-  `text-warning`, `text-destructive`, `text-muted-foreground` are allowed (governance §2 —
+  `text-warning`, `text-info`, `text-destructive`, `text-muted-foreground` are allowed (governance §2 —
   no raw Tailwind colors).
 
 ### 2.2 Tooltip rules

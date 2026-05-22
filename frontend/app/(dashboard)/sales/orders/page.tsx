@@ -1,6 +1,6 @@
 "use client"
 
-import { lazy, Suspense, useState, useEffect, useRef } from "react"
+import { lazy, Suspense, useState, useEffect } from "react"
 import { TableSkeleton } from "@/components/shared"
 import { Tabs } from "@/components/ui/tabs"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
@@ -17,7 +17,6 @@ export default function SalesOrdersPage() {
     const viewMode = (searchParams.get('tab') as 'orders' | 'notes') || 'orders'
     const legacyId = searchParams.get('id')
     const selectedId = searchParams.get('selected')
-    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
     const { openHub, isHubOpen } = useHubPanel()
 
     // 1. Backward compatibility for legacy ?id=
@@ -72,15 +71,11 @@ export default function SalesOrdersPage() {
     }
 
     return (
-        <div className="pt-2 h-[calc(100vh-140px)] flex flex-col">
+        <div className="pt-2 flex-1 min-h-0 flex flex-col">
             <Tabs value={viewMode} className="w-full flex flex-col h-full gap-4">
                 <div className="flex-1 min-h-0">
                     <Suspense fallback={<TableSkeleton rows={10} columns={6} />}>
-                        <SalesOrdersClientView
-                            viewMode={viewMode}
-                            isCreateModalOpen={isCreateModalOpen}
-                            setCreateModalOpen={setIsCreateModalOpen}
-                        />
+                        <SalesOrdersClientView viewMode={viewMode} />
                     </Suspense>
                 </div>
             </Tabs>

@@ -100,7 +100,7 @@ export function ContactsClientView({ isNewModalOpen = false, createAction }: Con
         {
             accessorKey: "display_id",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Código" className="justify-center" />,
-            cell: ({ row }) => <DataCell.Entity entityLabel="contacts.contact" data={row.original} />,
+            cell: ({ row }) => <DataCell.Code>{row.original.display_id}</DataCell.Code>,
         },
         {
             accessorKey: "tax_id",

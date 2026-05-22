@@ -4,14 +4,32 @@ import React from "react"
 import { useQuery } from "@tanstack/react-query"
 import { notFound } from "next/navigation"
 import api from "@/lib/api"
-import { EntityDetailPage, FormSkeleton, LabeledContainer } from "@/components/shared"
+import { EntityDetailPage, LabeledContainer, SkeletonShell, Chip, MoneyDisplay } from "@/components/shared"
 import { formatPlainDate } from "@/lib/utils"
-import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
-import { Chip } from "@/components/shared"
 import { formatEntityDisplay } from "@/lib/entity-registry"
+import type { StockMove } from "@/features/inventory/hooks/useStockMoves"
 
 interface StockMoveDetailClientProps {
     moveId: string
+}
+
+// Placeholder tipado para el esqueleto - sigue el patrón del contrato
+const STOCK_MOVE_SKELETON: StockMove = {
+    id: 0,
+    date: "",
+    product_name: "————————————",
+    product_internal_code: "————————————",
+    product_code: "————————————",
+    warehouse_name: "————————————",
+    quantity: "0",
+    uom_name: "————————————",
+    move_type: "IN", // valor por defecto válido
+    description: "————————————",
+    related_documents: [
+        { type: "—", id: 0, name: "————————————" },
+        { type: "—", id: 0, name: "————————————" },
+        { type: "—", id: 0, name: "————————————" }
+    ]
 }
 
 export function StockMoveDetailClient({ moveId }: StockMoveDetailClientProps) {
@@ -27,123 +45,113 @@ export function StockMoveDetailClient({ moveId }: StockMoveDetailClientProps) {
 
     if (error === 404) return notFound()
     if (error) return <div className="p-8 text-destructive">Error al cargar el movimiento de stock</div>
-    
-    if (loading || !move) {
-        return (
-            <div className="flex-1 p-8">
-                <FormSkeleton />
-            </div>
-        )
-    }
 
-    const typeLabels: Record<string, string> = {
-        'IN': 'Entrada',
-        'OUT': 'Salida',
-        'ADJ': 'Ajuste'
-    }
-
-    const typeIntents: Record<string, "success" | "destructive" | "warning"> = {
-        'IN': 'success',
-        'OUT': 'destructive',
-        'ADJ': 'warning'
-    }
-
+    // Estado de carga manejado con SkeletonShell
     return (
-        <EntityDetailPage
-            entityLabel="inventory.stockmove"
-            displayId={formatEntityDisplay('inventory.stockmove', move)}
-            breadcrumb={[
-                { label: "Movimientos", href: "/inventory/moves" },
-                { label: formatEntityDisplay('inventory.stockmove', move), href: `/inventory/moves/${moveId}` }
-            ]}
-            instanceId={move.id}
-            readonly={true}
-        >
-            <div className="max-w-4xl mx-auto space-y-8">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div className="space-y-6">
-                        <LabeledContainer label="Información General">
-                            <div className="grid grid-cols-2 gap-4 mt-2">
-                                <div>
-                                    <span className="text-xs text-muted-foreground block">Fecha</span>
-                                    <span className="text-sm font-medium">
-                                        {formatPlainDate(move.date)}
-                                    </span>
-                                </div>
-                                <div>
-                                    <span className="text-xs text-muted-foreground block">Tipo</span>
-                                    <div className="mt-1">
-                                        <Chip intent={typeIntents[move.move_type] || 'neutral'}>
-                                            {typeLabels[move.move_type] || move.move_type}
-                                        </Chip>
+        <SkeletonShell isLoading={loading || !move} ariaLabel="Cargando detalle de movimiento de stock">
+            <EntityDetailPage
+                entityLabel="inventory.stockmove"
+                displayId={formatEntityDisplay('inventory.stockmove', move ?? STOCK_MOVE_SKELETON)}
+                breadcrumb={[
+                    { label: "Movimientos", href: "/inventory/moves" },
+                    { label: formatEntityDisplay('inventory.stockmove', move ?? STOCK_MOVE_SKELETON), href: `/inventory/moves/${moveId}` }
+                ]}
+                instanceId={move?.id ?? 0}
+                readonly={true}
+            >
+                <div className="max-w-4xl mx-auto space-y-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div className="space-y-6">
+                            <LabeledContainer label="Información General">
+                                <div className="grid grid-cols-2 gap-4 mt-2">
+                                    <div>
+                                        <span className="text-xs text-muted-foreground block">Fecha</span>
+                                        <span className="text-sm font-medium">
+                                            {formatPlainDate(move?.date ?? STOCK_MOVE_SKELETON.date)}
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <span className="text-xs text-muted-foreground block">Tipo</span>
+                                        <div className="mt-1">
+                                            <Chip 
+                                                intent={move?.move_type === 'IN' ? 'success' : 
+                                                       move?.move_type === 'OUT' ? 'destructive' : 
+                                                       move?.move_type === 'ADJ' ? 'warning' : 'neutral'}
+                                            >
+                                                {move?.move_type === 'IN' ? 'Entrada' : 
+                                                 move?.move_type === 'OUT' ? 'Salida' : 
+                                                 move?.move_type === 'ADJ' ? 'Ajuste' : 
+                                                 move?.move_type ?? STOCK_MOVE_SKELETON.move_type}
+                                            </Chip>
+                                        </div>
+                                    </div>
+                                    <div className="col-span-2">
+                                        <span className="text-xs text-muted-foreground block">Producto</span>
+                                        <span className="text-sm font-medium">{move?.product_details?.name ?? move?.product_name ?? STOCK_MOVE_SKELETON.product_name}</span>
+                                    </div>
+                                    <div className="col-span-2">
+                                        <span className="text-xs text-muted-foreground block">Bodega</span>
+                                        <span className="text-sm font-medium">{move?.warehouse_details?.name ?? move?.warehouse_name ?? STOCK_MOVE_SKELETON.warehouse_name}</span>
                                     </div>
                                 </div>
-                                <div className="col-span-2">
-                                    <span className="text-xs text-muted-foreground block">Producto</span>
-                                    <span className="text-sm font-medium">{move.product_details?.name || move.product}</span>
-                                </div>
-                                <div className="col-span-2">
-                                    <span className="text-xs text-muted-foreground block">Bodega</span>
-                                    <span className="text-sm font-medium">{move.warehouse_details?.name || move.warehouse}</span>
-                                </div>
-                            </div>
-                        </LabeledContainer>
-                    </div>
-
-                    <div className="space-y-6">
-                        <LabeledContainer label="Cantidades y Costos">
-                            <div className="grid grid-cols-2 gap-4 mt-2">
-                                <div>
-                                    <span className="text-xs text-muted-foreground block">Cantidad</span>
-                                    <span className="text-xl font-mono font-bold">
-                                        {Number(move.quantity).toLocaleString('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 4 })}
-                                    </span>
-                                    <span className="text-xs ml-1 text-muted-foreground">
-                                        {move.uom_details?.name || move.uom || 'Unidades'}
-                                    </span>
-                                </div>
-                                <div>
-                                    <span className="text-xs text-muted-foreground block">Costo Unitario</span>
-                                    <span className="text-sm font-medium">
-                                        <MoneyDisplay amount={Number(move.unit_cost) || 0} />
-                                    </span>
-                                </div>
-                                <div>
-                                    <span className="text-xs text-muted-foreground block">Costo Total</span>
-                                    <span className="text-sm font-bold text-primary">
-                                        <MoneyDisplay amount={(Number(move.quantity) || 0) * (Number(move.unit_cost) || 0)} />
-                                    </span>
-                                </div>
-                            </div>
-                        </LabeledContainer>
-                    </div>
-                </div>
-
-                {(move.description || move.adjustment_reason || move.journal_entry) && (
-                    <LabeledContainer label="Detalles Adicionales">
-                        <div className="space-y-4 mt-2">
-                            {move.adjustment_reason && (
-                                <div>
-                                    <span className="text-xs text-muted-foreground block">Motivo de Ajuste</span>
-                                    <span className="text-sm">{move.adjustment_reason}</span>
-                                </div>
-                            )}
-                            {move.description && (
-                                <div>
-                                    <span className="text-xs text-muted-foreground block">Descripción</span>
-                                    <span className="text-sm">{move.description}</span>
-                                </div>
-                            )}
-                            {move.journal_entry && (
-                                <div>
-                                    <span className="text-xs text-muted-foreground block">Asiento Contable</span>
-                                    <span className="text-sm font-mono">{move.journal_entry}</span>
-                                </div>
-                            )}
+                            </LabeledContainer>
                         </div>
-                    </LabeledContainer>
-                )}
-            </div>
-        </EntityDetailPage>
+
+                        <div className="space-y-6">
+                            <LabeledContainer label="Cantidades y Costos">
+                                <div className="grid grid-cols-2 gap-4 mt-2">
+                                    <div>
+                                        <span className="text-xs text-muted-foreground block">Cantidad</span>
+                                        <span className="text-xl font-mono font-bold">
+                                            {Number(move?.quantity ?? STOCK_MOVE_SKELETON.quantity).toLocaleString('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 4 })}
+                                        </span>
+                                        <span className="text-xs ml-1 text-muted-foreground">
+                                            {move?.uom_details?.name ?? move?.uom_name ?? STOCK_MOVE_SKELETON.uom_name}
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <span className="text-xs text-muted-foreground block">Costo Unitario</span>
+                                        <span className="text-sm font-medium">
+                                            <MoneyDisplay amount={Number(move?.unit_cost ?? 0)} />
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <span className="text-xs text-muted-foreground block">Costo Total</span>
+                                        <span className="text-sm font-bold text-primary">
+                                            <MoneyDisplay amount={(Number(move?.quantity ?? STOCK_MOVE_SKELETON.quantity) || 0) * (Number(move?.unit_cost ?? 0) || 0)} />
+                                        </span>
+                                    </div>
+                                </div>
+                            </LabeledContainer>
+                        </div>
+                    </div>
+
+                    {(move?.description || move?.adjustment_reason || move?.journal_entry) && (
+                        <LabeledContainer label="Detalles Adicionales">
+                            <div className="space-y-4 mt-2">
+                                {move?.adjustment_reason && (
+                                    <div>
+                                        <span className="text-xs text-muted-foreground block">Motivo de Ajuste</span>
+                                        <span className="text-sm">{move?.adjustment_reason ?? STOCK_MOVE_SKELETON.description}</span>
+                                    </div>
+                                )}
+                                {move?.description && (
+                                    <div>
+                                        <span className="text-xs text-muted-foreground block">Descripción</span>
+                                        <span className="text-sm">{move?.description ?? STOCK_MOVE_SKELETON.description}</span>
+                                    </div>
+                                )}
+                                {move?.journal_entry && (
+                                    <div>
+                                        <span className="text-xs text-muted-foreground block">Asiento Contable</span>
+                                        <span className="text-sm font-mono">{move?.journal_entry ?? '————————————'}</span>
+                                    </div>
+                                )}
+                            </div>
+                        </LabeledContainer>
+                    )}
+                </div>
+            </EntityDetailPage>
+        </SkeletonShell>
     )
 }

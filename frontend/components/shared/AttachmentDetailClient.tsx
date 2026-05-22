@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react"
 import { notFound, useRouter } from "next/navigation"
-import { EntityDetailPage, FormSkeleton, FormFooter, CancelButton, ActionSlideButton } from "@/components/shared"
+import { EntityDetailPage, SkeletonShell, FormFooter, CancelButton, ActionSlideButton } from "@/components/shared"
 import api from "@/lib/api"
 import { formatBytes } from "@/lib/utils"
 
@@ -39,12 +39,12 @@ export function AttachmentDetailClient({ attachmentId }: AttachmentDetailClientP
     )
 
     if (loading || !attachment) {
-        return (
-            <div className="flex-1 p-8">
-                <FormSkeleton />
-            </div>
-        )
-    }
+         return (
+             <div className="flex-1 p-8">
+                 <SkeletonShell isLoading={loading || !attachment} ariaLabel="Cargando detalle de archivo" />
+             </div>
+         )
+     }
 
     const isImage = attachment.content_type?.startsWith('image/')
     const isPDF = attachment.content_type === 'application/pdf'

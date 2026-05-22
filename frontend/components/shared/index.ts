@@ -38,7 +38,6 @@ export * from './BulkActionDock';
 // Cards & Containers
 
 export * from './CardSkeleton';
-export * from './FormSkeleton';
 export * from './TableSkeleton';
 export * from './SkeletonShell';
 export * from './LayoutSkeletons';

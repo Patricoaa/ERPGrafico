@@ -4,7 +4,7 @@ import React, { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { notFound, useRouter } from "next/navigation"
 import api from "@/lib/api"
-import { EntityDetailPage, FormFooter, SubmitButton, CancelButton, FormSkeleton } from "@/components/shared"
+import { EntityDetailPage, FormFooter, SubmitButton, CancelButton, SkeletonShell } from "@/components/shared"
 import { SaleNoteForm } from "./SaleNoteModal"
 import { toast } from "sonner"
 import { formatEntityDisplay } from "@/lib/entity-registry"
@@ -28,12 +28,12 @@ export function SaleReturnDetailClient({ orderId }: SaleReturnDetailClientProps)
     if (error) return <div className="p-8 text-destructive">Error al cargar la orden de venta</div>
     
     if (loading || !order) {
-        return (
-            <div className="flex-1 p-8">
-                <FormSkeleton />
-            </div>
-        )
-    }
+         return (
+             <div className="flex-1 p-8">
+                 <SkeletonShell isLoading={loading || !order} ariaLabel="Cargando detalle de devolución de venta" />
+             </div>
+         )
+     }
 
     const orderCode = formatEntityDisplay('sales.saleorder', order);
 

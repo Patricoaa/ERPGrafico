@@ -27,7 +27,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import api from "@/lib/api"
 import { Form, FormField } from "@/components/ui/form"
-import { AutoSaveStatusBadge, FormSkeleton } from "@/components/shared"
+import { AutoSaveStatusBadge, SkeletonShell } from "@/components/shared"
 import { useAutoSaveForm } from "@/hooks/useAutoSaveForm"
 import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard"
 import { mySchema, type MyFormValues } from "./MySettingsView.schema"
@@ -68,24 +68,25 @@ export function MySettingsView() {
     // 4. Guardar en unmount + advertir si hay cambios pendientes al navegar
     useUnsavedChangesGuard(status)
 
-    if (loading) return <FormSkeleton fields={4} />
-
     return (
         <div className="max-w-6xl mx-auto space-y-6">
-            {/* Badge siempre en la esquina superior derecha */}
-            <div className="flex justify-end">
-                <AutoSaveStatusBadge
-                    status={status}
-                    invalidReason={invalidReason}
-                    lastSavedAt={lastSavedAt}
-                    onRetry={retry}
-                />
-            </div>
-            <Form {...form}>
-                <form className="space-y-6">
-                    {/* campos */}
-                </form>
-            </Form>
+            <SkeletonShell isLoading={loading} ariaLabel="Cargando configuración">
+                {/* Badge siempre en la esquina superior derecha */}
+                <div className="flex justify-end">
+                    <AutoSaveStatusBadge
+                        status={status}
+                        invalidReason={invalidReason}
+                        lastSavedAt={lastSavedAt}
+                        onRetry={retry}
+                    />
+                </div>
+
+                <Form {...form}>
+                    <form className="space-y-6">
+                        {/* campos */}
+                    </form>
+                </Form>
+            </SkeletonShell>
         </div>
     )
 }

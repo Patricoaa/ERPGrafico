@@ -34,7 +34,7 @@ import { DomainHubStatus } from "@/components/shared/HubStatus"
 import { ColumnDef } from "@tanstack/react-table"
 import { Card, CardContent } from "@/components/ui/card"
 import { getHubStatuses } from '@/features/orders/utils/status'
-import { TableSkeleton, LabeledInput, FormTabs, FormTabsContent, type FormTabItem, FormFooter, FormSection } from "@/components/shared"
+import { LabeledInput, FormTabs, FormTabsContent, type FormTabItem, FormFooter, FormSection, SkeletonShell } from "@/components/shared"
 import { formatCurrency } from "@/lib/money"
 
 const contactSchema = z.object({
@@ -794,11 +794,36 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
 function CreditLedgerTable({ data, loading, onActionSuccess }: { data: Order[], loading: boolean, onActionSuccess?: () => void }) {
     const { openHub } = useHubPanel()
 
-    if (loading) {
-        return <TableSkeleton rows={5} columns={4} />
-    }
+    // Placeholder tipado para el ledger - sigue el patrón del contrato
+    const LEDGER_SKELETON: (Order & { balance?: number })[] = Array.from({ length: 5 }, (_, i) => ({
+        id: i + 1,
+        display_id: "————————————",
+        number: "————————————",
+        date: "",
+        total: 0,
+        pending_amount: 0,
+        balance: 0,
+        status: "pending" as const,
+        customer: { id: 0, name: "————————————" },
+        supplier: { id: 0, name: "————————————" },
+        customer_name: "————————————",
+        supplier_name: "————————————",
+        customer_id: 0,
+        supplier_id: 0,
+        lines: [],
+        related_documents: {
+            invoices: [],
+            payments: [],
+            deliveries: [],
+            receptions: [],
+            work_orders: [],
+            returns: [],
+            stock_moves: [],
+            notes: []
+        }
+    }));
 
-    if (data.length === 0) {
+    if (!loading && !data.length) {
         return (
             <EmptyState 
                 context="finance" 
@@ -832,30 +857,30 @@ function CreditLedgerTable({ data, loading, onActionSuccess }: { data: Order[], 
     ]
 
     return (
-        <div className="space-y-4">
-
-
-            <div className="flex-1 overflow-hidden p-0">
-                <DataTable
-                    columns={columns}
-                    data={data}
-                    defaultPageSize={10}
-                    globalFilterFields={["display_id", "number"]}
-                    showToolbarSort={true}
-                    renderCustomView={(table) => (
-                        <div className="grid gap-3 pt-2">
-                            {table.getRowModel().rows.map((row) => (
-                                <DomainCard
-                                    key={row.id as string}
-                                    label="sales.saleorder"
-                                    data={row.original as Order}
-                                    onClick={() => openHub({ orderId: (row.original as Order).id, type: 'sale', onActionSuccess })}
-                                />
-                            ))}
-                        </div>
-                    )}
-                />
+        <SkeletonShell isLoading={loading} ariaLabel="Cargando libro de cuenta">
+            <div className="space-y-4">
+                <div className="flex-1 overflow-hidden p-0">
+                    <DataTable
+                        columns={columns}
+                        data={loading ? (LEDGER_SKELETON as Order[]) : data}
+                        defaultPageSize={10}
+                        globalFilterFields={["display_id", "number"]}
+                        showToolbarSort={true}
+                        renderCustomView={(table) => (
+                            <div className="grid gap-3 pt-2">
+                                {table.getRowModel().rows.map((row) => (
+                                    <DomainCard
+                                        key={row.id as string}
+                                        label="sales.saleorder"
+                                        data={row.original as Order}
+                                        onClick={() => openHub({ orderId: (row.original as Order).id, type: 'sale', onActionSuccess })}
+                                    />
+                                ))}
+                            </div>
+                        )}
+                    />
+                </div>
             </div>
-        </div>
+        </SkeletonShell>
     )
 }

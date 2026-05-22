@@ -1,14 +1,14 @@
 "use client"
 import { formatCurrency } from "@/lib/money";
-
+ 
 import React, { useState } from 'react';
 import { useTrialBalance } from '../../hooks/useTrialBalance';
-import { TableSkeleton } from '@/components/shared';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Calculator, Calendar, CheckCircle2, AlertCircle } from 'lucide-react';
-
+import { SkeletonShell } from '@/components/shared';
+ 
 import { PeriodValidationDateInput } from '@/components/shared';
 
 export function TrialBalanceView() {
@@ -27,12 +27,9 @@ export function TrialBalanceView() {
         return val === 0 ? '—' : formatCurrency(val);
     };
 
-    if (isLoading && !data) {
-        return <TableSkeleton rows={10} columns={8} />;
-    }
-
     return (
-        <div className="space-y-6 pt-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
+        <SkeletonShell isLoading={isLoading && !data} ariaLabel="Cargando balance de comprobación">
+            <div className="space-y-6 pt-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
             {/* Filters Header */}
             <div className="flex flex-col md:flex-row gap-4 items-center bg-muted/30 p-4 rounded-md border border-border/50">
                 <PeriodValidationDateInput
@@ -136,15 +133,16 @@ export function TrialBalanceView() {
                 )}
             </Card>
 
-            <div className="flex justify-between items-center text-[10px] text-muted-foreground px-1">
-                <div className="flex items-center gap-2">
-                    <Calculator className="w-3 h-3" />
-                    Generado automáticamente desde el Libro Mayor
-                </div>
-                <div>
-                    Todos los importes expresados en moneda nacional (CLP)
+                <div className="flex justify-between items-center text-[10px] text-muted-foreground px-1">
+                    <div className="flex items-center gap-2">
+                        <Calculator className="w-3 h-3" />
+                        Generado automáticamente desde el Libro Mayor
+                    </div>
+                    <div>
+                        Todos los importes expresados en moneda nacional (CLP)
+                    </div>
                 </div>
             </div>
-        </div>
+        </SkeletonShell>
     );
 }

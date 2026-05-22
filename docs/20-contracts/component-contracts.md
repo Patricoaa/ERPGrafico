@@ -110,7 +110,7 @@ States handled: — (pure presentational, no async).
 
 > 📄 Documentación completa en **[component-skeleton.md](./component-skeleton.md)**.
 
-Catálogo: `CardSkeleton` · `TableSkeleton` · `FormSkeleton` · `SkeletonShell` · `PageLayoutSkeleton` · `LoadingFallback`.
+Catálogo: `CardSkeleton` · `TableSkeleton` · `SkeletonShell` · `PageLayoutSkeleton` · `LoadingFallback`.
 Regla clave: usar wrappers estáticos para first-load, `SkeletonShell` para refetching.
 
 ---

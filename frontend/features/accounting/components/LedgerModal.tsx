@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { useServerDate } from "@/hooks/useServerDate"
 import { Book, ArrowUpRight, ArrowDownRight, Scale, Calculator, Eye, Trash2 } from "lucide-react"
-import { Drawer, DataTable, DataTableColumnHeader, CardSkeleton, DataCell, createActionsColumn, IconButton } from "@/components/shared"
+import { Drawer, DataTable, DataTableColumnHeader, DataCell, createActionsColumn, IconButton, SkeletonShell } from "@/components/shared"
 import { ColumnDef } from "@tanstack/react-table"
 import { Card, CardContent } from "@/components/ui/card"
 import { DateRangeFilter } from "@/components/shared/DateRangeFilter"
@@ -60,6 +60,9 @@ export function LedgerModal({ accountId, accountName, accountCode, trigger }: Le
     const startStr = dateRange ? format(dateRange.from, 'yyyy-MM-dd') : ''
     const endStr = dateRange ? format(dateRange.to, 'yyyy-MM-dd') : ''
 
+    // Fetch ledger data
+    const { data, isLoading, refetch } = useLedger(accountId, startStr, endStr)
+
     return (
         <>
             {trigger ? (
@@ -99,18 +102,21 @@ export function LedgerModal({ accountId, accountName, accountCode, trigger }: Le
                 showOverlay={true}
                 defaultSize="50%"
             >
-                {open && dateRange && (
-                    <React.Suspense fallback={<CardSkeleton count={4} variant="grid" />}>
-                        <LedgerContent
-                            accountId={accountId}
-                            startDate={startStr}
-                            endDate={endStr}
-                            dateRange={dateRange}
-                            setDateRange={setDateRange}
-                        />
-                    </React.Suspense>
-                )}
-            </Drawer>
+                 {open && dateRange && (
+                     <SkeletonShell isLoading={isLoading} ariaLabel="Cargando libro mayor">
+                         <LedgerContent
+                             accountId={accountId}
+                             startDate={startStr}
+                             endDate={endStr}
+                             dateRange={dateRange}
+                             setDateRange={setDateRange}
+                             data={data}
+                             isLoading={isLoading}
+                             refetch={refetch}
+                         />
+                     </SkeletonShell>
+                 )}
+             </Drawer>
         </>
     )
 }
@@ -120,16 +126,21 @@ function LedgerContent({
     startDate,
     endDate,
     dateRange,
-    setDateRange
+    setDateRange,
+    data,
+    isLoading,
+    refetch
 }: {
     accountId: number;
     startDate: string;
     endDate: string;
     dateRange: { from: Date; to: Date };
     setDateRange: (range: { from: Date; to: Date } | undefined) => void;
+    data: any;
+    isLoading: boolean;
+    refetch: () => void;
 }) {
     const { serverDate } = useServerDate()
-    const { data, isLoading, refetch } = useLedger(accountId, startDate, endDate)
 
     const router = useRouter()
     const pathname = usePathname()

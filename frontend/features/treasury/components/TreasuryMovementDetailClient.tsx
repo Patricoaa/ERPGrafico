@@ -4,7 +4,7 @@ import React from "react"
 import { useQuery } from "@tanstack/react-query"
 import { notFound } from "next/navigation"
 import api from "@/lib/api"
-import { EntityDetailPage, FormSkeleton } from "@/components/shared"
+import { EntityDetailPage, SkeletonShell } from "@/components/shared"
 import { TransactionContent } from "@/components/shared/transaction-modal/TransactionContent"
 import { SidebarContent } from "@/components/shared/transaction-modal/SidebarContent"
 
@@ -31,12 +31,12 @@ export function TreasuryMovementDetailClient({ movementId }: TreasuryMovementDet
     )
 
     if (loading || !data) {
-        return (
-            <div className="flex-1 p-8">
-                <FormSkeleton />
-            </div>
-        )
-    }
+         return (
+             <div className="flex-1 p-8">
+                 <SkeletonShell isLoading={loading || !data} ariaLabel="Cargando detalle de movimiento de tesorería" />
+             </div>
+         )
+     }
 
     const displayId: string = data.display_id ?? `#${movementId}`
 

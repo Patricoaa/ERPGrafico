@@ -205,28 +205,28 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
         <div className="h-full flex flex-col">
             <div className="flex-1 min-h-0">
                 <DataTable
-                columns={(viewMode === 'orders' ? columns : noteColumns) as any}
-                data={(viewMode === 'orders' ? orders : filteredNotes) as any}
-                onRowClick={(row: any) => toggleSelection(row.original.id)}
-                variant="embedded"
-                isLoading={viewMode === 'orders' ? isLoadingOrders : isLoadingNotes}
-                currentView={currentView}
-                onViewChange={handleViewChange}
-                viewOptions={viewOptions}
-                leftAction={viewMode === 'orders'
-                    ? <SmartSearchBar searchDef={salesOrderSearchDef} placeholder="Buscar órdenes..." />
-                    : <SmartSearchBar searchDef={salesNoteSearchDef} placeholder="Buscar notas..." />
-                }
-                showToolbarSort={true}
+                    columns={(viewMode === 'orders' ? columns : noteColumns) as any}
+                    data={(viewMode === 'orders' ? orders : filteredNotes) as any}
+                    onRowClick={(row: any) => toggleSelection(row.id)}
+                    variant="embedded"
+                    isLoading={viewMode === 'orders' ? isLoadingOrders : isLoadingNotes}
+                    currentView={currentView}
+                    onViewChange={handleViewChange}
+                    viewOptions={viewOptions}
+                    leftAction={viewMode === 'orders'
+                        ? <SmartSearchBar searchDef={salesOrderSearchDef} placeholder="Buscar órdenes..." />
+                        : <SmartSearchBar searchDef={salesNoteSearchDef} placeholder="Buscar notas..." />
+                    }
+                    showToolbarSort={true}
 
-                defaultPageSize={20}
-                renderCustomView={isCustomView ? createDomainCardView(entityLabel, {
-                    onRowClick: (data) => toggleSelection(data.id),
-                    isSelected: (data) => !!getSelectionId(data),
-                    isHubOpen,
-                }) : undefined}
-                renderLoadingView={isCustomView ? createCardLoadingView('single-column') : undefined}
-            />
+                    defaultPageSize={20}
+                    renderCustomView={isCustomView ? createDomainCardView(entityLabel, {
+                        onRowClick: (data) => toggleSelection(data.id),
+                        isSelected: (data) => !!getSelectionId(data),
+                        isHubOpen,
+                    }) : undefined}
+                    renderLoadingView={isCustomView ? createCardLoadingView('single-column') : undefined}
+                />
             </div>
         </div>
     )

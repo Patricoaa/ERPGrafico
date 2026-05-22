@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils"
 import api from "@/lib/api"
 import { useRef } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
-import { CardSkeleton, MoneyDisplay, EntityBadge, Chip } from "@/components/shared"
+import { SkeletonShell, MoneyDisplay, EntityBadge, Chip } from "@/components/shared"
 import { useAuth } from "@/contexts/AuthContext"
 import { formatEntityDisplay, getEntityMetadata, detectEntityLabel } from "@/lib/entity-registry"
 
@@ -463,21 +463,27 @@ export function TaskInbox() {
                     </TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="approvals" className="mt-4">
-                    {loading ? (
-                        <CardSkeleton variant="compact" count={3} className="gap-2" />
-                    ) : (
-                        <>
-                            {approvalsPending.length > 0 && (
-                                <CollapsibleSection
-                                    title="Pendientes"
-                                    count={approvalsPending.length}
-                                    expanded={approvalsExpanded}
-                                    onToggle={() => setApprovalsExpanded(!approvalsExpanded)}
-                                >
-                                    {approvalsPending.map(task => renderTaskCard(task))}
-                                </CollapsibleSection>
-                            )}
+                 <TabsContent value="approvals" className="mt-4">
+                     {loading ? (
+                         <SkeletonShell isLoading={true} ariaLabel="Cargando tareas de aprobación">
+                             <div className="flex flex-col gap-2">
+                                 <div className="p-3 border border-muted/50 rounded-md">Placeholder 1</div>
+                                 <div className="p-3 border border-muted/50 rounded-md">Placeholder 2</div>
+                                 <div className="p-3 border border-muted/50 rounded-md">Placeholder 3</div>
+                             </div>
+                         </SkeletonShell>
+                     ) : (
+                         <>
+                             {approvalsPending.length > 0 && (
+                                 <CollapsibleSection
+                                     title="Pendientes"
+                                     count={approvalsPending.length}
+                                     expanded={approvalsExpanded}
+                                     onToggle={() => setApprovalsExpanded(!approvalsExpanded)}
+                                 >
+                                     {approvalsPending.map(task => renderTaskCard(task))}
+                                 </CollapsibleSection>
+                             )}
 
                             {approvalsCompleted.length > 0 && (
                                 <CollapsibleSection
@@ -500,19 +506,25 @@ export function TaskInbox() {
                     )}
                 </TabsContent>
 
-                <TabsContent value="tasks" className="mt-4">
-                    {loading ? (
-                        <CardSkeleton variant="compact" count={3} className="gap-2" />
-                    ) : operationalTasks.length === 0 ? (
-                        <div className="text-center py-12 bg-muted/10 rounded-lg border border-dashed text-muted-foreground">
-                            <ListTodo className="h-8 w-8 mx-auto mb-2 opacity-20" />
-                            <p className="text-xs">No tienes tareas pendientes</p>
-                        </div>
-                    ) : (
-                        <div className="space-y-2">
-                            {operationalTasks.map(task => renderTaskCard(task))}
-                        </div>
-                    )}
+                 <TabsContent value="tasks" className="mt-4">
+                     {loading ? (
+                         <SkeletonShell isLoading={true} ariaLabel="Cargando tareas operativas">
+                             <div className="flex flex-col gap-2">
+                                 <div className="p-3 border border-muted/50 rounded-md">Placeholder 1</div>
+                                 <div className="p-3 border border-muted/50 rounded-md">Placeholder 2</div>
+                                 <div className="p-3 border border-muted/50 rounded-md">Placeholder 3</div>
+                             </div>
+                         </SkeletonShell>
+                     ) : operationalTasks.length === 0 ? (
+                         <div className="text-center py-12 bg-muted/10 rounded-lg border border-dashed text-muted-foreground">
+                             <ListTodo className="h-8 w-8 mx-auto mb-2 opacity-20" />
+                             <p className="text-xs">No tienes tareas pendientes</p>
+                         </div>
+                     ) : (
+                         <div className="space-y-2">
+                             {operationalTasks.map(task => renderTaskCard(task))}
+                         </div>
+                     )}
                 </TabsContent>
             </Tabs>
         </div>
