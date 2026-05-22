@@ -6,7 +6,10 @@ class CoreConfig(AppConfig):
     name = 'core'
 
     def ready(self):
-        import core.signals
+        import core.signals  # noqa: F401
+
+        from core.entity_bus import register_receivers
+        register_receivers()
 
         try:
             from core.registry import UniversalRegistry, SearchableEntity

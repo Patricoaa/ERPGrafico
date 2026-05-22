@@ -101,6 +101,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'allauth.account.middleware.AccountMiddleware',
     'simple_history.middleware.HistoryRequestMiddleware',
+    'core.middleware.CurrentUserMiddleware',
     'core.middleware.AuditMiddleware',
 ]
 

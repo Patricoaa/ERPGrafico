@@ -3,6 +3,7 @@ import { useQueryClient, useMutation, useQuery } from '@tanstack/react-query'
 import { salesApi } from '../api/salesApi'
 import { toast } from 'sonner'
 import { SaleOrderFilters, SaleOrderPayload } from '../types'
+import { useRealtime } from '@/features/realtime'
 
 import { SALES_KEYS } from './queryKeys'
 
@@ -10,6 +11,7 @@ export { SALES_KEYS }
 
 export function useSalesOrders({ filters }: { filters?: SaleOrderFilters } = {}) {
     const queryClient = useQueryClient()
+    const { markLocalMutation } = useRealtime()
 
     const { data: orders, isLoading, refetch } = useQuery({
         queryKey: SALES_KEYS.orders(filters || {}),
@@ -20,8 +22,8 @@ export function useSalesOrders({ filters }: { filters?: SaleOrderFilters } = {})
     const createMutation = useMutation({
         mutationFn: salesApi.createOrder,
         onSuccess: () => {
+            markLocalMutation()
             toast.success('Nota de venta creada')
-            // Narrow: only orders list is stale after creating an order (not notes)
             queryClient.invalidateQueries({ queryKey: [...SALES_KEYS.all, 'orders'] })
         },
         onError: (error: Error) => {
@@ -33,8 +35,8 @@ export function useSalesOrders({ filters }: { filters?: SaleOrderFilters } = {})
         mutationFn: ({ id, payload }: { id: number, payload: Partial<SaleOrderPayload> }) =>
             salesApi.updateOrder(id, payload),
         onSuccess: () => {
+            markLocalMutation()
             toast.success('Nota de venta actualizada')
-            // Narrow: only orders list + invoices (order status may affect billing badge)
             queryClient.invalidateQueries({ queryKey: [...SALES_KEYS.all, 'orders'] })
         },
         onError: (error: Error) => {
@@ -45,8 +47,8 @@ export function useSalesOrders({ filters }: { filters?: SaleOrderFilters } = {})
     const deleteMutation = useMutation({
         mutationFn: salesApi.deleteOrder,
         onSuccess: () => {
+            markLocalMutation()
             toast.success('Nota de venta eliminada')
-            // Narrow: only orders list is stale on delete
             queryClient.invalidateQueries({ queryKey: [...SALES_KEYS.all, 'orders'] })
         },
         onError: (error: Error) => {

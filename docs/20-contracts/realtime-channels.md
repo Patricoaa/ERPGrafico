@@ -3,33 +3,40 @@ layer: 20-contracts
 doc: realtime-channels
 status: active
 owner: core-team
-last_review: 2026-05-21
+last_review: 2026-05-22
 stability: contract-changes-require-ADR
 ---
 
-# Realtime Channels — WebSocket + SSE
+# Realtime Channels — WebSocket + SSE + Entity Bus
 
-ERPGrafico usa **dos canales realtime complementarios**, no uno solo. La elección es por dirección del flujo, no por preferencia del autor.
+ERPGrafico usa **tres canales realtime complementarios**, no uno solo. La elección es por *qué viaja en el canal*, no por preferencia del autor.
 
 | Canal | Stack backend | Stack frontend | Dirección | Cuándo usar |
 |-------|---------------|----------------|-----------|-------------|
-| **WebSocket** | Django Channels + Redis channel layer | `new WebSocket()` + hook propio | Bidireccional | Cliente envía y recibe — colaboración, locks, presencia |
-| **SSE** | DRF `StreamingHttpResponse` (text/event-stream) | `new EventSource()` + hook propio | Server → cliente broadcast | Solo recibe — notificaciones, progreso, refresh de listas |
+| **WebSocket por-feature** | Django Channels + Redis channel layer | `new WebSocket()` + hook propio | Bidireccional | Cliente envía y recibe — colaboración, locks, presencia (POS) |
+| **SSE** | DRF `StreamingHttpResponse` (text/event-stream) | `new EventSource()` + hook propio | Server → cliente broadcast | Solo recibe — progreso de jobs largos, exports |
+| **Entity Bus (WS multiplexado)** | `core.consumers.EntityBusConsumer` + signal genérica | `RealtimeProvider` + `useEntitySubscription` | Server → cliente broadcast | Refresh de listados/modales y sync cross-tab del propio usuario — ver [ADR-0026](../10-architecture/adr/0026-entity-bus-realtime-invalidation.md) |
 
 ## Árbol de decisión
 
 ```
 1. ¿El cliente necesita enviar mensajes al servidor en tiempo real (no solo polling REST)?
-   SÍ  → WebSocket. Punto.
+   SÍ  → WebSocket por-feature. Punto.
    NO  → 2.
 
-2. ¿El servidor necesita pushear eventos al cliente sin que el cliente pregunte?
-   SÍ  → SSE.
+2. ¿Es "una entidad cambió, los suscriptores deben refrescar su query"
+      (listado abierto, modal abierto, otro tab del mismo usuario)?
+   SÍ  → Entity Bus. Suscribirse con useEntitySubscription. NO escribir un canal propio.
+   NO  → 3.
+
+3. ¿El servidor necesita pushear eventos *específicos* (notificación, progreso de export, etc.)?
+   SÍ  → SSE o WS dedicado por feature (decidir por bidireccionalidad).
    NO  → No es un caso realtime. Usar REST + TanStack Query staleTime / refetch.
 ```
 
 **Antipatrones:**
-- WebSocket para casos puramente broadcast (notificaciones one-way). Suma complejidad de reconexión + protocolo bidireccional sin razón.
+- WebSocket para casos puramente broadcast cuando el Entity Bus ya cubre el caso. Si lo único que necesitás es "refrescá la lista cuando algo cambió", suscribirse al bus — no escribir un consumer nuevo.
+- WebSocket para casos puramente broadcast con payload propio (notificación, progreso). Sumá SSE o usá el WS por-feature; no inventar otro multiplex.
 - SSE para casos donde el cliente debe responder (locks, heartbeats activos). EventSource no permite escribir.
 - Polling REST cada 2s para eventos que pueden empujarse — gasta CPU del cliente y carga inútil al backend.
 
@@ -37,11 +44,75 @@ ERPGrafico usa **dos canales realtime complementarios**, no uno solo. La elecci�
 
 | Caso | Canal | Backend | Frontend | Propósito |
 |------|-------|---------|----------|-----------|
-| POS draft sync multi-terminal | WebSocket | `sales.consumers.POSDraftConsumer` | `features/pos/hooks/useDraftSync.ts` | Bidireccional: cliente edita carrito, lock por sesión, broadcast a otros terminales |
-| Notificaciones globales | **WebSocket → migrar a SSE** | TBD (hoy via WS) | `features/notifications/hooks/useNotifications.ts` | Solo recepción — candidato canónico de SSE |
+| POS draft sync multi-terminal | WebSocket por-feature | `sales.consumers.POSDraftConsumer` + `sales.signals` | `features/pos/hooks/useDraftSync.ts` | Bidireccional: cliente edita carrito, lock por sesión, broadcast a otros terminales |
+| Notificaciones globales | WebSocket por-feature | `workflow.consumers.NotificationConsumer` + `workflow.signals.push_notification_to_channels` | `features/notifications/hooks/useNotifications.ts` | Solo recepción de notificaciones por usuario — bidireccionalidad reservada para read-receipts |
+| **Entity Bus (refresh de listados/modales)** | **WS multiplexado** | `core.consumers.EntityBusConsumer` + `core.signals.entity_bus` (allowlist) | `RealtimeProvider` + `useEntitySubscription` | **Piloto en `sales` (SaleOrder + lines). Ver [ADR-0026](../10-architecture/adr/0026-entity-bus-realtime-invalidation.md). Estado: Proposed — implementación pendiente.** |
 | Workflow transitions | (routing existente, no consumer activo) | `workflow.routing` registrado en ASGI | — | Reservado para presencia/colaboración en aprobaciones |
 
-> **Migración pendiente:** `useNotifications` es unidireccional por diseño; el WebSocket actual es over-engineering. Ver playbook `add-realtime-channel.md` (Tier 2 — Sesión 4) para el patrón SSE canónico.
+---
+
+## Entity Bus — refresco de listados y modales
+
+El bus de entidades es el canal canónico para **mantener listados y modales en sync** frente a cambios — propios (cross-tab) y remotos (otros usuarios). **Antes de escribir un canal nuevo, comprobar si el bus ya cubre el caso.**
+
+### Cuándo NO usar el bus
+
+- El payload no es "una entidad cambió" sino contenido propio (notificación, progreso, mensaje de chat). Usar SSE o WS dedicado.
+- El cliente necesita responder (lock, heartbeat, write). Usar WS dedicado.
+- La invalidación local en `onSuccess` ya basta y no hay multi-tab ni multi-usuario sobre la entidad. No hacer nada — TanStack Query ya cubre.
+
+### Patrón canónico
+
+**Backend** — signal genérica con allowlist en `core.signals.entity_bus`:
+
+```python
+# Llamada por post_save / post_delete sólo para modelos de la ALLOWLIST.
+def _broadcast_entity_change(*, app, model, instance_id, op, actor_id):
+    channel_layer = get_channel_layer()
+    payload = {
+        "event": "entity.changed",
+        "app": app, "model": model, "id": instance_id, "op": op,
+        "actor_id": actor_id, "ts": timezone.now().isoformat(),
+    }
+    for group in (
+        f"entity.{app}.{model}",
+        f"entity.{app}.{model}.{instance_id}",
+        f"entity.user.{actor_id}" if actor_id else None,
+    ):
+        if group:
+            async_to_sync(channel_layer.group_send)(group, {"type": "entity.changed", "payload": payload})
+```
+
+`actor_id` lo resuelve un middleware thread-local; si la mutación viene de Celery o management command queda `null` (todos invalidan, sin filtro).
+
+**Frontend** — un único `RealtimeProvider` en el layout autenticado y hooks declarativos por feature:
+
+```ts
+// Listado de Sale Orders
+useEntitySubscription('sales.saleorder', [['sales'], ['orders-hub']])
+
+// Modal de detalle abierto
+useEntitySubscription(`sales.saleorder.${id}`, [['sales', id]])
+
+// El provider se suscribe automáticamente a entity.user.<currentUserId>
+// → no hace falta hook explícito para cross-tab del propio usuario.
+```
+
+### Reglas estrictas
+
+1. **`invalidateQueries` local en `onSuccess` NO se quita.** El bus es complemento, no reemplazo. El autor de la mutación ve la UI actualizada al instante; el bus cubre a los demás.
+2. **Filtro `ignoreOwnActor: true` por defecto** en `useEntitySubscription`. Si el evento llega con `actor_id === currentUser.id` dentro de los 2s posteriores a una mutación local, se descarta para evitar doble refetch.
+3. **Una sola conexión WS por sesión** — `RealtimeProvider` la gestiona. **Nunca** abrir `new WebSocket('/ws/entity-bus/')` desde un componente o un hook de feature.
+4. **Allowlist explícita por modelo** en `core/signals/entity_bus.py`. Agregar una entidad nueva al bus es un cambio que pasa por PR — no se hace por defecto.
+5. **Payload sin entidad serializada.** El bus dice "X cambió"; el cliente refetch via su query existente. Esto preserva permisos (cada GET valida) y evita serializadores caros en signals.
+6. **Topic naming:**
+   - Listado: `<app>.<model>` (todo en minúscula, `model_name` no `ModelName`)
+   - Detalle: `<app>.<model>.<id>`
+   - Usuario: `user.<id>` (gestionado por el provider, no por features)
+
+### Alcance vigente
+
+**Piloto activo:** `sales.SaleOrder` (broadcast propio) + `sales.SaleLine` vía `PARENT_BROADCASTS` (dispara `op="updated"` sobre el `SaleOrder` padre, sin tópico propio). Antes de extender a `billing`, `inventory`, `contacts`, `purchasing`: validar carga de WS y latencia percibida sobre el piloto.
 
 ---
 
@@ -232,5 +303,7 @@ Tanto WS como SSE pueden necesitar broadcast multi-proceso. Hoy:
 ## Referencias
 
 - Playbook paso-a-paso: `add-realtime-channel.md` (Tier 2 — Sesión 4)
+- ADR del Entity Bus: [ADR-0026](../10-architecture/adr/0026-entity-bus-realtime-invalidation.md)
 - Auth JWT: [ADR-0010](../10-architecture/adr/0010-jwt-auth-via-api-token.md), [security.md](../40-quality/security.md)
 - Hook conventions: [hook-contracts.md](hook-contracts.md)
+- Tabla de invalidación por mutación: [data-flow.md §Cache invalidation rules](../10-architecture/data-flow.md)

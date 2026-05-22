@@ -7,6 +7,10 @@ import { SalesOrdersView } from "./SalesOrdersView"
 import { FormSkeleton, FadeIn } from "@/components/shared"
 import { SaleOrder, SaleOrderLine } from "../types"
 import { Invoice } from "@/features/billing/types"
+import { useEntitySubscription } from "@/features/realtime"
+import { SALES_KEYS } from "../hooks/queryKeys"
+
+const SALES_ORDER_LIST_KEYS = [[...SALES_KEYS.all, 'orders']] as const
 
 // Lazy load heavy components
 const SalesCheckoutWizard = lazy(() => import("./SalesCheckoutWizard"))
@@ -23,6 +27,10 @@ interface SalesOrdersClientViewProps {
 
 export function SalesOrdersClientView({ viewMode, isCreateModalOpen, setCreateModalOpen }: SalesOrdersClientViewProps) {
     const { multiplier: vatMultiplier } = useVatRate()
+
+    // Remote-change / cross-tab refresh — see ADR-0026.
+    useEntitySubscription('sales.saleorder', [...SALES_ORDER_LIST_KEYS])
+
     const [payingOrder, setPayingOrder] = useState<SaleOrder | null>(null)
     const [dispatchingOrder, setDispatchingOrder] = useState<number | null>(null)
     const [completingFolio, setCompletingFolio] = useState<SaleOrder | null>(null)
