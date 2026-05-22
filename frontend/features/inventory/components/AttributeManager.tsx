@@ -3,7 +3,6 @@
 import { showApiError } from "@/lib/errors"
 
 import React, { useState, useMemo, useCallback } from "react"
-import api from "@/lib/api"
 import { Plus, Trash2, Tag, Eye, X } from "lucide-react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
@@ -42,7 +41,15 @@ import { attributeSearchDef } from "../searchDef"
 
 export function AttributeManager({ externalOpen, createAction }: AttributeManagerProps) {
     const { filters } = useSmartSearch(attributeSearchDef)
-    const { attributes, isLoading, refetch } = useAttributes({ filters })
+    const {
+        attributes,
+        isLoading,
+        refetch,
+        saveAttribute,
+        deleteAttribute,
+        createAttributeValue,
+        deleteAttributeValue,
+    } = useAttributes({ filters })
     const [isAttrModalOpen, setIsAttrModalOpen] = useState(false)
     const [isValueModalOpen, setIsValueModalOpen] = useState(false)
     const [selectedAttribute, setSelectedAttribute] = useState<ProductAttribute | null>(null)
@@ -73,29 +80,22 @@ export function AttributeManager({ externalOpen, createAction }: AttributeManage
         if (!newAttrName.trim()) return
         setIsSaving(true)
         try {
-            let attrId: number;
+            // saveAttribute invalida ATTRIBUTES_QUERY_KEY y emite el toast.
+            const saved = await saveAttribute({
+                id: selectedAttribute?.id ?? null,
+                payload: { name: newAttrName },
+            })
+            const attrId = saved.id
 
-            if (selectedAttribute) {
-                // Update existing attribute (only name for now)
-                await api.patch(`/inventory/attributes/${selectedAttribute.id}/`, { name: newAttrName })
-                attrId = selectedAttribute.id;
-            } else {
-                // Create new attribute
-                const res = await api.post("/inventory/attributes/", { name: newAttrName })
-                attrId = res.data.id;
-            }
-
-            // Create values if there are any new ones
+            // Bulk-create de los valores nuevos. Cada createAttributeValue
+            // invalidaría ATTRIBUTES_QUERY_KEY individualmente; lo permitimos
+            // (TanStack Query agrupa los refetches del mismo queryKey).
             if (newAttrValues.length > 0) {
                 await Promise.all(newAttrValues.map(val =>
-                    api.post("/inventory/attribute-values/", {
-                        attribute: attrId,
-                        value: val
-                    })
+                    createAttributeValue({ attribute: attrId, value: val })
                 ))
             }
 
-            toast.success(selectedAttribute ? "Atributo actualizado" : "Atributo creado")
             handleCloseModal()
             refetch()
         } catch (error) {
@@ -118,14 +118,10 @@ export function AttributeManager({ externalOpen, createAction }: AttributeManage
     const handleCreateValue = async () => {
         if (!newValueName.trim() || !selectedAttribute) return
         try {
-            await api.post("/inventory/attribute-values/", {
-                attribute: selectedAttribute.id,
-                value: newValueName
-            })
+            await createAttributeValue({ attribute: selectedAttribute.id, value: newValueName })
             toast.success("Valor añadido")
             setNewValueName("")
             setIsValueModalOpen(false)
-            refetch()
         } catch (error) {
             showApiError(error, "Error al añadir valor")
         }
@@ -133,9 +129,8 @@ export function AttributeManager({ externalOpen, createAction }: AttributeManage
 
     const deleteAttrConfirm = useConfirmAction<number>(async (id) => {
         try {
-            await api.delete(`/inventory/attributes/${id}/`)
+            await deleteAttribute(id)
             toast.success("Atributo eliminado")
-            refetch()
         } catch (error) {
             showApiError(error, "Error al eliminar")
         }
@@ -145,9 +140,8 @@ export function AttributeManager({ externalOpen, createAction }: AttributeManage
 
     const deleteValueConfirm = useConfirmAction<number>(async (id) => {
         try {
-            await api.delete(`/inventory/attribute-values/${id}/`)
+            await deleteAttributeValue(id)
             toast.success("Valor eliminado")
-            refetch()
         } catch (error) {
             showApiError(error, "Error al eliminar valor")
         }
@@ -270,15 +264,14 @@ export function AttributeManager({ externalOpen, createAction }: AttributeManage
             onClick: async (items) => {
                 if (!confirm(`¿Está seguro de que desea eliminar ${items.length} atributos y todos sus valores?`)) return
                 try {
-                    await Promise.all(items.map(a => api.delete(`/inventory/attributes/${a.id}/`)))
+                    await Promise.all(items.map(a => deleteAttribute(a.id)))
                     toast.success(`${items.length} atributos eliminados`)
-                    refetch()
                 } catch (error) {
                     showApiError(error, "Error al eliminar los atributos")
                 }
             },
         },
-    ], [])
+    ], [deleteAttribute])
 
 
     return (
