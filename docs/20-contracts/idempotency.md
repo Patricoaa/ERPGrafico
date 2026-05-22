@@ -246,6 +246,7 @@ Si dudás de si tu endpoint debe estar en la lista cerrada: pregunta "¿una dobl
 
 ## Referencias
 
-- Campo `idempotency_key` existente: `backend/treasury/models.py::PaymentRequest`
 - Patrón usado en imports: [import-csv-xlsx.md](import-csv-xlsx.md)
 - Background tasks: [../30-playbooks/add-background-task.md](../30-playbooks/add-background-task.md)
+
+> **Nota de estado:** al 2026-05-21 ningún modelo del codebase tiene aún el campo `idempotency_key`. La migración inicial estuvo en `treasury/PaymentRequest` (migration `0010`), pero el modelo fue eliminado en `0017_remove_paymentrequest.py`. Cuando se agregue el primer modelo bajo este contrato (candidatos: `Invoice`, `TreasuryMovement`, `JournalEntry`), crear primero `backend/core/models.py::IdempotencyRecord` + `backend/core/idempotency.py` (decorador) y luego conectar.

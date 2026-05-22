@@ -64,47 +64,65 @@ frontend/
 
 Promotion requires: (a) stable API signature, (b) tests, (c) entry in component-contracts or hook-contracts.
 
-## Special case: `features/orders`
+## Aggregator pattern (read-only feature without root barrel)
 
-Visualization hub. Aggregates SaleOrder + PurchaseOrder + WorkOrder. No backend entity. Reads canonical states from each source; never defines its own.
+Una feature puede agregar otras features con propósito puramente visual. Es un patrón legítimo, no una excepción ilegal. Tiene reglas estrictas.
 
-**No root barrel (`index.ts`).** Consumers import from `features/orders/components`:
+### Criterios — los 5 deben cumplirse para calificar como aggregator
+
+1. **No tiene entidad backend propia.** No hay `/api/<aggregator>/` endpoint; no escribe a la DB; no posee state transitions.
+2. **Consume ≥2 features fuente** como data sources (vía sus hooks/componentes barreled).
+3. **No define estados canónicos.** Cualquier `status` que renderice es leído de la entidad fuente; nunca duplicado.
+4. **No tiene root barrel `index.ts`.** Tener uno implicaría "esta feature posee algo", lo cual contradice el criterio 1. Los consumidores importan desde subfolders barreled (`components/`, `types/`, `hooks/`, `utils/`).
+5. **Tests:** cubre solamente comportamiento visual + reaccionar a cambios de las fuentes. La lógica de negocio se testea en las features fuente.
+
+### Cómo importar desde un aggregator
 
 ```ts
-import { OrderHubPanel, OrderHubIntegrated, OrderCard } from '@/features/orders/components'
+// Desde una page o desde otra feature:
+import { OrderHubPanel, OrderCard } from '@/features/orders/components'
+import { getHubStatuses } from '@/features/orders/utils/status'
+import type { Order } from '@/features/orders/types'
 ```
 
-### What it exports
+**Esto NO viola** la regla "import desde barrel" — cada subfolder (`components/`, `types/`, `utils/`) tiene su propio `index.ts`. La regla se viola solo si importás un archivo concreto sin pasar por barrel (`from '@/features/orders/components/OrderCard'` ← prohibido).
 
-| Component | Purpose |
-|-----------|---------|
-| `OrderHubPanel` | Full side-panel hub with tabs (used by sales, purchasing pages) |
-| `OrderHubIntegrated` | Inner hub: 5-phase lifecycle (Origin → Production → Logistics → Billing → Treasury) |
-| `OrderCard` | Summary card for a single order |
-| `OrderHeaderDashboard` | Header with status and totals |
-| `GlobalHubPanel` | App-level singleton panel (mount in root layout) |
-| `OrderActionPanel` | Action buttons panel for a given order |
-| `DocumentListModal` | Modal listing related documents |
-| `PaymentHistoryModal` | Modal for payment history |
+### Caso canónico actual: `features/orders`
+
+Hub de visualización para SaleOrder + PurchaseOrder + WorkOrder.
+
+| Componente | Propósito |
+|-----------|-----------|
+| `OrderHubPanel` | Side-panel completo con tabs (usado por sales, purchasing) |
+| `OrderHubIntegrated` | Hub interno con 5 fases (Origin → Production → Logistics → Billing → Treasury) |
+| `OrderCard` | Card resumen para una orden |
+| `OrderHeaderDashboard` | Header con status y totales |
+| `GlobalHubPanel` | Singleton a nivel app (montado en root layout) |
+| `OrderActionPanel` | Panel de acciones para una orden |
+| `DocumentListModal` / `PaymentHistoryModal` | Modales relacionados |
 | `phases/*` | `OriginPhase`, `ProductionPhase`, `LogisticsPhase`, `BillingPhase`, `TreasuryPhase` |
 
-### Hook
+Hook local: `useSaleOrderSearch()` — devuelve `{ orders, singleOrder, loading, fetchOrders, fetchSingleOrder }`. No se promueve a `/hooks/` porque su utilidad es solo dentro del aggregator.
 
-| Hook | Returns | Notes |
-|------|---------|-------|
-| `useSaleOrderSearch()` | `{ orders, singleOrder, loading, fetchOrders, fetchSingleOrder }` | Module-local, not promoted to `/hooks/` |
-
-### Source features consumed
-
-- `features/sales` — SaleOrder data and actions
-- `features/purchasing` — PurchaseOrder data and actions
+Features fuente consumidas:
+- `features/sales` — SaleOrder data y acciones
+- `features/purchasing` — PurchaseOrder data y acciones
 - `features/production` — WorkOrder status
 
-### What it does NOT own
+### Qué NO debe hacer un aggregator
 
-- No `/api/orders/` endpoint — never writes directly.
-- No state transitions — those stay in source features.
-- No canonical status definitions — reads statuses from each source feature.
+- Definir su propia API o endpoint backend.
+- Ejecutar mutations (cualquier write va a la feature fuente).
+- Mantener estado de servidor (`useQuery`/`useMutation`) — eso lo hace la feature fuente.
+- Tener root `index.ts` (señalizaría falsamente que "posee" algo).
+
+### Cuándo NO usar el patrón aggregator (usar otra cosa)
+
+| Caso | Solución correcta |
+|------|-------------------|
+| Necesito escribir a múltiples entities en una transacción cross-domain | Servicio backend en `workflow/services.py` + un endpoint propio; del lado frontend, una feature regular con barrel |
+| Necesito un componente compartido entre 2 features | Promoción a `components/shared/` (regla habitual de promoción) |
+| Necesito un dashboard con métricas computadas | Endpoint backend `/api/dashboard/` + feature regular `features/dashboard` con barrel completo |
 
 ## Data flow — mandatory pattern
 
