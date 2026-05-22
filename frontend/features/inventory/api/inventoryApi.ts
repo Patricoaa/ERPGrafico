@@ -74,6 +74,16 @@ export const inventoryApi = {
     },
 
     /**
+     * Fetch the insights bundle for a product (price history, kardex,
+     * sales analysis, production usage). Shape is consumed locally by
+     * ProductInsightsModal — typed generically so the caller can refine it.
+     */
+    getProductInsights: async <T = unknown>(id: number): Promise<T> => {
+        const { data } = await api.get<T>(`inventory/products/${id}/insights/`)
+        return data
+    },
+
+    /**
      * Fetch product categories
      */
     getCategories: async (): Promise<Array<{ id: number; name: string; icon?: string | null }>> => {
