@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { createPortal } from "react-dom"
-import { Product, UoM } from "@/types/entities"
+import { Product } from "@/types/entities"
 import { useForm, UseFormReturn } from "react-hook-form"
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -13,11 +13,12 @@ import { LabeledInput, LabeledSelect } from "@/components/shared"
 import { Factory, AlertCircle, Copy, PlusCircle, DollarSign, Users } from "lucide-react"
 import { Chip } from "@/components/shared"
 import { cn } from "@/lib/utils"
-import api from "@/lib/api"
 import { showApiError } from "@/lib/errors"
 import { toast } from "sonner"
 import { BOMFormModal } from "@/features/production/components/BOMFormModal"
 import type { ProductMinimal } from "@/features/production/types"
+import { useUoMs } from "../../hooks/useUoMs"
+import { useProducts } from "../../hooks/useProducts"
 
 type ProductWithBomClone = Product & { copy_bom_from?: string }
 
@@ -57,7 +58,8 @@ export function BulkVariantEditFormV2({
   onCancel,
 }: BulkVariantEditFormV2Props) {
   const [mounted, setMounted] = useState(false)
-  const [uoms, setUoms] = useState<UoM[]>([])
+  const { uoms } = useUoMs()
+  const { updateProduct } = useProducts()
   const [cloneSourceId, setCloneSourceId] = useState<string>('none')
   const [activeTab, setActiveTab] = useState<string>('precios')
   const [bomModalOpen, setBomModalOpen] = useState(false)
@@ -79,17 +81,7 @@ export function BulkVariantEditFormV2({
 
   useEffect(() => { setMounted(true) }, [])
 
-  useEffect(() => {
-    const fetchUoms = async () => {
-      try {
-        const res = await api.get("/inventory/uoms/")
-        setUoms(res.data.results || res.data)
-      } catch (e) {
-        console.error("Failed to fetch UOMs", e)
-      }
-    }
-    fetchUoms()
-  }, [])
+  // uoms vienen de useUoMs (TanStack Query, reactivos y cacheados 1h).
 
   const onSubmit = async (data: BulkEditValues) => {
     if (!templateData?.id) {
@@ -113,8 +105,11 @@ export function BulkVariantEditFormV2({
     }
 
     try {
-      await api.patch(`/inventory/products/${templateData.id}/`, {
-        variant_updates: selectedVariants.map(v => ({ id: v.id, ...variantPayload })),
+      await updateProduct({
+        id: templateData.id,
+        payload: {
+          variant_updates: selectedVariants.map(v => ({ id: v.id, ...variantPayload })),
+        } as never,
       })
       const updatedVariants = selectedVariants.map(v => ({ ...v, ...variantPayload })) as Product[]
       toast.success(`${selectedVariants.length} variantes actualizadas.`)
@@ -143,8 +138,11 @@ export function BulkVariantEditFormV2({
     const others = selectedVariants.slice(1)
     if (others.length > 0 && templateData?.id) {
       try {
-        await api.patch(`/inventory/products/${templateData.id}/`, {
-          variant_updates: others.map(v => ({ id: v.id, copy_bom_from: String(anchor.id) })),
+        await updateProduct({
+          id: templateData.id,
+          payload: {
+            variant_updates: others.map(v => ({ id: v.id, copy_bom_from: String(anchor.id) })),
+          } as never,
         })
       } catch (e) {
         console.error('Error cloning BOM to other variants', e)
