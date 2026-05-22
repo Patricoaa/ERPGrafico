@@ -24,7 +24,7 @@ export function useSalesOrders({ filters }: { filters?: SaleOrderFilters } = {})
         onSuccess: () => {
             markLocalMutation()
             toast.success('Nota de venta creada')
-            queryClient.invalidateQueries({ queryKey: [...SALES_KEYS.all, 'orders'] })
+            queryClient.invalidateQueries({ queryKey: SALES_KEYS.all })
         },
         onError: (error: Error) => {
             showApiError(error, 'Error al crear la nota de venta')
@@ -37,7 +37,7 @@ export function useSalesOrders({ filters }: { filters?: SaleOrderFilters } = {})
         onSuccess: () => {
             markLocalMutation()
             toast.success('Nota de venta actualizada')
-            queryClient.invalidateQueries({ queryKey: [...SALES_KEYS.all, 'orders'] })
+            queryClient.invalidateQueries({ queryKey: SALES_KEYS.all })
         },
         onError: (error: Error) => {
             showApiError(error, 'Error al actualizar la nota de venta')
@@ -49,7 +49,7 @@ export function useSalesOrders({ filters }: { filters?: SaleOrderFilters } = {})
         onSuccess: () => {
             markLocalMutation()
             toast.success('Nota de venta eliminada')
-            queryClient.invalidateQueries({ queryKey: [...SALES_KEYS.all, 'orders'] })
+            queryClient.invalidateQueries({ queryKey: SALES_KEYS.all })
         },
         onError: (error: Error) => {
             toast.error('Error al eliminar')
@@ -82,4 +82,18 @@ export function useSalesNotes({ filters }: { filters?: SaleNoteFilters } = {}) {
     })
 
     return { data: data ?? [], isLoading, refetch }
+}
+
+/**
+ * Fetch a single sale order by id. queryKey alineada con SALES_KEYS.order(id)
+ * para que las mutations que invalidan SALES_KEYS.all también refresquen el
+ * detalle. Usada por SaleOrderDetailClient, DeliveryDetailClient y
+ * SaleReturnDetailClient (las tres pantallas fetchean la misma orden padre).
+ */
+export function useSaleOrder(id: number | null | undefined) {
+    return useQuery({
+        queryKey: id ? SALES_KEYS.order(id) : ['sales', 'order', 'noop'],
+        queryFn: () => salesApi.getOrder(id!),
+        enabled: !!id,
+    })
 }
