@@ -1,12 +1,12 @@
 "use client"
 
-import { useState, useEffect } from "react"
+// React imports removidos — el form ya no usa estado local (useAllowedUoMs reactivo).
 import { LabeledContainer, LabeledInput, PeriodValidationDateInput } from "@/components/shared"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import { Truck, Package, Calendar, Info, AlertTriangle, ShoppingBag } from "lucide-react"
 import { cn } from "@/lib/utils"
-import api from "@/lib/api"
+import { useAllowedUoMs } from "@/features/inventory/hooks/useUoMs"
 import {
     Select,
     SelectContent,
@@ -27,19 +27,9 @@ import {
 import { CheckoutDeliveryData, SaleOrderLine } from "../../types"
 
 function UoMSelector({ line, currentUom, onUomChange }: { line: SaleOrderLine, currentUom: string | number | null, onUomChange: (uomId: number) => void }) {
-    const [allowedUoms, setAllowedUoms] = useState<{id: number, name: string}[]>([])
-
-    useEffect(() => {
-        const fetchAllowed = async () => {
-            try {
-                const res = await api.get(`/inventory/uoms/allowed/?product_id=${line.product || line.id}&context=sale`)
-                setAllowedUoms(res.data)
-            } catch (err) {
-                console.error("Error fetching allowed UoMs", err)
-            }
-        }
-        fetchAllowed()
-    }, [line.id, line.product])
+    // useAllowedUoMs cachea por (productId, context). Re-fetchea automáticamente
+    // si cambia line.product (queryKey lo incluye).
+    const { data: allowedUoms = [] } = useAllowedUoMs((line.product || line.id) ?? null, 'sale')
 
     if (allowedUoms.length <= 1) return <span>{line.uom_name || line.uom}</span>
 
