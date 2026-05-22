@@ -44,4 +44,17 @@ export const billingApi = {
     annulInvoice: async (id: number, payload: AnnulInvoicePayload): Promise<void> => {
         await api.post(`/billing/invoices/${id}/annul/`, payload)
     },
+
+    /**
+     * Confirm (emit/finalize) a draft invoice. Acepta FormData porque el
+     * flujo de completion permite adjuntar archivos (proof, payment receipt).
+     */
+    confirmInvoice: async (id: number, payload: FormData | Record<string, unknown>): Promise<Invoice> => {
+        const isFormData = typeof FormData !== 'undefined' && payload instanceof FormData
+        const config = isFormData
+            ? { headers: { 'Content-Type': 'multipart/form-data' as const } }
+            : undefined
+        const { data } = await api.post<Invoice>(`/billing/invoices/${id}/confirm/`, payload, config)
+        return data
+    },
 }
