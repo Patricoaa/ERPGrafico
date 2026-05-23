@@ -52,6 +52,16 @@ export const contactsApi = {
     },
 
     /**
+     * Credit ledger del contacto — lista de deudas pendientes (saldo > 0
+     * tras filtro client-side opcional). Consumido por el wizard de checkout
+     * para mostrar saldo a aplicar al pagar.
+     */
+    getCreditLedger: async (contactId: number): Promise<Array<{ id: number, balance: string | number, [k: string]: unknown }>> => {
+        const { data } = await api.get<Array<{ id: number, balance: string | number, [k: string]: unknown }>>(`/contacts/${contactId}/credit_ledger/`)
+        return data
+    },
+
+    /**
      * Fetch insights for a contact
      */
     getInsights: async (id: number): Promise<InsightsData> => {

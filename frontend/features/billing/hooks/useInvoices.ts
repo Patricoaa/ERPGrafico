@@ -63,6 +63,22 @@ export function useInvoices({ filters }: UseInvoicesProps = {}) {
         },
     })
 
+    const posCheckoutMutation = useMutation({
+        mutationFn: async (payload: FormData) => billingApi.posCheckout(payload),
+        onSuccess: () => {
+            markLocalMutation()
+            invalidateBilling()
+        },
+    })
+
+    const requestCreditMutation = useMutation({
+        mutationFn: async (payload: FormData) => billingApi.requestCredit(payload),
+        onSuccess: () => {
+            markLocalMutation()
+            invalidateBilling()
+        },
+    })
+
     return {
         invoices: invoices ?? [],
         isLoading,
@@ -72,6 +88,10 @@ export function useInvoices({ filters }: UseInvoicesProps = {}) {
         confirmInvoice: confirmMutation.mutateAsync,
         isConfirming: confirmMutation.isPending,
         registerNoteOnInvoice: registerNoteMutation.mutateAsync,
+        posCheckout: posCheckoutMutation.mutateAsync,
+        isCheckingOut: posCheckoutMutation.isPending,
+        requestCredit: requestCreditMutation.mutateAsync,
+        isRequestingCredit: requestCreditMutation.isPending,
     }
 }
 

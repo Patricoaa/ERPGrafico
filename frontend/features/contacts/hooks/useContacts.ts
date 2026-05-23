@@ -90,3 +90,34 @@ export function useContactInsights(id: number | undefined) {
         staleTime: 5 * 60 * 1000, // 5 min
     })
 }
+
+/** Detalle reactivo de un contact. */
+export function useContact(id: number | null | undefined) {
+    return useQuery({
+        queryKey: id ? CONTACTS_KEYS.detail(id) : ['contacts', 'detail', 'noop'],
+        queryFn: () => contactsApi.getContact(id!),
+        enabled: !!id,
+    })
+}
+
+export interface PendingDebt {
+    id: number
+    balance: string | number
+    [key: string]: unknown
+}
+
+/**
+ * Ledger de crédito del contacto: lista de deudas pendientes (saldo > 0).
+ * El componente recibe solo las que tienen balance positivo (filtro
+ * client-side preservado para no romper el contrato existente).
+ */
+export function useContactCreditLedger(contactId: number | null | undefined) {
+    return useQuery<PendingDebt[]>({
+        queryKey: contactId ? [...CONTACTS_KEYS.detail(contactId), 'creditLedger'] : ['contacts', 'creditLedger', 'noop'],
+        queryFn: async () => {
+            const data = await contactsApi.getCreditLedger(contactId!)
+            return data.filter(d => Number(d.balance) > 0)
+        },
+        enabled: !!contactId,
+    })
+}
