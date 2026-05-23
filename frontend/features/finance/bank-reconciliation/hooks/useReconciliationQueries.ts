@@ -1,25 +1,19 @@
 import { useQuery } from '@tanstack/react-query'
-import api from '@/lib/api'
-import type { BankStatement, ReconciliationRule, TreasuryAccount, PaginatedResponse, BankStatementLine, ReconciliationSystemItem } from '../types'
+import { financeApi } from '../../api/financeApi'
+import type { BankStatement, TreasuryAccount, PaginatedResponse, BankStatementLine } from '../types'
 import { reconciliationKeys } from './queryKeys'
 
 export function useStatementsQuery() {
     return useQuery({
         queryKey: reconciliationKeys.statements(),
-        queryFn: async () => {
-            const res = await api.get('/treasury/statements/')
-            return res.data as BankStatement[]
-        }
+        queryFn: () => financeApi.getStatements() as Promise<BankStatement[]>,
     })
 }
 
 export function useStatementQuery(id: number, enabled: boolean = true) {
     return useQuery({
         queryKey: reconciliationKeys.statement(id),
-        queryFn: async () => {
-            const res = await api.get(`/treasury/statements/${id}/`)
-            return res.data as BankStatement
-        },
+        queryFn: () => financeApi.getStatement(id) as Promise<BankStatement>,
         enabled: enabled && !!id
     })
 }
@@ -27,22 +21,14 @@ export function useStatementQuery(id: number, enabled: boolean = true) {
 export function useAccountsQuery() {
     return useQuery({
         queryKey: reconciliationKeys.accounts(),
-        queryFn: async () => {
-            const res = await api.get('/treasury/accounts/')
-            return res.data as TreasuryAccount[]
-        }
+        queryFn: () => financeApi.getReconciliationAccounts() as Promise<TreasuryAccount[]>,
     })
 }
 
 export function useReconciliationSettingsQuery(accountId?: number | string) {
     return useQuery({
         queryKey: reconciliationKeys.settings(accountId),
-        queryFn: async () => {
-            const res = await api.get('/treasury/reconciliation-settings/for_account/', {
-                params: { treasury_account_id: accountId }
-            })
-            return res.data
-        },
+        queryFn: () => financeApi.getReconciliationSettings(accountId),
         enabled: !!accountId
     })
 }
@@ -63,16 +49,12 @@ export function useDashboardDataQuery(selectedAccount: string = 'all') {
         queryKey: reconciliationKeys.dashboard(selectedAccount),
         queryFn: async () => {
             const params = selectedAccount !== 'all' ? { treasury_account: selectedAccount } : {}
-            const [kpiRes, trendRes, pendingRes] = await Promise.all([
-                api.get('/treasury/reconciliation-reports/dashboard/', { params }),
-                api.get('/treasury/reconciliation-reports/history/', { params }),
-                api.get('/treasury/reconciliation-reports/pending/', { params })
+            const [stats, trend, pending] = await Promise.all([
+                financeApi.getDashboardData(params),
+                financeApi.getDashboardHistory(params),
+                financeApi.getDashboardPending(params),
             ])
-            return {
-                stats: kpiRes.data,
-                trend: trendRes.data,
-                pending: pendingRes.data
-            }
+            return { stats, trend, pending }
         }
     })
 }
@@ -81,22 +63,19 @@ export function useUnreconciledLinesQuery(statementId: number, params: QueryPagi
     return useQuery({
         queryKey: reconciliationKeys.unreconciledLines(statementId, params),
         queryFn: async ({ signal }) => {
-            const res = await api.get<PaginatedResponse<BankStatementLine>>('/treasury/statement-lines/', {
-                params: {
-                    statement: statementId,
-                    reconciliation_state: 'UNRECONCILED,EXCLUDED',
-                    page: params.page || 1,
-                    page_size: params.pageSize || 50,
-                    search: params.search,
-                    date_from: params.date_from,
-                    date_to: params.date_to,
-                    amount_min: params.amount_min,
-                    amount_max: params.amount_max,
-                    direction: params.type
-                },
-                signal
+            const data = await financeApi.getStatementLines({
+                statement: statementId,
+                reconciliation_state: 'UNRECONCILED,EXCLUDED',
+                page: params.page || 1,
+                page_size: params.pageSize || 50,
+                search: params.search,
+                date_from: params.date_from,
+                date_to: params.date_to,
+                amount_min: params.amount_min,
+                amount_max: params.amount_max,
+                direction: params.type,
             })
-            return res.data // { count, next, previous, results }
+            return data as PaginatedResponse<BankStatementLine>
         },
         enabled: !!statementId
     })
@@ -106,41 +85,30 @@ export function useUnreconciledPaymentsQuery(treasuryAccountId: number, params: 
     return useQuery({
         queryKey: reconciliationKeys.unreconciledPayments(treasuryAccountId, params),
         queryFn: async ({ signal }) => {
-            const paymentsRes = await api.get<PaginatedResponse<ReconciliationSystemItem>>('/treasury/payments/', {
-                params: {
-                    is_reconciled: 'False',
-                    treasury_account: treasuryAccountId,
-                    page: params.page || 1,
-                    page_size: params.pageSize || 50,
-                    date_from: params.date_from,
-                    date_to: params.date_to,
-                    amount_min: params.amount_min,
-                    amount_max: params.amount_max,
-                    direction: params.type
-                },
-                signal
+            const paymentsData = await financeApi.getPayments({
+                is_reconciled: 'False',
+                treasury_account: treasuryAccountId,
+                page: params.page || 1,
+                page_size: params.pageSize || 50,
+                date_from: params.date_from,
+                date_to: params.date_to,
+                amount_min: params.amount_min,
+                amount_max: params.amount_max,
+                direction: params.type,
             })
-
-            const paymentsData = paymentsRes.data.results || paymentsRes.data
-
-            const payments = Array.isArray(paymentsData) ? paymentsData.map((p: any) => {
+            const results = (paymentsData as any).results ?? paymentsData
+            const payments = Array.isArray(results) ? results.map((p: any) => {
                 let contactName = p.partner_name || 'Particular'
-                
                 if (p.movement_type === 'TRANSFER') {
                     contactName = p.is_inbound ? (p.from_account_name || 'Cuenta Origen') : (p.to_account_name || 'Cuenta Destino')
                 } else if (p.movement_type === 'ADJUSTMENT') {
                     contactName = p.justify_reason_display || p.notes || 'Ajuste Manual'
                 }
-
-                return {
-                    ...p,
-                    contact_name: contactName
-                }
+                return { ...p, contact_name: contactName }
             }) : []
-
             return {
                 results: payments,
-                count: paymentsRes.data.count || payments.length
+                count: (paymentsData as any).count || payments.length
             }
         },
         enabled: !!treasuryAccountId
@@ -150,10 +118,7 @@ export function useUnreconciledPaymentsQuery(treasuryAccountId: number, params: 
 export function useLineSuggestionsQuery(lineId: number, enabled: boolean) {
     return useQuery({
         queryKey: reconciliationKeys.lineSuggestions(lineId),
-        queryFn: async ({ signal }) => {
-            const res = await api.get(`/treasury/statement-lines/${lineId}/suggestions/`, { signal })
-            return res.data.suggestions || []
-        },
+        queryFn: () => financeApi.getLineSuggestions(lineId),
         enabled: enabled && !!lineId
     })
 }
@@ -161,33 +126,28 @@ export function useLineSuggestionsQuery(lineId: number, enabled: boolean) {
 export function usePaymentSuggestionsQuery(paymentId: number, enabled: boolean) {
     return useQuery({
         queryKey: reconciliationKeys.paymentSuggestions(paymentId),
-        queryFn: async ({ signal }) => {
-            const res = await api.get(`/treasury/payments/${paymentId}/suggestions/`, { signal })
-            return res.data.suggestions || []
-        },
+        queryFn: () => financeApi.getPaymentSuggestions(paymentId),
         enabled: enabled && !!paymentId
     })
 }
+
 export function useReconciledLinesQuery(statementId: number, params: QueryPaginationParams = {}) {
     return useQuery({
         queryKey: reconciliationKeys.reconciledLines(statementId, params),
         queryFn: async ({ signal }) => {
-            const res = await api.get<PaginatedResponse<BankStatementLine>>('/treasury/statement-lines/', {
-                params: {
-                    statement: statementId,
-                    reconciliation_state: 'RECONCILED',
-                    page: params.page || 1,
-                    page_size: params.pageSize || 50,
-                    search: params.search,
-                    date_from: params.date_from,
-                    date_to: params.date_to,
-                    amount_min: params.amount_min,
-                    amount_max: params.amount_max,
-                    direction: params.type
-                },
-                signal
+            const data = await financeApi.getStatementLines({
+                statement: statementId,
+                reconciliation_state: 'RECONCILED',
+                page: params.page || 1,
+                page_size: params.pageSize || 50,
+                search: params.search,
+                date_from: params.date_from,
+                date_to: params.date_to,
+                amount_min: params.amount_min,
+                amount_max: params.amount_max,
+                direction: params.type,
             })
-            return res.data
+            return data as PaginatedResponse<BankStatementLine>
         },
         enabled: !!statementId
     })

@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
-import api from "@/lib/api"
+import { financeApi } from "../api/financeApi"
 import { Download, ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
@@ -58,12 +58,12 @@ export function BudgetDetailView({ budgetId }: BudgetDetailViewProps) {
     const loadData = async () => {
         setLoading(true)
         try {
-            const [budgetRes, execRes] = await Promise.all([
-                api.get(`/accounting/budgets/${budgetId}/`),
-                api.get(`/accounting/budgets/${budgetId}/execution/`)
+            const [budgetData, execData] = await Promise.all([
+                financeApi.getBudgetDetail(Number(budgetId)),
+                financeApi.getBudgetExecution(Number(budgetId))
             ])
-            setBudget(budgetRes.data)
-            setExecutionData(execRes.data)
+            setBudget(budgetData)
+            setExecutionData(execData)
         } catch (err) {
             console.error(err)
             toast.error("Error al cargar datos del presupuesto")
@@ -75,10 +75,8 @@ export function BudgetDetailView({ budgetId }: BudgetDetailViewProps) {
     const handleExport = async () => {
         if (!budget) return
         try {
-            const res = await api.get(`/accounting/budgets/${budget.id}/export_csv/`, {
-                responseType: 'blob'
-            })
-            const url = window.URL.createObjectURL(new Blob([res.data]))
+            const blob = await financeApi.exportBudgetCsv(budget.id)
+            const url = window.URL.createObjectURL(new Blob([blob]))
             const link = document.createElement('a')
             link.href = url
             link.setAttribute('download', `ejecucion_${budget.name}.csv`)

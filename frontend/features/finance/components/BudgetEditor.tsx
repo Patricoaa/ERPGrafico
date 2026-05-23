@@ -13,7 +13,7 @@ import {
     TooltipTrigger
 } from "@/components/ui/tooltip";
 import { Info, History, Split, BarChart2 } from "lucide-react";
-import api from '@/lib/api';
+import { financeApi } from "../api/financeApi";
 import { cn } from "@/lib/utils";
 
 interface BudgetEditorProps {
@@ -109,28 +109,17 @@ export function BudgetEditor({ open, onOpenChange, budget, onSave }: BudgetEdito
         if (!budget) return;
         setLoading(true);
         try {
-            // Load only budgetable accounts
-            const accRes = await api.get('/accounting/accounts/budgetable/');
-            // Load current budget items (we can get them from budget detail or execution endpoint, 
-            // or just rely on parent passing them? Parent has "summary" maybe not full list depending on serializer)
-            // Let's re-fetch budget to be safe or use execution endpoint which returns "budgeted"
-            const execRes = await api.get(`/accounting/budgets/${budget.id}/execution/`);
+            const accData = await financeApi.getBudgetableAccounts();
+            await financeApi.getBudgetExecution(budget.id);
 
-            const fetchedAccounts = accRes.data.results || accRes.data;
+            const fetchedAccounts = (accData as any).results || accData;
             setAccounts(fetchedAccounts);
 
-            // Map existing items
             const currItems: Record<number, Record<number, number>> = {};
-            // The execution endpoint returns 'items' array. 
-            // However, we need the raw budget items with month.
-            // Let's fetch the budget detail which should have the items.
-            const budgetRes = await api.get(`/accounting/budgets/${budget.id}/`);
+            const budgetData = await financeApi.getBudgetDetail(budget.id);
 
-            // If the budget detail doesn't include items, we might need a specific endpoint 
-            // or use the BudgetViewSet if it serializes items.
-            // Let's assume BudgetSerializer includes items (BudgetItemSerializer).
-            if (budgetRes.data.items) {
-                budgetRes.data.items.forEach((item: BudgetItem) => {
+            if ((budgetData as any).items) {
+                (budgetData as any).items.forEach((item: BudgetItem) => {
                     if (!currItems[item.account]) currItems[item.account] = {};
                     currItems[item.account][item.month] = parseFloat(String(item.amount));
                 });
@@ -148,8 +137,7 @@ export function BudgetEditor({ open, onOpenChange, budget, onSave }: BudgetEdito
         if (!budget) return;
         setLoading(true);
         try {
-            const res = await api.get(`/accounting/budgets/${budget.id}/previous_year_actuals/`);
-            const fetchedItems = res.data;
+            const fetchedItems = await financeApi.getBudgetPreviousYearActuals(budget.id);
             const newItems: Record<number, Record<number, number>> = {};
 
             fetchedItems.forEach((item: BudgetItem) => {
@@ -217,7 +205,7 @@ export function BudgetEditor({ open, onOpenChange, budget, onSave }: BudgetEdito
             });
 
             if (budget) {
-                await api.post(`/accounting/budgets/${budget.id}/set_items/`, { items: payload });
+                await financeApi.setBudgetItems(budget.id, payload);
             }
             onOpenChange(false);
             onSave();

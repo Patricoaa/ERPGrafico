@@ -26,7 +26,7 @@ import {
 } from "lucide-react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
-import api from "@/lib/api"
+import { financeApi } from "../../api/financeApi"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { cn } from "@/lib/utils"
 import {
@@ -353,8 +353,8 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                 const localDate = new Date(defaultDate.getTime() + defaultDate.getTimezoneOffset() * 60000)
                 setDiffDialog({ open: true, lineId, paymentId, amount: diffAmount.toString(), accountingDate: localDate })
                 try {
-                    const res = await api.get(`/treasury/statement-lines/${lineId}/suggested_difference/`)
-                    setDiffType(res.data.suggestion)
+                    const diffData = await financeApi.getSuggestedDifference(lineId)
+                    setDiffType((diffData as any).suggestion)
                 } catch { /* ignore */ }
                 return
             }

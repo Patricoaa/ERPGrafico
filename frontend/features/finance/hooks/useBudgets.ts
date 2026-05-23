@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import api from '@/lib/api'
+import { financeApi } from '../api/financeApi'
 import { toast } from 'sonner'
 
 export const BUDGETS_QUERY_KEY = ['budgets']
@@ -17,15 +17,12 @@ export function useBudgets() {
 
     const { data: budgets, isLoading, refetch } = useQuery({
         queryKey: BUDGETS_QUERY_KEY,
-        queryFn: async () => {
-            const response = await api.get('/accounting/budgets/')
-            return response.data
-        },
-        staleTime: 5 * 60 * 1000, // 5 min
+        queryFn: financeApi.getBudgets,
+        staleTime: 5 * 60 * 1000,
     })
 
     const createMutation = useMutation({
-        mutationFn: (payload: Partial<Budget>) => api.post('/accounting/budgets/', payload),
+        mutationFn: (payload: Partial<Budget>) => financeApi.createBudget(payload),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: BUDGETS_QUERY_KEY })
             toast.success('Presupuesto creado exitosamente')
@@ -37,8 +34,8 @@ export function useBudgets() {
     })
 
     const updateMutation = useMutation({
-        mutationFn: ({ id, payload }: { id: number, payload: Partial<Budget> }) => 
-            api.patch(`/accounting/budgets/${id}/`, payload),
+        mutationFn: ({ id, payload }: { id: number, payload: Partial<Budget> }) =>
+            financeApi.updateBudget(id, payload),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: BUDGETS_QUERY_KEY })
             toast.success('Presupuesto actualizado exitosamente')

@@ -17,7 +17,7 @@ import {
     Pie,
     Cell
 } from 'recharts';
-import api, { pollTask } from '@/lib/api';
+import { financeApi } from "../api/financeApi";
 import { TrendingUp, TrendingDown, Package, DollarSign, ShoppingCart } from 'lucide-react';
 import { CardSkeleton, MoneyDisplay } from "@/components/shared";
 import { EmptyState } from "@/components/shared/EmptyState";
@@ -73,8 +73,7 @@ export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
                 if (date?.to) params.end_date = format(date.to, 'yyyy-MM-dd');
                 if (date?.from) params.start_date = format(date.from, 'yyyy-MM-dd');
 
-                const res = await api.get('finances/api/bi-analytics/', { params });
-                const finalData = res.data.task_id ? await pollTask(res.data.task_id) : res.data;
+                const finalData = await financeApi.getBIAnalytics(params);
                 setData(finalData);
             } catch (err) {
                 console.error(err);

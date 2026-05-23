@@ -1,9 +1,8 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import api from '@/lib/api'
+import { financeApi } from '../../api/financeApi'
 import { toast } from 'sonner'
 import { showApiError } from '@/lib/errors'
 import { reconciliationKeys } from './queryKeys'
-import type { ReconciliationRule } from '../types'
 
 export function useMatchMutation(statementId: number, treasuryAccountId: number) {
     const queryClient = useQueryClient()
@@ -11,16 +10,16 @@ export function useMatchMutation(statementId: number, treasuryAccountId: number)
     return useMutation({
         mutationFn: async ({ lineId, paymentId, isBatch, confirmData }: { lineId: number; paymentId: number; isBatch?: boolean; confirmData?: Record<string, unknown> }) => {
             if (isBatch) {
-                await api.post(`/treasury/statement-lines/match_group/`, {
+                await financeApi.groupMatchLines({
                     line_ids: [lineId],
                     batch_ids: [paymentId],
                     payment_ids: []
                 })
             } else {
-                await api.post(`/treasury/statement-lines/${lineId}/match/`, { payment_id: paymentId })
+                await financeApi.matchStatementLine(lineId, { payment_id: paymentId })
             }
             if (confirmData) {
-                await api.post(`/treasury/statement-lines/${lineId}/confirm/`, confirmData)
+                await financeApi.confirmMatch(lineId, confirmData)
             }
             return { lineId, paymentId, isBatch }
         },
@@ -62,9 +61,9 @@ export function useGroupMatchMutation(statementId: number, treasuryAccountId: nu
 
     return useMutation({
         mutationFn: async ({ payload, confirmPayload, lineId }: { payload: { line_ids?: number[], payment_ids?: number[], batch_ids?: number[] }, confirmPayload?: Record<string, unknown>, lineId: number }) => {
-            await api.post('/treasury/statement-lines/match_group/', payload)
+            await financeApi.groupMatchLines(payload)
             if (confirmPayload && Object.keys(confirmPayload).length > 0) {
-                await api.post(`/treasury/statement-lines/${lineId}/confirm/`, confirmPayload)
+                await financeApi.confirmMatch(lineId, confirmPayload)
             }
             return payload
         },
@@ -109,7 +108,7 @@ export function useExcludeMutation(statementId: number) {
 
     return useMutation({
         mutationFn: async ({ lineId, reason, notes }: { lineId: number; reason: string; notes: string }) => {
-            return api.patch(`/treasury/statement-lines/${lineId}/`, {
+            return financeApi.updateStatementLine(lineId, {
                 reconciliation_status: 'EXCLUDED',
                 exclusion_reason: reason,
                 exclusion_notes: notes
@@ -133,7 +132,7 @@ export function useBulkExcludeMutation(statementId: number) {
 
     return useMutation({
         mutationFn: async ({ lineIds, reason, notes }: { lineIds: number[]; reason: string; notes: string }) => {
-            return api.post(`/treasury/statement-lines/bulk_exclude/`, {
+            return financeApi.bulkExcludeLines({
                 line_ids: lineIds,
                 exclusion_reason: reason,
                 exclusion_notes: notes
@@ -157,7 +156,7 @@ export function useRestoreMutation(statementId: number) {
 
     return useMutation({
         mutationFn: async (lineId: number) => {
-            return api.patch(`/treasury/statement-lines/${lineId}/`, {
+            return financeApi.updateStatementLine(lineId, {
                 reconciliation_status: 'UNRECONCILED',
                 exclusion_reason: null,
                 exclusion_notes: null
@@ -181,8 +180,7 @@ export function useAutoMatchMutation(statementId: number) {
 
     return useMutation({
         mutationFn: async ({ confidenceThreshold }: { confidenceThreshold: number }) => {
-            const res = await api.post(`/treasury/statements/${statementId}/auto_match/`, { confidence_threshold: confidenceThreshold })
-            return res.data
+            return financeApi.autoMatch(statementId, { confidence_threshold: confidenceThreshold })
         },
         onSuccess: (data) => {
             toast.success(`Conciliación Finalizada`, {
@@ -207,8 +205,8 @@ export function useUpdateReconciliationSettingsMutation(accountId?: number | str
 
     return useMutation({
         mutationFn: async (settings: Record<string, unknown> & { id: number }) => {
-            const res = await api.patch(`/treasury/reconciliation-settings/${settings.id}/`, settings)
-            return res.data
+            const { id, ...rest } = settings
+            return financeApi.updateReconciliationSettings(id, rest)
         },
         onSuccess: () => {
             toast.success('Configuración de inteligencia actualizada')
@@ -232,13 +230,9 @@ export function useCreateAndMatchMutation(statementId: number, treasuryAccountId
 
     return useMutation({
         mutationFn: async ({ lineId, movementData }: { lineId: number, movementData: Record<string, unknown> }) => {
-            // 1. Crear el movimiento
-            const movementRes = await api.post('/treasury/movements/', movementData)
-            const paymentId = movementRes.data.id
-
-            // 2. Realizar el match con la línea
-            await api.post(`/treasury/statement-lines/${lineId}/match/`, { payment_id: paymentId })
-            
+            const movement = await financeApi.createMovement(movementData)
+            const paymentId = (movement as any).id
+            await financeApi.matchStatementLine(lineId, { payment_id: paymentId })
             return { lineId, paymentId }
         },
         onSuccess: () => {
@@ -263,7 +257,7 @@ export function useUnmatchMutation(statementId: number, treasuryAccountId: numbe
 
     return useMutation({
         mutationFn: async (lineId: number) => {
-            return api.post(`/treasury/statement-lines/${lineId}/unmatch/`)
+            return financeApi.unmatchLine(lineId)
         },
         onSuccess: () => {
             toast.success("Conciliación revertida")
@@ -287,7 +281,7 @@ export function useAllocateMutation(movementId: number, treasuryAccountId?: numb
 
     return useMutation({
         mutationFn: async ({ allocations, validateSum = false }: { allocations: Record<string, unknown>[], validateSum?: boolean }) => {
-            return api.post(`/treasury/movements/${movementId}/allocate/?validate_sum=${validateSum}`, { allocations })
+            return financeApi.allocateMovement(movementId, { allocations, validate_sum: validateSum })
         },
         onSuccess: () => {
             toast.success("Distribución guardada correctamente")
@@ -312,7 +306,7 @@ export function useCreateMovementMutation(treasuryAccountId: number) {
 
     return useMutation({
         mutationFn: async (movementData: Record<string, unknown>) => {
-            return api.post('/treasury/movements/', movementData)
+            return financeApi.createMovement(movementData)
         },
         onSuccess: () => {
             toast.success("Movimiento creado correctamente")
