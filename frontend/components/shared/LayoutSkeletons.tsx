@@ -3,7 +3,7 @@
 import React from "react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Card } from "@/components/ui/card"
-import { TableSkeleton } from "./TableSkeleton"
+import { SimpleTable } from "./SimpleTable"
 import { SkeletonShell } from "./SkeletonShell"
 
 /**
@@ -99,7 +99,7 @@ export function PageLayoutSkeleton({
                     {children || (
                         <>
                             {contentType === 'table' && (
-                                <TableSkeleton rows={8} columns={6} />
+                                <SkeletonShell isLoading ariaLabel="Cargando tabla"><SimpleTable rows={8} columns={6} /></SkeletonShell>
                             )}
                             {contentType === 'card' && (
                                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">

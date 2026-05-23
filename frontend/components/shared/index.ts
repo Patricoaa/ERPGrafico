@@ -38,8 +38,8 @@ export * from './BulkActionDock';
 // Cards & Containers
 
 export * from './CardSkeleton';
-export * from './TableSkeleton';
 export * from './SkeletonShell';
+export * from './SimpleTable';
 export * from './LayoutSkeletons';
 export { Skeleton } from '@/components/ui/skeleton';
 

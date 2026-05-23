@@ -30,7 +30,7 @@ import { StatusBadge } from "@/components/shared/StatusBadge"
 import { TaxPeriod, TaxDeclaration, TaxPaymentData } from "../types"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { Row } from "@tanstack/react-table"
-import { CardSkeleton, TableSkeleton, SmartSearchBar, useClientSearch } from "@/components/shared"
+import { CardSkeleton, SmartSearchBar, useClientSearch } from "@/components/shared"
 import { taxPeriodSearchDef } from "@/features/tax/searchDef"
 import { EntityCard } from "@/components/shared/EntityCard"
 

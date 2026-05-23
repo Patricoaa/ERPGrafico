@@ -185,7 +185,7 @@ export function UoMList({ externalOpen, onExternalOpenChange, createAction }: Uo
                 open={!!selectedUoM || isLoadingSelected || !!externalOpen}
                 onOpenChange={(open) => { if (!open) handleCloseModal() }}
                 initialData={selectedUoM ?? undefined}
-                onSuccess={() => { refetch(); handleCloseModal() }}
+                onSuccess={() => { refetch() }}
             />
 
             <ActionConfirmModal

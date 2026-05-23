@@ -217,9 +217,7 @@ export function DataTable<TData, TValue>({
             expanded: autoExpand ? true : {},
             columnFilters: initialColumnFilters,
         },
-        state: {
-            ...(pagination ? { pagination } : {}),
-        }
+        ...(pagination ? { state: { pagination } } : {})
     })
 
     // Sync prop-driven column visibility after mount.
@@ -277,17 +275,78 @@ export function DataTable<TData, TValue>({
         return null
     })()
 
+    // ─── Loading state (unified) ────────────────────────────────────────
+    if (isLoading) {
+        return (
+            <div ref={containerRef} className={isEmbedded ? "relative flex flex-col h-full space-y-1 min-h-0" : "space-y-4"}>
+                {showToolbar && (
+                    <DataTableToolbar
+                        table={table}
+                        filterColumn={filterColumn}
+                        globalFilterFields={globalFilterFields}
+                        searchPlaceholder={searchPlaceholder}
+                        facetedFilters={facetedFilters}
+                        toolbarAction={toolbarAction}
+                        useAdvancedFilter={useAdvancedFilter}
+                        onReset={onReset}
+                        leftAction={leftAction}
+                        rightAction={rightAction}
+                        showToolbarSort={showToolbarSort}
+                        viewOptions={viewOptions}
+                        currentView={currentView}
+                        onViewChange={onViewChange}
+                        showColumnToggle={showColumnToggle}
+                        customFilters={customFilters}
+                        isCustomFiltered={isCustomFiltered}
+                        customFilterCount={customFilterCount}
+                        createAction={createAction}
+                        rightButtonGroupAction={rightButtonGroupAction}
+                    />
+                )}
+
+                {renderLoadingView ? (
+                    renderLoadingView()
+                ) : (
+                    <div className={cn(!noBorder && !isEmbedded && "rounded-md border")}>
+                        <SkeletonShell isLoading ariaLabel="Cargando tabla">
+                            <Table>
+                                <TableHeader>
+                                    {table.getHeaderGroups().map(headerGroup => (
+                                        <TableRow key={headerGroup.id}>
+                                            {headerGroup.headers.map(header => (
+                                                <TableHead key={header.id} className="h-12">
+                                                    {header.isPlaceholder
+                                                        ? null
+                                                        : flexRender(
+                                                            header.column.columnDef.header,
+                                                            header.getContext()
+                                                        )}
+                                                </TableHead>
+                                            ))}
+                                        </TableRow>
+                                    ))}
+                                </TableHeader>
+                                <TableBody>
+                                    {Array.from({ length: skeletonRows }, (_, i) => (
+                                        <TableRow key={`skel-${i}`} className="border-b border-border/40">
+                                            {columns.map((_, j) => (
+                                                <TableCell key={`skel-${i}-${j}`} className="py-4" />
+                                            ))}
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </SkeletonShell>
+                    </div>
+                )}
+
+                {!hidePagination && <DataTablePagination table={table} pageSizeOptions={pageSizeOptions} />}
+            </div>
+        )
+    }
+
     if (isEmbedded) {
-        const tableBody = isLoading ? (
-            <TableRow className="hover:bg-transparent border-none">
-                <TableCell
-                    colSpan={columns.length}
-                    className="p-6 pt-0 text-center"
-                >
-                    {renderLoadingView && !renderCustomView ? renderLoadingView() : <SharedTableSkeleton rows={skeletonRows} columns={columns.length} className="pt-4" />}
-                </TableCell>
-            </TableRow>
-        ) : renderCustomView ? null : (
+        const tableBody = renderCustomView ? null : (
             table.getRowModel().rows?.length ? (
                 table.getRowModel().rows.map((row) => (
                     <React.Fragment key={row.id}>
@@ -397,9 +456,7 @@ export function DataTable<TData, TValue>({
                 <div className={cn("flex-1 min-h-0", renderCustomView ? "overflow-x-auto" : "flex flex-col overflow-hidden")}>
                     {renderCustomView ? (
                         <div className="py-0 h-full overflow-y-scroll custom-scrollbar">
-                            {isLoading
-                                ? (renderLoadingView ? renderLoadingView() : <SharedTableSkeleton rows={skeletonRows} columns={columns.length} className="pt-4" />)
-                                : renderCustomView(table)}
+                            {renderCustomView(table)}
                         </div>
                     ) : (
                         <Table containerClassName={cn(
@@ -484,9 +541,7 @@ export function DataTable<TData, TValue>({
                 </div>
             )}
             {renderCustomView ? (
-                isLoading
-                    ? (renderLoadingView ? renderLoadingView() : <SharedTableSkeleton rows={skeletonRows} columns={columns.length} className="pt-4" />)
-                    : renderCustomView(table)
+                renderCustomView(table)
             ) : (
                 <div className={cn(!noBorder && "rounded-md border")}>
                     <Table containerClassName={cn(
@@ -511,16 +566,7 @@ export function DataTable<TData, TValue>({
                             ))}
                         </TableHeader>
                         <TableBody>
-                            {isLoading ? (
-                                <TableRow className="hover:bg-transparent border-none">
-                                    <TableCell
-                                        colSpan={columns.length}
-                                        className="p-6 pt-0"
-                                    >
-                                        <SharedTableSkeleton rows={skeletonRows} columns={columns.length} className="pt-4" />
-                                    </TableCell>
-                                </TableRow>
-                            ) : table.getRowModel().rows?.length ? (
+                            {table.getRowModel().rows?.length ? (
                                 table.getRowModel().rows.map((row) => (
                                     <React.Fragment key={row.id}>
                                         {renderRow ? (

@@ -6,7 +6,6 @@ import { notFound, useRouter } from "next/navigation"
 import api from "@/lib/api"
 import { EntityDetailPage, FormFooter, SubmitButton, CancelButton, SkeletonShell } from "@/components/shared"
 import { AccountForm } from "@/features/finance/components/AccountForm"
-import { useAccounts } from "@/features/accounting/hooks/useAccounts"
 import { Button } from "@/components/ui/button"
 import { Book } from "lucide-react"
 
@@ -22,6 +21,9 @@ export function AccountDetailClient({ accountId }: AccountDetailClientProps) {
             return res.data
         }
     })
+ 
+    const router = useRouter()
+    const [isSaving, setIsSaving] = useState(false)
 
     const error = queryError ? (queryError as any).response?.status || 500 : null
 
@@ -78,7 +80,6 @@ export function AccountDetailClient({ accountId }: AccountDetailClientProps) {
                         if (!open) router.push('/accounting/ledger')
                     }}
                     initialData={account} 
-                    accounts={flatAccounts as any}
                     onLoadingChange={setIsSaving}
                     onSuccess={() => {
                         router.push('/accounting/ledger')

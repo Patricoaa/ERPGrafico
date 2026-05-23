@@ -1,5 +1,6 @@
 import React from 'react'
-import { TableSkeleton } from './TableSkeleton'
+import { SkeletonShell } from './SkeletonShell'
+import { SimpleTable } from './SimpleTable'
 import { CardSkeleton } from './CardSkeleton'
 
 interface LoadingFallbackProps {
@@ -33,5 +34,9 @@ export const LoadingFallback: React.FC<LoadingFallbackProps> = ({
         )
     }
 
-    return <TableSkeleton className={className} ariaLabel={message} />
+    return (
+        <SkeletonShell isLoading ariaLabel={message} className={className}>
+            <SimpleTable />
+        </SkeletonShell>
+    )
 }

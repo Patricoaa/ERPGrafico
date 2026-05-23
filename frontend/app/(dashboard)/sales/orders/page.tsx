@@ -1,7 +1,7 @@
 "use client"
 
 import { lazy, Suspense, useState, useEffect } from "react"
-import { TableSkeleton } from "@/components/shared"
+import { SkeletonShell, SimpleTable } from "@/components/shared"
 import { Tabs } from "@/components/ui/tabs"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
@@ -74,7 +74,7 @@ export default function SalesOrdersPage() {
         <div className="pt-2 flex-1 min-h-0 flex flex-col">
             <Tabs value={viewMode} className="w-full flex flex-col h-full gap-4">
                 <div className="flex-1 min-h-0">
-                    <Suspense fallback={<TableSkeleton rows={10} columns={6} />}>
+                    <Suspense fallback={<SkeletonShell isLoading ariaLabel="Cargando pedidos"><SimpleTable rows={10} columns={6} /></SkeletonShell>}>
                         <SalesOrdersClientView viewMode={viewMode} />
                     </Suspense>
                 </div>

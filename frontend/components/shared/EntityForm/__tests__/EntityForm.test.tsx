@@ -1,4 +1,5 @@
-import { render, screen, waitFor } from "@testing-library/react"
+import { render, waitFor } from "@testing-library/react"
+import { screen } from "@testing-library/dom"
 import userEvent from "@testing-library/user-event"
 import { vi, describe, it, beforeEach, expect } from "vitest"
 import { EntityForm } from "../index"

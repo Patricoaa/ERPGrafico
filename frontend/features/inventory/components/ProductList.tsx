@@ -153,11 +153,13 @@ export function ProductList({ externalOpen, onExternalOpenChange, createAction }
 
     // Initial fetch handled by Suspense
 
-    // Open edit form if ?selected= is present (ADR-0020)
     useEffect(() => {
         if (selectedFromUrl) {
             setEditingProduct(selectedFromUrl)
             setIsFormOpen(true)
+        } else {
+            setIsFormOpen(false)
+            setEditingProduct(null)
         }
     }, [selectedFromUrl])
 

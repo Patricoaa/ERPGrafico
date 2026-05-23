@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react"
 import { TabsContent } from "@/components/ui/tabs"
 import { Card, CardContent } from "@/components/ui/card"
-import { TableSkeleton, MoneyDisplay, FadeIn } from "@/components/shared"
+import { SkeletonShell, SimpleTable, MoneyDisplay, FadeIn } from "@/components/shared"
 import { PageContainer } from "@/components/shared"
 import { Button } from "@/components/ui/button"
 import { SlidersHorizontal, ChevronDown, GitCompare } from "lucide-react"
@@ -307,7 +307,7 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
                                         </div>
                                     ) : (
                                         <div className="p-8">
-                                            <TableSkeleton rows={8} columns={4} />
+                                            <SkeletonShell isLoading ariaLabel="Cargando..."><SimpleTable rows={8} columns={4} /></SkeletonShell>
                                         </div>
                                     )}
                                 </CardContent>
@@ -368,7 +368,7 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
                                         </div>
                                     ) : (
                                         <div className="p-8">
-                                            <TableSkeleton rows={8} columns={4} />
+                                            <SkeletonShell isLoading ariaLabel="Cargando..."><SimpleTable rows={8} columns={4} /></SkeletonShell>
                                         </div>
                                     )}
                                 </CardContent>
@@ -391,7 +391,7 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
                                         />
                                     ) : (
                                         <div className="p-8">
-                                            <TableSkeleton rows={8} columns={4} />
+                                            <SkeletonShell isLoading ariaLabel="Cargando..."><SimpleTable rows={8} columns={4} /></SkeletonShell>
                                         </div>
                                     )}
                                 </CardContent>

@@ -19,6 +19,9 @@ export function PurchaseOrderDetailClient({ orderId }: PurchaseOrderDetailClient
             return res.data
         }
     })
+ 
+    const router = useRouter()
+    const [isSaving, setIsSaving] = useState(false)
 
     const error = queryError ? (queryError as any).response?.status || 500 : null
 

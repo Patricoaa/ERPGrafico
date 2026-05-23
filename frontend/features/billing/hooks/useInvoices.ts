@@ -54,6 +54,15 @@ export function useInvoices({ filters }: UseInvoicesProps = {}) {
         },
     })
 
+    const registerNoteMutation = useMutation({
+        mutationFn: async ({ invoiceId, payload }: { invoiceId: number, payload: FormData }) =>
+            billingApi.registerNoteOnInvoice(invoiceId, payload),
+        onSuccess: () => {
+            markLocalMutation()
+            invalidateBilling()
+        },
+    })
+
     return {
         invoices: invoices ?? [],
         isLoading,
@@ -62,5 +71,18 @@ export function useInvoices({ filters }: UseInvoicesProps = {}) {
         isAnnulling: annulMutation.isPending,
         confirmInvoice: confirmMutation.mutateAsync,
         isConfirming: confirmMutation.isPending,
+        registerNoteOnInvoice: registerNoteMutation.mutateAsync,
     }
+}
+
+/**
+ * Fetch a single invoice by id. queryKey alineada con INVOICES_QUERY_KEY +
+ * id para que invalidaciones masivas refresquen también el detalle.
+ */
+export function useInvoice(id: number | null | undefined) {
+    return useQuery({
+        queryKey: id ? [...INVOICES_QUERY_KEY, 'detail', id] : [...INVOICES_QUERY_KEY, 'detail', 'noop'],
+        queryFn: () => billingApi.getInvoice(id!),
+        enabled: !!id,
+    })
 }

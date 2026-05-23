@@ -8,32 +8,26 @@ import { StatusBadge } from "@/components/shared/StatusBadge"
 import type { Task } from "@/features/workflow/api/workflowApi"
 
 // Placeholder tipado para el esqueleto - sigue el patrón del contrato
+interface TaskDetailClientProps {
+    taskId: string
+}
+
 const TASK_SKELETON: Task = {
     id: 0,
     title: "————————————",
     description: "————————————",
-    status: "pending",
-    priority: "medium",
-    assigned_to_name: "————————————",
+    task_type: "————————————",
+    status: "PENDING",
+    priority: "MEDIUM",
+    assigned_to: null,
+    assigned_to_data: { id: 0, username: "————————————" },
     assigned_group_name: "————————————",
+    created_by: null,
+    created_by_data: { id: 0, username: "————————————" },
     created_at: "",
-    updated_at: "",
-    context_data: {},
-    attachments: [],
-    assignees: [],
-    watchers: [],
-    tags: [],
-    parent: null,
-    project: null,
-    milestone: null,
-    estimated_hours: 0,
-    spent_hours: 0,
-    remaining_hours: 0,
-    start_date: "",
     due_date: "",
     completed_at: "",
-    created_by_name: "————————————",
-    updated_by_name: "————————————"
+    completed_by: null
 }
 
 export function TaskDetailClient({ taskId }: TaskDetailClientProps) {
@@ -96,7 +90,7 @@ export function TaskDetailClient({ taskId }: TaskDetailClientProps) {
                         </div>
                         <div className="space-y-2 col-span-2">
                             <p className="text-sm text-muted-foreground">Descripción</p>
-                            <p className="font-semibold">{task?.description ?? TASK_SKELETON.description || "—"}</p>
+                            <p className="font-semibold">{(task?.description ?? TASK_SKELETON.description) || "—"}</p>
                         </div>
                         <div className="space-y-2">
                             <p className="text-sm text-muted-foreground">Estado</p>
@@ -106,11 +100,11 @@ export function TaskDetailClient({ taskId }: TaskDetailClientProps) {
                         </div>
                         <div className="space-y-2">
                             <p className="text-sm text-muted-foreground">Asignado a</p>
-                            <p className="font-semibold">{task?.assigned_to_name ?? TASK_SKELETON.assigned_to_name || task?.assigned_group_name ?? TASK_SKELETON.assigned_group_name || "—"}</p>
+                            <p className="font-semibold">{(task?.assigned_to_data?.username ?? TASK_SKELETON.assigned_to_data?.username) || (task?.assigned_group_name ?? TASK_SKELETON.assigned_group_name) || "—"}</p>
                         </div>
                         <div className="space-y-2">
                             <p className="text-sm text-muted-foreground">Prioridad</p>
-                            <p className="font-semibold">{task?.priority ?? TASK_SKELETON.priority || "—"}</p>
+                            <p className="font-semibold">{(task?.priority ?? TASK_SKELETON.priority) || "—"}</p>
                         </div>
                         <div className="space-y-2">
                             <p className="text-sm text-muted-foreground">Fecha de Creación</p>

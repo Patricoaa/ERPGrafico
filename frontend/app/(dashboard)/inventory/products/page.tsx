@@ -3,7 +3,7 @@ import { Suspense } from "react"
 import { redirect } from "next/navigation"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { ProductList, CategoryList, PricingRuleList, SubscriptionsView } from "@/features/inventory"
-import { TableSkeleton, ToolbarCreateButton, FadeIn } from "@/components/shared"
+import { SkeletonShell, SimpleTable, ToolbarCreateButton, FadeIn } from "@/components/shared"
 
 export const metadata: Metadata = {
     title: "Productos | ERPGrafico",
@@ -44,7 +44,7 @@ export default async function UnifiedProductsPage({ searchParams }: PageProps) {
         <Tabs value={activeTab} className="space-y-4 pt-2 flex flex-col flex-1 min-h-0">
             <div className="flex-1 min-h-0">
                 <TabsContent value="products" className="h-full mt-0 outline-none">
-                    <Suspense fallback={<TableSkeleton rows={10} columns={6} />}>
+                    <Suspense fallback={<SkeletonShell isLoading ariaLabel="Cargando productos"><SimpleTable rows={10} columns={6} /></SkeletonShell>}>
                         <FadeIn className="h-full">
                             <ProductList
                                 externalOpen={activeTab === 'products' && resolvedParams.modal === 'new'}
@@ -54,7 +54,7 @@ export default async function UnifiedProductsPage({ searchParams }: PageProps) {
                     </Suspense>
                 </TabsContent>
                 <TabsContent value="categories" className="h-full mt-0 outline-none">
-                    <Suspense fallback={<TableSkeleton rows={10} columns={6} />}>
+                    <Suspense fallback={<SkeletonShell isLoading ariaLabel="Cargando productos"><SimpleTable rows={10} columns={6} /></SkeletonShell>}>
                         <FadeIn className="h-full">
                             <CategoryList
                                 externalOpen={activeTab === 'categories' && resolvedParams.modal === 'new'}
@@ -64,7 +64,7 @@ export default async function UnifiedProductsPage({ searchParams }: PageProps) {
                     </Suspense>
                 </TabsContent>
                 <TabsContent value="pricing-rules" className="h-full mt-0 outline-none">
-                    <Suspense fallback={<TableSkeleton rows={10} columns={6} />}>
+                    <Suspense fallback={<SkeletonShell isLoading ariaLabel="Cargando productos"><SimpleTable rows={10} columns={6} /></SkeletonShell>}>
                         <FadeIn className="h-full">
                             <PricingRuleList
                                 externalOpen={activeTab === 'pricing-rules' && resolvedParams.modal === 'new'}
@@ -74,7 +74,7 @@ export default async function UnifiedProductsPage({ searchParams }: PageProps) {
                     </Suspense>
                 </TabsContent>
                 <TabsContent value="subscriptions" className="h-full mt-0 outline-none">
-                    <Suspense fallback={<TableSkeleton rows={10} columns={6} />}>
+                    <Suspense fallback={<SkeletonShell isLoading ariaLabel="Cargando productos"><SimpleTable rows={10} columns={6} /></SkeletonShell>}>
                         <FadeIn className="h-full">
                             <SubscriptionsView
                                 hideHeader

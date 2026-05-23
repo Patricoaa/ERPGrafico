@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, lazy, Suspense } from "react"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
-import { CardSkeleton, TableSkeleton, FadeIn } from "@/components/shared"
+import { CardSkeleton, SkeletonShell, SimpleTable, FadeIn } from "@/components/shared"
 
 // Lazy load components
 const TerminalManagement = lazy(() => import("@/features/treasury/components/TerminalManagement"))
@@ -48,7 +48,7 @@ export const SalesTerminalsView: React.FC<SalesTerminalsViewProps> = ({ activeTa
             </TabsContent>
 
             <TabsContent value="sessions" className="mt-0 outline-none flex-1 min-h-0">
-                <Suspense fallback={<TableSkeleton rows={8} columns={5} />}>
+                <Suspense fallback={<SkeletonShell isLoading ariaLabel="Cargando..."><SimpleTable rows={8} columns={5} /></SkeletonShell>}>
                     <FadeIn className="h-full">
                         <POSSessionsView hideHeader />
                     </FadeIn>
@@ -56,7 +56,7 @@ export const SalesTerminalsView: React.FC<SalesTerminalsViewProps> = ({ activeTa
             </TabsContent>
 
             <TabsContent value="batches" className="mt-0 outline-none flex-1 min-h-0">
-                <Suspense fallback={<TableSkeleton rows={8} columns={5} />}>
+                <Suspense fallback={<SkeletonShell isLoading ariaLabel="Cargando..."><SimpleTable rows={8} columns={5} /></SkeletonShell>}>
                     <FadeIn className="h-full">
                         <TerminalBatchesManagement
                             showTitle={false}

@@ -42,13 +42,22 @@ export function CategoryList({ externalOpen, onExternalOpenChange, createAction 
         endpoint: '/inventory/categories'
     })
 
-    // Open edit form if ?selected= is present (ADR-0020)
+    // Open edit form if ?selected= is present (ADR-0020).
+    // Depends ONLY on selectedFromUrl — NOT on isFormOpen/editingCategory.
+    // Reason: clearSelection() calls router.replace() which is async; the URL
+    // update arrives one tick later, so selectedFromUrl is still non-null when
+    // isFormOpen first flips to false. If we depend on isFormOpen, the effect
+    // re-fires and sees (selectedFromUrl=entity, isFormOpen=false) → re-opens
+    // the form. Depending only on selectedFromUrl avoids this race.
     useEffect(() => {
-        if (selectedFromUrl && (!isFormOpen || editingCategory?.id !== selectedFromUrl.id)) {
+        if (selectedFromUrl) {
             setEditingCategory(selectedFromUrl)
             setIsFormOpen(true)
+        } else {
+            setIsFormOpen(false)
+            setEditingCategory(null)
         }
-    }, [selectedFromUrl, isFormOpen, editingCategory])
+    }, [selectedFromUrl])
 
     const handleCloseModal = () => {
         setIsFormOpen(false)
@@ -147,7 +156,7 @@ export function CategoryList({ externalOpen, onExternalOpenChange, createAction 
 
             {/* Unified Modal — CategoryForm keeps rich selectors + audit for both create and edit */}
             <CategoryForm
-                onSuccess={() => { void refetch(); handleCloseModal() }}
+                onSuccess={() => { void refetch() }}
                 open={isFormOpen || isCreateOpen}
                 onOpenChange={(open) => {
                     if (!open) { handleCloseModal() }

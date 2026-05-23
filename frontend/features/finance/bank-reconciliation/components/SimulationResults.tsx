@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import api from "@/lib/api"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { TableSkeleton } from "@/components/shared/TableSkeleton"
+import { SkeletonShell, SimpleTable } from "@/components/shared"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { formatPlainDate, cn } from "@/lib/utils"
 
@@ -45,7 +45,7 @@ export function SimulationResults({ rule }: { rule: Record<string, unknown> }) {
         simulate()
     }, [rule])
 
-    if (loading) return <TableSkeleton rows={5} columns={3} className="p-8" />
+    if (loading) return <SkeletonShell isLoading ariaLabel="Cargando..."><SimpleTable rows={5} columns={3} className="p-8" /></SkeletonShell>
 
     if (results.length === 0) {
         return <EmptyState context="search" variant="compact" title="Sin coincidencias" description="Ninguna línea reciente coincide con esta configuración." />

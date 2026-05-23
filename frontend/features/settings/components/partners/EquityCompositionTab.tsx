@@ -25,7 +25,8 @@ import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import {
     CardSkeleton,
-    TableSkeleton,
+    SkeletonShell,
+    SimpleTable,
     DataTable,
     DataCell,
     createActionsColumn,
@@ -138,7 +139,7 @@ export function EquityCompositionTab({
         return (
             <div className="space-y-6">
                 <CardSkeleton count={4} variant="grid" />
-                <TableSkeleton rows={10} columns={9} />
+                <SkeletonShell isLoading ariaLabel="Cargando..."><SimpleTable rows={10} columns={9} /></SkeletonShell>
             </div>
         )
     }
