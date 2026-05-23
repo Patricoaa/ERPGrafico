@@ -12,7 +12,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
-import api from "@/lib/api"
+import { purchasingApi } from "../api/purchasingApi"
 import { toast } from "sonner"
 import { Loader2, Package, AlertTriangle, CheckCircle2 } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -92,14 +92,14 @@ export function ReceiptModal({
         setLoading(true)
         try {
             // Fetch order details
-            const orderResponse = await api.get(`/purchasing/orders/${orderId}/`)
-            setOrder(orderResponse.data)
+            const orderData = await purchasingApi.getOrder(orderId)
+            setOrder(orderData as any)
 
             // Initialize quantities and costs
             const initialQuantities: { [lineId: number]: number } = {}
             const initialCosts: { [lineId: number]: number } = {}
 
-            orderResponse.data.lines.forEach((line: PurchaseOrderLine) => {
+            ;(orderData as any).lines.forEach((line: PurchaseOrderLine) => {
                 initialQuantities[line.id] = Math.ceil(line.quantity_pending)
                 initialCosts[line.id] = Math.ceil(line.unit_cost)
             })
@@ -107,13 +107,13 @@ export function ReceiptModal({
             setReceiptCosts(initialCosts)
 
             // Fetch warehouses
-            const warehousesResponse = await api.get('/inventory/warehouses/')
-            const warehousesList = warehousesResponse.data.results || warehousesResponse.data
+            const warehousesData = await purchasingApi.getWarehouses()
+            const warehousesList = warehousesData as any[]
             setWarehouses(warehousesList)
 
             // Default to order warehouse
-            if (orderResponse.data.warehouse) {
-                setSelectedWarehouse(orderResponse.data.warehouse)
+            if ((orderData as any).warehouse) {
+                setSelectedWarehouse((orderData as any).warehouse)
             } else if (warehousesList.length > 0) {
                 setSelectedWarehouse(warehousesList[0].id)
             }
@@ -177,14 +177,18 @@ export function ReceiptModal({
             }
 
             // Always use partial_receive/return as it's more flexible
-            const endpoint = isRefund ? `/purchasing/orders/${orderId}/partial_return/` : `/purchasing/orders/${orderId}/partial_receive/`
-            await api.post(endpoint, {
+            const payload = {
                 warehouse_id: selectedWarehouse,
                 receipt_date: receiptDate,
                 delivery_reference: deliveryReference,
                 notes: notes,
                 line_data: lineData
-            })
+            }
+            if (isRefund) {
+                await purchasingApi.partialReturn(orderId, payload)
+            } else {
+                await purchasingApi.partialReceive(orderId, payload)
+            }
 
             toast.success(isRefund ? "Devolución registrada correctamente" : "Recepción registrada correctamente")
             onOpenChange(false)

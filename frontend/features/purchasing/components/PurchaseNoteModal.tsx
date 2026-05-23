@@ -13,7 +13,7 @@ import {
     FileBadge,
     X
 } from "lucide-react"
-import api from "@/lib/api"
+import { purchasingApi } from "../api/purchasingApi"
 import { validateTaxPeriod } from '@/features/tax/actions'
 import { PurchaseOrderAPI, PurchaseNoteLine } from "../types"
 import { PricingUtils } from '@/features/inventory/utils/pricing'
@@ -90,12 +90,12 @@ export function PurchaseNoteModal({
             let fetchedLines: any[] = []
 
             if (orderId) {
-                const response = await api.get(`/purchasing/orders/${orderId}/`)
-                data = response.data
-                fetchedLines = data.lines || []
+                const orderItem = await purchasingApi.getOrder(orderId)
+                data = orderItem as any
+                fetchedLines = (data as any).lines || []
             } else if (invoiceId) {
-                const response = await api.get(`/billing/invoices/${invoiceId}/`)
-                data = response.data
+                const invoiceData = await purchasingApi.getInvoice(invoiceId)
+                data = invoiceData as any
                 // Map invoice lines to expected structure
                 fetchedLines = (data.lines || []).map((l: any) => ({
                     ...l,
@@ -225,17 +225,13 @@ export function PurchaseNoteModal({
                 formData.append('payment_data', JSON.stringify(paymentData))
             }
 
-            let endpoint = ""
             if (orderId) {
-                endpoint = `/purchasing/orders/${orderId}/register_note/`
+                await purchasingApi.registerNote(orderId, formData)
             } else if (invoiceId) {
-                // Standalone invoice note
-                endpoint = `/billing/invoices/${invoiceId}/register_note/`
+                await purchasingApi.registerInvoiceNote(invoiceId, formData)
             } else {
                 throw new Error("No Order ID or Invoice ID provided")
             }
-
-            await api.post(endpoint, formData)
 
             toast.success("Nota registrada correctamente")
             onOpenChange(false)

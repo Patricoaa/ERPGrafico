@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button"
 import { Plus, Trash2, ShoppingCart } from "lucide-react"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { UoMSelector } from "@/components/selectors/UoMSelector"
-import api from "@/lib/api"
+import { purchasingApi } from "../../api/purchasingApi"
 import { toast } from "sonner"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { CheckoutLine } from "../../types"
@@ -50,14 +50,13 @@ export function Step1_ProductSelection({
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [productsRes, uomsRes] = await Promise.all([
-                    api.get('/inventory/products/?can_be_purchased=true'),
-                    api.get('/inventory/uoms/'),
+                const [allProducts, uomsData] = await Promise.all([
+                    purchasingApi.getPurchasableProducts(),
+                    purchasingApi.getUoms(),
                 ])
 
-                const allProducts = productsRes.data.results || productsRes.data
-                setProducts(allProducts)
-                setUoMs(uomsRes.data.results || uomsRes.data)
+                setProducts(allProducts as any)
+                setUoMs(uomsData as any)
             } catch (error) {
                 console.error("Error fetching data:", error)
                 toast.error("Error al cargar productos")

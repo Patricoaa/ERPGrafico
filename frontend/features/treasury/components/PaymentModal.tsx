@@ -7,11 +7,11 @@ import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Card } from "@/components/ui/card"
-import { CreditCard, Banknote, Landmark, Receipt, Hash, ClipboardCheck, Calendar, FileUp, FileText, User, Wallet, AlertCircle, Building2, ShieldAlert } from "lucide-react"
-import api from "@/lib/api"
+import { CreditCard, Banknote, Receipt, Hash, Calendar, FileUp } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { PaymentMethodCardSelector, PaymentData } from "@/features/treasury/components/PaymentMethodCardSelector"
 import { useServerDate } from "@/hooks/useServerDate"
+import { usePOSSession } from "@/features/treasury/hooks/usePOSSession"
 
 interface PaymentModalProps {
     open: boolean
@@ -89,7 +89,8 @@ export function PaymentModal({
         isPending: false
     })
 
-    const [terminalId, setTerminalId] = useState<number | null>(null)
+    const { session: posSession } = usePOSSession(posSessionId)
+    const terminalId = posSession?.terminal ?? null
 
     // Reset payment data when modal opens
     useEffect(() => {
@@ -117,21 +118,6 @@ export function PaymentModal({
             })
         }
     }, [open, pendingAmount, isPurchase, existingInvoice, dateString])
-
-    // Fetch terminal from POS session
-    useEffect(() => {
-        if (posSessionId) {
-            api.get(`/treasury/pos-sessions/${posSessionId}/`)
-                .then(response => {
-                    requestAnimationFrame(() => setTerminalId(response.data.terminal || null))
-                })
-                .catch(error => {
-                    console.error('Error fetching POS session:', error)
-                })
-        } else {
-            requestAnimationFrame(() => setTerminalId(null))
-        }
-    }, [posSessionId])
 
     return (
         <BaseModal

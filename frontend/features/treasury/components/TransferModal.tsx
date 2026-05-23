@@ -4,13 +4,12 @@ import React, { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { ArrowLeftRight, DollarSign, Calendar as CalendarIcon, Info } from "lucide-react"
+import { ArrowLeftRight, DollarSign } from "lucide-react"
 import { TreasuryAccountSelector } from "@/components/selectors"
 import { PeriodValidationDateInput } from "@/components/shared"
-import api from "@/lib/api"
-import { showApiError } from "@/lib/errors"
-import { toast } from "sonner"
 import { useServerDate } from "@/hooks/useServerDate"
+import { useTreasuryAccounts } from "@/features/treasury/hooks/useTreasuryAccounts"
+import { useTransfer } from "@/features/treasury/hooks/useTransfer"
 import { Form, FormField } from "@/components/ui/form"
 import { CancelButton, LabeledInput, FormSection, FormFooter, FormSplitLayout, ActionSlideButton, BaseModal, MoneyDisplay } from "@/components/shared"
 
@@ -27,13 +26,6 @@ const transferSchema = z.object({
 
 type TransferFormValues = z.infer<typeof transferSchema>
 
-interface TreasuryAccount {
-    id: number
-    name: string
-    account_type: 'BANK' | 'CASH'
-    current_balance: number
-}
-
 interface TransferModalProps {
     open: boolean
     onOpenChange: (open: boolean) => void
@@ -41,9 +33,8 @@ interface TransferModalProps {
 }
 
 export function TransferModal({ open, onOpenChange, onSuccess }: TransferModalProps) {
-    const [accounts, setAccounts] = useState<TreasuryAccount[]>([])
-    const [loading, setLoading] = useState(false)
-    const [submitting, setSubmitting] = useState(false)
+    const { accounts } = useTreasuryAccounts()
+    const { createTransfer, isCreating } = useTransfer()
     const { serverDate } = useServerDate()
     const [isDateValid, setIsDateValid] = useState(true)
 
@@ -67,46 +58,20 @@ export function TransferModal({ open, onOpenChange, onSuccess }: TransferModalPr
         }
     }, [serverDate, form])
 
-    useEffect(() => {
-        if (open) {
-            fetchAccounts()
-        }
-    }, [open])
-
-    const fetchAccounts = async () => {
-        try {
-            setLoading(true)
-            const response = await api.get('/treasury/accounts/')
-            setAccounts(response.data)
-        } catch (error) {
-            toast.error("Error al cargar cuentas.")
-        } finally {
-            setLoading(false)
-        }
-    }
-
     const onSubmit = async (values: TransferFormValues) => {
         try {
-            setSubmitting(true)
-            const payload = {
+            await createTransfer({
                 from_account_id: values.from_account_id,
                 to_account_id: values.to_account_id,
                 amount: parseFloat(values.amount),
                 notes: values.notes,
-                date: values.date.toISOString().split('T')[0] + 'T' + new Date().toTimeString().split(' ')[0]
-            }
-
-            await api.post('/treasury/dashboard/register_transfer/', payload)
-
-            toast.success("Traspaso registrado correctamente.")
+                date: values.date.toISOString().split('T')[0] + 'T' + new Date().toTimeString().split(' ')[0],
+            })
             onOpenChange(false)
-            if (onSuccess) onSuccess()
+            onSuccess?.()
             form.reset()
         } catch (error: unknown) {
             console.error(error)
-            showApiError(error, "Error al registrar el traspaso.")
-        } finally {
-            setSubmitting(false)
         }
     }
 
@@ -131,11 +96,11 @@ export function TransferModal({ open, onOpenChange, onSuccess }: TransferModalPr
                 <FormFooter
                     actions={
                         <>
-                            <CancelButton onClick={() => onOpenChange(false)} disabled={submitting} />
+                            <CancelButton onClick={() => onOpenChange(false)} disabled={isCreating} />
                             <ActionSlideButton
-                                loading={submitting}
+                                loading={isCreating}
                                 onClick={form.handleSubmit(onSubmit)}
-                                disabled={submitting || !isDateValid}
+                                disabled={isCreating || !isDateValid}
                                 className="bg-warning hover:bg-warning/90 shadow-warning/10"
                             >
                                 Confirmar Traspaso
@@ -240,7 +205,7 @@ export function TransferModal({ open, onOpenChange, onSuccess }: TransferModalPr
                                         <div className="w-full p-2.5 rounded-lg bg-warning/5 border border-warning/20 flex flex-col items-center justify-center animate-in zoom-in-95 duration-300">
                                             <p className="text-[10px] text-warning font-black uppercase tracking-widest mb-1">Impacto en Origen</p>
                                             <p className="text-xs font-black text-warning">
-                                                <MoneyDisplay amount={sourceAccount.current_balance - parseFloat(amount)} />
+                                                <MoneyDisplay amount={(sourceAccount.current_balance ?? 0) - parseFloat(amount)} />
                                             </p>
                                         </div>
                                     )}

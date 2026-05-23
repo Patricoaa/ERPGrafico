@@ -1,12 +1,12 @@
 "use client"
 
-import { showApiError } from "@/lib/errors"
 import { useState, useEffect } from "react"
 import { SubmitButton, CancelButton, LabeledInput, LabeledSelect, BaseModal, PeriodValidationDateInput, FormFooter } from "@/components/shared"
 import { FileSpreadsheet } from "lucide-react"
-import api from "@/lib/api"
 import { toast } from "sonner"
 import { useServerDate } from "@/hooks/useServerDate"
+import { useMonthlyInvoice } from "@/features/treasury/hooks/useMonthlyInvoice"
+import { useSuppliers } from "@/features/treasury/hooks/useSuppliers"
 
 import { DocumentAttachmentDropzone } from "@/components/shared/DocumentAttachmentDropzone"
 
@@ -17,9 +17,9 @@ interface MonthlyInvoiceModalProps {
 
 export function MonthlyInvoiceModal({ open, onOpenChange }: MonthlyInvoiceModalProps) {
     const { dateString, year: serverYear, month: serverMonth } = useServerDate()
+    const { suppliers } = useSuppliers()
+    const { generateInvoice, isGenerating } = useMonthlyInvoice()
 
-    const [loading, setLoading] = useState(false)
-    const [suppliers, setSuppliers] = useState<any[]>([])
     const [supplierId, setSupplierId] = useState<string>("")
     const [month, setMonth] = useState<string>("")
     const [year, setYear] = useState<string>("")
@@ -27,7 +27,6 @@ export function MonthlyInvoiceModal({ open, onOpenChange }: MonthlyInvoiceModalP
     const [date, setDate] = useState("")
     const [attachment, setAttachment] = useState<File | null>(null)
 
-    // Sync with server date
     useEffect(() => {
         if (serverYear && serverMonth && dateString) {
             requestAnimationFrame(() => {
@@ -37,19 +36,6 @@ export function MonthlyInvoiceModal({ open, onOpenChange }: MonthlyInvoiceModalP
             })
         }
     }, [serverYear, serverMonth, dateString])
-
-    useEffect(() => {
-        let isMounted = true
-        if (open) {
-            // Load suppliers (providers)
-            api.get("/contacts/?is_supplier=true&has_terminal_payment_method=true").then(res => {
-                if (isMounted) requestAnimationFrame(() => setSuppliers(res.data))
-            }).catch(() => {
-                if (isMounted) toast.error("Error al cargar proveedores")
-            })
-        }
-        return () => { isMounted = false }
-    }, [open])
 
     const handleSubmit = async () => {
         if (!supplierId) {
@@ -67,7 +53,6 @@ export function MonthlyInvoiceModal({ open, onOpenChange }: MonthlyInvoiceModalP
             return
         }
 
-        setLoading(true)
         try {
             const formData = new FormData()
             formData.append('supplier_id', supplierId)
@@ -75,20 +60,12 @@ export function MonthlyInvoiceModal({ open, onOpenChange }: MonthlyInvoiceModalP
             formData.append('year', year)
             formData.append('number', number)
             formData.append('date', date)
-            if (attachment) {
-                formData.append('document_attachment', attachment)
-            }
+            formData.append('document_attachment', attachment)
 
-            await api.post('/treasury/terminal-batches/generate_invoice/', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            })
-
-            toast.success("Factura generada exitosamente")
+            await generateInvoice(formData)
             onOpenChange(false)
         } catch (error: unknown) {
-            showApiError(error, "Error al generar factura")
-        } finally {
-            setLoading(false)
+            // Error handled by hook
         }
     }
 
@@ -115,11 +92,11 @@ export function MonthlyInvoiceModal({ open, onOpenChange }: MonthlyInvoiceModalP
                         <>
                             <CancelButton onClick={() => onOpenChange(false)} className="rounded-lg text-xs font-bold border-primary/20 hover:bg-primary/5" />
                             <SubmitButton
-                                loading={loading}
+                                loading={isGenerating}
                                 onClick={handleSubmit}
                                 className="rounded-lg text-xs font-bold"
                             >
-                                {loading ? "Procesando..." : "Generar y Finalizar"}
+                                {isGenerating ? "Procesando..." : "Generar y Finalizar"}
                             </SubmitButton>
                         </>
                     }

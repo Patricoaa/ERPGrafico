@@ -1,8 +1,7 @@
 "use client"
-import { formatCurrency } from "@/lib/money";
+import { formatCurrency } from "@/lib/money"
 
-import { showApiError } from "@/lib/errors"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useServerDate } from "@/hooks/useServerDate"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
@@ -10,14 +9,16 @@ import { LabeledSelect } from "@/components/shared"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
-import { Loader2, Calculator, Info, Search, ChevronDown, Check, MousePointerClick, RefreshCcw, Landmark } from "lucide-react"
-import { DateRangeFilter, PeriodValidationDateInput } from "@/components/shared"
+import { Loader2, Calculator, Search, ChevronDown, Check, MousePointerClick, Landmark } from "lucide-react"
+import { DateRangeFilter } from "@/components/shared"
 import { toast } from "sonner"
 import { DateRange } from "react-day-picker"
 import { Checkbox } from "@/components/ui/checkbox"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import api from "@/lib/api"
+import { treasuryApi } from "../api/treasuryApi"
+import { useTerminalProviders, usePaymentMethods } from "@/features/treasury"
+import { useTerminalBatches } from "@/features/treasury/hooks/useTerminalBatches"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton"
 import { CancelButton, SubmitButton, LabeledContainer, LabeledInput, FormFooter, FormSection } from "@/components/shared"
@@ -28,18 +29,16 @@ interface TerminalBatchFormProps {
 }
 
 export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProps) {
-    const [loading, setLoading] = useState(false)
-    const [providers, setProviders] = useState<any[]>([])
-    const [paymentMethods, setPaymentMethods] = useState<any[]>([])
+    const { providers } = useTerminalProviders()
+    const { methods } = usePaymentMethods()
+    const { createBatch, isCreating } = useTerminalBatches()
 
     // Form State
     const [providerId, setProviderId] = useState<string>("")
     const [depositMethodId, setDepositMethodId] = useState<string>("")
     const { serverDate } = useServerDate()
     const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined)
-    const [isDateValid, setIsDateValid] = useState(true)
 
-    // Sync state with server date when available and not yet set
     useEffect(() => {
         if (serverDate && !dateRange) {
             requestAnimationFrame(() => setDateRange({ from: serverDate, to: serverDate }))
@@ -53,30 +52,6 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
     const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
     const [openSelection, setOpenSelection] = useState(false)
 
-    // Load providers and deposit methods
-    useEffect(() => {
-        let isMounted = true
-        const fetchData = async () => {
-            try {
-                const [provRes, methRes] = await Promise.all([
-                    api.get('/treasury/terminal-providers/'),
-                    api.get('/treasury/payment-methods/')
-                ])
-                if (isMounted) {
-                    requestAnimationFrame(() => {
-                        setProviders(provRes.data.results || provRes.data)
-                        setPaymentMethods(methRes.data.results || methRes.data)
-                    })
-                }
-            } catch (error) {
-                if (isMounted) toast.error("Error al cargar datos")
-            }
-        }
-        requestAnimationFrame(() => fetchData())
-        return () => { isMounted = false }
-    }, [])
-
-    // Derived values for real-time validation
     const gross = parseFloat(grossAmount) || 0
     const cNet = parseFloat(commissionNet) || 0
     const cTax = parseFloat(commissionTax) || 0
@@ -85,8 +60,7 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
     const netDeposit = calculatedNet.toString()
     const isValid = gross > 0 && calculatedNet >= 0
 
-
-    const handleAutoCalculate = async () => {
+    const handleAutoCalculate = () => {
         if (!providerId || !dateRange?.from) {
             toast.error("Seleccione proveedor y fecha")
             return
@@ -101,9 +75,8 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
             return
         }
 
-        setLoading(true)
         try {
-            const payload = {
+            await createBatch({
                 provider: providerId,
                 payment_method: depositMethodId,
                 sales_date: dateRange?.from ? format(dateRange.from, "yyyy-MM-dd") : null,
@@ -114,15 +87,10 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
                 net_amount: parseFloat(netDeposit),
                 terminal_reference: reference,
                 movement_ids: selectedMovements.map(m => m.id)
-            }
-
-            await api.post('/treasury/terminal-batches/', payload)
-            toast.success("Liquidación registrada exitosamente")
+            })
             onSuccess()
-        } catch (error: unknown) {
-            showApiError(error, "Error al registrar")
-        } finally {
-            setLoading(false)
+        } catch {
+            // Error handled by hook
         }
     }
 
@@ -186,14 +154,14 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
                                                     )}
                                                 </div>
                                             ))}
-                                            {providers.length === 0 && (
-                                                <EmptyState context="generic" variant="minimal" description="No hay proveedores disponibles" />
-                                            )}
-                                        </div>
-                                    </div>
-                                </PopoverContent>
-                            </Popover>
-                        </LabeledContainer>
+                                    {providers.length === 0 && (
+                                        <EmptyState context="generic" variant="minimal" description="No hay proveedores disponibles" />
+                                    )}
+                                </div>
+                            </div>
+                        </PopoverContent>
+                    </Popover>
+                </LabeledContainer>
 
                         <LabeledContainer label="Fechas de Venta">
                             <DateRangeFilter
@@ -208,7 +176,7 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
                             value={depositMethodId}
                             onChange={setDepositMethodId}
                             placeholder="Seleccione método de abono..."
-                            options={paymentMethods
+                            options={methods
                                 .filter(m => m.allow_for_sales && m.method_type !== 'CARD_TERMINAL')
                                 .map(meth => ({ value: meth.id.toString(), label: meth.name }))}
                         />
@@ -322,7 +290,7 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
                 actions={
                     <>
                         <CancelButton onClick={onCancel} />
-                        <ActionSlideButton type="submit" loading={loading} disabled={loading || !isValid || !providerId || !depositMethodId || !isDateValid}>
+                        <ActionSlideButton type="submit" loading={isCreating} disabled={isCreating || !isValid || !providerId || !depositMethodId}>
                             Registrar Liquidación
                         </ActionSlideButton>
                     </>
@@ -379,11 +347,9 @@ function SaleSelectionModal({ open, onOpenChange, providerId, dateRange, onConfi
                 params.date_to = format(dateRange.to, "yyyy-MM-dd")
             }
 
-            api.get(`/treasury/movements/`, {
-                params
-            }).then((res: any) => {
+            treasuryApi.getMovements(params).then((res: any) => {
                 if (!isMounted) return
-                const data = res.data.results || res.data
+                const data = res.results || res
 
                 // Sort: Prioritize selected dates, then by date descending
                 const dateFromStr = dateRange?.from ? format(dateRange.from, "yyyy-MM-dd") : null;

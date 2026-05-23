@@ -196,28 +196,39 @@ export function ProductForm({ initialData, onSuccess }: Props) {
 
 Cero `import api from '@/lib/api'`. Cero `useMutation` directo. Las toasts y la invalidación viven en el hook, no en el componente.
 
-## Prerrequisito mecánico — ESLint rule
+## Prerrequisito mecánico — ESLint rule ✅ implementado (2026-05-22)
 
-El config actual ([frontend/eslint.config.mjs](../../frontend/eslint.config.mjs)) **ya bloquea como `error`**:
+El config actual ([frontend/eslint.config.mjs](../../frontend/eslint.config.mjs)) ahora aplica:
 
-- `useQuery`/`useMutation`/`useSuspenseQuery` directos en `features/*/components/**` (invariante #4).
-- Imports de `@/lib/api` en `components/shared/**` y `components/ui/**` (no-restricted-imports `warn` para shared, además `boundaries/dependencies` `error` cierra acceso a `lib/*`).
+- `useQuery`/`useMutation`/`useSuspenseQuery` directos en `features/*/components/**` — invariante #4, severidad **`error`**.
+- `import … from '@/lib/api'` en `components/shared/**` y `components/ui/**` — bloqueado por `boundaries/dependencies` (`error`).
+- `import … from '@/lib/api'` en `features/*/components/**` — invariante #5, severidad **`warn`** vía la regla custom `fsd/no-api-in-component` definida en [frontend/eslint-rules/fsd-no-api-in-component.mjs](../../frontend/eslint-rules/fsd-no-api-in-component.mjs).
 
-Lo que **falta** es bloquear el `import api from '@/lib/api'` (default-only) en `features/*/components/**`. Esto no se puede añadir trivialmente: ESLint flat-config **sobrescribe** la regla `no-restricted-imports` entre bloques que matchean los mismos files (no mergea). Si se añade un segundo bloque con `no-restricted-imports` en `warn` para el api default, **se pierde** la restricción `error` de tanstack en esos files.
+**Por qué una regla custom y no extender `no-restricted-imports`:** ESLint flat-config sobrescribe `no-restricted-imports` entre bloques que matchean los mismos files (las opciones no se mergean). Un segundo bloque con `no-restricted-imports` en `features/*/components/**` clobbearía la restricción `error` de tanstack ya existente. Una regla con nombre distinto (`fsd/no-api-in-component`) compone sin colisión y permite severidad independiente.
 
-Caminos viables (elegir uno antes de empezar):
+Caminos descartados:
 
-1. **Plugin custom** (recomendado a futuro). Un rule custom `fsd/no-api-in-component` que se compone con las otras restricciones sin colisión de nombre. Esfuerzo: 1-2h escribir el plugin local.
-2. **Big-bang error**. Cuando todas las features estén migradas, añadir `@/lib/api` como entrada en el `paths[]` existente de `no-restricted-imports` (severidad `error`). Esto no es viable mientras quedan 119 violaciones.
-3. **Manual review en PR**. Revisión humana hasta que (1) o (2) sea posible. Frágil pero suficiente si el refactor avanza rápido.
+- ~~**Big-bang error** sobre `no-restricted-imports`~~: además de la colisión anterior, romperíamos el lint con 74 violaciones simultáneas.
+- ~~**Manual review en PR**~~: frágil; sin barrera mecánica las features migradas pueden regresar silenciosamente.
 
-**Mientras tanto**, el barrier mecánico real es:
+**Cómo evoluciona la severidad:**
 
-- `boundaries/dependencies` ya prohíbe que `components/shared/**` toque `lib/api`.
-- `no-restricted-imports` ya prohíbe `useQuery`/`useMutation` en feature components.
-- Un PR template / checklist con `grep -rn "import api from" features/<feature>/components/` antes de mergear.
+| Estado del refactor | Severidad en config | Acción |
+|---|---|---|
+| Hoy (74 violaciones) | `warn` | Cada PR de migración baja el conteo. El warning aparece en `npm run lint` y es visible para el reviewer. |
+| 0 violaciones globales | `error` | Cambiar `"fsd/no-api-in-component": "warn"` → `"error"` en [frontend/eslint.config.mjs](../../frontend/eslint.config.mjs). |
 
-Documentar en cada PR de migración cuántas violaciones quedan; cuando llegue a 0 globalmente, ejecutar el camino (2).
+Comando de medición del progreso (apoyo al audit):
+
+```bash
+cd frontend && npm run lint 2>&1 | grep -c "fsd/no-api-in-component"
+```
+
+Barreras mecánicas complementarias ya activas:
+
+- `boundaries/dependencies` prohíbe que `components/shared/**` toque `lib/api`.
+- `no-restricted-imports` prohíbe `useQuery`/`useMutation` en feature components (`error`).
+- Cross-feature: `no-restricted-imports` `error` sobre `@/features/*/{components,hooks,api,types}/*` — solo se importa desde barrel.
 
 ## Orden de migración
 

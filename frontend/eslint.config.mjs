@@ -5,6 +5,7 @@ import { defineConfig, globalIgnores } from "eslint/config";
 import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";
 import boundaries from "eslint-plugin-boundaries";
+import fsdNoApiInComponent from "./eslint-rules/fsd-no-api-in-component.mjs";
 
 const eslintConfig = defineConfig([...nextVitals, ...nextTs, globalIgnores([
   ".next/**",
@@ -122,7 +123,22 @@ const eslintConfig = defineConfig([...nextVitals, ...nextTs, globalIgnores([
       }],
     }],
   },
-}, // UI component data fetching and formatting restrictions
+}, // FSD invariant #5 — components must not import @/lib/api directly.
+// Lives in a custom rule (not no-restricted-imports) because flat-config does
+// not merge no-restricted-imports across blocks: layering a second block here
+// would clobber the tanstack restriction below. Severity is `warn` during the
+// FSD data-layer migration (docs/50-audit/fsddata/fsd-data-layer-refactor-plan.md);
+// bump to `error` when the global violation count reaches 0.
+{
+  files: ["features/*/components/**/*.ts", "features/*/components/**/*.tsx"],
+  plugins: {
+    fsd: { rules: { "no-api-in-component": fsdNoApiInComponent } },
+  },
+  rules: {
+    "fsd/no-api-in-component": "warn",
+  },
+},
+// UI component data fetching and formatting restrictions
 {
   files: ["components/**/*.tsx", "features/*/components/**/*.tsx"],
   rules: {

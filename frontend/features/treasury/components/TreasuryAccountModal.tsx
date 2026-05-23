@@ -117,11 +117,9 @@ export function TreasuryAccountModal({ open, onOpenChange, accountId, onSuccess 
             }
 
             if (accountId) {
-                await updateAccount({ id: accountId, payload })
-                toast.success("Cuenta actualizada")
+                await updateAccount({ id: accountId, payload: payload as any })
             } else {
-                await createAccount(payload)
-                toast.success("Cuenta creada")
+                await createAccount(payload as any)
             }
 
             if (onSuccess) onSuccess()
