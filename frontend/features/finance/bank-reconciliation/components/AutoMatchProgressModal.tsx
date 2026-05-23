@@ -7,7 +7,7 @@ import { Progress } from "@/components/ui/progress"
 import { Chip, FormFooter, CancelButton } from "@/components/shared"
 import { CheckCircle2, Loader2, XCircle, Zap } from "lucide-react"
 import { cn } from "@/lib/utils"
-import api from "@/lib/api"
+import { financeApi } from "../../api/financeApi"
 import { toast } from "sonner"
 import { showApiError } from "@/lib/errors"
 
@@ -65,11 +65,10 @@ export function AutoMatchProgressModal({
         stopPolling()
         pollRef.current = setInterval(async () => {
             try {
-                const res = await api.get(
-                    `/treasury/statements/${statementId}/auto_match_status/`,
-                    { params: { task_id: id } }
+                const data: ProgressData = await financeApi.getAutoMatchStatus(
+                    statementId,
+                    { task_id: id }
                 )
-                const data: ProgressData = res.data
                 setProgress(data)
 
                 if (data.status === 'SUCCESS') {
@@ -102,10 +101,10 @@ export function AutoMatchProgressModal({
         const launchTask = async () => {
             try {
                 setProgress({ status: 'PENDING', processed: 0, total: 0, matched: 0, percent: 0 })
-                const res = await api.post(`/treasury/statements/${statementId}/auto_match/`, {
+                const autoMatchResult = await financeApi.autoMatch(statementId, {
                     confidence_threshold: confidenceThreshold,
                 })
-                const id: string = res.data.task_id
+                const id: string = (autoMatchResult as any).task_id
                 setTaskId(id)
                 startPolling(id)
             } catch (err) {

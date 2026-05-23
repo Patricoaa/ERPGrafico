@@ -10,7 +10,7 @@ import {
     Form,
     FormField,
 } from "@/components/ui/form"
-import api from "@/lib/api"
+import { financeApi } from "../../api/financeApi"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { WalletCards } from "lucide-react"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
@@ -76,9 +76,9 @@ export function BankJournalForm({ auditSidebar,  onSuccess, initialData, open: o
         setLoading(true)
         try {
             if (initialData && initialData.id) {
-                await api.put(`/treasury/journals/${initialData.id}/`, data)
+                await financeApi.updateJournal(initialData.id as number, data)
             } else {
-                await api.post('/treasury/journals/', data)
+                await financeApi.createJournal(data)
             }
             form.reset()
             setOpen(false)

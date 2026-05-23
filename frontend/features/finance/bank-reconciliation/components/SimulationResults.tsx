@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import api from "@/lib/api"
+import { financeApi } from "../../api/financeApi"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { SkeletonShell, SimpleTable } from "@/components/shared"
 import { EmptyState } from "@/components/shared/EmptyState"
@@ -34,8 +34,8 @@ export function SimulationResults({ rule }: { rule: Record<string, unknown> }) {
                     ...(rule as any),
                     treasury_account_id: (rule as any).treasury_account?.id
                 }
-                const response = await api.post('/treasury/reconciliation-rules/simulate/', payload)
-                setResults(response.data.results)
+                const response = await financeApi.simulateRule(payload)
+                setResults((response as any).results)
             } catch (error) {
                 console.error("Simulation error", error)
             } finally {

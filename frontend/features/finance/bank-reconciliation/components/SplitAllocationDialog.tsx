@@ -10,13 +10,12 @@ import { Plus, Trash2, CheckCircle2 } from "lucide-react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 
 import { useAllocateMutation } from "../hooks/useReconciliationMutations"
+import { usePendingInvoices } from "../../hooks"
 import type { ReconciliationSystemItem } from "../types"
-import api from "@/lib/api"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { z } from "zod"
 import { useForm, useFieldArray } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useQuery } from "@tanstack/react-query"
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form"
 import { isZeroTolerance, safeDifference, safeSum, safeParseFloat } from "@/lib/math"
 
@@ -53,14 +52,7 @@ export function SplitAllocationDialog({ open, onOpenChange, payment, treasuryAcc
         name: "allocations"
     })
 
-    const { data: invoices = [], isLoading: loadingInvoices } = useQuery({
-        queryKey: ['billing', 'pending-invoices'],
-        queryFn: async () => {
-            const res = await api.get('/billing/invoices/?status=DRAFT,ISSUED,AUTHORIZED')
-            return res.data.results || res.data
-        },
-        enabled: open && !!payment
-    })
+    const { data: invoices = [], isLoading: loadingInvoices } = usePendingInvoices(open && !!payment)
 
     useEffect(() => {
         if (open && payment && fields.length === 0) {

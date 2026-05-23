@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect, useMemo } from 'react';
-import api from "@/lib/api";
+import { financeApi } from "../api/financeApi";
 import {
     CalendarDays,
     FileDown,
@@ -52,8 +52,8 @@ export function BudgetVarianceView() {
 
     const loadBudgets = async () => {
         try {
-            const res = await api.get('/accounting/budgets/');
-            const fetched = res.data.results || res.data;
+            const budgetsData = await financeApi.getBudgets();
+            const fetched = (budgetsData as any).results || budgetsData;
             setBudgets(fetched);
             if (fetched.length > 0 && !selectedBudget) {
                 setSelectedBudget(fetched[0].id.toString());
@@ -67,13 +67,11 @@ export function BudgetVarianceView() {
     const loadVariance = async () => {
         setLoading(true);
         try {
-            const res = await api.get(`/accounting/budgets/${selectedBudget}/variance/`, {
-                params: {
-                    month: selectedMonth,
-                    year: selectedYear
-                }
+            const varianceData = await financeApi.getBudgetVariance(Number(selectedBudget), {
+                month: selectedMonth,
+                year: selectedYear
             });
-            setData(res.data);
+            setData(varianceData);
         } catch (err) {
             console.error(err);
             toast.error("Error al cargar reporte de variaciones");

@@ -1,9 +1,8 @@
 "use client"
 
 import React, { useState } from "react"
-import { useQuery } from "@tanstack/react-query"
 import { notFound, useRouter } from "next/navigation"
-import api from "@/lib/api"
+import { useAccountDetail } from "../hooks"
 import { EntityDetailPage, FormFooter, SubmitButton, CancelButton, SkeletonShell } from "@/components/shared"
 import { AccountForm } from "@/features/finance/components/AccountForm"
 import { Button } from "@/components/ui/button"
@@ -14,13 +13,7 @@ interface AccountDetailClientProps {
 }
 
 export function AccountDetailClient({ accountId }: AccountDetailClientProps) {
-    const { data: account, isLoading: loading, error: queryError } = useQuery({
-        queryKey: ['account', accountId],
-        queryFn: async () => {
-            const res = await api.get(`/accounting/accounts/${accountId}/`)
-            return res.data
-        }
-    })
+    const { data: account, isLoading: loading, error: queryError } = useAccountDetail(accountId)
  
     const router = useRouter()
     const [isSaving, setIsSaving] = useState(false)

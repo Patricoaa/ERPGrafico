@@ -12,7 +12,7 @@ import {
     FormField,
     FormItem,
 } from "@/components/ui/form"
-import api from "@/lib/api"
+import { financeApi } from "../api/financeApi"
 import { toast } from "sonner"
 import { LabeledInput, FormFooter, CancelButton } from "@/components/shared"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
@@ -56,7 +56,7 @@ export function TransactionNumberForm({
         if (!paymentId) return
         setLoading(true)
         try {
-            await api.patch(`/treasury/payments/${paymentId}/`, {
+            await financeApi.updatePayment(paymentId, {
                 transaction_number: data.transaction_number
             })
             toast.success("N° de transacción actualizado")

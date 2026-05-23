@@ -14,7 +14,7 @@ import {
     FormField,
 } from "@/components/ui/form"
 import { Button } from "@/components/ui/button"
-import api from "@/lib/api"
+import { financeApi } from "../api/financeApi"
 import { toast } from "sonner"
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
@@ -106,8 +106,8 @@ export function PaymentForm({
         }
         setIsFetchingInvoices(true)
         try {
-            const res = await api.get('/billing/invoices/')
-            let results = res.data.results || res.data
+            const invoicesData = await financeApi.getBillingInvoices()
+            let results = (invoicesData as any).results || invoicesData
             if (paymentType === "INBOUND" && customerId) {
                 results = results.filter((i: InvoiceOption) => i.sale_order && i.sale_order.customer === parseInt(customerId) && i.status === 'POSTED')
             } else if (paymentType === "OUTBOUND" && supplierId) {
@@ -131,9 +131,11 @@ export function PaymentForm({
             if (treasuryAccountId) {
                 setIsFetchingMethods(true)
                 try {
-                    const direction = paymentType === "INBOUND" ? "for_sales=true" : "for_purchases=true"
-                    const res = await api.get(`/treasury/payment-methods/?treasury_account=${treasuryAccountId}&${direction}`)
-                    const methods = res.data || []
+                    const direction = paymentType === "INBOUND" ? "true" : "true"
+                    const methods = await financeApi.getPaymentMethods({
+                        treasury_account: treasuryAccountId,
+                        ...(paymentType === "INBOUND" ? { for_sales: true } : { for_purchases: true })
+                    }) || []
                     setAvailableMethods(methods)
 
                     if (methods.length > 0) {
@@ -170,10 +172,10 @@ export function PaymentForm({
         }
         try {
             if (initialData?.id) {
-                await api.patch(`/treasury/payments/${initialData.id}/`, payload)
+                await financeApi.updatePayment(initialData.id, payload)
                 toast.success("Pago actualizado")
             } else {
-                await api.post('/treasury/payments/register_movement/', payload)
+                await financeApi.registerPayment(payload)
                 toast.success("Movimiento registrado")
             }
             form.reset()

@@ -18,7 +18,7 @@ import {
     BarChart,
     Bar
 } from 'recharts';
-import api, { pollTask } from '@/lib/api';
+import { financeApi } from "../api/financeApi";
 import { DateRange } from "react-day-picker";
 import { format } from "date-fns";
 import { CardSkeleton } from "@/components/shared";
@@ -49,8 +49,7 @@ export const RatiosView: React.FC<RatiosViewProps> = ({ date, showComparison, co
                     params.start_date = format(date.from, 'yyyy-MM-dd');
                 }
 
-                const res = await api.get('finances/api/analysis/', { params });
-                const finalData = res.data.task_id ? await pollTask(res.data.task_id) : res.data;
+                const finalData = await financeApi.getAnalysis(params);
                 setData(finalData);
 
                 // Load comparison data if enabled
@@ -62,8 +61,7 @@ export const RatiosView: React.FC<RatiosViewProps> = ({ date, showComparison, co
                     if (compDate.from) {
                         compParams.start_date = format(compDate.from, 'yyyy-MM-dd');
                     }
-                    const compRes = await api.get('finances/api/analysis/', { params: compParams });
-                    const finalCompData = compRes.data.task_id ? await pollTask(compRes.data.task_id) : compRes.data;
+                    const finalCompData = await financeApi.getAnalysis(compParams);
                     setCompData(finalCompData);
                 }
             } catch (err) {

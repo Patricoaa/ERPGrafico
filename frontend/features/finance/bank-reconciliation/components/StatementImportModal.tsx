@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { LabeledSelect, GenericWizard, WizardStep, FormSection, DocumentAttachmentDropzone, LabeledInput } from "@/components/shared"
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
 import { FileUp, Columns, Table as TableIcon, AlertCircle, CheckCircle2, RefreshCw, FileSearch, Landmark, FileText, SlidersHorizontal } from "lucide-react"
-import api from "@/lib/api"
+import { financeApi } from "../../api/financeApi"
 import { cn } from "@/lib/utils"
 import { Chip } from "@/components/shared"
 import ImportPreviewStep, { DryRunResult } from "./ImportPreviewStep"
@@ -95,8 +95,8 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess }: 
 
     const fetchBankFormats = useCallback(async () => {
         try {
-            const response = await api.get('/treasury/statements/formats/')
-            setBankFormats(response.data.formats)
+            const formatsData = await financeApi.getStatementFormats()
+            setBankFormats((formatsData as any).formats)
         } catch (error) {
             console.error('Error fetching bank formats:', error)
             setBankFormats({
@@ -127,20 +127,18 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess }: 
         setLoading(true)
         setError(null)
         try {
-            const formData = new FormData()
-            formData.append('file', file)
+            const fData = new FormData()
+            fData.append('file', file)
 
-            const response = await api.post('/treasury/statements/preview/', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            })
-            setPreviewData(response.data)
+            const previewResult = await financeApi.previewStatement(fData)
+            setPreviewData(previewResult)
 
             // Update bank format if it's generic and file type matches excel
-            if (response.data.file_type === 'excel' && bankFormat === 'GENERIC_CSV') {
+            if ((previewResult as any).file_type === 'excel' && bankFormat === 'GENERIC_CSV') {
                 form.setValue('bank_format', 'GENERIC_EXCEL')
             }
 
-            const cols = response.data.columns
+            const cols = (previewResult as any).columns
             const newMapping = { ...mapping }
             cols.forEach((col: string | number) => {
                 const colStr = String(col).toLowerCase()
@@ -188,20 +186,18 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess }: 
         setLoading(true)
         setError(null)
         try {
-            const formData = new FormData()
-            formData.append('file', file!)
-            formData.append('treasury_account_id', treasuryAccountId)
-            formData.append('bank_format', bankFormat)
+            const dryRunData = new FormData()
+            dryRunData.append('file', file!)
+            dryRunData.append('treasury_account_id', treasuryAccountId)
+            dryRunData.append('bank_format', bankFormat)
             
             if (isGenericFormat()) {
                 const config = buildCustomConfig()
-                formData.append('custom_config', JSON.stringify(config))
+                dryRunData.append('custom_config', JSON.stringify(config))
             }
             
-            const response = await api.post('/treasury/statements/dry_run/', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            })
-            setDryRunResult(response.data)
+            const dryRunResultData = await financeApi.dryRunStatement(dryRunData)
+            setDryRunResult(dryRunResultData)
             return true
         } catch (error: unknown) {
             console.error('Dry run error:', error)
@@ -229,21 +225,17 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess }: 
         try {
             setLoading(true)
 
-            const formData = new FormData()
-            formData.append('file', file!)
-            formData.append('treasury_account_id', treasuryAccountId)
-            formData.append('bank_format', bankFormat)
+            const importData = new FormData()
+            importData.append('file', file!)
+            importData.append('treasury_account_id', treasuryAccountId)
+            importData.append('bank_format', bankFormat)
 
             if (isGenericFormat()) {
                 const config = buildCustomConfig()
-                formData.append('custom_config', JSON.stringify(config))
+                importData.append('custom_config', JSON.stringify(config))
             }
 
-            await api.post('/treasury/statements/import_statement/', formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data'
-                }
-            })
+            await financeApi.importStatement(importData)
 
             onSuccess()
             return true
