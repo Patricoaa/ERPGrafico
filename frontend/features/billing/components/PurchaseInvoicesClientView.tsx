@@ -8,7 +8,7 @@ import { SmartSearchBar, useSmartSearch, FadeIn } from "@/components/shared"
 import { purchaseInvoiceSearchDef } from '../searchDef'
 import { FileBadge } from "lucide-react"
 import { formatCurrency } from "@/lib/money"
-import api from "@/lib/api"
+import { billingApi } from "@/features/billing/api/billingApi"
 import { toast } from "sonner"
 import { PaymentModal } from "@/features/treasury/components/PaymentModal"
 import { ReceiptModal } from "@/features/purchasing/components/ReceiptModal"
@@ -45,7 +45,7 @@ export function PurchaseInvoicesClientView() {
 
     const deleteConfirm = useConfirmAction<number>(async (id) => {
         try {
-            await api.delete(`/billing/invoices/${id}/`)
+            await billingApi.deleteInvoice(id)
             toast.success("Documento eliminado correctamente")
             fetchDocuments()
         } catch (error: unknown) {
@@ -58,7 +58,7 @@ export function PurchaseInvoicesClientView() {
 
     const forceAnnulConfirm = useConfirmAction<number>(async (id) => {
         try {
-            await api.post(`/billing/invoices/${id}/annul/`, { force: true })
+            await billingApi.annulInvoice(id, { force: true })
             toast.success("Documento anulado correctamente.")
             fetchDocuments()
         } catch (error: unknown) {
@@ -68,7 +68,7 @@ export function PurchaseInvoicesClientView() {
 
     const annulConfirm = useConfirmAction<number>(async (id) => {
         try {
-            await api.post(`/billing/invoices/${id}/annul/`, { force: false })
+            await billingApi.annulInvoice(id, { force: false })
             toast.success("Documento anulado correctamente.")
             fetchDocuments()
         } catch (error: unknown) {
@@ -112,7 +112,7 @@ export function PurchaseInvoicesClientView() {
             if (d.document_date) formData.append('document_date', d.document_date)
             if (d.document_attachment) formData.append('document_attachment', d.document_attachment)
 
-            await api.post('/treasury/payments/', formData)
+            await billingApi.createPayment(formData)
             toast.success("Operación registrada correctamente")
             setPayingDoc(null)
             fetchDocuments()
@@ -253,7 +253,7 @@ export function PurchaseInvoicesClientView() {
             {payingDoc && <PaymentModal open={!!payingDoc} onOpenChange={(open) => !open && setPayingDoc(null)} onConfirm={handlePayment} isPurchase={true} total={parseFloat(payingDoc.total)} pendingAmount={payingDoc.pending_amount ?? parseFloat(payingDoc.total)} hideDteFields={true} isRefund={payingDoc.dte_type === 'NOTA_CREDITO'} existingInvoice={{ dte_type: payingDoc.dte_type, number: payingDoc.number, document_attachment: null }} />}
             {receivingDoc && receivingDoc.purchase_order && <ReceiptModal open={!!receivingDoc} onOpenChange={(open) => !open && setReceivingDoc(null)} orderId={receivingDoc.purchase_order} onSuccess={fetchDocuments} isRefund={receivingDoc.dte_type === 'NOTA_CREDITO'} />}
             {notingDoc && <PurchaseNoteModal open={!!notingDoc} onOpenChange={(open) => !open && setNotingDoc(null)} orderId={notingDoc.purchase_order} orderNumber={notingDoc.purchase_order_number || notingDoc.purchase_order?.toString()} invoiceId={notingDoc.id} onSuccess={fetchDocuments} />}
-            {completingDoc && <DocumentCompletionModal open={!!completingDoc} onOpenChange={(open) => !open && setCompletingDoc(null)} invoiceId={completingDoc.id} invoiceType={completingDoc.dte_type} contactId={completingDoc.partner || completingDoc.supplier} isPurchase={true} onComplete={async (invoiceId, formData) => { await api.post(`/billing/invoices/${invoiceId}/confirm/`, formData, { headers: { 'Content-Type': 'multipart/form-data' } }) }} onSuccess={fetchDocuments} />}
+            {completingDoc && <DocumentCompletionModal open={!!completingDoc} onOpenChange={(open) => !open && setCompletingDoc(null)} invoiceId={completingDoc.id} invoiceType={completingDoc.dte_type} contactId={completingDoc.partner || completingDoc.supplier} isPurchase={true} onComplete={async (invoiceId, formData) => { await billingApi.confirmInvoice(invoiceId, formData) }} onSuccess={fetchDocuments} />}
             <ActionConfirmModal open={deleteConfirm.isOpen} onOpenChange={(open) => { if (!open) deleteConfirm.cancel() }} onConfirm={deleteConfirm.confirm} title="Eliminar Documento" description="¿Está seguro de eliminar este documento? Esta acción no se puede deshacer." variant="destructive" />
             <ActionConfirmModal open={annulConfirm.isOpen} onOpenChange={(open) => { if (!open) annulConfirm.cancel() }} onConfirm={annulConfirm.confirm} title="Anular Documento" description="¿Está seguro de que desea ANULAR este documento?" variant="destructive" />
             <ActionConfirmModal open={forceAnnulConfirm.isOpen} onOpenChange={(open) => { if (!open) forceAnnulConfirm.cancel() }} onConfirm={forceAnnulConfirm.confirm} title="Desvincular y Anular Pagos" description="Este documento tiene pagos asociados. ¿Desea anular también todos los pagos vinculados automáticamente?" variant="destructive" />

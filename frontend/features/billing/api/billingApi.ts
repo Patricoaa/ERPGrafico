@@ -97,4 +97,31 @@ export const billingApi = {
         })
         return data
     },
+
+    deleteInvoice: async (id: number): Promise<void> => {
+        await api.delete(`/billing/invoices/${id}/`)
+    },
+
+    createPayment: async (formData: FormData): Promise<void> => {
+        await api.post('/treasury/payments/', formData)
+    },
+
+    noteWorkflowCheckout: async (formData: FormData): Promise<void> => {
+        await api.post('/billing/note-workflows/checkout/', formData)
+    },
+
+    completeNoteWorkflow: async (id: number): Promise<Record<string, unknown>> => {
+        const { data } = await api.post<Record<string, unknown>>(`/billing/note-workflows/${id}/complete/`)
+        return data
+    },
+
+    getWarehouses: async (): Promise<Record<string, unknown>[]> => {
+        const res = await api.get('/inventory/warehouses/')
+        return res.data.results || res.data
+    },
+
+    getAllowedUoms: async (productId: string | number, context: string): Promise<Record<string, unknown>[]> => {
+        const res = await api.get(`/inventory/uoms/allowed/?product_id=${productId}&context=${context}`)
+        return res.data
+    },
 }

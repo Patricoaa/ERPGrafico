@@ -1,10 +1,9 @@
 "use client"
 
-import { useQuery } from "@tanstack/react-query"
 import { notFound } from "next/navigation"
-import api from "@/lib/api"
 import { EntityDetailPage, SkeletonShell } from "@/components/shared"
 import { DomainCard } from "@/components/shared/DomainCard"
+import { useInvoice } from "../hooks/useInvoices"
 
 interface InvoiceDetailClientProps {
     invoiceId: string
@@ -12,18 +11,9 @@ interface InvoiceDetailClientProps {
 }
 
 export function InvoiceDetailClient({ invoiceId, type }: InvoiceDetailClientProps) {
-    const { data: invoice, isLoading: loading, error: queryError } = useQuery({
-        queryKey: ['invoice', invoiceId],
-        queryFn: async () => {
-            const res = await api.get(`/billing/invoices/${invoiceId}/`)
-            return res.data
-        }
-    })
+    const { data: invoice, isLoading: loading } = useInvoice(Number(invoiceId))
 
-    const error = queryError ? (queryError as any).response?.status || 500 : null
-
-    if (error === 404) return notFound()
-    if (error) return <div className="p-8 text-destructive">Error al cargar la factura</div>
+    if (!loading && !invoice) return notFound()
 
     if (loading || !invoice) {
          return (

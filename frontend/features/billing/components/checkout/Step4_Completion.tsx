@@ -4,7 +4,7 @@ import { showApiError } from "@/lib/errors"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Loader2, CheckCircle2, Wallet, ArrowRight, Printer, FileText } from "lucide-react"
-import api from "@/lib/api"
+import { billingApi } from "../../api/billingApi"
 import { toast } from "sonner"
 import { Card, CardContent } from "@/components/ui/card"
 import { Chip } from "@/components/shared"
@@ -24,8 +24,8 @@ export function Step4_Completion({
     const handleComplete = async () => {
         try {
             setLoading(true)
-            const res = await api.post(`/billing/note-workflows/${(workflow as any).id}/complete/`)
-            onSuccess(res.data)
+            const result = await billingApi.completeNoteWorkflow((workflow as any).id)
+            onSuccess(result)
         } catch (error: unknown) {
             console.error("Error completing workflow:", error)
             showApiError(error, "Error al finalizar el proceso.")
