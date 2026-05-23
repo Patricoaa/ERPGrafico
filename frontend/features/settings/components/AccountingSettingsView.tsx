@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react"
 import { useForm, UseFormReturn } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import api from "@/lib/api"
+import { settingsApi } from "../hooks"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Form, FormField } from "@/components/ui/form"
 import {
@@ -50,7 +50,7 @@ function StructureSettings() {
     })
 
     const onSave = useCallback(async (data: AccountingFormValues) => {
-        await api.patch('/accounting/settings/current/', data)
+        await settingsApi.updateCurrentSettings(data as any)
     }, [])
 
     const { status, invalidReason, lastSavedAt, retry } = useAutoSaveForm({
@@ -67,9 +67,9 @@ function StructureSettings() {
         if (!confirm("¿Está seguro de cargar el plan de cuentas IFRS? Esto creará las cuentas detalladas y configurará todos los mapeos predeterminados automáticamente.")) return
         setPopulating(true)
         try {
-            const res = await api.post('/accounting/accounts/populate_ifrs/')
+            const res = await settingsApi.populateIfrsChart()
             const { toast } = await import("sonner")
-            toast.success(res.data.message)
+            toast.success(res.message)
             window.location.reload()
         } catch {
             const { toast } = await import("sonner")
@@ -206,7 +206,7 @@ function DefaultsSettings() {
     })
 
     const onSave = useCallback(async (data: DefaultsFormValues) => {
-        await api.patch('/accounting/settings/current/', data)
+        await settingsApi.updateCurrentSettings(data as any)
     }, [])
 
     const { status, invalidReason, lastSavedAt, retry } = useAutoSaveForm({
@@ -294,7 +294,7 @@ function TaxSettings() {
     })
 
     const onSave = useCallback(async (data: TaxFormValues) => {
-        await api.patch('/accounting/settings/current/', data)
+        await settingsApi.updateCurrentSettings(data as any)
     }, [])
 
     const { status, invalidReason, lastSavedAt, retry } = useAutoSaveForm({

@@ -11,8 +11,9 @@ import type {
     CompanySettingsUpdatePayload,
     PartnerSettings,
     PartnerSettingsUpdatePayload,
-    SystemStatus
+    SystemStatus,
 } from '../types'
+import type { TreasuryAccount, PosTerminal, Warehouse, UoM, Group, ProductMinimal } from './types'
 
 /**
  * Centralized API service for accounting settings operations
@@ -210,6 +211,83 @@ export const settingsApi = {
       */
      getSystemStatus: async (): Promise<SystemStatus> => {
          const { data } = await api.get<SystemStatus>('/core/status/')
+         return data
+     },
+
+     // ========== Groups ==========
+
+     getGroups: async (): Promise<Group[]> => {
+         const { data } = await api.get<{ results?: Group[] } | Group[]>('/core/groups/')
+         return (data as any).results ?? (data as Group[])
+     },
+
+     deleteGroup: async (id: number): Promise<void> => {
+         await api.delete(`/core/groups/${id}/`)
+     },
+
+     // ========== Treasury Accounts ==========
+
+     getTreasuryAccounts: async (): Promise<TreasuryAccount[]> => {
+         const { data } = await api.get<{ results?: TreasuryAccount[] } | TreasuryAccount[]>('/treasury/accounts/')
+         return (data as any).results ?? (data as TreasuryAccount[])
+     },
+
+     // ========== POS Terminals ==========
+
+     getPosTerminals: async (): Promise<PosTerminal[]> => {
+         const { data } = await api.get<{ results?: PosTerminal[] } | PosTerminal[]>('/treasury/pos-terminals/')
+         return (data as any).results ?? (data as PosTerminal[])
+     },
+
+     createPosTerminal: async (payload: Record<string, unknown>): Promise<PosTerminal> => {
+         const { data } = await api.post<PosTerminal>('/treasury/pos-terminals/', payload)
+         return data
+     },
+
+     updatePosTerminal: async (id: number, payload: Record<string, unknown>): Promise<PosTerminal> => {
+         const { data } = await api.patch<PosTerminal>(`/treasury/pos-terminals/${id}/`, payload)
+         return data
+     },
+
+     // ========== Warehouses ==========
+
+     getWarehouses: async (): Promise<Warehouse[]> => {
+         const { data } = await api.get<{ results?: Warehouse[] } | Warehouse[]>('/inventory/warehouses/')
+         return (data as any).results ?? (data as Warehouse[])
+     },
+
+     // ========== Products ==========
+
+     getProduct: async (id: number | string): Promise<ProductMinimal> => {
+         const { data } = await api.get<ProductMinimal>(`/inventory/products/${id}/`)
+         return data
+     },
+
+     // ========== UoMs ==========
+
+     getUoms: async (params?: Record<string, string>): Promise<UoM[]> => {
+         const { data } = await api.get<{ results?: UoM[] } | UoM[]>('/inventory/uoms/', { params })
+         return (data as any).results ?? (data as UoM[])
+     },
+
+     // ========== Inventory Moves ==========
+
+     createInventoryAdjustment: async (payload: Record<string, unknown>): Promise<unknown> => {
+         const { data } = await api.post('/inventory/moves/adjust/', payload)
+         return data
+     },
+
+     // ========== Custom Field Templates ==========
+
+     createCustomFieldTemplate: async (payload: Record<string, unknown>): Promise<unknown> => {
+         const { data } = await api.post('/inventory/custom-field-templates/', payload)
+         return data
+     },
+
+     // ========== IFRS Chart of Accounts ==========
+
+     populateIfrsChart: async (): Promise<{ message: string }> => {
+         const { data } = await api.post<{ message: string }>('/accounting/accounts/populate_ifrs/')
          return data
      },
  }

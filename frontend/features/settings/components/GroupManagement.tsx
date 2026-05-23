@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { toast } from "sonner"
-import api from "@/lib/api"
+import { useGroups } from "../hooks"
 import { DataTable } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
@@ -20,26 +20,10 @@ interface GroupManagementProps {
 }
 
 export function GroupManagement({ externalOpen, onExternalOpenChange, createAction }: GroupManagementProps) {
-    const [loading, setLoading] = useState(true)
-    const [groups, setGroups] = useState<Record<string, unknown>[]>([])
+    const { groups, loading, fetchGroups, deleteGroup } = useGroups()
     const { filterFn } = useClientSearch<Record<string, unknown>>(groupSearchDef)
     const [deleteId, setDeleteId] = useState<number | null>(null)
     const [showCreateModal, setShowCreateModal] = useState(false)
-
-    const fetchGroups = async () => {
-        try {
-            const res = await api.get('/core/groups/')
-            setGroups(res.data.results || res.data)
-        } catch (error) {
-            toast.error("Error al cargar grupos")
-        } finally {
-            setLoading(false)
-        }
-    }
-
-    useEffect(() => {
-        fetchGroups()
-    }, [])
 
     useEffect(() => {
         if (externalOpen) {
@@ -49,15 +33,8 @@ export function GroupManagement({ externalOpen, onExternalOpenChange, createActi
 
     const handleDelete = async () => {
         if (!deleteId) return
-        try {
-            await api.delete(`/core/groups/${deleteId}/`)
-            toast.success("Grupo eliminado correctamente")
-            fetchGroups()
-        } catch (error) {
-            toast.error("Error al eliminar grupo")
-        } finally {
-            setDeleteId(null)
-        }
+        const success = await deleteGroup(deleteId)
+        if (success) setDeleteId(null)
     }
 
     const columns: ColumnDef<Record<string, unknown>>[] = [
@@ -102,7 +79,7 @@ export function GroupManagement({ externalOpen, onExternalOpenChange, createActi
             <div className="flex-1 min-h-0">
                 <DataTable
                     columns={columns}
-                    data={filterFn(groups)}
+                    data={filterFn(groups as unknown as Record<string, unknown>[])}
                     isLoading={loading}
                     variant="embedded"
                     leftAction={<SmartSearchBar searchDef={groupSearchDef} placeholder="Buscar grupo..." className="w-full" />}

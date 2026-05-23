@@ -13,7 +13,7 @@ import {
     FormMessage,
 } from "@/components/ui/form"
 import { Checkbox } from "@/components/ui/checkbox"
-import api from "@/lib/api"
+import { settingsApi } from "../hooks"
 import { toast } from "sonner"
 import { MonitorSmartphone, Wifi, Library } from "lucide-react"
 import * as LucideIcons from "lucide-react"
@@ -133,8 +133,7 @@ export function TerminalFormModal({ open, onOpenChange, terminal, onSuccess }: T
 
     const fetchTreasuryAccounts = async () => {
         try {
-            const res = await api.get('/treasury/accounts/')
-            const allAccounts = res.data.results || res.data
+            const allAccounts = await settingsApi.getTreasuryAccounts()
             const validAccounts = allAccounts.filter((a: TreasuryAccount) =>
                 a.allows_cash || a.allows_card || a.allows_transfer
             )
@@ -194,10 +193,10 @@ export function TerminalFormModal({ open, onOpenChange, terminal, onSuccess }: T
         try {
             setLoading(true)
             if (terminal) {
-                await api.patch(`/treasury/pos-terminals/${terminal.id}/`, payload)
+                await settingsApi.updatePosTerminal(terminal.id, payload)
                 toast.success("Terminal actualizado")
             } else {
-                await api.post('/treasury/pos-terminals/', payload)
+                await settingsApi.createPosTerminal(payload)
                 toast.success("Terminal creado")
             }
             onSuccess()

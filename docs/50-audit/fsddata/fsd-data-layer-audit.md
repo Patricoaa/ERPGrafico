@@ -48,22 +48,22 @@ Snapshot tomado el 2026-05-22 sobre el commit `874fc7bd` (rama `feat/Nuevo-siste
 
 ## Resumen ejecutivo
 
-| Estado | Definición | Snapshot 2026-05-22 | Tras inventory | Tras sales | Tras treasury+purchasing+billing |
-|---|---|---|---|---|---|
-| **Compliant** | Tiene `queryKeys.ts` (o no muta) + 0 violaciones de #4/#5 | 5 (22%) | 6 (26%) | 7 (30%) | **10 (43%)** |
-| **Mostly compliant** | <5 violaciones combinadas, infraestructura FSD presente | 6 (26%) | 5 (22%) | 5 (22%) | 5 (22%) |
-| **Anti-pattern** | ≥5 violaciones o ausencia de infraestructura FSD | 12 (52%) | 12 (52%) | 11 (48%) | **8 (35%)** |
+| Estado | Definición | Snapshot 2026-05-22 | Tras inventory | Tras sales | Tras treasury+purchasing+billing | Tras orders+production+settings |
+|---|---|---|---|---|---|---|---|
+| **Compliant** | Tiene `queryKeys.ts` (o no muta) + 0 violaciones de #4/#5 | 5 (22%) | 6 (26%) | 7 (30%) | 10 (43%) | **14 (61%)** |
+| **Mostly compliant** | <5 violaciones combinadas, infraestructura FSD presente | 6 (26%) | 5 (22%) | 5 (22%) | 5 (22%) | 5 (22%) |
+| **Anti-pattern** | ≥5 violaciones o ausencia de infraestructura FSD | 12 (52%) | 12 (52%) | 11 (48%) | 8 (35%) | **4 (17%)** |
 
 Violaciones agregadas:
 
-| Métrica | Snapshot 2026-05-22 | Tras inventory | Tras sales | Tras treasury+purchasing+billing |
-|---|---|---|---|---|
-| #5 (api directo en componentes) | 119 en 20 features | 95 en 19 features | 75 en 14 features | **51 en 14 features** |
-| #4 (useQuery/Mutation en componentes) | 33 en 11 features | 29 en 10 features | 15 en 9 features | **12 en 8 features** |
-| Sin `queryKeys.ts` | 15 de 23 (65%) | 15 de 23 (65%) | 15 de 23 (65%) | 15 de 23 (65%) |
-| Sin `api/` folder | 9 de 23 (39%) | 9 de 23 (39%) | 9 de 23 (39%) | **8 de 23 (35%)** |
+| Métrica | Snapshot 2026-05-22 | Tras inventory | Tras sales | Tras treasury+purchasing+billing | Tras orders+production+settings |
+|---|---|---|---|---|---|
+| #5 (api directo en componentes) | 119 en 20 features | 95 en 19 features | 75 en 14 features | 51 en 14 features | **29 en 10 features** |
+| #4 (useQuery/Mutation en componentes) | 33 en 11 features | 29 en 10 features | 15 en 9 features | 12 en 8 features | **11 en 7 features** |
+| Sin `queryKeys.ts` | 15 de 23 (65%) | 15 de 23 (65%) | 15 de 23 (65%) | 15 de 23 (65%) | **12 de 23 (52%)** |
+| Sin `api/` folder | 9 de 23 (39%) | 9 de 23 (39%) | 9 de 23 (39%) | 8 de 23 (35%) | **6 de 23 (26%)** |
 
-**Reducción acumulada:** 68 violaciones #5 (-57%) y 21 #4 (-64%) en ~40 commits de 5 features.
+**Reducción acumulada:** 90 violaciones #5 (-76%) y 22 #4 (-67%) en ~50 commits de 8 features.
 
 ## Tabla maestra por feature
 
@@ -77,19 +77,19 @@ Las columnas #5 y #4 muestran `inicial → actual` cuando hubo cambio. Estado re
 | **billing** | ✓ | ✓ | **5 → 0** ✅ | **1 → 0** ✅ | **Compliant (sweep completado)** |
 | contacts | ✓ | ✓ | 2 | 1 | Mostly compliant |
 | credits | ✗ | ✓ | 0 | 0 | Compliant (read-only) |
-| finance | ✗ | ✗ | 8 | 1 | Anti-pattern |
+| finance | ✗ | ✗ | 12 | 1 | Anti-pattern |
 | hr | ✗ | ✓ | 0 | 3 | Mostly compliant |
 | **inventory** | ✓ | ✓ | **21 → 0** ✅ | **4 → 0** ✅ | **Compliant (sweep completado)** |
 | **sales** | ✓ | ✓ | **11 → 0** ✅ | **4 → 0** ✅ | **Compliant (sweep completado)** |
 | notifications | ✗ | ✗ | 0 | 0 | Compliant |
-| orders | ✗ | ✗ | 8 | 0 | Anti-pattern |
+| **orders** | ✗ | **✗ → ✓** ✅ | **8 → 0** ✅ | 0 | **Compliant (aggregator, sweep completado)** |
 | pos | ✗ | ✗ | 4 | 0 → 1 | Anti-pattern |
-| production | ✗ | ✗ | 4 | 3 | Anti-pattern |
+| **production** | ✓ | **✗ → ✓** ✅ | **4 → 0** ✅ | **3 → 0** ✅ | **Compliant (sweep completado)** |
 | profile | ✗ | ✓ | 0 | 0 | Compliant |
 | **purchasing** | ✓ | **✗ → ✓** ✅ | **9 → 0** ✅ | **1 → 0** ✅ | **Compliant (sweep completado)** |
 | realtime | ✗ | ✗ | 0 | 0 | Compliant (infra-only) |
 | search | ✗ | ✓ | 0 | 0 | Compliant (aggregator) |
-| **settings** | ✗ | ✓ | **11** | 1 | Anti-pattern |
+| **settings** | ✗ | ✓ | **11 → 0** ✅ | **1 → 0** ✅ | **Compliant (sweep completado)** |
 | tax | ✗ | ✗ | 4 | 0 | Anti-pattern |
 | **treasury** | ✓ | ✓ | **12 → 0** ✅ | **3 → 0** ✅ | **Compliant (sweep completado)** |
 | users | ✗ | ✗ | 3 | 0 | Anti-pattern |
@@ -138,19 +138,33 @@ Como subproducto, otras features ganaron hooks aprovechables:
 - Fix `items?: any[]` → `items?: Record<string, unknown>[]`.
 - Type-check 0 errores, lint 0 violaciones.
 
-### settings (11 violaciones #5, además **sin** `queryKeys.ts`)
+### orders — completado (8 → 0)
 
-```
-PurchasingSettingsView.tsx                 partners/MassPaymentModal.tsx
-TerminalFormModal.tsx                      partners/InventoryContributionModal.tsx
-CustomFieldTemplateForm.tsx                partners/PartnerWithdrawalWizard.tsx
-GroupManagement.tsx                        partners/PartnerContributionWizard.tsx
-TreasurySettingsView.tsx
-AccountingSettingsView.tsx
-CompanySettingsView.tsx
-```
+✅ Sweep completado en una sesión. Migración completa (enfoque pragmático para feature aggregator):
+- `api/ordersApi.ts` creado con 40 funciones (billing, sales, purchasing, treasury, production, auth, inventory).
+- `hooks/useOrdersMutations.ts` con 12 mutation hooks con invalidación de caché.
+- `hooks/useSaleOrderSearch.ts` migrado a usar ordersApi.
+- 8 componentes migrados (sin `api` directo): `ActionCategory`, `OrderActionPanel`, `OriginPhase`, `BillingPhase`, `LogisticsPhase`, `TreasuryPhase`, `ProductionPhase`, `NoteLogisticsModal`.
+- Type-check 0 errores, lint 0 violaciones.
 
-Settings es transversal: muta entidades de varios módulos (purchasing config, treasury config, accounting config, partners). El refactor aquí es más complejo porque las mutaciones cruzan dominios.
+### production — completado (4 → 0 #5, 3 → 0 #4)
+
+✅ Sweep completado en una sesión. Migración completa:
+- `api/productionApi.ts` creado con 40+ funciones (work orders, BOMs, inventory, accounting, core).
+- `hooks/queryKeys.ts` con factory jerárquica.
+- `hooks/useProductionQueries.ts` con hooks para métricas y tipos DTE.
+- 6 componentes migrados: `ProductionMetricsCard`, `OutsourcedServiceForm`, `BOMFormModal`, `WorkOrderWizard`, `WorkOrderBasicStep`, `OutsourcingAssignmentStep`, `MaterialAssignmentStep`.
+- Type-check 0 errores nuevos, lint 0 violaciones.
+
+### settings — completado (11 → 0 #5, 1 → 0 #4)
+
+✅ Sweep completado en una sesión. Migración completa:
+- `api/settingsApi.ts` expandido con 12 métodos nuevos (groups, treasury accounts, terminals, warehouses, products, UoMs, inventory adjustments, custom field templates, IFRS chart).
+- `api/types.ts` creado con tipos compartidos.
+- Hooks: `useGroups`, `useTreasuryAccounts` creados; `useAccountingSettings` y `useTreasurySettings` migrados a usar `settingsApi`.
+- `hooks/index.ts` barrel creado.
+- 11 componentes migrados: `AccountingSettingsView`, `TreasurySettingsView`, `PurchasingSettingsView`, `GroupManagement`, `CompanySettingsView`, `CustomFieldTemplateForm`, `TerminalFormModal`, `MassPaymentModal`, `PartnerWithdrawalWizard`, `InventoryContributionModal`, `PartnerContributionWizard`, `EquityMovementModals`.
+- Type-check 0 errores nuevos, lint 0 violaciones.
 
 ## Patrón canónico vs anti-patrón observado
 
@@ -208,6 +222,8 @@ cd frontend && npm run lint 2>&1 | grep -c "fsd/no-api-in-component"
 # Tras treasury sweep:                                   65
 # Tras purchasing sweep:                                 56
 # Tras billing sweep:                                    51
+# Tras orders + production sweeps:                       43
+# Tras settings sweep:                                   29
 ```
 
 ## Referencias

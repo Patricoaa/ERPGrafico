@@ -1,17 +1,14 @@
 import { useQuery } from '@tanstack/react-query'
-import api from '@/lib/api'
+import { settingsApi } from '../api/settingsApi'
 import { accountingSchema, defaultsSchema, taxSchema, type AccountingFormValues, type DefaultsFormValues, type TaxFormValues } from "@/features/settings/components/AccountingSettingsView.schema"
 import { purchasingSchema, type PurchasingFormValues } from "@/features/settings/components/PurchasingSettingsView.schema"
 
 export const ACCOUNTING_SETTINGS_QUERY_KEY = ['accountingSettings']
 
 export function useAccountingSettings() {
-    const { data: rawSettings = {}, isLoading, refetch } = useQuery({
+    const { data: rawSettings = {} as Record<string, unknown>, isLoading, refetch } = useQuery({
         queryKey: ACCOUNTING_SETTINGS_QUERY_KEY,
-        queryFn: async () => {
-            const response = await api.get('/accounting/settings/current/')
-            return response.data
-        },
+        queryFn: () => settingsApi.getCurrentSettings().then(d => d as unknown as Record<string, unknown>),
         staleTime: 10 * 60 * 1000, // 10 min — settings cambian raramente
     })
 
