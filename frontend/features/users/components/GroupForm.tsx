@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import api from "@/lib/api"
+import { usersApi } from "../api/usersApi"
 
 import { BaseModal } from "@/components/shared/BaseModal"
 
@@ -83,10 +83,10 @@ export function GroupForm({
         setIsLoading(true)
         try {
             if (initialData) {
-                await api.patch(`/core/groups/${initialData.id}/`, values)
+                await usersApi.updateGroup(initialData.id, values)
                 toast.success("Grupo actualizado correctamente")
             } else {
-                await api.post("/core/groups/", values)
+                await usersApi.createGroup(values)
                 toast.success("Grupo creado correctamente")
             }
             setOpen?.(false)

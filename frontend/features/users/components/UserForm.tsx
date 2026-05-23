@@ -8,7 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { UserInitialData } from "@/types/forms"
 import * as z from "zod"
 import { toast } from "sonner"
-import api from "@/lib/api"
+import { usersApi } from "../api/usersApi"
 import { Button } from "@/components/ui/button"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Plus, User, ShieldCheck, ShieldAlert } from "lucide-react"
@@ -80,15 +80,15 @@ export function UserForm({ auditSidebar, initialData, onSuccess, trigger, open: 
 
         const fetchDisplayData = async () => {
             try {
-                const [rolesRes, groupsRes] = await Promise.all([
-                    api.get('/core/users/roles/'),
-                    api.get('/core/groups/')
+                const [rolesData, groupsData] = await Promise.all([
+                    usersApi.getRoles(),
+                    usersApi.getGroups()
                 ])
 
-                setAvailableRoles(rolesRes.data)
+                setAvailableRoles(rolesData)
 
                 const systemRoles = ['ADMIN', 'MANAGER', 'OPERATOR', 'READ_ONLY']
-                const functionalGroupsData = (groupsRes.data.results || groupsRes.data).filter(
+                const functionalGroupsData = (groupsData.results || groupsData).filter(
                     (g: AppGroup) => !systemRoles.includes(g.name)
                 )
                 setAvailableGroups(functionalGroupsData)
@@ -138,10 +138,10 @@ export function UserForm({ auditSidebar, initialData, onSuccess, trigger, open: 
             if (data.password) payload.password = data.password
 
             if (initialData?.id) {
-                await api.patch(`/core/users/${initialData.id}/`, payload)
+                await usersApi.updateUser(initialData.id, payload)
                 toast.success("Usuario actualizado")
             } else {
-                await api.post('/core/users/', payload)
+                await usersApi.createUser(payload)
                 toast.success("Usuario creado")
             }
             setOpen(false)

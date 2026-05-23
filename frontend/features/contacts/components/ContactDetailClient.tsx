@@ -1,11 +1,11 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React, { useState } from "react"
 import { notFound, useRouter } from "next/navigation"
 import { EntityDetailPage, FormFooter, CancelButton, ActionSlideButton, Chip, SkeletonShell } from "@/components/shared"
 import { formatEntityDisplay } from "@/lib/entity-registry"
 import { formatRUT } from "@/lib/utils/format"
-import api from "@/lib/api"
+import { useContact } from "@/features/contacts/hooks/useContacts"
 import type { Contact } from "@/features/contacts/types"
 
 interface ContactDetailClientProps {
@@ -31,25 +31,10 @@ const CONTACT_DETAIL_SKELETON: Contact = {
 
 export function ContactDetailClient({ contactId }: ContactDetailClientProps) {
     const router = useRouter()
-    const [contact, setContact] = useState<Contact | null>(null)
-    const [loading, setLoading] = useState(true)
-    const [error, setError] = useState<number | null>(null)
+    const { data: contact, isLoading: loading, error: queryError } = useContact(Number(contactId))
     const [modalOpen, setModalOpen] = useState(false)
 
-    const fetchContact = async () => {
-        try {
-            const response = await api.get(`/contacts/${contactId}/`)
-            setContact(response.data)
-        } catch (err: any) {
-            setError(err.response?.status || 500)
-        } finally {
-            setLoading(false)
-        }
-    }
-
-    useEffect(() => {
-        fetchContact()
-    }, [contactId])
+    const error = queryError ? (queryError as any)?.response?.status || 500 : null
 
     if (error === 404) return notFound()
     if (error) return (

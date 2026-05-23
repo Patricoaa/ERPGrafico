@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react"
 import { notFound, useRouter } from "next/navigation"
 import { EntityDetailPage, SkeletonShell, FormFooter, CancelButton } from "@/components/shared"
-import api from "@/lib/api"
+import { taxApi } from "../api/taxApi"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 
 interface TaxPeriodDetailClientProps {
@@ -19,8 +19,8 @@ export function TaxPeriodDetailClient({ periodId }: TaxPeriodDetailClientProps) 
     useEffect(() => {
         const fetchPeriod = async () => {
             try {
-                const response = await api.get(`/tax/periods/${periodId}/`)
-                setPeriod(response.data)
+                const data = await taxApi.getPeriod(periodId)
+                setPeriod(data)
             } catch (err: any) {
                 setError(err.response?.status || 500)
             } finally {

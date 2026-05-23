@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import api from '@/lib/api'
+import { usersApi } from "../api/usersApi"
 import type { AppUser } from '@/types/entities'
 
 export const USER_KEYS = {
@@ -16,11 +16,11 @@ export function useUserSearch(search: string = "", enabled: boolean = true) {
             if (search) params.append("search", search)
             params.append("limit", "50")
 
-            const res = await api.get(`/core/users/?${params.toString()}`, { signal })
-            return (res.data.results || res.data) as AppUser[]
+            const data = await usersApi.getUsers({ params, signal } as any)
+            return (data.results || data) as AppUser[]
         },
         enabled,
-        staleTime: 5 * 60 * 1000, // 5 min
+        staleTime: 5 * 60 * 1000,
     })
 
     return {
@@ -34,11 +34,11 @@ export function useSingleUser(id: string | number | null) {
     const query = useQuery({
         queryKey: USER_KEYS.detail(id!),
         queryFn: async ({ signal }) => {
-            const res = await api.get(`/core/users/${id}/`, { signal })
-            return res.data as AppUser
+            const data = await usersApi.getUser(id!)
+            return data as AppUser
         },
         enabled: !!id,
-        staleTime: 5 * 60 * 1000, // 5 min
+        staleTime: 5 * 60 * 1000,
     })
 
     return {

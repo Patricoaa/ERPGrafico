@@ -17,7 +17,8 @@ import {
 import { SubmitButton, CancelButton } from "@/components/shared/ActionButtons"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
-import api from "@/lib/api"
+import { contactsApi } from "../api/contactsApi"
+import { useContact, useContactCreditLedger } from "../hooks/useContacts"
 import { Contact, InsightsData } from "../types"
 import { Order } from "../../orders/types"
 import { formatRUT, validateRUT } from "@/lib/utils/format"
@@ -95,8 +96,8 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
     const { data: defaultCustomer } = useQuery({
         queryKey: ['defaultCustomer'],
         queryFn: async () => {
-            const res = await api.get("/contacts/?is_default_customer=true")
-            return res.data.results?.[0] || res.data?.[0] || null
+            const data = await contactsApi.getContacts({ is_default_customer: true })
+            return (data as any)?.[0] || null
         },
         enabled: open
     })
@@ -104,45 +105,31 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
     const { data: defaultVendor } = useQuery({
         queryKey: ['defaultVendor'],
         queryFn: async () => {
-            const res = await api.get("/contacts/?is_default_vendor=true")
-            return res.data.results?.[0] || res.data?.[0] || null
+            const data = await contactsApi.getContacts({ is_default_vendor: true })
+            return (data as any)?.[0] || null
         },
         enabled: open
     })
 
-    const { data: contactDetails } = useQuery({
-        queryKey: ['contactDetails', c?.id],
-        queryFn: async () => {
-            const res = await api.get(`/contacts/${c?.id}/`)
-            return res.data
-        },
-        enabled: open && !!c?.id && !c.name
-    })
+    const { data: contactDetails } = useContact(c?.id && !c.name ? c.id : undefined)
 
     useEffect(() => {
         if (contactDetails) {
             form.reset({
-                name: contactDetails.name || "",
-                tax_id: contactDetails.tax_id || "",
-                email: contactDetails.email || "",
-                phone: contactDetails.phone || "",
-                address: contactDetails.address || "",
-                city: contactDetails.city || "",
-                payment_terms: contactDetails.payment_terms || "CONTADO",
-                is_default_customer: !!contactDetails.is_default_customer,
-                is_default_vendor: !!contactDetails.is_default_vendor,
+                name: (contactDetails as any).name || "",
+                tax_id: (contactDetails as any).tax_id || "",
+                email: (contactDetails as any).email || "",
+                phone: (contactDetails as any).phone || "",
+                address: (contactDetails as any).address || "",
+                city: (contactDetails as any).city || "",
+                payment_terms: (contactDetails as any).payment_terms || "CONTADO",
+                is_default_customer: !!(contactDetails as any).is_default_customer,
+                is_default_vendor: !!(contactDetails as any).is_default_vendor,
             })
         }
     }, [contactDetails, form])
 
-    const { data: ledgerData = [], isLoading: loadingLedger, refetch: fetchLedger } = useQuery({
-        queryKey: ['contactLedger', c?.id],
-        queryFn: async () => {
-            const res = await api.get(`/contacts/${c?.id}/credit_ledger/`)
-            return res.data
-        },
-        enabled: open && !!c?.id && activeTab === "credit"
-    })
+    const { data: ledgerData = [], isLoading: loadingLedger, refetch: fetchLedger } = useContactCreditLedger(c?.id && activeTab === "credit" ? c.id : undefined)
 
     const handleActionSuccess = () => {
         refetchInsights()

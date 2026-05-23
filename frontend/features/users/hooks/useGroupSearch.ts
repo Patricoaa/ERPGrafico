@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import api from '@/lib/api'
+import { usersApi } from "../api/usersApi"
 import type { AppGroup } from '@/types/entities'
 
 export const GROUP_KEYS = {
@@ -16,11 +16,11 @@ export function useGroupSearch(search: string = "", enabled: boolean = true) {
             if (search) params.append("search", search)
             params.append("limit", "50")
 
-            const res = await api.get(`/core/groups/?${params.toString()}`, { signal })
-            return (res.data.results || res.data) as AppGroup[]
+            const data = await usersApi.getGroups({ params, signal } as any)
+            return (data.results || data) as AppGroup[]
         },
         enabled,
-        staleTime: 5 * 60 * 1000, // 5 min
+        staleTime: 5 * 60 * 1000,
     })
 
     return {
@@ -34,11 +34,11 @@ export function useSingleGroup(id: string | number | null) {
     const query = useQuery({
         queryKey: GROUP_KEYS.detail(id!),
         queryFn: async ({ signal }) => {
-            const res = await api.get(`/core/groups/${id}/`, { signal })
-            return res.data as AppGroup
+            const data = await usersApi.getGroup(id!)
+            return data as AppGroup
         },
         enabled: !!id,
-        staleTime: 5 * 60 * 1000, // 5 min
+        staleTime: 5 * 60 * 1000,
     })
 
     return {
