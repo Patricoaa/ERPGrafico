@@ -13,7 +13,7 @@ import {
     Package,
     History as HistoryIcon
 } from "lucide-react"
-import api from "@/lib/api"
+import { taxApi } from "../api/taxApi"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { toast } from "sonner"
@@ -80,8 +80,8 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange, create
     const fetchPeriods = async () => {
         setIsLoading(true)
         try {
-            const response = await api.get<{ results?: TaxPeriod[] } | TaxPeriod[]>("/tax/periods/?page_size=100")
-            const fetchedPeriods = (response.data as { results?: TaxPeriod[] }).results || (response.data as TaxPeriod[])
+            const data = await taxApi.getPeriods()
+            const fetchedPeriods = (data as { results?: TaxPeriod[] }).results || (data as TaxPeriod[])
             setPeriods(fetchedPeriods)
 
             // The effect above will handle the modal opening based on selectedFromUrl
@@ -163,8 +163,8 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange, create
             setIsPaymentOpen(true)
         } else {
             try {
-                const resp = await api.get<{ results?: TaxDeclaration[] } | TaxDeclaration[]>(`/tax/declarations/?tax_period__year=${period.year}&tax_period__month=${period.month}`)
-                const declarations = (resp.data as { results?: TaxDeclaration[] }).results || (resp.data as TaxDeclaration[])
+                const data = await taxApi.getDeclarations({ tax_period__year: period.year, tax_period__month: period.month })
+                const declarations = (data as { results?: TaxDeclaration[] }).results || (data as TaxDeclaration[])
                 if (declarations.length > 0) {
                     setSelectedDeclaration({
                         ...declarations[0],
@@ -185,7 +185,7 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange, create
     const handlePaymentConfirm = async (data: TaxPaymentData) => {
         if (!selectedDeclaration) return
         try {
-            await api.post("/tax/payments/", {
+            await taxApi.createPayment({
                 declaration: selectedDeclaration.id,
                 payment_date: data.documentDate || dateString || "",
                 amount: data.amount,

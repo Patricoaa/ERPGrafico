@@ -20,7 +20,7 @@ import {
     AlertCircle,
     ExternalLink
 } from "lucide-react"
-import api from "@/lib/api"
+import { taxApi } from "../api/taxApi"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { useServerDate } from "@/hooks/useServerDate"
@@ -105,17 +105,14 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
     const calculateDataForPeriod = async (y: number, m: number) => {
         setIsLoading(true)
         try {
-            const response = await api.post("/tax/declarations/calculate/", {
-                year: y,
-                month: m
-            })
-            setCalcData(response.data)
-            if (response.data.tax_period_id) setTaxPeriodId(response.data.tax_period_id)
-            if (response.data.tax_rate) {
+            const data = await taxApi.calculateDeclaration({ year: y, month: m })
+            setCalcData(data)
+            if (data.tax_period_id) setTaxPeriodId(data.tax_period_id)
+            if (data.tax_rate) {
                 setManualFields(prev => ({
                     ...prev,
-                    tax_rate: response.data.tax_rate,
-                    vat_credit_carryforward: response.data.vat_credit_carryforward || 0
+                    tax_rate: data.tax_rate,
+                    vat_credit_carryforward: data.vat_credit_carryforward || 0
                 }))
             }
             return true
@@ -149,15 +146,15 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
     const handleSaveAndClose = async () => {
         setIsLoading(true)
         try {
-            const createResponse = await api.post("/tax/declarations/", {
+            const declarationData = await taxApi.createDeclaration({
                 tax_period_year: period.year,
                 tax_period_month: period.month,
                 ...manualFields
             })
-            const declarationId = createResponse.data.id
-            const currentTaxPeriodId = createResponse.data.tax_period || taxPeriodId
+            const declarationId = declarationData.id
+            const currentTaxPeriodId = declarationData.tax_period || taxPeriodId
             try {
-                await api.post(`/tax/declarations/${declarationId}/register/`, {
+                await taxApi.registerDeclaration(declarationId, {
                     declaration_date: dateString || ""
                 })
             } catch (regError: unknown) {
@@ -166,7 +163,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                     (regError as { response?: { data?: { error?: string } } })?.response?.data?.error?.includes("ya ha sido registrada")
                 if (!isAlreadyRegistered) throw regError
             }
-            if (currentTaxPeriodId) await api.post(`/tax/periods/${currentTaxPeriodId}/close/`)
+            if (currentTaxPeriodId) await taxApi.closePeriod(currentTaxPeriodId)
             toast.success("Ciclo tributario finalizado exitosamente")
             setIsClosed(true)
             onSuccess();

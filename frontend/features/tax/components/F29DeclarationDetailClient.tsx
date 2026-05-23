@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react"
 import { notFound, useRouter } from "next/navigation"
 import { EntityDetailPage, SkeletonShell, FormFooter, CancelButton } from "@/components/shared"
-import api from "@/lib/api"
+import { taxApi } from "../api/taxApi"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 
 interface F29DeclarationDetailClientProps {
@@ -19,8 +19,8 @@ export function F29DeclarationDetailClient({ f29Id }: F29DeclarationDetailClient
     useEffect(() => {
         const fetchDeclaration = async () => {
             try {
-                const response = await api.get(`/tax/f29/${f29Id}/`)
-                setDeclaration(response.data)
+                const data = await taxApi.getF29Detail(f29Id)
+                setDeclaration(data)
             } catch (err: any) {
                 setError(err.response?.status || 500)
             } finally {

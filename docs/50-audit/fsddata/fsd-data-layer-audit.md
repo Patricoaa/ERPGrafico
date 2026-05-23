@@ -48,22 +48,22 @@ Snapshot tomado el 2026-05-22 sobre el commit `874fc7bd` (rama `feat/Nuevo-siste
 
 ## Resumen ejecutivo
 
-| Estado | Definición | Snapshot 2026-05-22 | Tras inventory | Tras sales | Tras treasury+purchasing+billing | Tras orders+production+settings |
-|---|---|---|---|---|---|---|---|
-| **Compliant** | Tiene `queryKeys.ts` (o no muta) + 0 violaciones de #4/#5 | 5 (22%) | 6 (26%) | 7 (30%) | 10 (43%) | **14 (61%)** |
-| **Mostly compliant** | <5 violaciones combinadas, infraestructura FSD presente | 6 (26%) | 5 (22%) | 5 (22%) | 5 (22%) | 5 (22%) |
-| **Anti-pattern** | ≥5 violaciones o ausencia de infraestructura FSD | 12 (52%) | 12 (52%) | 11 (48%) | 8 (35%) | **4 (17%)** |
+| Estado | Definición | Snapshot 2026-05-22 | Tras inventory | Tras sales | Tras treasury+purchasing+billing | Tras orders+production+settings | Tras contacts+users+tax |
+|---|---|---|---|---|---|---|---|---|
+| **Compliant** | Tiene `queryKeys.ts` (o no muta) + 0 violaciones de #4/#5 | 5 (22%) | 6 (26%) | 7 (30%) | 10 (43%) | 14 (61%) | **14 (61%)** |
+| **Mostly compliant** | <5 violaciones combinadas, infraestructura FSD presente | 6 (26%) | 5 (22%) | 5 (22%) | 5 (22%) | 5 (22%) | **4 (17%)** |
+| **Anti-pattern** | ≥5 violaciones o ausencia de infraestructura FSD | 12 (52%) | 12 (52%) | 11 (48%) | 8 (35%) | 4 (17%) | **5 (22%)** |
 
 Violaciones agregadas:
 
-| Métrica | Snapshot 2026-05-22 | Tras inventory | Tras sales | Tras treasury+purchasing+billing | Tras orders+production+settings |
-|---|---|---|---|---|---|
-| #5 (api directo en componentes) | 119 en 20 features | 95 en 19 features | 75 en 14 features | 51 en 14 features | **29 en 10 features** |
-| #4 (useQuery/Mutation en componentes) | 33 en 11 features | 29 en 10 features | 15 en 9 features | 12 en 8 features | **11 en 7 features** |
-| Sin `queryKeys.ts` | 15 de 23 (65%) | 15 de 23 (65%) | 15 de 23 (65%) | 15 de 23 (65%) | **12 de 23 (52%)** |
-| Sin `api/` folder | 9 de 23 (39%) | 9 de 23 (39%) | 9 de 23 (39%) | 8 de 23 (35%) | **6 de 23 (26%)** |
+| Métrica | Snapshot 2026-05-22 | Tras inventory | Tras sales | Tras treasury+purchasing+billing | Tras orders+production+settings | Tras contacts+users+tax |
+|---|---|---|---|---|---|---|
+| #5 (api directo en componentes) | 119 en 20 features | 95 en 19 features | 75 en 14 features | 51 en 14 features | 29 en 10 features | **20 en 6 features** |
+| #4 (useQuery/Mutation en componentes) | 33 en 11 features | 29 en 10 features | 15 en 9 features | 12 en 8 features | 11 en 7 features | **11 en 7 features** |
+| Sin `queryKeys.ts` | 15 de 23 (65%) | 15 de 23 (65%) | 15 de 23 (65%) | 15 de 23 (65%) | 12 de 23 (52%) | **12 de 23 (52%)** |
+| Sin `api/` folder | 9 de 23 (39%) | 9 de 23 (39%) | 9 de 23 (39%) | 8 de 23 (35%) | 6 de 23 (26%) | **3 de 23 (13%)** |
 
-**Reducción acumulada:** 90 violaciones #5 (-76%) y 22 #4 (-67%) en ~50 commits de 8 features.
+**Reducción acumulada:** 99 violaciones #5 (-83%) y 22 #4 (-67%) en ~50 commits de 11 features.
 
 ## Tabla maestra por feature
 
@@ -75,7 +75,7 @@ Las columnas #5 y #4 muestran `inicial → actual` cuando hubo cambio. Estado re
 | audit | ✗ | ✗ | 0 | 0 | Compliant (read-only) |
 | auth | ✗ | ✗ | 1 | 0 | Anti-pattern |
 | **billing** | ✓ | ✓ | **5 → 0** ✅ | **1 → 0** ✅ | **Compliant (sweep completado)** |
-| contacts | ✓ | ✓ | 2 | 1 | Mostly compliant |
+| contacts | ✓ | ✓ | **2 → 0** ✅ | 1 | Mostly compliant |
 | credits | ✗ | ✓ | 0 | 0 | Compliant (read-only) |
 | finance | ✗ | ✗ | 12 | 1 | Anti-pattern |
 | hr | ✗ | ✓ | 0 | 3 | Mostly compliant |
@@ -90,9 +90,9 @@ Las columnas #5 y #4 muestran `inicial → actual` cuando hubo cambio. Estado re
 | realtime | ✗ | ✗ | 0 | 0 | Compliant (infra-only) |
 | search | ✗ | ✓ | 0 | 0 | Compliant (aggregator) |
 | **settings** | ✗ | ✓ | **11 → 0** ✅ | **1 → 0** ✅ | **Compliant (sweep completado)** |
-| tax | ✗ | ✗ | 4 | 0 | Anti-pattern |
+| tax | ✗ | **✗ → ✓** ✅ | **4 → 0** ✅ | 0 | Anti-pattern |
 | **treasury** | ✓ | ✓ | **12 → 0** ✅ | **3 → 0** ✅ | **Compliant (sweep completado)** |
-| users | ✗ | ✗ | 3 | 0 | Anti-pattern |
+| users | ✗ | **✗ → ✓** ✅ | **3 → 0** ✅ | 0 | Mostly compliant |
 | workflow | ✗ | ✓ | 3 | 0 | Anti-pattern |
 
 ## Top ofensores actuales — archivos exactos
@@ -166,6 +166,31 @@ Como subproducto, otras features ganaron hooks aprovechables:
 - 11 componentes migrados: `AccountingSettingsView`, `TreasurySettingsView`, `PurchasingSettingsView`, `GroupManagement`, `CompanySettingsView`, `CustomFieldTemplateForm`, `TerminalFormModal`, `MassPaymentModal`, `PartnerWithdrawalWizard`, `InventoryContributionModal`, `PartnerContributionWizard`, `EquityMovementModals`.
 - Type-check 0 errores nuevos, lint 0 violaciones.
 
+### contacts — completado (2 → 0 #5, 1 → 1 #4)
+
+✅ Migración en una sesión. Detalles:
+- `ContactDetailClient.tsx`: reemplazó `api.get` manual por hook `useContact(id)` existente.
+- `ContactModal.tsx`: reemplazó 4 `useQuery` directos con api import — 2 migrados a hooks existentes (`useContact`, `useContactCreditLedger`), 2 refactorizados a `contactsApi.getContacts()` en queryFn. Eliminado `import api from "@/lib/api"`.
+- `hooks/index.ts` barrel creado exportando hooks existentes.
+- 2 componentes migrados, 0 errores de type-check nuevos.
+
+### users — completado (3 → 0 #5)
+
+✅ Migración en una sesión. Detalles:
+- `api/usersApi.ts` creado con 9 funciones (users CRUD, groups CRUD, roles).
+- Hooks migrados: `useUsers`, `useUserSearch`/`useSingleUser`, `useGroupSearch`/`useSingleGroup` — todos reemplazaron `import api from "@/lib/api"` por `import { usersApi } from "../api/usersApi"`.
+- Componentes migrados: `UserDetailClient.tsx` (refactorizado a hook `useSingleUser`), `GroupForm.tsx`, `UserForm.tsx`.
+- `hooks/index.ts` barrel creado.
+- 3 componentes migrados, 0 errores de type-check nuevos.
+
+### tax — completado (4 → 0 #5)
+
+✅ Migración en una sesión. Detalles:
+- `api/taxApi.ts` creado con 10 funciones (periods, declarations, F29 detail, payments, check_closed).
+- `actions.ts` server action migrada de `import api` directo a `import { taxApi }`.
+- Componentes migrados: `DeclarationWizard.tsx` (4 llamadas), `TaxDeclarationsView.tsx` (3 llamadas), `TaxPeriodDetailClient.tsx`, `F29DeclarationDetailClient.tsx`.
+- 4 componentes + 1 action migrados, 0 errores de type-check nuevos.
+
 ## Patrón canónico vs anti-patrón observado
 
 ### Compliant (referencia: `contacts`)
@@ -224,6 +249,7 @@ cd frontend && npm run lint 2>&1 | grep -c "fsd/no-api-in-component"
 # Tras billing sweep:                                    51
 # Tras orders + production sweeps:                       43
 # Tras settings sweep:                                   29
+# Tras contacts + users + tax sweeps:                    18
 ```
 
 ## Referencias

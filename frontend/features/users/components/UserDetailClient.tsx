@@ -1,12 +1,12 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React from "react"
 import { notFound, useRouter } from "next/navigation"
 import { EntityDetailPage, SkeletonShell, FormFooter, CancelButton, ActionSlideButton } from "@/components/shared"
 import { formatEntityDisplay } from "@/lib/entity-registry"
-import api from "@/lib/api"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { UserForm } from "@/features/users/components/UserForm"
+import { useSingleUser } from "../hooks/useUserSearch"
 
 interface UserDetailClientProps {
     userId: string
@@ -14,31 +14,9 @@ interface UserDetailClientProps {
 
 export function UserDetailClient({ userId }: UserDetailClientProps) {
     const router = useRouter()
-    const [user, setUser] = useState<any>(null)
-    const [loading, setLoading] = useState(true)
-    const [error, setError] = useState<number | null>(null)
+    const { user, loading } = useSingleUser(userId)
 
-    const fetchUser = async () => {
-        try {
-            const response = await api.get(`/users/${userId}/`)
-            setUser(response.data)
-        } catch (err: any) {
-            setError(err.response?.status || 500)
-        } finally {
-            setLoading(false)
-        }
-    }
-
-    useEffect(() => {
-        fetchUser()
-    }, [userId])
-
-    if (error === 404) return notFound()
-    if (error) return (
-        <div className="flex-1 flex items-center justify-center p-8 text-destructive text-sm">
-            Error al cargar usuario
-        </div>
-    )
+    if (!loading && !user) return notFound()
 
     if (loading || !user) {
          return (
@@ -67,10 +45,6 @@ export function UserDetailClient({ userId }: UserDetailClientProps) {
                             <CancelButton onClick={() => router.push("/settings/users")}>Volver</CancelButton>
                             <UserForm 
                                 initialData={user} 
-                                onSuccess={() => {
-                                    fetchUser()
-                                    router.refresh()
-                                }} 
                                 trigger={
                                     <ActionSlideButton>
                                         Editar Usuario
