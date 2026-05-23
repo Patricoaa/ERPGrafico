@@ -2,7 +2,6 @@ export * from './ActionButton';
 export * from './ActionCategory';
 export * from './DocumentListModal';
 export * from './GlobalHubPanel';
-export * from './NoteHubStatus';
 export * from './NoteLogisticsModal';
 export * from './OrderActionPanel';
 export * from './OrderHeaderDashboard';

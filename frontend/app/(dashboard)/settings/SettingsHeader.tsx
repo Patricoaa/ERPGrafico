@@ -57,7 +57,7 @@ export function SettingsHeader() {
     const currentSegment = segments[1] || 'overview'
 
     const activeValue = currentSegment
-    const subActiveValue = searchParams.get('tab')
+    const subActiveValue = searchParams.get('tab') ?? undefined
 
     const navigation = {
         moduleName: "Configuración Global",

@@ -44,13 +44,18 @@ export function WarehouseList({ externalOpen, onExternalOpenChange, createAction
         endpoint: '/inventory/warehouses'
     })
 
-    // Open edit form if ?selected= is present (ADR-0020)
+    // Open edit form if ?selected= is present (ADR-0020).
+    // Depends ONLY on selectedFromUrl — see CategoryList for explanation
+    // of why isFormOpen/editingWarehouse must NOT be in the dependency array.
     useEffect(() => {
-        if (selectedFromUrl && (!isFormOpen || editingWarehouse?.id !== selectedFromUrl.id)) {
+        if (selectedFromUrl) {
             setEditingWarehouse(selectedFromUrl)
             setIsFormOpen(true)
+        } else {
+            setIsFormOpen(false)
+            setEditingWarehouse(null)
         }
-    }, [selectedFromUrl, isFormOpen, editingWarehouse])
+    }, [selectedFromUrl])
 
     const handleCloseModal = () => {
         setIsFormOpen(false)

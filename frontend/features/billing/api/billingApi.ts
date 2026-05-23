@@ -57,4 +57,21 @@ export const billingApi = {
         const { data } = await api.post<Invoice>(`/billing/invoices/${id}/confirm/`, payload, config)
         return data
     },
+
+    /** Fetch a single invoice by id. */
+    getInvoice: async (id: number): Promise<Invoice> => {
+        const { data } = await api.get<Invoice>(`/billing/invoices/${id}/`)
+        return data
+    },
+
+    /**
+     * Registra una nota (crédito/débito) asociada a la factura.
+     * Acepta FormData porque el adjunto del documento es obligatorio.
+     */
+    registerNoteOnInvoice: async (invoiceId: number, payload: FormData): Promise<Invoice> => {
+        const { data } = await api.post<Invoice>(`/billing/invoices/${invoiceId}/register_note/`, payload, {
+            headers: { 'Content-Type': 'multipart/form-data' as const },
+        })
+        return data
+    },
 }

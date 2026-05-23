@@ -16,7 +16,7 @@ import {
 } from "lucide-react"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { Button } from "@/components/ui/button"
-import { TableSkeleton, ActionConfirmModal } from "@/components/shared"
+import { SkeletonShell, SimpleTable, ActionConfirmModal } from "@/components/shared"
 import { DataTable } from '@/components/shared'
 import { type Table as ReactTable, type Row, type HeaderGroup, type Header, type Cell, flexRender, ColumnDef } from "@tanstack/react-table"
 
@@ -185,7 +185,7 @@ function ExpandableContactRow({ row, onRefresh }: { row: Row<CreditContact>, onR
             />
 
             {loadingLedger ? (
-                <TableSkeleton rows={2} />
+                <SkeletonShell isLoading ariaLabel="Cargando..."><SimpleTable rows={2} columns={1} /></SkeletonShell>
             ) : ledger && ledger.length > 0 ? (
                 <div className="overflow-x-auto">
                     <table className="w-full text-left">

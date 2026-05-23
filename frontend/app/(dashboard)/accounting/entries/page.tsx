@@ -1,5 +1,5 @@
 import { Suspense } from "react"
-import { TableSkeleton, ToolbarCreateButton } from "@/components/shared"
+import { SkeletonShell, SimpleTable, ToolbarCreateButton } from "@/components/shared"
 import EntriesClientView from "./EntriesClientView"
 
 interface PageProps {
@@ -18,7 +18,7 @@ export default async function EntriesPage({ searchParams }: PageProps) {
 
     return (
         <div className="pt-2 flex-1 min-h-0 flex flex-col">
-            <Suspense fallback={<TableSkeleton rows={10} columns={6} />}>
+            <Suspense fallback={<SkeletonShell isLoading ariaLabel="Cargando..."><SimpleTable rows={10} columns={6} /></SkeletonShell>}>
                 <EntriesClientView externalOpen={modal === 'new'} createAction={createAction} />
             </Suspense>
         </div>

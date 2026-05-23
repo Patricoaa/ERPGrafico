@@ -5,14 +5,7 @@ import { cn } from "@/lib/utils"
 import { FormSplitLayout } from "@/components/shared/FormSplitLayout"
 import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 import { getEntityMetadata, ENTITY_REGISTRY } from "@/lib/entity-registry"
-import { EntityHeader } from "@/components/shared/EntityHeader"
-
-// ─── Types ───────────────────────────────────────────────────────────────────
-
-export interface BreadcrumbItem {
-    label: string
-    href: string
-}
+import { EntityHeader, type BreadcrumbItem } from "@/components/shared/EntityHeader"
 
 export interface ActionItem {
     id: string

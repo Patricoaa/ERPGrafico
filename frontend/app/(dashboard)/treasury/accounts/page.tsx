@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react"
-import { TableSkeleton, ToolbarCreateButton } from "@/components/shared"
+import { SkeletonShell, SimpleTable, ToolbarCreateButton } from "@/components/shared"
 
 const TreasuryAccountsView = lazy(() =>
     import("@/features/treasury").then(module => ({
@@ -28,7 +28,7 @@ export default async function AccountsPage({ searchParams }: PageProps) {
 
     return (
         <div className="pt-2 flex-1 min-h-0 flex flex-col">
-            <Suspense fallback={<TableSkeleton rows={10} columns={6} />}>
+            <Suspense fallback={<SkeletonShell isLoading ariaLabel="Cargando..."><SimpleTable rows={10} columns={6} /></SkeletonShell>}>
                 <TreasuryAccountsView activeTab={activeTab} externalOpen={modalOpen} createAction={createAction} />
             </Suspense>
         </div>

@@ -14,6 +14,5 @@ export * from './CategoryFilter';
 export * from './POSCheckoutHeader';
 export * from './POSShell';
 export * from './ProductGrid';
-export * from './skeletons/ProductGridSkeleton';
 export * from './SearchBar';
 export * from './skeletons/POSLayoutSkeleton';

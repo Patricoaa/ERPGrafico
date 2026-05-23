@@ -73,12 +73,16 @@ export function BudgetsListView({ externalOpen, onExternalOpenChange, createActi
     const [budgetToEdit, setBudgetToEdit] = useState<Budget | null>(null)
 
     // Open edit form if ?selected= is present (ADR-0020)
+    // Depends ONLY on selectedFromUrl to prevent async url clearing race condition.
     useEffect(() => {
-        if (selectedFromUrl && (!isEditorOpen || budgetToEdit?.id !== selectedFromUrl.id)) {
+        if (selectedFromUrl) {
             setBudgetToEdit(selectedFromUrl)
             setIsEditorOpen(true)
+        } else {
+            setIsEditorOpen(false)
+            setBudgetToEdit(null)
         }
-    }, [selectedFromUrl, isEditorOpen, budgetToEdit])
+    }, [selectedFromUrl])
 
     const handleCreate = async () => {
         try {

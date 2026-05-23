@@ -39,8 +39,10 @@ export default function EmployeesPage() {
     const dialogOpen = isNewModalOpen || !!editingEmployee || !!selectedFromUrl
 
     useEffect(() => {
-        if (selectedFromUrl && (!editingEmployee || editingEmployee.id !== selectedFromUrl.id)) {
+        if (selectedFromUrl) {
             setEditingEmployee(selectedFromUrl)
+        } else {
+            setEditingEmployee(null)
         }
     }, [selectedFromUrl])
 

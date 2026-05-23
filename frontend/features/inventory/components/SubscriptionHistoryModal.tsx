@@ -371,15 +371,13 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                                          </Table>
                                      </div>
                                  </FormTabsContent>
-                             </div>
-                         </FormTabs>
-                     )}
-                 </div>
-             </BaseModal>
-         </SkeletonShell>
-     )
- }
-
-        </>
+                            </div>
+                        </FormTabs>
+                    )}
+                    </SkeletonShell>
+                )}
+            </div>
+        </BaseModal>
+    </>
     )
 }

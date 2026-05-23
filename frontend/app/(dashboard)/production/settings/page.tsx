@@ -1,5 +1,5 @@
 import { Suspense, lazy } from "react"
-import { TableSkeleton } from "@/components/shared"
+import { SkeletonShell, SimpleTable } from "@/components/shared"
 
 const ProductionSettingsView = lazy(() => import("@/features/settings").then(m => ({ default: m.ProductionSettingsView })))
 
@@ -12,7 +12,7 @@ export default async function ProductionSettingsPage({ searchParams }: PageProps
     const configTab = tab || "global"
 
     return (
-        <Suspense fallback={<TableSkeleton rows={10} columns={6} />}>
+        <Suspense fallback={<SkeletonShell isLoading ariaLabel="Cargando..."><SimpleTable rows={10} columns={6} /></SkeletonShell>}>
             <ProductionSettingsView />
         </Suspense>
     )

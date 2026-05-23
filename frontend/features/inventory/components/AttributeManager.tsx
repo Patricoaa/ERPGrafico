@@ -16,7 +16,7 @@ import type { BulkAction } from "@/components/shared"
 import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 import { cn } from "@/lib/utils"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
-import { CancelButton, SubmitButton, IconButton, LabeledInput, MultiTagInput, ActionConfirmModal } from "@/components/shared"
+import { CancelButton, SubmitButton, IconButton, LabeledInput, MultiTagInput, ActionConfirmModal, FormFooter } from "@/components/shared"
 
 interface ProductAttribute {
     id: number

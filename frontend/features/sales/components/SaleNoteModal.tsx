@@ -14,7 +14,7 @@ import { Card } from "@/components/ui/card"
 import { formatEntityDisplay } from "@/lib/entity-registry"
 
 import { DocumentAttachmentDropzone } from "@/components/shared/DocumentAttachmentDropzone"
-import { EmptyState, PeriodValidationDateInput, TableSkeleton, LabeledContainer, LabeledInput, LabeledSelect, CancelButton, SubmitButton, FormFooter, FormSection } from "@/components/shared"
+import { EmptyState, PeriodValidationDateInput, SkeletonShell, SimpleTable, LabeledContainer, LabeledInput, LabeledSelect, CancelButton, SubmitButton, FormFooter, FormSection } from "@/components/shared"
 
 import { SaleOrderLine, SaleNoteLine } from "../types"
 
@@ -274,7 +274,7 @@ export function SaleNoteForm({
                             {loadingOrder ? (
                                 <tr>
                                     <td colSpan={6} className="p-4">
-                                        <TableSkeleton rows={3} columns={6} />
+                                        <SkeletonShell isLoading ariaLabel="Cargando..."><SimpleTable rows={3} columns={6} /></SkeletonShell>
                                     </td>
                                 </tr>
                             ) : lines.length === 0 ? (

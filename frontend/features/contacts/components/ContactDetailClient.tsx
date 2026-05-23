@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react"
 import { notFound, useRouter } from "next/navigation"
 import { EntityDetailPage, FormFooter, CancelButton, ActionSlideButton, Chip, SkeletonShell } from "@/components/shared"
 import { formatEntityDisplay } from "@/lib/entity-registry"
+import { formatRUT } from "@/lib/utils/format"
 import api from "@/lib/api"
 import type { Contact } from "@/features/contacts/types"
 

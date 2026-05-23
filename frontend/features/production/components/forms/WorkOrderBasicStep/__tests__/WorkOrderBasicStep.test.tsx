@@ -1,4 +1,5 @@
-import { render, screen } from "@testing-library/react"
+import { render } from "@testing-library/react"
+import { screen } from "@testing-library/dom"
 import { vi, describe, it, expect } from "vitest"
 import { WorkOrderBasicStep } from "../index"
 import React from "react"

@@ -30,7 +30,7 @@ import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { TableSkeleton, Skeleton } from "@/components/shared"
+import { SkeletonShell, SimpleTable, Skeleton } from "@/components/shared"
 
 const TransactionViewModal = lazy(() => import("@/components/shared/TransactionViewModal"))
 
@@ -162,7 +162,7 @@ export function PartnerProfileTab({ contactId }: Props) {
         })
     ]
 
-    if (loading) return <TableSkeleton rows={8} columns={4} className="p-6" />
+    if (loading) return <SkeletonShell isLoading ariaLabel="Cargando..."><SimpleTable rows={8} columns={4} className="p-6" /></SkeletonShell>
 
     if (!statement) return null
 

@@ -135,6 +135,49 @@ describe('useSelectedEntity', () => {
         await waitFor(() => expect(apiGetMock).toHaveBeenCalledTimes(2))
     })
 
+    // ── 3b. Regresión: re-apertura del mismo id nunca muestra datos viejos ──
+    // Bug original: placeholderData servía el valor previo inmediatamente al
+    // reabrir el formulario tras guardar, mostrando datos antes del cambio.
+    // Con gcTime: 0 el caché se descarta al desactivarse la query, garantizando
+    // que la próxima apertura siempre espera el fetch fresco.
+
+    it('NO muestra datos stale al reabrir el mismo id tras clearSelection (regresión bug stale-form)', async () => {
+        mockGet.mockReturnValue('5')
+        const freshData = { id: 5, name: 'Nombre actualizado' }
+
+        // Primera apertura: retorna datos viejos
+        apiGetMock.mockResolvedValueOnce({ data: { id: 5, name: 'Nombre viejo' } })
+
+        const queryClient = new QueryClient({
+            defaultOptions: { queries: { retry: false } },
+        })
+        const wrapper = ({ children }: { children: React.ReactNode }) =>
+            React.createElement(QueryClientProvider, { client: queryClient }, children)
+
+        const { result, rerender } = renderHook(
+            () => useSelectedEntity({ endpoint: '/api/inventory/categories' }),
+            { wrapper }
+        )
+        await waitFor(() => expect(result.current.entity).toEqual({ id: 5, name: 'Nombre viejo' }))
+
+        // Simula clearSelection: selectedId = null → query desactivada → gcTime:0 limpia el caché
+        mockGet.mockReturnValue(null)
+        rerender()
+        // Con gcTime:0 el caché debe estar vacío; entity vuelve a null
+        await waitFor(() => expect(result.current.entity).toBeNull())
+
+        // Re-apertura: el hook debe hacer un nuevo fetch y NO servir datos viejos
+        apiGetMock.mockResolvedValueOnce({ data: freshData })
+        mockGet.mockReturnValue('5')
+        rerender()
+
+        // Mientras fetchea, entity es null (no hay placeholder con datos viejos)
+        expect(result.current.entity).toBeNull()
+
+        // Cuando el fetch termina, devuelve los datos frescos
+        await waitFor(() => expect(result.current.entity).toEqual(freshData))
+    })
+
     // ── 4. 404 → toast + clearSelection ──────────────────────────────────
 
     it('llama toast.error y clearSelection cuando el servidor retorna 404', async () => {

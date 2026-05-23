@@ -61,14 +61,18 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
         endpoint: '/accounting/accounts'
     })
 
-    // Open edit form if ?selected= is present (ADR-0020)
+    // Open edit form if ?selected= is present (ADR-0020).
+    // Depends ONLY on selectedFromUrl — see CategoryList for explanation
+    // of why isFormOpen/editingAccount must NOT be in the dependency array.
     useEffect(() => {
-        if (selectedFromUrl && (!isFormOpen || editingAccount?.id !== selectedFromUrl.id)) {
+        if (selectedFromUrl) {
             setEditingAccount(selectedFromUrl)
             setIsFormOpen(true)
+        } else {
+            setIsFormOpen(false)
+            setEditingAccount(null)
         }
-    }, [selectedFromUrl, isFormOpen, editingAccount])
-
+    }, [selectedFromUrl])
 
 
     const handleCloseModal = () => {
@@ -279,7 +283,6 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
                 readonly={editingAccount ? !editingAccount.is_selectable : false}
                 onSuccess={() => {
                     refetch()
-                    handleCloseModal()
                 }}
                 open={isFormOpen}
                 onOpenChange={(open) => {
