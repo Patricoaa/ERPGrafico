@@ -127,6 +127,15 @@ export const getTasks = async (params: TaskQueryParams = {}) => {
     return response.data
 }
 
+/**
+ * Fetch del detalle de una task. Imperativo, usado en polls de estado
+ * (p.ej. wizard de venta esperando aprobación de crédito).
+ */
+export const getTask = async <T = Task>(taskId: number | string): Promise<T> => {
+    const response = await api.get<T>(`workflow/tasks/${taskId}/`)
+    return response.data
+}
+
 export const completeTask = async (id: number, notes?: string, attachments?: File[]) => {
     const formData = new FormData()
     if (notes) formData.append('notes', notes)

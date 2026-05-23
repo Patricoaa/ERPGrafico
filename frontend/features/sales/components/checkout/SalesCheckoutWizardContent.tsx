@@ -2,7 +2,6 @@
 
 import { showApiError, getErrorMessage } from "@/lib/errors"
 import { useState, useEffect, useMemo, useRef, useCallback } from "react"
-import { useQuery } from "@tanstack/react-query"
 import { PricingUtils } from '@/features/inventory/utils/pricing'
 import { Button } from "@/components/ui/button"
 import { Step1_CustomerDTE } from "./Step1_CustomerDTE"
@@ -15,7 +14,10 @@ import { OrderSummaryCard } from "./OrderSummaryCard"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { ProcessSummarySidebar } from "./ProcessSummarySidebar"
 import { toast } from "sonner"
-import api from "@/lib/api"
+import { useContact, useContactCreditLedger } from "@/features/contacts"
+import { useAccountingSettings } from "@/features/accounting"
+import { useInvoices } from "@/features/billing"
+import { getTask } from "@/features/workflow"
 
 import { Check, ChevronRight, ChevronLeft, Loader2, ShoppingCart, AlertCircle, AlertTriangle, ShieldAlert, CheckCircle2, FileWarning, Printer, Truck } from "lucide-react"
 import { User, Info } from "lucide-react"
@@ -104,6 +106,7 @@ export function SalesCheckoutWizardContent({
     const { dateString, serverDate } = useServerDate()
     const { openHub, isHubOpen } = useHubPanel()
     const { hasPermission } = useAuth()
+    const { posCheckout, requestCredit } = useInvoices()
 
     const [currentOrderLines, setCurrentOrderLines] = useState<SaleOrderLine[]>(initialOrderLines)
     const [step, setStep] = useState(initialStep || 1)
@@ -224,14 +227,10 @@ export function SalesCheckoutWizardContent({
     const [checkoutResponse, setCheckoutResponse] = useState<CheckoutResponse | null>(null)
 
 
-    const { data: pendingDebts = null, isLoading: loadingDebts, refetch: refreshDebts } = useQuery({
-        queryKey: ['pendingDebts', selectedCustomer?.id],
-        queryFn: async () => {
-            const res = await api.get<PendingDebt[]>(`/contacts/${selectedCustomer?.id}/credit_ledger/`)
-            return res.data.filter((d: PendingDebt) => Number(d.balance) > 0)
-        },
-        enabled: !!selectedCustomer && Number(selectedCustomer.credit_balance_used || 0) > 0
-    })
+    // Solo fetcheamos credit ledger si el cliente tiene saldo a usar.
+    const creditLedgerEnabled = !!selectedCustomer && Number(selectedCustomer.credit_balance_used || 0) > 0
+    const { data: pendingDebts = null, isLoading: loadingDebts, refetch: refreshDebts } =
+        useContactCreditLedger(creditLedgerEnabled ? selectedCustomer?.id ?? null : null)
 
     // Sync debts when Hub closes (after potential payments)
     const prevHubOpenRef = useRef(isHubOpen)
@@ -242,22 +241,8 @@ export function SalesCheckoutWizardContent({
         prevHubOpenRef.current = isHubOpen
     }, [isHubOpen, refreshDebts])
 
-    const { data: salesSettings = null } = useQuery({
-        queryKey: ['salesSettings'],
-        queryFn: async () => {
-            const res = await api.get('/accounting/settings/current/')
-            return res.data
-        }
-    })
-
-    const { data: customerDetails } = useQuery({
-        queryKey: ['contact', selectedCustomerId],
-        queryFn: async () => {
-            const res = await api.get(`/contacts/${selectedCustomerId}/`)
-            return res.data
-        },
-        enabled: !!selectedCustomerId
-    })
+    const { data: salesSettings = null } = useAccountingSettings()
+    const { data: customerDetails } = useContact(selectedCustomerId ?? null)
 
     useEffect(() => {
         if (customerDetails) {
@@ -552,9 +537,9 @@ export function SalesCheckoutWizardContent({
                 formData.append('pos_pin', pin)
             }
 
-            const res = await api.post<CheckoutResponse>('/billing/invoices/pos_checkout/', formData)
+            const data = await posCheckout(formData) as CheckoutResponse
             toast.success("Venta procesada correctamente")
-            onComplete(res.data)
+            onComplete(data)
         } catch (error: unknown) {
             console.error("Checkout error:", error)
             const rawError = getErrorMessage(error) || "Error al procesar la venta"
@@ -674,8 +659,8 @@ export function SalesCheckoutWizardContent({
             if (posSessionId) formData.append('pos_session_id', posSessionId.toString())
             if (initialDraftId) formData.append('draft_id', initialDraftId.toString())
 
-            const response = await api.post('/billing/invoices/request_credit/', formData)
-            const taskId = response.data.task_id
+            const response = await requestCredit(formData) as { task_id: number }
+            const taskId = response.task_id
             setApprovalTaskId(taskId)
             pollApprovalStatus(taskId)
         } catch (error: unknown) {
@@ -687,8 +672,7 @@ export function SalesCheckoutWizardContent({
 
     const checkApprovalStatus = async (taskId: number, silent = false) => {
         try {
-            const response = await api.get(`/workflow/tasks/${taskId}/`)
-            const task = response.data
+            const task = await getTask<{ status: string, data: unknown, rejection_reason?: string }>(taskId)
 
             if (task.status === 'COMPLETED') {
                 if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current)

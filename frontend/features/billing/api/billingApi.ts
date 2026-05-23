@@ -74,4 +74,27 @@ export const billingApi = {
         })
         return data
     },
+
+    /**
+     * Checkout completo del wizard de venta — crea Invoice + SaleOrder.
+     * Genérico en el response porque la respuesta del backend incluye
+     * referencias a múltiples entidades creadas (invoice, order, payment, etc).
+     */
+    posCheckout: async <T = unknown>(payload: FormData): Promise<T> => {
+        const { data } = await api.post<T>('/billing/invoices/pos_checkout/', payload, {
+            headers: { 'Content-Type': 'multipart/form-data' as const },
+        })
+        return data
+    },
+
+    /**
+     * Pide aprobación de crédito para una venta — abre un workflow.Task
+     * que el supervisor debe aprobar antes de confirmar la factura.
+     */
+    requestCredit: async <T = unknown>(payload: FormData): Promise<T> => {
+        const { data } = await api.post<T>('/billing/invoices/request_credit/', payload, {
+            headers: { 'Content-Type': 'multipart/form-data' as const },
+        })
+        return data
+    },
 }
