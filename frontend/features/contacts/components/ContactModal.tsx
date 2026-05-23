@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useState, useMemo } from "react"
-import { useQuery } from "@tanstack/react-query"
 import { useFormWithToast } from "@/hooks/use-form-with-toast"
 import * as z from "zod"
 import { BaseModal } from "@/components/shared/BaseModal"
@@ -17,12 +16,12 @@ import {
 import { SubmitButton, CancelButton } from "@/components/shared/ActionButtons"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
-import { contactsApi } from "../api/contactsApi"
 import { useContact, useContactCreditLedger } from "../hooks/useContacts"
 import { Contact, InsightsData } from "../types"
 import { Order } from "../../orders/types"
 import { formatRUT, validateRUT } from "@/lib/utils/format"
 import { useContactMutations, useContactInsights } from "@/features/contacts"
+import { useDefaultCustomer, useDefaultVendor } from "../hooks/useContactDefaults"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 import { StatusBadge } from "@/components/shared/StatusBadge"
@@ -93,23 +92,8 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
         },
     })
 
-    const { data: defaultCustomer } = useQuery({
-        queryKey: ['defaultCustomer'],
-        queryFn: async () => {
-            const data = await contactsApi.getContacts({ is_default_customer: true })
-            return (data as any)?.[0] || null
-        },
-        enabled: open
-    })
-
-    const { data: defaultVendor } = useQuery({
-        queryKey: ['defaultVendor'],
-        queryFn: async () => {
-            const data = await contactsApi.getContacts({ is_default_vendor: true })
-            return (data as any)?.[0] || null
-        },
-        enabled: open
-    })
+    const { data: defaultCustomer } = useDefaultCustomer(open)
+    const { data: defaultVendor } = useDefaultVendor(open)
 
     const { data: contactDetails } = useContact(c?.id && !c.name ? c.id : undefined)
 
