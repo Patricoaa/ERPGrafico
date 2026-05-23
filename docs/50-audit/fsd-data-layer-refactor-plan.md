@@ -294,8 +294,8 @@ Tras cada feature migrada, antes de mergear:
 | Feature | qK | api/ | hooks | components | bus extendido | Done |
 |---|:---:|:---:|:---:|:---:|:---:|:---:|
 | **inventory** | ✓ | ✓ | ✓ | ✓ | pendiente | **✅ (22 commits)** |
-| sales | ✓ | ✓ | parcial | parcial | ✓ (saleorder) | ⏳ (próximo) |
-| treasury | ✓ | ✓ | parcial | ✗ | ✗ | ⏳ |
+| **sales** | ✓ | ✓ | ✓ | ✓ | ✓ (saleorder) | **✅ (8 commits)** |
+| treasury | ✓ | ✓ | parcial | parcial | pendiente | ⏳ (próximo) |
 | purchasing | ✓ | ✗ | parcial | ✗ | ✗ | ⏳ |
 | billing | ✓ | ✓ | parcial | ✗ | ✗ | ⏳ |
 | orders | ✗ | ✗ | ✗ | ✗ | n/a (aggregator) | ⏳ |

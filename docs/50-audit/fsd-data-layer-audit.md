@@ -48,23 +48,22 @@ Snapshot tomado el 2026-05-22 sobre el commit `874fc7bd` (rama `feat/Nuevo-siste
 
 ## Resumen ejecutivo
 
-| Estado | Definición | Snapshot 2026-05-22 | Tras inventory sweep |
-|---|---|---|---|
-| **Compliant** | Tiene `queryKeys.ts` (o no muta) + 0 violaciones de #4/#5 | 5 (22%) | **6 (26%)** |
-| **Mostly compliant** | <5 violaciones combinadas, infraestructura FSD presente | 6 (26%) | 5 (22%) |
-| **Anti-pattern** | ≥5 violaciones o ausencia de infraestructura FSD | 12 (52%) | 12 (52%) |
+| Estado | Definición | Snapshot 2026-05-22 | Tras inventory sweep | Tras sales sweep |
+|---|---|---|---|---|
+| **Compliant** | Tiene `queryKeys.ts` (o no muta) + 0 violaciones de #4/#5 | 5 (22%) | 6 (26%) | **7 (30%)** |
+| **Mostly compliant** | <5 violaciones combinadas, infraestructura FSD presente | 6 (26%) | 5 (22%) | 5 (22%) |
+| **Anti-pattern** | ≥5 violaciones o ausencia de infraestructura FSD | 12 (52%) | 12 (52%) | 11 (48%) |
 
 Violaciones agregadas:
 
-| Métrica | Snapshot 2026-05-22 | Tras inventory sweep |
-|---|---|---|
-| #5 (api directo en componentes) | 119 en 20 features | **95 en 19 features** |
-| #4 (useQuery/Mutation en componentes) | 33 en 11 features | **29 en 10 features** |
-| Sin `queryKeys.ts` | 15 de 23 (65%) | 15 de 23 (65%) |
-| Sin `api/` folder | 9 de 23 (39%) | 9 de 23 (39%) |
+| Métrica | Snapshot 2026-05-22 | Tras inventory | Tras sales |
+|---|---|---|---|
+| #5 (api directo en componentes) | 119 en 20 features | 95 en 19 features | **75 en 14 features** |
+| #4 (useQuery/Mutation en componentes) | 33 en 11 features | 29 en 10 features | **15 en 9 features** |
+| Sin `queryKeys.ts` | 15 de 23 (65%) | 15 de 23 (65%) | 15 de 23 (65%) |
+| Sin `api/` folder | 9 de 23 (39%) | 9 de 23 (39%) | 9 de 23 (39%) |
 
-Inventory cerró su 21 + 4 violaciones en 22 commits incrementales. Sales recibe sweep
-parcial vía piloto realtime (11 → 10 #5). Resto sin cambios.
+**Reducción acumulada:** 44 violaciones #5 (-37%) y 18 #4 (-55%) en 30 commits de 2 features.
 
 ## Tabla maestra por feature
 
@@ -81,6 +80,7 @@ Las columnas #5 y #4 muestran `inicial → actual` cuando hubo cambio. Estado re
 | finance | ✗ | ✗ | 8 | 1 | Anti-pattern |
 | hr | ✗ | ✓ | 0 | 3 | Mostly compliant |
 | **inventory** | ✓ | ✓ | **21 → 0** ✅ | **4 → 0** ✅ | **Compliant (sweep completado)** |
+| **sales** | ✓ | ✓ | **11 → 0** ✅ | **4 → 0** ✅ | **Compliant (sweep completado)** |
 | notifications | ✗ | ✗ | 0 | 0 | Compliant |
 | orders | ✗ | ✗ | 8 | 0 | Anti-pattern |
 | pos | ✗ | ✗ | 4 | 0 → 1 | Anti-pattern |
@@ -88,7 +88,6 @@ Las columnas #5 y #4 muestran `inicial → actual` cuando hubo cambio. Estado re
 | profile | ✗ | ✓ | 0 | 0 | Compliant |
 | purchasing | ✓ | ✗ | 9 | 1 | Anti-pattern |
 | realtime | ✗ | ✗ | 0 | 0 | Compliant (infra-only) |
-| **sales** | ✓ | ✓ | **11 → 10** | 4 | Anti-pattern (próximo en cola) |
 | search | ✗ | ✓ | 0 | 0 | Compliant (aggregator) |
 | **settings** | ✗ | ✓ | **11** | 1 | Anti-pattern |
 | tax | ✗ | ✗ | 4 | 0 | Anti-pattern |
@@ -116,19 +115,32 @@ TransferModal.tsx                   MasterDataManagement.tsx
 
 Sub-entidades: `Terminal`, `TerminalBatch`, `POSSession`, `TreasuryMovement`, `BankStatement`, `Payment`, `PaymentReference`, `MonthlyInvoice`, `Transfer`, `CashMovement`.
 
-### sales (10 violaciones #5 — siguiente en cola)
+### sales — completado (11 → 0)
+
+✅ Sweep completado en 8 commits. Hooks creados:
+`useSaleOrder`, `useSubscriptionHistory`, mutaciones de `registerNoteOnOrder`,
+`dispatchOrder`, `dispatchOrderPartial` + 3 DetailClients huérfanos eliminados
+(ADR-0020 los reemplazó por list+modal pattern).
+
+Como subproducto, otras features ganaron hooks aprovechables:
+- `billing`: `useInvoice`, `confirmInvoice`, `registerNoteOnInvoice`, `posCheckout`, `requestCredit`
+- `contacts`: `useContact`, `useContactCreditLedger`, `usePartners`
+- `accounting`: `useAccountingSettings`
+- `pos`: `usePOSSessionSummary`, `fetchPOSSessionSummary`
+- `workflow`: `getTask` helper
+
+### treasury (12 violaciones #5 — siguiente en cola)
 
 ```
-SalesOrdersClientView.tsx                  checkout/SalesCheckoutWizardContent.tsx
-SaleOrderDetailClient.tsx                  checkout/Step3_Delivery.tsx
-SaleReturnDetailClient.tsx                 PricingRuleForm.tsx
-DeliveryDetailClient.tsx                   POSSessionsView.tsx
-DeliveryModal.tsx                          SaleNoteModal.tsx
+TerminalManagement.tsx              MovementWizard.tsx
+POSSessionDetailClient.tsx          TerminalBatchForm.tsx
+MonthlyInvoiceModal.tsx             TreasuryMovementDetailClient.tsx
+PaymentReferenceModal.tsx           BankStatementDetailClient.tsx
+CashMovementModal.tsx               PaymentModal.tsx
+TransferModal.tsx                   MasterDataManagement.tsx
 ```
 
-`forms/SaleOrderForm.tsx` ya no existe (removido en otra rama). Sub-entidades activas
-en el sweep: `SaleOrder`, `SaleDelivery`, `SaleReturn`, `SaleNote`, `POSSession`,
-`PricingRule` (este último compartido con inventory — ya tiene hook).
+Sub-entidades: `Terminal`, `TerminalBatch`, `POSSession`, `TreasuryMovement`, `BankStatement`, `Payment`, `PaymentReference`, `MonthlyInvoice`, `Transfer`, `CashMovement`.
 
 Nota: `useSalesOrders` ya existe con la mayoría de las mutaciones bien hechas (commit del piloto realtime). El gap está en `SaleOrderForm.tsx` (usa `api.put` directo) y los wizards de checkout.
 
