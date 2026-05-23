@@ -56,6 +56,19 @@ export function useSalesOrders({ filters }: { filters?: SaleOrderFilters } = {})
         }
     })
 
+    const registerNoteMutation = useMutation({
+        mutationFn: ({ orderId, payload }: { orderId: number, payload: FormData }) =>
+            salesApi.registerNoteOnOrder(orderId, payload),
+        onSuccess: () => {
+            markLocalMutation()
+            // Una nota afecta el estado y los totales de la orden padre + crea
+            // un invoice asociado → invalida sales completo. Billing también
+            // debe refrescarse pero esa invalidación la dispara el bus o el
+            // próximo useInvoices al volverse stale.
+            queryClient.invalidateQueries({ queryKey: SALES_KEYS.all })
+        },
+    })
+
     return {
         orders: orders ?? [],
         isLoading,
@@ -63,9 +76,11 @@ export function useSalesOrders({ filters }: { filters?: SaleOrderFilters } = {})
         createOrder: createMutation.mutateAsync,
         updateOrder: updateMutation.mutateAsync,
         deleteOrder: deleteMutation.mutateAsync,
+        registerNoteOnOrder: registerNoteMutation.mutateAsync,
         isCreating: createMutation.isPending,
         isUpdating: updateMutation.isPending,
-        isDeleting: deleteMutation.isPending
+        isDeleting: deleteMutation.isPending,
+        isRegisteringNote: registerNoteMutation.isPending,
     }
 }
 

@@ -53,6 +53,17 @@ export const salesApi = {
     },
 
     /**
+     * Register a note (credit/debit) directly on a sale order.
+     * El backend acepta FormData porque el adjunto del documento es obligatorio.
+     */
+    registerNoteOnOrder: async (orderId: number, payload: FormData): Promise<SaleOrder> => {
+        const { data } = await api.post<SaleOrder>(`/sales/orders/${orderId}/register_note/`, payload, {
+            headers: { 'Content-Type': 'multipart/form-data' as const },
+        })
+        return data
+    },
+
+    /**
      * Fetch sales notes (credit/debit notes associated with orders)
      */
     getSalesNotes: async (filters?: { date_after?: string, date_before?: string, customer_name?: string }): Promise<SaleNote[]> => {
