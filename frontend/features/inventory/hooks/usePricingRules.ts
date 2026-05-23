@@ -46,15 +46,30 @@ export function usePricingRules(filters?: FilterState) {
         },
     })
 
+    const invalidate = () => {
+        queryClient.invalidateQueries({ queryKey: PRICING_RULES_QUERY_KEY })
+        // Pricing rule mutations cambian precios computados → invalidar products.
+        queryClient.invalidateQueries({ queryKey: PRODUCTS_QUERY_KEY })
+    }
+
     const deleteMutation = useMutation({
-        mutationFn: async (id: number) => {
-            return api.delete(`/inventory/pricing-rules/${id}/`)
+        mutationFn: async (id: number) => api.delete(`/inventory/pricing-rules/${id}/`),
+        onSuccess: () => {
+            markLocalMutation()
+            invalidate()
+        },
+    })
+
+    const saveMutation = useMutation({
+        mutationFn: async ({ id, payload }: { id: number | null, payload: Record<string, unknown> }) => {
+            const res = id !== null
+                ? await api.put<PricingRule>(`/inventory/pricing-rules/${id}/`, payload)
+                : await api.post<PricingRule>('/inventory/pricing-rules/', payload)
+            return res.data
         },
         onSuccess: () => {
             markLocalMutation()
-            queryClient.invalidateQueries({ queryKey: PRICING_RULES_QUERY_KEY })
-            // A deleted rule can change computed prices shown in the product list
-            queryClient.invalidateQueries({ queryKey: PRODUCTS_QUERY_KEY })
+            invalidate()
         },
     })
 
@@ -63,7 +78,9 @@ export function usePricingRules(filters?: FilterState) {
         isLoading,
         refetch,
         deletePricingRule: deleteMutation.mutateAsync,
-        isDeleting: deleteMutation.isPending
+        isDeleting: deleteMutation.isPending,
+        savePricingRule: saveMutation.mutateAsync,
+        isSaving: saveMutation.isPending,
     }
 }
 

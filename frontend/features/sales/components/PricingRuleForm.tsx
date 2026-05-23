@@ -14,7 +14,8 @@ import { CancelButton, LabeledInput, LabeledSelect, LabeledSwitch, LabeledContai
 
 import { Checkbox } from "@/components/ui/checkbox"
 import { cn } from "@/lib/utils"
-import api from "@/lib/api"
+import { useUoMs } from "@/features/inventory/hooks/useUoMs"
+import { usePricingRules } from "@/features/inventory/hooks/usePricingRules"
 import { toast } from "sonner"
 import { Tags, Layers, Zap, DollarSign, Calendar } from "lucide-react"
 import { PricingUtils } from '@/features/inventory/utils/pricing'
@@ -39,6 +40,9 @@ const formSchema = z.object({
     active: z.boolean(),
 })
 
+// Forma local que espera el UoMFilterSelect — ratio es number aquí pero
+// el hook useUoMs devuelve string (backend serializa Decimal). Casteamos
+// en el punto de uso (línea con uoms={uoms as unknown as ...}).
 interface UoM {
     id: number
     name: string
@@ -59,7 +63,8 @@ interface PricingRuleFormProps {
 }
 
 export function PricingRuleForm({ auditSidebar, initialData, onSuccess, open, onOpenChange, productId, productName }: PricingRuleFormProps) {
-    const [uoms, setUoms] = useState<UoM[]>([])
+    const { uoms } = useUoMs()
+    const { savePricingRule } = usePricingRules()
     const [selectedProductObj, setSelectedProductObj] = useState<any>(null)
 
     const form = useForm<FormValues>({
@@ -147,17 +152,7 @@ export function PricingRuleForm({ auditSidebar, initialData, onSuccess, open, on
         }
     }, [open, initialData, productId, form])
 
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const uomRes = await api.get('/inventory/uoms/')
-                setUoms(uomRes.data.results || uomRes.data)
-            } catch (error) {
-                console.error("Error fetching data", error)
-            }
-        }
-        if (open) fetchData()
-    }, [open])
+    // uoms vienen reactivos de useUoMs (declarado al inicio del componente).
 
     async function onSubmit(values: FormValues) {
         try {
@@ -166,13 +161,10 @@ export function PricingRuleForm({ auditSidebar, initialData, onSuccess, open, on
             if (payload.uom === null) delete (payload as any).uom
             if (payload.operator !== "BT") delete (payload as any).max_quantity
 
-            if (initialData) {
-                await api.put(`/inventory/pricing-rules/${initialData.id}/`, payload)
-                toast.success("Regla actualizada correctamente")
-            } else {
-                await api.post("/inventory/pricing-rules/", payload)
-                toast.success("Regla creada correctamente")
-            }
+            // savePricingRule invalida PRICING_RULES + PRODUCTS_KEYS (los precios
+            // computados en la lista de productos cambian) automáticamente.
+            await savePricingRule({ id: initialData?.id ?? null, payload })
+            toast.success(initialData ? "Regla actualizada correctamente" : "Regla creada correctamente")
             onSuccess?.()
             onOpenChange?.(false)
         } catch (error) {
@@ -237,7 +229,7 @@ export function PricingRuleForm({ auditSidebar, initialData, onSuccess, open, on
                                 variant="standalone"
                                 product={selectedProductObj}
                                 context="sale"
-                                uoms={uoms}
+                                uoms={uoms as unknown as UoM[]}
                                 value={field.value?.toString() || ""}
                                 onChange={(val) => field.onChange(val ? parseInt(val) : null)}
                             />
