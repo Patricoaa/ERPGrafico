@@ -69,6 +69,29 @@ export function useSalesOrders({ filters }: { filters?: SaleOrderFilters } = {})
         },
     })
 
+    const dispatchMutation = useMutation({
+        mutationFn: ({ orderId, payload }: { orderId: number, payload: { warehouse_id: number, delivery_date: string } }) =>
+            salesApi.dispatchOrder(orderId, payload),
+        onSuccess: () => {
+            markLocalMutation()
+            // dispatch cambia el delivery_status de la orden y crea movimientos
+            // de stock. Invalidamos sales (estado) y la query externa de stockMoves
+            // se invalidará si el bus está habilitado.
+            queryClient.invalidateQueries({ queryKey: SALES_KEYS.all })
+        },
+    })
+
+    const partialDispatchMutation = useMutation({
+        mutationFn: ({ orderId, payload }: {
+            orderId: number,
+            payload: { warehouse_id: number, delivery_date: string, line_quantities: Record<string, number> },
+        }) => salesApi.dispatchOrderPartial(orderId, payload),
+        onSuccess: () => {
+            markLocalMutation()
+            queryClient.invalidateQueries({ queryKey: SALES_KEYS.all })
+        },
+    })
+
     return {
         orders: orders ?? [],
         isLoading,
@@ -77,10 +100,13 @@ export function useSalesOrders({ filters }: { filters?: SaleOrderFilters } = {})
         updateOrder: updateMutation.mutateAsync,
         deleteOrder: deleteMutation.mutateAsync,
         registerNoteOnOrder: registerNoteMutation.mutateAsync,
+        dispatchOrder: dispatchMutation.mutateAsync,
+        dispatchOrderPartial: partialDispatchMutation.mutateAsync,
         isCreating: createMutation.isPending,
         isUpdating: updateMutation.isPending,
         isDeleting: deleteMutation.isPending,
         isRegisteringNote: registerNoteMutation.isPending,
+        isDispatching: dispatchMutation.isPending || partialDispatchMutation.isPending,
     }
 }
 

@@ -53,6 +53,24 @@ export const salesApi = {
     },
 
     /**
+     * Despacha (cierra logística) una orden de venta completa.
+     */
+    dispatchOrder: async (orderId: number, payload: { warehouse_id: number, delivery_date: string }): Promise<void> => {
+        await api.post(`/sales/orders/${orderId}/dispatch/`, payload)
+    },
+
+    /**
+     * Despacho parcial — entrega solo las cantidades especificadas en
+     * `line_quantities` (lineId → qty). El resto queda pendiente.
+     */
+    dispatchOrderPartial: async (
+        orderId: number,
+        payload: { warehouse_id: number, delivery_date: string, line_quantities: Record<string, number> },
+    ): Promise<void> => {
+        await api.post(`/sales/orders/${orderId}/partial_dispatch/`, payload)
+    },
+
+    /**
      * Register a note (credit/debit) directly on a sale order.
      * El backend acepta FormData porque el adjunto del documento es obligatorio.
      */

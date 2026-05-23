@@ -14,7 +14,8 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
-import api from "@/lib/api"
+import { useSalesOrders } from "../hooks/useSalesOrders"
+import { fetchProductStockLevel } from "@/features/inventory/hooks/useStockMoves"
 import { toast } from "sonner"
 import { Loader2, Package, AlertTriangle, CheckCircle2 } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -130,6 +131,7 @@ function DeliveryModalInner({ open, onOpenChange, orderId, onSuccess }: Delivery
 
 export function DeliveryForm({ orderId, order, warehouses, onSuccess, id = "delivery-form", onLoadingChange, onCancel }: DeliveryFormProps) {
     const { dateString } = useServerDate()
+    const { dispatchOrder, dispatchOrderPartial } = useSalesOrders()
 
     const [selectedWarehouse, setSelectedWarehouse] = useState<number | null>(
         warehouses.length > 0 ? warehouses[0].id : null
@@ -166,11 +168,9 @@ export function DeliveryForm({ orderId, order, warehouses, onSuccess, id = "deli
             const productIds = order.lines.map(line => line.product)
             const stockPromises = productIds.map(async (productId) => {
                 try {
-                    const response = await api.get(`/inventory/moves/?product_id=${productId}&warehouse_id=${selectedWarehouse}`)
-                    const moves = response.data.results || response.data
-                    const totalStock = moves.reduce((sum: number, move: { quantity?: string | number }) => sum + parseFloat(String(move.quantity || 0)), 0)
-                    return { productId, stock: totalStock }
-                } catch (error) {
+                    const stock = await fetchProductStockLevel(productId as number, selectedWarehouse)
+                    return { productId, stock }
+                } catch {
                     return { productId, stock: 0 }
                 }
             })
@@ -178,7 +178,7 @@ export function DeliveryForm({ orderId, order, warehouses, onSuccess, id = "deli
             const stockResults = await Promise.all(stockPromises)
             const stockMap: StockLevel = {}
             stockResults.forEach(({ productId, stock }) => {
-                stockMap[productId] = stock
+                stockMap[productId as number] = stock
             })
             setStockLevels(stockMap)
         } catch (error) {
@@ -262,15 +262,21 @@ export function DeliveryForm({ orderId, order, warehouses, onSuccess, id = "deli
                     }
                 })
 
-                await api.post(`/sales/orders/${orderId}/partial_dispatch/`, {
-                    warehouse_id: selectedWarehouse,
-                    delivery_date: deliveryDate,
-                    line_quantities: lineQuantities
+                await dispatchOrderPartial({
+                    orderId,
+                    payload: {
+                        warehouse_id: selectedWarehouse as number,
+                        delivery_date: deliveryDate,
+                        line_quantities: lineQuantities,
+                    },
                 })
             } else {
-                await api.post(`/sales/orders/${orderId}/dispatch/`, {
-                    warehouse_id: selectedWarehouse,
-                    delivery_date: deliveryDate
+                await dispatchOrder({
+                    orderId,
+                    payload: {
+                        warehouse_id: selectedWarehouse as number,
+                        delivery_date: deliveryDate,
+                    },
                 })
             }
 

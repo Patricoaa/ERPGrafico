@@ -106,6 +106,18 @@ export interface StockAdjustmentPayload {
  * Por eso invalida tanto STOCK_MOVES como PRODUCTS (qty_available/cost_price)
  * para que listas y detalles abiertos reflejen el ajuste inmediatamente.
  */
+/**
+ * Imperative one-shot fetch — total stock de un producto en una bodega
+ * sumando los movimientos. Útil para validar disponibilidad antes de
+ * despachar/transferir sin cachear en un hook reactivo (los movimientos
+ * cambian con cada operación).
+ */
+export async function fetchProductStockLevel(productId: number | string, warehouseId: number | string): Promise<number> {
+    const response = await api.get(`/inventory/moves/?product_id=${productId}&warehouse_id=${warehouseId}`)
+    const moves = (response.data?.results ?? response.data) as Array<{ quantity?: string | number }>
+    return moves.reduce((sum, move) => sum + parseFloat(String(move.quantity ?? 0)), 0)
+}
+
 export function useStockAdjustment() {
     const queryClient = useQueryClient()
     const { markLocalMutation } = useRealtime()
