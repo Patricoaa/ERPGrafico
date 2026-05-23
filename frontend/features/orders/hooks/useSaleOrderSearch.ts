@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react"
-import api from "@/lib/api"
 import { showApiError } from "@/lib/errors"
 import { SaleOrder } from "@/types/entities"
+import { ordersApi } from "../api/ordersApi"
 
 interface UseSaleOrderSearchReturn {
     orders: SaleOrder[]
@@ -20,8 +20,8 @@ export function useSaleOrderSearch(): UseSaleOrderSearchReturn {
 
     const fetchSingleOrder = useCallback(async (id: string | number) => {
         try {
-            const res = await api.get(`/sales/orders/${id}/`)
-            setSingleOrder(res.data)
+            const data = await ordersApi.getSaleOrder(id)
+            setSingleOrder(data as SaleOrder)
         } catch (e) {
             console.error("Error fetching single sale order", e)
         }
@@ -40,8 +40,10 @@ export function useSaleOrderSearch(): UseSaleOrderSearchReturn {
             if (search) params.append("search", search)
             params.append("limit", "50")
 
-            const res = await api.get(`/sales/orders/?${params.toString()}`)
-            const data = res.data.results || res.data
+            const data = await ordersApi.searchSaleOrders({
+                search: search || undefined,
+                limit: '50',
+            }) as SaleOrder[]
             
             globalCache[cacheKey] = data
             setOrders(data)

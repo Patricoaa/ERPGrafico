@@ -3,8 +3,8 @@ import { getErrorMessage } from "@/lib/errors"
 import { PhaseCard } from "./PhaseCard"
 import { FileText, Trash2, X, Edit, TrendingUp } from "lucide-react"
 import { formatEntity } from '@/features/orders/utils/status'
-import api from "@/lib/api"
 import { toast } from "sonner"
+import { useAnnulOrder, useDeleteOrder } from "../../hooks/useOrdersMutations"
 import { useRouter } from "next/navigation"
 import { saleOrderActions } from '@/features/sales/actions'
 import { purchaseOrderActions } from '@/features/purchasing/actions'
@@ -47,11 +47,13 @@ export function OriginPhase({
         : saleOrderActions
     const router = useRouter()
     const isSale = type === 'sale'
+    const orderType = type === 'obligation' ? 'purchase' : type
+    const annulOrder = useAnnulOrder(orderType)
+    const deleteOrder = useDeleteOrder(orderType)
 
     const handleAnnulOrder = async (id: number) => {
         try {
-            await api.post(type === 'purchase' ? `/purchasing/orders/${id}/annul/` : `/sales/orders/${id}/annul/`, { force: false })
-            toast.success("Orden anulada correctamente")
+            await annulOrder.mutateAsync(id)
             onActionSuccess?.()
         } catch (error: unknown) {
             const errorMessage = getErrorMessage(error) || "Error al anular orden"
@@ -88,7 +90,7 @@ export function OriginPhase({
                     icon: Trash2,
                     title: 'Eliminar Borrador',
                     color: 'text-destructive hover:bg-destructive/10',
-                    onClick: () => api.delete(type === 'purchase' ? `/purchasing/orders/${order?.id}/` : `/sales/orders/${order?.id}/`).then(() => { toast.success("Borrador eliminado"); onActionSuccess?.() })
+                    onClick: () => deleteOrder.mutateAsync(order?.id).then(() => { onActionSuccess?.() })
                 }] : []),
                 ...((order?.status !== 'CANCELLED' && order?.status !== 'DRAFT') ? [{
                     icon: X,

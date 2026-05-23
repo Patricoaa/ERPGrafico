@@ -1,6 +1,5 @@
-import { useQuery } from "@tanstack/react-query"
-import api from "@/lib/api"
 import { Skeleton } from "@/components/shared"
+import { useProductionMetrics } from "../hooks/useProductionQueries"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { AlertCircle, CheckCircle2, Clock, Activity, Printer } from "lucide-react"
 import Link from "next/link"
@@ -12,17 +11,8 @@ interface ProductionMetrics {
     throughput_last_30d: number
 }
 
-const fetchMetrics = async (): Promise<ProductionMetrics> => {
-    const { data } = await api.get('/production/orders/metrics/')
-    return data
-}
-
 export function ProductionMetricsCard() {
-    const { data, isLoading, error } = useQuery({
-        queryKey: ['production_metrics'],
-        queryFn: fetchMetrics,
-        refetchInterval: 60000, // Refresh every minute
-    })
+    const { data, isLoading, error } = useProductionMetrics()
 
     if (isLoading) {
         return (

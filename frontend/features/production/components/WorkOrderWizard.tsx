@@ -16,8 +16,7 @@ import { useConfirmAction } from '@/hooks/useConfirmAction'
 import { useVatRate } from '@/hooks/useVatRate'
 import { useAuth } from '@/contexts/AuthContext'
 import { useHubPanel } from '@/components/providers/HubPanelProvider'
-import api from '@/lib/api'
-import { useWorkOrderMutations } from '../hooks'
+import { useWorkOrderMutations, productionApi } from '../hooks'
 import { completeTask } from '@/features/workflow/api/workflowApi'
 
 import { WizardHeader } from './WizardHeader'
@@ -167,10 +166,10 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
     if (!localOrderId) return
     setLoading(true)
     try {
-      const res = await api.get(`/production/orders/${localOrderId}/`)
-      setOrder(res.data)
-      const filteredStages = getFilteredStages(res.data)
-      const currentIndex = filteredStages.findIndex((s) => s.id === res.data.current_stage)
+      const orderData = await productionApi.getWorkOrder(localOrderId)
+      setOrder(orderData as any)
+      const filteredStages = getFilteredStages(orderData as any)
+      const currentIndex = filteredStages.findIndex((s) => s.id === (orderData as any).current_stage)
       // +1 offset because STEP_BASIC is at index 0
       let resolvedIndex = currentIndex !== -1 ? currentIndex + 1 : 1
       const targetStage = mode.kind === 'manage' ? mode.targetStage : undefined
@@ -747,10 +746,7 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
                   onClick={async () => {
                     setIsSavingTemplate(true)
                     try {
-                      await api.post('/production/templates/save_from_order/', {
-                        order_id: localOrderId,
-                        name: templateName.trim(),
-                      })
+                      await productionApi.saveTemplate(localOrderId!, templateName.trim())
                       toast.success('Plantilla guardada correctamente.')
                       setIsSaveTemplateOpen(false)
                     } catch {

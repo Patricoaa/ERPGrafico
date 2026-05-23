@@ -11,7 +11,7 @@ import {
 import { Skeleton } from '@/components/shared'
 import { ProductSelector } from '@/components/selectors/ProductSelector'
 import { UoMSelector } from '@/components/selectors/UoMSelector'
-import { useProductionVariants } from '../../hooks'
+import { useProductionVariants, productionApi } from '../../hooks'
 import { MaterialAssignmentTabs } from '../MaterialAssignmentTabs'
 import { useVatRate } from '@/hooks/useVatRate'
 import { useWorkOrderMutations } from '../../hooks'
@@ -81,11 +81,9 @@ export function MaterialAssignmentStep({
     setQty(m.quantity_planned.toString())
     setUomId(m.uom.toString())
     // Fetch product to populate selector
-    import('@/lib/api').then(({ default: api }) => {
-      api.get(`/inventory/products/${m.component}/`).then((res) => {
-        setProductObj(res.data)
-        setIsAddOpen(true)
-      })
+    productionApi.getProduct(m.component).then((data) => {
+      setProductObj(data as any)
+      setIsAddOpen(true)
     })
   }
 

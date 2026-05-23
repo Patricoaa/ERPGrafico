@@ -5,8 +5,8 @@ import { PhaseCard } from "./PhaseCard"
 import { Package, Ban } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { formatEntity } from '@/features/orders/utils/status'
-import api from "@/lib/api"
 import { toast } from "sonner"
+import { useAnnulLogistics } from "../../hooks/useOrdersMutations"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { saleOrderActions } from '@/features/sales/actions'
 import { purchaseOrderActions } from '@/features/purchasing/actions'
@@ -52,6 +52,8 @@ export function LogisticsPhase({
         ? purchaseOrderActions
         : saleOrderActions
 
+    const annulLogistics = useAnnulLogistics()
+
     const [confirmModal, setConfirmModal] = useState<{
         open: boolean,
         title: string,
@@ -77,14 +79,7 @@ export function LogisticsPhase({
             confirmText: `Anular ${label}`,
             onConfirm: async () => {
                 try {
-                    let endpoint = ''
-                    if (docType === 'sale_delivery') endpoint = `/sales/deliveries/${id}/annul/`
-                    else if (docType === 'purchase_receipt') endpoint = `/purchasing/receipts/${id}/annul/`
-                    else if (docType === 'sale_return') endpoint = `/sales/returns/${id}/annul/`
-                    else if (docType === 'purchase_return') endpoint = `/purchasing/returns/${id}/annul/`
-
-                    await api.post(endpoint)
-                    toast.success(`${label} anulado correctamente`)
+                    await annulLogistics.mutateAsync({ id, docType })
                     setConfirmModal(prev => ({ ...prev, open: false }))
                     onActionSuccess?.()
                 } catch (error: unknown) {

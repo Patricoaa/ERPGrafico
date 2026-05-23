@@ -15,7 +15,6 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Skeleton, CardSkeleton, StatusBadge, EmptyState } from '@/components/shared'
 import { Progress } from '@/components/ui/progress'
 import { SheetCloseButton } from '@/components/shared/SheetCloseButton'
-import api from '@/lib/api'
 import { toast } from 'sonner'
 import { ActionCategory } from './ActionCategory'
 import { filterAvailableActions } from '@/lib/action-utils'
@@ -23,6 +22,7 @@ import { formatPlainDate } from '@/lib/utils'
 import { formatCurrency } from '@/lib/money'
 import { purchaseOrderActions } from '@/features/purchasing/actions'
 import { saleOrderActions } from '@/features/sales/actions'
+import { ordersApi } from '../hooks/useOrdersMutations'
 import type { UserPermissions } from '@/types/actions'
 import { Order } from '../types'
 
@@ -59,11 +59,10 @@ export function OrderActionPanel({
     const fetchOrderDetails = async () => {
         setLoading(true)
         try {
-            const endpoint = orderType === 'purchase'
-                ? `/purchasing/orders/${orderId}/`
-                : `/sales/orders/${orderId}/`
-            const res = await api.get(endpoint)
-            setOrder(res.data)
+            const data = orderType === 'purchase'
+                ? await ordersApi.getPurchaseOrder(orderId)
+                : await ordersApi.getSaleOrder(orderId)
+            setOrder(data as Order)
         } catch (error) {
             console.error('Error fetching order:', error)
             toast.error('Error al cargar los detalles de la orden')
@@ -74,14 +73,13 @@ export function OrderActionPanel({
 
     const fetchUserPermissions = async () => {
         try {
-            const res = await api.get('/auth/user/')
+            const data = await ordersApi.getCurrentUser()
             setUserPermissions({
-                permissions: res.data.permissions || [],
-                isSuperuser: res.data.is_superuser || false
+                permissions: (data as { permissions?: string[] }).permissions || [],
+                isSuperuser: (data as { is_superuser?: boolean }).is_superuser || false
             })
         } catch (error) {
             console.error('Error fetching user permissions:', error)
-            // Fallback: assume no permissions
             setUserPermissions({ permissions: [], isSuperuser: false })
         }
     }

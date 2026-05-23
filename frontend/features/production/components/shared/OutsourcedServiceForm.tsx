@@ -22,7 +22,7 @@ import { UoMSelector } from '@/components/selectors/UoMSelector'
 import { AdvancedContactSelector } from '@/components/selectors/AdvancedContactSelector'
 import { formatCurrency } from "@/lib/money"
 import { useVatRate } from '@/hooks/useVatRate'
-import { useQuery } from '@tanstack/react-query'
+import { useCoreAllowedDteTypes } from '../../hooks/useProductionQueries'
 import type { ProductMinimal, UoM } from '../../types'
 
 // ── Canonical shape for one outsourced service ──────────────────────────────
@@ -81,15 +81,7 @@ export function OutsourcedServiceForm({
 }: OutsourcedServiceFormProps) {
   const { multiplier: vatMultiplier } = useVatRate()
 
-  const { data: allowedDteTypes = ["FACTURA", "BOLETA"] } = useQuery({
-    queryKey: ['settings', 'general'],
-    queryFn: async () => {
-      const { default: api } = await import('@/lib/api')
-      const res = await api.get('/core/settings/')
-      return res.data.allowed_dte_types_receive || ["FACTURA", "BOLETA"]
-    },
-    staleTime: 1000 * 60 * 60, // 1 hour
-  })
+  const { data: allowedDteTypes = ["FACTURA", "BOLETA"] } = useCoreAllowedDteTypes()
 
   const set = (patch: Partial<OutsourcedServiceValues>) =>
     onChange({ ...value, ...patch })

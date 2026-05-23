@@ -6,8 +6,8 @@ import { PhaseCard } from "./PhaseCard"
 import { Banknote, Hash, Trash2, AlertCircle, Gavel } from "lucide-react"
 import { formatEntity } from '@/features/orders/utils/status'
 import { cn } from "@/lib/utils"
-import api from "@/lib/api"
 import { toast } from "sonner"
+import { useDeletePayment, useAnnulPayment } from "../../hooks/useOrdersMutations"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { TransactionNumberForm } from "@/features/finance/components/TransactionNumberForm"
 import { saleOrderActions } from '@/features/sales/actions'
@@ -45,6 +45,9 @@ export function TreasuryPhase({
     const registry = (activeDoc?.document_type === 'PURCHASE_ORDER' || activeDoc?.document_type === 'SERVICE_OBLIGATION')
         ? purchaseOrderActions
         : saleOrderActions
+
+    const deletePayment = useDeletePayment()
+    const annulPayment = useAnnulPayment()
 
     const [confirmModal, setConfirmModal] = useState<{
         open: boolean,
@@ -88,8 +91,7 @@ export function TreasuryPhase({
         }
 
         try {
-            await api.delete(`/treasury/payments/${id}/`)
-            toast.success("Pago eliminado correctamente")
+            await deletePayment.mutateAsync(id)
             setConfirmModal(prev => ({ ...prev, open: false }))
             onActionSuccess?.()
         } catch (error: unknown) {
@@ -108,8 +110,7 @@ export function TreasuryPhase({
                         confirmText: "Anular Pago",
                         onConfirm: async () => {
                             try {
-                                await api.post(`/treasury/payments/${id}/annul/`)
-                                toast.success("Pago anulado correctamente")
+                                await annulPayment.mutateAsync(id)
                                 setConfirmModal(prev => ({ ...prev, open: false }))
                                 onActionSuccess?.()
                             } catch (err: unknown) {
