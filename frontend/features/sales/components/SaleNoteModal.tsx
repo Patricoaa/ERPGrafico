@@ -6,7 +6,8 @@ import { BaseModal } from "@/components/shared/BaseModal"
 import { Button } from "@/components/ui/button"
 
 import { FileBadge, Loader2, CheckCircle2, AlertCircle, ShieldAlert } from "lucide-react"
-import api from "@/lib/api"
+import { useSaleOrder, useSalesOrders } from "../hooks/useSalesOrders"
+import { useInvoice, useInvoices } from "@/features/billing"
 import { toast } from "sonner"
 import { formatCurrency } from "@/lib/money"
 import { PricingUtils } from '@/features/inventory/utils/pricing'
@@ -90,43 +91,34 @@ export function SaleNoteForm({
     const [lines, setLines] = useState<SaleNoteLine[]>([])
     const [attachment, setAttachment] = useState<File | null>(null)
     const [submitting, setSubmitting] = useState(false)
-    const [loadingOrder, setLoadingOrder] = useState(false)
     const [isPeriodValid, setIsPeriodValid] = useState(true)
+
+    // Reads reactivos: solo uno de orderId/invoiceId está seteado a la vez.
+    // El hook que recibe null queda disabled → no fetch.
+    const { data: order, isLoading: loadingOrderFetch } = useSaleOrder(orderId ?? null)
+    const { data: invoice, isLoading: loadingInvoiceFetch } = useInvoice(invoiceId ?? null)
+    const loadingOrder = loadingOrderFetch || loadingInvoiceFetch
+
+    const { registerNoteOnOrder } = useSalesOrders()
+    const { registerNoteOnInvoice } = useInvoices()
 
     useEffect(() => {
         setDocumentNumber("")
         setDocumentDate(new Date())
         setAttachment(null)
-        fetchDetails()
-    }, [orderId, invoiceId])
-
-    const fetchDetails = async () => {
-        setLoadingOrder(true)
-        try {
-            let fetchedLines: SaleOrderLine[] = []
-
-            if (orderId) {
-                const response = await api.get(`/sales/orders/${orderId}/`)
-                fetchedLines = response.data.lines || []
-            } else if (invoiceId) {
-                const response = await api.get(`/billing/invoices/${invoiceId}/`)
-                fetchedLines = response.data.lines || []
-            }
-
-            // Initializing lines with 0 quantity but original unit price
-            const initialLines: SaleNoteLine[] = fetchedLines.map((line: SaleOrderLine) => ({
-                ...line,
-                note_quantity: 0,
-                note_unit_price: Number(line.unit_price)
-            }))
-            setLines(initialLines)
-        } catch (error) {
-            console.error("Error fetching details:", error)
-            toast.error("No se pudieron cargar los detalles del documento")
-        } finally {
-            setLoadingOrder(false)
-        }
-    }
+        // Cuando llega order o invoice de los hooks, recomponemos las líneas
+        // con quantity=0 y precio unitario original.
+        const fetchedLines: SaleOrderLine[] =
+            (order as { lines?: SaleOrderLine[] } | null | undefined)?.lines
+            ?? (invoice as { lines?: SaleOrderLine[] } | null | undefined)?.lines
+            ?? []
+        const initialLines: SaleNoteLine[] = fetchedLines.map((line: SaleOrderLine) => ({
+            ...line,
+            note_quantity: 0,
+            note_unit_price: Number(line.unit_price)
+        }))
+        setLines(initialLines)
+    }, [order, invoice])
 
     const handleLineChange = (index: number, field: 'note_quantity' | 'note_unit_price', value: string) => {
         const newLines = [...lines]
@@ -200,16 +192,13 @@ export function SaleNoteForm({
                 formData.append('document_attachment', attachment)
             }
 
-            let endpoint = ""
             if (orderId) {
-                endpoint = `/sales/orders/${orderId}/register_note/`
+                await registerNoteOnOrder({ orderId, payload: formData })
             } else if (invoiceId) {
-                endpoint = `/billing/invoices/${invoiceId}/register_note/`
+                await registerNoteOnInvoice({ invoiceId, payload: formData })
             } else {
                 throw new Error("No Order ID or Invoice ID provided")
             }
-
-            await api.post(endpoint, formData)
 
             toast.success("Nota registrada correctamente")
             onSuccess?.()
