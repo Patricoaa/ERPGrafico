@@ -14,7 +14,7 @@ import {
 import { MovementWizard, type MovementData } from "@/features/treasury/components/MovementWizard"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { toast } from "sonner"
-import api from "@/lib/api"
+import { posApi } from "../api/posApi"
 import { POSReport, type POSReportData } from "@/features/pos/components/POSReport"
 import { SessionCloseModal } from "@/features/pos/components/SessionCloseModal"
 import { Numpad } from '@/components/shared'
@@ -86,8 +86,8 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                 fetchAvailableSessions()
                 fetchTerminals()
                 // Fetch accounting settings for justification logic
-                api.get('/accounting/settings/current/')
-                    .then(res => requestAnimationFrame(() => setAccountingSettings(res.data)))
+                posApi.getAccountingSettings()
+                    .then(data => requestAnimationFrame(() => setAccountingSettings(data)))
                     .catch(err => console.error("Failed to load accounting settings", err))
                 // Reset validation states
                 setOpeningSelectedAccount(null)
@@ -104,13 +104,12 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
             const actual = parseFloat(openingBalance) || 0
             const diff = actual - expected
 
-            api.get(`/treasury/accounts/${openingJustifyTargetId}/`)
-                .then(res => {
+            posApi.getTreasuryAccount(Number(openingJustifyTargetId))
+                .then(data => {
                     requestAnimationFrame(() => {
-                        setOpeningSelectedAccount(res.data)
-                        // Validate only for surplus (diff > 0 = money coming IN)
-                        if (diff > 0 && res.data.current_balance !== undefined) {
-                            const available = res.data.current_balance as number
+                        setOpeningSelectedAccount(data)
+                        if (diff > 0 && (data as any).current_balance !== undefined) {
+                            const available = (data as any).current_balance as number
                             const needed = Math.abs(diff)
                             setOpeningInsufficientFunds(available < needed)
                         } else {
@@ -225,10 +224,10 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
 
     const fetchSharedSession = async (id: number) => {
         try {
-            const response = await api.get(`/treasury/pos-sessions/${id}/`)
-            if (response.data && response.data.status === 'OPEN') {
-                setCurrentSession(response.data)
-                onSessionChange?.(response.data)
+            const sessionData = await posApi.getSession(id)
+            if (sessionData && (sessionData as any).status === 'OPEN') {
+                setCurrentSession(sessionData)
+                onSessionChange?.(sessionData)
                 setIsSharedSession(true)
             } else {
                 // Invalid or closed
@@ -246,10 +245,10 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
 
     const fetchCurrentSession = async () => {
         try {
-            const response = await api.get('/treasury/pos-sessions/current/')
-            if (response.data && response.data.id) {
-                setCurrentSession(response.data)
-                onSessionChange?.(response.data)
+            const sessionData = await posApi.getCurrentSession()
+            if (sessionData && (sessionData as any).id) {
+                setCurrentSession(sessionData)
+                onSessionChange?.(sessionData)
                 setIsSharedSession(false)
             } else {
                 setCurrentSession(null)
@@ -264,8 +263,8 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
 
     const fetchTerminals = async () => {
         try {
-            const response = await api.get('/treasury/pos-terminals/?active_only=true')
-            const results = response.data.results || response.data
+            const terminalsData = await posApi.getTerminals()
+            const results = (terminalsData as any).results || terminalsData
             setTerminals(results)
         } catch (error) {
             console.error("Error fetching terminals:", error)
@@ -275,8 +274,8 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
 
     const fetchAvailableSessions = async () => {
         try {
-            const response = await api.get('/treasury/pos-sessions/?status=OPEN')
-            const results = response.data.results || response.data
+            const sessionsData = await posApi.getSessions({ status: 'OPEN' })
+            const results = (sessionsData as any).results || sessionsData
             setAvailableSessions(results)
         } catch (error) {
             console.error("Error fetching available sessions:", error)
@@ -317,7 +316,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
 
         setSubmitting(true)
         try {
-            const response = await api.post('/treasury/pos-sessions/open_session/', {
+            const sessionData = await posApi.openSession({
                 terminal_id: parseInt(selectedTerminalId),
                 opening_balance: parseFloat(openingBalance),
                 fund_source_id: fundSourceId ? parseInt(fundSourceId) : null,
@@ -325,8 +324,8 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                 justify_target_id: openingJustifyTargetId ? parseInt(openingJustifyTargetId) : null
             })
 
-            setCurrentSession(response.data)
-            onSessionChange?.(response.data)
+            setCurrentSession(sessionData)
+            onSessionChange?.(sessionData)
             setIsSharedSession(false)
             setOpenDialogOpen(false)
             setReportDialogOpen(false)
@@ -375,8 +374,8 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
         if (!currentSession) return
 
         try {
-            const summaryResponse = await api.get(`/treasury/pos-sessions/${currentSession.id}/summary/`)
-            setReportData(summaryResponse.data)
+            const summaryData = await posApi.getSessionSummary(currentSession.id)
+            setReportData(summaryData)
             setReportType("Z")
             setReportDialogOpen(true)
 
@@ -395,8 +394,8 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
 
         setLoading(true)
         try {
-            const response = await api.get(`/treasury/pos-sessions/${currentSession.id}/summary/`)
-            setReportData(response.data)
+            const reportData = await posApi.getSessionSummary(currentSession.id)
+            setReportData(reportData)
             setReportType("X")
             setReportDialogOpen(true)
         } catch (error) {
@@ -412,7 +411,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
 
         setSubmitting(true)
         try {
-            const response = await api.post(`/treasury/pos-sessions/${currentSession.id}/register_manual_movement/`, {
+            const moveResult = await posApi.registerManualMovement(currentSession.id, {
                 type: data.moveType,
                 amount: data.amount,
                 notes: data.notes,
@@ -420,10 +419,10 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                 is_inflow: data.impact === 'TRANSFER' ? data.isInflowForce : (data.impact === 'IN')
             })
 
-            setCurrentSession(response.data.session)
-            onSessionChange?.(response.data.session)
+            setCurrentSession((moveResult as any).session)
+            onSessionChange?.((moveResult as any).session)
             setMoveDialogOpen(false)
-            toast.success(response.data.message)
+            toast.success((moveResult as any).message)
         } catch (error: unknown) {
             showApiError(error, "Error al registrar movimiento")
         } finally {

@@ -4,3 +4,4 @@ export * from './useDraftSync';
 export * from './useProducts';
 export * from './useStockValidation';
 export * from './useDeviceContext';
+export * from './usePOSSessions';

@@ -11,7 +11,7 @@ import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/comp
 
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
-import api from "@/lib/api"
+import { posApi } from "../api/posApi"
 import {
     Archive,
     Trash2,
@@ -102,8 +102,8 @@ export function DraftCartsList({
         }
         setLoading(true)
         try {
-            const response = await api.get(`/sales/pos-drafts/?pos_session_id=${posSessionId}`)
-            const data = response.data.results || response.data
+            const draftsData = await posApi.getDrafts({ pos_session_id: posSessionId })
+            const data = (draftsData as any).results || draftsData
             const newDrafts = Array.isArray(data) ? data : []
             setDrafts(newDrafts)
             setPrevDraftIds(new Set(newDrafts.map((d: DraftCart) => d.id)))
@@ -175,7 +175,7 @@ export function DraftCartsList({
 
         setDeletingId(draftId)
         try {
-            await api.delete(`/sales/pos-drafts/${draftId}/?pos_session_id=${posSessionId}`)
+            await posApi.deleteDraft(draftId)
             toast.success(`Borrador "${draftName}" eliminado`)
             await fetchDrafts()
             onDraftDeleted?.()

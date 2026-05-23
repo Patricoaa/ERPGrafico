@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import api from '@/lib/api'
+import { posApi } from '../api/posApi'
 import { toast } from 'sonner'
 import { useAuth } from '@/contexts/AuthContext'
 
@@ -197,8 +197,7 @@ export function useDraftSync({
     const initialFetch = useCallback(async () => {
         if (!posSessionId) return
         try {
-            const res = await api.get(`/sales/pos-drafts/sync/?pos_session_id=${posSessionId}`)
-            const data: SyncResponse = res.data
+            const data: SyncResponse = await posApi.syncDrafts({ pos_session_id: posSessionId }) as SyncResponse
             setSyncDrafts(data.drafts)
             prevDraftsRef.current = data.drafts
             
@@ -262,7 +261,7 @@ export function useDraftSync({
     const acquireLock = useCallback(async (draftId: number) => {
         if (!posSessionId) return { acquired: false, error: 'Sin sesión' }
         try {
-            await api.post(`/sales/pos-drafts/${draftId}/lock/`, {
+            await posApi.lockDraft(draftId, {
                 pos_session_id: posSessionId,
                 session_key: browserSessionKey,
             })
@@ -281,7 +280,7 @@ export function useDraftSync({
         const targetId = draftId || activeLockDraftId
         if (!targetId || !posSessionId) return
         try {
-            await api.post(`/sales/pos-drafts/${targetId}/unlock/`, {
+            await posApi.unlockDraft(targetId, {
                 pos_session_id: posSessionId,
                 session_key: browserSessionKey,
             })
