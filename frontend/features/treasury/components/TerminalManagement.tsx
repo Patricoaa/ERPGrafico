@@ -1,8 +1,10 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { useTerminals, type Terminal, type PaymentMethod } from "@/features/treasury"
-import api from "@/lib/api"
+import { useTerminals, type Terminal } from "@/features/treasury"
+import { usePaymentMethods, useTerminalDevices } from "@/features/treasury"
+import type { PaymentMethod } from "@/features/treasury/types"
+import { treasuryApi } from "../api/treasuryApi"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { BaseModal } from "@/components/shared/BaseModal"
@@ -274,23 +276,23 @@ function TerminalModal({ open, onOpenChange, terminal, onSuccess }: {
     terminal: Terminal | null
     onSuccess: () => void
 }) {
-    const [loading, setLoading] = useState(false)
+    const [isSubmitting, setIsSubmitting] = useState(false)
     const [name, setName] = useState("")
     const [code, setCode] = useState("")
     const [location, setLocation] = useState("")
     const [serialNumber, setSerialNumber] = useState("")
     const [ipAddress, setIpAddress] = useState("")
     const [deviceId, setDeviceId] = useState<string>("")
-    const [allDevices, setAllDevices] = useState<any[]>([])
-
-    // Payment Methods State
-    const [allMethods, setAllMethods] = useState<PaymentMethod[]>([])
     const [selectedMethodIds, setSelectedMethodIds] = useState<number[]>([])
+
+    const { methods: allPaymentMethods } = usePaymentMethods()
+    const { devices: allDevices } = useTerminalDevices()
+
+    const allMethods = allPaymentMethods.filter(m => m.is_active && m.allow_for_sales === true)
 
     useEffect(() => {
         if (open) {
             requestAnimationFrame(() => {
-                fetchMethods()
                 if (terminal) {
                     setName(terminal.name)
                     setCode(terminal.code)
@@ -310,32 +312,9 @@ function TerminalModal({ open, onOpenChange, terminal, onSuccess }: {
                     setDeviceId("")
                     setSelectedMethodIds([])
                 }
-                fetchDevices()
             })
         }
     }, [open, terminal])
-
-    const fetchMethods = async () => {
-        try {
-            const res = await api.get('/treasury/payment-methods/')
-            const methods = (res.data.results || res.data).filter((m: any) => m.is_active)
-
-            // Allow if it's for sales
-            const collectionMethods = methods.filter((m: any) => m.allow_for_sales === true)
-            requestAnimationFrame(() => setAllMethods(collectionMethods))
-        } catch (error) {
-            console.error("Error fetching methods", error)
-        }
-    }
-
-    const fetchDevices = async () => {
-        try {
-            const res = await api.get('/treasury/terminal-devices/')
-            requestAnimationFrame(() => setAllDevices(res.data.results || res.data))
-        } catch (error) {
-            console.error("Error fetching devices", error)
-        }
-    }
 
     const toggleMethod = (methodId: number) => {
         setSelectedMethodIds(prev => {
@@ -362,9 +341,8 @@ function TerminalModal({ open, onOpenChange, terminal, onSuccess }: {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-        setLoading(true)
+        setIsSubmitting(true)
 
-        // Derive default treasury account from selected CASH method
         const selectedCashMethod = allMethods.find(m =>
             selectedMethodIds.includes(m.id) && m.method_type === 'CASH'
         )
@@ -383,20 +361,17 @@ function TerminalModal({ open, onOpenChange, terminal, onSuccess }: {
 
         try {
             if (terminal) {
-                await api.patch(`/treasury/pos-terminals/${terminal.id}/`, payload)
-                toast.success("Caja POS actualizada")
+                await treasuryApi.updateTerminal(terminal.id, payload as any)
             } else {
-                await api.post('/treasury/pos-terminals/', payload)
-                toast.success("Caja POS creada")
+                await treasuryApi.createTerminal(payload as any)
             }
             onSuccess()
             onOpenChange(false)
         } catch (error: unknown) {
             const err = error as any
             console.error("Error saving terminal:", err.response?.data || err)
-            toast.error("Error al guardar la caja POS")
         } finally {
-            setLoading(false)
+            setIsSubmitting(false)
         }
     }
 
@@ -454,7 +429,7 @@ function TerminalModal({ open, onOpenChange, terminal, onSuccess }: {
                     actions={
                         <>
                             <CancelButton onClick={() => onOpenChange(false)} />
-                            <ActionSlideButton type="submit" form="terminal-form" loading={loading} disabled={loading}>
+                            <ActionSlideButton type="submit" form="terminal-form" loading={isSubmitting} disabled={isSubmitting}>
                                 {terminal ? "Guardar Cambios" : "Crear Caja POS"}
                             </ActionSlideButton>
                         </>

@@ -1,49 +1,48 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import api from "@/lib/api"
 import { toast } from "sonner"
 import { showApiError } from "@/lib/errors"
-import type { FilterState } from "@/components/shared"
-import type { PaymentTerminalProvider, PaymentTerminalDevice } from "../types"
+import { treasuryApi } from "../api/treasuryApi"
+import { TERMINAL_PROVIDERS_KEYS, TERMINAL_DEVICES_KEYS } from "./queryKeys"
+import type { PaymentTerminalProvider, PaymentTerminalProviderCreatePayload, PaymentTerminalProviderUpdatePayload } from "../types"
+import type { PaymentTerminalDevice, PaymentTerminalDeviceCreatePayload, PaymentTerminalDeviceUpdatePayload } from "../types"
 export type { PaymentTerminalProvider, PaymentTerminalDevice }
 
-/**
- * Hook for managing Payment Terminal Providers
- */
 export function useTerminalProviders() {
     const queryClient = useQueryClient()
 
     const { data: providers, isLoading, error, refetch } = useQuery<PaymentTerminalProvider[]>({
-        queryKey: ['terminal-providers'],
-        queryFn: async () => {
-            const res = await api.get('/treasury/terminal-providers/')
-            return res.data.results || res.data
-        },
-        staleTime: 5 * 60 * 1000, // 5 min
+        queryKey: TERMINAL_PROVIDERS_KEYS.lists(),
+        queryFn: treasuryApi.getTerminalProviders,
+        staleTime: 5 * 60 * 1000,
     })
 
+    const invalidate = () => {
+        queryClient.invalidateQueries({ queryKey: TERMINAL_PROVIDERS_KEYS.all })
+    }
+
     const createProvider = useMutation({
-        mutationFn: (data: Partial<PaymentTerminalProvider>) => api.post('/treasury/terminal-providers/', data),
+        mutationFn: (data: PaymentTerminalProviderCreatePayload) => treasuryApi.createTerminalProvider(data),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['terminal-providers'] })
+            invalidate()
             toast.success("Proveedor creado exitosamente")
         },
         onError: (err) => showApiError(err, "Error al crear proveedor")
     })
 
     const updateProvider = useMutation({
-        mutationFn: ({ id, data }: { id: number, data: Partial<PaymentTerminalProvider> }) => 
-            api.patch(`/treasury/terminal-providers/${id}/`, data),
+        mutationFn: ({ id, data }: { id: number; data: PaymentTerminalProviderUpdatePayload }) =>
+            treasuryApi.updateTerminalProvider(id, data),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['terminal-providers'] })
+            invalidate()
             toast.success("Proveedor actualizado")
         },
         onError: (err) => showApiError(err, "Error al actualizar proveedor")
     })
 
     const deleteProvider = useMutation({
-        mutationFn: (id: number) => api.delete(`/treasury/terminal-providers/${id}/`),
+        mutationFn: (id: number) => treasuryApi.deleteTerminalProvider(id),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['terminal-providers'] })
+            invalidate()
             toast.success("Proveedor eliminado")
         },
         onError: (err) => showApiError(err, "No se pudo eliminar el proveedor")
@@ -54,52 +53,47 @@ export function useTerminalProviders() {
         isLoading,
         error,
         refetch,
-        createProvider,
-        updateProvider,
-        deleteProvider
+        createProvider: createProvider.mutateAsync,
+        updateProvider: updateProvider.mutateAsync,
+        deleteProvider: deleteProvider.mutateAsync,
     }
 }
 
-/**
- * Hook for managing Payment Terminal Devices (Hardware)
- */
-export function useTerminalDevices(filters?: FilterState) {
+export function useTerminalDevices(filters?: Record<string, string>) {
     const queryClient = useQueryClient()
 
     const { data: devices, isLoading, error, refetch } = useQuery<PaymentTerminalDevice[]>({
-        queryKey: ['terminal-devices', filters],
-        queryFn: async () => {
-            const params = new URLSearchParams()
-            if (filters?.status) params.append('status', filters.status)
-            if (filters?.search) params.append('search', filters.search)
-            const res = await api.get('/treasury/terminal-devices/', { params })
-            return res.data.results || res.data
-        }
+        queryKey: [...TERMINAL_DEVICES_KEYS.lists(), filters],
+        queryFn: () => treasuryApi.getTerminalDevices(filters),
     })
 
+    const invalidate = () => {
+        queryClient.invalidateQueries({ queryKey: TERMINAL_DEVICES_KEYS.all })
+    }
+
     const createDevice = useMutation({
-        mutationFn: (data: Partial<PaymentTerminalDevice>) => api.post('/treasury/terminal-devices/', data),
+        mutationFn: (data: PaymentTerminalDeviceCreatePayload) => treasuryApi.createTerminalDevice(data),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['terminal-devices'] })
+            invalidate()
             toast.success("Dispositivo registrado")
         },
         onError: (err) => showApiError(err, "Error al registrar dispositivo")
     })
 
     const updateDevice = useMutation({
-        mutationFn: ({ id, data }: { id: number, data: Partial<PaymentTerminalDevice> }) => 
-            api.patch(`/treasury/terminal-devices/${id}/`, data),
+        mutationFn: ({ id, data }: { id: number; data: PaymentTerminalDeviceUpdatePayload }) =>
+            treasuryApi.updateTerminalDevice(id, data),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['terminal-devices'] })
+            invalidate()
             toast.success("Dispositivo actualizado")
         },
         onError: (err) => showApiError(err, "Error al actualizar dispositivo")
     })
 
     const deleteDevice = useMutation({
-        mutationFn: (id: number) => api.delete(`/treasury/terminal-devices/${id}/`),
+        mutationFn: (id: number) => treasuryApi.deleteTerminalDevice(id),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['terminal-devices'] })
+            invalidate()
             toast.success("Dispositivo eliminado")
         },
         onError: (err) => showApiError(err, "No se pudo eliminar el dispositivo")
@@ -110,8 +104,8 @@ export function useTerminalDevices(filters?: FilterState) {
         isLoading,
         error,
         refetch,
-        createDevice,
-        updateDevice,
-        deleteDevice
+        createDevice: createDevice.mutateAsync,
+        updateDevice: updateDevice.mutateAsync,
+        deleteDevice: deleteDevice.mutateAsync,
     }
 }

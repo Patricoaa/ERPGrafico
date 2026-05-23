@@ -1,32 +1,22 @@
 "use client"
 
 import React, { useState } from "react"
-import { useQuery } from "@tanstack/react-query"
 import { notFound, useRouter } from "next/navigation"
-import api from "@/lib/api"
 import { EntityDetailPage, FormFooter, SubmitButton, CancelButton, SkeletonShell } from "@/components/shared"
 import { PurchaseOrderForm } from "./PurchaseOrderForm"
+import { usePurchasingOrder } from "../hooks/usePurchasing"
 
 interface PurchaseOrderDetailClientProps {
     orderId: string
 }
 
 export function PurchaseOrderDetailClient({ orderId }: PurchaseOrderDetailClientProps) {
-    const { data: order, isLoading: loading, error: queryError } = useQuery({
-        queryKey: ['purchaseOrder', orderId],
-        queryFn: async () => {
-            const res = await api.get(`/purchasing/orders/${orderId}/`)
-            return res.data
-        }
-    })
- 
+    const { order, isLoading: loading } = usePurchasingOrder(Number(orderId))
+
     const router = useRouter()
     const [isSaving, setIsSaving] = useState(false)
 
-    const error = queryError ? (queryError as any).response?.status || 500 : null
-
-    if (error === 404) return notFound()
-    if (error) return <div className="p-8 text-destructive">Error al cargar la orden de compra</div>
+    if (!loading && !order) return notFound()
     
     if (loading || !order) {
          return (
@@ -60,8 +50,7 @@ export function PurchaseOrderDetailClient({ orderId }: PurchaseOrderDetailClient
         >
             <div className="max-w-5xl mx-auto">
                 <PurchaseOrderForm 
-                    initialData={order} 
-                    onLoadingChange={setIsSaving} 
+                    {...{ initialData: order, onLoadingChange: setIsSaving } as any}
                     onSuccess={() => {
                         router.push('/purchasing/orders')
                         router.refresh()

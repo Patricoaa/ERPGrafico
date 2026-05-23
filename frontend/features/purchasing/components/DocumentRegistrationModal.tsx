@@ -9,7 +9,7 @@ import { FileText, Loader2, Upload, ShieldAlert, Plus } from "lucide-react"
 import { FormFooter, LabeledInput, LabeledSelect, FormSection, CancelButton } from "@/components/shared"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
-import api from "@/lib/api"
+import { purchasingApi } from "../api/purchasingApi"
 import { useServerDate } from "@/hooks/useServerDate"
 import { DocumentAttachmentDropzone } from "@/components/shared/DocumentAttachmentDropzone"
 import { PeriodValidationDateInput } from "@/components/shared/PeriodValidationDateInput"
@@ -88,9 +88,7 @@ export function DocumentRegistrationModal({
                 formData.append('document_attachment', attachment)
             }
 
-            await api.post('/billing/invoices/create_from_order/', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            })
+            await purchasingApi.createInvoiceFromOrder(formData)
 
             toast.success(isPending ? "Documento registrado como pendiente" : "Documento registrado correctamente")
             onOpenChange(false)

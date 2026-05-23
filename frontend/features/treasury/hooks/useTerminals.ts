@@ -1,11 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { treasuryApi } from '../api/treasuryApi'
+import { TERMINALS_KEYS } from './queryKeys'
+import { useRealtime } from '@/features/realtime'
 import type { Terminal, TerminalUpdatePayload } from '../types'
 
-import { TERMINALS_QUERY_KEY } from './queryKeys'
-
-export { TERMINALS_QUERY_KEY }
+export { TERMINALS_KEYS }
 
 interface UseTerminalsReturn {
     terminals: Terminal[]
@@ -15,17 +15,20 @@ interface UseTerminalsReturn {
     isLoading: boolean
 }
 
-/**
- * Custom hook for managing POS terminals using React Query
- */
 export function useTerminals(): UseTerminalsReturn {
     const queryClient = useQueryClient()
+    const { markLocalMutation } = useRealtime()
 
     const { data: terminals, isLoading, refetch } = useQuery({
-        queryKey: TERMINALS_QUERY_KEY,
+        queryKey: TERMINALS_KEYS.lists(),
         queryFn: treasuryApi.getTerminals,
-        staleTime: 5 * 60 * 1000, // 5 min
+        staleTime: 5 * 60 * 1000,
     })
+
+    const invalidate = () => {
+        queryClient.invalidateQueries({ queryKey: TERMINALS_KEYS.lists() })
+        queryClient.invalidateQueries({ queryKey: TERMINALS_KEYS.details() })
+    }
 
     const toggleActiveMutation = useMutation({
         mutationFn: async (terminal: Terminal) => {
@@ -35,8 +38,9 @@ export function useTerminals(): UseTerminalsReturn {
             return treasuryApi.updateTerminal(terminal.id, payload)
         },
         onSuccess: (_, terminal) => {
+            markLocalMutation()
             toast.success(terminal.is_active ? 'Terminal desactivado' : 'Terminal activado')
-            queryClient.invalidateQueries({ queryKey: TERMINALS_QUERY_KEY })
+            invalidate()
         },
         onError: () => {
             toast.error('Error al actualizar terminal')
@@ -48,8 +52,9 @@ export function useTerminals(): UseTerminalsReturn {
             return treasuryApi.deleteTerminal(terminal.id)
         },
         onSuccess: () => {
+            markLocalMutation()
             toast.success('Terminal eliminado correctamente')
-            queryClient.invalidateQueries({ queryKey: TERMINALS_QUERY_KEY })
+            invalidate()
         },
         onError: (err: Error & { response?: { data?: { error?: string } } }) => {
             const errorMsg = err.response?.data?.error || 'Error al eliminar terminal'
@@ -60,8 +65,8 @@ export function useTerminals(): UseTerminalsReturn {
     return {
         terminals: terminals ?? [],
         refetch,
-        toggleActive: toggleActiveMutation.mutateAsync,
-        deleteTerminal: deleteMutation.mutateAsync,
+    toggleActive: async (terminal: Terminal) => { await toggleActiveMutation.mutateAsync(terminal); },
+    deleteTerminal: async (terminal: Terminal) => { await deleteMutation.mutateAsync(terminal); },
         isLoading,
     }
 }

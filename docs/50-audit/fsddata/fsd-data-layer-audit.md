@@ -201,9 +201,16 @@ Síntomas observables al usuario:
 
 ## Conclusión
 
-El proyecto tiene un **gap arquitectural sistémico**: la capa de datos FSD existe en docs (ADR-0020, frontend-fsd.md, invariantes #4/#5) pero **no está mecánicamente enforced**. Las features que se escribieron temprano siguen el patrón; las que crecieron orgánicamente bajo presión de feature work bypasean los hooks.
+El proyecto tenía un **gap arquitectural sistémico**: la capa de datos FSD existe en docs (ADR-0020, frontend-fsd.md, invariantes #4/#5) pero **no estaba mecánicamente enforced**. Las features escritas temprano seguían el patrón; las que crecieron orgánicamente bajo presión de feature work bypaseaban los hooks.
 
-El plan de remediación está en [fsd-data-layer-refactor-plan.md](fsd-data-layer-refactor-plan.md). Antes de cualquier refactor masivo es prerrequisito **agregar la barrera mecánica** (ESLint rule) — sin eso las violaciones reaparecen.
+Desde el 2026-05-22 hay barrera mecánica activa: la regla custom `fsd/no-api-in-component` ([frontend/eslint-rules/fsd-no-api-in-component.mjs](../../frontend/eslint-rules/fsd-no-api-in-component.mjs)) reporta cada import de `@/lib/api` en `features/*/components/**` como warning visible en `npm run lint`. Detalle del rationale y plan para subirla a `error` en [fsd-data-layer-refactor-plan.md §Prerrequisito mecánico](fsd-data-layer-refactor-plan.md#prerrequisito-mecánico--eslint-rule--implementado-2026-05-22).
+
+**Métrica de seguimiento** (correr tras cada PR de migración):
+
+```bash
+cd frontend && npm run lint 2>&1 | grep -c "fsd/no-api-in-component"
+# Snapshot 2026-05-22 (regla recién activada): 74
+```
 
 ## Referencias
 

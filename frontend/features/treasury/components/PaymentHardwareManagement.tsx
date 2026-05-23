@@ -101,16 +101,14 @@ export function PaymentHardwareManagement({
 
     const deleteProviderConfirm = useConfirmAction<PaymentTerminalProvider>(async (provider) => {
         try {
-            await deleteProvider.mutateAsync(provider.id)
-            refetchProviders()
-        } catch (error) { }
+            await deleteProvider(provider.id)
+        } catch { }
     })
 
     const deleteDeviceConfirm = useConfirmAction<PaymentTerminalDevice>(async (device) => {
         try {
-            await deleteDevice.mutateAsync(device.id)
-            refetchDevices()
-        } catch (error) { }
+            await deleteDevice(device.id)
+        } catch { }
     })
 
     const searchParams = useSearchParams()
@@ -493,9 +491,9 @@ function ProviderModal({ open, onOpenChange, provider, onSuccess }: {
             }
 
             if (provider) {
-                await updateProvider.mutateAsync({ id: provider.id, data: data as any })
+                await updateProvider({ id: provider.id, data: data as any })
             } else {
-                await createProvider.mutateAsync(data as any)
+                await createProvider(data as any)
             }
             onSuccess()
             onOpenChange(false)
@@ -637,9 +635,9 @@ function DeviceModal({ open, onOpenChange, device, providers, onSuccess }: {
             }
 
             if (device) {
-                await updateDevice.mutateAsync({ id: device.id, data })
+                await updateDevice({ id: device.id, data })
             } else {
-                await createDevice.mutateAsync(data)
+                await createDevice(data)
             }
             onSuccess()
             onOpenChange(false)

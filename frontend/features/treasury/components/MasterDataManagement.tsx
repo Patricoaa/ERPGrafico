@@ -10,8 +10,6 @@ import {
 import { DataCell, createActionsColumn } from '@/components/shared'
 import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
-import api from "@/lib/api"
-import { toast } from "sonner"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -24,7 +22,8 @@ import {
 import { bankSearchDef, paymentMethodSearchDef } from "@/features/treasury/searchDef"
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
 import { Column } from "@tanstack/react-table";
-import { useBanks, usePaymentMethods, Bank, PaymentMethod } from "@/features/treasury/hooks/useMasterData"
+import { useBanks, usePaymentMethods } from "@/features/treasury/hooks/useMasterData"
+import type { Bank, PaymentMethod } from "@/features/treasury/types"
 
 // --- Schemas ---
 
@@ -56,18 +55,16 @@ interface BankManagementProps {
 }
 
 export function BankManagement({ externalOpen, onOpenChange, createAction }: BankManagementProps) {
-    const { banks, refetch } = useBanks()
+    const { banks, refetch, deleteBank } = useBanks()
     const { filterFn: filterBanks } = useClientSearch<Bank>(bankSearchDef)
     const [dialogOpen, setDialogOpen] = useState(false)
     const [selectedBank, setSelectedBank] = useState<Bank | null>(null)
 
     const deleteConfirm = useConfirmAction<number>(async (id) => {
         try {
-            await api.delete(`/treasury/banks/${id}/`)
-            toast.success("Banco eliminado")
-            refetch()
-        } catch (error) {
-            toast.error("Error al eliminar banco")
+            await deleteBank(id)
+        } catch {
+            // Error handled by hook
         }
     })
 
@@ -177,7 +174,8 @@ interface BankModalProps {
 }
 
 function BankModal({ open, onOpenChange, bank, onSuccess }: BankModalProps) {
-    const [loading, setLoading] = useState(false)
+    const { createBank, updateBank, isCreating, isUpdating } = useBanks()
+    const isSaving = isCreating || isUpdating
 
     const form = useForm<BankFormValues>({
         resolver: zodResolver(bankSchema),
@@ -199,20 +197,15 @@ function BankModal({ open, onOpenChange, bank, onSuccess }: BankModalProps) {
     }, [open, bank, form])
 
     const onSubmit = async (data: BankFormValues) => {
-        setLoading(true)
         try {
             if (bank) {
-                await api.patch(`/treasury/banks/${bank.id}/`, data)
-                toast.success("Banco actualizado")
+                await updateBank({ id: bank.id, payload: data })
             } else {
-                await api.post("/treasury/banks/", data)
-                toast.success("Banco creado")
+                await createBank(data)
             }
             onSuccess()
-        } catch (error) {
-            toast.error("Error al guardar banco")
-        } finally {
-            setLoading(false)
+        } catch {
+            // Error handled by hook
         }
     }
 
@@ -238,8 +231,8 @@ function BankModal({ open, onOpenChange, bank, onSuccess }: BankModalProps) {
                             <ActionSlideButton
                                 type="submit"
                                 form="bank-form"
-                                loading={loading}
-                                disabled={loading}
+                                loading={isSaving}
+                                disabled={isSaving}
                                 onClick={form.handleSubmit(onSubmit)}
                             >
                                 {bank ? "Guardar Cambios" : "Crear Banco"}
@@ -329,18 +322,16 @@ interface PaymentMethodManagementProps {
 }
 
 export function PaymentMethodManagement({ externalOpen, onOpenChange, createAction }: PaymentMethodManagementProps) {
-    const { methods, refetch } = usePaymentMethods()
+    const { methods, refetch, deleteMethod } = usePaymentMethods()
     const { filterFn: filterMethods } = useClientSearch<PaymentMethod>(paymentMethodSearchDef)
     const [dialogOpen, setDialogOpen] = useState(false)
     const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(null)
 
     const deleteConfirm = useConfirmAction<number>(async (id) => {
         try {
-            await api.delete(`/treasury/payment-methods/${id}/`)
-            toast.success("Método eliminado")
-            refetch()
-        } catch (error) {
-            toast.error("Error al eliminar")
+            await deleteMethod(id)
+        } catch {
+            // Error handled by hook
         }
     })
 
@@ -490,10 +481,11 @@ interface PaymentMethodModalProps {
 }
 
 function PaymentMethodModal({ open, onOpenChange, method, onSuccess }: PaymentMethodModalProps) {
-    const [loading, setLoading] = useState(false)
+    const { createMethod, updateMethod, isCreating, isUpdating } = usePaymentMethods()
+    const isSaving = isCreating || isUpdating
 
     const form = useForm<PaymentMethodFormValues>({
-        resolver: zodResolver(paymentMethodSchema),
+        resolver: zodResolver(paymentMethodSchema) as any,
         defaultValues: {
             name: "",
             method_type: "DEBIT_CARD",
@@ -521,20 +513,15 @@ function PaymentMethodModal({ open, onOpenChange, method, onSuccess }: PaymentMe
     }, [open, method, form])
 
     const onSubmit = async (data: PaymentMethodFormValues) => {
-        setLoading(true)
         try {
             if (method) {
-                await api.patch(`/treasury/payment-methods/${method.id}/`, data)
-                toast.success("Método actualizado")
+                await updateMethod({ id: method.id, payload: data as any })
             } else {
-                await api.post("/treasury/payment-methods/", data)
-                toast.success("Método creado")
+                await createMethod(data as any)
             }
             onSuccess()
-        } catch (error) {
-            toast.error("Error al guardar método")
-        } finally {
-            setLoading(false)
+        } catch {
+            // Error handled by hook
         }
     }
 
@@ -560,8 +547,8 @@ function PaymentMethodModal({ open, onOpenChange, method, onSuccess }: PaymentMe
                             <ActionSlideButton
                                 type="submit"
                                 form="method-form"
-                                loading={loading}
-                                disabled={loading}
+                                loading={isSaving}
+                                disabled={isSaving}
                                 onClick={form.handleSubmit(onSubmit)}
                             >
                                 {method ? "Guardar Cambios" : "Crear Método"}

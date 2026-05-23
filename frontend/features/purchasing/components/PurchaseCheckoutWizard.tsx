@@ -10,7 +10,7 @@ import { Step4_Receipt } from "./checkout/Step4_Receipt"
 import { PurchaseOrderSummaryCard } from "./checkout/PurchaseOrderSummaryCard"
 import { PurchaseProcessSummarySidebar } from "./checkout/PurchaseProcessSummarySidebar"
 import { toast } from "sonner"
-import api from "@/lib/api"
+import { purchasingApi } from "../api/purchasingApi"
 import { PurchaseOrderAPI, CheckoutLine, DTEData, ReceiptData } from "../types"
 import { PaymentData } from "@/features/treasury/components/PaymentMethodCardSelector"
 
@@ -63,8 +63,7 @@ export function PurchaseCheckoutWizard({
             const fetchOrder = async () => {
                 setLoading(true)
                 try {
-                    const response = await api.get(`/purchasing/orders/${orderId}/`)
-                    const data = response.data
+                    const data = await purchasingApi.getOrder(orderId)
                     setInternalOrder(data)
 
                     const mappedLines = (data.lines || []).map((l: any) => ({
@@ -80,9 +79,9 @@ export function PurchaseCheckoutWizard({
                         product_type: l.product_type
                     }))
                     setCurrentOrderLines(mappedLines)
-                    setCurrentTotal(parseFloat(data.total))
-                    setSelectedSupplierId(data.supplier?.toString() || null)
-                    setSelectedWarehouseId(data.warehouse?.toString() || "")
+                    setCurrentTotal(parseFloat(data.total as string))
+                    setSelectedSupplierId((data.supplier as any)?.toString() || null)
+                    setSelectedWarehouseId((data.warehouse as any)?.toString() || "")
                 } catch (error) {
                     console.error("Error fetching order in wizard:", error)
                     toast.error("Error al cargar la orden")
@@ -169,8 +168,8 @@ export function PurchaseCheckoutWizard({
         if (selectedWarehouseId) {
             const fetchWarehouseName = async () => {
                 try {
-                    const response = await api.get(`/inventory/warehouses/${selectedWarehouseId}/`)
-                    setSelectedWarehouseName(response.data.name)
+                    const warehouseData = await purchasingApi.getWarehouse(selectedWarehouseId)
+                    setSelectedWarehouseName((warehouseData as any).name)
                 } catch (error) {
                     console.error("Failed to fetch warehouse name", error)
                 }
@@ -351,7 +350,7 @@ export function PurchaseCheckoutWizard({
                 formData.append('receipt_data', JSON.stringify(receiptPayload))
             }
 
-            await api.post('/purchasing/orders/purchase_checkout/', formData)
+            await purchasingApi.createOrder(formData)
 
             toast.success("Compra procesada correctamente")
             onComplete()

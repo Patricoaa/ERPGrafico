@@ -3,12 +3,12 @@ import { formatCurrency } from "@/lib/money"
 
 import React, { useState, useEffect, useMemo } from 'react'
 import { Button } from "@/components/ui/button"
-import { Banknote, LogOut, ArrowRightLeft, Loader2, AlertTriangle, Info, ShieldAlert, CheckCircle2 } from "lucide-react"
+import { Banknote, LogOut, ArrowRightLeft, AlertTriangle, Info, ShieldAlert, CheckCircle2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Numpad } from '@/components/shared'
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
-import api from "@/lib/api"
+import { treasuryApi } from "../api/treasuryApi"
 import { LabeledInput, MoneyDisplay } from "@/components/shared"
 import { validateAccountingPeriod } from '@/features/accounting/actions'
 import { toast } from 'sonner'
@@ -326,7 +326,7 @@ export function MovementWizard({
                 component: (
                     <div className="space-y-4 pt-2">
                         <div className="grid gap-2 max-h-[340px] overflow-y-auto pr-1">
-                            {impact !== 'TRANSFER' && MOVEMENT_TYPES[impact as 'IN' | 'OUT'].map((t) => (
+                            {MOVEMENT_TYPES[impact as 'IN' | 'OUT'].map((t) => (
                                 <Button
                                     key={t.value}
                                     variant={moveType === t.value ? "default" : "outline"}
@@ -526,10 +526,9 @@ export function MovementWizard({
 
     useEffect(() => {
         if (contactId && moveType === 'CAPITAL_CONTRIBUTION') {
-            api.get(`/contacts/${contactId}/`).then(res => {
-                const p = res.data
-                const subscribed = parseFloat(p.partner_total_contributions) || 0
-                const balance = parseFloat(p.partner_balance) || 0
+            treasuryApi.getContact(contactId).then(p => {
+                const subscribed = parseFloat(p.partner_total_contributions ?? '0') || 0
+                const balance = parseFloat(p.partner_balance ?? '0') || 0
                 const pending = Math.max(0, subscribed - balance)
                 requestAnimationFrame(() => setPartnerCapitalInfo({ subscribed, balance, pending }))
             }).catch(() => requestAnimationFrame(() => setPartnerCapitalInfo(null)))

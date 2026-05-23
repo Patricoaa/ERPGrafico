@@ -75,6 +75,7 @@ export interface PaymentMethod {
     is_active: boolean
     allow_for_sales: boolean
     allow_for_purchases: boolean
+    requires_reference?: boolean
     /** true para CARD_TERMINAL — método vinculado a dispositivo de terminal integrado */
     is_terminal_integration: boolean
     linked_terminal_device: number | null
@@ -150,6 +151,126 @@ export interface PaymentCreatePayload {
     document_reference?: string
     document_date?: string
     document_attachment?: File | null
+}
+
+export interface PaymentTerminalProviderCreatePayload {
+    name: string
+    provider_type: PaymentTerminalProvider['provider_type']
+    supplier: number
+    commission_expense_account: number
+    commission_iva_account: number
+    receivable_account: number
+    config?: Record<string, unknown>
+    is_active?: boolean
+}
+
+export type PaymentTerminalProviderUpdatePayload = Partial<PaymentTerminalProviderCreatePayload>
+
+export interface PaymentTerminalDeviceCreatePayload {
+    name: string
+    provider: number
+    serial_number: string
+    model?: string
+    is_active?: boolean
+    supported_payment_methods?: number[]
+}
+
+export type PaymentTerminalDeviceUpdatePayload = Partial<PaymentTerminalDeviceCreatePayload>
+
+export interface Bank {
+    id: number
+    name: string
+    code: string | null
+    swift_code?: string | null
+    is_active: boolean
+}
+
+export interface BankCreatePayload {
+    name: string
+    code?: string | null
+    swift_code?: string | null
+}
+
+export type BankUpdatePayload = Partial<BankCreatePayload>
+
+export interface PaymentMethodCreatePayload {
+    name: string
+    method_type: PaymentMethodType
+    treasury_account: number
+    requires_reference?: boolean
+    allow_for_sales?: boolean
+    allow_for_purchases?: boolean
+}
+
+export type PaymentMethodUpdatePayload = Partial<PaymentMethodCreatePayload>
+
+export interface POSSession {
+    id: number
+    terminal: number | null
+    terminal_name?: string
+    opened_at: string
+    closed_at?: string
+    is_active: boolean
+    cash_balance: number
+}
+
+export interface TransferPayload {
+    from_account_id: string
+    to_account_id: string
+    amount: number
+    notes?: string
+    date: string
+}
+
+export interface MovementCreatePayload {
+    movement_type: 'INBOUND' | 'OUTBOUND' | 'TRANSFER'
+    amount: number
+    from_account?: number | null
+    to_account?: number | null
+    contact?: number | null
+    notes?: string
+    justify_reason?: string | null
+    payment_method?: string
+}
+
+export interface TerminalBatchCreatePayload {
+    provider: string
+    payment_method: string
+    sales_date: string | null
+    sales_date_end: string | null
+    gross_amount: number
+    commission_base: number
+    commission_tax: number
+    net_amount: number
+    terminal_reference?: string
+    movement_ids: number[]
+}
+
+export interface MonthlyInvoicePayload {
+    supplier_id: string
+    month: string
+    year: string
+    number: string
+    date: string
+    document_attachment: File
+}
+
+export interface PaymentUpdatePayload {
+    transaction_number?: string
+    is_pending_registration?: boolean
+}
+
+export interface PartnerCapitalInfo {
+    subscribed: number
+    balance: number
+    pending: number
+}
+
+export interface ContactBrief {
+    id: number
+    name: string
+    partner_total_contributions?: string
+    partner_balance?: string
 }
 
 // API Error types
