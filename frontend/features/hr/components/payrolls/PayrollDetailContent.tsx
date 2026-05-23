@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
-import { useQuery } from "@tanstack/react-query"
+import { usePayrollDetail } from "../hooks/usePayrolls"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { showApiError } from "@/lib/errors"
@@ -85,29 +85,7 @@ export function PayrollDetailContent({
     const [salaryDialog, setSalaryDialog] = useState(false)
     const [postConfirmOpen, setPostConfirmOpen] = useState(false)
 
-    const { data: payrollData, isLoading: loading, refetch: fetchPayroll } = useQuery({
-        queryKey: ['payroll', payrollId, viewMode],
-        queryFn: async () => {
-            if (viewMode === 'employee') {
-                const pData = await getEmployeePayrollPreview(payrollId)
-                if (employee && pData) {
-                    pData.employee_detail = pData.employee_detail || {
-                        contact_detail: employee.contact_detail,
-                        position: employee.position,
-                        department: employee.department
-                    }
-                }
-                return { payroll: pData, concepts: [] as PayrollConcept[], payments: pData.payments || [] }
-            } else {
-                const [pData, cData, pmtData] = await Promise.all([
-                    getPayroll(payrollId),
-                    getPayrollConcepts(),
-                    getPayrollPayments({ payroll: String(payrollId) })
-                ])
-                return { payroll: pData, concepts: cData, payments: pmtData }
-            }
-        }
-    })
+    const { data: payrollData, isLoading: loading, refetch: fetchPayroll } = usePayrollDetail(payrollId, viewMode, employee)
 
     const payroll = payrollData?.payroll || null
     const concepts = payrollData?.concepts || []

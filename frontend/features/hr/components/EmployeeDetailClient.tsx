@@ -1,15 +1,11 @@
 "use client"
 
 import React, { useState } from "react"
-import { useQuery } from "@tanstack/react-query"
 import { notFound, useRouter } from "next/navigation"
 import { EntityDetailPage, SkeletonShell, FormFooter, CancelButton, ActionSlideButton } from "@/components/shared"
 import { formatEntityDisplay } from "@/lib/entity-registry"
-import { getEmployee, updateEmployee, getAFPs, getPayrollConcepts } from "@/features/hr/api/hrApi"
-import type { Employee, AFP, PayrollConcept } from "@/types/hr"
-import { toast } from "sonner"
-import { showApiError } from "@/lib/errors"
-import { formatCurrency } from "@/lib/money"
+import { useEmployee } from "../hooks/useEmployees"
+import type { Employee } from "@/types/hr"
 import { EmployeeFormModal } from "@/features/hr/components/EmployeeFormModal"
 
 interface EmployeeDetailClientProps {
@@ -20,10 +16,7 @@ export function EmployeeDetailClient({ employeeId }: EmployeeDetailClientProps) 
     const router = useRouter()
     const [modalOpen, setModalOpen] = useState(false)
 
-    const { data: employee, isLoading: loading, error: queryError, refetch: fetchEmployee } = useQuery({
-        queryKey: ['employee', employeeId],
-        queryFn: () => getEmployee(parseInt(employeeId)),
-    })
+    const { data: employee, isLoading: loading, error: queryError, refetch: fetchEmployee } = useEmployee(employeeId)
 
     const error = queryError ? (queryError as any).response?.status || 500 : null
 

@@ -1,11 +1,10 @@
 "use client"
 
 import React, { useState } from "react"
-import { useQuery } from "@tanstack/react-query"
 import { notFound, useRouter } from "next/navigation"
-import api from "@/lib/api"
 import { EntityDetailPage, FormFooter, SubmitButton, CancelButton, SkeletonShell } from "@/components/shared"
 import { JournalEntryForm } from "./JournalEntryForm"
+import { useJournalEntry } from "../hooks/useJournalEntries"
 
 interface JournalEntryDetailClientProps {
     entryId: string
@@ -15,19 +14,13 @@ export function JournalEntryDetailClient({ entryId }: JournalEntryDetailClientPr
     const router = useRouter()
     const [isSaving, setIsSaving] = useState(false)
 
-    const { data: entry, isLoading: loading, error: queryError } = useQuery({
-        queryKey: ['journalEntry', entryId],
-        queryFn: async () => {
-            const res = await api.get(`/accounting/entries/${entryId}/`)
-            return res.data
-        }
-    })
+    const { data: entry, isLoading: loading, error: queryError } = useJournalEntry(entryId)
 
     const error = queryError ? (queryError as any).response?.status || 500 : null
 
     if (error === 404) return notFound()
     if (error) return <div className="p-8 text-destructive">Error al cargar el asiento</div>
-    
+
     if (loading || !entry) {
          return (
              <div className="flex-1 p-8">
