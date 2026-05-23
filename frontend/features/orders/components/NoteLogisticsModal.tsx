@@ -15,8 +15,8 @@ import {
     TableRow,
 } from "@/components/ui/table"
 import { Chip } from "@/components/shared"
-import api from "@/lib/api"
 import { toast } from "sonner"
+import { ordersApi, useProcessLogistics } from "../hooks/useOrdersMutations"
 import { Loader2, Package, AlertTriangle, CheckCircle2, ArrowLeftRight } from "lucide-react"
 import { useServerDate } from "@/hooks/useServerDate"
 
@@ -41,6 +41,7 @@ interface NoteLogisticsModalProps {
 
 export function NoteLogisticsModal({ open, onOpenChange, invoice, onSuccess }: NoteLogisticsModalProps) {
     const { dateString } = useServerDate()
+    const processLogistics = useProcessLogistics()
     const [warehouses, setWarehouses] = useState<Record<string, unknown>[]>([])
     const [selectedWarehouse, setSelectedWarehouse] = useState<number | null>(null)
     const [processQuantities, setProcessQuantities] = useState<{ [pId: number]: number }>({})
@@ -72,20 +73,15 @@ export function NoteLogisticsModal({ open, onOpenChange, invoice, onSuccess }: N
     const fetchData = async () => {
         setLoading(true)
         try {
-            // Fetch warehouses
-            const warehousesResponse = await api.get('/inventory/warehouses/')
-            const warehousesList = warehousesResponse.data.results || warehousesResponse.data
+            const warehousesList = await ordersApi.getWarehouses() as Record<string, unknown>[]
             setWarehouses(warehousesList)
 
             if (warehousesList.length > 0) {
-                setSelectedWarehouse(warehousesList[0].id)
+                setSelectedWarehouse(warehousesList[0].id as number)
             }
 
-            // Fetch FRESH invoice data to ensure we have latest 'quantity_delivered'/'quantity_received'
-            // The serializer logic augments these fields with (Sum of Returns)
-            const invoiceResponse = await api.get(`/billing/invoices/${invoice.id}/`)
-            const freshInvoice = invoiceResponse.data
-            const freshLines = freshInvoice.lines || []
+            const freshInvoice = await ordersApi.getInvoice(invoice.id) as Record<string, unknown>
+            const freshLines = (freshInvoice.lines || []) as InvoiceLine[]
 
             setDisplayLines(freshLines)
 
@@ -133,14 +129,16 @@ export function NoteLogisticsModal({ open, onOpenChange, invoice, onSuccess }: N
 
         setSubmitting(true)
         try {
-            await api.post(`/billing/invoices/${invoice.id}/process_logistics/`, {
-                warehouse_id: selectedWarehouse,
-                date: date,
-                line_data: lineData,
-                notes: notes
+            await processLogistics.mutateAsync({
+                id: invoice.id,
+                data: {
+                    warehouse_id: selectedWarehouse,
+                    date: date,
+                    line_data: lineData,
+                    notes: notes
+                }
             })
 
-            toast.success("Logística procesada correctamente")
             onOpenChange(false)
             onSuccess?.()
         } catch (error: unknown) {

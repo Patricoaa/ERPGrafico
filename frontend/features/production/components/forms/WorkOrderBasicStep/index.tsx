@@ -9,7 +9,6 @@ import { format } from "date-fns"
 import { Form, FormField } from "@/components/ui/form"
 import { Button } from "@/components/ui/button"
 
-import api from "@/lib/api"
 import { toast } from "sonner"
 
 import { WorkOrderBasicInfo } from "./WorkOrderBasicInfo"
@@ -24,6 +23,7 @@ import {
     useProductDetail,
     useActiveBom,
     useSaleOrderManufacturableLines,
+    productionApi,
 } from "../../../hooks"
 import type { WorkOrderBasicStepProps } from "./types"
 
@@ -302,20 +302,15 @@ export function WorkOrderBasicStep({
         try {
             let workOrderId: number
             if (initialData?.id) {
-                await api.put(`/production/orders/${initialData.id}/`, formData, {
-                    headers: { 'Content-Type': 'multipart/form-data' }
-                })
+                await productionApi.updateWorkOrder(Number(initialData.id), formData)
                 toast.success("Orden de Trabajo actualizada correctamente")
                 workOrderId = Number(initialData.id)
             } else {
-                const res = await api.post('/production/orders/', formData, {
-                    headers: {
-                        'Content-Type': 'multipart/form-data',
-                        'Idempotency-Key': idempotencyKeyRef.current,
-                    }
+                const data = await productionApi.createWorkOrder(formData, {
+                    'Idempotency-Key': idempotencyKeyRef.current,
                 })
                 toast.success("Orden de Trabajo creada correctamente")
-                workOrderId = res.data.id
+                workOrderId = (data as { id: number }).id
             }
             form.reset({} as WorkOrderFormValues)
             setOtType(null)

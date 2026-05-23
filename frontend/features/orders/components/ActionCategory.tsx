@@ -25,7 +25,13 @@ const DocumentListModal = dynamic(() => import("./DocumentListModal").then(m => 
 const TransactionViewModal = dynamic(() => import("@/components/shared/TransactionViewModal").then(m => m.TransactionViewModal))
 const NoteLogisticsModal = dynamic(() => import("./NoteLogisticsModal").then(m => m.NoteLogisticsModal))
 const WorkOrderWizard = dynamic(() => import("@/features/production").then(m => m.WorkOrderWizard))
-import api from "@/lib/api"
+import {
+    useAnnulInvoice,
+    useDeleteInvoice,
+    useCreateInvoiceFromOrder,
+    useConfirmInvoice,
+    useRegisterPaymentMovement,
+} from "../hooks/useOrdersMutations"
 
 import { useRouter } from "next/navigation"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
@@ -134,6 +140,12 @@ export const ActionCategory = forwardRef(({
         handleActionClick
     }))
 
+    const annulInvoice = useAnnulInvoice()
+    const deleteInvoice = useDeleteInvoice()
+    const createInvoiceFromOrder = useCreateInvoiceFromOrder()
+    const confirmInvoice = useConfirmInvoice()
+    const registerPaymentMovement = useRegisterPaymentMovement()
+
     // Determine order type helper - supporting both Order and Note models
     const isSale = !!order?.customer_name || !!order?.customer || !!order?.sale_order
     const isPurchase = !!order?.supplier_name || !!order?.supplier || !!order?.purchase_order
@@ -230,8 +242,7 @@ export const ActionCategory = forwardRef(({
 
         setIsProcessing(true)
         try {
-            await api.post(`/billing/invoices/${invoice.id}/annul/`, { force })
-            toast.success("Documento anulado correctamente")
+            await annulInvoice.mutateAsync({ id: Number(invoice.id), force })
             onActionSuccess?.()
         } catch (error: unknown) {
             console.error("Error annulling document:", error)
@@ -257,22 +268,14 @@ export const ActionCategory = forwardRef(({
     const handleRegenerateDocument = async () => {
         setIsProcessing(true)
         try {
-            // We need a dummy DTE_TYPE and PAYMENT_METHOD to init the draft, later the user can change it in the completion modal?
-            // Actually, create_from_order requires dte_type and payment_method. 
-            // We'll infer defaults or ask backend to handle a 'DRAFT' init.
-            // Since we want to open the "Complete Folio" modal which ASKS for dte_type, 
-            // maybe we should just create a placeholder draft.
-            // However, our backend create_from_order expects data.
-            // Let's try sending defaults, the user will confirm in the next step.
-
-            const response = await api.post('/billing/invoices/create_from_order/', {
+            const result = await createInvoiceFromOrder.mutateAsync({
                 order_id: order?.id,
                 order_type: isSale ? 'sale' : 'purchase',
-                dte_type: 'FACTURA_ELECTRONICA', // Default, will change in completion
+                dte_type: 'FACTURA_ELECTRONICA',
                 payment_method: 'CREDIT'
             })
 
-            setTempInvoiceId(response.data.id)
+            setTempInvoiceId((result as { id: number }).id)
             setActiveModal('complete-folio')
             onActionSuccess?.()
         } catch (error: unknown) {
@@ -300,8 +303,7 @@ export const ActionCategory = forwardRef(({
             onConfirm: async () => {
                 setIsProcessing(true)
                 try {
-                    await api.delete(`/billing/invoices/${draftInvoice.id}/`)
-                    toast.success("Borrador eliminado correctamente")
+                    await deleteInvoice.mutateAsync(Number(draftInvoice.id))
                     setConfirmModal(prev => ({ ...prev, open: false }))
                     onActionSuccess?.()
                 } catch (error: unknown) {
@@ -334,8 +336,7 @@ export const ActionCategory = forwardRef(({
                 (payload as Record<string, unknown>)[isSale ? 'sale_order' : 'purchase_order'] = order?.id
             }
 
-            await api.post('/treasury/payments/register_movement/', payload)
-            toast.success("Operación de tesorería registrada")
+            await registerPaymentMovement.mutateAsync(payload)
             closeModal()
             onActionSuccess?.()
         } catch (error: unknown) {
@@ -417,15 +418,13 @@ export const ActionCategory = forwardRef(({
                          invoiceType={(tempInvoiceId ? "FACTURA_ELECTRONICA" : (resolvedInvoices?.find((inv: any) => inv.status === 'DRAFT' || inv.number === 'Draft' || !inv.number) as any)?.dte_type as string) || "FACTURA_ELECTRONICA"}
                          contactId={(((order?.customer || order?.supplier) as Record<string, unknown>)?.id as number || (isSale ? (order as any).customer_id : (order as any).supplier_id)) as number || 0}
                          isPurchase={isPurchase}
-                         onComplete={async (invoiceId, formData) => {
-                             if (!invoiceId) {
-                                 toast.error("Error: No se pudo identificar el borrador de la factura.")
-                                 throw new Error("Missing invoice ID")
-                             }
-                             await api.post(`/billing/invoices/${invoiceId}/confirm/`, formData, {
-                                 headers: { 'Content-Type': 'multipart/form-data' }
-                             })
-                         }}
+                          onComplete={async (invoiceId, formData) => {
+                              if (!invoiceId) {
+                                  toast.error("Error: No se pudo identificar el borrador de la factura.")
+                                  throw new Error("Missing invoice ID")
+                              }
+                              await confirmInvoice.mutateAsync({ id: invoiceId, formData: formData as unknown as Record<string, unknown> })
+                          }}
                          onSuccess={() => { closeModal(); onActionSuccess?.() }}
                      />
                  )}

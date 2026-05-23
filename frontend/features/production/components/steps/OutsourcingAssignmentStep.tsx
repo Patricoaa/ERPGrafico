@@ -7,7 +7,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { formatCurrency } from "@/lib/money"
 import { showApiError } from '@/lib/errors'
 import { useHubPanel } from '@/components/providers/HubPanelProvider'
-import { useWorkOrderMutations } from '../../hooks'
+import { useWorkOrderMutations, productionApi } from '../../hooks'
 import { useState } from 'react'
 import { useVatRate } from '@/hooks/useVatRate'
 import { OutsourcedServiceForm, OutsourcedServiceValues, emptyOutsourcedService } from '../shared/OutsourcedServiceForm'
@@ -74,11 +74,9 @@ export function OutsourcingAssignmentStep({
       grossPrice: m.unit_price ? (parseFloat(m.unit_price) * vatMultiplier).toFixed(2) : '0',
       documentType: (m.document_type as 'FACTURA' | 'BOLETA') ?? 'FACTURA'
     })
-    import('@/lib/api').then(({ default: api }) => {
-      api.get(`/inventory/products/${m.component}/`).then((res) => {
-        setFormData(prev => ({ ...prev, productObj: res.data }))
-        setIsAddOpen(true)
-      })
+    productionApi.getProduct(m.component).then((data) => {
+      setFormData(prev => ({ ...prev, productObj: data as any }))
+      setIsAddOpen(true)
     })
   }
 

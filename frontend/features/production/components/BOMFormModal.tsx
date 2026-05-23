@@ -3,7 +3,6 @@ import { formatCurrency } from "@/lib/money"
 
 import { showApiError } from "@/lib/errors"
 import { useState, useEffect, useRef } from "react"
-import { useQuery } from "@tanstack/react-query"
 import { useForm, useFieldArray, Resolver, FieldValues } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -20,8 +19,9 @@ import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { UoMSelector } from "@/components/selectors/UoMSelector"
 import { cn } from "@/lib/utils"
-import api from "@/lib/api"
 import { toast } from "sonner"
+import { productionApi, useAllowedDteTypes } from "../hooks"
+import { useUoMs, useProductionVariants } from "../hooks"
 import type { BOM, BOMLine, ProductMinimal, UoM } from "../types"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
 import { LabeledInput, LabeledSelect, LabeledSwitch, FormSection, FormFooter, FormLineItemsTable, IconButton } from "@/components/shared"
@@ -99,9 +99,8 @@ export function BOMFormModal({
     const fetchLineVariants = async (productId: string | number, index: number, isService: boolean = false) => {
         if (!productId) return
         try {
-            const res = await api.get(`/inventory/products/?parent_template=${productId}&show_technical_variants=true`)
-            const vars = res.data.results || res.data
-            setLineVariantsCache(prev => ({ ...prev, [productId]: vars }))
+            const vars = await productionApi.getProductVariants(productId)
+            setLineVariantsCache(prev => ({ ...prev, [productId]: vars as any[] }))
         } catch (error) {
             console.error("Error fetching line variants:", error)
         }
@@ -126,30 +125,13 @@ export function BOMFormModal({
         setSelectedVariant(null)
     }, [initialProduct])
 
-    const { data: uoms = [] } = useQuery({
-        queryKey: ['uoms'],
-        queryFn: async () => {
-            const res = await api.get('/inventory/uoms/')
-            return res.data.results || res.data
-        }
-    })
+    const { data: uoms = [] } = useUoMs()
 
-    const { data: allowedDteTypes = ["FACTURA", "BOLETA"] } = useQuery({
-        queryKey: ['accountingSettings'],
-        queryFn: async () => {
-            const res = await api.get('/accounting/settings/current/')
-            return res.data.allowed_dte_types_receive || ["FACTURA", "BOLETA"]
-        }
-    })
+    const { data: allowedDteTypes = ["FACTURA", "BOLETA"] } = useAllowedDteTypes()
 
-    const { data: variants = [], isLoading: loadingVariants } = useQuery({
-        queryKey: ['productVariants', selectedProduct?.id],
-        queryFn: async () => {
-            const res = await api.get(`/inventory/products/?parent_template=${selectedProduct?.id}&show_technical_variants=true`)
-            return res.data.results || res.data
-        },
-        enabled: !!selectedProduct?.id && !!selectedProduct?.has_variants
-    })
+    const { variants = [], isVariantsLoading: loadingVariants } = useProductionVariants(
+        selectedProduct?.has_variants ? selectedProduct.id : undefined
+    )
 
     useEffect(() => {
         if (variants.length > 0 && bomToEdit?.product) {
@@ -296,10 +278,10 @@ export function BOMFormModal({
             }
 
             if (bomToEdit && bomToEdit.id) {
-                await api.patch(`/production/boms/${bomToEdit.id}/`, payload)
+                await productionApi.updateBom(bomToEdit.id, payload)
                 toast.success("Lista de Materiales actualizada correctamente")
             } else {
-                await api.post("/production/boms/", payload)
+                await productionApi.createBom(payload)
                 toast.success("Lista de Materiales creada correctamente")
             }
             if (onSuccess) onSuccess()

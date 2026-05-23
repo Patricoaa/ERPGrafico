@@ -20,3 +20,6 @@ export type {
 export { useWorkOrderListActions } from './useWorkOrderListActions'
 export { useWorkOrderComments } from './useWorkOrderComments'
 export type { WorkOrderComment } from './useWorkOrderComments'
+export { useProductionMetrics, useAllowedDteTypes, useCoreAllowedDteTypes } from './useProductionQueries'
+export { productionApi } from '../api/productionApi'
+export { WORK_ORDERS_KEYS, BOMS_KEYS, PRODUCTION_METRICS_KEY, UOMS_KEY, ACCOUNTING_SETTINGS_KEY } from './queryKeys'

@@ -5,8 +5,8 @@ import { PhaseCard } from "./PhaseCard"
 import { FileText, Trash2, X } from "lucide-react"
 import { formatEntity } from '@/features/orders/utils/status'
 import { getDtePrefix, getDteLabel } from '@/lib/entity-registry'
-import api from "@/lib/api"
 import { toast } from "sonner"
+import { useAnnulInvoice, useDeleteInvoice } from "../../hooks/useOrdersMutations"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { saleOrderActions } from '@/features/sales/actions'
 import { purchaseOrderActions } from '@/features/purchasing/actions'
@@ -49,6 +49,9 @@ export function BillingPhase({
     const registry = (activeDoc?.document_type as string === 'PURCHASE_ORDER' || activeDoc?.document_type as string === 'SERVICE_OBLIGATION')
         ? purchaseOrderActions
         : saleOrderActions
+    const annulInvoice = useAnnulInvoice()
+    const deleteInvoice = useDeleteInvoice()
+
     const [confirmModal, setConfirmModal] = useState<{
         open: boolean,
         title: string,
@@ -77,8 +80,7 @@ export function BillingPhase({
         }
 
         try {
-            await api.delete(`/billing/invoices/${id}/`)
-            toast.success("Borrador eliminado correctamente")
+            await deleteInvoice.mutateAsync(id)
             setConfirmModal(prev => ({ ...prev, open: false }))
             onActionSuccess?.()
         } catch (error: unknown) {
@@ -89,8 +91,7 @@ export function BillingPhase({
 
     const handleAnnulDocument = async (id: number, force: boolean = false) => {
         try {
-            await api.post(`/billing/invoices/${id}/annul/`, { force })
-            toast.success("Documento anulado correctamente")
+            await annulInvoice.mutateAsync({ id, force })
             setConfirmModal(prev => ({ ...prev, open: false }))
             onActionSuccess?.()
         } catch (error: unknown) {

@@ -5,8 +5,8 @@ import { useState } from "react"
 import { PhaseCard } from "./PhaseCard"
 import { ClipboardList, Ban } from "lucide-react"
 import { Progress } from "@/components/ui/progress"
-import api from "@/lib/api"
 import { toast } from "sonner"
+import { useAnnulWorkOrder } from "../../hooks/useOrdersMutations"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { saleOrderActions } from '@/features/sales/actions'
 import { purchaseOrderActions } from '@/features/purchasing/actions'
@@ -39,6 +39,8 @@ export function ProductionPhase({
     const registry = (activeDoc?.document_type === 'PURCHASE_ORDER' || activeDoc?.document_type === 'SERVICE_OBLIGATION') 
         ? purchaseOrderActions 
         : saleOrderActions
+
+    const annulWorkOrder = useAnnulWorkOrder()
 
     const [confirmModal, setConfirmModal] = useState<{
         open: boolean,
@@ -75,8 +77,7 @@ export function ProductionPhase({
             confirmText: "Anular OT",
             onConfirm: async () => {
                 try {
-                    await api.post(`/production/orders/${id}/annul/`)
-                    toast.success("OT anulada correctamente")
+                    await annulWorkOrder.mutateAsync(id)
                     setConfirmModal(prev => ({ ...prev, open: false }))
                     onActionSuccess?.()
                 } catch (error: unknown) {
