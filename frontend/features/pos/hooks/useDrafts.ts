@@ -5,7 +5,7 @@ import { showApiError } from "@/lib/errors"
 import { useState, useEffect, useCallback } from 'react'
 import { usePOS } from '../contexts/POSContext'
 import type { CartItem, DraftCart } from '@/types/pos'
-import api from '@/lib/api'
+import { posApi } from '../api/posApi'
 import { toast } from 'sonner'
 
 interface UseDraftsOptions {
@@ -42,8 +42,8 @@ export function useDrafts(options: UseDraftsOptions = {}) {
         if (!currentSession?.id) return
         setIsLoading(true)
         try {
-            const res = await api.get(`/sales/pos-drafts/?pos_session_id=${currentSession.id}`)
-            const list = res.data.results || res.data
+            const data = await posApi.getDrafts({ pos_session_id: currentSession.id })
+            const list = (data as any).results || data
             setDrafts(list)
 
             // Sync currentDraftId: if it's set but not in the list, it's stale
@@ -90,16 +90,15 @@ export function useDrafts(options: UseDraftsOptions = {}) {
             if (currentDraftId) {
                 // Update existing
                 try {
-                    res = await api.put(`/sales/pos-drafts/${currentDraftId}/`, draftData)
+                    res = await posApi.updateDraft(currentDraftId, draftData)
                 } catch (error) {
                     const err = error as { response?: { status?: number } }
                     if (err.response?.status === 404) {
                         console.warn("Draft not found on server, falling back to new draft")
                         setCurrentDraftId(null)
-                        // Retry as post
-                        res = await api.post('/sales/pos-drafts/', draftData)
-                        setCurrentDraftId(res.data.id)
-                        if (options.acquireLock) await options.acquireLock(res.data.id)
+                        res = await posApi.createDraft(draftData)
+                        setCurrentDraftId((res as any).id)
+                        if (options.acquireLock) await options.acquireLock((res as any).id)
                         if (!silent) {
                             toast.success("Borrador guardado (nuevo)")
                         }
@@ -109,9 +108,9 @@ export function useDrafts(options: UseDraftsOptions = {}) {
                 }
             } else {
                 // Create new
-                res = await api.post('/sales/pos-drafts/', draftData)
-                setCurrentDraftId(res.data.id)
-                if (options.acquireLock) await options.acquireLock(res.data.id)
+                res = await posApi.createDraft(draftData)
+                setCurrentDraftId((res as any).id)
+                if (options.acquireLock) await options.acquireLock((res as any).id)
                 if (!silent) {
                     toast.success("Borrador guardado")
                 }
@@ -123,11 +122,11 @@ export function useDrafts(options: UseDraftsOptions = {}) {
             options.forceSync?.()
 
             // Refresh drafts list without full loading indicator
-            api.get(`/sales/pos-drafts/?pos_session_id=${currentSession?.id}`).then(r => {
-                setDrafts(r.data.results || r.data)
+            posApi.getDrafts({ pos_session_id: currentSession?.id }).then(data => {
+                setDrafts((data as any).results || data)
             })
 
-            return res.data
+            return res
         } catch (error: unknown) {
             console.error("Error saving draft:", error)
             if (!silent) {
@@ -164,14 +163,12 @@ export function useDrafts(options: UseDraftsOptions = {}) {
                 await options.releaseLock(currentDraftId)
             }
 
-            const res = await api.get(`/sales/pos-drafts/${draftId}/?pos_session_id=${currentSession.id}`)
-            const draft = res.data
+            const draft = await posApi.getDraft(draftId) as any
 
             // Reconstruct cart items from draft
             const itemPromises = draft.items.map(async (draftItem: { product_id: number; quantity: number; uom_id: number; unit_price_net: number; unit_price_gross: number; manufacturing_data?: unknown }) => {
                 try {
-                    const productRes = await api.get(`/inventory/products/${draftItem.product_id}/`)
-                    const product = productRes.data
+                    const product = await posApi.getProduct(draftItem.product_id)
 
                     return {
                         ...product,
@@ -228,7 +225,7 @@ export function useDrafts(options: UseDraftsOptions = {}) {
     const deleteDraft = useCallback(async (draftId: number) => {
         if (!currentSession?.id) return
         try {
-            await api.delete(`/sales/pos-drafts/${draftId}/?pos_session_id=${currentSession.id}`)
+            await posApi.deleteDraft(draftId)
             toast.success("Borrador eliminado")
             await fetchDrafts()
             options.forceSync?.()

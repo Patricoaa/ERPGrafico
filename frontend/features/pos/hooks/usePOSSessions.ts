@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import api from '@/lib/api'
+import { posApi } from '../api/posApi'
 import type { FilterState } from '@/components/shared'
 
 export interface POSSession {
@@ -31,11 +31,11 @@ export function usePOSSessions(filters?: FilterState) {
     const { data: sessions, isLoading, refetch } = useQuery({
         queryKey: [...POS_SESSIONS_QUERY_KEY, filters],
         queryFn: async (): Promise<POSSession[]> => {
-            const params = new URLSearchParams()
-            if (filters?.status) params.append('status', filters.status)
-            if (filters?.search) params.append('search', filters.search)
-            const response = await api.get('/treasury/pos-sessions/', { params })
-            return response.data
+            const params: Record<string, unknown> = {}
+            if (filters?.status) params.status = filters.status
+            if (filters?.search) params.search = filters.search
+            const data = await posApi.getSessions(params)
+            return data
         },
         staleTime: 60 * 1000, // 1 min — datos operativos activos
     })
@@ -54,8 +54,7 @@ export function usePOSSessions(filters?: FilterState) {
  * a `api` dentro de la capa de hooks (cumple invariante #5).
  */
 export async function fetchPOSSessionSummary<T = Record<string, unknown>>(sessionId: number): Promise<T> {
-    const response = await api.get<T>(`/treasury/pos-sessions/${sessionId}/summary/`)
-    return response.data
+    return posApi.getSessionSummary(sessionId) as Promise<T>
 }
 
 /**
@@ -71,8 +70,7 @@ export function usePOSSessionSummary<T = Record<string, unknown>>(sessionId: num
         queryKey: sessionId ? [...POS_SESSIONS_QUERY_KEY, 'summary', sessionId] : [...POS_SESSIONS_QUERY_KEY, 'summary', 'noop'],
         queryFn: async () => {
             if (!sessionId) return null
-            const response = await api.get<T>(`/treasury/pos-sessions/${sessionId}/summary/`)
-            return response.data
+            return posApi.getSessionSummary(sessionId) as Promise<T>
         },
         enabled: !!sessionId,
         // Summary se computa server-side y es relativamente costoso; sin staleTime

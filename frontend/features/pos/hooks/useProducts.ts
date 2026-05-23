@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { usePOS } from '../contexts/POSContext'
-import api from '@/lib/api'
+import { posApi } from '../api/posApi'
 import type { Product, StockLimits } from '@/types/pos'
 import { toast } from 'sonner'
 import * as BOMResolver from '@/features/pos/utils/bom-resolver'
@@ -58,8 +58,8 @@ export function useProducts() {
     const { data: uoms = [], isLoading: loadingUoms } = useQuery({
         queryKey: ['uoms'],
         queryFn: async () => {
-            const res = await api.get('/inventory/uoms/', { params: { active: true, page_size: 500 } })
-            return res.data.results || res.data
+            const data = await posApi.getUoms({ active: true, page_size: 500 })
+            return (data as any).results || data
         },
         staleTime: 1000 * 60 * 60,
     })
@@ -125,8 +125,8 @@ export function useProducts() {
 
     const toggleFavorite = useCallback(async (productId: number) => {
         try {
-            const res = await api.post(`/inventory/products/${productId}/toggle_favorite/`)
-            const isFavorite = res.data.is_favorite
+            const data = await posApi.toggleFavorite(productId)
+            const isFavorite = (data as any).is_favorite
 
             // Update cache directly for immediate UI response
             queryClient.setQueryData(['products', { active: true, can_be_sold: true }], (old: Product[] | undefined) => {

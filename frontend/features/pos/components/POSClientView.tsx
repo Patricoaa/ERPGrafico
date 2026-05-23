@@ -20,7 +20,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { toast } from 'sonner'
-import api from '@/lib/api'
+import { posApi } from '../api/posApi'
 import * as Validation from '@/features/pos/utils/validation'
 import { cn } from "@/lib/utils"
 import { Check, Printer } from 'lucide-react'
@@ -317,12 +317,11 @@ export function POSClientView() {
 
         setIsWithdrawing(true)
         try {
-            const res = await api.post(`/sales/pos-drafts/${currentDraftId}/withdraw/`, {
+            const data = await posApi.withdrawDraft(currentDraftId, {
                 pos_session_id: currentSession?.id,
-                partner_id: selectedPartnerId
+                partner_id: selectedPartnerId,
             })
-
-            toast.success(res.data.message || "Retiro procesado exitosamente")
+            toast.success((data as any).message || "Retiro procesado exitosamente")
             setWithdrawDialogOpen(false)
             setSelectedPartnerId(null)
             setSelectedPartnerName("")
