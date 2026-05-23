@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
-import { getEmployees } from '../api/hrApi'
-import type { Employee } from '@/types/hr'
+import { getEmployees, getEmployee, getAFPs, getPayrollConcepts } from '../api/hrApi'
+import type { Employee, AFP, PayrollConcept } from '@/types/hr'
 import type { FilterState } from '@/components/shared'
 
 export const EMPLOYEES_QUERY_KEY = ['hr', 'employees'] as const
@@ -22,4 +22,29 @@ export function useEmployees(filters?: FilterState) {
         isLoading,
         refetch,
     }
+}
+
+export function useEmployee(id: number | string | undefined) {
+    return useQuery({
+        queryKey: [...EMPLOYEES_QUERY_KEY, 'detail', id],
+        queryFn: () => getEmployee(Number(id)),
+        enabled: !!id,
+    })
+}
+
+export function useEmployeeFormDeps(enabled: boolean) {
+    return useQuery({
+        queryKey: ['hr', 'employee-form-deps'],
+        queryFn: async () => {
+            const [afpsData, conceptsData] = await Promise.all([
+                getAFPs(),
+                getPayrollConcepts({ formula_type: 'EMPLOYEE_SPECIFIC' })
+            ])
+            return {
+                afps: afpsData,
+                concepts: conceptsData.filter((c: PayrollConcept) => c.formula_type === 'EMPLOYEE_SPECIFIC')
+            }
+        },
+        enabled
+    })
 }

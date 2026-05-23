@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useQuery } from "@tanstack/react-query"
+import { useEmployeeFormDeps } from "../hooks/useEmployees"
 import { toast } from "sonner"
 import { showApiError } from "@/lib/errors"
 import { useForm } from "react-hook-form"
@@ -91,20 +91,7 @@ export function EmployeeFormModal({ open, onOpenChange, employee, onSaved, trigg
         }
     })
 
-    const { data: hrData } = useQuery({
-        queryKey: ['employee-form-deps'],
-        queryFn: async () => {
-            const [afpsData, conceptsData] = await Promise.all([
-                getAFPs(),
-                getPayrollConcepts({ formula_type: 'EMPLOYEE_SPECIFIC' })
-            ])
-            return {
-                afps: afpsData,
-                concepts: conceptsData.filter((c: PayrollConcept) => c.formula_type === 'EMPLOYEE_SPECIFIC')
-            }
-        },
-        enabled: open
-    })
+    const { data: hrData, isLoading: depsLoading } = useEmployeeFormDeps(open)
 
     const afps = hrData?.afps || []
     const availableConcepts = hrData?.concepts || []

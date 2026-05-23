@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
-import { getPayrolls } from '../api/hrApi'
-import type { Payroll } from '@/types/hr'
+import { getPayrolls, getPayroll, getPayrollConcepts, getPayrollPayments } from '../api/hrApi'
+import { getEmployeePayrollPreview } from '@/features/profile/api/profileApi'
+import type { Payroll, PayrollConcept, PayrollPayment } from '@/types/hr'
 import type { FilterState } from '@/components/shared'
 
 export const PAYROLLS_QUERY_KEY = ['hr', 'payrolls'] as const
@@ -23,4 +24,38 @@ export function usePayrolls(filters?: FilterState) {
         isLoading,
         refetch,
     }
+}
+
+type EmployeeBasic = {
+    id: number
+    contact_detail?: { name?: string; tax_id?: string }
+    position?: string
+    department?: string
+}
+
+export function usePayrollDetail(payrollId: number, viewMode: 'admin' | 'employee' = 'admin', employee?: EmployeeBasic) {
+    return useQuery({
+        queryKey: [...PAYROLLS_QUERY_KEY, 'detail', payrollId, viewMode],
+        queryFn: async () => {
+            if (viewMode === 'employee') {
+                const pData = await getEmployeePayrollPreview(payrollId)
+                if (employee && pData) {
+                    pData.employee_detail = pData.employee_detail || {
+                        contact_detail: employee.contact_detail,
+                        position: employee.position,
+                        department: employee.department
+                    }
+                }
+                return { payroll: pData, concepts: [] as PayrollConcept[], payments: pData.payments || [] }
+            } else {
+                const [pData, cData, pmtData] = await Promise.all([
+                    getPayroll(payrollId),
+                    getPayrollConcepts(),
+                    getPayrollPayments({ payroll: String(payrollId) })
+                ])
+                return { payroll: pData, concepts: cData, payments: pmtData }
+            }
+        },
+        enabled: !!payrollId,
+    })
 }
