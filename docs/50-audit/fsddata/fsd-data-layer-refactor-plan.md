@@ -306,9 +306,9 @@ Tras cada feature migrada, antes de mergear:
 |---|:---:|:---:|:---:|:---:|:---:|:---:|
 | **inventory** | ✓ | ✓ | ✓ | ✓ | pendiente | **✅ (22 commits)** |
 | **sales** | ✓ | ✓ | ✓ | ✓ | ✓ (saleorder) | **✅ (8 commits)** |
-| treasury | ✓ | ✓ | parcial | parcial | pendiente | ⏳ (próximo) |
-| purchasing | ✓ | ✗ | parcial | ✗ | ✗ | ⏳ |
-| billing | ✓ | ✓ | parcial | ✗ | ✗ | ⏳ |
+| **treasury** | ✓ | ✓ | ✓ | ✓ | pendiente | **✅ (12 commits)** |
+| **purchasing** | ✓ | ✓ | ✓ | ✓ | ✗ | **✅** |
+| **billing** | ✓ | ✓ | ✓ | ✓ | ✗ | **✅** |
 | orders | ✗ | ✗ | ✗ | ✗ | n/a (aggregator) | ⏳ |
 | production | ✗ | ✗ | parcial | ✗ | ✗ | ⏳ |
 | settings | ✗ | ✓ | parcial | ✗ | n/a (cross-domain) | ⏳ |

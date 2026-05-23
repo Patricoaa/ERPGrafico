@@ -48,22 +48,22 @@ Snapshot tomado el 2026-05-22 sobre el commit `874fc7bd` (rama `feat/Nuevo-siste
 
 ## Resumen ejecutivo
 
-| Estado | Definición | Snapshot 2026-05-22 | Tras inventory sweep | Tras sales sweep |
-|---|---|---|---|---|
-| **Compliant** | Tiene `queryKeys.ts` (o no muta) + 0 violaciones de #4/#5 | 5 (22%) | 6 (26%) | **7 (30%)** |
-| **Mostly compliant** | <5 violaciones combinadas, infraestructura FSD presente | 6 (26%) | 5 (22%) | 5 (22%) |
-| **Anti-pattern** | ≥5 violaciones o ausencia de infraestructura FSD | 12 (52%) | 12 (52%) | 11 (48%) |
+| Estado | Definición | Snapshot 2026-05-22 | Tras inventory | Tras sales | Tras treasury+purchasing+billing |
+|---|---|---|---|---|---|
+| **Compliant** | Tiene `queryKeys.ts` (o no muta) + 0 violaciones de #4/#5 | 5 (22%) | 6 (26%) | 7 (30%) | **10 (43%)** |
+| **Mostly compliant** | <5 violaciones combinadas, infraestructura FSD presente | 6 (26%) | 5 (22%) | 5 (22%) | 5 (22%) |
+| **Anti-pattern** | ≥5 violaciones o ausencia de infraestructura FSD | 12 (52%) | 12 (52%) | 11 (48%) | **8 (35%)** |
 
 Violaciones agregadas:
 
-| Métrica | Snapshot 2026-05-22 | Tras inventory | Tras sales |
-|---|---|---|---|
-| #5 (api directo en componentes) | 119 en 20 features | 95 en 19 features | **75 en 14 features** |
-| #4 (useQuery/Mutation en componentes) | 33 en 11 features | 29 en 10 features | **15 en 9 features** |
-| Sin `queryKeys.ts` | 15 de 23 (65%) | 15 de 23 (65%) | 15 de 23 (65%) |
-| Sin `api/` folder | 9 de 23 (39%) | 9 de 23 (39%) | 9 de 23 (39%) |
+| Métrica | Snapshot 2026-05-22 | Tras inventory | Tras sales | Tras treasury+purchasing+billing |
+|---|---|---|---|---|
+| #5 (api directo en componentes) | 119 en 20 features | 95 en 19 features | 75 en 14 features | **51 en 14 features** |
+| #4 (useQuery/Mutation en componentes) | 33 en 11 features | 29 en 10 features | 15 en 9 features | **12 en 8 features** |
+| Sin `queryKeys.ts` | 15 de 23 (65%) | 15 de 23 (65%) | 15 de 23 (65%) | 15 de 23 (65%) |
+| Sin `api/` folder | 9 de 23 (39%) | 9 de 23 (39%) | 9 de 23 (39%) | **8 de 23 (35%)** |
 
-**Reducción acumulada:** 44 violaciones #5 (-37%) y 18 #4 (-55%) en 30 commits de 2 features.
+**Reducción acumulada:** 68 violaciones #5 (-57%) y 21 #4 (-64%) en ~40 commits de 5 features.
 
 ## Tabla maestra por feature
 
@@ -74,7 +74,7 @@ Las columnas #5 y #4 muestran `inicial → actual` cuando hubo cambio. Estado re
 | accounting | ✓ | ✓ | 1 | 1 | Mostly compliant |
 | audit | ✗ | ✗ | 0 | 0 | Compliant (read-only) |
 | auth | ✗ | ✗ | 1 | 0 | Anti-pattern |
-| billing | ✓ | ✓ | 5 | 1 | Anti-pattern |
+| **billing** | ✓ | ✓ | **5 → 0** ✅ | **1 → 0** ✅ | **Compliant (sweep completado)** |
 | contacts | ✓ | ✓ | 2 | 1 | Mostly compliant |
 | credits | ✗ | ✓ | 0 | 0 | Compliant (read-only) |
 | finance | ✗ | ✗ | 8 | 1 | Anti-pattern |
@@ -86,12 +86,12 @@ Las columnas #5 y #4 muestran `inicial → actual` cuando hubo cambio. Estado re
 | pos | ✗ | ✗ | 4 | 0 → 1 | Anti-pattern |
 | production | ✗ | ✗ | 4 | 3 | Anti-pattern |
 | profile | ✗ | ✓ | 0 | 0 | Compliant |
-| purchasing | ✓ | ✗ | 9 | 1 | Anti-pattern |
+| **purchasing** | ✓ | **✗ → ✓** ✅ | **9 → 0** ✅ | **1 → 0** ✅ | **Compliant (sweep completado)** |
 | realtime | ✗ | ✗ | 0 | 0 | Compliant (infra-only) |
 | search | ✗ | ✓ | 0 | 0 | Compliant (aggregator) |
 | **settings** | ✗ | ✓ | **11** | 1 | Anti-pattern |
 | tax | ✗ | ✗ | 4 | 0 | Anti-pattern |
-| **treasury** | ✓ | ✓ | **12** | 3 | Anti-pattern |
+| **treasury** | ✓ | ✓ | **12 → 0** ✅ | **3 → 0** ✅ | **Compliant (sweep completado)** |
 | users | ✗ | ✗ | 3 | 0 | Anti-pattern |
 | workflow | ✗ | ✓ | 3 | 0 | Anti-pattern |
 
@@ -102,25 +102,15 @@ Las columnas #5 y #4 muestran `inicial → actual` cuando hubo cambio. Estado re
 ✅ Sweep completado en 22 commits incrementales. Detalle de hooks creados y patrones
 aplicados en [fsd-data-layer-refactor-plan.md](fsd-data-layer-refactor-plan.md).
 
-### treasury (12 violaciones #5)
+### treasury — completado (12 → 0)
 
-```
-TerminalManagement.tsx              MovementWizard.tsx
-POSSessionDetailClient.tsx          TerminalBatchForm.tsx
-MonthlyInvoiceModal.tsx             TreasuryMovementDetailClient.tsx
-PaymentReferenceModal.tsx           BankStatementDetailClient.tsx
-CashMovementModal.tsx               PaymentModal.tsx
-TransferModal.tsx                   MasterDataManagement.tsx
-```
+✅ Sweep completado en 12 commits incrementales. Migración completa:
+- `api/treasuryApi.ts` completado con todas las funciones faltantes (providers, devices, payments, transfers, movements, banks, payment methods, contacts, POS sessions, monthly invoices).
+- 9 hooks refactored/creados con `mutateAsync` directo + invalidación jerárquica.
+- 9 componentes migrados (sin `api` directo).
+- Type-check 0 errores, lint 0 violaciones.
 
-Sub-entidades: `Terminal`, `TerminalBatch`, `POSSession`, `TreasuryMovement`, `BankStatement`, `Payment`, `PaymentReference`, `MonthlyInvoice`, `Transfer`, `CashMovement`.
-
-### sales — completado (11 → 0)
-
-✅ Sweep completado en 8 commits. Hooks creados:
-`useSaleOrder`, `useSubscriptionHistory`, mutaciones de `registerNoteOnOrder`,
-`dispatchOrder`, `dispatchOrderPartial` + 3 DetailClients huérfanos eliminados
-(ADR-0020 los reemplazó por list+modal pattern).
+Hooks creados/refactorizados: `useTerminalProviders`, `useTerminalBatches`, `useMasterData` (split en `useBanks` + `usePaymentMethods`), `useTreasuryMovements`, `useTerminals`, `useTreasuryAccounts`, `usePayments`, `useTransfer`, `useMonthlyInvoice`, `usePOSSession`, `useSuppliers`.
 
 Como subproducto, otras features ganaron hooks aprovechables:
 - `billing`: `useInvoice`, `confirmInvoice`, `registerNoteOnInvoice`, `posCheckout`, `requestCredit`
@@ -129,20 +119,24 @@ Como subproducto, otras features ganaron hooks aprovechables:
 - `pos`: `usePOSSessionSummary`, `fetchPOSSessionSummary`
 - `workflow`: `getTask` helper
 
-### treasury (12 violaciones #5 — siguiente en cola)
+### purchasing — completado (9 → 0)
 
-```
-TerminalManagement.tsx              MovementWizard.tsx
-POSSessionDetailClient.tsx          TerminalBatchForm.tsx
-MonthlyInvoiceModal.tsx             TreasuryMovementDetailClient.tsx
-PaymentReferenceModal.tsx           BankStatementDetailClient.tsx
-CashMovementModal.tsx               PaymentModal.tsx
-TransferModal.tsx                   MasterDataManagement.tsx
-```
+✅ Sweep completado en una sesión. Migración completa:
+- `api/purchasingApi.ts` creado con 15 funciones (orders CRUD, notes, invoices, products, UoMs, warehouses, contacts).
+- Hooks refactorizados: `usePurchasingOrders`, `usePurchasingNotes` usa `purchasingApi`; nuevo `usePurchasingOrder(id)`.
+- `queryKeys.ts` extendido con `lists()`, `detail(id)`.
+- 9 componentes migrados (sin `api` directo).
+- Root barrel `index.ts` creado.
+- Type-check 0 errores, lint 0 violaciones.
 
-Sub-entidades: `Terminal`, `TerminalBatch`, `POSSession`, `TreasuryMovement`, `BankStatement`, `Payment`, `PaymentReference`, `MonthlyInvoice`, `Transfer`, `CashMovement`.
+### billing — completado (5 → 0)
 
-Nota: `useSalesOrders` ya existe con la mayoría de las mutaciones bien hechas (commit del piloto realtime). El gap está en `SaleOrderForm.tsx` (usa `api.put` directo) y los wizards de checkout.
+✅ Sweep completado en una sesión. Migración completa:
+- `api/billingApi.ts` extendido con 6 funciones: `deleteInvoice`, `createPayment`, `noteWorkflowCheckout`, `completeNoteWorkflow`, `getWarehouses`, `getAllowedUoms`.
+- Hooks: `useNoteCheckout` creado; `usePurchaseInvoices` extendido con `deleteInvoice`, `confirmInvoice`, `makePayment`.
+- 5 componentes migrados (sin `api` directo).
+- Fix `items?: any[]` → `items?: Record<string, unknown>[]`.
+- Type-check 0 errores, lint 0 violaciones.
 
 ### settings (11 violaciones #5, además **sin** `queryKeys.ts`)
 
@@ -209,7 +203,11 @@ Desde el 2026-05-22 hay barrera mecánica activa: la regla custom `fsd/no-api-in
 
 ```bash
 cd frontend && npm run lint 2>&1 | grep -c "fsd/no-api-in-component"
-# Snapshot 2026-05-22 (regla recién activada): 74
+# Snapshot 2026-05-22 (regla recién activada):          74
+# Tras inventory + sales sweeps:                         75
+# Tras treasury sweep:                                   65
+# Tras purchasing sweep:                                 56
+# Tras billing sweep:                                    51
 ```
 
 ## Referencias

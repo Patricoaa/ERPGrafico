@@ -6,7 +6,7 @@ import { BaseModal } from "@/components/shared/BaseModal"
 import { useServerDate } from "@/hooks/useServerDate"
 import { ChevronRight, ChevronLeft, Loader2, FileText, CheckCircle2, ShieldAlert } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import api from "@/lib/api"
+import { billingApi } from "../api/billingApi"
 import { toast } from "sonner"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton"
 // Sub-components
@@ -112,11 +112,11 @@ export function NoteCheckoutWizard({
                 is_pending: false
             })
 
-            const invRes = await api.get(`/billing/invoices/${invoiceId}/`)
-            setOriginalInvoice(invRes.data)
+            const invoiceData = await billingApi.getInvoice(invoiceId)
+            setOriginalInvoice(invoiceData as any)
 
             // Initial Payment Amount default
-            setPaymentData((p: Record<string, unknown>) => ({ ...p, amount: invRes.data.total })) // Correct logic will happen when items are selected
+            setPaymentData((p: Record<string, unknown>) => ({ ...p, amount: invoiceData.total }))
 
         } catch (error: unknown) {
             console.error("Error initializing note wizard:", error)
@@ -296,7 +296,7 @@ export function NoteCheckoutWizard({
                 formData.append('payment_data', JSON.stringify(paymentData))
             }
 
-            await api.post('/billing/note-workflows/checkout/', formData)
+            await billingApi.noteWorkflowCheckout(formData)
 
             toast.success("Nota generada exitosamente.")
             onSuccess?.()
