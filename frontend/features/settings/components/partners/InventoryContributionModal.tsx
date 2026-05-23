@@ -23,7 +23,7 @@ import { toast } from "sonner"
 
 
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import api from "@/lib/api"
+import { settingsApi } from "../../hooks"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
 import { cn } from "@/lib/utils"
 import { Partner } from "@/features/contacts/types/partner"
@@ -76,13 +76,12 @@ export function InventoryContributionModal({
         if (!open) return
         const fetchData = async () => {
             try {
-                const [pData, wRes] = await Promise.all([
+                const [pData, warehouses] = await Promise.all([
                     partnersApi.getPartners(),
-                    api.get<{ results?: Warehouse[] } | Warehouse[]>('/inventory/warehouses/')
+                    settingsApi.getWarehouses()
                 ])
                 setPartners(pData)
-                const wData = 'results' in wRes.data ? wRes.data.results : wRes.data
-                setWarehouses(Array.isArray(wData) ? wData : [])
+                setWarehouses(warehouses)
             } catch {
                 toast.error("Error cargando datos")
             }
@@ -105,20 +104,17 @@ export function InventoryContributionModal({
             setUomId("")
             return
         }
-        api.get<Product>(`/inventory/products/${productId}/`)
-            .then(res => {
-                const data = res.data
-                setProductDetails(data)
-                setUnitCost(data.cost_price?.toString() || "0")
+        settingsApi.getProduct(productId)
+            .then(data => {
+                setProductDetails(data as any)
+                setUnitCost((data as any).cost_price?.toString() || "0")
 
-                if (data.uom_category) {
-                    return api.get<{ results?: UoM[] } | UoM[]>(`/inventory/uoms/?category=${data.uom_category}`)
-                        .then(uomRes => {
-                            const uomData = uomRes.data
-                            const uoms = Array.isArray(uomData) ? uomData : (uomData.results || [])
-                            setProductUoMs(uoms)
-                            const baseId = typeof data.uom === 'object' && data.uom !== null ? (data.uom as any).id : data.uom
-                            const base = uoms.find((u: UoM) => u.id === baseId)
+                if ((data as any).uom_category) {
+                    return settingsApi.getUoms({ category: (data as any).uom_category })
+                        .then(uoms => {
+                            setProductUoMs(uoms as any)
+                            const baseId = typeof (data as any).uom === 'object' && (data as any).uom !== null ? (data as any).uom.id : (data as any).uom
+                            const base = uoms.find((u: { id: number }) => u.id === baseId)
                             if (base) setUomId(base.id.toString())
                         })
                 }
@@ -180,7 +176,7 @@ export function InventoryContributionModal({
             const qty = Number(quantity)
             const finalQty = moveType === 'OUT' ? -qty : qty
 
-            await api.post('/inventory/moves/adjust/', {
+            await settingsApi.createInventoryAdjustment({
                 product_id: productId,
                 warehouse_id: warehouseId,
                 quantity: finalQty,

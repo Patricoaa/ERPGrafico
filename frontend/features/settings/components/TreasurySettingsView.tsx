@@ -4,7 +4,7 @@ import React, { useCallback } from "react"
 import { useForm, UseFormReturn, Path } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 
-import api from "@/lib/api"
+import { settingsApi } from "../hooks"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Form, FormField } from "@/components/ui/form"
 import { Banknote, ArrowLeftRight, Settings2 } from "lucide-react"
@@ -50,7 +50,7 @@ export function TreasurySettingsView({ activeTab = "conciliation" }: TreasurySet
     })
 
     const onSave = useCallback(async (data: TreasuryFormValues) => {
-        await api.patch('/accounting/settings/current/', data)
+        await settingsApi.updateCurrentSettings(data)
     }, [])
 
     const { status, invalidReason, lastSavedAt, retry } = useAutoSaveForm({

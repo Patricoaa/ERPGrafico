@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils"
 import { useAutoSaveForm } from "@/hooks/useAutoSaveForm"
 import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard"
 
-import api, { resolveMediaUrl } from "@/lib/api"
+import { resolveMediaUrl } from "@/lib/api"
 import { CompanySettings } from "@/features/settings/types"
 import { contactsApi } from "@/features/contacts/api/contactsApi"
 
@@ -95,8 +95,7 @@ export function CompanySettingsView({ activeTab }: { activeTab: string }) {
 
         setSyncing(true)
         try {
-            const res = await api.get(`/contacts/${idToSync}/`)
-            const contact = res.data
+            const contact = await contactsApi.getContact(idToSync)
 
             form.setValue("name", contact.name || "", { shouldDirty: true, shouldValidate: true })
             form.setValue("tax_id", contact.tax_id || "", { shouldDirty: true, shouldValidate: true })

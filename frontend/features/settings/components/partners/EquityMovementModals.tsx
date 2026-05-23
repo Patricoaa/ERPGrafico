@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { CancelButton, SubmitButton, LabeledInput, LabeledSelect, PeriodValidationDateInput, ActionConfirmModal } from "@/components/shared"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
+import { settingsApi } from "../../hooks"
 import { Partner } from "@/features/contacts/types/partner"
 import { TreasuryAccount } from "@/features/treasury/types"
 import { toast } from "sonner"
@@ -425,13 +426,8 @@ function useTreasuryAccounts() {
 
     useEffect(() => {
         // Fetch treasury accounts for the dropdowns
-        import("@/lib/api").then(m => m.default).then(async (api) => {
-            try {
-                const res = await api.get<TreasuryAccount[]>('/treasury/accounts/')
-                setAccounts(res.data)
-            } catch (error) {
-                console.error("Error fetching treasury accounts:", error)
-            }
+        settingsApi.getTreasuryAccounts().then((accs) => setAccounts(accs as any)).catch((error) => {
+            console.error("Error fetching treasury accounts:", error)
         })
     }, [])
 

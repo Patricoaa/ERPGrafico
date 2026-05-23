@@ -17,7 +17,7 @@ import { partnersApi } from "@/features/contacts/api/partnersApi"
 import { Partner } from "@/features/contacts/types/partner"
 import { TreasuryAccount } from "@/features/treasury/types"
 import { Product } from "@/features/inventory/types"
-import api from "@/lib/api"
+import { settingsApi } from "../../hooks"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { LabeledInput, LabeledSelect, LabeledContainer, PeriodValidationDateInput, Chip } from "@/components/shared"
 
@@ -82,12 +82,12 @@ export function PartnerWithdrawalWizard({
             setLoading(true)
             Promise.all([
                 partnersApi.getPartners(),
-                api.get('/inventory/warehouses/'),
-                api.get('/treasury/accounts/')
-            ]).then(([pData, wRes, aRes]) => {
+                settingsApi.getWarehouses(),
+                settingsApi.getTreasuryAccounts()
+            ]).then(([pData, warehouses, accounts]) => {
                 setPartners(pData)
-                setWarehouses(wRes.data.results || wRes.data)
-                setTreasuryAccounts(aRes.data)
+                setWarehouses(warehouses)
+                setTreasuryAccounts(accounts as any)
 
                 if (initialPartnerId) setPartnerId(initialPartnerId)
             }).catch(err => {
@@ -126,18 +126,16 @@ export function PartnerWithdrawalWizard({
             return
         }
 
-        api.get(`/inventory/products/${assetData.productId}/`)
-            .then(res => {
-                const data = res.data
-                setProductDetails(data)
-                setAssetData(prev => ({ ...prev, unitCost: data.cost_price?.toString() || "0" }))
+        settingsApi.getProduct(assetData.productId)
+            .then(data => {
+                setProductDetails(data as any)
+                setAssetData(prev => ({ ...prev, unitCost: (data as any).cost_price?.toString() || "0" }))
 
-                if (data.uom_category) {
-                    api.get(`/inventory/uoms/?category=${data.uom_category}`)
-                        .then(uomRes => {
-                            const uoms = uomRes.data.results || uomRes.data
+                if ((data as any).uom_category) {
+                    settingsApi.getUoms({ category: (data as any).uom_category })
+                        .then(uoms => {
                             setProductUoMs(uoms)
-                            const baseId = typeof data.uom === 'object' ? data.uom.id : data.uom
+                            const baseId = typeof (data as any).uom === 'object' ? (data as any).uom.id : (data as any).uom
                             const base = uoms.find((u: { id: number }) => u.id === baseId)
                             if (base) setAssetData(prev => ({ ...prev, uomId: base.id.toString() }))
                         })
@@ -162,7 +160,7 @@ export function PartnerWithdrawalWizard({
                     description: cashData.description || 'Retiro Provisorio de Utilidades'
                 })
             } else {
-                await api.post('/inventory/moves/adjust/', {
+                await settingsApi.createInventoryAdjustment({
                     product_id: assetData.productId,
                     warehouse_id: assetData.warehouseId,
                     quantity: -Number(assetData.quantity), // Negative for withdrawal

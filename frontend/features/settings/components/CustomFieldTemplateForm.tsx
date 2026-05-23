@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/form"
 import { Switch } from "@/components/ui/switch"
 import { BaseModal } from "@/components/shared/BaseModal"
-import api from "@/lib/api"
+import { settingsApi } from "../hooks"
 import { toast } from "sonner"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
 import { LabeledInput, LabeledSelect, FormSection, FormFooter } from "@/components/shared"
@@ -78,9 +78,9 @@ export function CustomFieldTemplateForm({ open, onOpenChange, onSuccess }: Custo
     const onSubmit = async (data: TemplateFormValues) => {
         setLoading(true)
         try {
-            const response = await api.post("/inventory/custom-field-templates/", data)
+            const response = await settingsApi.createCustomFieldTemplate(data)
             toast.success("Plantilla creada exitosamente")
-            onSuccess(response.data)
+            onSuccess(response)
             form.reset()
             onOpenChange(false)
         } catch (error: unknown) {

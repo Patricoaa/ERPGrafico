@@ -309,9 +309,9 @@ Tras cada feature migrada, antes de mergear:
 | **treasury** | ✓ | ✓ | ✓ | ✓ | pendiente | **✅ (12 commits)** |
 | **purchasing** | ✓ | ✓ | ✓ | ✓ | ✗ | **✅** |
 | **billing** | ✓ | ✓ | ✓ | ✓ | ✗ | **✅** |
-| orders | ✗ | ✗ | ✗ | ✗ | n/a (aggregator) | ⏳ |
-| production | ✗ | ✗ | parcial | ✗ | ✗ | ⏳ |
-| settings | ✗ | ✓ | parcial | ✗ | n/a (cross-domain) | ⏳ |
+| **orders** | ✓ | ✓ | ✓ | ✓ | n/a (aggregator) | **✅** |
+| **production** | ✓ | ✓ | ✓ | ✓ | ✗ | **✅** |
+| **settings** | ✓ | ✓ | ✓ | ✓ | n/a (cross-domain) | **✅** |
 | finance | ✗ | ✗ | parcial | ✗ | ✗ | ⏳ |
 | pos | ✗ | ✗ | parcial | ✗ | n/a (WS dedicado) | ⏳ |
 | hr | ✗ | ✓ | parcial | parcial | ✗ | ⏳ |

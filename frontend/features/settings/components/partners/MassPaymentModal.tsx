@@ -3,8 +3,7 @@ import { formatCurrency } from "@/lib/money"
 
 import { showApiError } from "@/lib/errors"
 import React, { useState, useEffect, useMemo } from "react"
-import { useQuery } from "@tanstack/react-query"
-import api from "@/lib/api"
+import { useTreasuryAccounts } from "../../hooks"
 import { GenericWizard, WizardStep } from "@/components/shared/GenericWizard"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -43,14 +42,7 @@ export function MassPaymentModal({ open, onOpenChange, resolution, onSuccess }: 
         }).filter(l => l.pendingAmount > 0)
     }, [resolution])
 
-    const { data: treasuryAccounts = [] } = useQuery<TreasuryAccount[]>({
-        queryKey: ['treasuryAccounts'],
-        queryFn: async () => {
-            const res = await api.get('/treasury/accounts/')
-            return res.data
-        },
-        enabled: open
-    })
+    const { data: treasuryAccounts = [] } = useTreasuryAccounts(open)
 
     useEffect(() => {
         if (open) {
