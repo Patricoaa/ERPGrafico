@@ -32,7 +32,7 @@ import { Separator } from "@/components/ui/separator"
 import { DataTable } from '@/components/shared'
 import { DomainHubStatus } from "@/components/shared/HubStatus"
 import { ColumnDef } from "@tanstack/react-table"
-import { Card, CardContent } from "@/components/ui/card"
+import { StatCard } from "@/components/shared"
 import { getHubStatuses } from '@/features/orders/utils/status'
 import { LabeledInput, FormTabs, FormTabsContent, type FormTabItem, FormFooter, FormSection, SkeletonShell } from "@/components/shared"
 import { formatCurrency } from "@/lib/money"
@@ -633,100 +633,53 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
         <div className="flex flex-col h-full">
             {/* Summary Cards Grid */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                {/* 1. Total Card (Available for all types) */}
-                <Card
-                    className={`cursor-pointer transition-all hover:bg-muted/50 border-none shadow-sm rounded-md ${activeFilter === 'all' ? 'ring-2 ring-primary ring-offset-2' : 'bg-muted/5'}`}
+                <StatCard
+                    label="Total"
+                    value={metrics.total}
+                    icon={Icon}
                     onClick={() => setActiveFilter('all')}
-                >
-                    <CardContent className="p-4 flex items-center justify-between">
-                        <div>
-                            <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider mb-1">Total</p>
-                            <p className="text-2xl font-bold">{metrics.total}</p>
-                        </div>
-                        <Icon className="h-4 w-4 text-muted-foreground" />
-                    </CardContent>
-                </Card>
-
-                {/* Sales/Purchase Specific Cards */}
+                    active={activeFilter === 'all'}
+                    accent="primary"
+                />
                 {type !== 'work_order' && (
                     <>
-                        {/* 2. Financial Card (Accounts Receivable/Payable) */}
-                        <Card
-                            className={`cursor-pointer transition-all hover:bg-destructive/10/50 border-none shadow-sm rounded-md ${activeFilter === 'financial' ? 'ring-2 ring-destructive ring-offset-2' : 'bg-destructive/10/20'}`}
+                        <StatCard
+                            label={type === 'sale' ? 'Por Cobrar' : 'Por Pagar'}
+                            value={formatCurrency(metrics.totalPendingMoney)}
+                            icon={Banknote}
+                            subtext={`${metrics.pendingPaymentCount} documentos`}
                             onClick={() => setActiveFilter('financial')}
-                        >
-                            <CardContent className="p-4 flex items-center justify-between">
-                                <div>
-                                    <p className="text-[10px] font-bold uppercase text-destructive/70 tracking-wider mb-1">
-                                        {type === 'sale' ? 'Por Cobrar' : 'Por Pagar'}
-                                    </p>
-                                    <p className="text-lg font-bold text-destructive">
-                                        {formatCurrency(metrics.totalPendingMoney)}
-                                    </p>
-                                    <p className="text-[9px] text-destructive/60 font-medium">
-                                        {metrics.pendingPaymentCount} documentos
-                                    </p>
-                                </div>
-                                <Banknote className="h-4 w-4 text-muted-foreground" />
-                            </CardContent>
-                        </Card>
-
-                        {/* 3. Logistics Card */}
-                        <Card
-                            className={`cursor-pointer transition-all hover:bg-warning/10/50 border-none shadow-sm rounded-md ${activeFilter === 'logistics' ? 'ring-2 ring-warning ring-offset-2' : 'bg-white'}`}
+                            active={activeFilter === 'financial'}
+                            accent="destructive"
+                            valueSize="md"
+                        />
+                        <StatCard
+                            label={type === 'sale' ? 'Despacho Pdte.' : 'Recepción Pdte.'}
+                            value={metrics.pendingLogisticsCount}
+                            icon={Truck}
                             onClick={() => setActiveFilter('logistics')}
-                        >
-                            <CardContent className="p-4 flex items-center justify-between">
-                                <div>
-                                    <p className="text-[10px] font-bold uppercase text-warning/70 tracking-wider mb-1">
-                                        {type === 'sale' ? 'Despacho Pdte.' : 'Recepción Pdte.'}
-                                    </p>
-                                    <p className="text-2xl font-bold text-warning">
-                                        {metrics.pendingLogisticsCount}
-                                    </p>
-                                </div>
-                                <Truck className="h-4 w-4 text-muted-foreground" />
-                            </CardContent>
-                        </Card>
-
-                        {/* 4. Billing Card */}
-                        <Card
-                            className={`cursor-pointer transition-all hover:bg-primary/10/50 border-none shadow-sm rounded-md ${activeFilter === 'billing' ? 'ring-2 ring-primary ring-offset-2' : 'bg-white'}`}
+                            active={activeFilter === 'logistics'}
+                            accent="warning"
+                        />
+                        <StatCard
+                            label="Facturación Pdte."
+                            value={metrics.pendingBillingCount}
+                            icon={Receipt}
                             onClick={() => setActiveFilter('billing')}
-                        >
-                            <CardContent className="p-4 flex items-center justify-between">
-                                <div>
-                                    <p className="text-[10px] font-bold uppercase text-primary/70 tracking-wider mb-1">
-                                        Facturación Pdte.
-                                    </p>
-                                    <p className="text-2xl font-bold text-primary">
-                                        {metrics.pendingBillingCount}
-                                    </p>
-                                </div>
-                                <Receipt className="h-4 w-4 text-muted-foreground" />
-                            </CardContent>
-                        </Card>
+                            active={activeFilter === 'billing'}
+                            accent="primary"
+                        />
                     </>
                 )}
-
-                {/* Work Order Specific Card */}
                 {type === 'work_order' && (
-                    <Card
-                        className={`cursor-pointer transition-all hover:bg-primary/10/50 border-none shadow-sm rounded-md ${activeFilter === 'pending' ? 'ring-2 ring-primary ring-offset-2' : 'bg-primary/10/20'}`}
+                    <StatCard
+                        label="En Proceso / Pdte"
+                        value={metrics.pendingWOCount}
+                        icon={ClipboardList}
                         onClick={() => setActiveFilter('pending')}
-                    >
-                        <CardContent className="p-4 flex items-center justify-between">
-                            <div>
-                                <p className="text-[10px] font-bold uppercase text-primary/70 tracking-wider mb-1">
-                                    En Proceso / Pdte
-                                </p>
-                                <p className="text-2xl font-bold text-primary">
-                                    {metrics.pendingWOCount}
-                                </p>
-                            </div>
-                            <ClipboardList className="h-4 w-4 text-muted-foreground" />
-                        </CardContent>
-                    </Card>
+                        active={activeFilter === 'pending'}
+                        accent="primary"
+                    />
                 )}
             </div>
 

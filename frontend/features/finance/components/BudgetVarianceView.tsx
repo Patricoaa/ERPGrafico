@@ -5,12 +5,9 @@ import { financeApi } from "../api/financeApi";
 import {
     CalendarDays,
     FileDown,
-    TrendingUp,
-    TrendingDown,
     Target
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { 
     Select, 
     SelectContent, 
@@ -19,12 +16,10 @@ import {
     SelectValue 
 } from "@/components/ui/select";
 import { BudgetVarianceTable, BudgetVarianceNode } from "./BudgetVarianceTable";
-import { EmptyState } from "@/components/shared";
+import { EmptyState, StatCard } from "@/components/shared";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay";
-import { cn } from "@/lib/utils";
-
 const MONTH_NAMES = [
     "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
     "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
@@ -168,47 +163,37 @@ export function BudgetVarianceView() {
 
              {summary && (
                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                     <Card className="border-l-4 border-l-primary">
-                         <CardContent className="pt-6">
-                             <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Margen Mes</p>
-                             <MoneyDisplay amount={summary.month_actual} className="text-2xl font-heading font-black tracking-tighter" />
-                             <div className="mt-2 flex items-center gap-1.5">
-                                 {summary.month_variance >= 0 ? <TrendingUp className="text-success" /> : <TrendingDown className="text-destructive" />}
-                                 <span className={cn("text-xs font-bold", summary.month_variance >= 0 ? "text-success" : "text-destructive")}>
-                                     {summary.month_perc.toFixed(1)}% ejecución
-                                 </span>
-                             </div>
-                         </CardContent>
-                     </Card>
-                     
-                     <Card>
-                         <CardContent className="pt-6">
-                             <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Presupuesto Mes</p>
-                             <MoneyDisplay amount={summary.month_budget} showColor={false} className="text-2xl font-heading font-black tracking-tighter opacity-80" />
-                             <p className="text-[10px] text-muted-foreground mt-2">Projection objetivos periodo</p>
-                         </CardContent>
-                     </Card>
-
-                     <Card className="border-l-4 border-l-primary bg-primary/5">
-                         <CardContent className="pt-6">
-                             <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-1">Margen YTD (Acum.)</p>
-                             <MoneyDisplay amount={summary.ytd_actual} className="text-2xl font-heading font-black tracking-tighter" />
-                             <div className="mt-2 flex items-center gap-1.5">
-                                 {summary.ytd_variance >= 0 ? <TrendingUp className="text-success" /> : <TrendingDown className="text-destructive" />}
-                                 <span className={cn("text-xs font-bold", summary.ytd_variance >= 0 ? "text-success" : "text-destructive")}>
-                                     {summary.ytd_perc.toFixed(1)}% objetivos YTD
-                                 </span>
-                             </div>
-                         </CardContent>
-                     </Card>
-
-                     <Card>
-                         <CardContent className="pt-6">
-                             <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Desviación Neta YTD</p>
-                             <MoneyDisplay amount={summary.ytd_variance} className="text-2xl font-heading font-black tracking-tighter" />
-                             <p className="text-[10px] text-muted-foreground mt-2">Diferencia acumulada anual</p>
-                         </CardContent>
-                     </Card>
+                     <StatCard
+                         label="Margen Mes"
+                         value={<MoneyDisplay amount={summary.month_actual} />}
+                         trend={{
+                             direction: summary.month_variance >= 0 ? "up" : "down",
+                             value: `${summary.month_perc.toFixed(1)}% ejecución`,
+                         }}
+                         accent="primary"
+                     />
+                     <StatCard
+                         label="Presupuesto Mes"
+                         value={<MoneyDisplay amount={summary.month_budget} showColor={false} />}
+                         subtext="Projection objetivos periodo"
+                         accent="muted"
+                     />
+                     <StatCard
+                         label="Margen YTD (Acum.)"
+                         value={<MoneyDisplay amount={summary.ytd_actual} />}
+                         trend={{
+                             direction: summary.ytd_variance >= 0 ? "up" : "down",
+                             value: `${summary.ytd_perc.toFixed(1)}% objetivos YTD`,
+                         }}
+                         accent="primary"
+                         className="bg-primary/5"
+                     />
+                     <StatCard
+                         label="Desviación Neta YTD"
+                         value={<MoneyDisplay amount={summary.ytd_variance} />}
+                         subtext="Diferencia acumulada anual"
+                         accent="muted"
+                     />
                  </div>
              )}
 

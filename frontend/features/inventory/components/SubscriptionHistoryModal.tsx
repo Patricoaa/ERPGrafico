@@ -6,7 +6,7 @@ import { SkeletonShell } from "@/components/shared"
 
 import { useState, useMemo } from "react"
 import { BaseModal } from "@/components/shared/BaseModal"
-import { DataTable } from "@/components/shared"
+import { DataTable, StatCard } from "@/components/shared"
 import {
     History,
     FileText,
@@ -28,10 +28,8 @@ import {
     YAxis,
     CartesianGrid,
     Tooltip as RechartsTooltip,
-    Legend,
     Cell
 } from 'recharts'
-import { Card, CardContent } from "@/components/ui/card"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { DateRangeFilter } from "@/components/shared/DateRangeFilter"
 import { translateStatus } from "@/lib/utils"
@@ -138,130 +136,128 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                                     <p className="text-muted-foreground">Error al cargar datos.</p>
                                 </div>
                             ) : (
-                        <FormTabs
-                            value={activeTab}
-                            onValueChange={setActiveTab}
-                            orientation="horizontal"
-                            variant="underline"
-                            items={[
-                                { value: "historial", label: "Historial de Costos", icon: History },
-                                { value: "orders", label: "Órdenes de Compra (OCS)", icon: FileText },
-                                { value: "notes", label: "Notas de Crédito / Débito", icon: Receipt }
-                            ]}
-                            className="flex-1 overflow-visible"
-                        >
-                            <div className="flex-1 overflow-auto p-6 scrollbar-thin">
+                                <FormTabs
+                                    value={activeTab}
+                                    onValueChange={setActiveTab}
+                                    orientation="horizontal"
+                                    variant="underline"
+                                    items={[
+                                        { value: "historial", label: "Historial de Costos", icon: History },
+                                        { value: "orders", label: "Órdenes de Compra (OCS)", icon: FileText },
+                                        { value: "notes", label: "Notas de Crédito / Débito", icon: Receipt }
+                                    ]}
+                                    className="flex-1 overflow-visible"
+                                >
+                                    <div className="flex-1 overflow-auto p-6 scrollbar-thin">
 
-                                {/* HISTORIAL TAB */}
-                                <FormTabsContent value="historial" className="mt-0 space-y-6">
-                                    <div className="space-y-4">
-                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                            <Card className="bg-primary/10/30 border-primary/10 shadow-none">
-                                                <CardContent className="p-4">
-                                                    <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Último Precio</p>
-                                                    <DataCell.Currency value={data.price_history[0]?.unit_cost || 0} className="text-2xl font-black text-primary text-left" />
-                                                </CardContent>
-                                            </Card>
-                                            <Card className="bg-warning/10/30 border-warning/10 shadow-none">
-                                                <CardContent className="p-4">
-                                                    <p className="text-[10px] font-bold text-warning uppercase tracking-wider">OCS Totales</p>
-                                                    <div className="flex items-baseline gap-2">
-                                                        <p className="text-2xl font-black text-warning">{data.orders.length}</p>
-                                                        <span className="text-xs text-warning">documentos</span>
-                                                    </div>
-                                                </CardContent>
-                                            </Card>
-                                            <Card className="bg-success/10/30 border-success/10 shadow-none">
-                                                <CardContent className="p-4">
-                                                    <p className="text-[10px] font-bold text-success uppercase tracking-wider">Estado Actual</p>
-                                                    <div className="mt-1">
-                                                        <StatusBadge status="SUCCESS" label="ACTIVA" size="md" />
-                                                    </div>
-                                                </CardContent>
-                                            </Card>
-                                        </div>
+                                        {/* HISTORIAL TAB */}
+                                        <FormTabsContent value="historial" className="mt-0 space-y-6">
+                                            <div className="space-y-4">
+                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                                    <StatCard
+                                                        label="Último Precio"
+                                                        value={<DataCell.Currency value={data.price_history[0]?.unit_cost || 0} className="text-2xl font-black text-left" />}
+                                                        variant="compact"
+                                                        accent="primary"
+                                                        className="shadow-none"
+                                                    />
+                                                    <StatCard
+                                                        label="OCS Totales"
+                                                        value={<>{data.orders.length} <span className="text-xs">documentos</span></>}
+                                                        variant="compact"
+                                                        accent="warning"
+                                                        className="shadow-none"
+                                                    />
+                                                    <StatCard
+                                                        label="Estado Actual"
+                                                        value={<StatusBadge status="SUCCESS" label="ACTIVA" size="md" />}
+                                                        variant="compact"
+                                                        accent="success"
+                                                        className="shadow-none"
+                                                    />
+                                                </div>
 
-                                        <div className="flex justify-end">
-                                            <DateRangeFilter onDateChange={setDateRange} label="Periodo para el gráfico" />
-                                        </div>
-                                    </div>
+                                                <div className="flex justify-end">
+                                                    <DateRangeFilter onDateChange={setDateRange} label="Periodo para el gráfico" />
+                                                </div>
+                                            </div>
 
-                                    <div className="h-[400px] w-full bg-white rounded-md border p-6 shadow-sm">
-                                        <ResponsiveContainer width="100%" height="100%">
-                                            <BarChart data={filteredPriceHistory}>
-                                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--muted)" />
-                                                <XAxis
-                                                    dataKey="date"
-                                                    tickFormatter={(str) => format(new Date(str), 'MMM d', { locale: es })}
-                                                    fontSize={10}
-                                                    tickMargin={10}
-                                                    stroke="var(--muted-foreground)"
+                                            <div className="h-[400px] w-full bg-white rounded-md border p-6 shadow-sm">
+                                                <ResponsiveContainer width="100%" height="100%">
+                                                    <BarChart data={filteredPriceHistory}>
+                                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--muted)" />
+                                                        <XAxis
+                                                            dataKey="date"
+                                                            tickFormatter={(str) => format(new Date(str), 'MMM d', { locale: es })}
+                                                            fontSize={10}
+                                                            tickMargin={10}
+                                                            stroke="var(--muted-foreground)"
+                                                        />
+                                                        <YAxis fontSize={10} stroke="var(--muted-foreground)" tickFormatter={(val) => formatCurrency(val)} />
+                                                        <RechartsTooltip
+                                                            labelFormatter={(val) => format(new Date(val), 'PPP', { locale: es })}
+                                                            formatter={(val: number | undefined) => [val !== undefined ? formatCurrency(val) : '---', 'Costo Unitario']}
+                                                            contentStyle={{ borderRadius: 'var(--radius)', border: '1px solid var(--border)', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', padding: '12px', backgroundColor: 'var(--popover)', color: 'var(--popover-foreground)' }}
+                                                        />
+                                                        <Bar
+                                                            dataKey="unit_cost"
+                                                            name="Precio"
+                                                            fill="var(--primary)"
+                                                            radius={[6, 6, 0, 0]}
+                                                            barSize={40}
+                                                        >
+                                                            {filteredPriceHistory.map((entry, index) => (
+                                                                <Cell key={`cell-${index}`} fill={index === 0 ? 'var(--primary)' : 'var(--primary)'} fillOpacity={index === 0 ? 1 : 0.7} />
+                                                            ))}
+                                                        </Bar>
+                                                    </BarChart>
+                                                </ResponsiveContainer>
+                                            </div>
+                                            {filteredPriceHistory.length === 0 && (
+                                                <EmptyState
+                                                    context="search"
+                                                    variant="compact"
+                                                    title="Sin datos"
+                                                    description="No hay datos para el periodo seleccionado."
                                                 />
-                                                <YAxis fontSize={10} stroke="var(--muted-foreground)" tickFormatter={(val) => formatCurrency(val)} />
-                                                <RechartsTooltip
-                                                    labelFormatter={(val) => format(new Date(val), 'PPP', { locale: es })}
-                                                    formatter={(val: number | undefined) => [val !== undefined ? formatCurrency(val) : '---', 'Costo Unitario']}
-                                                    contentStyle={{ borderRadius: 'var(--radius)', border: '1px solid var(--border)', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', padding: '12px', backgroundColor: 'var(--popover)', color: 'var(--popover-foreground)' }}
+                                            )}
+                                        </FormTabsContent>
+
+                                        {/* ORDERS TAB */}
+                                        <FormTabsContent value="orders" className="mt-0">
+                                            <div className="rounded-md border shadow-sm overflow-hidden bg-card">
+                                                <OrderTable
+                                                    orders={data.orders}
+                                                    onOpenHub={(orderId) => openHub({
+                                                        orderId,
+                                                        type: 'purchase' as const,
+                                                        onActionSuccess: () => refetchHistory()
+                                                    })}
                                                 />
-                                                <Bar
-                                                    dataKey="unit_cost"
-                                                    name="Precio"
-                                                    fill="var(--primary)"
-                                                    radius={[6, 6, 0, 0]}
-                                                    barSize={40}
-                                                >
-                                                    {filteredPriceHistory.map((entry, index) => (
-                                                        <Cell key={`cell-${index}`} fill={index === 0 ? 'var(--primary)' : 'var(--primary)'} fillOpacity={index === 0 ? 1 : 0.7} />
-                                                    ))}
-                                                </Bar>
-                                            </BarChart>
-                                        </ResponsiveContainer>
-                                    </div>
-                                    {filteredPriceHistory.length === 0 && (
-                                        <EmptyState
-                                            context="search"
-                                            variant="compact"
-                                            title="Sin datos"
-                                            description="No hay datos para el periodo seleccionado."
-                                        />
-                                    )}
-                                </FormTabsContent>
+                                            </div>
+                                        </FormTabsContent>
 
-                                {/* ORDERS TAB */}
-                                <FormTabsContent value="orders" className="mt-0">
-                                    <div className="rounded-md border shadow-sm overflow-hidden bg-card">
-                                        <OrderTable
-                                            orders={data.orders}
-                                            onOpenHub={(orderId) => openHub({
-                                                orderId,
-                                                type: 'purchase' as const,
-                                                onActionSuccess: () => refetchHistory()
-                                            })}
-                                        />
+                                        {/* NOTES TAB */}
+                                        <FormTabsContent value="notes" className="mt-0">
+                                            <div className="rounded-md border shadow-sm overflow-hidden bg-card">
+                                                <NoteTable
+                                                    notes={data.notes}
+                                                    onOpenHub={(invoiceId) => openHub({
+                                                        invoiceId,
+                                                        type: 'purchase' as const,
+                                                        onActionSuccess: () => refetchHistory()
+                                                    })}
+                                                />
+                                            </div>
+                                        </FormTabsContent>
                                     </div>
-                                </FormTabsContent>
-
-                                {/* NOTES TAB */}
-                                <FormTabsContent value="notes" className="mt-0">
-                                    <div className="rounded-md border shadow-sm overflow-hidden bg-card">
-                                        <NoteTable
-                                            notes={data.notes}
-                                            onOpenHub={(invoiceId) => openHub({
-                                                invoiceId,
-                                                type: 'purchase' as const,
-                                                onActionSuccess: () => refetchHistory()
-                                            })}
-                                        />
-                                    </div>
-                                </FormTabsContent>
-                            </div>
-                        </FormTabs>
+                                </FormTabs>
+                            )}
+                        </SkeletonShell>
                     )}
-                    </SkeletonShell>
-                )}
-            </div>
-        </BaseModal>
-    </>
+                </div>
+            </BaseModal>
+        </>
     )
 }
 

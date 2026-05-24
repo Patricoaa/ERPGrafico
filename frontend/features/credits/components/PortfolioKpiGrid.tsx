@@ -1,42 +1,8 @@
 "use client"
 
-import { motion } from "framer-motion"
-import { cn } from "@/lib/utils"
 import { CreditCard, Target, ShieldAlert, Activity } from "lucide-react"
 import { CreditPortfolioResponse } from "@/features/credits/api/creditsApi"
-import { MoneyDisplay } from "@/components/shared"
-
-
-
-function KpiCard({ label, value, sub, icon: Icon, color }: {
-    label: string
-    value: React.ReactNode
-    sub?: string
-    icon: React.ElementType
-    color: string
-}) {
-    return (
-        <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            className={cn(
-                "rounded-lg border bg-card p-5 flex flex-col gap-3 shadow-sm relative overflow-hidden",
-            )}
-        >
-            <div className="absolute top-0 right-0 p-4 opacity-[0.03] pointer-events-none">
-                <Icon className="w-12 h-12" />
-            </div>
-            <div className="flex items-center justify-between relative z-10">
-                <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">{label}</span>
-                <div className={cn("p-2 rounded-lg border", color)}>
-                    <Icon className="h-4 w-4" />
-                </div>
-            </div>
-            <div className="text-2xl font-black font-heading tracking-tight relative z-10">{value}</div>
-            {sub && <p className="text-[11px] text-muted-foreground font-medium relative z-10">{sub}</p>}
-        </motion.div>
-    )
-}
+import { MoneyDisplay, StatCard } from "@/components/shared"
 
 export function PortfolioKpiGrid({ data }: { data: CreditPortfolioResponse | null }) {
     if (!data) return null
@@ -56,33 +22,33 @@ export function PortfolioKpiGrid({ data }: { data: CreditPortfolioResponse | nul
 
     return (
         <div className="grid gap-4 md:grid-cols-4">
-            <KpiCard
+            <StatCard
                 label="Deuda Total"
                 value={<MoneyDisplay amount={totalDebt} digits={0} />}
-                sub={`${s?.count_debtors || 0} clientes con deuda activa`}
+                subtext={`${s?.count_debtors || 0} clientes con deuda activa`}
                 icon={CreditCard}
-                color="bg-primary/5 text-primary border-primary/20"
+                accent="primary"
             />
-            <KpiCard
+            <StatCard
                 label="Exposición Total"
                 value={<MoneyDisplay amount={computedTotalLimit} digits={0} />}
-                sub={`Uso: ${computedUtilizationRate.toFixed(1)}% del límite`}
+                subtext={`Uso: ${computedUtilizationRate.toFixed(1)}% del límite`}
                 icon={Target}
-                color="bg-info/5 text-info border-info/20"
+                accent="info"
             />
-            <KpiCard
+            <StatCard
                 label="Pérdida Potencial"
                 value={<MoneyDisplay amount={potentialLoss} digits={0} />}
-                sub={`${s?.risk_distribution?.CRITICAL || 0} riesgos críticos`}
+                subtext={`${s?.risk_distribution?.CRITICAL || 0} riesgos críticos`}
                 icon={ShieldAlert}
-                color={potentialLoss > 0 ? "bg-destructive/5 text-destructive border-destructive/20" : "bg-muted text-muted-foreground border-border"}
+                accent={potentialLoss > 0 ? "destructive" : "muted"}
             />
-            <KpiCard
+            <StatCard
                 label="Tasa de Mora"
                 value={`${((totalOverdue / (totalDebt || 1)) * 100).toFixed(1)}%`}
-                sub={`${s?.count_overdue || 0} vencimientos`}
+                subtext={`${s?.count_overdue || 0} vencimientos`}
                 icon={Activity}
-                color={totalOverdue > 0 ? "bg-warning/5 text-warning border-warning/20" : "bg-success/5 text-success border-success/20"}
+                accent={totalOverdue > 0 ? "warning" : "success"}
             />
         </div>
     )

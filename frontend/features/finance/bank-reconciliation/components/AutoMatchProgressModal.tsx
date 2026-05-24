@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useCallback } from "react"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
-import { Chip, FormFooter, CancelButton } from "@/components/shared"
+import { Chip, FormFooter, CancelButton, StatCard } from "@/components/shared"
 import { CheckCircle2, Loader2, XCircle, Zap } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { financeApi } from "../../api/financeApi"
@@ -217,37 +217,30 @@ export function AutoMatchProgressModal({
                 {/* Stats Grid */}
                 {(progress.status === 'PROGRESS' || progress.status === 'SUCCESS') && (
                     <div className="grid grid-cols-3 gap-3">
-                        <div className="rounded-lg bg-muted/50 border p-3 text-center">
-                            <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">
-                                Procesadas
-                            </p>
-                            <p className="text-2xl font-black font-mono text-foreground">
-                                {progress.status === 'SUCCESS'
-                                    ? (progress.total_unreconciled ?? progress.total)
-                                    : progress.processed}
-                            </p>
-                            <p className="text-[10px] text-muted-foreground font-medium">
-                                de {progress.total_unreconciled ?? progress.total}
-                            </p>
-                        </div>
-                        <div className="rounded-lg bg-success/5 border border-success/20 p-3 text-center">
-                            <p className="text-[10px] font-black uppercase tracking-widest text-success/70 mb-1">
-                                Conciliadas
-                            </p>
-                            <p className="text-2xl font-black font-mono text-success">
-                                {progress.matched_count ?? progress.matched}
-                            </p>
-                            <p className="text-[10px] text-success/70 font-medium">matches</p>
-                        </div>
-                        <div className="rounded-lg bg-warning/5 border border-warning/20 p-3 text-center">
-                            <p className="text-[10px] font-black uppercase tracking-widest text-warning/70 mb-1">
-                                Sin Conciliar
-                            </p>
-                            <p className="text-2xl font-black font-mono text-warning">
-                                {(progress.total_unreconciled ?? progress.total) - (progress.matched_count ?? progress.matched)}
-                            </p>
-                            <p className="text-[10px] text-warning/70 font-medium">sin match</p>
-                        </div>
+                        <StatCard
+                            label="Procesadas"
+                            value={progress.status === 'SUCCESS' ? (progress.total_unreconciled ?? progress.total) : progress.processed}
+                            subtext={`de ${progress.total_unreconciled ?? progress.total}`}
+                            variant="minimal"
+                            accent="muted"
+                            className="text-center"
+                        />
+                        <StatCard
+                            label="Conciliadas"
+                            value={progress.matched_count ?? progress.matched}
+                            subtext="matches"
+                            variant="minimal"
+                            accent="success"
+                            className="text-center"
+                        />
+                        <StatCard
+                            label="Sin Conciliar"
+                            value={(progress.total_unreconciled ?? progress.total) - (progress.matched_count ?? progress.matched)}
+                            subtext="sin match"
+                            variant="minimal"
+                            accent="warning"
+                            className="text-center"
+                        />
                     </div>
                 )}
 

@@ -21,7 +21,7 @@ import {
 import { financeApi } from "../api/financeApi";
 import { DateRange } from "react-day-picker";
 import { format } from "date-fns";
-import { CardSkeleton } from "@/components/shared";
+import { CardSkeleton, StatCard } from "@/components/shared";
 import { EmptyState } from "@/components/shared/EmptyState";
 
 const COLORS = ['var(--primary)', 'var(--accent)', 'var(--secondary)', 'var(--muted-foreground)', 'var(--warning)', 'var(--destructive)'];
@@ -113,107 +113,91 @@ export const RatiosView: React.FC<RatiosViewProps> = ({ date, showComparison, co
         <PageContainer>
             {/* Key Metrics Cards */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                <Card className="rounded-none shadow-2xl ring-1 ring-border bg-card">
-                    <CardHeader className="pb-3">
-                        <CardTitle className="text-sm font-medium text-muted-foreground text-primary/70">Ratio de Liquidez</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-3xl font-bold text-primary">{d.liquidity.current_ratio.toFixed(2)}</div>
-                        {showComparison && cd && (
-                            <div className="mt-2 text-xs text-muted-foreground">
-                                vs {cd.liquidity.current_ratio.toFixed(2)} ({((d.liquidity.current_ratio - cd.liquidity.current_ratio) / cd.liquidity.current_ratio * 100).toFixed(1)}%)
-                            </div>
-                        )}
-                        <p className="text-xs text-muted-foreground mt-2">Activo Corriente / Pasivo Corriente</p>
-                    </CardContent>
-                </Card>
-
-                <Card className="rounded-none shadow-2xl ring-1 ring-border bg-card border-t-warning">
-                    <CardHeader className="pb-3">
-                        <CardTitle className="text-sm font-medium text-muted-foreground text-warning/70">Endeudamiento (D/E)</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-3xl font-bold text-primary">{d.structure.debt_to_equity.toFixed(2)}</div>
-                        {showComparison && cd && (
-                            <div className="mt-2 text-xs text-muted-foreground">
-                                vs {cd.structure.debt_to_equity.toFixed(2)} ({((d.structure.debt_to_equity - cd.structure.debt_to_equity) / cd.structure.debt_to_equity * 100).toFixed(1)}%)
-                            </div>
-                        )}
-                        <p className="text-xs text-muted-foreground mt-2">Pasivos Totales / Patrimonio</p>
-                    </CardContent>
-                </Card>
-
-                <Card className="rounded-none shadow-2xl ring-1 ring-border bg-card border-t-info">
-                    <CardHeader className="pb-3">
-                        <CardTitle className="text-sm font-medium text-muted-foreground text-primary/70">Solvencia</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-3xl font-bold text-primary">{d.solvency.solvency_ratio.toFixed(2)}</div>
-                        {showComparison && cd && (
-                            <div className="mt-2 text-xs text-muted-foreground">
-                                vs {cd.solvency.solvency_ratio.toFixed(2)} ({((d.solvency.solvency_ratio - cd.solvency.solvency_ratio) / cd.solvency.solvency_ratio * 100).toFixed(1)}%)
-                            </div>
-                        )}
-                        <p className="text-xs text-muted-foreground mt-2">Activos Totales / Pasivos Totales</p>
-                    </CardContent>
-                </Card>
-
-                <Card className="rounded-none shadow-2xl ring-1 ring-border bg-card border-t-success">
-                    <CardHeader className="pb-3">
-                        <CardTitle className="text-sm font-medium text-muted-foreground text-success/70">Capital de Trabajo</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-3xl font-bold text-primary">
-                            {(d.liquidity.current_assets - d.liquidity.current_liabilities).toLocaleString('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 })}
+                <StatCard
+                    label="Ratio de Liquidez"
+                    value={d.liquidity.current_ratio.toFixed(2)}
+                    valueSize="xl"
+                    subtext="Activo Corriente / Pasivo Corriente"
+                    accent="muted"
+                >
+                    {showComparison && cd && (
+                        <div className="mt-2 text-xs text-muted-foreground">
+                            vs {cd.liquidity.current_ratio.toFixed(2)} ({((d.liquidity.current_ratio - cd.liquidity.current_ratio) / cd.liquidity.current_ratio * 100).toFixed(1)}%)
                         </div>
-                        <p className="text-xs text-muted-foreground mt-2">Activo Corriente - Pasivo Corriente</p>
-                    </CardContent>
-                </Card>
-
-                <Card className="rounded-none shadow-2xl ring-1 ring-border bg-card border-t-primary">
-                    <CardHeader className="pb-3">
-                        <CardTitle className="text-sm font-medium text-muted-foreground text-primary/70">Prueba Ácida</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-3xl font-bold text-primary">{(d.liquidity.acid_test || 0).toFixed(2)}</div>
-                        {showComparison && cd && (
-                            <div className="mt-2 text-xs text-muted-foreground">
-                                vs {(cd.liquidity.acid_test || 0).toFixed(2)} ({cd.liquidity.acid_test ? (((d.liquidity.acid_test - cd.liquidity.acid_test) / cd.liquidity.acid_test) * 100).toFixed(1) : 0}%)
-                            </div>
-                        )}
-                        <p className="text-xs text-muted-foreground mt-2">(Activo Cte. - Inventario) / Pasivo Cte.</p>
-                    </CardContent>
-                </Card>
-
-                <Card className="rounded-none shadow-2xl ring-1 ring-border bg-card border-t-accent">
-                    <CardHeader className="pb-3">
-                        <CardTitle className="text-sm font-medium text-muted-foreground text-accent/70">Margen Bruto</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-3xl font-bold text-accent">{((d.profitability?.gross_margin || 0) * 100).toFixed(1)}%</div>
-                        {showComparison && cd && (
-                            <div className="mt-2 text-xs text-muted-foreground">
-                                vs {((cd.profitability?.gross_margin || 0) * 100).toFixed(1)}%
-                            </div>
-                        )}
-                        <p className="text-xs text-muted-foreground mt-2">Utilidad Bruta / Ingresos Operac.</p>
-                    </CardContent>
-                </Card>
-
-                <Card className="rounded-none shadow-2xl ring-1 ring-border bg-card border-t-info">
-                    <CardHeader className="pb-3">
-                        <CardTitle className="text-sm font-medium text-muted-foreground text-info/70">Margen Neto</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-3xl font-bold text-info">{((d.profitability?.net_margin || 0) * 100).toFixed(1)}%</div>
-                        {showComparison && cd && (
-                            <div className="mt-2 text-xs text-muted-foreground">
-                                vs {((cd.profitability?.net_margin || 0) * 100).toFixed(1)}%
-                            </div>
-                        )}
-                        <p className="text-xs text-muted-foreground mt-2">Utilidad Neta / Ingresos Operac.</p>
-                    </CardContent>
-                </Card>
+                    )}
+                </StatCard>
+                <StatCard
+                    label="Endeudamiento (D/E)"
+                    value={d.structure.debt_to_equity.toFixed(2)}
+                    valueSize="xl"
+                    subtext="Pasivos Totales / Patrimonio"
+                    accent="warning"
+                >
+                    {showComparison && cd && (
+                        <div className="mt-2 text-xs text-muted-foreground">
+                            vs {cd.structure.debt_to_equity.toFixed(2)} ({((d.structure.debt_to_equity - cd.structure.debt_to_equity) / cd.structure.debt_to_equity * 100).toFixed(1)}%)
+                        </div>
+                    )}
+                </StatCard>
+                <StatCard
+                    label="Solvencia"
+                    value={d.solvency.solvency_ratio.toFixed(2)}
+                    valueSize="xl"
+                    subtext="Activos Totales / Pasivos Totales"
+                    accent="info"
+                >
+                    {showComparison && cd && (
+                        <div className="mt-2 text-xs text-muted-foreground">
+                            vs {cd.solvency.solvency_ratio.toFixed(2)} ({((d.solvency.solvency_ratio - cd.solvency.solvency_ratio) / cd.solvency.solvency_ratio * 100).toFixed(1)}%)
+                        </div>
+                    )}
+                </StatCard>
+                <StatCard
+                    label="Capital de Trabajo"
+                    value={(d.liquidity.current_assets - d.liquidity.current_liabilities).toLocaleString('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 })}
+                    valueSize="xl"
+                    subtext="Activo Corriente - Pasivo Corriente"
+                    accent="success"
+                />
+                <StatCard
+                    label="Prueba Ácida"
+                    value={(d.liquidity.acid_test || 0).toFixed(2)}
+                    valueSize="xl"
+                    subtext="(Activo Cte. - Inventario) / Pasivo Cte."
+                    accent="primary"
+                >
+                    {showComparison && cd && (
+                        <div className="mt-2 text-xs text-muted-foreground">
+                            vs {(cd.liquidity.acid_test || 0).toFixed(2)} ({cd.liquidity.acid_test ? (((d.liquidity.acid_test - cd.liquidity.acid_test) / cd.liquidity.acid_test) * 100).toFixed(1) : 0}%)
+                        </div>
+                    )}
+                </StatCard>
+                <StatCard
+                    label="Margen Bruto"
+                    value={`${((d.profitability?.gross_margin || 0) * 100).toFixed(1)}%`}
+                    valueSize="xl"
+                    subtext="Utilidad Bruta / Ingresos Operac."
+                    accent="accent"
+                >
+                    {showComparison && cd && (
+                        <div className="mt-2 text-xs text-muted-foreground">
+                            vs {((cd.profitability?.gross_margin || 0) * 100).toFixed(1)}%
+                        </div>
+                    )}
+                </StatCard>
+                <StatCard
+                    label="Margen Neto"
+                    value={`${((d.profitability?.net_margin || 0) * 100).toFixed(1)}%`}
+                    valueSize="xl"
+                    subtext="Utilidad Neta / Ingresos Operac."
+                    accent="info"
+                >
+                    {showComparison && cd && (
+                        <div className="mt-2 text-xs text-muted-foreground">
+                            vs {((cd.profitability?.net_margin || 0) * 100).toFixed(1)}%
+                        </div>
+                    )}
+                </StatCard>
             </div>
 
             {/* Charts Section */}

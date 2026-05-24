@@ -6,7 +6,7 @@ import { Download, ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { DataTable, PageHeader, LoadingFallback, MoneyDisplay } from "@/components/shared"
+import { DataTable, PageHeader, LoadingFallback, MoneyDisplay, StatCard } from "@/components/shared"
 import { toast } from "sonner"
 import Link from "next/link"
 import type { ColumnDef } from "@tanstack/react-table"
@@ -157,40 +157,21 @@ export function BudgetDetailView({ budgetId }: BudgetDetailViewProps) {
             />
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Card>
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">Presupuestado</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-black font-heading tracking-tighter">
-                            <MoneyDisplay amount={executionData.summary.total_budgeted} digits={0} />
-                        </div>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">Ejecutado</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-black font-heading tracking-tighter">
-                            <MoneyDisplay amount={executionData.summary.total_actual} digits={0} />
-                        </div>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">Desviación</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-black font-heading tracking-tighter">
-                            <MoneyDisplay 
-                                amount={executionData.summary.total_variance} 
-                                digits={0} 
-                                showColor={true} 
-                            />
-                        </div>
-                    </CardContent>
-                </Card>
+                <StatCard
+                    label="Presupuestado"
+                    value={<MoneyDisplay amount={executionData.summary.total_budgeted} digits={0} />}
+                    accent="muted"
+                />
+                <StatCard
+                    label="Ejecutado"
+                    value={<MoneyDisplay amount={executionData.summary.total_actual} digits={0} />}
+                    accent="muted"
+                />
+                <StatCard
+                    label="Desviación"
+                    value={<MoneyDisplay amount={executionData.summary.total_variance} digits={0} showColor />}
+                    accent="muted"
+                />
             </div>
 
             <Card>

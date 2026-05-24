@@ -5,7 +5,7 @@ import React, { useEffect, useState, lazy, Suspense } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
 import { Card, CardContent } from "@/components/ui/card"
-import { Chip, FadeIn } from "@/components/shared"
+import { Chip, FadeIn, StatCard } from "@/components/shared"
 import { DataTable } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { createActionsColumn, DataCell } from '@/components/shared'
@@ -191,23 +191,23 @@ export function PartnerProfileTab({ contactId }: Props) {
                             <AccordionContent className="p-0 border-t-0">
                                 <CardContent className="p-6">
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                        {/* Participation Card */}
-                                        <div className="bg-muted/30 p-4 rounded-lg border flex flex-col justify-center text-center">
-                                            <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest mb-1">Participación</span>
-                                            <div className="text-3xl font-extrabold text-foreground">
-                                                {summary.equity_percentage}%
-                                            </div>
-                                            <span className="text-[9px] text-muted-foreground mt-1">Participación sobre el total patrimonial</span>
-                                        </div>
-
-                                        {/* Net Balance Card */}
-                                        <div className="md:col-span-2 bg-primary/5 p-4 rounded-lg border border-primary/20 flex flex-col justify-center items-center text-center">
-                                            <span className="text-[10px] text-primary/70 uppercase font-bold tracking-widest mb-1">Saldo Particular Neto</span>
-                                            <div className="text-4xl font-black text-primary">
-                                                <MoneyDisplay amount={parseFloat(summary.balance)} />
-                                            </div>
-                                            <span className="text-[9px] text-primary/60 mt-1">Neto acumulado de aportes y retiros</span>
-                                        </div>
+                                        <StatCard
+                                            label="Participación"
+                                            value={`${summary.equity_percentage}%`}
+                                            subtext="Participación sobre el total patrimonial"
+                                            variant="minimal"
+                                            accent="muted"
+                                            className="bg-muted/30 p-4 rounded-lg border flex flex-col justify-center text-center"
+                                            valueSize="xl"
+                                        />
+                                        <StatCard
+                                            label="Saldo Particular Neto"
+                                            value={<MoneyDisplay amount={parseFloat(summary.balance)} />}
+                                            subtext="Neto acumulado de aportes y retiros"
+                                            variant="minimal"
+                                            accent="primary"
+                                            className="md:col-span-2 bg-primary/5 p-4 rounded-lg border border-primary/20 flex flex-col justify-center items-center text-center"
+                                        />
                                     </div>
                                 </CardContent>
                             </AccordionContent>
