@@ -35,7 +35,7 @@ export function SaleOrderProductStep({
   const [search, setSearch] = useState<string>("");
 
   const { orders, loading } = useSaleOrderSearch();
-  
+
   const { data: lines = [], isLoading: loadingLines } = useSaleOrderManufacturableLines(
     selectedOrderId ? selectedOrderId : undefined,
     {
@@ -54,7 +54,7 @@ export function SaleOrderProductStep({
   availableLines.forEach(line => {
     const productKey = line.product?.id?.toString() ?? "";
     if (!productKey) return;
-    
+
     const existing = productsById.get(productKey);
     if (!existing || (line.quantity ?? 0) > (existing.quantity ?? 0)) {
       // Keep the line with highest quantity for this product (or first if equal)
@@ -65,7 +65,7 @@ export function SaleOrderProductStep({
       });
     }
   });
-  
+
   const availableProducts = Array.from(productsById.values());
 
   useEffect(() => {
@@ -80,14 +80,14 @@ export function SaleOrderProductStep({
   };
 
   const handleProductSelect = (productId: string) => {
-    const line = availableLines.find(l => 
+    const line = availableLines.find(l =>
       l.product?.id?.toString() === productId
     );
-    
+
     if (!line) return;
-    
+
     setSelectedLineId(line.id?.toString() ?? null);
-    
+
     // Auto-advance to manufacturing config after selecting product
     onChooseProduct(
       "LINKED",
@@ -111,24 +111,6 @@ export function SaleOrderProductStep({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-bold tracking-tight text-foreground">
-          Selección de Nota de Venta
-        </h2>
-        {otType === "LINKED" && (
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => {
-              setOtType(null);
-              setSelectedOrderId(null);
-              setSelectedLineId(null);
-            }}
-          >
-            Cambiar origen
-          </Button>
-        )}
-      </div>
 
       <div className="space-y-4">
         <div className="space-y-2">
@@ -174,8 +156,8 @@ export function SaleOrderProductStep({
                       variant="outline"
                       className={cn(
                         "group flex h-[120px] w-full rounded-xl border border-border/30",
-                        selectedOrderId === String(order.id) && 
-                          "border-primary/50 bg-primary/[0.03]",
+                        selectedOrderId === String(order.id) &&
+                        "border-primary/50 bg-primary/[0.03]",
                         "hover:border-primary/50 hover:bg-primary/[0.03] transition-all duration-300"
                       )}
                       onClick={() => handleOrderSelect(String(order.id))}
@@ -194,20 +176,20 @@ export function SaleOrderProductStep({
                               {new Date(order.date || 0).toLocaleDateString()}
                             </span>
                           </div>
-                          
+
                           <p className="text-sm text-muted-foreground line-clamp-2">
                             {order.customer?.name || "Cliente desconocido"}
                           </p>
-                          
+
                           <div className="flex items-center gap-3 text-sm">
                             <span className="font-medium text-foreground">
-                              {order.lines?.reduce((sum: number, line: any) => 
+                              {order.lines?.reduce((sum: number, line: any) =>
                                 sum + (line.quantity || 0), 0) || 0} productos
                             </span>
                             <span className="text-muted-foreground">•</span>
                             <span className="text-muted-foreground">
                               {formatCurrency(
-                                order.lines?.reduce((sum: number, line: any) => 
+                                order.lines?.reduce((sum: number, line: any) =>
                                   sum + ((line.quantity || 0) * (line.unit_price || 0)), 0) || 0
                               )}
                             </span>
@@ -243,7 +225,7 @@ export function SaleOrderProductStep({
               <label className="text-sm font-medium text-muted-foreground mb-1">
                 Seleccione el producto a fabricar
               </label>
-              
+
               {loadingLines ? (
                 <div className="text-center py-6">
                   <p className="text-muted-foreground">Cargando productos disponibles...</p>
@@ -259,7 +241,7 @@ export function SaleOrderProductStep({
                   <div className="grid gap-3">
                     {availableProducts.map((line) => {
                       const isSelected = selectedLineId === line.id?.toString();
-                      
+
                       return (
                         <Button
                           key={line.id}
@@ -296,14 +278,14 @@ export function SaleOrderProductStep({
                                   #{line.product?.code}
                                 </span>
                               </div>
-                              
+
                               <div className="flex items-center gap-2 text-sm">
                                 <span className="font-mono">Cant:</span>
                                 <span className="font-medium text-foreground">
                                   {line.quantity} {line.uom_name}
                                 </span>
                               </div>
-                              
+
                               {line.product?.requires_advanced_manufacturing && (
                                 <span className="px-2 py-0.5 text-xs rounded bg-primary/[0.10] text-primary/80">
                                   Fabricación avanzada

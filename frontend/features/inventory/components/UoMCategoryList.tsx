@@ -74,6 +74,16 @@ export function UoMCategoryList({ externalOpen, onExternalOpenChange, createActi
         }
     })
 
+    const bulkDeleteConfirm = useConfirmAction<UoMCategory[]>(async (items) => {
+        try {
+            await Promise.all(items.map(c => deleteUoMCategory(c.id)))
+            toast.success(`${items.length} categorías eliminadas`)
+        } catch (error) {
+            showApiError(error, "Error al eliminar las categorías (pueden tener unidades asociadas)")
+            throw error
+        }
+    })
+
     const handleDelete = (id: number) => deleteConfirm.requestConfirm(id)
 
     const columns = useMemo<ColumnDef<UoMCategory>[]>(() => [
@@ -122,17 +132,9 @@ export function UoMCategoryList({ externalOpen, onExternalOpenChange, createActi
             label: "Eliminar",
             icon: Trash2,
             intent: "destructive",
-            onClick: async (items) => {
-                if (!confirm(`¿Está seguro de que desea eliminar ${items.length} categorías de unidades?`)) return
-                try {
-                    await Promise.all(items.map(c => deleteUoMCategory(c.id)))
-                    toast.success(`${items.length} categorías eliminadas`)
-                } catch (error) {
-                    showApiError(error, "Error al eliminar las categorías (pueden tener unidades asociadas)")
-                }
-            },
+            onClick: async (items) => bulkDeleteConfirm.requestConfirm(items),
         },
-    ], [deleteUoMCategory])
+    ], [deleteUoMCategory, bulkDeleteConfirm])
 
 
     return (
@@ -169,6 +171,15 @@ export function UoMCategoryList({ externalOpen, onExternalOpenChange, createActi
                 onConfirm={deleteConfirm.confirm}
                 title="Eliminar Categoría"
                 description="¿Eliminar categoría? Esto eliminará las unidades asociadas y no se puede deshacer."
+                variant="destructive"
+            />
+
+            <ActionConfirmModal
+                open={bulkDeleteConfirm.isOpen}
+                onOpenChange={(open) => { if (!open) bulkDeleteConfirm.cancel() }}
+                onConfirm={bulkDeleteConfirm.confirm}
+                title="Eliminar Categorías"
+                description={`¿Está seguro de que desea eliminar ${bulkDeleteConfirm.payload?.length ?? 0} categorías de unidades?`}
                 variant="destructive"
             />
         </div>

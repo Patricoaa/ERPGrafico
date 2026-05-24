@@ -63,6 +63,16 @@ export function UoMList({ externalOpen, onExternalOpenChange, createAction }: Uo
         }
     })
 
+    const bulkDeleteConfirm = useConfirmAction<UoM[]>(async (items) => {
+        try {
+            await Promise.all(items.map(u => deleteUoM(u.id)))
+            toast.success(`${items.length} unidades eliminadas`)
+        } catch (error) {
+            showApiError(error, "Error al eliminar las unidades")
+            throw error
+        }
+    })
+
     const handleDelete = (id: number) => deleteConfirm.requestConfirm(id)
 
     const columns = useMemo<ColumnDef<UoM>[]>(() => [
@@ -152,17 +162,9 @@ export function UoMList({ externalOpen, onExternalOpenChange, createAction }: Uo
             label: "Eliminar",
             icon: Trash2,
             intent: "destructive",
-            onClick: async (items) => {
-                if (!confirm(`¿Está seguro de que desea eliminar ${items.length} unidades de medida?`)) return
-                try {
-                    await Promise.all(items.map(u => deleteUoM(u.id)))
-                    toast.success(`${items.length} unidades eliminadas`)
-                } catch (error) {
-                    showApiError(error, "Error al eliminar las unidades")
-                }
-            },
+            onClick: async (items) => bulkDeleteConfirm.requestConfirm(items),
         },
-    ], [deleteUoM])
+    ], [deleteUoM, bulkDeleteConfirm])
 
 
     return (
@@ -194,6 +196,15 @@ export function UoMList({ externalOpen, onExternalOpenChange, createAction }: Uo
                 onConfirm={deleteConfirm.confirm}
                 title="Eliminar Unidad de Medida"
                 description="¿Seguro que deseas eliminar esta unidad de medida?"
+                variant="destructive"
+            />
+
+            <ActionConfirmModal
+                open={bulkDeleteConfirm.isOpen}
+                onOpenChange={(open) => { if (!open) bulkDeleteConfirm.cancel() }}
+                onConfirm={bulkDeleteConfirm.confirm}
+                title="Eliminar Unidades de Medida"
+                description={`¿Está seguro de que desea eliminar ${bulkDeleteConfirm.payload?.length ?? 0} unidades de medida?`}
                 variant="destructive"
             />
         </div>

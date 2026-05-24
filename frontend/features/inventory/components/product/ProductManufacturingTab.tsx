@@ -1,7 +1,7 @@
 "use client"
 
 import { UoM, Product } from "@/types/entities"
-import { LabeledContainer, FormSection, FormTabsContent, LabeledSwitch, LabeledSeparator } from "@/components/shared"
+import { LabeledContainer, FormSection, FormTabsContent, LabeledSwitch, LabeledSeparator, ActionConfirmModal } from "@/components/shared"
 import { FormField } from "@/components/ui/form"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { Button } from "@/components/ui/button"
@@ -34,6 +34,7 @@ export function ProductManufacturingTab({ form, products, uoms, variantMode = fa
     const { boms, isBOMsLoading, refetch, deleteBom, toggleActive } = useBOMs({ product_id: initialData?.id })
     const [isBomModalOpen, setIsBomModalOpen] = useState(false)
     const [bomToEdit, setBomToEdit] = useState<BOM | undefined>(undefined)
+    const [confirmDeleteBomId, setConfirmDeleteBomId] = useState<number | undefined>(undefined)
 
     const hasBom = form.watch("has_bom")
     const isEditing = !!initialData
@@ -261,11 +262,7 @@ export function ProductManufacturingTab({ form, products, uoms, variantMode = fa
                                                     variant="ghost"
                                                     size="icon"
                                                     className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                                                    onClick={() => {
-                                                        if (confirm(`¿Eliminar la receta "${bom.name}"?`)) {
-                                                            deleteBom(bom.id!)
-                                                        }
-                                                    }}
+                                                    onClick={() => setConfirmDeleteBomId(bom.id!)}
                                                 >
                                                     <Trash2 className="h-4 w-4" />
                                                 </Button>
@@ -295,6 +292,20 @@ export function ProductManufacturingTab({ form, products, uoms, variantMode = fa
                     onSuccess={() => refetch()}
                 />
             )}
+
+            <ActionConfirmModal
+                open={confirmDeleteBomId !== undefined}
+                onOpenChange={(open) => { if (!open) setConfirmDeleteBomId(undefined) }}
+                onConfirm={async () => {
+                    if (confirmDeleteBomId !== undefined) {
+                        await deleteBom(confirmDeleteBomId)
+                    }
+                }}
+                title="Eliminar Receta"
+                description="¿Eliminar esta receta? Esta acción no se puede deshacer."
+                variant="destructive"
+                confirmText="Eliminar"
+            />
         </div>
     )
 }

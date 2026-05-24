@@ -9,7 +9,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { Form, FormField } from "@/components/ui/form"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { LabeledInput, LabeledSelect } from "@/components/shared"
+import { LabeledInput, LabeledSelect, ActionConfirmModal } from "@/components/shared"
 import { Factory, Barcode, AlertCircle, Copy, CheckCircle2, PlusCircle, Pencil, Trash2, DollarSign } from "lucide-react"
 import { Chip } from "@/components/shared"
 import { cn } from "@/lib/utils"
@@ -98,15 +98,20 @@ export function VariantQuickEditForm({
     // el queryKey del useBOMs incluye variant.id (se re-fetchea solo).
   }, [variant])
 
-  const handleDeleteBOM = async (bomId: number) => {
-    if (!confirm("¿Eliminar esta lista de materiales? Esta acción no se puede deshacer.")) return
+  const [pendingDeleteBomId, setPendingDeleteBomId] = useState<number | null>(null)
+
+  const handleDeleteBOM = (bomId: number) => setPendingDeleteBomId(bomId)
+
+  const onConfirmDeleteBOM = async () => {
+    if (pendingDeleteBomId === null) return
     try {
       // deleteBom invalida BOMS_QUERY_KEY + PRODUCTS_QUERY_KEY internamente
       // y emite su propio toast.
-      await deleteBom(bomId)
+      await deleteBom(pendingDeleteBomId)
     } catch (e) {
       console.error(e)
       // El hook emite toast.error, pero registramos por si fuera otra causa.
+      throw e
     }
   }
 
@@ -510,6 +515,16 @@ export function VariantQuickEditForm({
           setBomModalOpen(false)
           setBomToEdit(undefined)
         }}
+      />
+
+      <ActionConfirmModal
+        open={pendingDeleteBomId !== null}
+        onOpenChange={(open) => { if (!open) setPendingDeleteBomId(null) }}
+        onConfirm={onConfirmDeleteBOM}
+        title="Eliminar Lista de Materiales"
+        description="¿Eliminar esta lista de materiales? Esta acción no se puede deshacer."
+        variant="destructive"
+        confirmText="Eliminar"
       />
     </div>
     </>

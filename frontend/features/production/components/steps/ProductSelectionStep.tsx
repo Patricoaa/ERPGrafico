@@ -97,39 +97,9 @@ export function ProductSelectionStep({
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-bold tracking-tight text-foreground">
-          Selección de Producto
-        </h2>
-        {otType === "NONE" && (
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => {
-              setOtType(null);
-              setSelectedProduct(null);
-              setSearchTerm("");
-            }}
-          >
-            Cambiar origen
-          </Button>
-        )}
       </div>
 
       <div className="space-y-4">
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-muted-foreground mb-1">
-            Buscar productos
-          </label>
-          <div className="relative">
-            <Input
-              placeholder="Buscar por nombre, código o descripción..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-            <Search className="absolute left-3 top-1/2 -mt-2 h-4 w-4 text-muted-foreground" />
-          </div>
-        </div>
 
         {isError ? (
           <div className="text-center py-6">
@@ -149,7 +119,7 @@ export function ProductSelectionStep({
                 categories={[]}
                 searchTerm={searchTerm}
                 onSearchChange={setSearchTerm}
-                onSelectCategory={() => {}}
+                onSelectCategory={() => { }}
                 selectedCategoryId={null}
                 onProductClick={handleProductSelect}
                 isProductDisabled={(product: BaseProduct) =>

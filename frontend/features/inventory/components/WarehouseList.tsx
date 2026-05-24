@@ -13,6 +13,7 @@ import { Trash2 } from "lucide-react"
 import { toast } from "sonner"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import type { BulkAction } from "@/components/shared"
+import { useConfirmAction } from "@/hooks/useConfirmAction"
 import React from "react"
 
 import { useWarehouses, type Warehouse } from "@/features/inventory/hooks/useWarehouses"
@@ -34,6 +35,16 @@ export function WarehouseList({ externalOpen, onExternalOpenChange, createAction
     const [isFormOpen, setIsFormOpen] = useState(false)
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
     const [warehouseToDelete, setWarehouseToDelete] = useState<Warehouse | null>(null)
+
+    const bulkDeleteConfirm = useConfirmAction<Warehouse[]>(async (items) => {
+        try {
+            await Promise.all(items.map(w => deleteWarehouse(w.id)))
+            toast.success(`${items.length} almacenes eliminados`)
+        } catch (error) {
+            showApiError(error, "Error al eliminar los almacenes (algunos podrían estar en uso)")
+            throw error
+        }
+    })
 
     const router = useRouter()
     const pathname = usePathname()
@@ -153,17 +164,9 @@ export function WarehouseList({ externalOpen, onExternalOpenChange, createAction
             label: "Eliminar",
             icon: Trash2,
             intent: "destructive",
-            onClick: async (items) => {
-                if (!confirm(`¿Está seguro de que desea eliminar ${items.length} almacenes? Esta acción es irreversible.`)) return
-                try {
-                    await Promise.all(items.map(w => deleteWarehouse(w.id)))
-                    toast.success(`${items.length} almacenes eliminados`)
-                } catch (error) {
-                    showApiError(error, "Error al eliminar los almacenes (algunos podrían estar en uso)")
-                }
-            },
+            onClick: async (items) => bulkDeleteConfirm.requestConfirm(items),
         },
-    ], [deleteWarehouse])
+    ], [deleteWarehouse, bulkDeleteConfirm])
 
     return (
         <div className="space-y-6 h-full flex flex-col">
@@ -209,6 +212,15 @@ export function WarehouseList({ externalOpen, onExternalOpenChange, createAction
                         </p>
                     </div>
                 }
+            />
+
+            <ActionConfirmModal
+                open={bulkDeleteConfirm.isOpen}
+                onOpenChange={(open) => { if (!open) bulkDeleteConfirm.cancel() }}
+                onConfirm={bulkDeleteConfirm.confirm}
+                title="Eliminar Almacenes"
+                description={`¿Está seguro de que desea eliminar ${bulkDeleteConfirm.payload?.length ?? 0} almacenes? Esta acción es irreversible.`}
+                variant="destructive"
             />
         </div >
     )
