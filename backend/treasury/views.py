@@ -1,4 +1,4 @@
-from rest_framework import viewsets, status, pagination, filters as drf_filters
+from rest_framework import viewsets, status, filters as drf_filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend, FilterSet
@@ -31,12 +31,8 @@ from contacts.models import Contact
 from decimal import Decimal
 from accounting.models import Account
 from core.mixins import AuditHistoryMixin
+from core.api.pagination import StandardResultsSetPagination
 
-
-class StandardResultsSetPagination(pagination.PageNumberPagination):
-    page_size = 50
-    page_size_query_param = 'page_size'
-    max_page_size = 1000
 
 class BankViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = Bank.objects.all().order_by('name')
