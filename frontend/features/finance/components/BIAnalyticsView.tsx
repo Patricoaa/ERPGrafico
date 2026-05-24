@@ -19,7 +19,7 @@ import {
 } from 'recharts';
 import { financeApi } from "../api/financeApi";
 import { TrendingUp, TrendingDown, Package, DollarSign, ShoppingCart } from 'lucide-react';
-import { CardSkeleton, MoneyDisplay } from "@/components/shared";
+import { CardSkeleton, MoneyDisplay, StatCard } from "@/components/shared";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { formatCurrency } from "@/lib/money";
 import { DateRange } from "react-day-picker";
@@ -93,64 +93,34 @@ export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
         <PageContainer>
             {/* KPI Overview Cards */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <Card className="rounded-none shadow-2xl ring-1 ring-border bg-card border-l-4 border-l-info">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Ventas Totales</CardTitle>
-                        <DollarSign className="h-4 w-4 text-primary" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-black font-heading tracking-tighter">
-                            <MoneyDisplay amount={sales.total_sales} digits={0} />
-                        </div>
-                        <div className="flex items-center text-xs text-success mt-1">
-                            <TrendingUp className="h-3 w-3 mr-1" />
-                            +{sales.growth}% vs período anterior
-                        </div>
-                    </CardContent>
-                </Card>
-
-                <Card className="rounded-none shadow-2xl ring-1 ring-border bg-card border-l-4 border-l-success">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Ticket Promedio</CardTitle>
-                        <ShoppingCart className="h-4 w-4 text-success" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-black font-heading tracking-tighter">
-                            <MoneyDisplay amount={sales.average_ticket} digits={0} />
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                            {sales.sales_count} ventas realizadas
-                        </p>
-                    </CardContent>
-                </Card>
-
-                <Card className="rounded-none shadow-2xl ring-1 ring-border bg-card border-l-4 border-l-accent">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Valor Inventario</CardTitle>
-                        <Package className="h-4 w-4 text-accent" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-black font-heading tracking-tighter">
-                            <MoneyDisplay amount={inventory.total_value} digits={0} />
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                            {inventory.item_count} productos en stock
-                        </p>
-                    </CardContent>
-                </Card>
-
-                <Card className="rounded-none shadow-2xl ring-1 ring-border bg-card border-l-4 border-l-warning">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Rotación Inventario</CardTitle>
-                        <TrendingUp className="h-4 w-4 text-warning" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-black font-heading tracking-tighter">{inventory.turnover_ratio}x</div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                            {inventory.low_stock_alerts} alertas de stock bajo
-                        </p>
-                    </CardContent>
-                </Card>
+                <StatCard
+                    label="Ventas Totales"
+                    value={<MoneyDisplay amount={sales.total_sales} digits={0} />}
+                    icon={DollarSign}
+                    trend={{ direction: "up", value: `+${sales.growth}% vs período anterior` }}
+                    accent="info"
+                />
+                <StatCard
+                    label="Ticket Promedio"
+                    value={<MoneyDisplay amount={sales.average_ticket} digits={0} />}
+                    icon={ShoppingCart}
+                    subtext={`${sales.sales_count} ventas realizadas`}
+                    accent="success"
+                />
+                <StatCard
+                    label="Valor Inventario"
+                    value={<MoneyDisplay amount={inventory.total_value} digits={0} />}
+                    icon={Package}
+                    subtext={`${inventory.item_count} productos en stock`}
+                    accent="accent"
+                />
+                <StatCard
+                    label="Rotación Inventario"
+                    value={`${inventory.turnover_ratio}x`}
+                    icon={TrendingUp}
+                    subtext={`${inventory.low_stock_alerts} alertas de stock bajo`}
+                    accent="warning"
+                />
             </div>
 
             {/* Sales Trend */}

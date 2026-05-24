@@ -6,7 +6,7 @@ import { SkeletonShell } from "@/components/shared"
 import { useState, useEffect } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { BaseModal } from "@/components/shared/BaseModal"
-import { DataTable } from "@/components/shared"
+import { DataTable, StatCard } from "@/components/shared"
 import {
     History,
     TrendingUp,
@@ -37,7 +37,6 @@ import {
     AreaChart,
     Area
 } from 'recharts'
-import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 
 interface ProductInsightsModalProps {
@@ -193,40 +192,34 @@ export function ProductInsightsModal({ productId, productName, open, onOpenChang
                             {/* OVERVIEW TAB */}
                             <FormTabsContent value="overview" className="mt-0 space-y-6">
                                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                                    <Card className="bg-success/10 border-success/10">
-                                        <CardContent className="pt-4">
-                                            <p className="text-[10px] font-bold text-success uppercase tracking-wider">Ventas Totales</p>
-                                            <div className="flex items-baseline gap-2">
-                                                <p className="text-2xl font-black text-success">{data.sales_analysis.total_sold}</p>
-                                                <span className="text-xs text-success">uds</span>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                    <Card className="bg-primary/10 border-primary/10">
-                                        <CardContent className="pt-4">
-                                            <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Ingresos (Neto)</p>
-                                            <DataCell.Currency value={data.sales_analysis.total_revenue} className="text-2xl font-black text-primary text-left" />
-                                        </CardContent>
-                                    </Card>
-                                    <Card className="bg-warning/10 border-warning/10">
-                                        <CardContent className="pt-4">
-                                            <p className="text-[10px] font-bold text-warning uppercase tracking-wider">Margen Bruto</p>
-                                            <div className="flex items-baseline gap-2">
-                                                <DataCell.Currency value={margin} className="text-2xl font-black text-warning text-left" />
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                    <Card className={marginPercent >= 20 ? "bg-primary/10 border-info/10" : "bg-destructive/10 border-destructive/20"}>
-                                        <CardContent className="pt-4">
-                                            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">% de Margen</p>
-                                            <div className="flex items-center gap-2">
-                                                <p className={`text-2xl font-black ${marginPercent >= 20 ? 'text-info' : 'text-destructive'}`}>
-                                                    {marginPercent.toFixed(1)}%
-                                                </p>
-                                                {marginPercent >= 20 ? <ArrowUpRight className="h-5 w-5 text-primary" /> : <ArrowDownRight className="h-5 w-5 text-destructive" />}
-                                            </div>
-                                        </CardContent>
-                                    </Card>
+                                    <StatCard
+                                        label="Ventas Totales"
+                                        value={<>{data.sales_analysis.total_sold} <span className="text-xs">uds</span></>}
+                                        variant="compact"
+                                        accent="success"
+                                    />
+                                    <StatCard
+                                        label="Ingresos (Neto)"
+                                        value={<DataCell.Currency value={data.sales_analysis.total_revenue} className="text-2xl font-black text-left" />}
+                                        variant="compact"
+                                        accent="primary"
+                                    />
+                                    <StatCard
+                                        label="Margen Bruto"
+                                        value={<DataCell.Currency value={margin} className="text-2xl font-black text-left" />}
+                                        variant="compact"
+                                        accent="warning"
+                                    />
+                                    <StatCard
+                                        label="% de Margen"
+                                        value={`${marginPercent.toFixed(1)}%`}
+                                        variant="compact"
+                                        accent={marginPercent >= 20 ? "info" : "destructive"}
+                                    >
+                                        <div className="flex items-center gap-2 mt-1">
+                                            {marginPercent >= 20 ? <ArrowUpRight className="h-4 w-4 text-primary" /> : <ArrowDownRight className="h-4 w-4 text-destructive" />}
+                                        </div>
+                                    </StatCard>
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

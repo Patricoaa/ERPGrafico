@@ -6,7 +6,7 @@ import {
     SheetHeader,
     SheetTitle,
 } from "@/components/ui/sheet"
-import { SheetCloseButton } from "@/components/shared/SheetCloseButton"
+import { SheetCloseButton, StatCard } from "@/components/shared"
 
 import {
     TrendingUp,
@@ -117,16 +117,15 @@ export function EquityStatsSheet({ open, onOpenChange, partners, summary }: Equi
                 <div className="flex-1 overflow-y-auto px-8 pb-8 space-y-8 scrollbar-thin scrollbar-thumb-primary/10 scrollbar-track-transparent">
                     {/* General Summary Metrics */}
                     <div className="animate-in fade-in slide-in-from-left-4 duration-500">
-                        <div className="p-5 bg-primary/5 border border-primary/20 rounded-lg flex flex-col justify-center ring-1 ring-primary/10">
-                            <div className="flex items-center gap-2 mb-2 text-primary shrink-0">
-                                <Building2 className="h-4 w-4" />
-                                <span className="text-[10px] font-black uppercase tracking-widest leading-none">Patrimonio Neto</span>
-                            </div>
-                            <span className="text-2xl font-black font-mono leading-none text-primary">{formatCurrency(summary.total_net_equity || 0)}</span>
-                            <span className="text-[9px] font-black text-primary mt-2 uppercase tracking-tighter opacity-60">
-                                Valor Libro de la Compañía
-                            </span>
-                        </div>
+                        <StatCard
+                            label="Patrimonio Neto"
+                            value={formatCurrency(summary.total_net_equity || 0)}
+                            icon={Building2}
+                            subtext="Valor Libro de la Compañía"
+                            variant="minimal"
+                            accent="primary"
+                            className="p-5 flex flex-col justify-center ring-1 ring-primary/10"
+                        />
                     </div>
 
                     {/* Chart 1: Equity Ownership */}

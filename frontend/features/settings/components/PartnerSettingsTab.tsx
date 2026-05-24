@@ -5,7 +5,7 @@ import { toast } from "sonner"
 import { Card, CardContent, CardHeader, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { DataTable } from '@/components/shared'
-import { DataCell, createActionsColumn } from '@/components/shared'
+import { DataCell, createActionsColumn, StatCard } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { Building2, Plus, ArrowUpRight, ArrowDownRight, Wallet, Users, Banknote, Edit2, Search, TrendingUp, TrendingDown, Loader2 } from "lucide-react"
 import { ColumnDef } from "@tanstack/react-table"
@@ -182,39 +182,24 @@ export function PartnerSettingsTab() {
                     </CardContent>
                 </Card>
 
-                <Card className="shadow-sm border">
-                    <CardHeader className="p-4 pb-2">
-                        <CardDescription className="text-[10px] uppercase font-bold tracking-widest flex items-center gap-2">
-                            <Users className="h-3.5 w-3.5" /> Total Socios
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="p-4 pt-0">
-                        <p className="text-2xl font-bold">{summary?.total_partners || 0}</p>
-                    </CardContent>
-                </Card>
-
-                <Card className="shadow-sm border border-success/20 bg-success/5">
-                    <CardHeader className="p-4 pb-2">
-                        <CardDescription className="text-[10px] uppercase font-bold tracking-widest text-success flex items-center gap-2">
-                            <ArrowUpRight className="h-3.5 w-3.5" /> Total Aportes
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="p-4 pt-0">
-                        <DataCell.Currency className="text-2xl font-bold text-success" value={summary?.total_contributions || 0} />
-                    </CardContent>
-                </Card>
-
-                <Card className="shadow-sm border border-destructive/20 bg-destructive/5">
-                    <CardHeader className="p-4 pb-2">
-                        <CardDescription className="text-[10px] uppercase font-bold tracking-widest text-destructive flex items-center gap-2">
-                            <ArrowDownRight className="h-3.5 w-3.5" /> Total Retiros
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="p-4 pt-0">
-                        <DataCell.Currency className="text-2xl font-bold text-destructive" value={summary?.total_withdrawals || 0} />
-                    </CardContent>
-                </Card>
-
+                <StatCard
+                    label="Total Socios"
+                    value={summary?.total_partners || 0}
+                    icon={Users}
+                    accent="muted"
+                />
+                <StatCard
+                    label="Total Aportes"
+                    value={<DataCell.Currency value={summary?.total_contributions || 0} />}
+                    icon={ArrowUpRight}
+                    accent="success"
+                />
+                <StatCard
+                    label="Total Retiros"
+                    value={<DataCell.Currency value={summary?.total_withdrawals || 0} />}
+                    icon={ArrowDownRight}
+                    accent="destructive"
+                />
                 <Card className="shadow-sm border bg-foreground text-background md:col-span-2 lg:col-span-1">
                     <CardHeader className="p-4 pb-2">
                         <CardDescription className="text-[10px] uppercase font-bold tracking-widest text-muted flex items-center gap-2">

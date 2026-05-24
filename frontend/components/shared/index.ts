@@ -36,7 +36,7 @@ export * from './ActionDock';
 export * from './BulkActionDock';
 
 // Cards & Containers
-
+export * from './StatCard';
 export * from './CardSkeleton';
 export * from './SkeletonShell';
 export * from './LayoutSkeletons';
