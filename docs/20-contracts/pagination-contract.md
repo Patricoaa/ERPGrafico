@@ -61,23 +61,11 @@ Todo endpoint `GET /api/<app>/<resource>/` que devuelva una colección MUST resp
 | `page` | int ≥ 1 | `1` | Page-number pagination (no cursor). |
 | `page_size` | int ≥ 1 | depende del viewset | Cap obligatorio: ver §1.4. |
 
-### 1.3 Configuración Django (MUST)
+### 1.3 Configuración Django
 
-`backend/config/settings.py` MUST declarar pagination class global. Estado actual: **no la tiene** — es la primera regla a cerrar. Patrón canónico:
-
-```python
-# backend/config/settings.py
-REST_FRAMEWORK = {
-    # … resto …
-    'DEFAULT_PAGINATION_CLASS': 'core.api.pagination.StandardResultsSetPagination',
-    'PAGE_SIZE': 50,
-}
-```
-
-Y la clase compartida (mover desde `inventory/views.py` y `treasury/views.py`, eliminar duplicados):
+Clase compartida en [backend/core/api/pagination.py](../../backend/core/api/pagination.py):
 
 ```python
-# backend/core/api/pagination.py
 from rest_framework.pagination import PageNumberPagination
 
 class StandardResultsSetPagination(PageNumberPagination):
@@ -86,7 +74,19 @@ class StandardResultsSetPagination(PageNumberPagination):
     max_page_size = 200          # ver §1.4
 ```
 
-Cualquier viewset que necesite override (export, batch) declara su propia `pagination_class`. Quitar la pagination global solo vía ADR.
+Hoy los viewsets de `inventory` y `treasury` la usan vía `pagination_class = StandardResultsSetPagination`. **`DEFAULT_PAGINATION_CLASS` global en `settings.py` NO está activado todavía** — su activación es el último paso del rollout y está bloqueado por la migración pendiente de los hooks listados en §5 (los 5 archivos del refactor en curso del usuario). Activarla antes truncaría silenciosamente esos endpoints.
+
+Patrón objetivo (a aplicar cuando todos los consumidores estén migrados — vía ADR):
+
+```python
+# backend/config/settings.py
+REST_FRAMEWORK = {
+    'DEFAULT_PAGINATION_CLASS': 'core.api.pagination.StandardResultsSetPagination',
+    'PAGE_SIZE': 50,
+}
+```
+
+Mientras tanto: todo viewset nuevo MUST opt-in explícitamente con `pagination_class = StandardResultsSetPagination`, y todo endpoint listable nuevo MUST cumplir el contrato desde el principio.
 
 ### 1.4 `max_page_size` (MUST)
 
