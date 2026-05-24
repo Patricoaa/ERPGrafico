@@ -24,8 +24,8 @@ export const inventoryApi = {
         if (filters?.page_size) params.append('page_size', String(filters.page_size))
         if (filters?.fields) params.append('fields', filters.fields)
 
-        const { data } = await api.get<{ results: Product[] }>('inventory/products/', { params })
-        return data.results || data
+        const { data } = await api.get<Product[]>('inventory/products/', { params })
+        return data
     },
 
     /**
@@ -100,7 +100,7 @@ export const inventoryApi = {
      * Fetch product categories
      */
     getCategories: async (): Promise<Array<{ id: number; name: string; icon?: string | null }>> => {
-        const { data } = await api.get('inventory/categories/', { params: { page_size: 9999 } })
-        return data.results || data
+        const { data } = await api.get<Array<{ id: number; name: string; icon?: string | null }>>('inventory/categories/', { params: { page_size: 9999 } })
+        return data
     },
 }
