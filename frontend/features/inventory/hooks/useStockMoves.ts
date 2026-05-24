@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
+import { toPage, type Page } from '@/lib/pagination'
 import { useRealtime } from '@/features/realtime'
 import { PRODUCTS_KEYS } from './queryKeys'
 
@@ -31,13 +32,6 @@ export interface StockMoveFilters {
     date_to?: string
 }
 
-export interface PaginatedStockMoves {
-    count: number
-    next: string | null
-    previous: string | null
-    results: StockMove[]
-}
-
 export const STOCK_MOVES_QUERY_KEY = ['inventory', 'stockMoves'] as const
 
 /**
@@ -61,31 +55,23 @@ export function useStockMove<T = StockMove>(id: string | number | null | undefin
 export function useStockMoves(filters: StockMoveFilters = {}) {
     const { page = 1, page_size = 50, ...rest } = filters
 
-    const queryInfo = useQuery<PaginatedStockMoves>({
+    const { data: page_, isLoading, isFetching, refetch } = useQuery({
         queryKey: [...STOCK_MOVES_QUERY_KEY, { page, page_size, ...rest }],
-        queryFn: async ({ signal }): Promise<PaginatedStockMoves> => {
-            const params: Record<string, any> = { page, page_size, ...rest }
+        queryFn: async ({ signal }): Promise<Page<StockMove>> => {
+            const params: Record<string, unknown> = { page, page_size, ...rest }
             const response = await api.get('/inventory/moves/', { params, signal })
-            return response.data
+            return toPage<StockMove>(response.data, page, page_size)
         },
-        staleTime: 2 * 60 * 1000, // 2 min
+        staleTime: 2 * 60 * 1000, // 2 min — tier "Transactional"
     })
 
-    return queryInfo
-}
-
-/**
- * @deprecated Usa `useStockMoves(filters)` directamente.
- * Este wrapper mantiene la forma de retorno `{ moves, isLoading, refetch }`
- * para no romper consumidores en esta iteración.
- */
-export function useStockMovesList(filters: StockMoveFilters = {}) {
-    const query = useStockMoves(filters)
     return {
-        moves: query.data?.results ?? [],
-        totalCount: query.data?.count ?? 0,
-        isLoading: query.isLoading,
-        refetch: query.refetch,
+        page: page_,
+        moves: page_?.results ?? [],
+        totalCount: page_?.count ?? 0,
+        isLoading,
+        isFetching,
+        refetch,
     }
 }
 
@@ -100,12 +86,6 @@ export interface StockAdjustmentPayload {
     partner_contact_id?: number | string
 }
 
-/**
- * Mutación del endpoint custom POST /inventory/moves/adjust/.
- * Cambia stock + costo del producto y crea un journal entry asociado.
- * Por eso invalida tanto STOCK_MOVES como PRODUCTS (qty_available/cost_price)
- * para que listas y detalles abiertos reflejen el ajuste inmediatamente.
- */
 /**
  * Imperative one-shot fetch — total stock de un producto en una bodega
  * sumando los movimientos. Útil para validar disponibilidad antes de

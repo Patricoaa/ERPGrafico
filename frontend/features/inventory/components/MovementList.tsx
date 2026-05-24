@@ -39,13 +39,18 @@ interface MovementListProps {
     createAction?: React.ReactNode
 }
 
-import { useStockMovesList } from "@/features/inventory/hooks/useStockMoves"
+import { useStockMoves } from "@/features/inventory/hooks/useStockMoves"
 import { SmartSearchBar, useSmartSearch } from "@/components/shared"
 import { stockMoveSearchDef } from "@/features/inventory/searchDef"
 
 export function MovementList({ externalOpen, onExternalOpenChange, createAction }: MovementListProps) {
     const { filters } = useSmartSearch(stockMoveSearchDef)
-    const { moves, isLoading, refetch } = useStockMovesList(filters)
+    const [pageState, setPageState] = useState({ pageIndex: 0, pageSize: 50 })
+    const { page, moves, totalCount, isLoading, refetch } = useStockMoves({
+        ...filters,
+        page: pageState.pageIndex + 1,
+        page_size: pageState.pageSize,
+    })
     const [viewingTransaction, setViewingTransaction] = useState<{ type: TransactionType, id: number | string, view?: 'details' | 'history' | 'all' } | null>(null)
     const [showAdjustmentModal, setShowAdjustmentModal] = useState(false)
     const [isFormLoading, setIsFormLoading] = useState(false)
@@ -175,6 +180,11 @@ export function MovementList({ externalOpen, onExternalOpenChange, createAction 
                     data={moves}
                     isLoading={isLoading}
                     variant="embedded"
+                    manualPagination
+                    pageCount={page ? Math.ceil(page.count / page.pageSize) : 0}
+                    rowCount={totalCount}
+                    pagination={pageState}
+                    onPaginationChange={setPageState}
                     leftAction={<SmartSearchBar searchDef={stockMoveSearchDef} placeholder="Buscar movimientos..." className="w-full" />}
                     createAction={createAction}
                 />

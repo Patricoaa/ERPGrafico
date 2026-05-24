@@ -1,4 +1,5 @@
 import api from '@/lib/api'
+import { toPage, type Page } from '@/lib/pagination'
 import type {
     Terminal,
     TerminalCreatePayload,
@@ -25,6 +26,7 @@ import type {
     PaymentUpdatePayload,
     ContactBrief,
     PartnerCapitalInfo,
+    TreasuryMovement,
 } from '../types'
 
 export const treasuryApi = {
@@ -178,9 +180,14 @@ export const treasuryApi = {
 
     // ========== Movements ==========
 
-    getMovements: async (params: Record<string, string | number | boolean>, signal?: AbortSignal): Promise<any> => {
+    getMovements: async (
+        params: Record<string, string | number | boolean>,
+        signal?: AbortSignal,
+    ): Promise<Page<TreasuryMovement>> => {
         const response = await api.get('/treasury/movements/', { params, signal })
-        return response.data
+        const pageIndex = Number(params.page ?? 1)
+        const pageSize = Number(params.page_size ?? 50)
+        return toPage<TreasuryMovement>(response.data, pageIndex, pageSize)
     },
 
     createMovement: async (payload: MovementCreatePayload): Promise<any> => {
