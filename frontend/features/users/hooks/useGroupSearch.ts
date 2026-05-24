@@ -1,16 +1,11 @@
 import { useQuery } from '@tanstack/react-query'
 import { usersApi } from "../api/usersApi"
 import type { AppGroup } from '@/types/entities'
-
-export const GROUP_KEYS = {
-    all: ['groups'] as const,
-    search: (term: string) => [...GROUP_KEYS.all, 'search', term] as const,
-    detail: (id: string | number) => [...GROUP_KEYS.all, 'detail', id] as const,
-}
+import { GROUP_KEYS } from './queryKeys'
 
 export function useGroupSearch(search: string = "", enabled: boolean = true) {
     const query = useQuery({
-        queryKey: GROUP_KEYS.search(search),
+        queryKey: GROUP_KEYS.list(search),
         queryFn: async ({ signal }) => {
             const params = new URLSearchParams()
             if (search) params.append("search", search)

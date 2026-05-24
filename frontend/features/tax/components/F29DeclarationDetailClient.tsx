@@ -1,10 +1,10 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React from "react"
 import { notFound, useRouter } from "next/navigation"
 import { EntityDetailPage, SkeletonShell, FormFooter, CancelButton } from "@/components/shared"
-import { taxApi } from "../api/taxApi"
 import { StatusBadge } from "@/components/shared/StatusBadge"
+import { useF29Detail } from "../hooks"
 
 interface F29DeclarationDetailClientProps {
     f29Id: string
@@ -12,35 +12,23 @@ interface F29DeclarationDetailClientProps {
 
 export function F29DeclarationDetailClient({ f29Id }: F29DeclarationDetailClientProps) {
     const router = useRouter()
-    const [declaration, setDeclaration] = useState<any>(null)
-    const [loading, setLoading] = useState(true)
-    const [error, setError] = useState<number | null>(null)
+    const { data: declaration, isLoading, error: queryError } = useF29Detail(f29Id)
 
-    useEffect(() => {
-        const fetchDeclaration = async () => {
-            try {
-                const data = await taxApi.getF29Detail(f29Id)
-                setDeclaration(data)
-            } catch (err: any) {
-                setError(err.response?.status || 500)
-            } finally {
-                setLoading(false)
-            }
-        }
-        fetchDeclaration()
-    }, [f29Id])
+    const errorStatus = queryError
+        ? ((queryError as { response?: { status?: number } })?.response?.status ?? 500)
+        : null
 
-    if (error === 404) return notFound()
-    if (error) return (
+    if (errorStatus === 404) return notFound()
+    if (errorStatus) return (
         <div className="flex-1 flex items-center justify-center p-8 text-destructive text-sm">
             Error al cargar declaración F29
         </div>
     )
 
-    if (loading || !declaration) {
+    if (isLoading || !declaration) {
          return (
              <div className="flex-1 p-8">
-                 <SkeletonShell isLoading={loading || !declaration} ariaLabel="Cargando detalle de declaración F29" />
+                 <SkeletonShell isLoading={isLoading || !declaration} ariaLabel="Cargando detalle de declaración F29" />
              </div>
          )
      }

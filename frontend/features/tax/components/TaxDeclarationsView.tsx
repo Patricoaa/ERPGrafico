@@ -1,7 +1,6 @@
 "use client"
 import { formatCurrency } from "@/lib/money";
 
-import { showApiError } from "@/lib/errors"
 import React, { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -13,7 +12,6 @@ import {
     Package,
     History as HistoryIcon
 } from "lucide-react"
-import { taxApi } from "../api/taxApi"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { toast } from "sonner"
@@ -33,6 +31,8 @@ import { Row } from "@tanstack/react-table"
 import { CardSkeleton, SmartSearchBar, useClientSearch } from "@/components/shared"
 import { taxPeriodSearchDef } from "@/features/tax/searchDef"
 import { EntityCard } from "@/components/shared/EntityCard"
+import { useTaxPeriods, useLazyTaxDeclarations } from "../hooks/useTaxQueries"
+import { useCreateTaxPayment } from "../hooks/useTaxMutations"
 
 interface TaxDeclarationsViewProps {
     externalOpen?: boolean
@@ -44,16 +44,20 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange, create
     const searchParams = useSearchParams()
     const router = useRouter()
     const pathname = usePathname()
-    const [periods, setPeriods] = useState<TaxPeriod[]>([])
-    const [isLoading, setIsLoading] = useState(true)
     const [isWizardOpen, setIsWizardOpen] = useState(false)
     const [isPaymentOpen, setIsPaymentOpen] = useState(false)
     const [selectedPeriodId, setSelectedPeriodId] = useState<number | undefined>(undefined)
     const [selectedDeclaration, setSelectedDeclaration] = useState<TaxDeclaration | null>(null)
-
     const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<TaxPeriod>({
         endpoint: '/tax/periods'
     })
+
+    const { data: periodsData, isLoading: isLoadingPeriods, refetch: refetchPeriods } = useTaxPeriods()
+    const { fetchDeclarations } = useLazyTaxDeclarations()
+    const createPaymentMutation = useCreateTaxPayment()
+
+    const periods = ((periodsData as { results?: TaxPeriod[] })?.results || (periodsData as TaxPeriod[]) || []) as TaxPeriod[]
+    const isLoading = isLoadingPeriods
 
     const handleCloseModal = () => {
         setIsWizardOpen(false)
@@ -76,26 +80,6 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange, create
             setIsWizardOpen(true)
         }
     }
-
-    const fetchPeriods = async () => {
-        setIsLoading(true)
-        try {
-            const data = await taxApi.getPeriods()
-            const fetchedPeriods = (data as { results?: TaxPeriod[] }).results || (data as TaxPeriod[])
-            setPeriods(fetchedPeriods)
-
-            // The effect above will handle the modal opening based on selectedFromUrl
-        } catch (error) {
-            console.error("Error fetching tax periods:", error)
-            toast.error("Error al cargar los períodos tributarios")
-        } finally {
-            setIsLoading(false)
-        }
-    }
-
-    useEffect(() => {
-        fetchPeriods()
-    }, [])
 
     useEffect(() => {
         if (externalOpen) {
@@ -163,8 +147,7 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange, create
             setIsPaymentOpen(true)
         } else {
             try {
-                const data = await taxApi.getDeclarations({ tax_period__year: period.year, tax_period__month: period.month })
-                const declarations = (data as { results?: TaxDeclaration[] }).results || (data as TaxDeclaration[])
+                const declarations = await fetchDeclarations({ tax_period__year: period.year, tax_period__month: period.month })
                 if (declarations.length > 0) {
                     setSelectedDeclaration({
                         ...declarations[0],
@@ -174,7 +157,7 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange, create
                 } else {
                     toast.error("No se encontró una declaración válida para pagar")
                 }
-            } catch (error) {
+            } catch {
                 toast.error("Error al buscar la declaración")
             }
         }
@@ -185,7 +168,7 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange, create
     const handlePaymentConfirm = async (data: TaxPaymentData) => {
         if (!selectedDeclaration) return
         try {
-            await taxApi.createPayment({
+            await createPaymentMutation.mutateAsync({
                 declaration: selectedDeclaration.id,
                 payment_date: data.documentDate || dateString || "",
                 amount: data.amount,
@@ -196,11 +179,9 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange, create
             })
 
             toast.success("Pago de impuestos registrado correctamente")
-            fetchPeriods()
             setIsPaymentOpen(false)
-        } catch (error: unknown) {
-            console.error("Error saving payment:", error)
-            showApiError(error, "Error al registrar el pago")
+        } catch {
+            // Error handled by mutation's onError
         }
     }
 
@@ -475,7 +456,7 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange, create
                 onOpenChange={handleWizardOpenChange}
                 periodId={selectedPeriodId}
                 onSuccess={() => {
-                    fetchPeriods()
+                    refetchPeriods()
                     setIsWizardOpen(false)
                     setSelectedPeriodId(undefined)
                 }}
