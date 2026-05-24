@@ -36,17 +36,6 @@ export function useJournalEntry(id: string | number | undefined) {
     })
 }
 
-export function useJournalEntry(id: string | number | undefined) {
-    return useQuery({
-        queryKey: [...JOURNAL_ENTRIES_QUERY_KEY, 'detail', id],
-        queryFn: async () => {
-            const data = await accountingApi.getEntry(id!)
-            return data
-        },
-        enabled: !!id,
-    })
-}
-
 export function useJournalEntries(filters?: FilterState) {
     const { data: entries, isLoading, refetch } = useQuery({
         queryKey: [...JOURNAL_ENTRIES_QUERY_KEY, filters],
