@@ -1,8 +1,5 @@
 import api from '@/lib/api'
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import api from '@/lib/api'
-
 export const usersApi = {
     getUsers: (config?: Record<string, unknown>) =>
         api.get('/core/users/', config as any).then(r => r.data),
