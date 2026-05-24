@@ -15,7 +15,7 @@ import { ChevronDown, Plus, AlertTriangle, Layers } from "lucide-react"
 import { toast } from "sonner"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { cn, translateProductType } from "@/lib/utils"
-import { resolveMediaUrl } from "@/lib/api"
+import { resolveMediaUrl } from "@/features/inventory/api/inventoryApi"
 import { PricingUtils } from '@/features/inventory/utils/pricing'
 import { Checkbox } from "@/components/ui/checkbox"
 import { Archive as ArchiveIcon } from "lucide-react"

@@ -1,6 +1,5 @@
 "use client"
 import { formatPlainDate } from "@/lib/utils";
-
 import { useState, useEffect } from "react"
 import { getTasks, Task } from '@/features/workflow/api/workflowApi'
 import { Card } from "@/components/ui/card"
@@ -12,12 +11,12 @@ import { useGlobalModalActions } from "@/components/providers/GlobalModalProvide
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
-import api from "@/lib/api"
 import { useRef } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { SkeletonShell, MoneyDisplay, EntityBadge, Chip } from "@/components/shared"
 import { useAuth } from "@/contexts/AuthContext"
 import { formatEntityDisplay, getEntityMetadata, detectEntityLabel } from "@/lib/entity-registry"
+import { useUpdateTask } from "../hooks/useWorkflowQueries"
 
 const HUB_STAGE_LABELS: Record<string, string> = {
     origin: 'Origen',
@@ -188,9 +187,13 @@ export function TaskInbox() {
             // Add a small note if approved/rejected
             const notes = action === 'APPROVE' ? 'Aprobado desde Inbox POS' : 'Rechazado desde Inbox POS'
 
-            await api.patch(`/workflow/tasks/${task.id}/`, {
-                status,
-                notes: task.notes ? `${task.notes}\n${notes}` : notes
+            const updateTaskMutation = useUpdateTask()
+            await updateTaskMutation.mutateAsync({
+                id: task.id,
+                payload: {
+                    status,
+                    notes: task.notes ? `${task.notes}\n${notes}` : notes
+                }
             })
 
             toast.success(`Crédito ${action === 'APPROVE' ? 'Aprobado' : 'Rechazado'}`)

@@ -5,7 +5,6 @@ import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { useQueryClient } from "@tanstack/react-query"
-import api from "@/lib/api"
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { UserSelector } from "@/components/selectors/UserSelector"
@@ -27,6 +26,11 @@ import {
     useWorkflowRulesQuery,
     useNotificationRulesQuery,
     useWorkflowRecurrentSettingsQuery,
+    useUpdateAssignmentRule,
+    useCreateAssignmentRule,
+    useUpdateWorkflowSettings,
+    useUpdateNotificationRule,
+    useCreateNotificationRule,
     workflowKeys,
     type WorkflowRecurrentSettings,
 } from "../hooks/useWorkflowQueries"
@@ -252,6 +256,9 @@ const AssignmentRuleRow = React.memo(function AssignmentRuleRow({ taskType, rule
         }
     }, [rule, form])
 
+    const updateMutation = useUpdateAssignmentRule()
+    const createMutation = useCreateAssignmentRule()
+    
     const onSave = useCallback(async (data: AssignmentValues) => {
         const current = ruleRef.current
         const payload = {
@@ -260,12 +267,11 @@ const AssignmentRuleRow = React.memo(function AssignmentRuleRow({ taskType, rule
             assigned_group: data.mode === "group" ? (data.assigned_group ?? "") : "",
         }
         if (current?.id) {
-            await api.patch(`/workflow/assignment-rules/${current.id}/`, payload)
+            await updateMutation.mutateAsync({ id: current.id, data: payload })
         } else {
-            await api.post("/workflow/assignment-rules/", payload)
+            await createMutation.mutateAsync(payload)
         }
-        queryClient.invalidateQueries({ queryKey: workflowKeys.rules() })
-    }, [taskType.id, queryClient])
+    }, [taskType.id])
 
     const { status } = useAutoSaveForm({ form, onSave, debounceMs: 400 })
     const mode = form.watch("mode")
@@ -325,6 +331,9 @@ const RecurrentRuleRow = React.memo(function RecurrentRuleRow({ taskType, rule, 
         }
     }, [rule, assignmentForm])
 
+    const updateMutation = useUpdateAssignmentRule()
+    const createMutation = useCreateAssignmentRule()
+    
     const onSaveAssignment = useCallback(async (data: AssignmentValues) => {
         const current = ruleRef.current
         const payload = {
@@ -333,12 +342,11 @@ const RecurrentRuleRow = React.memo(function RecurrentRuleRow({ taskType, rule, 
             assigned_group: data.mode === "group" ? (data.assigned_group ?? "") : "",
         }
         if (current?.id) {
-            await api.patch(`/workflow/assignment-rules/${current.id}/`, payload)
+            await updateMutation.mutateAsync({ id: current.id, data: payload })
         } else {
-            await api.post("/workflow/assignment-rules/", payload)
+            await createMutation.mutateAsync(payload)
         }
-        queryClient.invalidateQueries({ queryKey: workflowKeys.rules() })
-    }, [taskType.id, queryClient])
+    }, [taskType.id])
 
     const { status: assignmentStatus } = useAutoSaveForm({ form: assignmentForm, onSave: onSaveAssignment, debounceMs: 400 })
 
@@ -354,10 +362,12 @@ const RecurrentRuleRow = React.memo(function RecurrentRuleRow({ taskType, rule, 
         }
     }, [dayValue, dayForm])
 
+    const updateWorkflowSettingsMutation = useUpdateWorkflowSettings()
+    
     const onSaveDay = useCallback(async (data: DayValues) => {
-        await api.patch("/workflow/settings/current/", { [taskType.dayField]: data.value })
+        await updateWorkflowSettingsMutation.mutateAsync({ [taskType.dayField]: data.value })
         queryClient.invalidateQueries({ queryKey: workflowKeys.recurrentSettings() })
-    }, [taskType.dayField, queryClient])
+    }, [taskType.dayField])
 
     const { status: dayStatus } = useAutoSaveForm({
         form: dayForm,
@@ -434,8 +444,10 @@ const MarginThresholdInput = React.memo(function MarginThresholdInput({ initialV
         }
     }, [initialValue, form])
 
+    const updateWorkflowSettingsMutation = useUpdateWorkflowSettings()
+    
     const onSave = useCallback(async (data: ThresholdValues) => {
-        await api.patch("/workflow/settings/current/", { low_margin_threshold_percent: data.value })
+        await updateWorkflowSettingsMutation.mutateAsync({ low_margin_threshold_percent: data.value })
     }, [])
 
     const { status } = useAutoSaveForm({ form, onSave, debounceMs: 400 })
@@ -494,6 +506,9 @@ const NotificationRuleRow = React.memo(function NotificationRuleRow({ type, rule
         }
     }, [rule, form])
 
+    const updateNotificationRuleMutation = useUpdateNotificationRule()
+    const createNotificationRuleMutation = useCreateNotificationRule()
+    
     const onSave = useCallback(async (data: NotificationValues) => {
         const current = ruleRef.current
         const payload = {
@@ -503,12 +518,11 @@ const NotificationRuleRow = React.memo(function NotificationRuleRow({ type, rule
             notify_creator: data.notify_creator,
         }
         if (current?.id) {
-            await api.patch(`/workflow/notification-rules/${current.id}/`, payload)
+            await updateNotificationRuleMutation.mutateAsync({ id: current.id, data: payload })
         } else {
-            await api.post("/workflow/notification-rules/", payload)
+            await createNotificationRuleMutation.mutateAsync(payload)
         }
-        queryClient.invalidateQueries({ queryKey: workflowKeys.notificationRules() })
-    }, [type.id, queryClient])
+    }, [type.id])
 
     const { status } = useAutoSaveForm({ form, onSave, debounceMs: 400 })
     const mode = form.watch("mode")
