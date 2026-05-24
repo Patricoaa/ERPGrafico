@@ -2,7 +2,7 @@
 
 import React from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
-import { DataTable } from '@/components/shared'
+import { DataTableView } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
 import { ArrowRight, ArrowLeft } from "lucide-react"
@@ -16,9 +16,6 @@ import { SmartSearchBar, useSmartSearch } from "@/components/shared"
 import { salesOrderSearchDef, salesNoteSearchDef } from "@/features/sales/searchDef"
 import type { SaleOrderFilters } from "@/features/sales/types"
 import { cn } from "@/lib/utils"
-import { useViewMode } from "@/hooks/useViewMode"
-import { createDomainCardView, createCardLoadingView } from "@/lib/view-helpers"
-
 
 interface SalesOrdersViewProps {
     viewMode: 'orders' | 'notes'
@@ -32,8 +29,6 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
     const router = useRouter()
     const searchParams = useSearchParams()
     const pathname = usePathname()
-
-    const { currentView, handleViewChange, viewOptions, isCustomView } = useViewMode('sales.saleorder')
 
     const toggleSelection = (id: number) => {
         const isSelected = viewMode === "orders" ? hubConfig?.orderId === id : hubConfig?.invoiceId === id
@@ -204,28 +199,21 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
     return (
         <div className="h-full flex flex-col">
             <div className="flex-1 min-h-0">
-                <DataTable
+                <DataTableView
+                    entityLabel={entityLabel}
                     columns={(viewMode === 'orders' ? columns : noteColumns) as any}
                     data={(viewMode === 'orders' ? orders : filteredNotes) as any}
                     onRowClick={(row: any) => toggleSelection(row.id)}
                     variant="embedded"
                     isLoading={viewMode === 'orders' ? isLoadingOrders : isLoadingNotes}
-                    currentView={currentView}
-                    onViewChange={handleViewChange}
-                    viewOptions={viewOptions}
                     leftAction={viewMode === 'orders'
                         ? <SmartSearchBar searchDef={salesOrderSearchDef} placeholder="Buscar órdenes..." />
                         : <SmartSearchBar searchDef={salesNoteSearchDef} placeholder="Buscar notas..." />
                     }
                     showToolbarSort={true}
-
                     defaultPageSize={20}
-                    renderCustomView={isCustomView ? createDomainCardView(entityLabel, {
-                        onRowClick: (data) => toggleSelection(data.id),
-                        isSelected: (data) => !!getSelectionId(data),
-                        isHubOpen,
-                    }) : undefined}
-                    renderLoadingView={isCustomView ? createCardLoadingView('single-column') : undefined}
+                    isSelected={(data: any) => !!getSelectionId(data)}
+                    isHubOpen={isHubOpen}
                 />
             </div>
         </div>

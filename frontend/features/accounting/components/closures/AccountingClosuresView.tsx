@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useFiscalYears } from '../../hooks/useFiscalYears';
 import { useAccountingPeriods } from '../../hooks/useAccountingPeriods';
 import { FiscalYearCard } from './FiscalYearCard';
@@ -8,14 +8,14 @@ import { FiscalYearClosingWizard } from './FiscalYearClosingWizard';
 import { NewFiscalYearModal } from './NewFiscalYearModal';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { AccountingPeriod, FiscalYearPreviewResult, FiscalYear } from '../../types';
-import { useSearchParams, useRouter, usePathname } from 'next/navigation';
+
 import { useSelectedEntity } from '@/hooks/useSelectedEntity';
-import { DataTable } from '@/components/shared';
+import { DataTableView } from '@/components/shared';
 import { ColumnDef } from '@tanstack/react-table';
 import { DataTableColumnHeader } from '@/components/shared';
 import { createActionsColumn, DataCell } from '@/components/shared';
 import { StatusBadge } from '@/components/shared/StatusBadge';
-import { LayoutGrid, List, PlayCircle, ShieldAlert, Lock, LockOpen } from 'lucide-react';
+import { PlayCircle, ShieldAlert, LockOpen } from 'lucide-react';
 import { ToolbarCreateButton, SmartSearchBar, useClientSearch } from '@/components/shared';
 import { ClosuresSkeleton } from './ClosuresSkeleton';
 import { fiscalYearSearchDef } from '../../searchDef';
@@ -26,10 +26,6 @@ interface AccountingClosuresViewProps {
 }
 
 export function AccountingClosuresView({ externalOpen, onExternalOpenChange }: AccountingClosuresViewProps) {
-    const searchParams = useSearchParams();
-    const router = useRouter();
-    const pathname = usePathname();
-
     const {
         data: fiscalYears,
         isLoading: isLoadingYr,
@@ -164,15 +160,6 @@ export function AccountingClosuresView({ externalOpen, onExternalOpenChange }: A
 
     const { filterFn } = useClientSearch<{ year: number; periods: AccountingPeriod[]; fiscalYear: FiscalYear | undefined; status: string }>(fiscalYearSearchDef)
 
-    const viewMode = searchParams.get('view') ?? 'card';
-    const isCustomView = viewMode !== 'list';
-
-    const handleViewChange = useCallback((v: string) => {
-        const params = new URLSearchParams(searchParams.toString());
-        params.set('view', v);
-        router.push(`${pathname}?${params.toString()}`, { scroll: false });
-    }, [searchParams, router, pathname]);
-
     if (isLoadingYr || isLoadingPeriods) {
         return <ClosuresSkeleton />;
     }
@@ -261,26 +248,21 @@ export function AccountingClosuresView({ externalOpen, onExternalOpenChange }: A
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500 h-full flex flex-col">
             <div className="flex-1 min-h-0">
-                <DataTable
+                <DataTableView
+                    entityLabel="accounting.fiscalyear"
                     columns={columns}
                     data={filterFn(groupedData.map(r => ({ ...r, status: r.fiscalYear?.status ?? 'OPEN' })))}
                     isLoading={actionLoadingYr || actionLoadingPeriod}
                     variant="standalone"
                     leftAction={<SmartSearchBar searchDef={fiscalYearSearchDef} placeholder="Buscar ejercicio..." className="w-full" />}
-                    currentView={viewMode}
-                    onViewChange={handleViewChange}
                     defaultPageSize={10}
-                    viewOptions={[
-                        { label: "Lista", value: "list", icon: List },
-                        { label: "Tarjeta", value: "card", icon: LayoutGrid }
-                    ]}
                     createAction={
                         <ToolbarCreateButton
                             href="/accounting/closures?modal=fy"
                             label="Nuevo Año Fiscal"
                         />
                     }
-                    renderCustomView={isCustomView ? (table) => (
+                    renderCustomView={(table) => (
                         <div className="space-y-6 pt-4">
                             {table.getRowModel().rows.map(row => {
                                 const { year, periods: yearPeriods, fiscalYear } = row.original;
@@ -301,7 +283,7 @@ export function AccountingClosuresView({ externalOpen, onExternalOpenChange }: A
                                 );
                             })}
                         </div>
-                    ) : undefined}
+                    )}
                 />
             </div>
 

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { EmployeeFormModal } from "@/features/hr"
 import type { Employee } from "@/types/hr"
 import { ColumnDef } from "@tanstack/react-table"
-import { DataTable } from '@/components/shared'
+import { DataTableView } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { createActionsColumn, DataCell } from '@/components/shared'
 import { StatusBadge } from "@/components/shared/StatusBadge"
@@ -16,8 +16,7 @@ import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { useEmployees } from "@/features/hr/hooks/useEmployees"
 import { employeeSearchDef } from "@/features/hr/searchDef"
 import { EntityCard } from "@/components/shared/EntityCard"
-import { useViewMode } from "@/hooks/useViewMode"
-import { createEntityCardView, createCardLoadingView } from "@/lib/view-helpers"
+import { createEntityCardView } from "@/lib/view-helpers"
 
 // Employee schemas and types moved to features/hr/components/EmployeeFormDialog
 
@@ -28,7 +27,6 @@ export default function EmployeesPage() {
     const searchParams = useSearchParams()
     const { filters } = useSmartSearch(employeeSearchDef)
     const { employees, isLoading: loading, refetch: fetchEmployees } = useEmployees(filters)
-    const { currentView, handleViewChange, viewOptions, isCustomView } = useViewMode('hr.employee')
     const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<Employee>({
         endpoint: '/hr/employees'
     })
@@ -145,7 +143,8 @@ export default function EmployeesPage() {
     return (
         <div className="space-y-4 h-full flex flex-col">
             <div className="flex-1 min-h-0">
-                <DataTable
+                <DataTableView
+                entityLabel="hr.employee"
                 columns={columns}
                 data={employees}
                 isLoading={loading}
@@ -153,11 +152,7 @@ export default function EmployeesPage() {
                 leftAction={<SmartSearchBar searchDef={employeeSearchDef} placeholder="Buscar por nombre o RUT..." className="w-full" />}
                 defaultPageSize={20}
                 createAction={createAction}
-                currentView={currentView}
-                onViewChange={handleViewChange}
-                viewOptions={viewOptions}
-                renderLoadingView={isCustomView ? createCardLoadingView('multi-column', 10) : undefined}
-                renderCustomView={isCustomView ? createEntityCardView('hr.employee', {
+                renderCustomView={createEntityCardView('hr.employee', {
                     renderCard: (emp: Employee) => (
                         <EntityCard key={emp.id} onClick={() => {
                             const params = new URLSearchParams(searchParams.toString())
@@ -183,7 +178,7 @@ export default function EmployeesPage() {
                             </EntityCard.Footer>
                         </EntityCard>
                     )
-                }) : undefined}
+                }                    )}
             />
             </div>
             <EmployeeFormModal

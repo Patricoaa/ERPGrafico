@@ -108,6 +108,7 @@ export * from './ExpandableTableRow'
 // ─── Migrated from components/ui — GOVERNANCE rule 21 compliance ─────────────
 // Table system
 export * from './DataTable';
+export * from './DataTableView';
 export * from './DataTableToolbar';
 export * from './DataTableFilters';
 export * from './DataTablePagination';

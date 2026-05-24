@@ -3,7 +3,7 @@
 import { showApiError, getErrorMessage } from "@/lib/errors"
 import React, { useEffect, useState, useRef } from "react"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
-import { DataTable } from '@/components/shared'
+import { DataTableView } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
 import { DataCell } from '@/components/shared'
@@ -21,8 +21,7 @@ import { getHubStatuses } from "@/lib/workflow-status"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { Tabs } from "@/components/ui/tabs"
-import { useViewMode } from "@/hooks/useViewMode"
-import { createDomainCardView, createCardLoadingView } from "@/lib/view-helpers"
+
 
 
 import type { Order } from "@/features/orders/types"
@@ -69,8 +68,6 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
     const [folioModalOpen, setFolioModalOpen] = useState(false)
     const [selectedInvoice, setSelectedInvoice] = useState<{ id: number, type: string } | null>(null)
     const [checkoutOrderId, setCheckoutOrderId] = useState<number | null>(null)
-
-    const { currentView, handleViewChange, viewOptions, isCustomView } = useViewMode('purchasing.purchaseorder')
 
     const { openHub, closeHub, hubConfig, isHubOpen } = useHubPanel()
 
@@ -402,29 +399,21 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
 
             <Tabs value={viewMode} className="w-full h-full flex flex-col">
                 <div className="flex-1 min-h-0">
-                    <DataTable
+                    <DataTableView
+                        entityLabel={viewMode === 'orders' ? 'purchasing.purchaseorder' : 'billing.invoice'}
                         columns={(viewMode === 'orders' ? columns : noteColumns) as any}
                         data={(viewMode === 'orders' ? filteredOrders : filteredNotes) as any}
                         onRowClick={(row: any) => toggleSelection(row.id)}
                         variant="embedded"
                         isLoading={viewMode === 'orders' ? isLoadingOrders : isLoadingNotes}
-                        currentView={currentView}
-                        onViewChange={handleViewChange}
-                        viewOptions={viewOptions}
                         leftAction={<SmartSearchBar searchDef={purchaseOrderSearchDef} placeholder="Buscar por proveedor..." className="w-full" />}
                         showToolbarSort={true}
-                        renderCustomView={isCustomView ? createDomainCardView(
-                            viewMode === 'orders' ? 'purchasing.purchaseorder' : 'billing.invoice',
-                            {
-                                onRowClick: (data) => toggleSelection(data.id),
-                                isSelected: (data) => viewMode === 'orders'
-                                    ? hubConfig?.orderId === data.id
-                                    : hubConfig?.invoiceId === data.id,
-                                isHubOpen,
-                            }
-                        ) : undefined}
-                        renderLoadingView={isCustomView ? createCardLoadingView('single-column') : undefined}
                         createAction={createAction}
+                        isSelected={(data: any) => viewMode === 'orders'
+                            ? hubConfig?.orderId === data.id
+                            : hubConfig?.invoiceId === data.id
+                        }
+                        isHubOpen={isHubOpen}
                     />
                 </div>
             </Tabs>

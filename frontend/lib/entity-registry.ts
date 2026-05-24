@@ -2,7 +2,8 @@ import {
   ReceiptText, Truck, Undo2, FileText,
   Wrench, Package, ArrowLeftRight, Landmark, BookOpen, 
   Hash, Users, User, UserCheck, Book, PiggyBank, ShoppingCart, Receipt,
-  List, LayoutDashboard, LayoutGrid, Kanban,
+  List, LayoutDashboard, LayoutGrid, Kanban, CalendarDays, ClipboardCheck,
+  Building2, Smartphone, CreditCard, Calendar, CalendarX2, Repeat,
   type LucideIcon 
 } from 'lucide-react';
 
@@ -127,6 +128,17 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     detailUrlPattern: '/inventory/products/{id}',
     viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', gridLayout: 'single-column' },
   },
+  'inventory.subscription': {
+    label: 'inventory.subscription',
+    title: 'Suscripción',
+    titlePlural: 'Suscripciones',
+    icon: Repeat,
+    shortTemplate: 'SUB-{id}',
+    listUrl: '/inventory/products?tab=subscriptions',
+    detailUrlPattern: '/inventory/products/{id}',
+    partnerField: 'customer_name',
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', gridLayout: 'single-column' },
+  },
   'treasury.treasurymovement': {
     label: 'treasury.treasurymovement',
     title: 'Movimiento de Tesorería',
@@ -156,6 +168,52 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     listUrl: '/treasury/reconciliation?tab=statements',
     detailUrlPattern: '/treasury/reconciliation/statements/{id}',
   },
+  'treasury.terminal': {
+    label: 'treasury.terminal',
+    title: 'Caja',
+    titlePlural: 'Cajas',
+    icon: CreditCard,
+    shortTemplate: 'CAJ-{id}',
+    listUrl: '/treasury/terminals',
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'custom' },
+  },
+  'treasury.terminaldevice': {
+    label: 'treasury.terminaldevice',
+    title: 'Dispositivo',
+    titlePlural: 'Dispositivos',
+    icon: Smartphone,
+    shortTemplate: 'DIS-{id}',
+    listUrl: '/treasury/hardware',
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'custom' },
+  },
+  'treasury.terminalprovider': {
+    label: 'treasury.terminalprovider',
+    title: 'Proveedor',
+    titlePlural: 'Proveedores',
+    icon: Building2,
+    shortTemplate: 'PROV-{id}',
+    listUrl: '/treasury/hardware',
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'custom' },
+  },
+  'treasury.terminalbatch': {
+    label: 'treasury.terminalbatch',
+    title: 'Liquidación',
+    titlePlural: 'Liquidaciones',
+    icon: Receipt,
+    shortTemplate: 'LIQ-{id}',
+    listUrl: '/treasury/terminal-batches',
+    detailUrlPattern: '/treasury/terminal-batches/{id}',
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', gridLayout: 'single-column' },
+  },
+  'accounting.fiscalyear': {
+    label: 'accounting.fiscalyear',
+    title: 'Ejercicio Contable',
+    titlePlural: 'Ejercicios Contables',
+    icon: Calendar,
+    shortTemplate: 'EJ-{year}',
+    listUrl: '/accounting/closures',
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'custom' },
+  },
   'accounting.account': {
     label: 'accounting.account',
     title: 'Cuenta Contable',
@@ -173,6 +231,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: 'AS-{number}',
     listUrl: '/accounting/entries',
     detailUrlPattern: '/accounting/entries/{id}',
+    viewPolicy: { availableViews: ['list'], defaultView: 'list', cardComponent: 'custom' },
   },
   'contacts.contact': {
     label: 'contacts.contact',
@@ -194,6 +253,17 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     detailUrlPattern: '/hr/employees/{id}',
     viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', gridLayout: 'single-column' },
   },
+  'hr.absence': {
+    label: 'hr.absence',
+    title: 'Inasistencia',
+    titlePlural: 'Inasistencias',
+    icon: CalendarX2,
+    shortTemplate: 'AUS-{id}',
+    listUrl: '/hr/absences',
+    detailUrlPattern: '/hr/absences/{id}',
+    partnerField: 'employee_name',
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', gridLayout: 'single-column' },
+  },
   'hr.payroll': {
     label: 'hr.payroll',
     title: 'Liquidación de Sueldo',
@@ -202,6 +272,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: 'LIQ-{id}',
     listUrl: '/hr/payrolls',
     detailUrlPattern: '/hr/payrolls/{id}',
+    viewPolicy: { availableViews: ['list'], defaultView: 'list', cardComponent: 'custom' },
   },
   'core.user': {
     label: 'core.user',
@@ -211,6 +282,17 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: 'USR-{id}',
     listUrl: '/settings/users',
     detailUrlPattern: '/settings/users/{id}',
+    viewPolicy: { availableViews: ['list'], defaultView: 'list', cardComponent: 'custom' },
+  },
+  'workflow.task': {
+    label: 'workflow.task',
+    title: 'Tarea',
+    titlePlural: 'Tareas',
+    icon: ClipboardCheck,
+    shortTemplate: 'TASK-{id}',
+    listUrl: '/workflow/tasks',
+    detailUrlPattern: '/workflow/tasks/{id}',
+    viewPolicy: { availableViews: ['list'], defaultView: 'list', cardComponent: 'custom' },
   },
 };
 
@@ -295,10 +377,11 @@ export function getPartnerName(label: string, data: any): string {
  * Icon and label map for canonical view types.
  */
 const VIEW_ICON_MAP: Record<string, { label: string; icon: LucideIcon }> = {
-  list:   { label: 'Lista',    icon: List },
-  card:   { label: 'Tarjeta',  icon: LayoutDashboard },
-  grid:   { label: 'Grilla',   icon: LayoutGrid },
-  kanban: { label: 'Kanban',   icon: Kanban },
+  list:    { label: 'Lista',      icon: List },
+  card:    { label: 'Tarjeta',    icon: LayoutDashboard },
+  grid:    { label: 'Grilla',     icon: LayoutGrid },
+  kanban:  { label: 'Kanban',     icon: Kanban },
+  timeline:{ label: 'Cronograma', icon: CalendarDays },
 };
 
 /**

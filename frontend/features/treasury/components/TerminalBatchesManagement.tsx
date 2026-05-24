@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect, lazy, Suspense, useMemo } from "react"
-import { DataTable } from '@/components/shared'
+import { DataTableView } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import type { ColumnDef } from "@tanstack/react-table"
 import { Plus, Building2 } from "lucide-react"
@@ -129,7 +129,8 @@ export function TerminalBatchesManagement({
     return (
         <div className="h-full flex flex-col">
             <div className="flex-1 min-h-0">
-                <DataTable
+                <DataTableView
+                    entityLabel="treasury.terminalbatch"
                     columns={columns}
                     data={batches}
                     isLoading={isLoading}
