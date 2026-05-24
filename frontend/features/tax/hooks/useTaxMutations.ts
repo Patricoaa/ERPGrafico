@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { markLocalMutation } from '@/lib/markLocalMutation'
+import { useRealtime } from '@/features/realtime'
 import { taxApi } from '../api/taxApi'
 import { TAX_KEYS } from './queryKeys'
 import { showApiError } from '@/lib/errors'
@@ -16,6 +16,7 @@ export function useTaxCalculation() {
 
 export function useCreateDeclaration() {
   const queryClient = useQueryClient()
+  const { markLocalMutation } = useRealtime()
 
   return useMutation({
     mutationFn: (data: Record<string, unknown>) =>
@@ -30,6 +31,7 @@ export function useCreateDeclaration() {
 
 export function useRegisterDeclaration() {
   const queryClient = useQueryClient()
+  const { markLocalMutation } = useRealtime()
 
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: { declaration_date: string } }) =>
@@ -44,6 +46,7 @@ export function useRegisterDeclaration() {
 
 export function useClosePeriod() {
   const queryClient = useQueryClient()
+  const { markLocalMutation } = useRealtime()
 
   return useMutation({
     mutationFn: (id: number) => taxApi.closePeriod(id),
@@ -56,6 +59,7 @@ export function useClosePeriod() {
 
 export function useCreateTaxPayment() {
   const queryClient = useQueryClient()
+  const { markLocalMutation } = useRealtime()
 
   return useMutation({
     mutationFn: (data: Record<string, unknown>) =>
