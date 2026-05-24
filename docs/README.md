@@ -48,6 +48,7 @@
 | "form size", "form pattern", "when to use tabs", "wizard vs form", "form surface", "form layout" | [component-form-patterns.md](20-contracts/component-form-patterns.md) | 20 |
 | "edit modal", "list edit", "?selected param", "open modal from search", "detail from search" | [list-modal-edit-pattern.md](20-contracts/list-modal-edit-pattern.md) | 20 |
 | "hook signature", "return shape" | [hook-contracts.md](20-contracts/hook-contracts.md) | 20 |
+| "pagination", "page_size", "count next previous", "manualPagination", "DataTable footer mal cuenta", "lista truncada a 50", "Page<T>", "envoltorio DRF" | [pagination-contract.md](20-contracts/pagination-contract.md) | 20 |
 | "entity state", "status values" | [state-map.md](20-contracts/state-map.md) | 20 |
 | "testing strategy", "coverage", "fixtures" | [testing.md](40-quality/testing.md) | 40 |
 | "auth", "permissions", "injection", "security review" | [security.md](40-quality/security.md) | 40 |

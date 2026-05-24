@@ -16,7 +16,7 @@ Backend REST surface under `/api/`. Every endpoint has request schema, response 
 - Base URL: `/api/[app]/`
 - Auth: JWT `Authorization: Bearer <access>` on all except `/api/token/*`.
 - Content-Type: `application/json` (except uploads).
-- Pagination: DRF cursor — `?cursor=…&page_size=N` (max 100). Response: `{ next, previous, results }`.
+- Pagination: DRF page-number — `?page=N&page_size=M` (default `page_size=50`, max `200`). Response: `{ count, next, previous, results }`. Contrato cruzado backend↔hook↔DataTable: [pagination-contract.md](./pagination-contract.md). _Nota 2026-05-23: el contrato actualmente aplica solo a `inventory/*` y `treasury/*` (las únicas apps con `pagination_class` declarado). El resto devuelve `T[]` plano hasta que se active `DEFAULT_PAGINATION_CLASS` global — ver [pagination-contract.md §1.3 + §5 paso 5](./pagination-contract.md#13-configuración-django-must)._
 - Filtering: `django_filter` query params.
 - Ordering: `?ordering=field,-other`.
 - Errors: DRF standard — `{ detail }` or `{ field: [msg] }`.
