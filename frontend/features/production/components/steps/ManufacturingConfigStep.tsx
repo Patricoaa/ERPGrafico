@@ -20,7 +20,7 @@ import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactS
 import { UoMSelector } from "@/components/selectors/UoMSelector";
 import { LabeledInput, LabeledContainer, PeriodValidationDateInput } from "@/components/shared";
 import { workOrderSchema } from "@/types/forms";
-import { productionApi } from "../../../api/productionApi";
+import { productionApi } from "../../api/productionApi";
 import { useAuth } from "@/contexts/AuthContext";
 import { useVatRate } from "@/hooks/useVatRate";
 
