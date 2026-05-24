@@ -26,14 +26,16 @@ import {
     useWorkflowRulesQuery,
     useNotificationRulesQuery,
     useWorkflowRecurrentSettingsQuery,
+    workflowKeys,
+    type WorkflowRecurrentSettings,
+} from "../hooks/useWorkflowQueries"
+import {
     useUpdateAssignmentRule,
     useCreateAssignmentRule,
     useUpdateWorkflowSettings,
     useUpdateNotificationRule,
     useCreateNotificationRule,
-    workflowKeys,
-    type WorkflowRecurrentSettings,
-} from "../hooks/useWorkflowQueries"
+} from "../hooks/useWorkflowMutations"
 
 // ─── Static data ──────────────────────────────────────────────────────────────
 
