@@ -102,6 +102,12 @@ interface DataTableProps<TData, TValue> {
     renderRow?: (row: Row<TData>, children: React.ReactNode) => React.ReactNode
     manualPagination?: boolean
     pageCount?: number
+    /**
+     * Server-side total. REQUIRED when `manualPagination` is true so the
+     * pagination footer can show the real count instead of the current
+     * page's row count. See docs/20-contracts/pagination-contract.md §3.2.
+     */
+    rowCount?: number
     pagination?: { pageIndex: number; pageSize: number }
     onPaginationChange?: (updater: any) => void
     rowSelection?: RowSelectionState
@@ -158,6 +164,7 @@ export function DataTable<TData, TValue>({
     renderRow,
     manualPagination,
     pageCount,
+    rowCount,
     pagination,
     onPaginationChange,
     rowSelection,
@@ -206,6 +213,7 @@ export function DataTable<TData, TValue>({
         getSubRows,
         manualPagination,
         pageCount,
+        rowCount,
         onPaginationChange,
         autoResetPageIndex: false,
         autoResetExpanded: false,

@@ -32,9 +32,9 @@ export function DataTablePagination<TData>({
                 Mostrando {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1} a{" "}
                 {Math.min(
                     (table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize,
-                    table.getFilteredRowModel().rows.length
+                    table.getRowCount()
                 )}{" "}
-                de {table.getFilteredRowModel().rows.length} registros
+                de {table.getRowCount()} registros
             </div>
             <div className="flex items-center space-x-6 lg:space-x-8">
                 <div className="flex items-center space-x-2">
