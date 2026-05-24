@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
 
 import { WorkOrderBasicInfo } from "./WorkOrderBasicInfo"
-import { OtTypeChooser } from "./OtTypeChooser"
+import { OriginSelectionStep } from "../../steps/OriginSelectionStep"
 import { ManufacturingSpecsEditor, emptyManufacturingData, type ManufacturingData } from "@/components/shared/manufacturing"
 import { workOrderSchema, type WorkOrderFormValues, type WorkOrderInitialData } from "@/types/forms"
 import { LabeledInput } from "@/components/shared"
@@ -332,7 +332,7 @@ export function WorkOrderBasicStep({
             <form id={formId} onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-4">
                 <fieldset disabled={isViewMode} className="block border-0 p-0 m-0 min-w-0">
                     {mode === 'create' && !chosenOtType && !otType && (
-                        <OtTypeChooser
+                        <OriginSelectionStep
                             onChoose={(type, defaults) => {
                                 setOtType(type)
                                 form.reset(defaults)
