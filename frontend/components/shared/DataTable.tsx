@@ -214,7 +214,6 @@ export function DataTable<TData, TValue>({
         manualPagination,
         pageCount,
         rowCount,
-        onPaginationChange,
         autoResetPageIndex: false,
         autoResetExpanded: false,
         initialState: {
@@ -225,6 +224,11 @@ export function DataTable<TData, TValue>({
             expanded: autoExpand ? true : {},
             columnFilters: initialColumnFilters,
         },
+        // IMPORTANT: pasar `onPaginationChange: undefined` sobrescribe el default
+        // `makeStateUpdater('pagination', table)` de TanStack v8 (merge por spread
+        // en core/table.ts), convirtiendo `setPageSize`/`setPageIndex` en no-ops.
+        // Solo incluir cuando el consumidor realmente provee un callback.
+        ...(onPaginationChange ? { onPaginationChange } : {}),
         ...(pagination ? { state: { pagination } } : {})
     })
 
