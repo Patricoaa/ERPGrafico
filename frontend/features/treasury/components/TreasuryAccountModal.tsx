@@ -12,7 +12,7 @@ import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 import { useTreasuryAccounts, treasuryApi } from "@/features/treasury"
 
-import { CancelButton, LabeledInput, LabeledSelect, FormSection, FormFooter, FormSplitLayout, ActionSlideButton, BaseModal, Chip } from "@/components/shared"
+import { CancelButton, LabeledInput, LabeledSelect, FormSection, FormFooter, FormSplitLayout, ActionSlideButton, BaseModal, Chip, SkeletonShell } from "@/components/shared"
 import { Form, FormField } from "@/components/ui/form"
 
 const treasuryAccountSchema = z.object({
@@ -185,11 +185,7 @@ export function TreasuryAccountModal({ open, onOpenChange, accountId, onSuccess 
                     )
                 }
             >
-                {loading ? (
-                    <div className="flex items-center justify-center p-12">
-                        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                    </div>
-                ) : (
+                <SkeletonShell isLoading={open && loading} ariaLabel="Cargando formulario de cuenta de tesorería">
                     <Form {...form}>
                         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-4 pb-4 pt-2">
                             {isSystemManaged && (
@@ -335,7 +331,7 @@ export function TreasuryAccountModal({ open, onOpenChange, accountId, onSuccess 
                             </div>
                         </form>
                     </Form>
-                )}
+                </SkeletonShell>
             </FormSplitLayout>
         </BaseModal>
     )

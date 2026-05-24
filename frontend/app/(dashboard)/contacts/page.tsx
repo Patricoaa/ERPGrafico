@@ -1,12 +1,9 @@
 "use client"
 
 import { lazy, Suspense } from "react"
-import { SkeletonShell, ToolbarCreateButton } from "@/components/shared"
+import { ToolbarCreateButton } from "@/components/shared"
 import { useRouter, useSearchParams } from "next/navigation"
-
-const ContactsClientView = lazy(() =>
-    import("@/features/contacts").then(m => ({ default: m.ContactsClientView }))
-)
+import { ContactsClientView } from "@/features/contacts"
 
 export default function ContactsPage() {
     const router = useRouter()
@@ -27,10 +24,6 @@ export default function ContactsPage() {
     )
 
     return (
-        <div className="pt-2 flex-1 min-h-0 flex flex-col">
-            <Suspense fallback={<SkeletonShell isLoading ariaLabel="Cargando..." />}>
-                <ContactsClientView isNewModalOpen={isNewModalOpen} createAction={createAction} />
-            </Suspense>
-        </div>
+        <ContactsClientView isNewModalOpen={isNewModalOpen} createAction={createAction} />
     )
 }

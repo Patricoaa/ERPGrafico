@@ -1,11 +1,6 @@
-import { lazy, Suspense } from "react"
 import { redirect } from "next/navigation"
-import { LoadingFallback } from "@/components/shared/LoadingFallback"
 import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
-
-
-
-const SalesTerminalsView = lazy(() => import("@/features/sales").then(m => ({ default: m.SalesTerminalsView })))
+import { SalesTerminalsView } from "@/features/sales"
 
 interface PageProps {
     searchParams: Promise<{
@@ -39,14 +34,10 @@ export default async function TerminalsPage({ searchParams }: PageProps) {
     }
 
     return (
-        <div className="pt-2 flex-1 min-h-0 flex flex-col">
-            <Suspense fallback={<LoadingFallback message="Cargando terminales..." />}>
-                <SalesTerminalsView
-                    activeTab={activeTab}
-                    modal={modal}
-                    createAction={getCreateAction()}
-                />
-            </Suspense>
-        </div>
+        <SalesTerminalsView
+            activeTab={activeTab}
+            modal={modal}
+            createAction={getCreateAction()}
+        />
     )
 }

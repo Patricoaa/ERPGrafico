@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
-import { usePayrollDetail } from "../hooks/usePayrolls"
+import { usePayrollDetail } from "@/features/hr/hooks/usePayrolls"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { showApiError } from "@/lib/errors"
@@ -9,12 +9,9 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import {
-    getPayroll, postPayroll, generateProformaPayroll, deletePayroll,
-    createPayrollItem, updatePayrollItem, deletePayrollItem,
-    getPayrollConcepts, payPrevired, paySalary,
-    getPayrollPayments
+    postPayroll, generateProformaPayroll, deletePayroll,
+    createPayrollItem, updatePayrollItem, deletePayrollItem, payPrevired, paySalary,
 } from '@/features/hr/api/hrApi'
-import { getEmployeePayrollPreview } from '@/features/profile/api/profileApi'
 import { PaymentModal } from "@/features/treasury/components/PaymentModal"
 import type { PayrollItem, PayrollConcept, PayrollPayment, SalaryAdvance } from "@/types/hr"
 import { Button } from "@/components/ui/button"
@@ -47,6 +44,7 @@ const itemSchema = z.object({
 type ItemFormValues = z.infer<typeof itemSchema>
 
 interface EmployeeBasic {
+    id: number
     contact_detail?: { name?: string } | null
     position?: string | null
     department?: string | null

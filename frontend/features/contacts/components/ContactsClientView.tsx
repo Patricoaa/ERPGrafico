@@ -174,13 +174,18 @@ export function ContactsClientView({ isNewModalOpen = false, createAction }: Con
         },
 
         {
-            accessorKey: "contact_type",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Tipo" className="justify-center" />,
-            cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <Chip.Category domain="contact_type" value={row.getValue("contact_type")} size="xs" />
-                </div>
-            ),
+            accessorKey: "active_roles",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Roles" className="justify-center" />,
+            cell: ({ row }) => {
+                const roles = row.original.active_roles || []
+                return (
+                    <div className="flex flex-wrap gap-1 justify-center w-full">
+                        {roles.map(role => (
+                            <Chip.Category key={role} domain="contact_type" value={role} size="xs" />
+                        ))}
+                    </div>
+                )
+            },
         },
         {
             accessorKey: "email",
@@ -233,7 +238,11 @@ export function ContactsClientView({ isNewModalOpen = false, createAction }: Con
                                     subtitle={contact.tax_id || 'S/Rut'}
                                     trailing={
                                         <div className="flex flex-col items-end gap-1">
-                                            {contact.contact_type && <Chip.Category domain="contact_type" value={contact.contact_type} size="xs" />}
+                                            <div className="flex gap-1 flex-wrap justify-end">
+                                                {contact.active_roles?.map(role => (
+                                                    <Chip.Category key={role} domain="contact_type" value={role} size="xs" />
+                                                ))}
+                                            </div>
                                             <div className="flex gap-1">
                                                 {contact.is_default_customer && <Chip size="xs" intent="primary" icon={UserIcon}>Cliente</Chip>}
                                                 {contact.is_default_vendor && <Chip size="xs" intent="success" icon={Building2}>Proveedor</Chip>}

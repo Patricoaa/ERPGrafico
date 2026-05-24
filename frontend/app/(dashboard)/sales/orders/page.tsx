@@ -1,14 +1,10 @@
 "use client"
 
-import { lazy, Suspense, useState, useEffect } from "react"
-import { SkeletonShell } from "@/components/shared"
+import { useState, useEffect } from "react"
 import { Tabs } from "@/components/ui/tabs"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
-
-const SalesOrdersClientView = lazy(() =>
-    import("@/features/sales").then(m => ({ default: m.SalesOrdersClientView }))
-)
+import { SalesOrdersClientView } from "@/features/sales"
 
 export default function SalesOrdersPage() {
     const searchParams = useSearchParams()
@@ -74,9 +70,7 @@ export default function SalesOrdersPage() {
         <div className="pt-2 flex-1 min-h-0 flex flex-col">
             <Tabs value={viewMode} className="w-full flex flex-col h-full gap-4">
                 <div className="flex-1 min-h-0">
-                    <Suspense fallback={<SkeletonShell isLoading ariaLabel="Cargando pedidos" />}>
-                        <SalesOrdersClientView viewMode={viewMode} />
-                    </Suspense>
+                    <SalesOrdersClientView viewMode={viewMode} />
                 </div>
             </Tabs>
         </div>

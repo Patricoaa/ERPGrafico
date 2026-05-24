@@ -1,7 +1,5 @@
-import { lazy, Suspense } from "react"
-import { SkeletonShell, ToolbarCreateButton } from "@/components/shared"
-
-const TaxDeclarationsView = lazy(() => import("@/features/tax").then(m => ({ default: m.TaxDeclarationsView })))
+import { ToolbarCreateButton } from "@/components/shared"
+import { TaxDeclarationsView } from "@/features/tax"
 
 interface PageProps {
     searchParams: Promise<{ modal?: string }>
@@ -18,10 +16,6 @@ export default async function TaxPage({ searchParams }: PageProps) {
     )
 
     return (
-        <div className="pt-2 flex-1 min-h-0 flex flex-col">
-            <Suspense fallback={<SkeletonShell isLoading ariaLabel="Cargando..." />}>
-                <TaxDeclarationsView externalOpen={modal === 'new'} createAction={createAction} />
-            </Suspense>
-        </div>
+        <TaxDeclarationsView externalOpen={modal === 'new'} createAction={createAction} />
     )
 }

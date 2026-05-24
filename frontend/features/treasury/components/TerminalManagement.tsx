@@ -12,12 +12,16 @@ import { toast } from "sonner"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { CancelButton, IconButton, LabeledInput, LabeledSelect, FormSection, FormFooter, FormSplitLayout } from "@/components/shared"
 import { EntityCard } from "@/components/shared/EntityCard"
-import { DataTableView } from '@/components/shared'
+import { DataTableView } from '@/components/shared/DataTableView'
 import { DataTableColumnHeader } from '@/components/shared'
 import { createActionsColumn, DataCell, Chip } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
-import { Plus, Pencil, Power, PowerOff, Trash2 } from "lucide-react"
-import { EntityCard } from "@/components/shared/EntityCard"
+import { Plus, Power, PowerOff, Trash2, Settings, MapPin, Smartphone, Banknote, CreditCard, Landmark, MonitorSmartphone } from "lucide-react"
+import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+import { ActionSlideButton } from "@/components/shared/ActionSlideButton"
+import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
+import { useConfirmAction } from "@/hooks/useConfirmAction"
+
 
 
 
@@ -57,7 +61,7 @@ export function TerminalManagement({ externalOpen, onExternalOpenChange, createA
         }
     }
 
-    const deleteConfirm = useConfirmAction<Terminal>(async (terminal) => {
+    const deleteConfirm = useConfirmAction<Terminal>(async (terminal: Terminal) => {
         try {
             await deleteTerminal(terminal)
         } catch (error) {
@@ -222,7 +226,7 @@ export function TerminalManagement({ externalOpen, onExternalOpenChange, createA
 
             <TerminalModal
                 open={dialogOpen}
-                onOpenChange={(open) => {
+                onOpenChange={(open: boolean) => {
                     setDialogOpen(open)
                     if (!open) onExternalOpenChange?.(false)
                 }}
@@ -232,7 +236,7 @@ export function TerminalManagement({ externalOpen, onExternalOpenChange, createA
 
             <ActionConfirmModal
                 open={deleteConfirm.isOpen}
-                onOpenChange={(open) => { if (!open) deleteConfirm.cancel() }}
+                onOpenChange={(open: boolean) => { if (!open) deleteConfirm.cancel() }}
                 onConfirm={deleteConfirm.confirm}
                 title="Eliminar Caja POS"
                 description={`¿Está seguro de eliminar la caja POS "${deleteConfirm.payload?.name || ''}"? Esta acción no se puede deshacer.`}

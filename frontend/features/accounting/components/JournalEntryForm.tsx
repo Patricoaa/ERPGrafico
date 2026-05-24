@@ -9,24 +9,18 @@ import * as z from "zod"
 import { CalendarIcon, Plus, Pencil, BookOpen } from "lucide-react"
 import { format } from "date-fns"
 import { BaseModal } from "@/components/shared/BaseModal"
-
-// ... other imports same
 import {
     Form,
-    FormControl,
     FormField,
-    FormItem,
     FormMessage,
 } from "@/components/ui/form"
 
 import { Button } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 import { accountingApi } from "@/features/accounting/api/accountingApi"
 import { useAccounts } from "@/features/accounting/hooks/useAccounts"
-import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { useServerDate } from "@/hooks/useServerDate"
-import { LabeledInput, LabeledContainer, CancelButton, SubmitButton, IconButton, PeriodValidationDateInput, ActionSlideButton, FormFooter, FormSplitLayout, FormSection, AccountingLinesTable } from "@/components/shared";
+import { LabeledInput, LabeledContainer, CancelButton, SubmitButton, IconButton, PeriodValidationDateInput, ActionSlideButton, FormFooter, FormSplitLayout, FormSection, AccountingLinesTable, SkeletonShell } from "@/components/shared";
 
 // JournalItem and JournalEntry schemas remain the same
 const journalItemSchema = z.object({
@@ -103,10 +97,12 @@ export function JournalEntryForm({
         return () => { isMounted.current = false }
     }, [])
 
-    const { accounts: fetchedAccounts } = useAccounts({ filters: { is_leaf: true } })
+    const { accounts: fetchedAccounts, isLoading: isAccountsLoading } = useAccounts({ filters: { is_leaf: true } })
     const accounts = (accountsProp?.length ? accountsProp : fetchedAccounts) as Record<string, unknown>[]
 
-    const { serverDate } = useServerDate()
+    const { serverDate, isLoading: isServerDateLoading } = useServerDate()
+
+    const isFetchingInitialData = open && (isAccountsLoading || isServerDateLoading)
 
     // Convert string date to Date object if editing
     const getDefaultValues = () => {
@@ -226,72 +222,74 @@ export function JournalEntryForm({
     }
 
     const formContent = (
-        <FormSplitLayout
-            sidebar={auditSidebar}
-            showSidebar={!!initialData?.id}
-        >
-            <Form {...form}>
-                <form id="journal-entry-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pb-4 pt-4">
-                    <div className="grid grid-cols-12 gap-4">
-                        <div className="col-span-3">
-                            <FormField
-                                control={form.control}
-                                name="date"
-                                render={({ field }) => (
-                                    <PeriodValidationDateInput
-                                        date={field.value}
-                                        onDateChange={field.onChange}
-                                        validationType="accounting"
-                                        onValidityChange={setIsPeriodValid}
-                                        label="Fecha"
-                                        required
-                                    />
-                                )}
-                            />
+        <SkeletonShell isLoading={isFetchingInitialData} ariaLabel="Cargando formulario de asiento contable" className="flex-1 flex flex-col">
+            <FormSplitLayout
+                sidebar={auditSidebar}
+                showSidebar={!!initialData?.id}
+            >
+                <Form {...form}>
+                    <form id="journal-entry-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pb-4 pt-4">
+                        <div className="grid grid-cols-12 gap-4">
+                            <div className="col-span-3">
+                                <FormField
+                                    control={form.control}
+                                    name="date"
+                                    render={({ field }) => (
+                                        <PeriodValidationDateInput
+                                            date={field.value}
+                                            onDateChange={field.onChange}
+                                            validationType="accounting"
+                                            onValidityChange={setIsPeriodValid}
+                                            label="Fecha"
+                                            required
+                                        />
+                                    )}
+                                />
+                            </div>
+                            <div className="col-span-6">
+                                <FormField
+                                    control={form.control}
+                                    name="description"
+                                    render={({ field, fieldState }) => (
+                                        <LabeledInput
+                                            label="Descripción"
+                                            placeholder="Venta de mercadería..."
+                                            error={fieldState.error?.message}
+                                            {...field}
+                                        />
+                                    )}
+                                />
+                            </div>
+                            <div className="col-span-3">
+                                <FormField
+                                    control={form.control}
+                                    name="reference"
+                                    render={({ field, fieldState }) => (
+                                        <LabeledInput
+                                            label="Referencia"
+                                            placeholder="FAC-123"
+                                            error={fieldState.error?.message}
+                                            {...field}
+                                        />
+                                    )}
+                                />
+                            </div>
                         </div>
-                        <div className="col-span-6">
-                            <FormField
-                                control={form.control}
-                                name="description"
-                                render={({ field, fieldState }) => (
-                                    <LabeledInput
-                                        label="Descripción"
-                                        placeholder="Venta de mercadería..."
-                                        error={fieldState.error?.message}
-                                        {...field}
-                                    />
-                                )}
-                            />
-                        </div>
-                        <div className="col-span-3">
-                            <FormField
-                                control={form.control}
-                                name="reference"
-                                render={({ field, fieldState }) => (
-                                    <LabeledInput
-                                        label="Referencia"
-                                        placeholder="FAC-123"
-                                        error={fieldState.error?.message}
-                                        {...field}
-                                    />
-                                )}
-                            />
-                        </div>
-                    </div>
 
-                    <FormSection title="Líneas del Asiento" />
+                        <FormSection title="Líneas del Asiento" />
 
-                    <AccountingLinesTable control={form.control as any} name="items" />
+                        <AccountingLinesTable control={form.control as any} name="items" />
 
-                    <FormMessage className="text-right" />
-                    {form.formState.errors.items?.root && (
-                        <div className="text-destructive text-sm text-right font-medium">
-                            {form.formState.errors.items.root.message}
-                        </div>
-                    )}
-                </form>
-            </Form>
-        </FormSplitLayout>
+                        <FormMessage className="text-right" />
+                        {form.formState.errors.items?.root && (
+                            <div className="text-destructive text-sm text-right font-medium">
+                                {form.formState.errors.items.root.message}
+                            </div>
+                        )}
+                    </form>
+                </Form>
+            </FormSplitLayout>
+        </SkeletonShell>
     )
 
     if (inline) {

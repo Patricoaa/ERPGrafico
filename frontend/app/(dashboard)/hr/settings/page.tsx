@@ -1,6 +1,4 @@
-import { Suspense } from "react"
 import { redirect } from "next/navigation"
-import { SkeletonShell } from "@/components/shared"
 import { HRSettingsView } from "@/features/settings"
 
 interface PageProps {
@@ -16,8 +14,6 @@ export default async function HRSettingsPage({ searchParams }: PageProps) {
     }
 
     return (
-        <Suspense fallback={<SkeletonShell isLoading ariaLabel="Cargando..." />}>
-            <HRSettingsView activeTab={configTab} />
-        </Suspense>
+        <HRSettingsView activeTab={configTab} />
     )
 }

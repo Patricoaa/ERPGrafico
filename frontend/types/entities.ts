@@ -171,6 +171,7 @@ export interface Contact {
     address?: string | null
     city?: string | null
     contact_type?: ContactType | 'CUSTOMER' | 'SUPPLIER' | 'BOTH' | 'RELATED' | 'OTHER'
+    active_roles?: string[]
     code?: string | null
     is_default_customer?: boolean
     is_default_vendor?: boolean

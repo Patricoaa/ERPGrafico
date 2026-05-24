@@ -27,12 +27,12 @@ import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { ShoppingCart, Package, Wand2, User, Banknote, Scale, Truck, Receipt, ClipboardList, LayoutDashboard, Calendar, ArrowRight, Mail, MapPin } from "lucide-react"
 import { DomainCard } from "@/components/shared/DomainCard"
-import { DataCell, createActionsColumn, EmptyState } from '@/components/shared'
+import { DataCell, createActionsColumn, EmptyState, Chip } from '@/components/shared'
 import { Separator } from "@/components/ui/separator"
 import { DataTable } from '@/components/shared'
 import { DomainHubStatus } from "@/components/shared/HubStatus"
 import { ColumnDef } from "@tanstack/react-table"
-import { StatCard } from "@/components/shared"
+import { StatCard } from "@/components/shared/StatCard"
 import { getHubStatuses } from '@/features/orders/utils/status'
 import { LabeledInput, FormTabs, FormTabsContent, type FormTabItem, FormFooter, FormSection, SkeletonShell } from "@/components/shared"
 import { formatCurrency } from "@/lib/money"
@@ -48,6 +48,7 @@ const contactSchema = z.object({
     is_default_customer: z.boolean(),
     is_default_vendor: z.boolean(),
     payment_terms: z.string().optional(),
+    roles: z.array(z.string()).default([]),
 })
 
 interface ContactModalProps {
@@ -80,6 +81,7 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
             payment_terms: (c.payment_terms || "CONTADO") as string,
             is_default_customer: !!c.is_default_customer,
             is_default_vendor: !!c.is_default_vendor,
+            roles: (c as any).roles || [],
         } : {
             name: "",
             tax_id: "",
@@ -89,13 +91,16 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
             city: "",
             is_default_customer: false,
             is_default_vendor: false,
+            roles: [],
         },
     })
 
     const { data: defaultCustomer } = useDefaultCustomer(open)
     const { data: defaultVendor } = useDefaultVendor(open)
 
-    const { data: contactDetails } = useContact(c?.id && !c.name ? c.id : undefined)
+    const { data: contactDetails, isLoading: isLoadingContact } = useContact(c?.id && !c.name ? c.id : undefined)
+
+    const isFetchingInitialData = open && (loadingInsights || isLoadingContact)
 
     useEffect(() => {
         if (contactDetails) {
@@ -109,6 +114,7 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                 payment_terms: (contactDetails as any).payment_terms || "CONTADO",
                 is_default_customer: !!(contactDetails as any).is_default_customer,
                 is_default_vendor: !!(contactDetails as any).is_default_vendor,
+                roles: (contactDetails as any).roles || [],
             })
         }
     }, [contactDetails, form])
@@ -139,6 +145,7 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                     payment_terms: (c.payment_terms || "CONTADO") as string,
                     is_default_customer: !!c.is_default_customer,
                     is_default_vendor: !!c.is_default_vendor,
+                    roles: (c as any).roles || [],
                 })
             } else if (!c?.id) {
                 form.reset({
@@ -151,6 +158,7 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                     payment_terms: "CONTADO",
                     is_default_customer: false,
                     is_default_vendor: false,
+                    roles: [],
                 })
             }
         })
@@ -247,238 +255,317 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                 />
             }
         >
-            <Form {...form}>
+            <SkeletonShell isLoading={isFetchingInitialData} ariaLabel="Cargando ficha de contacto" className="flex-1 flex flex-col h-full">
+                <Form {...form}>
 
-                <form id="contact-form" onSubmit={form.handleSubmit(onSubmit)} className="flex-1 w-full h-full flex flex-col min-h-0 overflow-visible">
-                    <div className="flex-1 flex overflow-hidden min-h-[400px] w-full">
-                        {/* Contenido Principal con Pestañas Horizontales */}
-                        <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
-                            <FormTabs
-                                items={tabItems}
-                                value={activeTab}
-                                onValueChange={setActiveTab}
-                                orientation="horizontal"
-                                variant="underline"
-                                className="flex-1"
-                                contentClassName="bg-transparent"
-                            >
-                                <FormTabsContent
-                                    value="profile"
-                                    className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin"
+                    <form id="contact-form" onSubmit={form.handleSubmit(onSubmit)} className="flex-1 w-full h-full flex flex-col min-h-0 overflow-visible">
+                        <div className="flex-1 flex overflow-hidden min-h-[400px] w-full">
+                            {/* Contenido Principal con Pestañas Horizontales */}
+                            <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
+                                <FormTabs
+                                    items={tabItems}
+                                    value={activeTab}
+                                    onValueChange={setActiveTab}
+                                    orientation="horizontal"
+                                    variant="underline"
+                                    className="flex-1"
+                                    contentClassName="bg-transparent"
                                 >
-                                    <div className="space-y-6">
-                                    <div className="space-y-4">
-                                        <FormSection title="Estado y Roles" icon={Scale} />
-                                        <div className="flex items-center gap-8 p-6 bg-muted/5 rounded-md border border-primary/5">
-                                            <FormField
-                                                control={form.control}
-                                                name="is_default_customer"
-                                                render={({ field }) => (
-                                                    <FormItem className="flex flex-row items-center space-x-3 space-y-0 group cursor-pointer">
-                                                        <FormControl>
-                                                            <Checkbox
-                                                                checked={field.value}
-                                                                onCheckedChange={field.onChange}
-                                                            />
-                                                        </FormControl>
-                                                        <div className="space-y-0.5">
-                                                            <FormLabel className="text-[11px] font-black uppercase tracking-widest cursor-pointer group-hover:text-primary transition-colors">
-                                                                Cliente por defecto
+                                    <FormTabsContent
+                                        value="profile"
+                                        className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin"
+                                    >
+                                        <div className="space-y-6">
+                                            <div className="space-y-4">
+                                                <FormSection title="Estado y Roles" icon={Scale} />
+                                                
+                                                {/* Defaults Section */}
+                                                <div className="flex items-center gap-8 p-4 bg-muted/5 rounded-md border border-primary/5">
+                                                    <FormField
+                                                        control={form.control}
+                                                        name="is_default_customer"
+                                                        render={({ field }) => (
+                                                            <FormItem className="flex flex-row items-center space-x-3 space-y-0 group cursor-pointer">
+                                                                <FormControl>
+                                                                    <Checkbox
+                                                                        checked={field.value}
+                                                                        onCheckedChange={field.onChange}
+                                                                    />
+                                                                </FormControl>
+                                                                <div className="space-y-0.5">
+                                                                    <FormLabel className="text-[11px] font-black uppercase tracking-widest cursor-pointer group-hover:text-primary transition-colors">
+                                                                        Cliente por defecto
+                                                                    </FormLabel>
+                                                                </div>
+                                                            </FormItem>
+                                                        )}
+                                                    />
+                                                    <Separator orientation="vertical" className="h-8" />
+                                                    <FormField
+                                                        control={form.control}
+                                                        name="is_default_vendor"
+                                                        render={({ field }) => (
+                                                            <FormItem className="flex flex-row items-center space-x-3 space-y-0 group cursor-pointer">
+                                                                <FormControl>
+                                                                    <Checkbox
+                                                                        checked={field.value}
+                                                                        onCheckedChange={field.onChange}
+                                                                    />
+                                                                </FormControl>
+                                                                <div className="space-y-0.5">
+                                                                    <FormLabel className="text-[11px] font-black uppercase tracking-widest cursor-pointer group-hover:text-primary transition-colors">
+                                                                        Proveedor por defecto
+                                                                    </FormLabel>
+                                                                </div>
+                                                            </FormItem>
+                                                        )}
+                                                    />
+                                                </div>
+
+                                                {/* Manual Roles Selection */}
+                                                <FormField
+                                                    control={form.control}
+                                                    name="roles"
+                                                    render={({ field }) => (
+                                                        <FormItem className="space-y-2">
+                                                            <FormLabel className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                                                                Roles Manuales Asignados
                                                             </FormLabel>
-                                                        </div>
-                                                    </FormItem>
+                                                            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                                                {[
+                                                                    { id: "CUSTOMER", label: "Cliente", desc: "Permite emitir notas de venta y facturas" },
+                                                                    { id: "SUPPLIER", label: "Proveedor", desc: "Permite emitir órdenes de compra" },
+                                                                    { id: "RELATED", label: "Relacionado", desc: "Contacto para órdenes de trabajo" },
+                                                                    { id: "PARTNER", label: "Socio", desc: "Socio aportador de capital" },
+                                                                    { id: "CARRIER", label: "Transportista", desc: "Empresa de transportes o despacho" },
+                                                                ].map((role) => {
+                                                                    const checked = field.value?.includes(role.id)
+                                                                    return (
+                                                                        <div
+                                                                            key={role.id}
+                                                                            className={`flex items-start space-x-3 p-3 rounded-lg border transition-all cursor-pointer select-none ${
+                                                                                checked
+                                                                                    ? "border-primary bg-primary/5 shadow-sm"
+                                                                                    : "border-muted hover:border-muted-foreground/30 bg-card"
+                                                                            }`}
+                                                                            onClick={() => {
+                                                                                const nextValue = checked
+                                                                                    ? field.value.filter((v: string) => v !== role.id)
+                                                                                    : [...(field.value || []), role.id]
+                                                                                field.onChange(nextValue)
+                                                                            }}
+                                                                        >
+                                                                            <Checkbox
+                                                                                id={`role-${role.id}`}
+                                                                                checked={checked}
+                                                                                onCheckedChange={(isChecked) => {
+                                                                                    const nextValue = isChecked
+                                                                                        ? [...(field.value || []), role.id]
+                                                                                        : field.value.filter((v: string) => v !== role.id)
+                                                                                    field.onChange(nextValue)
+                                                                                }}
+                                                                            />
+                                                                            <div className="space-y-1 leading-none">
+                                                                                <label
+                                                                                    htmlFor={`role-${role.id}`}
+                                                                                    className="text-sm font-semibold cursor-pointer"
+                                                                                >
+                                                                                    {role.label}
+                                                                                </label>
+                                                                                <p className="text-[11px] text-muted-foreground">
+                                                                                    {role.desc}
+                                                                                </p>
+                                                                            </div>
+                                                                        </div>
+                                                                    )
+                                                                })}
+                                                            </div>
+                                                        </FormItem>
+                                                    )}
+                                                />
+
+                                                {/* System/Dynamic Active Roles (Read-Only) */}
+                                                {c?.active_roles && c.active_roles.some(r => r === 'USER' || r === 'EMPLOYEE') && (
+                                                    <div className="flex flex-wrap gap-2 items-center p-3 rounded-lg bg-muted/20 border border-muted/50 mt-2">
+                                                        <span className="text-xs text-muted-foreground font-semibold">Roles del sistema (automáticos):</span>
+                                                        {c.active_roles.includes('USER') && (
+                                                            <Chip.Category domain="contact_type" value="USER" size="xs" />
+                                                        )}
+                                                        {c.active_roles.includes('EMPLOYEE') && (
+                                                            <Chip.Category domain="contact_type" value="EMPLOYEE" size="xs" />
+                                                        )}
+                                                    </div>
                                                 )}
-                                            />
-                                            <Separator orientation="vertical" className="h-8" />
-                                            <FormField
-                                                control={form.control}
-                                                name="is_default_vendor"
-                                                render={({ field }) => (
-                                                    <FormItem className="flex flex-row items-center space-x-3 space-y-0 group cursor-pointer">
-                                                        <FormControl>
-                                                            <Checkbox
-                                                                checked={field.value}
-                                                                onCheckedChange={field.onChange}
-                                                            />
-                                                        </FormControl>
-                                                        <div className="space-y-0.5">
-                                                            <FormLabel className="text-[11px] font-black uppercase tracking-widest cursor-pointer group-hover:text-primary transition-colors">
-                                                                Proveedor por defecto
-                                                            </FormLabel>
-                                                        </div>
-                                                    </FormItem>
-                                                )}
-                                            />
+                                            </div>
+
+                                            <div className="space-y-4">
+                                                <FormSection title="Identidad del Contacto" icon={User} />
+                                                <div className="grid grid-cols-4 gap-4">
+                                                    <FormField
+                                                        control={form.control}
+                                                        name="name"
+                                                        render={({ field, fieldState }) => (
+                                                            <FormItem className="col-span-2">
+                                                                <FormControl>
+                                                                    <LabeledInput
+                                                                        label="Nombre / Razón Social"
+                                                                        required
+                                                                        placeholder="Ej: Juan Pérez o Empresa SpA"
+                                                                        error={fieldState.error?.message}
+                                                                        {...field}
+                                                                    />
+                                                                </FormControl>
+                                                            </FormItem>
+                                                        )}
+                                                    />
+
+                                                    <FormField
+                                                        control={form.control}
+                                                        name="tax_id"
+                                                        render={({ field, fieldState }) => (
+                                                            <FormItem className="col-span-2">
+                                                                <FormControl>
+                                                                    <LabeledInput
+                                                                        label="RUT / Tax ID"
+                                                                        required
+                                                                        placeholder="12.345.678-9"
+                                                                        error={fieldState.error?.message}
+                                                                        {...field}
+                                                                        onChange={(e) => field.onChange(formatRUT(e.target.value))}
+                                                                    />
+                                                                </FormControl>
+                                                            </FormItem>
+                                                        )}
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div className="space-y-4">
+                                                <FormSection title="Información de Contacto" icon={Mail} />
+                                                <div className="grid grid-cols-4 gap-4">
+                                                    <FormField
+                                                        control={form.control}
+                                                        name="email"
+                                                        render={({ field, fieldState }) => (
+                                                            <FormItem className="col-span-2">
+                                                                <FormControl>
+                                                                    <LabeledInput
+                                                                        label="Email"
+                                                                        type="email"
+                                                                        placeholder="ejemplo@correo.com"
+                                                                        error={fieldState.error?.message}
+                                                                        {...field}
+                                                                    />
+                                                                </FormControl>
+                                                            </FormItem>
+                                                        )}
+                                                    />
+
+                                                    <FormField
+                                                        control={form.control}
+                                                        name="phone"
+                                                        render={({ field, fieldState }) => (
+                                                            <FormItem className="col-span-2">
+                                                                <FormControl>
+                                                                    <LabeledInput
+                                                                        label="Teléfono"
+                                                                        placeholder="+56 9 ..."
+                                                                        error={fieldState.error?.message}
+                                                                        {...field}
+                                                                    />
+                                                                </FormControl>
+                                                            </FormItem>
+                                                        )}
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div className="space-y-4">
+                                                <FormSection title="Ubicación" icon={MapPin} />
+                                                <div className="grid grid-cols-4 gap-4">
+                                                    <FormField
+                                                        control={form.control}
+                                                        name="address"
+                                                        render={({ field, fieldState }) => (
+                                                            <FormItem className="col-span-3">
+                                                                <FormControl>
+                                                                    <LabeledInput
+                                                                        label="Dirección"
+                                                                        placeholder="Calle, Número, Depto"
+                                                                        error={fieldState.error?.message}
+                                                                        {...field}
+                                                                    />
+                                                                </FormControl>
+                                                            </FormItem>
+                                                        )}
+                                                    />
+
+                                                    <FormField
+                                                        control={form.control}
+                                                        name="city"
+                                                        render={({ field, fieldState }) => (
+                                                            <FormItem className="col-span-1">
+                                                                <FormControl>
+                                                                    <LabeledInput
+                                                                        label="Ciudad / Comuna"
+                                                                        placeholder="Santiago"
+                                                                        error={fieldState.error?.message}
+                                                                        {...field}
+                                                                    />
+                                                                </FormControl>
+                                                            </FormItem>
+                                                        )}
+                                                    />
+                                                </div>
+                                            </div>
                                         </div>
-                                    </div>
+                                    </FormTabsContent>
 
-                                    <div className="space-y-4">
-                                        <FormSection title="Identidad del Contacto" icon={User} />
-                                        <div className="grid grid-cols-4 gap-4">
-                                            <FormField
-                                                control={form.control}
-                                                name="name"
-                                                render={({ field, fieldState }) => (
-                                                    <FormItem className="col-span-2">
-                                                        <FormControl>
-                                                            <LabeledInput
-                                                                label="Nombre / Razón Social"
-                                                                required
-                                                                placeholder="Ej: Juan Pérez o Empresa SpA"
-                                                                error={fieldState.error?.message}
-                                                                {...field}
-                                                            />
-                                                        </FormControl>
-                                                    </FormItem>
-                                                )}
-                                            />
+                                    <FormTabsContent value="sales" className="h-full w-full flex-1 m-0 border-0 outline-none overflow-hidden flex flex-col p-6">
+                                        <InsightsTable
+                                            data={insightsData?.sales?.orders || []}
+                                            type="sale"
+                                            title="Historial de Ventas (NV)"
+                                            icon={ShoppingCart}
+                                            onActionSuccess={handleActionSuccess}
+                                        />
+                                    </FormTabsContent>
 
-                                            <FormField
-                                                control={form.control}
-                                                name="tax_id"
-                                                render={({ field, fieldState }) => (
-                                                    <FormItem className="col-span-2">
-                                                        <FormControl>
-                                                            <LabeledInput
-                                                                label="RUT / Tax ID"
-                                                                required
-                                                                placeholder="12.345.678-9"
-                                                                error={fieldState.error?.message}
-                                                                {...field}
-                                                                onChange={(e) => field.onChange(formatRUT(e.target.value))}
-                                                            />
-                                                        </FormControl>
-                                                    </FormItem>
-                                                )}
-                                            />
-                                        </div>
-                                    </div>
+                                    <FormTabsContent value="purchases" className="h-full w-full flex-1 m-0 border-0 outline-none overflow-hidden flex flex-col p-6">
+                                        <InsightsTable
+                                            data={insightsData?.purchases?.orders || []}
+                                            type="purchase"
+                                            title="Historial de Compras (OC)"
+                                            icon={Package}
+                                            onActionSuccess={handleActionSuccess}
+                                        />
+                                    </FormTabsContent>
 
-                                    <div className="space-y-4">
-                                        <FormSection title="Información de Contacto" icon={Mail} />
-                                        <div className="grid grid-cols-4 gap-4">
-                                            <FormField
-                                                control={form.control}
-                                                name="email"
-                                                render={({ field, fieldState }) => (
-                                                    <FormItem className="col-span-2">
-                                                        <FormControl>
-                                                            <LabeledInput
-                                                                label="Email"
-                                                                type="email"
-                                                                placeholder="ejemplo@correo.com"
-                                                                error={fieldState.error?.message}
-                                                                {...field}
-                                                            />
-                                                        </FormControl>
-                                                    </FormItem>
-                                                )}
-                                            />
+                                    <FormTabsContent value="work_orders" className="h-full w-full flex-1 m-0 border-0 outline-none overflow-hidden flex flex-col p-6">
+                                        <InsightsTable
+                                            data={insightsData?.work_orders?.orders || []}
+                                            type="work_order"
+                                            title="Historial de Órdenes de Trabajo"
+                                            icon={Wand2}
+                                            onActionSuccess={handleActionSuccess}
+                                        />
+                                    </FormTabsContent>
+                                    <FormTabsContent value="credit" className="h-full w-full flex-1 m-0 border-0 outline-none overflow-hidden flex flex-col p-6">
+                                        <CreditLedgerTable data={ledgerData} loading={loadingLedger} onActionSuccess={handleActionSuccess} />
+                                    </FormTabsContent>
+                                </FormTabs>
+                            </div>
 
-                                            <FormField
-                                                control={form.control}
-                                                name="phone"
-                                                render={({ field, fieldState }) => (
-                                                    <FormItem className="col-span-2">
-                                                        <FormControl>
-                                                            <LabeledInput
-                                                                label="Teléfono"
-                                                                placeholder="+56 9 ..."
-                                                                error={fieldState.error?.message}
-                                                                {...field}
-                                                            />
-                                                        </FormControl>
-                                                    </FormItem>
-                                                )}
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className="space-y-4">
-                                        <FormSection title="Ubicación" icon={MapPin} />
-                                        <div className="grid grid-cols-4 gap-4">
-                                            <FormField
-                                                control={form.control}
-                                                name="address"
-                                                render={({ field, fieldState }) => (
-                                                    <FormItem className="col-span-3">
-                                                        <FormControl>
-                                                            <LabeledInput
-                                                                label="Dirección"
-                                                                placeholder="Calle, Número, Depto"
-                                                                error={fieldState.error?.message}
-                                                                {...field}
-                                                            />
-                                                        </FormControl>
-                                                    </FormItem>
-                                                )}
-                                            />
-
-                                            <FormField
-                                                control={form.control}
-                                                name="city"
-                                                render={({ field, fieldState }) => (
-                                                    <FormItem className="col-span-1">
-                                                        <FormControl>
-                                                            <LabeledInput
-                                                                label="Ciudad / Comuna"
-                                                                placeholder="Santiago"
-                                                                error={fieldState.error?.message}
-                                                                {...field}
-                                                            />
-                                                        </FormControl>
-                                                    </FormItem>
-                                                )}
-                                            />
-                                        </div>
-                                    </div>
-                                    </div>
-                                </FormTabsContent>
-
-                        <FormTabsContent value="sales" className="h-full w-full flex-1 m-0 border-0 outline-none overflow-hidden flex flex-col p-6">
-                            <InsightsTable
-                                data={insightsData?.sales?.orders || []}
-                                type="sale"
-                                title="Historial de Ventas (NV)"
-                                icon={ShoppingCart}
-                                onActionSuccess={handleActionSuccess}
-                            />
-                        </FormTabsContent>
-
-                        <FormTabsContent value="purchases" className="h-full w-full flex-1 m-0 border-0 outline-none overflow-hidden flex flex-col p-6">
-                            <InsightsTable
-                                data={insightsData?.purchases?.orders || []}
-                                type="purchase"
-                                title="Historial de Compras (OC)"
-                                icon={Package}
-                                onActionSuccess={handleActionSuccess}
-                            />
-                        </FormTabsContent>
-
-                        <FormTabsContent value="work_orders" className="h-full w-full flex-1 m-0 border-0 outline-none overflow-hidden flex flex-col p-6">
-                            <InsightsTable
-                                data={insightsData?.work_orders?.orders || []}
-                                type="work_order"
-                                title="Historial de Órdenes de Trabajo"
-                                icon={Wand2}
-                                onActionSuccess={handleActionSuccess}
-                            />
-                        </FormTabsContent>
-                        <FormTabsContent value="credit" className="h-full w-full flex-1 m-0 border-0 outline-none overflow-hidden flex flex-col p-6">
-                            <CreditLedgerTable data={ledgerData} loading={loadingLedger} onActionSuccess={handleActionSuccess} />
-                        </FormTabsContent>
-                            </FormTabs>
+                            {/* Barra Lateral de Actividad persistente */}
+                            {!!contact?.id && (
+                                <aside className="w-72 border-l flex flex-col pt-4 hidden lg:flex shrink-0 bg-background/50">
+                                    <ActivitySidebar entityId={contact.id.toString()} entityType="contact" />
+                                </aside>
+                            )}
                         </div>
-
-                        {/* Barra Lateral de Actividad persistente */}
-                        {!!contact?.id && (
-                            <aside className="w-72 border-l flex flex-col pt-4 hidden lg:flex shrink-0 bg-background/50">
-                                <ActivitySidebar entityId={contact.id.toString()} entityType="contact" />
-                            </aside>
-                        )}
-                    </div>
-                </form>
-            </Form>
+                    </form>
+                </Form>
+            </SkeletonShell>
 
             <ActionConfirmModal
                 open={isConfirmModalOpen}
@@ -715,11 +802,11 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
     )
 }
 
-function CreditLedgerTable({ data, loading, onActionSuccess }: { data: Order[], loading: boolean, onActionSuccess?: () => void }) {
+function CreditLedgerTable({ data, loading, onActionSuccess }: { data: any[], loading: boolean, onActionSuccess?: () => void }) {
     const { openHub } = useHubPanel()
 
     // Placeholder tipado para el ledger - sigue el patrón del contrato
-    const LEDGER_SKELETON: (Order & { balance?: number })[] = Array.from({ length: 5 }, (_, i) => ({
+    const LEDGER_SKELETON: any[] = Array.from({ length: 5 }, (_, i) => ({
         id: i + 1,
         display_id: "————————————",
         number: "————————————",
@@ -749,15 +836,15 @@ function CreditLedgerTable({ data, loading, onActionSuccess }: { data: Order[], 
 
     if (!loading && !data.length) {
         return (
-            <EmptyState 
-                context="finance" 
-                title="Sin documentos pendientes" 
+            <EmptyState
+                context="finance"
+                title="Sin documentos pendientes"
                 description="No hay documentos con deuda pendiente para este contacto."
             />
         )
     }
 
-    const columns: ColumnDef<Order>[] = [
+    const columns: ColumnDef<any>[] = [
         {
             accessorKey: "date",
             header: "Fecha",
@@ -786,7 +873,7 @@ function CreditLedgerTable({ data, loading, onActionSuccess }: { data: Order[], 
                 <div className="flex-1 overflow-hidden p-0">
                     <DataTable
                         columns={columns}
-                        data={loading ? (LEDGER_SKELETON as Order[]) : data}
+                        data={loading ? LEDGER_SKELETON : data}
                         defaultPageSize={10}
                         globalFilterFields={["display_id", "number"]}
                         showToolbarSort={true}
@@ -796,8 +883,8 @@ function CreditLedgerTable({ data, loading, onActionSuccess }: { data: Order[], 
                                     <DomainCard
                                         key={row.id as string}
                                         label="sales.saleorder"
-                                        data={row.original as Order}
-                                        onClick={() => openHub({ orderId: (row.original as Order).id, type: 'sale', onActionSuccess })}
+                                        data={row.original as any}
+                                        onClick={() => openHub({ orderId: (row.original as any).id, type: 'sale', onActionSuccess })}
                                     />
                                 ))}
                             </div>

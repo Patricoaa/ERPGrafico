@@ -18,7 +18,7 @@ import { toast } from "sonner"
 import { MonitorSmartphone, Wifi, Library } from "lucide-react"
 import * as LucideIcons from "lucide-react"
 import { cn } from "@/lib/utils"
-import { CancelButton, LabeledInput, LabeledSelect, FormSection, FormFooter, FormSplitLayout } from "@/components/shared"
+import { CancelButton, LabeledInput, LabeledSelect, FormSection, FormFooter, FormSplitLayout, SkeletonShell } from "@/components/shared"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
@@ -71,6 +71,7 @@ type FormValues = z.infer<typeof formSchema>
 
 export function TerminalFormModal({ open, onOpenChange, terminal, onSuccess }: TerminalFormModalProps) {
     const [loading, setLoading] = useState(false)
+    const [isFetchingDeps, setIsFetchingDeps] = useState(false)
     const [treasuryAccounts, setTreasuryAccounts] = useState<TreasuryAccount[]>([])
 
     const form = useForm<FormValues>({
@@ -131,7 +132,10 @@ export function TerminalFormModal({ open, onOpenChange, terminal, onSuccess }: T
         }
     }, [open, terminal, form])
 
+    const isFetchingInitialData = open && isFetchingDeps
+
     const fetchTreasuryAccounts = async () => {
+        setIsFetchingDeps(true)
         try {
             const allAccounts = await settingsApi.getTreasuryAccounts()
             const validAccounts = allAccounts.filter((a: TreasuryAccount) =>
@@ -141,6 +145,8 @@ export function TerminalFormModal({ open, onOpenChange, terminal, onSuccess }: T
         } catch (error) {
             console.error("Error fetching treasury accounts", error)
             toast.error("Error al cargar cuentas de tesorería")
+        } finally {
+            setIsFetchingDeps(false)
         }
     }
 
@@ -246,6 +252,7 @@ export function TerminalFormModal({ open, onOpenChange, terminal, onSuccess }: T
                 />
             }
         >
+            <SkeletonShell isLoading={isFetchingInitialData} ariaLabel="Cargando formulario de terminal" className="flex-1 flex flex-col">
             <FormSplitLayout
                 showSidebar={!!terminal?.id}
                 sidebar={
@@ -448,6 +455,7 @@ export function TerminalFormModal({ open, onOpenChange, terminal, onSuccess }: T
                     </form>
                 </Form>
             </FormSplitLayout>
+            </SkeletonShell>
         </BaseModal>
     )
 }

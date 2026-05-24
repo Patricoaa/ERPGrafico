@@ -1,5 +1,3 @@
-import { Suspense } from "react"
-import { SkeletonShell } from "@/components/shared"
 import { BillingSettingsView } from "@/features/settings"
 
 interface PageProps {
@@ -11,10 +9,6 @@ export default async function BillingSettingsPage({ searchParams }: PageProps) {
     const configTab = tab || "accounts"
 
     return (
-        <div className="flex-1 min-h-0 flex flex-col">
-            <Suspense fallback={<SkeletonShell isLoading ariaLabel="Cargando configuración" />}>
-                <BillingSettingsView activeTab={configTab} />
-            </Suspense>
-        </div>
+        <BillingSettingsView activeTab={configTab} />
     )
 }
