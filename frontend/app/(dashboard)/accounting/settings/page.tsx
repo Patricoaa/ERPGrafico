@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react"
-import { SkeletonShell, SimpleTable } from "@/components/shared"
+import { SkeletonShell } from "@/components/shared"
 
 const AccountingSettingsView = lazy(() => import("@/features/settings").then(m => ({ default: m.AccountingSettingsView })))
 
@@ -13,7 +13,7 @@ export default async function AccountingSettingsPage({ searchParams }: PageProps
 
     return (
         <div className="pt-2 flex-1 min-h-0 flex flex-col">
-            <Suspense fallback={<SkeletonShell isLoading ariaLabel="Cargando..."><SimpleTable rows={10} columns={6} /></SkeletonShell>}>
+            <Suspense fallback={<SkeletonShell isLoading ariaLabel="Cargando..." />}>
                 <AccountingSettingsView activeTab={activeTab} />
             </Suspense>
         </div>

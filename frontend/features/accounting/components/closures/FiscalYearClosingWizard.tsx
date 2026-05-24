@@ -18,7 +18,7 @@ import {
 import { FiscalYearPreviewResult } from '../../types';
 
 import { cn } from '@/lib/utils';
-import { SkeletonShell, SimpleTable, LabeledContainer, CancelButton, SubmitButton, IconButton } from '@/components/shared';
+import { SkeletonShell, LabeledContainer, CancelButton, SubmitButton, IconButton } from '@/components/shared';
 import { BaseModal } from '@/components/shared/BaseModal';
 
 // Lazy load TrialBalanceView
@@ -297,7 +297,7 @@ export function FiscalYearClosingWizard({
             contentClassName="p-0"
         >
             <div className="h-full flex flex-col p-4">
-                <Suspense fallback={<SkeletonShell isLoading ariaLabel="Cargando..."><SimpleTable rows={10} columns={5} /></SkeletonShell>}>
+                <Suspense fallback={<SkeletonShell isLoading ariaLabel="Cargando..." />}>
                     <TrialBalanceView />
                 </Suspense>
             </div>

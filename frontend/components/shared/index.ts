@@ -39,7 +39,6 @@ export * from './BulkActionDock';
 
 export * from './CardSkeleton';
 export * from './SkeletonShell';
-export * from './SimpleTable';
 export * from './LayoutSkeletons';
 export { Skeleton } from '@/components/ui/skeleton';
 

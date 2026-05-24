@@ -22,7 +22,7 @@ import { UserCheck, DollarSign, AlertCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 import { toast } from "sonner"
-import { ExpandableTableRow, SkeletonShell, SimpleTable, ActionConfirmModal } from "@/components/shared"
+import { ExpandableTableRow, SkeletonShell, ActionConfirmModal } from "@/components/shared"
 import { Input } from "@/components/ui/input"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { DataCell } from '@/components/shared'
@@ -132,7 +132,7 @@ function ExpandableBlacklistRow({ row, onRefresh }: { row: Row<CreditContact>, o
             </div>
 
             {loadingLedger ? (
-                <SkeletonShell isLoading ariaLabel="Cargando..."><SimpleTable rows={2} columns={1} /></SkeletonShell>
+                <SkeletonShell isLoading ariaLabel="Cargando..." />
             ) : ledger && ledger.length > 0 ? (
                 <div className="overflow-x-auto">
                     <table className="w-full text-left">

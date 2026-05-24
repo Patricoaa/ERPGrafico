@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { ArrowLeft } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
-import { SkeletonShell, SimpleTable } from "@/components/shared"
+import { SkeletonShell } from "@/components/shared"
 
 export default function AccountLedgerPage() {
     const params = useParams()
@@ -108,7 +108,7 @@ export default function AccountLedgerPage() {
     ]
 
     if (loading) {
-        return <div><SkeletonShell isLoading ariaLabel="Cargando..."><SimpleTable rows={10} columns={7} /></SkeletonShell></div>
+        return <div><SkeletonShell isLoading ariaLabel="Cargando..." /></div>
     }
 
     if (!account) {

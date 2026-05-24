@@ -1,7 +1,7 @@
 "use client"
 
 import { type ReactNode, lazy, Suspense, useState } from "react"
-import { SkeletonShell, SimpleTable } from "@/components/shared"
+import { SkeletonShell } from "@/components/shared"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { useSearchParams } from "next/navigation"
 
@@ -18,7 +18,7 @@ export default function UsersSettingsPage() {
 
     return (
         <div className="pt-2 flex-1 min-h-0 flex flex-col">
-            <Suspense fallback={<SkeletonShell isLoading ariaLabel="Cargando usuarios"><SimpleTable rows={10} columns={5} /></SkeletonShell>}>
+            <Suspense fallback={<SkeletonShell isLoading ariaLabel="Cargando usuarios" />}>
                 <UsersSettingsView 
                     activeTab={activeTab} 
                 />

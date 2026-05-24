@@ -7,7 +7,7 @@ import { ScrollArea as ScrollAreaUI } from "@/components/ui/scroll-area"
 import { useState, useEffect, Suspense } from "react"
 import { useWindowWidth } from "@/hooks/useWindowWidth"
 import { cn } from "@/lib/utils"
-import { Drawer, SkeletonShell, SimpleTable } from "@/components/shared"
+import { Drawer, SkeletonShell } from "@/components/shared"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 
 interface SalesOrdersModalProps {
@@ -70,7 +70,7 @@ export function SalesOrdersModal({ open, onOpenChange, posSessionId }: SalesOrde
         >
             <div className="py-2">
                 {shouldRenderContent && (
-                    <Suspense fallback={<SkeletonShell isLoading ariaLabel="Cargando..."><SimpleTable rows={10} columns={6} /></SkeletonShell>}>
+                    <Suspense fallback={<SkeletonShell isLoading ariaLabel="Cargando..." />}>
                         <SalesOrdersView
                             posSessionId={posSessionId}
                             viewMode={viewMode}

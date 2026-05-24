@@ -32,7 +32,7 @@ import {
     CheckCircle2, FileText, ArrowLeft
 } from "lucide-react"
 import { DataCell } from "@/components/shared"
-import { SkeletonShell, SimpleTable } from "@/components/shared"
+import { SkeletonShell } from "@/components/shared"
 import { PayrollCard } from "@/features/hr/components/PayrollCard"
 import { cn } from "@/lib/utils"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
@@ -164,7 +164,7 @@ export function PayrollDetailContent({
     const totalPreviredPaid = payments.filter((p: PayrollPayment) => p.payment_type === 'PREVIRED').reduce((s: number, p: PayrollPayment) => s + parseFloat(p.amount), 0)
     const pendingPrevired = Math.max(0, totalPreviredRequired - totalPreviredPaid)
 
-    if (loading) return <SkeletonShell isLoading ariaLabel="Cargando..."><SimpleTable rows={8} columns={5} className="flex-1 p-6" /></SkeletonShell>
+    if (loading) return <SkeletonShell isLoading ariaLabel="Cargando..." />
 
     if (!payroll) return (
         <div className="flex flex-col items-center justify-center p-24 text-muted-foreground gap-4">

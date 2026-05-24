@@ -26,8 +26,7 @@ import { cn } from "@/lib/utils"
 import {
     CardSkeleton,
     SkeletonShell,
-    SimpleTable,
-    DataTable,
+        DataTable,
     DataCell,
     createActionsColumn,
     Chip
@@ -139,7 +138,7 @@ export function EquityCompositionTab({
         return (
             <div className="space-y-6">
                 <CardSkeleton count={4} variant="grid" />
-                <SkeletonShell isLoading ariaLabel="Cargando..."><SimpleTable rows={10} columns={9} /></SkeletonShell>
+                <SkeletonShell isLoading ariaLabel="Cargando..." />
             </div>
         )
     }

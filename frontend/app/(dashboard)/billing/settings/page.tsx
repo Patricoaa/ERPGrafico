@@ -1,5 +1,5 @@
 import { Suspense } from "react"
-import { SkeletonShell, SimpleTable } from "@/components/shared"
+import { SkeletonShell } from "@/components/shared"
 import { BillingSettingsView } from "@/features/settings"
 
 interface PageProps {
@@ -12,7 +12,7 @@ export default async function BillingSettingsPage({ searchParams }: PageProps) {
 
     return (
         <div className="flex-1 min-h-0 flex flex-col">
-            <Suspense fallback={<SkeletonShell isLoading ariaLabel="Cargando configuración"><SimpleTable rows={10} columns={6} /></SkeletonShell>}>
+            <Suspense fallback={<SkeletonShell isLoading ariaLabel="Cargando configuración" />}>
                 <BillingSettingsView activeTab={configTab} />
             </Suspense>
         </div>
