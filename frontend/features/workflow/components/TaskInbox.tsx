@@ -16,7 +16,7 @@ import { useSearchParams, useRouter } from "next/navigation"
 import { SkeletonShell, MoneyDisplay, EntityBadge, Chip } from "@/components/shared"
 import { useAuth } from "@/contexts/AuthContext"
 import { formatEntityDisplay, getEntityMetadata, detectEntityLabel } from "@/lib/entity-registry"
-import { useUpdateTask } from "../hooks/useWorkflowQueries"
+import { useUpdateTask } from "../hooks/useWorkflowMutations"
 
 const HUB_STAGE_LABELS: Record<string, string> = {
     origin: 'Origen',
