@@ -1,10 +1,20 @@
 "use client"
 
-import React from "react"
-import { Table as ReactTable } from "@tanstack/react-table"
+import React, { useState, useCallback } from "react"
+import { Table as ReactTable, type Row, type VisibilityState } from "@tanstack/react-table"
 import { DomainCard } from "@/components/shared/DomainCard"
 import { EntityCard } from "@/components/shared/EntityCard"
 import { EmptyState } from "@/components/shared/EmptyState"
+
+import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Download, Upload, ChevronDown } from "lucide-react"
+import { cn } from "@/lib/utils"
 import { ENTITY_REGISTRY } from "@/lib/entity-registry"
 
 /**
@@ -124,4 +134,219 @@ export function createCardLoadingView(
         })
       )
     )
+}
+
+/**
+ * Creates a renderSubComponent callback for DataTable with optional lazy-loading
+ * and a built-in loading state. Eliminates the boilerplate of managing expand
+ * state + fetch-on-expand per consumer.
+ *
+ * Usage:
+ *   renderSubComponent={createExpandableRowView({
+ *     lazyLoad: (row) => fetchDetail(row.id),
+ *     renderDetail: (row, detail) => <DetailPanel data={detail} />,
+ *   })}
+ */
+export function createExpandableRowView<TData, TDetail = unknown>(
+  config: {
+    /** Called when the row expands for the first time. Return a promise for lazy data. */
+    lazyLoad?: (row: TData) => Promise<TDetail>
+    /** Renders the expanded detail panel. Receives the row data and optional lazy-loaded detail. */
+    renderDetail: (row: TData, detail: TDetail | null) => React.ReactNode
+    /** Skeleton rows to show while lazyLoad is in-flight. @default 2 */
+    skeletonRows?: number
+  }
+) {
+  const cache = new Map<string | number, TDetail | null>()
+
+  function ExpandableRowRenderer({ row }: { row: Row<TData> }) {
+    const [detail, setDetail] = useState<TDetail | null>(null)
+    const [loading, setLoading] = useState(false)
+    const id = (row.original as any).id
+
+    const handleExpand = useCallback(async () => {
+      if (!config.lazyLoad) return
+      if (cache.has(id)) {
+        setDetail(cache.get(id)!)
+        return
+      }
+      setLoading(true)
+      try {
+        const result = await config.lazyLoad(row.original)
+        cache.set(id, result)
+        setDetail(result)
+      } finally {
+        setLoading(false)
+      }
+    }, [id, row.original])
+
+    React.useEffect(() => {
+      handleExpand()
+    }, [handleExpand])
+
+    if (loading) {
+      const skeletonCount = config.skeletonRows ?? 2
+      return React.createElement("div", { className: "p-4 space-y-3" },
+        Array.from({ length: skeletonCount }).map((_, i) =>
+          React.createElement("div", {
+            key: i,
+            className: "h-8 bg-muted/30 rounded animate-pulse"
+          })
+        )
+      )
+    }
+
+    return config.renderDetail(row.original, detail)
+  }
+  ExpandableRowRenderer.displayName = "ExpandableRowRenderer"
+
+  const ExpandableRowView = (row: Row<TData>) => React.createElement(ExpandableRowRenderer, { row })
+  ExpandableRowView.displayName = "ExpandableRowView"
+  return ExpandableRowView
+}
+
+/**
+ * Creates a renderFooter callback for DataTable that shows column aggregations
+ * (sum, count, avg) in the footer row. Useful for ledgers, movement lists,
+ * and any numeric report.
+ *
+ * Usage:
+ *   renderFooter={createSimpleFooterView([
+ *     { accessorKey: "amount", aggregate: "sum", formatter: formatCurrency },
+ *     { accessorKey: "count", aggregate: "count" },
+ *   ])}
+ */
+export function createSimpleFooterView<TData>(
+  columns: Array<{
+    accessorKey: string
+    aggregate?: 'sum' | 'count' | 'avg' | 'none'
+    formatter?: (value: number) => string
+  }>,
+  options?: {
+    /** Label for the first column cell. Defaults to "Totales". */
+    label?: string
+    /** Additional className for the footer row. */
+    className?: string
+  }
+) {
+  const label = options?.label ?? "Totales"
+
+  const SimpleFooterView = (table: ReactTable<TData>) => {
+    const rows = table.getRowModel().rows
+
+    if (rows.length === 0) return null
+
+    const totalCells = columns.map((col) => {
+      if (col.aggregate === 'none' || !col.aggregate) {
+        return React.createElement("td", { key: col.accessorKey })
+      }
+
+      const values = rows.map((row) => {
+        const val = (row.original as Record<string, unknown>)[col.accessorKey]
+        return typeof val === 'number' ? val : Number(val) || 0
+      })
+
+      let result: number
+      if (col.aggregate === 'sum') {
+        result = values.reduce((a, b) => a + b, 0)
+      } else if (col.aggregate === 'avg') {
+        result = values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : 0
+      } else {
+        result = values.length
+      }
+
+      const display = col.formatter ? col.formatter(result) : result.toLocaleString('es-CL')
+      return React.createElement("td", {
+        key: col.accessorKey,
+        className: "text-right font-mono font-bold tabular-nums table-cell"
+      }, display)
+    })
+
+    return React.createElement("tr", { className: cn("border-t-2", options?.className) },
+      React.createElement("td", { className: "font-black uppercase tracking-widest text-[10px] table-cell" }, label),
+      ...totalCells
+    )
+  }
+  SimpleFooterView.displayName = "SimpleFooterView"
+  return SimpleFooterView
+}
+
+/**
+ * Creates a toolbar action dropdown for export/import operations.
+ * Standardizes the "Acciones" dropdown pattern used across modules.
+ *
+ * Usage:
+ *   toolbarAction={createExportToolbarAction({
+ *     entityLabel: "Movimientos",
+ *     onExport: handleExport,
+ *     onImport: handleImport,
+ *   })}
+ */
+export function createExportToolbarAction(config: {
+  entityLabel?: string
+  onExport?: () => void
+  onImport?: () => void
+}) {
+  const hasActions = config.onExport || config.onImport
+  if (!hasActions) return null
+
+  return React.createElement(DropdownMenu, null,
+    React.createElement(DropdownMenuTrigger, { asChild: true },
+      React.createElement(Button, {
+        variant: "outline",
+        size: "sm",
+        className: "h-9 gap-2 text-[10px] font-black uppercase tracking-widest"
+      },
+        "Acciones",
+        React.createElement(ChevronDown, { className: "h-3.5 w-3.5" })
+      )
+    ),
+    React.createElement(DropdownMenuContent, { align: "end", className: "min-w-[180px]" },
+      config.onExport && React.createElement(DropdownMenuItem, { onClick: config.onExport },
+        React.createElement(Download, { className: "h-4 w-4 mr-2" }),
+        `Exportar ${config.entityLabel || 'datos'}`
+      ),
+      config.onImport && React.createElement(DropdownMenuItem, { onClick: config.onImport },
+        React.createElement(Upload, { className: "h-4 w-4 mr-2" }),
+        `Importar ${config.entityLabel || 'datos'}`
+      )
+    )
+  )
+}
+
+/**
+ * Creates an initialColumnVisibility preset from common visibility patterns.
+ * Reduces boilerplate when configuring which columns to show by default.
+ *
+ * @param preset - 'all' shows all columns; 'essential' hides audit/technical fields;
+ *                 'financial' shows only monetary + date columns.
+ *
+ * Usage:
+ *   initialColumnVisibility={createColumnVisibilityPreset('essential')}
+ */
+export function createColumnVisibilityPreset(
+  preset: 'all' | 'essential' | 'financial'
+): VisibilityState {
+  switch (preset) {
+    case 'all':
+      return {}
+    case 'essential':
+      return {
+        id: true,
+        created_at: false,
+        updated_at: false,
+        created_by: false,
+        updated_by: false,
+      }
+    case 'financial':
+      return {
+        id: false,
+        created_at: false,
+        updated_at: false,
+        created_by: false,
+        updated_by: false,
+        notes: false,
+        reference: false,
+      }
+  }
 }

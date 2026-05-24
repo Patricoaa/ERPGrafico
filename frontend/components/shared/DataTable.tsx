@@ -22,6 +22,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFoo
 import { SkeletonShell } from "@/components/shared/SkeletonShell"
 import { cn } from "@/lib/utils"
 import { EmptyState } from "@/components/shared/EmptyState"
+import { motion, AnimatePresence } from "framer-motion"
 import { SearchX, LucideIcon } from "lucide-react"
 import { EmptyStateContext } from "@/components/shared/EmptyState"
 import { BulkActionDock, BulkActionButtons, type BulkAction } from "@/components/shared"
@@ -57,8 +58,8 @@ interface DataTableProps<TData, TValue> {
     rightAction?: React.ReactNode
     showToolbarSort?: boolean
     onRowClick?: (row: TData) => void
-    /** Layout variant. Use 'embedded' when the table lives inside a card/panel (no outer border, compact toolbar). Use 'standalone' for full-page tables with border. */
-    variant?: 'standalone' | 'embedded'
+    /** Layout variant. Use 'embedded' when the table lives inside a card/panel (no outer border, compact toolbar). Use 'standalone' for full-page tables with border. Use 'minimal' for simple display tables inside tabs/detail panels (no toolbar, no pagination). */
+    variant?: 'standalone' | 'embedded' | 'minimal'
     isLoading?: boolean
     skeletonRows?: number
     renderSubComponent?: (row: Row<TData>) => React.ReactNode
@@ -171,6 +172,7 @@ export function DataTable<TData, TValue>({
     renderLoadingView,
 }: DataTableProps<TData, TValue>) {
     const isEmbedded = variant === 'embedded'
+    const isMinimal = variant === 'minimal'
 
     const containerRef = React.useRef<HTMLDivElement>(null)
     const [isInModal, setIsInModal] = React.useState(false)
@@ -269,7 +271,7 @@ export function DataTable<TData, TValue>({
         }
     }, [internalRowSelection, onRowSelectionChange])
 
-    const showToolbar = filterColumn || globalFilterFields || (facetedFilters && facetedFilters.length > 0) || toolbarAction || rightAction || leftAction || createAction || (viewOptions && viewOptions.length > 0) || showToolbarSort
+    const showToolbar = !isMinimal && (filterColumn || globalFilterFields || (facetedFilters && facetedFilters.length > 0) || toolbarAction || rightAction || leftAction || createAction || (viewOptions && viewOptions.length > 0) || showToolbarSort)
     const selectedRows = table.getSelectedRowModel().rows
     const selectedItems = React.useMemo(() => selectedRows.map(r => r.original), [selectedRows])
     const clearSelection = React.useCallback(() => table.resetRowSelection(), [table])
@@ -290,8 +292,12 @@ export function DataTable<TData, TValue>({
     // ─── Loading state (unified) ────────────────────────────────────────
     if (isLoading) {
         return (
-            <div ref={containerRef} className={isEmbedded ? "relative flex flex-col h-full space-y-1 min-h-0" : "space-y-4"}>
-                {showToolbar && (
+            <div ref={containerRef} className={cn(
+                isEmbedded && "relative flex flex-col h-full space-y-1 min-h-0",
+                !isEmbedded && !isMinimal && "space-y-4",
+                isMinimal && "space-y-0"
+            )}>
+                {showToolbar && !isMinimal && (
                     <DataTableToolbar
                         table={table}
                         filterColumn={filterColumn}
@@ -352,7 +358,70 @@ export function DataTable<TData, TValue>({
                     </div>
                 )}
 
-                {!hidePagination && <DataTablePagination table={table} pageSizeOptions={pageSizeOptions} />}
+                {!hidePagination && !isMinimal && <DataTablePagination table={table} pageSizeOptions={pageSizeOptions} />}
+            </div>
+        )
+    }
+
+    // ─── Minimal mode ────────────────────────────────────────────────────
+    if (isMinimal) {
+        return (
+            <div ref={containerRef} className={cn(
+                "relative",
+                !noBorder && "rounded-md border"
+            )}>
+                <Table>
+                    <TableHeader className="bg-muted/30">
+                        {table.getHeaderGroups().map((headerGroup) => (
+                            <TableRow key={headerGroup.id} className="border-none hover:bg-transparent">
+                                {headerGroup.headers.map((header) => (
+                                    <TableHead key={header.id} className="table-header">
+                                        {header.isPlaceholder
+                                            ? null
+                                            : flexRender(header.column.columnDef.header, header.getContext())}
+                                    </TableHead>
+                                ))}
+                            </TableRow>
+                        ))}
+                    </TableHeader>
+                    <TableBody>
+                        {table.getRowModel().rows?.length ? (
+                            table.getRowModel().rows.map((row) => (
+                                <TableRow
+                                    key={row.id}
+                                    className={cn(
+                                        "table-row-hover border-b border-border/40",
+                                        onRowClick && "cursor-pointer"
+                                    )}
+                                    onClick={() => onRowClick?.(row.original)}
+                                >
+                                    {row.getVisibleCells().map((cell) => (
+                                        <TableCell key={cell.id} className="table-cell">
+                                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                        </TableCell>
+                                    ))}
+                                </TableRow>
+                            ))
+                        ) : (
+                            <TableRow>
+                                <TableCell colSpan={columns.length} className="h-24 p-0">
+                                    <EmptyState
+                                        context={customEmptyState?.context || "search"}
+                                        icon={customEmptyState?.icon || SearchX}
+                                        title={customEmptyState?.title || "No se encontraron resultados"}
+                                        description={customEmptyState?.description || "Intenta ajustar los filtros de búsqueda para encontrar lo que buscas."}
+                                        action={customEmptyState?.action}
+                                    />
+                                </TableCell>
+                            </TableRow>
+                        )}
+                    </TableBody>
+                    {renderFooter && (
+                        <TableFooter className="table-footer">
+                            {renderFooter(table)}
+                        </TableFooter>
+                    )}
+                </Table>
             </div>
         )
     }
@@ -366,11 +435,11 @@ export function DataTable<TData, TValue>({
                             renderRow(row, (
                                 <TableRow
                                     data-state={row.getIsSelected() && "selected"}
-                                    className={cn(
-                                        "group border-b border-border/40 hover:bg-muted/50 transition-all",
-                                        onRowClick && "cursor-pointer",
-                                        row.getIsSelected() && "bg-primary/5"
-                                    )}
+    className={cn(
+        "group border-b border-border/40 table-row-hover transition-all",
+        onRowClick && "cursor-pointer",
+        row.getIsSelected() && "bg-primary/5"
+    )}
                                     onClick={() => onRowClick?.(row.original)}
                                 >
                                     {row.getVisibleCells().map((cell) => (
@@ -387,7 +456,7 @@ export function DataTable<TData, TValue>({
                             <TableRow
                                 data-state={row.getIsSelected() && "selected"}
                                 className={cn(
-                                    "group border-b border-border/40 hover:bg-muted/50 transition-all",
+                                    "group border-b border-border/40 table-row-hover transition-all",
                                     onRowClick && "cursor-pointer",
                                     row.getIsSelected() && "bg-primary/5"
                                 )}
@@ -403,13 +472,22 @@ export function DataTable<TData, TValue>({
                                 ))}
                             </TableRow>
                         )}
-                        {row.getIsExpanded() && renderSubComponent && (
-                            <TableRow>
-                                <TableCell colSpan={row.getVisibleCells().length} className="p-0 bg-muted/30">
-                                    {renderSubComponent(row)}
-                                </TableCell>
-                            </TableRow>
-                        )}
+                        <AnimatePresence>
+                            {row.getIsExpanded() && renderSubComponent && (
+                                <motion.tr
+                                    key={`exp-${row.id}`}
+                                    initial={{ height: 0, opacity: 0 }}
+                                    animate={{ height: "auto", opacity: 1 }}
+                                    exit={{ height: 0, opacity: 0 }}
+                                    transition={{ duration: 0.2, ease: "easeInOut" }}
+                                    className="overflow-hidden"
+                                >
+                                    <TableCell colSpan={row.getVisibleCells().length} className="p-0" style={{ backgroundColor: 'var(--table-expanded-bg)' }}>
+                                        {renderSubComponent(row)}
+                                    </TableCell>
+                                </motion.tr>
+                            )}
+                        </AnimatePresence>
                     </React.Fragment>
                 ))
             ) : (
@@ -500,7 +578,7 @@ export function DataTable<TData, TValue>({
                                 {tableBody}
                             </TableBody>
                             {renderFooter && (
-                                <TableFooter className="bg-muted/50 border-t-2">
+                                <TableFooter className="table-footer border-t-2">
                                     {renderFooter(table)}
                                 </TableFooter>
                             )}
@@ -586,7 +664,7 @@ export function DataTable<TData, TValue>({
                                                 <TableRow
                                                     data-state={row.getIsSelected() && "selected"}
                                                     className={cn(
-                                                        "group hover:bg-muted/20 transition-colors",
+                                                        "group table-row-hover",
                                                         onRowClick && "cursor-pointer"
                                                     )}
                                                     onClick={() => onRowClick?.(row.original)}
@@ -605,7 +683,7 @@ export function DataTable<TData, TValue>({
                                             <TableRow
                                                 data-state={row.getIsSelected() && "selected"}
                                                 className={cn(
-                                                    "group hover:bg-muted/20 transition-colors",
+                                                    "group table-row-hover",
                                                     onRowClick && "cursor-pointer"
                                                 )}
                                                 onClick={() => onRowClick?.(row.original)}
@@ -620,13 +698,22 @@ export function DataTable<TData, TValue>({
                                                 ))}
                                             </TableRow>
                                         )}
-                                        {row.getIsExpanded() && renderSubComponent && (
-                                            <TableRow>
-                                                <TableCell colSpan={row.getVisibleCells().length} className="p-0 border-b border-border/50">
-                                                    {renderSubComponent(row)}
-                                                </TableCell>
-                                            </TableRow>
-                                        )}
+                                        <AnimatePresence>
+                                            {row.getIsExpanded() && renderSubComponent && (
+                                                <motion.tr
+                                                    key={`exp-${row.id}`}
+                                                    initial={{ height: 0, opacity: 0 }}
+                                                    animate={{ height: "auto", opacity: 1 }}
+                                                    exit={{ height: 0, opacity: 0 }}
+                                                    transition={{ duration: 0.2, ease: "easeInOut" }}
+                                                    className="overflow-hidden"
+                                                >
+                                                    <TableCell colSpan={row.getVisibleCells().length} className="p-0 border-b border-border/50">
+                                                        {renderSubComponent(row)}
+                                                    </TableCell>
+                                                </motion.tr>
+                                            )}
+                                        </AnimatePresence>
                                     </React.Fragment>
                                 ))
                             ) : (
@@ -647,7 +734,7 @@ export function DataTable<TData, TValue>({
                             )}
                         </TableBody>
                         {renderFooter && (
-                            <TableFooter className="bg-muted/50 border-t-2 font-mono">
+                            <TableFooter className="table-footer border-t-2">
                                 {renderFooter(table)}
                             </TableFooter>
                         )}

@@ -150,9 +150,10 @@ Sistema central de tablas de datos y sus primitivas de vista.
 
 | componente | uso principal | variant / prop clave |
 |---|---|---|
-| `DataTable` | Tabla principal, maneja paginación y skeleton automático | `variant="embedded" | "standalone"` |
+| `DataTable` | Tabla principal CRUD con filtros/paginación/acciones | `variant="embedded" | "standalone"` |
+| `DataTable` (minimal) | Tabla display simple sin toolbar ni paginación | `variant="minimal"` |
 | `EntityCard` | Shell estandarizado para vistas de tarjeta/grilla | `variant="default" | "compact"` |
-| `ExpandableTableRow` | Fila con panel de detalle desplegable (lazy fetch) | `onExpand`, `cellClassName` |
+| `ExpandableTableRow` 🔴 | **Deprecado.** Usar `renderSubComponent` + `createExpandableRowView` | `onExpand`, `cellClassName` |
 
 ---
 
@@ -667,6 +668,8 @@ interface FormLineItemColumn {
 ```
 
 Import: `import { FormLineItemsTable } from '@/components/shared'`
+
+> **Diferencia con `DataTable variant="minimal"`:** `FormLineItemsTable` es para **edición** (con inputs, `useFieldArray`, botón "Agregar Línea"). `variant="minimal"` es para **display** (solo lectura). Ambos usan los mismos tokens visuales definidos en `globals.css` (`--table-cell-py`, `--table-cell-px`, etc.).
 
 > Los inputs dentro de las celdas siguen el contrato **[Table Cell Input](./component-table-cell-input.md)**.
 

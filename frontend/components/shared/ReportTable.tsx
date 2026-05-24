@@ -66,7 +66,7 @@ const ReportRow = ({
     return (
         <>
             <TableRow className={cn(
-                "hover:bg-muted/10 transition-colors border-l-2",
+                "table-row-hover border-l-2",
                 level === 0 ? "font-black border-l-primary/40 bg-muted/5 h-12" : "border-l-transparent"
             )}>
                 <TableCell className="py-2.5 px-4">

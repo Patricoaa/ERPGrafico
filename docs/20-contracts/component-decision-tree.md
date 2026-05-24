@@ -65,6 +65,15 @@ graph TD
     A -->|Reporte jerárquico contable| G(ReportTable)
 ```
 
+```mermaid
+graph TD
+    T[¿Qué tipo de tabla?]
+    T -->|CRUD con filtros/paginación/acciones| TA(DataTable variant="standalone" | "embedded")
+    T -->|Tabla display simple en tabs/detalle| TB(DataTable variant="minimal")
+    T -->|Líneas editables en formulario| TC(FormLineItemsTable / AccountingLinesTable)
+    T -->|Reporte jerárquico contable| TD(ReportTable)
+```
+
 - **`StatusBadge`**: **Obligatorio** para el estado de las entidades (ej. `in_production`, `paid`). Lee `state-map.md`.
 - **`StatCard`**: **Obligatorio** para tarjetas de métrica/resumen con label + valor. 3 variantes (default, compact, minimal), 7 acentos, trend, href, onClick. [Ver contrato completo](./component-statcard.md).
 - **`Card` de shadcn**: Contenedor estándar para contenido arbitrario (formularios, charts, tablas). [Ver documentación oficial (component-card.md)](./component-card.md).
