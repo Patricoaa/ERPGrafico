@@ -149,6 +149,8 @@ export function ProductSelectionStep({
                 categories={[]}
                 searchTerm={searchTerm}
                 onSearchChange={setSearchTerm}
+                onSelectCategory={() => {}}
+                selectedCategoryId={null}
                 onProductClick={handleProductSelect}
                 isProductDisabled={(product: BaseProduct) =>
                   otType === "NONE" &&
