@@ -17,7 +17,7 @@ export function useGroupSearch(search: string = "", enabled: boolean = true) {
             params.append("limit", "50")
 
             const data = await usersApi.getGroups({ params, signal } as any)
-            return (data.results || data) as AppGroup[]
+            return data as AppGroup[]
         },
         enabled,
         staleTime: 5 * 60 * 1000,

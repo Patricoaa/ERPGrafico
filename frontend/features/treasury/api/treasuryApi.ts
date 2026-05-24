@@ -33,8 +33,8 @@ export const treasuryApi = {
     // ========== Terminals ==========
 
     getTerminals: async (): Promise<Terminal[]> => {
-        const response = await api.get('/treasury/pos-terminals/')
-        return response.data.results || response.data
+        const response = await api.get<Terminal[]>('/treasury/pos-terminals/')
+        return response.data
     },
 
     createTerminal: async (payload: TerminalCreatePayload): Promise<Terminal> => {
@@ -54,8 +54,8 @@ export const treasuryApi = {
     // ========== Terminal Providers ==========
 
     getTerminalProviders: async (): Promise<PaymentTerminalProvider[]> => {
-        const response = await api.get('/treasury/terminal-providers/')
-        return response.data.results || response.data
+        const response = await api.get<PaymentTerminalProvider[]>('/treasury/terminal-providers/')
+        return response.data
     },
 
     createTerminalProvider: async (payload: PaymentTerminalProviderCreatePayload): Promise<PaymentTerminalProvider> => {
@@ -75,8 +75,8 @@ export const treasuryApi = {
     // ========== Terminal Devices ==========
 
     getTerminalDevices: async (params?: Record<string, string>): Promise<PaymentTerminalDevice[]> => {
-        const response = await api.get('/treasury/terminal-devices/', { params })
-        return response.data.results || response.data
+        const response = await api.get<PaymentTerminalDevice[]>('/treasury/terminal-devices/', { params })
+        return response.data
     },
 
     getTerminalDevice: async (id: number): Promise<PaymentTerminalDevice> => {
@@ -101,8 +101,8 @@ export const treasuryApi = {
     // ========== Terminal Batches ==========
 
     getTerminalBatches: async (params?: Record<string, string>): Promise<any[]> => {
-        const response = await api.get('/treasury/terminal-batches/', { params })
-        return response.data.results || response.data
+        const response = await api.get<any[]>('/treasury/terminal-batches/', { params })
+        return response.data
     },
 
     createTerminalBatch: async (payload: TerminalBatchCreatePayload): Promise<any> => {
@@ -113,8 +113,8 @@ export const treasuryApi = {
     // ========== Treasury Accounts ==========
 
     getAccounts: async (filters?: { name?: string; account_type?: string }): Promise<TreasuryAccount[]> => {
-        const { data } = await api.get<{ results: TreasuryAccount[] }>('/treasury/accounts/', { params: filters })
-        return data.results || data
+        const { data } = await api.get<TreasuryAccount[]>('/treasury/accounts/', { params: filters })
+        return data
     },
 
     getAccount: async (id: number): Promise<TreasuryAccount> => {
@@ -139,8 +139,8 @@ export const treasuryApi = {
     // ========== Payment Methods ==========
 
     getPaymentMethods: async (): Promise<PaymentMethod[]> => {
-        const { data } = await api.get<{ results: PaymentMethod[] }>('/treasury/payment-methods/')
-        return data.results || data
+        const { data } = await api.get<PaymentMethod[]>('/treasury/payment-methods/')
+        return data
     },
 
     createPaymentMethod: async (payload: PaymentMethodCreatePayload): Promise<PaymentMethod> => {
@@ -240,7 +240,7 @@ export const treasuryApi = {
     },
 
     getSuppliers: async (params?: Record<string, string | boolean>): Promise<ContactBrief[]> => {
-        const response = await api.get('/contacts/', { params })
-        return response.data.results || response.data
+        const response = await api.get<ContactBrief[]>('/contacts/', { params })
+        return response.data
     },
 }

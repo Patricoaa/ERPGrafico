@@ -10,8 +10,8 @@ export const accountingApi = {
         if (filters?.is_leaf) params.append('is_leaf', 'true')
         if (filters?.search) params.append('search', filters.search)
 
-        const { data } = await api.get<{ results: Account[] }>('/accounting/accounts/', { params })
-        return data.results || data
+        const { data } = await api.get<Account[]>('/accounting/accounts/', { params })
+        return data
     },
 
     getLedger: async (accountId: number, startDate: string, endDate: string): Promise<LedgerData> => {
@@ -78,8 +78,8 @@ export const accountingApi = {
     },
 
     getFiscalYears: async (params?: Record<string, unknown>): Promise<FiscalYear[]> => {
-        const { data } = await api.get<{ results: FiscalYear[] }>('/accounting/fiscal-years/', { params })
-        return data.results || (data as unknown as FiscalYear[])
+        const { data } = await api.get<FiscalYear[]>('/accounting/fiscal-years/', { params })
+        return data
     },
 
     updateAccountMappings: async (updates: Array<{ id: number; field: string; value: string | null }>): Promise<void> => {

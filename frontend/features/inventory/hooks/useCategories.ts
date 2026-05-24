@@ -38,8 +38,8 @@ export function useCategories() {
     const { data: categories, isLoading, refetch } = useQuery({
         queryKey: CATEGORIES_KEYS.list(),
         queryFn: async (): Promise<Category[]> => {
-            const response = await api.get('/inventory/categories/')
-            return response.data.results || response.data
+            const response = await api.get<Category[]>('/inventory/categories/')
+            return response.data
         },
         staleTime: 15 * 60 * 1000, // 15 min — datos quasi-estáticos
     })

@@ -40,8 +40,8 @@ export function useSubscriptions(filters?: FilterState) {
             const params = new URLSearchParams()
             if (filters?.status) params.append('status', filters.status)
             if (filters?.search) params.append('search', filters.search)
-            const response = await api.get('/inventory/subscriptions/', { params })
-            return response.data.results || response.data
+            const response = await api.get<Subscription[]>('/inventory/subscriptions/', { params })
+            return response.data
         },
         staleTime: 2 * 60 * 1000,
     })

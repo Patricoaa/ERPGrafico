@@ -42,7 +42,7 @@ export function useWorkOrderSearch(): UseWorkOrderSearchReturn {
             params.append("limit", "50")
 
             const res = await api.get(`/production/orders/?${params.toString()}`)
-            const data = res.data.results || res.data
+            const data = res.data
             
             globalCache[cacheKey] = data
             setOrders(data)

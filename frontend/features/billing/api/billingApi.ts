@@ -34,8 +34,8 @@ export const billingApi = {
         // partner_name no tiene campo directo en filterset → usar search=
         if (filters?.partner_name) params.append('search', filters.partner_name)
 
-        const { data } = await api.get<{ results: Invoice[]; count: number }>('/billing/invoices/', { params })
-        return (data.results ?? (data as unknown as Invoice[])) as Invoice[]
+        const { data } = await api.get<Invoice[]>('/billing/invoices/', { params })
+        return data
     },
 
     /**
@@ -116,8 +116,8 @@ export const billingApi = {
     },
 
     getWarehouses: async (): Promise<Record<string, unknown>[]> => {
-        const res = await api.get('/inventory/warehouses/')
-        return res.data.results || res.data
+        const res = await api.get<Record<string, unknown>[]>('/inventory/warehouses/')
+        return res.data
     },
 
     getAllowedUoms: async (productId: string | number, context: string): Promise<Record<string, unknown>[]> => {

@@ -94,7 +94,8 @@ export interface StockAdjustmentPayload {
  */
 export async function fetchProductStockLevel(productId: number | string, warehouseId: number | string): Promise<number> {
     const response = await api.get(`/inventory/moves/?product_id=${productId}&warehouse_id=${warehouseId}`)
-    const moves = (response.data?.results ?? response.data) as Array<{ quantity?: string | number }>
+    const data = response.data as Array<{ quantity?: string | number }> | { results?: Array<{ quantity?: string | number }> }
+    const moves: Array<{ quantity?: string | number }> = Array.isArray(data) ? data : (data?.results ?? [])
     return moves.reduce((sum, move) => sum + parseFloat(String(move.quantity ?? 0)), 0)
 }
 

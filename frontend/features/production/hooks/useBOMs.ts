@@ -61,8 +61,8 @@ export function useAllBOMs(filters?: FilterState) {
             const params = new URLSearchParams()
             if (filters?.search) params.append('search', filters.search)
             if (filters?.active !== undefined) params.append('active', filters.active)
-            const res = await api.get('/production/boms/', { params })
-            return res.data.results || res.data
+            const res = await api.get<BOM[]>('/production/boms/', { params })
+            return res.data
         },
         staleTime: 5 * 60 * 1000,
     })
@@ -74,8 +74,8 @@ export function useProductionVariants(parentId: number | string | undefined) {
         queryKey: [...VARIANTS_QUERY_KEY, parentId],
         queryFn: async (): Promise<ProductMinimal[]> => {
             if (!parentId) return []
-            const res = await api.get(`/inventory/products/?parent_template=${parentId}&show_technical_variants=true`)
-            return res.data.results || res.data
+            const res = await api.get<ProductMinimal[]>(`/inventory/products/?parent_template=${parentId}&show_technical_variants=true`)
+            return res.data
         },
     })
 

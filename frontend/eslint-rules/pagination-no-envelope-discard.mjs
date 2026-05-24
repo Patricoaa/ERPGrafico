@@ -14,22 +14,47 @@
  * violation count reaches 0 (audit grep in pagination-contract.md §6).
  */
 
+/**
+ * Strip parens/casts/non-null/optional-chain wrappers so we compare the
+ * underlying expression. `(x as any).results ?? x` and `x.results ?? x` should
+ * be treated as the same smell.
+ */
+function unwrap(node) {
+    if (!node) return node;
+    switch (node.type) {
+        case 'TSAsExpression':
+        case 'TSNonNullExpression':
+        case 'TSTypeAssertion':
+        case 'TSSatisfiesExpression':
+        case 'ChainExpression':
+            return unwrap(node.expression);
+        default:
+            return node;
+    }
+}
+
 function isResultsAccess(node) {
+    const n = unwrap(node);
     return (
-        node?.type === 'MemberExpression' &&
-        !node.computed &&
-        node.property?.type === 'Identifier' &&
-        node.property.name === 'results'
+        (n?.type === 'MemberExpression' || n?.type === 'OptionalMemberExpression') &&
+        !n.computed &&
+        n.property?.type === 'Identifier' &&
+        n.property.name === 'results'
     );
 }
 
 function sameObject(a, b) {
-    if (!a || !b) return false;
-    if (a.type === 'Identifier' && b.type === 'Identifier') return a.name === b.name;
-    if (a.type === 'MemberExpression' && b.type === 'MemberExpression') {
+    const aa = unwrap(a);
+    const bb = unwrap(b);
+    if (!aa || !bb) return false;
+    if (aa.type === 'Identifier' && bb.type === 'Identifier') return aa.name === bb.name;
+    if (
+        (aa.type === 'MemberExpression' || aa.type === 'OptionalMemberExpression') &&
+        (bb.type === 'MemberExpression' || bb.type === 'OptionalMemberExpression')
+    ) {
         return (
-            a.property.name === b.property.name &&
-            sameObject(a.object, b.object)
+            aa.property?.name === bb.property?.name &&
+            sameObject(aa.object, bb.object)
         );
     }
     return false;
@@ -53,7 +78,8 @@ export default {
             LogicalExpression(node) {
                 if (node.operator !== '||' && node.operator !== '??') return;
                 if (!isResultsAccess(node.left)) return;
-                if (!sameObject(node.left.object, node.right)) return;
+                const leftInner = unwrap(node.left);
+                if (!sameObject(leftInner.object, node.right)) return;
                 context.report({ node, messageId: 'envelopeDiscard' });
             },
         };

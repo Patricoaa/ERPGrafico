@@ -41,8 +41,8 @@ export function usePricingRules(filters?: FilterState) {
             const params = new URLSearchParams()
             if (filters?.search) params.append('search', filters.search)
             if (filters?.active !== undefined) params.append('active', filters.active)
-            const response = await api.get('/inventory/pricing-rules/', { params })
-            return response.data.results || response.data
+            const response = await api.get<PricingRule[]>('/inventory/pricing-rules/', { params })
+            return response.data
         },
     })
 
@@ -100,8 +100,8 @@ export function useProductPricingRules(productId: number | null | undefined) {
             : [...PRICING_RULES_QUERY_KEY, 'byProduct', 'noop'],
         queryFn: async (): Promise<PricingRule[]> => {
             if (!productId) return []
-            const response = await api.get(`/inventory/pricing-rules/?product=${productId}`)
-            return response.data.results || response.data
+            const response = await api.get<PricingRule[]>(`/inventory/pricing-rules/?product=${productId}`)
+            return response.data
         },
         enabled: !!productId,
     })
