@@ -6,6 +6,8 @@ import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";
 import boundaries from "eslint-plugin-boundaries";
 import fsdNoApiInComponent from "./eslint-rules/fsd-no-api-in-component.mjs";
+import paginationNoEnvelopeDiscard from "./eslint-rules/pagination-no-envelope-discard.mjs";
+import paginationDatatableNeedsRowcount from "./eslint-rules/pagination-datatable-needs-rowcount.mjs";
 
 const eslintConfig = defineConfig([...nextVitals, ...nextTs, globalIgnores([
   ".next/**",
@@ -136,6 +138,31 @@ const eslintConfig = defineConfig([...nextVitals, ...nextTs, globalIgnores([
   },
   rules: {
     "fsd/no-api-in-component": "warn",
+  },
+},
+// Pagination contract — see docs/20-contracts/pagination-contract.md
+// 1. no-envelope-discard: bans `data.results || data` in api/ and hooks/.
+//    `warn` during migration; bump to `error` when the audit grep in
+//    §6 of the contract reaches 0.
+{
+  files: ["features/*/api/**/*.ts", "features/*/hooks/**/*.ts"],
+  plugins: {
+    pagination: { rules: { "no-envelope-discard": paginationNoEnvelopeDiscard } },
+  },
+  rules: {
+    "pagination/no-envelope-discard": "warn",
+  },
+},
+// 2. datatable-needs-rowcount: any <DataTable manualPagination /> without
+//    rowCount produces a wrong "Mostrando X a Y de Z" footer. This is a
+//    visible bug, so `error` from day one (no migration warmup).
+{
+  files: ["features/**/*.tsx", "components/**/*.tsx", "app/**/*.tsx"],
+  plugins: {
+    pagination: { rules: { "datatable-needs-rowcount": paginationDatatableNeedsRowcount } },
+  },
+  rules: {
+    "pagination/datatable-needs-rowcount": "error",
   },
 },
 // UI component data fetching and formatting restrictions
