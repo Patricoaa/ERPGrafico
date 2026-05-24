@@ -307,6 +307,20 @@
    * CSS-only label-on-border primitive. No JS positioning needed.
    * Used by <LabeledInput> in components/shared.
    */
+  /* TABLE SYSTEM — Shared tokens for all table variants */
+  /* Used by DataTable, FormLineItemsTable, ReportTable, and variant="minimal" */
+  --table-cell-py: 0.75rem;
+  /* py-3 */
+  --table-cell-px: 1rem;
+  /* px-4 */
+  --table-header-h: 2.75rem;
+  /* ~h-11 */
+  --table-row-hover: oklch(var(--muted-raw) / 0.5);
+  --table-header-bg: transparent;
+  --table-footer-bg: oklch(var(--muted-raw) / 0.5);
+  --table-expanded-bg: oklch(var(--muted-raw) / 0.3);
+  --table-row-border: oklch(var(--border-raw) / 0.4);
+
   --notched-pad-x: 0.75rem;
   /* Horizontal padding inside fieldset */
   --notched-pad-top: 0.35rem;
@@ -337,6 +351,28 @@
       background-position: 40rem 0;
     }
   }
+}
+
+/*
+ * TABLE SYSTEM — Shared utility classes
+ * All table variants (DataTable, FormLineItemsTable, ReportTable)
+ * should use these instead of ad-hoc padding/height values.
+ */
+.table-cell {
+  padding: var(--table-cell-py) var(--table-cell-px);
+}
+.table-header {
+  height: var(--table-header-h);
+  padding: var(--table-cell-py) var(--table-cell-px);
+}
+.table-row-hover {
+  transition: background-color 150ms ease;
+}
+.table-row-hover:hover {
+  background-color: var(--table-row-hover);
+}
+.table-footer {
+  background-color: var(--table-footer-bg);
 }
 
 /* Table Input Alignment - Force precision radius (8px) on all table controls */

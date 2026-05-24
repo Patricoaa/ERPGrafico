@@ -19,22 +19,39 @@ Este documento describe las reglas de arquitectura para el ecosistema `DataTable
 
 ## 1. Prop `variant` — Modo de renderizado
 
-El `DataTable` opera en dos modos excluyentes:
+El `DataTable` opera en tres modos excluyentes:
 
 | Valor | Cuándo usar |
 |---|---|
 | `"standalone"` | Tabla autónoma en página propia (ejm: `/inventory/products`). Incluye borde contenedor, header visible, padding externo. |
 | `"embedded"` | Tabla incrustada dentro de un card, modal o panel (ejm: líneas de una orden, historial en `ContactModal`). Sin borde externo; comparte el espacio visual con el contenedor padre. |
+| `"minimal"` | Tabla display-readonly dentro de tabs o paneles de detalle (ejm: variantes de producto, pricing, checkout steps). Sin toolbar, sin paginación. Usa el mismo motor TanStack pero con la mínima UI. |
 
 **Regla:** Siempre declarar `variant` explícitamente. La prop `cardMode` está deprecada y no debe usarse en código nuevo.
 
 ```tsx
 // ✅ Correcto
 <DataTable variant="embedded" ... />
+<DataTable variant="minimal" columns={columns} data={data} />
 
 // ❌ Deprecado
 <DataTable cardMode={true} ... />
 ```
+
+### 1.1 `variant="minimal"` — Comportamiento específico
+
+| Aspecto | Comportamiento |
+|---|---|
+| Toolbar | No se renderiza (aunque se pasen props de toolbar) |
+| Paginación | Oculta por defecto (`hidePagination` default `true`) |
+| Bulk actions | No se renderizan |
+| Row selection | No visible (pero el motor TanStack puede tenerla internamente si se usa `onRowClick`) |
+| Borde | Opcional vía `noBorder` (default: con borde) |
+| Sticky header | No aplica (tabla fluida) |
+| Loading state | Muestra skeleton sin toolbar ni paginación |
+| Empty state | Mismo `EmptyState` que las otras variantes |
+
+Las props `columns`, `data`, `isLoading`, `emptyState`, `noBorder`, `onRowClick`, `renderFooter`, `renderRow` funcionan igual que en los otros modos.
 
 ---
 
@@ -293,52 +310,55 @@ Reemplazar mecánicamente:
 
 ---
 
-## 9. Variante `ExpandableTableRow` — Filas con detalle inline
+## 9. Filas expandibles — `renderSubComponent` vs `ExpandableTableRow` (deprecado)
 
-Algunos módulos requieren mostrar detalle contextual de una fila **dentro de la misma tabla**, sin abrir un modal ni navegar. Para eso existe la primitiva `ExpandableTableRow`.
+DataTable soporta filas expandibles de dos formas:
+
+### 9.1 `renderSubComponent` — Camino preferido (nuevos desarrollos)
+
+DataTable nativo ya incluye un slot `renderSubComponent` que renderiza un panel debajo de la fila cuando se expande (vía chevron en la columna o `onRowClick`). Desde la Fase 1 de centralización, incluye animación framer-motion (`AnimatePresence` + `motion.tr`).
+
+```tsx
+<DataTable
+    columns={columns}
+    data={data}
+    renderSubComponent={createExpandableRowView({
+        lazyLoad: (row) => fetchDetail(row.id),
+        renderDetail: (row, detail) => <DetailPanel data={detail} />,
+    })}
+/>
+```
+
+Ver helper `createExpandableRowView` en `@/lib/view-helpers`.
 
 **Cuándo usar:**
-- La entidad tiene datos de detalle que el usuario necesita con frecuencia pero no justifican una página propia
-- El volumen de datos es alto y abrir un modal por cada fila sería costoso
-- El contenido expandible incluye listas secundarias (historial de documentos, ledger de créditos)
+- Nuevos desarrollos que requieran detalle inline
+- El detalle se carga bajo demanda (lazy fetch)
+- Se quiere mantener la tabla como DataTable estándar sin custom views
 
-**Cuándo NO usar:**
-- Si el detalle requiere edición → usar modal (`BaseModal`)
-- Si el detalle es la vista principal de la entidad → usar navegación a página de detalle
-- Si la tabla tiene vista alternativa (`card`/`grid`) — `ExpandableTableRow` es solo para vista `list`
+### 9.2 `ExpandableTableRow` — 🔴 Deprecado
 
-**Implementaciones canónicas:**
-- `ExpandableContactRow` en `PortfolioTable` (créditos vigentes)
-- `ExpandableBlacklistRow` en `BlacklistView` (incobrables/bloqueados)
+> **DEPRECADO:** Usa `renderSubComponent` de DataTable o el helper `createExpandableRowView()` para nuevos consumidores.
+> `ExpandableTableRow` se eliminará en una versión futura.
 
-**API:**
+Existente en:
+- `ExpandableContactRow` en `PortfolioTable` (créditos vigentes) — pendiente de migración
+- `ExpandableBlacklistRow` en `BlacklistView` (incobrables/bloqueados) — pendiente de migración
+
+API (solo referencia, no usar en código nuevo):
 
 ```tsx
 import { ExpandableTableRow } from "@/components/shared"
 
 <ExpandableTableRow
-    row={row}                          // Row<TData> de TanStack
-    onExpand={(isExpanding) => {...}}  // Lazy fetch en primera apertura
-    cellClassName="py-3 px-4"          // Clase para cada TableCell de datos
-    panelClassName="px-8 py-4 bg-background" // Clase para el div wrapper del panel
+    row={row}
+    onExpand={(isExpanding) => {...}}
+    cellClassName="py-3 px-4"
+    panelClassName="px-8 py-4 bg-background"
 >
-    {/* Contenido del panel expandido — renderizado SOLO cuando está abierto */}
     {loadingDetail ? <TableSkeleton rows={2} /> : <MyDetailPanel data={detail} />}
 </ExpandableTableRow>
 ```
-
-La primitiva gestiona internamente:
-- Estado `expanded` (uncontrolled)
-- Renderizado del chevron (Cell adicional al final de la fila)
-- `AnimatePresence` + `motion.div` con `height: 0 → auto`
-- `data-state="selected"` en el `TableRow` principal
-
-El consumidor gestiona:
-- Fetch lazy de datos de detalle mediante `onExpand(isExpanding: boolean)`
-- Estado local del detalle (`useState<MyDetail[] | null>(null)`)
-- Contenido del panel (dominio específico)
-
-**Regla:** La columna de chevron es **invisible en la definición de columnas** de TanStack. `ExpandableTableRow` la agrega automáticamente. El `colSpan` del panel se calcula como `getVisibleCells().length + 1`. Si se usa `renderCustomView` con `ExpandableTableRow`, añadir una columna vacía `<th />` al header manual para que el layout sea consistente.
 
 ---
 
@@ -356,4 +376,6 @@ Cada PR que toque `DataTable` o sus consumidores debe verificar:
 - [ ] `renderCustomView` usa `createDomainCardView` / `createEntityCardView` cuando aplique — no inline JSX
 - [ ] Default de vista definido en `ENTITY_REGISTRY.viewPolicy.defaultView`
 - [ ] Card views usan `EntityCard` o `DomainCard` — **no inline JSX**
-- [ ] Expandable rows usan `ExpandableTableRow` — **no** `AnimatePresence`/`motion.div` inline
+- [ ] `variant="minimal"` usado en tablas display dentro de tabs de producto/config (no en listados CRUD)
+- [ ] `variant="minimal"` no recibe props de toolbar, paginación ni bulk actions
+- [ ] Expandable rows nuevos usan `renderSubComponent` o `createExpandableRowView` — **no** `ExpandableTableRow`
