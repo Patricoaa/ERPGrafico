@@ -43,7 +43,7 @@ export function useDrafts(options: UseDraftsOptions = {}) {
         setIsLoading(true)
         try {
             const data = await posApi.getDrafts({ pos_session_id: currentSession.id })
-            const list = (data as any).results || data
+            const list = Array.isArray(data) ? data : ((data as { results?: DraftCart[] })?.results ?? [])
             setDrafts(list)
 
             // Sync currentDraftId: if it's set but not in the list, it's stale
@@ -123,7 +123,7 @@ export function useDrafts(options: UseDraftsOptions = {}) {
 
             // Refresh drafts list without full loading indicator
             posApi.getDrafts({ pos_session_id: currentSession?.id }).then(data => {
-                setDrafts((data as any).results || data)
+                setDrafts(Array.isArray(data) ? data : ((data as { results?: DraftCart[] })?.results ?? []))
             })
 
             return res
