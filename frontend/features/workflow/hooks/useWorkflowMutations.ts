@@ -4,7 +4,7 @@ import { markLocalMutation } from '@/lib/markLocalMutation'
 import * as workflowApi from '../api/workflowApi'
 import type { Task } from '@/types/entities'
 import { WORKFLOW_KEYS } from './queryKeys'
-import { showApiError } from '@/lib/api-error'
+import { showApiError } from '@/lib/errors'
 
 export function useCompleteTask() {
   const queryClient = useQueryClient()
