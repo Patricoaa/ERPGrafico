@@ -96,7 +96,7 @@ export function useUnreconciledPaymentsQuery(treasuryAccountId: number, params: 
                 amount_max: params.amount_max,
                 direction: params.type,
             })
-            const results = (paymentsData as any).results ?? paymentsData
+            const results = Array.isArray(paymentsData) ? paymentsData : ((paymentsData as { results?: unknown[] })?.results ?? [])
             const payments = Array.isArray(results) ? results.map((p: any) => {
                 let contactName = p.partner_name || 'Particular'
                 if (p.movement_type === 'TRANSFER') {

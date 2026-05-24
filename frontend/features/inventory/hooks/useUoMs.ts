@@ -80,7 +80,7 @@ export function useUoMs(filters?: FilterState) {
                 params.append('category', String(categoryFilter))
             }
             const response = await api.get('/inventory/uoms/', { params })
-            return response.data.results || response.data
+            return response.data
         },
         staleTime: 60 * 60 * 1000, // 1 hora — datos estáticos
     })
@@ -88,8 +88,8 @@ export function useUoMs(filters?: FilterState) {
     const { data: categories, isLoading: isCategoriesLoading } = useQuery({
         queryKey: UOM_CATEGORIES_KEYS.all,
         queryFn: async (): Promise<UoMCategory[]> => {
-            const response = await api.get('/inventory/uom-categories/')
-            return response.data.results || response.data
+            const response = await api.get<UoMCategory[]>('/inventory/uom-categories/')
+            return response.data
         },
         staleTime: 60 * 60 * 1000, // 1 hora — datos estáticos
     })

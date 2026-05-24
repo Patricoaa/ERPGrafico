@@ -21,10 +21,7 @@ export const ordersApi = {
     getSaleOrder: (id: string | number) =>
         api.get(`/sales/orders/${id}/`).then(r => r.data),
     searchSaleOrders: (params: { search?: string; limit?: string }) =>
-        api.get('/sales/orders/', { params }).then(r => {
-            const data = r.data
-            return data.results || data
-        }),
+        api.get('/sales/orders/', { params }).then(r => r.data),
     annulSaleOrder: (id: number) =>
         api.post(`/sales/orders/${id}/annul/`, { force: false }).then(r => r.data),
     deleteSaleOrder: (id: number) =>
@@ -64,8 +61,5 @@ export const ordersApi = {
 
     // ── Inventory ──
     getWarehouses: () =>
-        api.get('/inventory/warehouses/').then(r => {
-            const data = r.data
-            return data.results || data
-        }),
+        api.get('/inventory/warehouses/').then(r => r.data),
 }

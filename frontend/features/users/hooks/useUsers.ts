@@ -8,8 +8,7 @@ export function useUsers() {
     const { data: users, isLoading, refetch } = useQuery({
         queryKey: USERS_QUERY_KEY,
         queryFn: async (): Promise<AppUser[]> => {
-            const data = await usersApi.getUsers()
-            return data.results || data
+            return await usersApi.getUsers()
         },
         staleTime: 10 * 60 * 1000,
     })

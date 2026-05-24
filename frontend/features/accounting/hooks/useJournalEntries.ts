@@ -56,8 +56,7 @@ export function useJournalEntries(filters?: FilterState) {
             if (filters?.search) params['search'] = filters.search
             if (filters?.date_from) params['date_after'] = filters.date_from
             if (filters?.date_to) params['date_before'] = filters.date_to
-            const data = await accountingApi.getEntries(params)
-            return data.results || data
+            return await accountingApi.getEntries(params)
         },
         staleTime: 2 * 60 * 1000,
     })

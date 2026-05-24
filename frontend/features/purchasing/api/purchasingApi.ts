@@ -73,8 +73,8 @@ export const purchasingApi = {
         if (filters?.search) params.append('search', filters.search)
         if (filters?.date_from) params.append('date_after', filters.date_from)
         if (filters?.date_to) params.append('date_before', filters.date_to)
-        const res = await api.get('/purchasing/orders/', { params })
-        return res.data.results || res.data
+        const res = await api.get<PurchaseOrderAPI[]>('/purchasing/orders/', { params })
+        return res.data
     },
 
     getOrder: async (id: number): Promise<PurchaseOrderAPI> => {
@@ -113,13 +113,13 @@ export const purchasingApi = {
     // ========== Billing ==========
 
     getNotes: async (): Promise<Invoice[]> => {
-        const response = await api.get('/billing/invoices/', {
+        const response = await api.get<Invoice[]>('/billing/invoices/', {
             params: {
                 dte_type__in: 'NOTA_CREDITO,NOTA_DEBITO',
                 purchase_order__isnull: false
             }
         })
-        return response.data.results || response.data
+        return response.data
     },
 
     getInvoice: async (id: number): Promise<Invoice> => {
@@ -136,18 +136,18 @@ export const purchasingApi = {
     // ========== Inventory ==========
 
     getPurchasableProducts: async (): Promise<Record<string, unknown>[]> => {
-        const res = await api.get('/inventory/products/?can_be_purchased=true')
-        return res.data.results || res.data
+        const res = await api.get<Record<string, unknown>[]>('/inventory/products/?can_be_purchased=true')
+        return res.data
     },
 
     getUoms: async (): Promise<Record<string, unknown>[]> => {
-        const res = await api.get('/inventory/uoms/')
-        return res.data.results || res.data
+        const res = await api.get<Record<string, unknown>[]>('/inventory/uoms/')
+        return res.data
     },
 
     getWarehouses: async (): Promise<Record<string, unknown>[]> => {
-        const res = await api.get('/inventory/warehouses/')
-        return res.data.results || res.data
+        const res = await api.get<Record<string, unknown>[]>('/inventory/warehouses/')
+        return res.data
     },
 
     getWarehouse: async (id: string): Promise<Record<string, unknown>> => {
@@ -158,7 +158,7 @@ export const purchasingApi = {
     // ========== Contacts ==========
 
     getDefaultSupplier: async (): Promise<Record<string, unknown>[]> => {
-        const res = await api.get('/contacts/?is_default_vendor=true')
-        return res.data.results || res.data
+        const res = await api.get<Record<string, unknown>[]>('/contacts/?is_default_vendor=true')
+        return res.data
     },
 }

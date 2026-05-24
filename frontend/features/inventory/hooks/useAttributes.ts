@@ -35,12 +35,12 @@ export function useAttributes({ filters }: { filters?: AttributeFilters } = {}) 
         queryKey: [...ATTRIBUTES_QUERY_KEY, filters],
         queryFn: async (): Promise<Attribute[]> => {
             const [attrRes, valRes] = await Promise.all([
-                api.get("/inventory/attributes/", { params: filters }),
-                api.get("/inventory/attribute-values/")
+                api.get<Attribute[]>("/inventory/attributes/", { params: filters }),
+                api.get<AttributeValue[]>("/inventory/attribute-values/")
             ])
 
-            const attrs = attrRes.data.results || attrRes.data
-            const vals = valRes.data.results || valRes.data
+            const attrs = attrRes.data
+            const vals = valRes.data
 
             return attrs.map((attr: Attribute) => ({
                 ...attr,

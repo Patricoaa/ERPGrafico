@@ -34,8 +34,8 @@ export function useWarehouses() {
     const { data: warehouses, isLoading, refetch } = useQuery({
         queryKey: WAREHOUSES_KEYS.list(),
         queryFn: async (): Promise<Warehouse[]> => {
-            const response = await api.get('/inventory/warehouses/')
-            return response.data.results || response.data
+            const response = await api.get<Warehouse[]>('/inventory/warehouses/')
+            return response.data
         },
         staleTime: 15 * 60 * 1000, // 15 min — datos de configuración
     })

@@ -3,10 +3,7 @@ import api from '@/lib/api'
 export const productionApi = {
     // ── Work Orders ──
     getWorkOrders: (params?: Record<string, unknown>) =>
-        api.get('/production/orders/', { params }).then(r => {
-            const data = r.data
-            return data.results || data
-        }),
+        api.get('/production/orders/', { params }).then(r => r.data),
     getWorkOrder: (id: number) =>
         api.get(`/production/orders/${id}/`).then(r => r.data),
     createWorkOrder: (formData: FormData, headers?: Record<string, string>) =>
@@ -48,14 +45,10 @@ export const productionApi = {
 
     // ── BOMs ──
     getBOMs: (params?: Record<string, unknown>) =>
-        api.get('/production/boms/', { params }).then(r => {
-            const data = r.data
-            return data.results || data
-        }),
+        api.get('/production/boms/', { params }).then(r => r.data),
     getActiveBom: (productId: string | number) =>
         api.get('/production/boms/', { params: { product_id: productId } }).then(r => {
-            const data = r.data
-            const list = data.results || data
+            const list = r.data
             return Array.isArray(list) ? list.find((b: { active?: boolean }) => b.active) || null : null
         }),
     createBom: (payload: Record<string, unknown>) =>
@@ -69,19 +62,13 @@ export const productionApi = {
 
     // ── Inventory (cross-feature) ──
     getUoms: () =>
-        api.get('/inventory/uoms/').then(r => {
-            const data = r.data
-            return data.results || data
-        }),
+        api.get('/inventory/uoms/').then(r => r.data),
     getProduct: (id: string | number) =>
         api.get(`/inventory/products/${id}/`).then(r => r.data),
     getProductVariants: (parentId: string | number) =>
         api.get('/inventory/products/', {
             params: { parent_template: parentId, show_technical_variants: true }
-        }).then(r => {
-            const data = r.data
-            return data.results || data
-        }),
+        }).then(r => r.data),
 
     // ── Accounting / Core (cross-feature) ──
     getAccountingSettings: () =>

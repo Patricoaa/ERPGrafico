@@ -17,8 +17,8 @@ export const salesApi = {
         if (filters?.date_before) params.append('date_before', filters.date_before)
         if (filters?.pos_session) params.append('pos_session', String(filters.pos_session))
 
-        const { data } = await api.get<{ results: SaleOrder[] }>('/sales/orders/', { params })
-        return data.results || data
+        const { data } = await api.get<SaleOrder[]>('/sales/orders/', { params })
+        return data
     },
 
     /**
@@ -108,7 +108,7 @@ export const salesApi = {
         */
         // I will replicate this.
 
-        const { data } = await api.get<{ results: Invoice[] }>('/billing/invoices/', {
+        const { data } = await api.get<Invoice[]>('/billing/invoices/', {
             params: {
                 dte_type__in: 'NOTA_CREDITO,NOTA_DEBITO',
                 sale_order__isnull: false,
@@ -116,7 +116,7 @@ export const salesApi = {
             }
         })
 
-        const results = data.results || data
+        const results = data
         // Client-side filtering was also done in original code:
         /*
              const salesNotes = results.filter((inv: Invoice) =>

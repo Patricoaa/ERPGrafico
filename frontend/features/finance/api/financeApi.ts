@@ -63,10 +63,7 @@ export const financeApi = {
 
     // ── Invoices (billing) ──
     getPendingInvoices: (params?: Record<string, unknown>) =>
-        api.get('/billing/invoices/', { params }).then(r => {
-            const d = r.data
-            return (d as any).results ?? d
-        }),
+        api.get('/billing/invoices/', { params }).then(r => r.data),
     getBillingInvoices: (params?: Record<string, unknown>) =>
         api.get('/billing/invoices/', { params }).then(r => r.data),
 
