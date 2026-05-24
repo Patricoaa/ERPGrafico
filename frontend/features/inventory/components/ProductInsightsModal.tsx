@@ -6,14 +6,7 @@ import { SkeletonShell } from "@/components/shared"
 import { useState, useEffect } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { BaseModal } from "@/components/shared/BaseModal"
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table"
+import { DataTable } from "@/components/shared"
 import {
     History,
     TrendingUp,
@@ -33,6 +26,7 @@ import { StatusBadge } from "@/components/shared/StatusBadge"
 import { FormTabs, FormTabsContent } from "@/components/shared"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 import { WorkOrderWizard } from "@/features/production"
+import type { ColumnDef } from "@tanstack/react-table"
 import {
     ResponsiveContainer,
     XAxis,
@@ -319,153 +313,28 @@ export function ProductInsightsModal({ productId, productName, open, onOpenChang
                                 </div>
 
                                 <div className="rounded-md border">
-                                    <Table>
-                                        <TableHeader>
-                                            <TableRow className="bg-muted/50">
-                                                <TableHead>Fecha</TableHead>
-                                                <TableHead>Usuario</TableHead>
-                                                <TableHead>Precio de Venta</TableHead>
-                                                <TableHead>Costo Ponderado</TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {data.price_history.map((entry, i) => (
-                                                <TableRow key={i}>
-                                                    <TableCell className="text-xs">
-                                                        {format(new Date(entry.date), "dd/MM/yyyy HH:mm", { locale: es })}
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded-[0.25rem] border border-border bg-muted/50 text-muted-foreground whitespace-nowrap">
-                                                            {entry.user}
-                                                        </span>
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <DataCell.Currency value={entry.sale_price} className="text-left font-bold" />
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <DataCell.Currency value={entry.cost_price} className="text-left text-muted-foreground" />
-                                                    </TableCell>
-                                                </TableRow>
-                                            ))}
-                                        </TableBody>
-                                    </Table>
+                                    <PriceHistoryTable entries={data.price_history} />
                                 </div>
                             </FormTabsContent>
 
                             {/* KARDEX TAB */}
                             <FormTabsContent value="kardex" className="mt-0">
                                 <div className="rounded-md border">
-                                    <Table>
-                                        <TableHeader>
-                                            <TableRow className="bg-muted/50">
-                                                <TableHead>Fecha</TableHead>
-                                                <TableHead>N°</TableHead>
-                                                <TableHead>Tipo</TableHead>
-                                                <TableHead>Cantidad</TableHead>
-                                                <TableHead>P. Unitario</TableHead>
-                                                <TableHead>Total</TableHead>
-                                                <TableHead>Bodega</TableHead>
-                                                <TableHead className="text-right">Acciones</TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {data.kardex.map((move, i) => (
-                                                <TableRow key={i}>
-                                                    <TableCell className="text-xs">
-                                                        {format(new Date(move.date), "dd/MM/yyyy")}
-                                                    </TableCell>
-                                                    <TableCell className="font-mono text-[10px] font-bold">
-                                                        {move.display_id}
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <StatusBadge
-                                                            status={move.type === 'IN' ? 'SUCCESS' : move.type === 'OUT' ? 'DESTRUCTIVE' : 'WARNING'}
-                                                            label={move.type === 'IN' ? 'Entrada' : move.type === 'OUT' ? 'Salida' : 'Ajuste'}
-                                                        />
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <DataCell.Number value={move.quantity} className="text-left" suffix={move.uom} decimals={2} />
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <DataCell.Currency value={move.unit_price || 0} className="text-left" />
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <DataCell.Currency value={move.total_price || 0} className="text-left" />
-                                                    </TableCell>
-                                                    <TableCell className="text-xs">{move.warehouse}</TableCell>
-                                                    <TableCell className="text-right">
-                                                        <DataCell.ActionGroup>
-                                                            <DataCell.Action
-                                                                action="view"
-                                                                onClick={() => {
-                                                                    if (move.related_type === 'work_order') {
-                                                                        openWorkOrder(move.related_id)
-                                                                    } else {
-                                                                        openTransaction(move.related_id, move.related_type)
-                                                                    }
-                                                                }}
-                                                            />
-                                                        </DataCell.ActionGroup>
-                                                    </TableCell>
-                                                </TableRow>
-                                            ))}
-                                            {data.kardex.length === 0 && (
-                                                <TableRow>
-                                                    <TableCell colSpan={8} className="text-center py-10 text-muted-foreground italic">
-                                                        Sin movimientos registrados
-                                                    </TableCell>
-                                                </TableRow>
-                                            )}
-                                        </TableBody>
-                                    </Table>
+                                    <KardexTable
+                                        entries={data.kardex}
+                                        onOpenWorkOrder={openWorkOrder}
+                                        onOpenTransaction={openTransaction}
+                                    />
                                 </div>
                             </FormTabsContent>
 
                             {/* PRODUCTION TAB */}
                             <FormTabsContent value="production" className="mt-0">
                                 <div className="rounded-md border">
-                                    <Table>
-                                        <TableHeader>
-                                            <TableRow className="bg-muted/50">
-                                                <TableHead>Fecha</TableHead>
-                                                <TableHead>N° OT</TableHead>
-                                                <TableHead>Cantidad Consumida</TableHead>
-                                                <TableHead className="text-right">Acciones</TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {data.production_usage.map((usage, i) => (
-                                                <TableRow key={i}>
-                                                    <TableCell className="text-xs">
-                                                        {format(new Date(usage.date), "dd/MM/yyyy")}
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded-[0.25rem] border border-border bg-muted/50 text-muted-foreground whitespace-nowrap">
-                                                            {formatEntityDisplay('production.workorder', { number: usage.ot_number })}
-                                                        </span>
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <DataCell.Number value={usage.quantity} className="text-left" decimals={2} />
-                                                    </TableCell>
-                                                    <TableCell className="text-right">
-                                                        <DataCell.ActionGroup>
-                                                            <DataCell.Action
-                                                                action="view"
-                                                                onClick={() => openWorkOrder(usage.ot_id)}
-                                                            />
-                                                        </DataCell.ActionGroup>
-                                                    </TableCell>
-                                                </TableRow>
-                                            ))}
-                                            {data.production_usage.length === 0 && (
-                                                <TableRow>
-                                                    <TableCell colSpan={4} className="text-center py-10 text-muted-foreground italic">
-                                                        Este producto no ha sido utilizado como material en producción.
-                                                    </TableCell>
-                                                </TableRow>
-                                            )}
-                                        </TableBody>
-                                    </Table>
+                                    <ProductionUsageTable
+                                        entries={data.production_usage}
+                                        onOpenWorkOrder={openWorkOrder}
+                                    />
                                 </div>
                             </FormTabsContent>
                         </div>
@@ -491,5 +360,199 @@ export function ProductInsightsModal({ productId, productName, open, onOpenChang
                 />
             )}
         </BaseModal>
+    )
+}
+
+function PriceHistoryTable({ entries }: { entries: PriceHistoryEntry[] }) {
+    const columns: ColumnDef<PriceHistoryEntry>[] = [
+        {
+            header: "Fecha",
+            cell: ({ row }) => (
+                <span className="text-xs">{format(new Date(row.original.date), "dd/MM/yyyy HH:mm", { locale: es })}</span>
+            ),
+        },
+        {
+            header: "Usuario",
+            cell: ({ row }) => (
+                <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded-[0.25rem] border border-border bg-muted/50 text-muted-foreground whitespace-nowrap">
+                    {row.original.user}
+                </span>
+            ),
+        },
+        {
+            header: "Precio de Venta",
+            cell: ({ row }) => (
+                <DataCell.Currency value={row.original.sale_price} className="text-left font-bold" />
+            ),
+        },
+        {
+            header: "Costo Ponderado",
+            cell: ({ row }) => (
+                <DataCell.Currency value={row.original.cost_price} className="text-left text-muted-foreground" />
+            ),
+        },
+    ]
+
+    return (
+        <DataTable
+            columns={columns}
+            data={entries}
+            variant="embedded"
+            hidePagination
+            emptyState={{
+                context: "search",
+                title: "Sin historial de precios",
+                description: "No hay cambios de precio registrados para este producto.",
+            }}
+        />
+    )
+}
+
+function KardexTable({ entries, onOpenWorkOrder, onOpenTransaction }: {
+    entries: KardexEntry[]
+    onOpenWorkOrder: (id: number) => void
+    onOpenTransaction: (id: number | string, type: string) => void
+}) {
+    const columns: ColumnDef<KardexEntry>[] = [
+        {
+            header: "Fecha",
+            cell: ({ row }) => (
+                <span className="text-xs">{format(new Date(row.original.date), "dd/MM/yyyy")}</span>
+            ),
+        },
+        {
+            header: "N°",
+            cell: ({ row }) => (
+                <span className="font-mono text-[10px] font-bold">{row.original.display_id}</span>
+            ),
+        },
+        {
+            header: "Tipo",
+            cell: ({ row }) => {
+                const m = row.original
+                return (
+                    <StatusBadge
+                        status={m.type === 'IN' ? 'SUCCESS' : m.type === 'OUT' ? 'DESTRUCTIVE' : 'WARNING'}
+                        label={m.type === 'IN' ? 'Entrada' : m.type === 'OUT' ? 'Salida' : 'Ajuste'}
+                    />
+                )
+            },
+        },
+        {
+            header: "Cantidad",
+            cell: ({ row }) => {
+                const m = row.original
+                return <DataCell.Number value={m.quantity} className="text-left" suffix={m.uom} decimals={2} />
+            },
+        },
+        {
+            header: "P. Unitario",
+            cell: ({ row }) => (
+                <DataCell.Currency value={row.original.unit_price || 0} className="text-left" />
+            ),
+        },
+        {
+            header: "Total",
+            cell: ({ row }) => (
+                <DataCell.Currency value={row.original.total_price || 0} className="text-left" />
+            ),
+        },
+        {
+            header: "Bodega",
+            cell: ({ row }) => (
+                <span className="text-xs">{row.original.warehouse}</span>
+            ),
+        },
+        {
+            header: "Acciones",
+            cell: ({ row }) => {
+                const m = row.original
+                return (
+                    <div className="text-right">
+                        <DataCell.ActionGroup>
+                            <DataCell.Action
+                                action="view"
+                                onClick={() => {
+                                    if (m.related_type === 'work_order') {
+                                        onOpenWorkOrder(m.related_id)
+                                    } else {
+                                        onOpenTransaction(m.related_id, m.related_type)
+                                    }
+                                }}
+                            />
+                        </DataCell.ActionGroup>
+                    </div>
+                )
+            },
+        },
+    ]
+
+    return (
+        <DataTable
+            columns={columns}
+            data={entries}
+            variant="embedded"
+            hidePagination
+            emptyState={{
+                context: "search",
+                title: "Sin movimientos",
+                description: "Sin movimientos registrados para este producto.",
+            }}
+        />
+    )
+}
+
+function ProductionUsageTable({ entries, onOpenWorkOrder }: {
+    entries: ProductionUsage[]
+    onOpenWorkOrder: (id: number) => void
+}) {
+    const columns: ColumnDef<ProductionUsage>[] = [
+        {
+            header: "Fecha",
+            cell: ({ row }) => (
+                <span className="text-xs">{format(new Date(row.original.date), "dd/MM/yyyy")}</span>
+            ),
+        },
+        {
+            header: "N° OT",
+            cell: ({ row }) => (
+                <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded-[0.25rem] border border-border bg-muted/50 text-muted-foreground whitespace-nowrap">
+                    {formatEntityDisplay('production.workorder', { number: row.original.ot_number })}
+                </span>
+            ),
+        },
+        {
+            header: "Cantidad Consumida",
+            cell: ({ row }) => (
+                <DataCell.Number value={row.original.quantity} className="text-left" decimals={2} />
+            ),
+        },
+        {
+            header: "Acciones",
+            cell: ({ row }) => (
+                <div className="text-right">
+                    <DataCell.ActionGroup>
+                        <DataCell.Action
+                            action="view"
+                            onClick={() => onOpenWorkOrder(row.original.ot_id)}
+                        />
+                    </DataCell.ActionGroup>
+                </div>
+            ),
+        },
+    ]
+
+    return (
+        <DataTable
+            columns={columns}
+            data={entries}
+            variant="embedded"
+            hidePagination
+            emptyState={{
+                context: "search",
+                title: "Sin uso en producción",
+                description: "Este producto no ha sido utilizado como material en producción.",
+            }}
+        />
     )
 }

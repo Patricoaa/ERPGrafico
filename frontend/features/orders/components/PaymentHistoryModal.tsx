@@ -1,19 +1,12 @@
 "use client"
 import { formatCurrency } from "@/lib/money"
 import { BaseModal } from "@/components/shared/BaseModal"
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table"
-import { Chip } from "@/components/shared"
+import { DataTable, Chip } from "@/components/shared"
 import { formatPlainDate } from "@/lib/utils"
-import { Landmark, Calendar, User, Hash, FileText } from "lucide-react"
+import { Landmark, User, Hash, FileText } from "lucide-react"
 import { formatEntityDisplay } from "@/lib/entity-registry"
 import type { TransactionData } from "@/types/transactions"
+import type { ColumnDef } from "@tanstack/react-table"
 
 interface Payment {
     id: number
@@ -40,6 +33,60 @@ export function PaymentHistoryModal({
 }: PaymentHistoryModalProps) {
     const payments = (order as any).serialized_payments || (order as any).related_documents?.payments || []
 
+    const columns: ColumnDef<Payment>[] = [
+        {
+            header: "Fecha",
+            cell: ({ row }) => (
+                <div className="flex flex-col gap-0.5">
+                    <span className="font-bold">{formatPlainDate(row.original.date)}</span>
+                    {row.original.created_by_name && (
+                        <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                            <User className="h-3 w-3" /> {row.original.created_by_name}
+                        </span>
+                    )}
+                </div>
+            ),
+        },
+        {
+            header: "Método de Pago",
+            cell: ({ row }) => (
+                <Chip size="xs" intent="primary">{row.original.payment_method_display || row.original.payment_method}</Chip>
+            ),
+        },
+        {
+            header: "Referencia / N° Op",
+            cell: ({ row }) => {
+                const p = row.original
+                return (
+                    <div className="flex flex-col gap-1">
+                        {p.reference && (
+                            <span className="text-xs font-medium flex items-center gap-1">
+                                <FileText className="h-3 w-3 text-muted-foreground" /> {p.reference}
+                            </span>
+                        )}
+                        {p.transaction_number && (
+                            <span className="text-xs font-black text-success flex items-center gap-1">
+                                <Hash className="h-3 w-3" /> {p.transaction_number}
+                            </span>
+                        )}
+                        {!p.reference && !p.transaction_number && (
+                            <span className="text-[10px] text-muted-foreground italic">Sin referencias</span>
+                        )}
+                    </div>
+                )
+            },
+        },
+        {
+            header: "Monto",
+            cell: ({ row }) => (
+                <span className="font-black text-lg tracking-tighter text-primary">
+                    {formatCurrency(row.original.amount)}
+                </span>
+            ),
+            meta: { align: "right" } as const,
+        },
+    ]
+
     return (
         <BaseModal
             open={open}
@@ -52,72 +99,28 @@ export function PaymentHistoryModal({
                 </div>
             }
         >
-            <div className="flex flex-col">
-                {payments.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-16 text-muted-foreground bg-muted/20 rounded-lg border-2 border-dashed mt-4">
-                        <Landmark className="h-16 w-16 mb-4 opacity-10" />
-                        <p className="font-medium text-lg">No se han registrado pagos aún.</p>
-                    </div>
-                ) : (
-                    <div className="mt-4 rounded-lg border shadow-sm overflow-hidden">
-                        <Table>
-                            <TableHeader className="bg-muted/50">
-                                <TableRow>
-                                    <TableHead className="text-[11px] font-black uppercase tracking-wider">Fecha</TableHead>
-                                    <TableHead className="text-[11px] font-black uppercase tracking-wider">Método de Pago</TableHead>
-                                    <TableHead className="text-[11px] font-black uppercase tracking-wider">Referencia / N° Op</TableHead>
-                                    <TableHead className="text-right text-[11px] font-black uppercase tracking-wider">Monto</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {payments.map((payment: Payment) => (
-                                    <TableRow key={payment.id} className="hover:bg-muted/30 transition-colors">
-                                        <TableCell>
-                                            <div className="flex flex-col gap-0.5">
-                                                <span className="font-bold">{formatPlainDate(payment.date)}</span>
-                                                {payment.created_by_name && (
-                                                    <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-                                                        <User className="h-3 w-3" /> {payment.created_by_name}
-                                                    </span>
-                                                )}
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>
-                                            <Chip size="xs" intent="primary">{payment.payment_method_display || payment.payment_method}</Chip>
-                                        </TableCell>
-                                        <TableCell>
-                                            <div className="flex flex-col gap-1">
-                                                {payment.reference && (
-                                                    <span className="text-xs font-medium flex items-center gap-1">
-                                                        <FileText className="h-3 w-3 text-muted-foreground" /> {payment.reference}
-                                                    </span>
-                                                )}
-                                                {payment.transaction_number && (
-                                                    <span className="text-xs font-black text-success flex items-center gap-1">
-                                                        <Hash className="h-3 w-3" /> {payment.transaction_number}
-                                                    </span>
-                                                )}
-                                                {!payment.reference && !payment.transaction_number && (
-                                                    <span className="text-[10px] text-muted-foreground italic">Sin referencias</span>
-                                                )}
-                                            </div>
-                                        </TableCell>
-                                        <TableCell className="text-right font-black text-lg tracking-tighter text-primary">
-                                            {formatCurrency(payment.amount)}
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
+            <div className="flex flex-col mt-4">
+                <DataTable
+                    columns={columns}
+                    data={payments}
+                    variant="embedded"
+                    hidePagination
+                    emptyState={{
+                        icon: Landmark,
+                        title: "No se han registrado pagos aún.",
+                        description: "Los pagos asociados a esta orden aparecerán aquí.",
+                        context: "search",
+                    }}
+                />
+
+                {payments.length > 0 && (
+                    <div className="mt-4 p-4 rounded-lg bg-primary/5 flex justify-between items-center border border-primary/10">
+                        <span className="text-sm font-medium">Total Pagado:</span>
+                        <span className="text-lg font-bold text-primary">
+                            {formatCurrency(payments.reduce((acc: number, p: Payment) => acc + parseFloat(String(p.amount)), 0))}
+                        </span>
                     </div>
                 )}
-
-                <div className="mt-4 p-4 rounded-lg bg-primary/5 flex justify-between items-center border border-primary/10">
-                    <span className="text-sm font-medium">Total Pagado:</span>
-                    <span className="text-lg font-bold text-primary">
-                        {formatCurrency(payments.reduce((acc: number, p: Payment) => acc + parseFloat(String(p.amount)), 0))}
-                    </span>
-                </div>
             </div>
         </BaseModal>
     )

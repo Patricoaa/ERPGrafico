@@ -6,14 +6,7 @@ import { SkeletonShell } from "@/components/shared"
 
 import { useState, useMemo } from "react"
 import { BaseModal } from "@/components/shared/BaseModal"
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table"
+import { DataTable } from "@/components/shared"
 import {
     History,
     FileText,
@@ -26,6 +19,7 @@ import { es } from "date-fns/locale"
 import { DataCell } from '@/components/shared'
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { FormTabs, FormTabsContent } from "@/components/shared"
+import type { ColumnDef } from "@tanstack/react-table"
 import {
     ResponsiveContainer,
     BarChart,
@@ -236,141 +230,30 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                                 {/* ORDERS TAB */}
                                 <FormTabsContent value="orders" className="mt-0">
                                     <div className="rounded-md border shadow-sm overflow-hidden bg-card">
-                                        <Table>
-                                            <TableHeader>
-                                                <TableRow className="bg-muted/30 hover:bg-muted/30 border-b">
-                                                    <TableHead className="text-[10px] font-black uppercase tracking-wider py-4">Documento</TableHead>
-                                                    <TableHead className="text-[10px] font-black uppercase tracking-wider py-4">Fecha</TableHead>
-                                                    <TableHead className="text-[10px] font-black uppercase tracking-wider py-4 text-center">Estado</TableHead>
-                                                    <TableHead className="text-right text-[10px] font-black uppercase tracking-wider py-4">Monto Total</TableHead>
-                                                    <TableHead className="text-center text-[10px] font-black uppercase tracking-wider py-4">Acciones</TableHead>
-                                                </TableRow>
-                                            </TableHeader>
-                                            <TableBody>
-                                                {data.orders.map((order) => (
-                                                    <TableRow key={order.id} className="hover:bg-primary/5 transition-colors group">
-                                                        <TableCell>
-                                                            <span className="font-black text-sm text-primary">{order.display_id}</span>
-                                                        </TableCell>
-                                                        <TableCell className="text-xs font-medium">
-                                                            {formatPlainDate(order.date)}
-                                                        </TableCell>
-                                                        <TableCell className="text-center">
-                                                            <div className="flex justify-center">
-                                                                <StatusBadge
-                                                                    status={order.status === 'PAID' || order.status === 'RECEIVED' ? 'SUCCESS' : 'NEUTRAL'}
-                                                                    label={translateStatus(order.status)}
-                                                                />
-                                                            </div>
-                                                        </TableCell>
-                                                        <TableCell>
-                                                            <DataCell.Currency value={order.total} className="text-right font-black" />
-                                                        </TableCell>
-                                                        <TableCell className="text-center">
-                                                            <DataCell.ActionGroup>
-                                                                <DataCell.Action
-                                                                    action="hub"
-                                                                    title="Gestionar OCS"
-                                                                    onClick={() => openHub({
-                                                                        orderId: order.id,
-                                                                        type: 'purchase',
-                                                                        onActionSuccess: () => refetchHistory()
-                                                                    })}
-                                                                />
-                                                            </DataCell.ActionGroup>
-                                                        </TableCell>
-                                                    </TableRow>
-                                                ))}
-                                                {data.orders.length === 0 && (
-                                                    <TableRow>
-                                                        <TableCell colSpan={5} className="py-12">
-                                                            <EmptyState
-                                                                context="search"
-                                                                variant="compact"
-                                                                title="Sin órdenes"
-                                                                description="No se encontraron órdenes de compra para esta suscripción."
-                                                            />
-                                                        </TableCell>
-                                                    </TableRow>
-                                                )}
-                                            </TableBody>
-                                        </Table>
+                                        <OrderTable
+                                            orders={data.orders}
+                                            onOpenHub={(orderId) => openHub({
+                                                orderId,
+                                                type: 'purchase' as const,
+                                                onActionSuccess: () => refetchHistory()
+                                            })}
+                                        />
                                     </div>
                                 </FormTabsContent>
 
                                 {/* NOTES TAB */}
                                 <FormTabsContent value="notes" className="mt-0">
                                     <div className="rounded-md border shadow-sm overflow-hidden bg-card">
-                                        <Table>
-                                            <TableHeader>
-                                                <TableRow className="bg-muted/30 hover:bg-muted/30 border-b">
-                                                    <TableHead className="text-[10px] font-black uppercase tracking-wider py-4">Nota</TableHead>
-                                                    <TableHead className="text-[10px] font-black uppercase tracking-wider py-4">OCS Relacionada</TableHead>
-                                                    <TableHead className="text-[10px] font-black uppercase tracking-wider py-4">Fecha</TableHead>
-                                                    <TableHead className="text-[10px] font-black uppercase tracking-wider py-4 text-center">Estado</TableHead>
-                                                    <TableHead className="text-right text-[10px] font-black uppercase tracking-wider py-4">Monto Total</TableHead>
-                                                    <TableHead className="text-center text-[10px] font-black uppercase tracking-wider py-4">Acciones</TableHead>
-                                                </TableRow>
-                                            </TableHeader>
-                                            <TableBody>
-                                                {data.notes.map((note) => (
-                                                    <TableRow key={note.id} className="hover:bg-primary/5 transition-colors group">
-                                                        <TableCell>
-                                                            <div className="flex flex-col">
-                                                                <span className="font-black text-sm text-primary">{note.display_id}</span>
-                                                                <span className="text-[9px] text-muted-foreground font-bold uppercase">{note.dte_type.replace('_', ' ')}</span>
-                                                            </div>
-                                                        </TableCell>
-                                                        <TableCell>
-                                                            <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded-[0.25rem] border border-border bg-muted/50 text-muted-foreground whitespace-nowrap font-mono">
-                                                                OCS-{note.purchase_order_number}
-                                                            </span>
-                                                        </TableCell>
-                                                        <TableCell className="text-xs font-medium">
-                                                            {formatPlainDate(note.date)}
-                                                        </TableCell>
-                                                        <TableCell className="text-center">
-                                                            <div className="flex justify-center">
-                                                                <StatusBadge
-                                                                    status={note.status === 'PAID' || note.status === 'POSTED' ? 'SUCCESS' : 'NEUTRAL'}
-                                                                    label={translateStatus(note.status)}
-                                                                />
-                                                            </div>
-                                                        </TableCell>
-                                                        <TableCell>
-                                                            <DataCell.Currency value={note.total} className="text-right font-black" />
-                                                        </TableCell>
-                                                        <TableCell className="text-center">
-                                                            <DataCell.ActionGroup>
-                                                                <DataCell.Action
-                                                                    action="hub"
-                                                                    title="Gestionar nota"
-                                                                    onClick={() => openHub({
-                                                                        invoiceId: note.id,
-                                                                        type: 'purchase',
-                                                                        onActionSuccess: () => refetchHistory()
-                                                                    })}
-                                                                />
-                                                            </DataCell.ActionGroup>
-                                                        </TableCell>
-                                                    </TableRow>
-                                                ))}
-                                                 {data.notes.length === 0 && (
-                                                     <TableRow>
-                                                         <TableCell colSpan={6} className="py-12">
-                                                             <EmptyState
-                                                                 context="search"
-                                                                 variant="compact"
-                                                                 title="Sin notas"
-                                                                 description="No se encontraron notas asociadas a este producto."
-                                                             />
-                                                         </TableCell>
-                                                     </TableRow>
-                                                 )}
-                                             </TableBody>
-                                         </Table>
-                                     </div>
-                                 </FormTabsContent>
+                                        <NoteTable
+                                            notes={data.notes}
+                                            onOpenHub={(invoiceId) => openHub({
+                                                invoiceId,
+                                                type: 'purchase' as const,
+                                                onActionSuccess: () => refetchHistory()
+                                            })}
+                                        />
+                                    </div>
+                                </FormTabsContent>
                             </div>
                         </FormTabs>
                     )}
@@ -379,5 +262,140 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
             </div>
         </BaseModal>
     </>
+    )
+}
+
+function OrderTable({ orders, onOpenHub }: { orders: OrderHistoryEntry[]; onOpenHub: (orderId: number) => void }) {
+    const columns: ColumnDef<OrderHistoryEntry>[] = [
+        {
+            header: "Documento",
+            cell: ({ row }) => (
+                <span className="font-black text-sm text-primary">{row.original.display_id}</span>
+            ),
+        },
+        {
+            header: "Fecha",
+            cell: ({ row }) => (
+                <span className="text-xs font-medium">{formatPlainDate(row.original.date)}</span>
+            ),
+        },
+        {
+            header: "Estado",
+            cell: ({ row }) => (
+                <div className="flex justify-center">
+                    <StatusBadge
+                        status={row.original.status === 'PAID' || row.original.status === 'RECEIVED' ? 'SUCCESS' : 'NEUTRAL'}
+                        label={translateStatus(row.original.status)}
+                    />
+                </div>
+            ),
+        },
+        {
+            header: "Monto Total",
+            cell: ({ row }) => (
+                <DataCell.Currency value={row.original.total} className="text-right font-black" />
+            ),
+        },
+        {
+            header: "Acciones",
+            cell: ({ row }) => (
+                <div className="flex justify-center">
+                    <DataCell.ActionGroup>
+                        <DataCell.Action
+                            action="hub"
+                            title="Gestionar OCS"
+                            onClick={() => onOpenHub(row.original.id)}
+                        />
+                    </DataCell.ActionGroup>
+                </div>
+            ),
+        },
+    ]
+
+    return (
+        <DataTable
+            columns={columns}
+            data={orders}
+            variant="embedded"
+            hidePagination
+            emptyState={{
+                context: "search",
+                title: "Sin órdenes",
+                description: "No se encontraron órdenes de compra para esta suscripción.",
+            }}
+        />
+    )
+}
+
+function NoteTable({ notes, onOpenHub }: { notes: NoteHistoryEntry[]; onOpenHub: (invoiceId: number) => void }) {
+    const columns: ColumnDef<NoteHistoryEntry>[] = [
+        {
+            header: "Nota",
+            cell: ({ row }) => (
+                <div className="flex flex-col">
+                    <span className="font-black text-sm text-primary">{row.original.display_id}</span>
+                    <span className="text-[9px] text-muted-foreground font-bold uppercase">{row.original.dte_type.replace('_', ' ')}</span>
+                </div>
+            ),
+        },
+        {
+            header: "OCS Relacionada",
+            cell: ({ row }) => (
+                <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded-[0.25rem] border border-border bg-muted/50 text-muted-foreground whitespace-nowrap font-mono">
+                    OCS-{row.original.purchase_order_number}
+                </span>
+            ),
+        },
+        {
+            header: "Fecha",
+            cell: ({ row }) => (
+                <span className="text-xs font-medium">{formatPlainDate(row.original.date)}</span>
+            ),
+        },
+        {
+            header: "Estado",
+            cell: ({ row }) => (
+                <div className="flex justify-center">
+                    <StatusBadge
+                        status={row.original.status === 'PAID' || row.original.status === 'POSTED' ? 'SUCCESS' : 'NEUTRAL'}
+                        label={translateStatus(row.original.status)}
+                    />
+                </div>
+            ),
+        },
+        {
+            header: "Monto Total",
+            cell: ({ row }) => (
+                <DataCell.Currency value={row.original.total} className="text-right font-black" />
+            ),
+        },
+        {
+            header: "Acciones",
+            cell: ({ row }) => (
+                <div className="flex justify-center">
+                    <DataCell.ActionGroup>
+                        <DataCell.Action
+                            action="hub"
+                            title="Gestionar nota"
+                            onClick={() => onOpenHub(row.original.id)}
+                        />
+                    </DataCell.ActionGroup>
+                </div>
+            ),
+        },
+    ]
+
+    return (
+        <DataTable
+            columns={columns}
+            data={notes}
+            variant="embedded"
+            hidePagination
+            emptyState={{
+                context: "search",
+                title: "Sin notas",
+                description: "No se encontraron notas asociadas a este producto.",
+            }}
+        />
     )
 }
