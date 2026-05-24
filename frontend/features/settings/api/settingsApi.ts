@@ -217,8 +217,8 @@ export const settingsApi = {
      // ========== Groups ==========
 
      getGroups: async (): Promise<Group[]> => {
-         const { data } = await api.get<{ results?: Group[] } | Group[]>('/core/groups/')
-         return (data as any).results ?? (data as Group[])
+         const { data } = await api.get<Group[]>('/core/groups/')
+         return data
      },
 
      deleteGroup: async (id: number): Promise<void> => {
@@ -228,15 +228,15 @@ export const settingsApi = {
      // ========== Treasury Accounts ==========
 
      getTreasuryAccounts: async (): Promise<TreasuryAccount[]> => {
-         const { data } = await api.get<{ results?: TreasuryAccount[] } | TreasuryAccount[]>('/treasury/accounts/')
-         return (data as any).results ?? (data as TreasuryAccount[])
+         const { data } = await api.get<TreasuryAccount[]>('/treasury/accounts/')
+         return data
      },
 
      // ========== POS Terminals ==========
 
      getPosTerminals: async (): Promise<PosTerminal[]> => {
-         const { data } = await api.get<{ results?: PosTerminal[] } | PosTerminal[]>('/treasury/pos-terminals/')
-         return (data as any).results ?? (data as PosTerminal[])
+         const { data } = await api.get<PosTerminal[]>('/treasury/pos-terminals/')
+         return data
      },
 
      createPosTerminal: async (payload: Record<string, unknown>): Promise<PosTerminal> => {
@@ -252,8 +252,8 @@ export const settingsApi = {
      // ========== Warehouses ==========
 
      getWarehouses: async (): Promise<Warehouse[]> => {
-         const { data } = await api.get<{ results?: Warehouse[] } | Warehouse[]>('/inventory/warehouses/')
-         return (data as any).results ?? (data as Warehouse[])
+         const { data } = await api.get<Warehouse[]>('/inventory/warehouses/')
+         return data
      },
 
      // ========== Products ==========
@@ -266,8 +266,8 @@ export const settingsApi = {
      // ========== UoMs ==========
 
      getUoms: async (params?: Record<string, string>): Promise<UoM[]> => {
-         const { data } = await api.get<{ results?: UoM[] } | UoM[]>('/inventory/uoms/', { params })
-         return (data as any).results ?? (data as UoM[])
+         const { data } = await api.get<UoM[]>('/inventory/uoms/', { params })
+         return data
      },
 
      // ========== Inventory Moves ==========
