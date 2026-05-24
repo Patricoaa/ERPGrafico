@@ -228,3 +228,9 @@ export const createAssignmentRule = async (data: AssignmentRulePayload) => {
     const response = await api.post(`workflow/assignment-rules/`, data)
     return response.data
 }
+
+// Workflow Settings
+export const updateWorkflowSettings = async (data: Record<string, unknown>) => {
+    const response = await api.patch("/workflow/settings/current/", data)
+    return response.data
+}
