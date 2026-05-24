@@ -11,7 +11,7 @@ import { useGlobalModalActions } from "@/components/providers/GlobalModalProvide
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { SkeletonShell, SmartSearchBar, useSmartSearch } from "@/components/shared"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
-import { useTreasuryMovementsList, type TreasuryMovementFilters } from "@/features/treasury/hooks/useTreasuryMovements"
+import { useTreasuryMovements, type TreasuryMovementFilters } from "@/features/treasury/hooks/useTreasuryMovements"
 import { treasuryMovementsSearchDef } from "@/features/treasury/searchDef"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { EntityCard } from "@/components/shared/EntityCard"
@@ -67,7 +67,12 @@ interface TreasuryMovementsClientViewProps {
 export function TreasuryMovementsClientView({ externalOpen, createAction }: TreasuryMovementsClientViewProps) {
     const { openContact, openTreasuryAccount } = useGlobalModalActions()
     const { filters } = useSmartSearch(treasuryMovementsSearchDef)
-    const { movements, isLoading, refetch } = useTreasuryMovementsList(filters as TreasuryMovementFilters)
+    const [pageState, setPageState] = useState({ pageIndex: 0, pageSize: 50 })
+    const { page, movements, totalCount, isLoading, refetch } = useTreasuryMovements({
+        ...(filters as TreasuryMovementFilters),
+        page: pageState.pageIndex + 1,
+        page_size: pageState.pageSize,
+    })
     const searchParams = useSearchParams()
     const router = useRouter()
     const pathname = usePathname()
@@ -319,6 +324,11 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                     data={movements}
                     isLoading={isLoading}
                     variant="embedded"
+                    manualPagination
+                    pageCount={page ? Math.ceil(page.count / page.pageSize) : 0}
+                    rowCount={totalCount}
+                    pagination={pageState}
+                    onPaginationChange={setPageState}
                     leftAction={<SmartSearchBar searchDef={treasuryMovementsSearchDef} placeholder="Buscar movimientos..." className="w-full" />}
                     createAction={createAction}
                     emptyState={{

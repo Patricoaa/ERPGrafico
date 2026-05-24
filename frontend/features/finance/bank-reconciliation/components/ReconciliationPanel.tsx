@@ -861,6 +861,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                             }}
                                             manualPagination
                                             pageCount={Math.ceil((bankData?.count || 0) / (bankParams.pageSize || 50))}
+                                            rowCount={bankData?.count || 0}
                                             pagination={{ pageIndex: (bankParams.page || 1) - 1, pageSize: bankParams.pageSize || 50 }}
                                         />
                                     </div>
@@ -927,6 +928,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                             }}
                                             manualPagination
                                             pageCount={Math.ceil((systemData?.count || 0) / (systemParams.pageSize || 50))}
+                                            rowCount={systemData?.count || 0}
                                             pagination={{ pageIndex: (systemParams.page || 1) - 1, pageSize: systemParams.pageSize || 50 }}
                                         />
                                     </div>
