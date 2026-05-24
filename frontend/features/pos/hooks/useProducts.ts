@@ -59,7 +59,7 @@ export function useProducts() {
         queryKey: ['uoms'],
         queryFn: async () => {
             const data = await posApi.getUoms({ active: true, page_size: 500 })
-            return (data as any).results || data
+            return Array.isArray(data) ? data : ((data as { results?: unknown[] })?.results ?? [])
         },
         staleTime: 1000 * 60 * 60,
     })
