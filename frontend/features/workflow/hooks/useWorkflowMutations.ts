@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { markLocalMutation } from '@/lib/markLocalMutation'
+import { useRealtime } from '@/features/realtime'
 import * as workflowApi from '../api/workflowApi'
 import type { Task } from '@/types/entities'
 import { WORKFLOW_KEYS } from './queryKeys'
@@ -8,6 +8,7 @@ import { showApiError } from '@/lib/errors'
 
 export function useCompleteTask() {
   const queryClient = useQueryClient()
+  const { markLocalMutation } = useRealtime()
   
   return useMutation({
     mutationFn: workflowApi.completeTask,
@@ -25,6 +26,7 @@ export function useCompleteTask() {
 
 export function useUpdateTask() {
   const queryClient = useQueryClient()
+  const { markLocalMutation } = useRealtime()
   
   return useMutation({
     mutationFn: ({ id, payload }: { id: number; payload: Record<string, unknown> }) => 
@@ -43,6 +45,7 @@ export function useUpdateTask() {
 
 export function useUpdateAssignmentRule() {
   const queryClient = useQueryClient()
+  const { markLocalMutation } = useRealtime()
   
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: workflowApi.AssignmentRulePayload }) => 
@@ -60,6 +63,7 @@ export function useUpdateAssignmentRule() {
 
 export function useCreateAssignmentRule() {
   const queryClient = useQueryClient()
+  const { markLocalMutation } = useRealtime()
   
   return useMutation({
     mutationFn: workflowApi.createAssignmentRule,
@@ -76,6 +80,7 @@ export function useCreateAssignmentRule() {
 
 export function useUpdateNotificationRule() {
   const queryClient = useQueryClient()
+  const { markLocalMutation } = useRealtime()
   
   return useMutation({
     mutationFn: ({ id, data }: { id: number; data: workflowApi.NotificationRulePayload }) => 
@@ -93,6 +98,7 @@ export function useUpdateNotificationRule() {
 
 export function useCreateNotificationRule() {
   const queryClient = useQueryClient()
+  const { markLocalMutation } = useRealtime()
   
   return useMutation({
     mutationFn: workflowApi.createNotificationRule,
@@ -109,6 +115,7 @@ export function useCreateNotificationRule() {
 
 export function useUpdateWorkflowSettings() {
   const queryClient = useQueryClient()
+  const { markLocalMutation } = useRealtime()
   
   return useMutation({
     mutationFn: workflowApi.updateWorkflowSettings,
