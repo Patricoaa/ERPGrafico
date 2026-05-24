@@ -16,7 +16,7 @@ import { SplitAllocationDialog } from "./SplitAllocationDialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useReconciledLinesQuery } from "../hooks/useReconciliationQueries"
 
-import { LabeledSelect, LabeledInput, SkeletonShell, SimpleTable, ActionDock, Chip, CollapsibleSheet, SmartSearchBar, useSmartSearch, FormFooter, CancelButton } from "@/components/shared"
+import { LabeledSelect, LabeledInput, SkeletonShell, ActionDock, Chip, CollapsibleSheet, SmartSearchBar, useSmartSearch, FormFooter, CancelButton } from "@/components/shared"
 import { reconciliationSearchDef } from "../searchDef"
 import { PeriodValidationDateInput } from "@/components/shared/PeriodValidationDateInput"
 import { isZeroTolerance, safeDifference, safeSum, safeParseFloat } from "@/lib/math"
@@ -737,7 +737,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
 
     // ─── Render ───────────────────────────────────────────────────────────────
 
-    if (loading) return <SkeletonShell isLoading ariaLabel="Cargando..."><SimpleTable rows={10} columns={4} className="py-6" /></SkeletonShell>
+    if (loading) return <SkeletonShell isLoading ariaLabel="Cargando..." />
 
     return (
         <DndContext sensors={sensors} onDragEnd={handleDragEnd}>

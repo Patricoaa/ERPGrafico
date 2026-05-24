@@ -10,7 +10,7 @@ import {
     Calendar, Banknote, TrendingUp, TrendingDown,
     Undo2, Info, AlertCircle, ExternalLink, Activity
 } from "lucide-react"
-import { SkeletonShell, SimpleTable } from "@/components/shared"
+import { SkeletonShell } from "@/components/shared"
 import { PageHeader } from "@/components/shared/PageHeader"
 
 import { format } from "date-fns"
@@ -238,7 +238,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
 
     if (loading) return (
         <div className="flex-1">
-            <SkeletonShell isLoading ariaLabel="Cargando..."><SimpleTable rows={12} columns={5} /></SkeletonShell>
+            <SkeletonShell isLoading ariaLabel="Cargando..." />
         </div>
     )
 

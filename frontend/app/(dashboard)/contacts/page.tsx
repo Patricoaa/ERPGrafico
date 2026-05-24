@@ -1,7 +1,7 @@
 "use client"
 
 import { lazy, Suspense } from "react"
-import { SkeletonShell, SimpleTable, ToolbarCreateButton } from "@/components/shared"
+import { SkeletonShell, ToolbarCreateButton } from "@/components/shared"
 import { useRouter, useSearchParams } from "next/navigation"
 
 const ContactsClientView = lazy(() =>
@@ -28,7 +28,7 @@ export default function ContactsPage() {
 
     return (
         <div className="pt-2 flex-1 min-h-0 flex flex-col">
-            <Suspense fallback={<SkeletonShell isLoading ariaLabel="Cargando..."><SimpleTable rows={10} columns={6} /></SkeletonShell>}>
+            <Suspense fallback={<SkeletonShell isLoading ariaLabel="Cargando..." />}>
                 <ContactsClientView isNewModalOpen={isNewModalOpen} createAction={createAction} />
             </Suspense>
         </div>

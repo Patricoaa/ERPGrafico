@@ -10,7 +10,7 @@ import {
     Wallet,
     LogOut
 } from "lucide-react"
-import { Drawer, DataTable, SkeletonShell, SimpleTable, Chip } from "@/components/shared"
+import { Drawer, DataTable, SkeletonShell, Chip } from "@/components/shared"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
 import { PartnerStatement, PartnerTransaction } from "@/features/contacts/types/partner"
 import { toast } from "sonner"
@@ -180,7 +180,7 @@ export function PartnerLedgerModal({
         >
             {loading ? (
                 <div className="mt-4">
-                    <SkeletonShell isLoading ariaLabel="Cargando..."><SimpleTable rows={8} columns={5} /></SkeletonShell>
+                    <SkeletonShell isLoading ariaLabel="Cargando..." />
                 </div>
             ) : (
                 <div className="mt-4 animate-in fade-in duration-500">

@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { EmptyState } from "@/components/shared/EmptyState";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { SkeletonShell, SimpleTable } from "@/components/shared";
+import { SkeletonShell } from "@/components/shared";
 
 export interface BudgetVarianceNode {
     id: number;
@@ -186,7 +186,7 @@ function BudgetVarianceTableBase({ data, loading }: BudgetVarianceTableProps) {
 }
 
 BudgetVarianceTableBase.Skeleton = function BudgetVarianceTableSkeleton() {
-    return <SkeletonShell isLoading ariaLabel="Cargando variación presupuestal"><SimpleTable rows={8} columns={7} /></SkeletonShell>
+    return <SkeletonShell isLoading ariaLabel="Cargando variación presupuestal" />
 }
 
 export const BudgetVarianceTable = BudgetVarianceTableBase

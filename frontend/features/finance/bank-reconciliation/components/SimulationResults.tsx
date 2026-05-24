@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { financeApi } from "../../api/financeApi"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { SkeletonShell, SimpleTable } from "@/components/shared"
+import { SkeletonShell } from "@/components/shared"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { formatPlainDate, cn } from "@/lib/utils"
 
@@ -45,7 +45,7 @@ export function SimulationResults({ rule }: { rule: Record<string, unknown> }) {
         simulate()
     }, [rule])
 
-    if (loading) return <SkeletonShell isLoading ariaLabel="Cargando..."><SimpleTable rows={5} columns={3} className="p-8" /></SkeletonShell>
+    if (loading) return <SkeletonShell isLoading ariaLabel="Cargando..." />
 
     if (results.length === 0) {
         return <EmptyState context="search" variant="compact" title="Sin coincidencias" description="Ninguna línea reciente coincide con esta configuración." />

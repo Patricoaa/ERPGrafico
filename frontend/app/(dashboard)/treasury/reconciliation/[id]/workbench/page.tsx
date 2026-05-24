@@ -12,7 +12,7 @@ import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { showApiError } from "@/lib/errors"
-import { SkeletonShell, SimpleTable } from "@/components/shared"
+import { SkeletonShell } from "@/components/shared"
 import { PageHeader } from "@/components/shared/PageHeader"
 
 export default function WorkbenchPage({ params }: { params: Promise<{ id: string }> }) {
@@ -36,7 +36,7 @@ export default function WorkbenchPage({ params }: { params: Promise<{ id: string
     if (isLoading) {
         return (
             <div className="flex-1">
-                <SkeletonShell isLoading ariaLabel="Cargando..."><SimpleTable rows={12} columns={5} /></SkeletonShell>
+                <SkeletonShell isLoading ariaLabel="Cargando..." />
             </div>
         )
     }

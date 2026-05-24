@@ -2,7 +2,7 @@
 
 import { Suspense, lazy } from "react"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
-import { SkeletonShell, SimpleTable } from "@/components/shared"
+import { SkeletonShell } from "@/components/shared"
 import { useRouter } from "next/navigation"
 import { SaleOrder } from "@/features/sales/types"
 
@@ -24,7 +24,7 @@ export default function SalesDeliveriesPage() {
 
     return (
         <div className="pt-2 flex-1 min-h-0 flex flex-col">
-            <Suspense fallback={<SkeletonShell isLoading ariaLabel="Cargando despachos"><SimpleTable rows={10} columns={6} /></SkeletonShell>}>
+            <Suspense fallback={<SkeletonShell isLoading ariaLabel="Cargando despachos" />}>
                 <SalesOrdersView 
                     viewMode="orders" 
                     // Cuando hagan clic en la fila de la orden en vez del hub, podemos 
