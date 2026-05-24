@@ -149,6 +149,16 @@ export function AttributeManager({ externalOpen, createAction }: AttributeManage
 
     const handleDeleteValue = useCallback((id: number) => deleteValueConfirm.requestConfirm(id), [deleteValueConfirm])
 
+    const bulkDeleteConfirm = useConfirmAction<ProductAttribute[]>(async (items) => {
+        try {
+            await Promise.all(items.map(a => deleteAttribute(a.id)))
+            toast.success(`${items.length} atributos eliminados`)
+        } catch (error) {
+            showApiError(error, "Error al eliminar los atributos")
+            throw error
+        }
+    })
+
     const columns = useMemo<ColumnDef<ProductAttribute>[]>(() => [
         {
             id: "select",
@@ -261,17 +271,9 @@ export function AttributeManager({ externalOpen, createAction }: AttributeManage
             label: "Eliminar",
             icon: Trash2,
             intent: "destructive",
-            onClick: async (items) => {
-                if (!confirm(`¿Está seguro de que desea eliminar ${items.length} atributos y todos sus valores?`)) return
-                try {
-                    await Promise.all(items.map(a => deleteAttribute(a.id)))
-                    toast.success(`${items.length} atributos eliminados`)
-                } catch (error) {
-                    showApiError(error, "Error al eliminar los atributos")
-                }
-            },
+            onClick: async (items) => bulkDeleteConfirm.requestConfirm(items),
         },
-    ], [deleteAttribute])
+    ], [deleteAttribute, bulkDeleteConfirm])
 
 
     return (
@@ -400,6 +402,15 @@ export function AttributeManager({ externalOpen, createAction }: AttributeManage
                 onConfirm={deleteValueConfirm.confirm}
                 title="Eliminar Valor de Atributo"
                 description="¿Seguro que deseas eliminar este valor?"
+                variant="destructive"
+            />
+
+            <ActionConfirmModal
+                open={bulkDeleteConfirm.isOpen}
+                onOpenChange={(open) => { if (!open) bulkDeleteConfirm.cancel() }}
+                onConfirm={bulkDeleteConfirm.confirm}
+                title="Eliminar Atributos"
+                description={`¿Está seguro de que desea eliminar ${bulkDeleteConfirm.payload?.length ?? 0} atributos y todos sus valores?`}
                 variant="destructive"
             />
         </div>

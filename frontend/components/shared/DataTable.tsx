@@ -470,7 +470,7 @@ export function DataTable<TData, TValue>({
                         <Table containerClassName={cn(
                             !isInModal && "flex-1 overflow-y-scroll custom-scrollbar"
                         )}>
-                            <TableHeader className={cn(!isInModal ? "sticky top-0 bg-card/50 z-10 border-b-2" : "bg-transparent")}>
+                            <TableHeader className={cn(!isInModal ? "sticky top-0 bg-card z-10 border-b-2" : "sticky top-0 bg-card z-10 border-b-2")}>
                                 {table.getHeaderGroups().map((headerGroup) => (
                                     <TableRow
                                         key={headerGroup.id}

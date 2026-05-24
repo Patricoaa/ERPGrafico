@@ -5,10 +5,8 @@ import React from "react"
 import { formatCurrency } from "@/lib/money"
 import { AlertCircle, CheckCircle2, AlertTriangle, Calendar, FileText, DollarSign, Wallet } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-
-import { Chip } from "@/components/shared"
-import { FormSection } from "@/components/shared"
+import { DataTable, Chip, FormSection } from "@/components/shared"
+import type { ColumnDef } from "@tanstack/react-table"
 
 export interface DryRunWarning {
     line: number | null
@@ -135,33 +133,40 @@ export default function ImportPreviewStep({ data, isLoading }: ImportPreviewStep
             )}
 
             {hasWarnings && (
-                <div className="rounded-lg border border-border/40 overflow-hidden bg-background max-h-[40vh] overflow-y-auto custom-scrollbar">
-                    <Table>
-                        <TableHeader className="sticky top-0 bg-muted/90 backdrop-blur z-10">
-                            <TableRow>
-                                <TableHead className="w-[100px] text-xs font-black uppercase">Línea</TableHead>
-                                <TableHead className="w-[120px] text-xs font-black uppercase">Tipo</TableHead>
-                                <TableHead className="text-xs font-black uppercase">Mensaje</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {data.warnings.map((warn, i) => (
-                                <TableRow key={i} className="hover:bg-muted/30">
-                                    <TableCell className="text-xs font-mono font-medium">
-                                        {warn.line ?? "General"}
-                                    </TableCell>
-                                    <TableCell>
-                                        <Chip intent="warning">Advertencia</Chip>
-                                    </TableCell>
-                                    <TableCell className="text-xs text-muted-foreground font-medium">
-                                        {warn.message}
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
+                <div className="rounded-lg border border-border/40 overflow-hidden bg-background">
+                    <WarningTable warnings={data.warnings} />
                 </div>
             )}
         </div>
+    )
+}
+
+function WarningTable({ warnings }: { warnings: DryRunWarning[] }) {
+    const columns: ColumnDef<DryRunWarning>[] = [
+        {
+            header: "Línea",
+            cell: ({ row }) => (
+                <span className="text-xs font-mono font-medium">{row.original.line ?? "General"}</span>
+            ),
+        },
+        {
+            header: "Tipo",
+            cell: () => <Chip intent="warning">Advertencia</Chip>,
+        },
+        {
+            header: "Mensaje",
+            cell: ({ row }) => (
+                <span className="text-xs text-muted-foreground font-medium">{row.original.message}</span>
+            ),
+        },
+    ]
+
+    return (
+        <DataTable
+            columns={columns}
+            data={warnings}
+            variant="embedded"
+            hidePagination
+        />
     )
 }

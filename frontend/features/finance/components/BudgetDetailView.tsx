@@ -6,17 +6,10 @@ import { Download, ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table"
-import { PageHeader, LoadingFallback, MoneyDisplay } from "@/components/shared"
+import { DataTable, PageHeader, LoadingFallback, MoneyDisplay } from "@/components/shared"
 import { toast } from "sonner"
 import Link from "next/link"
+import type { ColumnDef } from "@tanstack/react-table"
 
 interface BudgetDetailViewProps {
     budgetId: string
@@ -45,6 +38,49 @@ interface Budget {
     start_date: string;
     end_date: string;
 }
+
+const columns: ColumnDef<BudgetExecutionItem>[] = [
+    {
+        header: "Cuenta",
+        accessorKey: "account_name",
+        cell: ({ row }) => (
+            <div>
+                <div className="font-medium">{row.original.account_name}</div>
+                <div className="text-xs text-muted-foreground">{row.original.account_code}</div>
+            </div>
+        ),
+    },
+    {
+        header: "Presupuesto",
+        accessorKey: "budgeted",
+        cell: ({ row }) => (
+            <div className="text-right font-mono">
+                <MoneyDisplay amount={row.original.budgeted} digits={0} />
+            </div>
+        ),
+        meta: { align: "right" as const },
+    },
+    {
+        header: "Real",
+        accessorKey: "actual",
+        cell: ({ row }) => (
+            <div className="text-right font-mono">
+                <MoneyDisplay amount={row.original.actual} digits={0} />
+            </div>
+        ),
+        meta: { align: "right" as const },
+    },
+    {
+        header: "Ejecución",
+        id: "percentage",
+        cell: ({ row }) => (
+            <div className="flex items-center gap-2">
+                <Progress value={Math.min(row.original.percentage, 100)} className="h-2" />
+                <span className="text-xs w-10 text-right">{row.original.percentage.toFixed(0)}%</span>
+            </div>
+        ),
+    },
+]
 
 export function BudgetDetailView({ budgetId }: BudgetDetailViewProps) {
     const [executionData, setExecutionData] = useState<BudgetExecutionData | null>(null)
@@ -162,38 +198,13 @@ export function BudgetDetailView({ budgetId }: BudgetDetailViewProps) {
                     <CardTitle>Detalle por Cuenta</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Cuenta</TableHead>
-                                <TableHead className="text-right">Presupuesto</TableHead>
-                                <TableHead className="text-right">Real</TableHead>
-                                <TableHead className="text-center w-[200px]">Ejecución</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {executionData.items.map((item, idx: number) => (
-                                <TableRow key={idx}>
-                                    <TableCell>
-                                        <div className="font-medium">{item.account_name}</div>
-                                        <div className="text-xs text-muted-foreground">{item.account_code}</div>
-                                    </TableCell>
-                                    <TableCell className="text-right font-mono">
-                                        <MoneyDisplay amount={item.budgeted} digits={0} />
-                                    </TableCell>
-                                    <TableCell className="text-right font-mono">
-                                        <MoneyDisplay amount={item.actual} digits={0} />
-                                    </TableCell>
-                                    <TableCell>
-                                        <div className="flex items-center gap-2">
-                                            <Progress value={Math.min(item.percentage, 100)} className="h-2" />
-                                            <span className="text-xs w-10 text-right">{item.percentage.toFixed(0)}%</span>
-                                        </div>
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
+                    <DataTable
+                        columns={columns}
+                        data={executionData.items}
+                        variant="embedded"
+                        hidePagination
+                        emptyState="No se encontraron cuentas presupuestarias"
+                    />
                 </CardContent>
             </Card>
         </div>

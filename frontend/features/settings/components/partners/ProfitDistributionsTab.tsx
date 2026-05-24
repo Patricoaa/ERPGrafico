@@ -4,7 +4,7 @@ import { formatCurrency } from "@/lib/money"
 import React, { useEffect, useState, useMemo, useRef } from "react"
 import { DataTable } from "@/components/shared/DataTable"
 import { ColumnDef } from "@tanstack/react-table"
-import { DataCell, createActionsColumn, Chip, DataTableColumnHeader } from "@/components/shared"
+import { DataCell, createActionsColumn, Chip, DataTableColumnHeader, ActionConfirmModal } from "@/components/shared"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
 import { ProfitDistribution, ProfitDistributionLine } from "@/features/contacts/types/partner"
@@ -38,6 +38,7 @@ export function ProfitDistributionsTab({ initialFlowOpen = false, onModalClose, 
         selectedResolution: undefined as ProfitDistribution | undefined,
         viewingDist: undefined as ProfitDistribution | undefined
     })
+    const [confirmExecute, setConfirmExecute] = useState<ProfitDistribution | null>(null)
 
     const isMounted = useRef(false)
 
@@ -89,18 +90,20 @@ export function ProfitDistributionsTab({ initialFlowOpen = false, onModalClose, 
         fetchDistributions()
     }
 
-    const handleExecute = async (resolution: ProfitDistribution) => {
-        if (!confirm(`¿Está seguro de ejecutar la resolución del año ${resolution.fiscal_year}? Esto generará los asientos contables finales y las transacciones de los socios.`)) return
+    const handleExecute = (resolution: ProfitDistribution) => setConfirmExecute(resolution)
 
+    const onConfirmExecute = async () => {
+        if (!confirmExecute) return
         setState(prev => ({ ...prev, loading: true }))
         try {
-            await partnersApi.executeProfitDistribution(resolution.id)
+            await partnersApi.executeProfitDistribution(confirmExecute.id)
             toast.success("Distribución ejecutada exitosamente.")
             fetchDistributions()
         } catch (error: unknown) {
             console.error(error)
             const detail = (error as any).response?.data?.detail || (error as Error).message || "Error al ejecutar la resolución"
             toast.error(detail)
+            throw error
         } finally {
             setState(prev => ({ ...prev, loading: false }))
         }
@@ -300,6 +303,16 @@ export function ProfitDistributionsTab({ initialFlowOpen = false, onModalClose, 
                     id={state.viewingDist.id}
                 />
             )}
+
+            <ActionConfirmModal
+                open={!!confirmExecute}
+                onOpenChange={(open) => { if (!open) setConfirmExecute(null) }}
+                onConfirm={onConfirmExecute}
+                title="Ejecutar Distribución"
+                description={confirmExecute ? `¿Está seguro de ejecutar la resolución del año ${confirmExecute.fiscal_year}? Esto generará los asientos contables finales y las transacciones de los socios.` : ""}
+                variant="warning"
+                confirmText="Ejecutar"
+            />
         </div>
     )
 }

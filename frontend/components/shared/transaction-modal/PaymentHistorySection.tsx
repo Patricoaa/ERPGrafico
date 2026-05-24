@@ -2,12 +2,13 @@
 
 import React from "react"
 import { formatCurrency } from "@/lib/money"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { DataTable } from "@/components/shared"
 import { Badge } from "@/components/ui/badge"
 import { Banknote, SplitSquareHorizontal } from "lucide-react"
 import { DataCell } from "@/components/shared/DataTableCells"
 import { formatPlainDate, translatePaymentMethod } from "@/lib/utils"
 import type { TransactionData, TransactionType } from "@/types/transactions"
+import type { ColumnDef } from "@tanstack/react-table"
 
 type PaymentEntry = {
     id: number
@@ -27,71 +28,88 @@ export const PaymentHistorySection = React.memo(({ data, currentType, navigateTo
     const payments = (data?.serialized_payments || data?.payments_detail || []) as PaymentEntry[];
     if (payments.length === 0) return null;
 
+    const columns: ColumnDef<PaymentEntry>[] = [
+        {
+            header: "Fecha",
+            accessorKey: "date",
+            cell: ({ row }) => (
+                <span className="text-xs font-semibold">
+                    {formatPlainDate(row.original.date || row.original.created_at)}
+                </span>
+            ),
+        },
+        {
+            header: "Método / Referencia",
+            id: "method_reference",
+            cell: ({ row }) => {
+                const pay = row.original
+                return (
+                    <div className="flex flex-col gap-0.5">
+                        <div className="flex items-center gap-1.5">
+                            <span className="text-xs font-bold uppercase">
+                                {translatePaymentMethod(pay.payment_method || pay.journal_name)}
+                            </span>
+                            {pay.is_partial_allocation && (
+                                <Badge variant="secondary" className="h-4 px-1 text-xs font-bold gap-0.5">
+                                    <SplitSquareHorizontal className="h-2.5 w-2.5" />
+                                    Parcial
+                                </Badge>
+                            )}
+                        </div>
+                        <span className="text-xs font-mono text-muted-foreground">
+                            {pay.transaction_number || pay.reference || '-'}
+                        </span>
+                        {pay.is_partial_allocation && pay.allocation_notes && (
+                            <span className="text-xs text-muted-foreground italic">{pay.allocation_notes}</span>
+                        )}
+                    </div>
+                )
+            },
+        },
+        {
+            header: "Aplicado",
+            id: "amount",
+            cell: ({ row }) => {
+                const pay = row.original
+                const displayAmount = pay.is_partial_allocation ? pay.allocated_amount : pay.amount
+                return (
+                    <div className="flex flex-col items-end">
+                        <span className="font-black text-sm text-success">{formatCurrency(displayAmount)}</span>
+                        {pay.is_partial_allocation && pay.amount !== pay.allocated_amount && (
+                            <span className="text-xs text-muted-foreground">de {formatCurrency(pay.amount)}</span>
+                        )}
+                    </div>
+                )
+            },
+            meta: { align: "right" as const },
+        },
+        {
+            header: "Acción",
+            id: "actions",
+            cell: ({ row }) => (
+                <DataCell.ActionGroup className="justify-end">
+                    <DataCell.Action
+                        action="view"
+                        onClick={() => navigateTo("payment", row.original.id)}
+                    />
+                </DataCell.ActionGroup>
+            ),
+            meta: { align: "right" as const },
+        },
+    ]
+
     return (
         <div className="space-y-4 pt-6 border-t">
             <h3 className="text-lg font-black uppercase tracking-tighter flex items-center gap-2 text-success">
                 <Banknote className="h-5 w-5" />
                 Historial de Pagos
             </h3>
-            <div className="border rounded-lg overflow-hidden bg-background shadow-sm">
-                <Table>
-                    <TableHeader className="bg-muted/10">
-                        <TableRow className="hover:bg-transparent tracking-widest text-[10px] font-black uppercase">
-                            <TableHead className="h-10">Fecha</TableHead>
-                            <TableHead className="h-10">Método / Referencia</TableHead>
-                            <TableHead className="text-right h-10 w-[140px]">Aplicado</TableHead>
-                            <TableHead className="text-right h-10 w-[80px]">Acción</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {payments.map((pay) => {
-                            const displayAmount = pay.is_partial_allocation
-                                ? pay.allocated_amount
-                                : pay.amount
-                            return (
-                                <TableRow key={`${pay.id}-${pay.is_partial_allocation}`} className="hover:bg-muted/10 transition-colors">
-                                    <TableCell className="text-xs font-semibold">{formatPlainDate(pay.date || pay.created_at)}</TableCell>
-                                    <TableCell>
-                                        <div className="flex flex-col gap-0.5">
-                                            <div className="flex items-center gap-1.5">
-                                                <span className="text-xs font-bold uppercase">{translatePaymentMethod(pay.payment_method || pay.journal_name)}</span>
-                                                {pay.is_partial_allocation && (
-                                                    <Badge variant="secondary" className="h-4 px-1 text-xs font-bold gap-0.5">
-                                                        <SplitSquareHorizontal className="h-2.5 w-2.5" />
-                                                        Parcial
-                                                    </Badge>
-                                                )}
-                                            </div>
-                                            <span className="text-xs font-mono text-muted-foreground">
-                                                {pay.transaction_number || pay.reference || '-'}
-                                            </span>
-                                            {pay.is_partial_allocation && pay.allocation_notes && (
-                                                <span className="text-xs text-muted-foreground italic">{pay.allocation_notes}</span>
-                                            )}
-                                        </div>
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        <div className="flex flex-col items-end">
-                                            <span className="font-black text-sm text-success">{formatCurrency(displayAmount)}</span>
-                                            {pay.is_partial_allocation && pay.amount !== pay.allocated_amount && (
-                                                <span className="text-xs text-muted-foreground">de {formatCurrency(pay.amount)}</span>
-                                            )}
-                                        </div>
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        <DataCell.ActionGroup className="justify-end">
-                                            <DataCell.Action
-                                                action="view"
-                                                onClick={() => navigateTo('payment', pay.id)}
-                                            />
-                                        </DataCell.ActionGroup>
-                                    </TableCell>
-                                </TableRow>
-                            )
-                        })}
-                    </TableBody>
-                </Table>
-            </div>
+            <DataTable
+                columns={columns}
+                data={payments}
+                variant="embedded"
+                hidePagination
+            />
         </div>
     );
 })

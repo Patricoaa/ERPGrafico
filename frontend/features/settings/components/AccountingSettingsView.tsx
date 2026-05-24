@@ -13,7 +13,7 @@ import {
     Percent,
     Receipt,
 } from "lucide-react"
-import { AutoSaveStatusBadge, LabeledInput, LabeledSelect, FadeIn } from "@/components/shared"
+import { AutoSaveStatusBadge, LabeledInput, LabeledSelect, FadeIn, ActionConfirmModal } from "@/components/shared"
 import { PageHeaderButton } from "@/components/shared/PageHeader"
 import { Separator } from "@/components/ui/separator"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
@@ -43,6 +43,7 @@ import { useAccountingSettings } from "@/features/settings/hooks/useAccountingSe
 function StructureSettings() {
     const { structure: settings, refetch } = useAccountingSettings()
     const [populating, setPopulating] = useState(false)
+    const [confirmOpen, setConfirmOpen] = useState(false)
 
     const form = useForm<AccountingFormValues>({
         resolver: zodResolver(accountingSchema),
@@ -63,8 +64,9 @@ function StructureSettings() {
 
     const formValues = form.watch()
 
-    const handlePopulateIFRS = async () => {
-        if (!confirm("¿Está seguro de cargar el plan de cuentas IFRS? Esto creará las cuentas detalladas y configurará todos los mapeos predeterminados automáticamente.")) return
+    const handlePopulateIFRS = () => setConfirmOpen(true)
+
+    const onConfirmPopulate = async () => {
         setPopulating(true)
         try {
             const res = await settingsApi.populateIfrsChart()
@@ -193,6 +195,16 @@ function StructureSettings() {
                     </Card>
                 </form>
             </Form>
+
+            <ActionConfirmModal
+                open={confirmOpen}
+                onOpenChange={setConfirmOpen}
+                onConfirm={onConfirmPopulate}
+                title="Cargar Plan de Cuentas IFRS"
+                description="¿Está seguro de cargar el plan de cuentas IFRS? Esto creará las cuentas detalladas y configurará todos los mapeos predeterminados automáticamente."
+                variant="warning"
+                confirmText="Cargar Plan IFRS"
+            />
         </div>
     )
 }
