@@ -3,7 +3,7 @@
 import { showApiError, getErrorMessage } from "@/lib/errors"
 import React, { useState } from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
-import { DataTable } from '@/components/shared'
+import { DataTableView } from '@/components/shared'
 import { DataCell } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
@@ -19,8 +19,7 @@ import { PaymentModal } from "@/features/treasury/components/PaymentModal"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
-import { useViewMode } from "@/hooks/useViewMode"
-import { createDomainCardView, createCardLoadingView } from "@/lib/view-helpers"
+
 import { getDtePrefix } from "@/lib/entity-registry"
 
 export function SalesInvoicesClientView() {
@@ -32,8 +31,6 @@ export function SalesInvoicesClientView() {
     const router = useRouter()
     const searchParams = useSearchParams()
     const pathname = usePathname()
-
-    const { currentView, handleViewChange, viewOptions, isCustomView } = useViewMode('billing.invoice')
 
     const toggleSelection = (inv: Invoice) => {
         const isSelected = hubConfig?.invoiceId === inv.id
@@ -160,23 +157,17 @@ export function SalesInvoicesClientView() {
         <div className="px-1 h-full flex flex-col">
 
             <div className="flex-1 min-h-0">
-                <DataTable
+                <DataTableView
+                    entityLabel="billing.invoice"
                     columns={columns}
                     data={invoices}
                     isLoading={isLoading}
                     onRowClick={(row: Invoice) => toggleSelection(row)}
                     variant="embedded"
-                    currentView={currentView}
-                    onViewChange={handleViewChange}
-                    viewOptions={viewOptions}
                     leftAction={<SmartSearchBar searchDef={invoiceSearchDef} placeholder="Buscar facturas..." className="w-full" />}
                     defaultPageSize={20}
-                    renderCustomView={isCustomView ? createDomainCardView('billing.invoice', {
-                        onRowClick: (data) => toggleSelection(data),
-                        isSelected: (data) => hubConfig?.invoiceId === data.id,
-                        isHubOpen,
-                    }) : undefined}
-                    renderLoadingView={isCustomView ? createCardLoadingView('single-column') : undefined}
+                    isSelected={(data: Invoice) => hubConfig?.invoiceId === data.id}
+                    isHubOpen={isHubOpen}
                 />
             </div>
 

@@ -4,11 +4,11 @@ import { ColumnDef } from "@tanstack/react-table"
 import { Building2, User as UserIcon, Banknote } from "lucide-react"
 
 import { formatRUT } from "@/lib/utils/format"
-import { DataTable } from '@/components/shared'
+import { DataTableView } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { EmptyState } from '@/components/shared'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { DataCell, createActionsColumn, Chip } from '@/components/shared'
+import { DataCell, createActionsColumn, Chip, EntityCard } from '@/components/shared'
 import { useContacts, type Contact } from "@/features/contacts"
 import { LoadingFallback, SmartSearchBar, StatusBadge, useSmartSearch } from "@/components/shared"
 import { contactSearchDef } from "@/features/contacts/searchDef"
@@ -217,7 +217,8 @@ export function ContactsClientView({ isNewModalOpen = false, createAction }: Con
                 {!isLoading && contacts.length === 0 ? (
                     <EmptyState context="users" title="No hay contactos" description="No se encontraron contactos con los criterios de búsqueda actuales." />
                 ) : (
-                    <DataTable
+                    <DataTableView
+                        entityLabel="contacts.contact"
                         columns={columns}
                         data={contacts}
                         isLoading={isLoading}
@@ -225,6 +226,30 @@ export function ContactsClientView({ isNewModalOpen = false, createAction }: Con
                         leftAction={<SmartSearchBar searchDef={contactSearchDef} placeholder="Buscar por nombre, RUT o tipo..." className="w-full" />}
                         defaultPageSize={20}
                         createAction={createAction}
+                        renderCard={(contact: Contact) => (
+                            <EntityCard key={contact.id} onClick={() => openSelected(contact.id)}>
+                                <EntityCard.Header
+                                    title={contact.name}
+                                    subtitle={contact.tax_id || 'S/Rut'}
+                                    trailing={
+                                        <div className="flex flex-col items-end gap-1">
+                                            {contact.contact_type && <Chip.Category domain="contact_type" value={contact.contact_type} size="xs" />}
+                                            <div className="flex gap-1">
+                                                {contact.is_default_customer && <Chip size="xs" intent="primary" icon={UserIcon}>Cliente</Chip>}
+                                                {contact.is_default_vendor && <Chip size="xs" intent="success" icon={Building2}>Proveedor</Chip>}
+                                            </div>
+                                        </div>
+                                    }
+                                />
+                                <EntityCard.Body>
+                                    <EntityCard.Field label="Email" value={contact.email || '-'} />
+                                    <EntityCard.Field label="Teléfono" value={contact.phone || '-'} />
+                                    {Number(contact.credit_limit || 0) > 0 && (
+                                        <EntityCard.Field label="Crédito" value={`${formatCurrency(Number(contact.credit_limit))} (${contact.credit_days}d)`} />
+                                    )}
+                                </EntityCard.Body>
+                            </EntityCard>
+                        )}
                     />
                 )}
 

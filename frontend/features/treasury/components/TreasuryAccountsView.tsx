@@ -7,7 +7,7 @@ import { treasuryAccountSearchDef } from "../searchDef"
 import {
     ColumnDef
 } from "@tanstack/react-table"
-import { DataTable } from '@/components/shared'
+import { DataTableView } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 
 import { Landmark, Pencil, Trash2, Lock } from "lucide-react"
@@ -20,8 +20,7 @@ import { DataCell, createActionsColumn, FadeIn } from '@/components/shared'
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { EntityCard } from "@/components/shared/EntityCard"
-import { useViewMode } from "@/hooks/useViewMode"
-import { createEntityCardView, createCardLoadingView } from "@/lib/view-helpers"
+import { createEntityCardView } from "@/lib/view-helpers"
 
 interface TreasuryAccountsViewProps {
     activeTab: string
@@ -40,8 +39,6 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
     const router = useRouter()
     const pathname = usePathname()
     const searchParams = useSearchParams()
-
-    const { currentView, handleViewChange, viewOptions, isCustomView } = useViewMode('treasury.treasuryaccount')
 
     const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<TreasuryAccount>({
         endpoint: '/treasury/accounts'
@@ -216,18 +213,15 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
             <TabsContent value="accounts" className="space-y-6 flex-1 min-h-0">
                 <div className="h-full flex flex-col">
                     <div className="flex-1 min-h-0">
-                        <DataTable
+                        <DataTableView
+                            entityLabel="treasury.treasuryaccount"
                             columns={columns}
                             data={accounts}
                             isLoading={isLoading}
                             variant="embedded"
                             createAction={activeTab === "accounts" ? createAction : undefined}
                             leftAction={<SmartSearchBar searchDef={treasuryAccountSearchDef} placeholder="Buscar cuenta..." className="w-full" />}
-                            currentView={currentView}
-                            onViewChange={handleViewChange}
-                            viewOptions={viewOptions}
-                            renderLoadingView={isCustomView ? createCardLoadingView('multi-column', 8) : undefined}
-                            renderCustomView={isCustomView ? createEntityCardView('treasury.treasuryaccount', {
+                            renderCustomView={createEntityCardView('treasury.treasuryaccount', {
                                 renderCard: (acc: TreasuryAccount) => {
                                     const name = acc.account_name
                                     return (
@@ -257,7 +251,7 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
                                         </EntityCard>
                                     )
                                 }
-                            }) : undefined}
+                            })}
                         />
                     </div>
                 </div>

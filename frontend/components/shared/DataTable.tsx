@@ -30,7 +30,7 @@ import { BulkActionDock, BulkActionButtons, type BulkAction } from "@/components
 import { DataTablePagination } from "@/components/shared/DataTablePagination"
 import { DataTableToolbar } from "@/components/shared/DataTableToolbar"
 
-interface DataTableProps<TData, TValue> {
+export interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[]
     data: TData[]
     defaultPageSize?: number

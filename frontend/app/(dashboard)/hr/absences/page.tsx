@@ -7,10 +7,10 @@ import { AbsenceFormModal } from "@/features/hr"
 import { deleteAbsence, getEmployees } from '@/features/hr/api/hrApi'
 import type { Absence, Employee } from "@/types/hr"
 import { ColumnDef } from "@tanstack/react-table"
-import { DataTable } from '@/components/shared'
+import { DataTableView } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { createActionsColumn, DataCell } from '@/components/shared'
-import { StatusBadge } from "@/components/shared/StatusBadge"
+import { StatusBadge, EntityCard } from "@/components/shared"
 import { Pencil, Trash2 } from "lucide-react"
 import { ToolbarCreateButton, SmartSearchBar, useSmartSearch } from "@/components/shared"
 import { useAbsences } from "@/features/hr/hooks/useAbsences"
@@ -118,7 +118,8 @@ export default function AbsencesPage() {
             />
 
             <div className="flex-1 min-h-0">
-                <DataTable
+                <DataTableView
+                    entityLabel="hr.absence"
                     columns={columns}
                     data={absences}
                     isLoading={loading}
@@ -127,6 +128,19 @@ export default function AbsencesPage() {
                     defaultPageSize={20}
                     onRowClick={(row: Absence) => { setEditingAbsence(row); setDialogOpen(true) }}
                     createAction={createAction}
+                    renderCard={(absence: Absence) => (
+                        <EntityCard key={absence.id} onClick={() => { setEditingAbsence(absence); setDialogOpen(true) }}>
+                            <EntityCard.Header
+                                title={absence.employee_name}
+                                subtitle={absence.absence_type_display}
+                            />
+                            <EntityCard.Body>
+                                <EntityCard.Field label="Inicio" value={absence.start_date} />
+                                <EntityCard.Field label="Fin" value={absence.end_date} />
+                                <EntityCard.Field label="Días" value={String(absence.days)} />
+                            </EntityCard.Body>
+                        </EntityCard>
+                    )}
                 />
             </div>
         </div>

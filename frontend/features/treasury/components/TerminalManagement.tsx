@@ -1,9 +1,8 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect } from "react"
 import { useTerminals, type Terminal } from "@/features/treasury"
 import { usePaymentMethods, useTerminalDevices } from "@/features/treasury"
-import type { PaymentMethod } from "@/features/treasury/types"
 import { treasuryApi } from "../api/treasuryApi"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -13,16 +12,12 @@ import { toast } from "sonner"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { CancelButton, IconButton, LabeledInput, LabeledSelect, FormSection, FormFooter, FormSplitLayout } from "@/components/shared"
 import { EntityCard } from "@/components/shared/EntityCard"
-import { DataTable } from '@/components/shared'
+import { DataTableView } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
-import { createActionsColumn, DataCell } from '@/components/shared'
+import { createActionsColumn, DataCell, Chip } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
-import { List, LayoutGrid, Plus, Power, PowerOff, Settings, MapPin, Trash2, CreditCard, Banknote, Landmark, MonitorSmartphone, Smartphone } from "lucide-react"
-import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
-import { useConfirmAction } from "@/hooks/useConfirmAction"
-import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
-import { ActionSlideButton } from "@/components/shared"
-import { useSearchParams, useRouter, usePathname } from "next/navigation"
+import { Plus, Pencil, Power, PowerOff, Trash2 } from "lucide-react"
+import { EntityCard } from "@/components/shared/EntityCard"
 
 
 
@@ -74,17 +69,7 @@ export function TerminalManagement({ externalOpen, onExternalOpenChange, createA
         deleteConfirm.requestConfirm(terminal)
     }
 
-    const searchParams = useSearchParams()
-    const router = useRouter()
-    const pathname = usePathname()
-    const viewMode = searchParams.get('view') ?? 'card'
-    const isCustomView = viewMode !== 'list'
 
-    const handleViewChange = useCallback((v: string) => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.set('view', v)
-        router.push(`${pathname}?${params.toString()}`, { scroll: false })
-    }, [searchParams, router, pathname])
 
     const columns: ColumnDef<Terminal>[] = [
         {
@@ -141,110 +126,98 @@ export function TerminalManagement({ externalOpen, onExternalOpenChange, createA
     return (
         <div className="space-y-4 h-full flex flex-col">
             <div className="flex-1 min-h-0">
-                <DataTable
+                <DataTableView
+                    entityLabel="treasury.terminal"
                     columns={columns}
                     data={terminals}
-                isLoading={isLoading}
-                variant="embedded"
-                filterColumn="name"
-                searchPlaceholder="Buscar caja por nombre..."
-                defaultPageSize={20}
-                currentView={viewMode}
-                onViewChange={handleViewChange}
-                viewOptions={[
-                    { label: "Lista", value: "list", icon: List },
-                    { label: "Tarjeta", value: "card", icon: LayoutGrid }
-                ]}
-                facetedFilters={[
-                    {
-                        column: "status",
-                        title: "Estado",
-                        options: [
-                            { label: "Activas", value: "ACTIVE" },
-                            { label: "Inactivas", value: "INACTIVE" }
-                        ]
-                    }
-                ]}
-                createAction={createAction || (
-                    <Button onClick={handleCreate} className="h-9">
-                        <Plus className="mr-2 h-4 w-4" /> Crear Caja
-                    </Button>
-                )}
-                renderLoadingView={isCustomView ? () => (
-                    <div className="flex flex-col gap-4 pt-2">
-                        {Array.from({ length: 3 }).map((_, i) => (
-                            <EntityCard.Skeleton key={i} />
-                        ))}
-                    </div>
-                ) : undefined}
-                renderCustomView={isCustomView ? (table) => (
-                    <div className="flex flex-col gap-4 pt-2">
-                        {table.getRowModel().rows.map(row => {
-                            const terminal = row.original
-                            const methodsByType = terminal.allowed_payment_methods.reduce((acc, method) => {
-                                const type = method.method_type
-                                if (!acc[type]) acc[type] = 0
-                                acc[type]++
-                                return acc
-                            }, {} as Record<string, number>)
+                    isLoading={isLoading}
+                    variant="embedded"
+                    filterColumn="name"
+                    searchPlaceholder="Buscar caja por nombre..."
+                    defaultPageSize={20}
+                    facetedFilters={[
+                        {
+                            column: "status",
+                            title: "Estado",
+                            options: [
+                                { label: "Activas", value: "ACTIVE" },
+                                { label: "Inactivas", value: "INACTIVE" }
+                            ]
+                        }
+                    ]}
+                    createAction={createAction || (
+                        <Button onClick={handleCreate} className="h-9">
+                            <Plus className="mr-2 h-4 w-4" /> Crear Caja
+                        </Button>
+                    )}
+                    renderCustomView={(table) => (
+                        <div className="flex flex-col gap-4 pt-2">
+                            {table.getRowModel().rows.map(row => {
+                                const terminal = row.original
+                                const methodsByType = terminal.allowed_payment_methods.reduce((acc, method) => {
+                                    const type = method.method_type
+                                    if (!acc[type]) acc[type] = 0
+                                    acc[type]++
+                                    return acc
+                                }, {} as Record<string, number>)
 
-                            return (
-                                <EntityCard key={terminal.id} className={!terminal.is_active ? "opacity-70 bg-muted/20" : ""}>
-                                    <EntityCard.Header
-                                        title={terminal.name}
-                                        subtitle={terminal.code}
-                                        trailing={
-                                            <div className="flex flex-col items-end gap-2">
-                                                <StatusBadge status={terminal.is_active ? "active" : "inactive"} size="sm" className="uppercase font-bold tracking-tight" />
-                                                <div className="flex items-center gap-1">
-                                                    <IconButton onClick={() => handleEdit(terminal)} className="h-7 w-7"><Settings className="h-3 w-3" /></IconButton>
-                                                </div>
-                                            </div>
-                                        }
-                                    />
-                                    <EntityCard.Body>
-                                        <EntityCard.Field
-                                            label="Ubicación"
-                                            value={
-                                                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                                                    <MapPin className="h-3.5 w-3.5" />
-                                                    {terminal.location || "No especificada"}
+                                return (
+                                    <EntityCard key={terminal.id} className={!terminal.is_active ? "opacity-70 bg-muted/20" : ""}>
+                                        <EntityCard.Header
+                                            title={terminal.name}
+                                            subtitle={terminal.code}
+                                            trailing={
+                                                <div className="flex flex-col items-end gap-2">
+                                                    <StatusBadge status={terminal.is_active ? "active" : "inactive"} size="sm" className="uppercase font-bold tracking-tight" />
+                                                    <div className="flex items-center gap-1">
+                                                        <IconButton onClick={() => handleEdit(terminal)} className="h-7 w-7"><Settings className="h-3 w-3" /></IconButton>
+                                                    </div>
                                                 </div>
                                             }
                                         />
-                                        {terminal.payment_terminal_device && (
+                                        <EntityCard.Body>
                                             <EntityCard.Field
-                                                label="Dispositivo"
+                                                label="Ubicación"
                                                 value={
-                                                    <div className="flex items-center gap-1.5 text-[10px] font-bold text-primary px-1.5 py-0.5 bg-primary/5 border border-primary/10 rounded uppercase">
-                                                        <Smartphone className="h-3 w-3" />
-                                                        {terminal.payment_terminal_device_name || "Vinculado"}
+                                                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                                        <MapPin className="h-3.5 w-3.5" />
+                                                        {terminal.location || "No especificada"}
                                                     </div>
                                                 }
                                             />
-                                        )}
-                                    </EntityCard.Body>
-                                    <EntityCard.Footer className="justify-between items-center bg-muted/10 px-4 py-2 border-t">
-                                        <div className="flex flex-wrap gap-1">
-                                            {Object.entries(methodsByType).map(([type, count]) => (
-                                                <div key={type} className="flex items-center gap-1 px-1.5 py-0.5 rounded-sm border bg-muted/30 text-[9px] uppercase font-bold text-foreground/70">
-                                                    {type === 'CASH' && <Banknote className="h-3 w-3 text-success" />}
-                                                    {type === 'CARD' && <CreditCard className="h-3 w-3 text-info" />}
-                                                    {type === 'TRANSFER' && <Landmark className="h-3 w-3 text-primary" />}
-                                                    {type} <span className="ml-0.5 opacity-60">({count})</span>
-                                                </div>
-                                            ))}
-                                            {terminal.allowed_payment_methods.length === 0 && (
-                                                <span className="text-[10px] text-muted-foreground italic">Sin métodos configurados</span>
+                                            {terminal.payment_terminal_device && (
+                                                <EntityCard.Field
+                                                    label="Dispositivo"
+                                                    value={
+                                                        <div className="flex items-center gap-1.5 text-[10px] font-bold text-primary px-1.5 py-0.5 bg-primary/5 border border-primary/10 rounded uppercase">
+                                                            <Smartphone className="h-3 w-3" />
+                                                            {terminal.payment_terminal_device_name || "Vinculado"}
+                                                        </div>
+                                                    }
+                                                />
                                             )}
-                                        </div>
-                                    </EntityCard.Footer>
-                                </EntityCard>
-                            )
-                        })}
-                    </div>
-                ) : undefined}
-            />
+                                        </EntityCard.Body>
+                                        <EntityCard.Footer className="justify-between items-center bg-muted/10 px-4 py-2 border-t">
+                                            <div className="flex flex-wrap gap-1">
+                                                {Object.entries(methodsByType).map(([type, count]) => (
+                                                    <div key={type} className="flex items-center gap-1 px-1.5 py-0.5 rounded-sm border bg-muted/30 text-[9px] uppercase font-bold text-foreground/70">
+                                                        {type === 'CASH' && <Banknote className="h-3 w-3 text-success" />}
+                                                        {type === 'CARD' && <CreditCard className="h-3 w-3 text-info" />}
+                                                        {type === 'TRANSFER' && <Landmark className="h-3 w-3 text-primary" />}
+                                                        {type} <span className="ml-0.5 opacity-60">({count})</span>
+                                                    </div>
+                                                ))}
+                                                {terminal.allowed_payment_methods.length === 0 && (
+                                                    <span className="text-[10px] text-muted-foreground italic">Sin métodos configurados</span>
+                                                )}
+                                            </div>
+                                        </EntityCard.Footer>
+                                    </EntityCard>
+                                )
+                            })}
+                        </div>
+                    )}
+                />
             </div>
 
             <TerminalModal

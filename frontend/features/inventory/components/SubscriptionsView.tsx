@@ -19,11 +19,11 @@ import {
 } from "lucide-react"
 import { toast } from "sonner"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
-import { StatusBadge, Chip } from "@/components/shared"
+import { StatusBadge, Chip, EntityCard } from "@/components/shared"
 import { ProductForm } from "@/features/inventory/components/ProductForm"
 import { SubscriptionHistoryModal } from "@/features/inventory/components/SubscriptionHistoryModal"
 import { ArchivingRestrictionsModal } from "@/features/inventory/components/ArchivingRestrictionsModal"
-import { DataTable } from '@/components/shared'
+import { DataTableView } from '@/components/shared'
 import type { Product } from "@/types/entities"
 import { DataTableColumnHeader } from '@/components/shared'
 import { DataCell, createActionsColumn, StatCard } from '@/components/shared'
@@ -432,7 +432,8 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false, cr
                         </div>
                     )}
                     <div className="flex-1 min-h-0">
-                        <DataTable
+                        <DataTableView
+                            entityLabel="inventory.subscription"
                             columns={columns}
                             data={subscriptions}
                             isLoading={loading}
@@ -441,6 +442,22 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false, cr
                             defaultPageSize={20}
                             bulkActions={bulkActions}
                             createAction={createAction}
+                            renderCard={(sub: Subscription) => (
+                                <EntityCard key={sub.id}>
+                                    <EntityCard.Header
+                                        title={sub.product_name || sub.name}
+                                        subtitle={`${sub.frequency || ''}${sub.amount ? ` - $${sub.amount}` : ''}`}
+                                        trailing={<StatusBadge status={sub.status} label={sub.status_display || sub.status} size="sm" />}
+                                    />
+                                    <EntityCard.Body>
+                                        <EntityCard.Field label="Categoría" value={sub.category_name || '-'} />
+                                        <EntityCard.Field label="Proveedor" value={sub.supplier_name || '-'} />
+                                        {sub.next_payment_date && (
+                                            <EntityCard.Field label="Próximo Pago" value={sub.next_payment_date} />
+                                        )}
+                                    </EntityCard.Body>
+                                </EntityCard>
+                            )}
                         />
                     </div>
                 </div>

@@ -14,7 +14,7 @@ import { PaymentModal } from "@/features/treasury/components/PaymentModal"
 import { ReceiptModal } from "@/features/purchasing/components/ReceiptModal"
 import { PurchaseNoteModal } from "@/features/purchasing/components/PurchaseNoteModal"
 import { DocumentCompletionModal } from "@/components/shared/DocumentCompletionModal"
-import { DataTable } from '@/components/shared'
+import { DataTableView } from '@/components/shared'
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { DataCell } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
@@ -23,8 +23,7 @@ import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { usePurchaseInvoices } from "@/features/billing/hooks/usePurchaseInvoices"
 import { Invoice } from "@/features/billing/types"
 import { getDtePrefix } from "@/lib/entity-registry"
-import { useViewMode } from "@/hooks/useViewMode"
-import { createDomainCardView, createCardLoadingView } from "@/lib/view-helpers"
+
 
 
 
@@ -38,8 +37,6 @@ export function PurchaseInvoicesClientView() {
     const router = useRouter()
     const searchParams = useSearchParams()
     const pathname = usePathname()
-
-    const { currentView, handleViewChange, viewOptions, isCustomView } = useViewMode('billing.invoice')
 
     const { openHub, closeHub, hubConfig, isHubOpen } = useHubPanel()
 
@@ -212,7 +209,8 @@ export function PurchaseInvoicesClientView() {
     return (
         <div className="px-1 h-full flex flex-col">
             <div className="flex-1 min-h-0">
-                <DataTable
+                <DataTableView
+                    entityLabel="billing.invoice"
                     columns={columns}
                     data={documents}
                     isLoading={isLoading}
@@ -230,24 +228,10 @@ export function PurchaseInvoicesClientView() {
                         }
                     }}
                     variant="embedded"
-                    currentView={currentView}
-                    onViewChange={handleViewChange}
-                    viewOptions={viewOptions}
                     leftAction={<SmartSearchBar searchDef={purchaseInvoiceSearchDef} placeholder="Buscar facturas de compra..." className="w-full" />}
                     defaultPageSize={20}
-                    renderCustomView={isCustomView ? createDomainCardView('billing.invoice', {
-                        onRowClick: (inv) => {
-                            const isSelected = hubConfig?.invoiceId === inv.id
-                            if (isSelected && isHubOpen) {
-                                closeHub()
-                            } else {
-                                openHub({ orderId: inv.purchase_order || null, invoiceId: inv.id, type: 'purchase', onActionSuccess: fetchDocuments })
-                            }
-                        },
-                        isSelected: (inv) => hubConfig?.invoiceId === inv.id,
-                        isHubOpen,
-                    }) : undefined}
-                    renderLoadingView={isCustomView ? createCardLoadingView('single-column') : undefined}
+                    isSelected={(inv: Invoice) => hubConfig?.invoiceId === inv.id}
+                    isHubOpen={isHubOpen}
                 />
             </div>
             {payingDoc && <PaymentModal open={!!payingDoc} onOpenChange={(open) => !open && setPayingDoc(null)} onConfirm={handlePayment} isPurchase={true} total={parseFloat(payingDoc.total)} pendingAmount={payingDoc.pending_amount ?? parseFloat(payingDoc.total)} hideDteFields={true} isRefund={payingDoc.dte_type === 'NOTA_CREDITO'} existingInvoice={{ dte_type: payingDoc.dte_type, number: payingDoc.number, document_attachment: null }} />}

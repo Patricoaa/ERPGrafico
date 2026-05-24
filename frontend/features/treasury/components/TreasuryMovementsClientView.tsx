@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect, lazy, Suspense } from "react"
-import { DataTable } from '@/components/shared'
+import { DataTableView } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
 import { ArrowDown, Eye } from "lucide-react"
@@ -15,8 +15,7 @@ import { useTreasuryMovements, type TreasuryMovementFilters } from "@/features/t
 import { treasuryMovementsSearchDef } from "@/features/treasury/searchDef"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { EntityCard } from "@/components/shared/EntityCard"
-import { useViewMode } from "@/hooks/useViewMode"
-import { createEntityCardView, createCardLoadingView } from "@/lib/view-helpers"
+import { createEntityCardView } from "@/lib/view-helpers"
 
 // Lazy load heavy components
 const CashMovementModal = lazy(() => import("./CashMovementModal"))
@@ -80,8 +79,6 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
     const [openModal, setOpenModal] = useState(false)
     const [detailsOpen, setDetailsOpen] = useState(false)
     const [selectedMovementId, setSelectedMovementId] = useState<number | null>(null)
-
-    const { currentView, handleViewChange, viewOptions, isCustomView } = useViewMode('treasury.treasurymovement')
 
     const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<TreasuryMovement>({
         endpoint: '/treasury/movements'
@@ -319,7 +316,8 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
              </SkeletonShell>
 
             <div className="flex-1 min-h-0">
-                <DataTable
+                <DataTableView
+                    entityLabel="treasury.treasurymovement"
                     columns={columns}
                     data={movements}
                     isLoading={isLoading}
@@ -337,11 +335,7 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                         description: "Aún no se han registrado ingresos o egresos de fondos en el sistema para el periodo actual.",
 
                     }}
-                    currentView={currentView}
-                    onViewChange={handleViewChange}
-                    viewOptions={viewOptions}
-                    renderLoadingView={isCustomView ? createCardLoadingView('single-column', 5) : undefined}
-                    renderCustomView={isCustomView ? createEntityCardView('treasury.treasurymovement', {
+                    renderCustomView={createEntityCardView('treasury.treasurymovement', {
                         renderCard: (m) => {
                             const type = m.movement_type
                             const isWriteOff = m.payment_method === 'WRITE_OFF'
@@ -401,7 +395,7 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                                 </EntityCard>
                             )
                         }
-                    }) : undefined}
+                    })}
                 />
             </div>
 

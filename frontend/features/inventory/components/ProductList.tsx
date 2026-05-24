@@ -4,7 +4,7 @@ import { showApiError } from "@/lib/errors"
 
 import React, { useEffect, useState, useMemo } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
-import { DataTable } from '@/components/shared'
+import { DataTableView } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 
 import { ColumnDef } from "@tanstack/react-table"
@@ -28,8 +28,7 @@ import { Product, Restriction, ProductFilters } from "@/features/inventory/types
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { Chip, SmartSearchBar, useSmartSearch } from "@/components/shared"
 import { productSearchDef } from "@/features/inventory/searchDef"
-import { useViewMode } from "@/hooks/useViewMode"
-import { createEntityCardView, createCardLoadingView } from "@/lib/view-helpers"
+import { createEntityCardView } from "@/lib/view-helpers"
 
 
 
@@ -64,8 +63,6 @@ export function ProductList({ externalOpen, onExternalOpenChange, createAction }
     const router = useRouter()
     const pathname = usePathname()
     const searchParams = useSearchParams()
-
-    const { currentView: view, handleViewChange, viewOptions, isCustomView } = useViewMode('inventory.product')
 
     const { entity: selectedFromUrl, clearSelection: clearUrlSelection } = useSelectedEntity<Product>({
         endpoint: '/inventory/products'
@@ -441,18 +438,15 @@ export function ProductList({ externalOpen, onExternalOpenChange, createAction }
     return (
         <div className="space-y-4 h-full flex flex-col">
             <div className="flex-1 min-h-0">
-                <DataTable
+                <DataTableView
+                    entityLabel="inventory.product"
                     columns={columns}
                     data={displayProducts}
                     isLoading={isLoading}
                     variant="embedded"
                     leftAction={<SmartSearchBar searchDef={productSearchDef} placeholder="Buscar por nombre, SKU o tipo..." className="w-full" />}
                     initialColumnVisibility={initialColumnVisibility}
-                    viewOptions={viewOptions}
-                    currentView={view}
-                    onViewChange={handleViewChange}
-                    renderLoadingView={isCustomView ? createCardLoadingView('single-column', 8) : undefined}
-                    renderCustomView={isCustomView ? createEntityCardView('inventory.product', {
+                    renderCustomView={createEntityCardView('inventory.product', {
                         renderCard: (product: Product) => (
                             <EntityCard key={product.id} onClick={() => {
                                 const params = new URLSearchParams(searchParams.toString())
@@ -493,7 +487,7 @@ export function ProductList({ externalOpen, onExternalOpenChange, createAction }
                                 </EntityCard.Body>
                             </EntityCard>
                         )
-                    }) : undefined}
+                    })}
                     bulkActions={bulkActions}
                     defaultPageSize={500}
                     createAction={createAction}

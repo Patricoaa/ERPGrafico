@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useCallback } from "react"
+import React, { useState, useEffect } from "react"
 import { useTerminalProviders, useTerminalDevices, type PaymentTerminalProvider, type PaymentTerminalDevice } from "../hooks/useTerminalProviders"
 import { Button } from "@/components/ui/button"
 import { BaseModal, StatusBadge, SubmitButton, CancelButton, IconButton, LabeledInput, LabeledSelect, FormSection, MultiSelectTagInput, SmartSearchBar, useSmartSearch, useClientSearch } from "@/components/shared"
@@ -20,13 +20,11 @@ import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
-import { DataTable } from '@/components/shared'
+import { DataTableView } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { createActionsColumn, DataCell } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
-import { List, LayoutGrid } from "lucide-react"
 import { EntityCard } from "@/components/shared/EntityCard"
-import { useSearchParams, useRouter, usePathname } from "next/navigation"
 
 interface PaymentHardwareManagementProps {
     externalDeviceOpen?: boolean
@@ -110,18 +108,6 @@ export function PaymentHardwareManagement({
             await deleteDevice(device.id)
         } catch { }
     })
-
-    const searchParams = useSearchParams()
-    const router = useRouter()
-    const pathname = usePathname()
-    const viewMode = searchParams.get('view') ?? 'card'
-    const isCustomView = viewMode !== 'list'
-
-    const handleViewChange = useCallback((v: string) => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.set('view', v)
-        router.push(`${pathname}?${params.toString()}`, { scroll: false })
-    }, [searchParams, router, pathname])
 
     const providerColumns: ColumnDef<PaymentTerminalProvider>[] = [
         {
@@ -225,32 +211,20 @@ export function PaymentHardwareManagement({
             )}
             {activeTab === "providers" ? (
                 <div className="flex-1 min-h-0">
-                    <DataTable
+                    <DataTableView
+                        entityLabel="treasury.terminalprovider"
                         columns={providerColumns}
                         data={filterProviders(providers)}
                         isLoading={isLoadingProviders}
                         variant="embedded"
                         leftAction={<SmartSearchBar searchDef={providerSearchDef} placeholder="Buscar proveedor..." className="w-full" />}
                         defaultPageSize={20}
-                        currentView={viewMode}
-                        onViewChange={handleViewChange}
-                        viewOptions={[
-                            { label: "Lista", value: "list", icon: List },
-                            { label: "Tarjeta", value: "card", icon: LayoutGrid }
-                        ]}
                         createAction={createAction || (
                             <Button onClick={handleCreateProvider} className="h-9">
                                 Configurar proveedor
                             </Button>
                         )}
-                        renderLoadingView={isCustomView ? () => (
-                            <div className="flex flex-col gap-4 pt-2">
-                                {Array.from({ length: 3 }).map((_, i) => (
-                                    <EntityCard.Skeleton key={i} />
-                                ))}
-                            </div>
-                        ) : undefined}
-                        renderCustomView={isCustomView ? (table) => (
+                        renderCustomView={(table) => (
                             <div className="flex flex-col gap-4 pt-2">
                                 {table.getRowModel().rows.map(row => {
                                     const provider = row.original
@@ -291,37 +265,25 @@ export function PaymentHardwareManagement({
                                     )
                                 })}
                             </div>
-                        ) : undefined}
+                        )}
                     />
                 </div>
             ) : (
                 <div className="flex-1 min-h-0">
-                    <DataTable
+                    <DataTableView
+                        entityLabel="treasury.terminaldevice"
                         columns={deviceColumns}
                         data={devices}
                         isLoading={isLoadingDevices}
                         variant="embedded"
                         leftAction={<SmartSearchBar searchDef={deviceSearchDef} placeholder="Buscar dispositivo..." className="w-full" />}
                         defaultPageSize={20}
-                        currentView={viewMode}
-                        onViewChange={handleViewChange}
-                        viewOptions={[
-                            { label: "Lista", value: "list", icon: List },
-                            { label: "Tarjeta", value: "card", icon: LayoutGrid }
-                        ]}
                         createAction={createAction || (
                             <Button onClick={handleCreateDevice} className="h-9">
                                 Registrar dispositivo
                             </Button>
                         )}
-                        renderLoadingView={isCustomView ? () => (
-                            <div className="flex flex-col gap-4 pt-2">
-                                {Array.from({ length: 3 }).map((_, i) => (
-                                    <EntityCard.Skeleton key={i} />
-                                ))}
-                            </div>
-                        ) : undefined}
-                        renderCustomView={isCustomView ? (table) => (
+                        renderCustomView={(table) => (
                             <div className="flex flex-col gap-4 pt-2">
                                 {table.getRowModel().rows.map(row => {
                                     const device = row.original
@@ -374,7 +336,7 @@ export function PaymentHardwareManagement({
                                     )
                                 })}
                             </div>
-                        ) : undefined}
+                        )}
                     />
                 </div>
             )}
