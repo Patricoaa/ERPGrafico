@@ -87,16 +87,16 @@ export interface StockAdjustmentPayload {
 }
 
 /**
- * Imperative one-shot fetch — total stock de un producto en una bodega
- * sumando los movimientos. Útil para validar disponibilidad antes de
- * despachar/transferir sin cachear en un hook reactivo (los movimientos
- * cambian con cada operación).
+ * Imperative one-shot fetch — total stock de un producto en una bodega.
+ * El backend hace el SUM al nivel de DB; antes el frontend iteraba los
+ * movimientos y sumaba en JS, lo que dejaba de funcionar al pasar a 50+
+ * movimientos porque el endpoint listable está paginado.
  */
 export async function fetchProductStockLevel(productId: number | string, warehouseId: number | string): Promise<number> {
-    const response = await api.get(`/inventory/moves/?product_id=${productId}&warehouse_id=${warehouseId}`)
-    const data = response.data as Array<{ quantity?: string | number }> | { results?: Array<{ quantity?: string | number }> }
-    const moves: Array<{ quantity?: string | number }> = Array.isArray(data) ? data : (data?.results ?? [])
-    return moves.reduce((sum, move) => sum + parseFloat(String(move.quantity ?? 0)), 0)
+    const response = await api.get<{ stock_level: string }>(
+        `/inventory/moves/stock-level/?product_id=${productId}&warehouse_id=${warehouseId}`
+    )
+    return parseFloat(response.data.stock_level)
 }
 
 export function useStockAdjustment() {

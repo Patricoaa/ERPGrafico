@@ -695,6 +695,29 @@ class StockMoveViewSet(viewsets.ReadOnlyModelViewSet, AuditHistory):
     filter_backends = [DjangoFilterBackend]
     filterset_class = StockMoveFilter
 
+    @action(detail=False, methods=['get'], url_path='stock-level')
+    def stock_level(self, request):
+        """
+        Aggregated stock for (product, warehouse) computed at DB level.
+        Replaces the previous client-side pattern of fetching all moves and
+        summing in JS — that pattern silently truncated to one page (≤50
+        rows) once the viewset adopted pagination, producing wrong stock
+        figures for any product with a long move history.
+        """
+        from django.db.models import Sum
+        product_id = request.query_params.get('product_id')
+        warehouse_id = request.query_params.get('warehouse_id')
+        if not product_id or not warehouse_id:
+            return Response(
+                {'detail': 'product_id and warehouse_id are required.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        total = StockMove.objects.filter(
+            product_id=product_id,
+            warehouse_id=warehouse_id,
+        ).aggregate(total=Sum('quantity'))['total'] or Decimal('0.0')
+        return Response({'stock_level': str(total)})
+
     @action(detail=False, methods=['post'])
     def adjust(self, request):
         """
