@@ -3,7 +3,7 @@ layer: 50-audit
 doc: fsd-data-layer-audit
 status: active
 owner: core-team
-last_review: 2026-05-22
+last_review: 2026-05-23
 stability: snapshot-updated-as-features-migrate
 ---
 
@@ -48,22 +48,22 @@ Snapshot tomado el 2026-05-22 sobre el commit `874fc7bd` (rama `feat/Nuevo-siste
 
 ## Resumen ejecutivo
 
-| Estado | Definición | Snapshot 2026-05-22 | Tras inventory | Tras sales | Tras treasury+purchasing+billing | Tras orders+production+settings | Tras contacts+users+tax | Tras accounting+hr |
-|---|---|---|---|---|---|---|---|---|---|---|
-| **Compliant** | Tiene `queryKeys.ts` (o no muta) + 0 violaciones de #4/#5 | 5 (22%) | 6 (26%) | 7 (30%) | 10 (43%) | 14 (61%) | 15 (65%) | **17 (74%)** |
-| **Mostly compliant** | <5 violaciones combinadas, infraestructura FSD presente | 6 (26%) | 5 (22%) | 5 (22%) | 5 (22%) | 5 (22%) | 3 (13%) | **1 (4%)** |
-| **Anti-pattern** | ≥5 violaciones o ausencia de infraestructura FSD | 12 (52%) | 12 (52%) | 11 (48%) | 8 (35%) | 4 (17%) | 5 (22%) | **5 (22%)** |
+| Estado | Definición | Snapshot 2026-05-22 | Tras inventory | Tras sales | Tras treasury+purchasing+billing | Tras orders+production+settings | Tras contacts+users+tax | Tras accounting+hr | Tras workflow+finance+users | **Tras tax (cierre)** |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| **Compliant** | Tiene `queryKeys.ts` (o no muta) + 0 violaciones de #4/#5 | 5 (22%) | 6 (26%) | 7 (30%) | 10 (43%) | 14 (61%) | 15 (65%) | 17 (74%) | 22 (96%) | **23 (100%)** |
+| **Mostly compliant** | <5 violaciones combinadas, infraestructura FSD presente | 6 (26%) | 5 (22%) | 5 (22%) | 5 (22%) | 5 (22%) | 3 (13%) | 1 (4%) | 0 (0%) | **0 (0%)** |
+| **Anti-pattern** | ≥5 violaciones o ausencia de infraestructura FSD | 12 (52%) | 12 (52%) | 11 (48%) | 8 (35%) | 4 (17%) | 5 (22%) | 5 (22%) | 1 (4%) | **0 (0%)** |
 
 Violaciones agregadas:
 
-| Métrica | Snapshot 2026-05-22 | Tras inventory | Tras sales | Tras treasury+purchasing+billing | Tras orders+production+settings | Tras contacts+users+tax |
-|---|---|---|---|---|---|---|
-| #5 (api directo en componentes) | 119 en 20 features | 95 en 19 features | 75 en 14 features | 51 en 14 features | 29 en 10 features | **19 en 5 features** |
-| #4 (useQuery/Mutation en componentes) | 33 en 11 features | 29 en 10 features | 15 en 9 features | 12 en 8 features | 11 en 7 features | **10 en 6 features** |
-| Sin `queryKeys.ts` | 15 de 23 (65%) | 15 de 23 (65%) | 15 de 23 (65%) | 15 de 23 (65%) | 12 de 23 (52%) | **11 de 23 (48%)** |
-| Sin `api/` folder | 9 de 23 (39%) | 9 de 23 (39%) | 9 de 23 (39%) | 8 de 23 (35%) | 6 de 23 (26%) | **3 de 23 (13%)** |
+| Métrica | Snapshot 2026-05-22 | Tras inventory | Tras sales | Tras treasury+purchasing+billing | Tras orders+production+settings | Tras contacts+users+tax | Tras accounting+hr | Tras workflow+finance+users | **Tras tax (cierre)** |
+|---|---|---|---|---|---|---|---|---|---|---|
+| #5 (api directo en componentes) | 119 en 20 features | 95 en 19 features | 75 en 14 features | 51 en 14 features | 29 en 10 features | 20 en 6 features | 19 en 5 features | 0 en 0 features ✅ | **0 en 0 features** ✅ |
+| #4 (useQuery/Mutation en componentes) | 33 en 11 features | 29 en 10 features | 15 en 9 features | 12 en 8 features | 11 en 7 features | 10 en 6 features | 10 en 6 features | 0 en 0 features ✅ | **0 en 0 features** ✅ |
+| Sin `queryKeys.ts` | 15 de 23 (65%) | 15 de 23 (65%) | 15 de 23 (65%) | 15 de 23 (65%) | 12 de 23 (52%) | 12 de 23 (52%) | 11 de 23 (48%) | 9 de 23 (39%) | **8 de 23 (35%)** |
+| Sin `api/` folder | 9 de 23 (39%) | 9 de 23 (39%) | 9 de 23 (39%) | 8 de 23 (35%) | 6 de 23 (26%) | 3 de 23 (13%) | 3 de 23 (13%) | 3 de 23 (13%) | **3 de 23 (13%)** |
 
-**Reducción acumulada:** 100 violaciones #5 (-84%) y 23 #4 (-70%) en ~50 commits de 12 features.
+**Reducción acumulada:** 119 violaciones #5 (-100%) y 33 #4 (-100%) en ~60 commits abarcando las 23 features. **100% de features Compliant.**
 
 ## Tabla maestra por feature
 
@@ -77,7 +77,7 @@ Las columnas #5 y #4 muestran `inicial → actual` cuando hubo cambio. Estado re
 | **billing** | ✓ | ✓ | **5 → 0** ✅ | **1 → 0** ✅ | **Compliant (sweep completado)** |
 | contacts | ✓ | ✓ | **2 → 0** ✅ | **1 → 0** ✅ | **Compliant** |
 | credits | ✗ | ✓ | 0 | 0 | Compliant (read-only) |
-| finance | ✗ | ✗ | 12 | 1 | Anti-pattern |
+| finance | ✓ | ✓ | **12 → 0** ✅ | **1 → 0** ✅ | **Compliant (sweep completado)** |
 | hr | ✗ | ✓ | 0 | **3 → 0** ✅ | Compliant |
 | **inventory** | ✓ | ✓ | **21 → 0** ✅ | **4 → 0** ✅ | **Compliant (sweep completado)** |
 | **sales** | ✓ | ✓ | **11 → 0** ✅ | **4 → 0** ✅ | **Compliant (sweep completado)** |
@@ -90,9 +90,9 @@ Las columnas #5 y #4 muestran `inicial → actual` cuando hubo cambio. Estado re
 | realtime | ✗ | ✗ | 0 | 0 | Compliant (infra-only) |
 | search | ✗ | ✓ | 0 | 0 | Compliant (aggregator) |
 | **settings** | ✗ | ✓ | **11 → 0** ✅ | **1 → 0** ✅ | **Compliant (sweep completado)** |
-| tax | ✗ | **✗ → ✓** ✅ | **4 → 0** ✅ | 0 | Anti-pattern |
+| tax | **✗ → ✓** ✅ | **✗ → ✓** ✅ | **4 → 0** ✅ | 0 | **Compliant (sweep completado)** |
 | **treasury** | ✓ | ✓ | **12 → 0** ✅ | **3 → 0** ✅ | **Compliant (sweep completado)** |
-| users | ✗ | **✗ → ✓** ✅ | **3 → 0** ✅ | 0 | Mostly compliant |
+| users | ✓ | **✗ → ✓** ✅ | **3 → 0** ✅ | 0 | **Compliant (sweep completado)** |
 | workflow | ✓ | ✓ | 0 → 0 ✅ | 0 → 0 ✅ | Compliant (sweep completado) |
 
 ## Top ofensores actuales — archivos exactos
@@ -183,13 +183,41 @@ Como subproducto, otras features ganaron hooks aprovechables:
 - `hooks/index.ts` barrel creado.
 - 3 componentes migrados, 0 errores de type-check nuevos.
 
-### tax — completado (4 → 0 #5)
+### tax — completado (4 → 0 #5, queryKeys.ts + hooks)
 
-✅ Migración en una sesión. Detalles:
+✅ Migración final en una sesión. Detalles:
 - `api/taxApi.ts` creado con 10 funciones (periods, declarations, F29 detail, payments, check_closed).
 - `actions.ts` server action migrada de `import api` directo a `import { taxApi }`.
-- Componentes migrados: `DeclarationWizard.tsx` (4 llamadas), `TaxDeclarationsView.tsx` (3 llamadas), `TaxPeriodDetailClient.tsx`, `F29DeclarationDetailClient.tsx`.
+- `hooks/queryKeys.ts` creado con `TAX_KEYS` jerárquico (periods, declarations, f29).
+- `hooks/useTaxQueries.ts` creado con 5 hooks: `useTaxPeriods`, `useTaxPeriod`, `useTaxDeclarations`, `useF29Detail`, `useLazyTaxDeclarations`.
+- `hooks/useTaxMutations.ts` creado con 6 hooks: `useTaxCalculation`, `useCreateDeclaration`, `useRegisterDeclaration`, `useClosePeriod`, `useCreateTaxPayment`, `useCheckPeriodClosed`.
+- Componentes migrados: `DeclarationWizard.tsx` (4 llamadas directas → hooks), `TaxDeclarationsView.tsx` (3 llamadas directas → hooks), `TaxPeriodDetailClient.tsx`, `F29DeclarationDetailClient.tsx`.
 - 4 componentes + 1 action migrados, 0 errores de type-check nuevos.
+
+### workflow — completado (1 → 0 #5)
+
+✅ Migración en una sesión. Detalles:
+- `hooks/queryKeys.ts` creado con `WORKFLOW_KEYS` jerárquico (tasks, assignment-rules, notification-rules, settings).
+- `hooks/useWorkflowMutations.ts` creado con 8 hooks de mutación (completar/actualizar tarea, reglas de asignación, reglas de notificación, settings).
+- `api/workflowApi.ts` extendido con `resolveMediaUrl` + `updateNotificationRule`/`createNotificationRule`/`getNotificationRules`.
+- Componente migrado: `WorkflowSettings.tsx` — reemplazó 8 llamadas directas a `api.*` por hooks con `markLocalMutation()` + invalidación jerárquica.
+- 0 errores de type-check, 0 violaciones de lint.
+
+### finance — completado (12 → 0 #5, 1 → 0 #4)
+
+✅ Migración en una sesión. Detalles:
+- `hooks/queryKeys.ts` creado con `FINANCE_KEYS` jerárquico (budgets, accounts, statements, pendingInvoices).
+- 4 hooks migrados: `useBudgets`, `useStatements`, `useAccountDetail`, `usePendingInvoices` — todos ahora usan `FINANCE_KEYS` en lugar de claves inline.
+- 0 violaciones #5 y #4 en componentes.
+- Type-check 0 errores, lint 0 violaciones.
+
+### users — completado (3 → 0 #5, queryKeys.ts)
+
+✅ Migración en una sesión. Detalles:
+- `hooks/queryKeys.ts` creado con `USER_KEYS` y `GROUP_KEYS` jerárquicos (extraídos de `useUserSearch.ts`/`useGroupSearch.ts`).
+- Hooks actualizados: `useUsers`, `useUserSearch`, `useGroupSearch`, `useSingleUser`, `useSingleGroup` — importan desde `queryKeys.ts` en lugar de definir claves inline.
+- 0 violaciones #5 y #4 en componentes.
+- Type-check 0 errores, lint 0 violaciones.
 
 ## Patrón canónico vs anti-patrón observado
 
@@ -250,6 +278,8 @@ cd frontend && npm run lint 2>&1 | grep -c "fsd/no-api-in-component"
 # Tras orders + production sweeps:                       43
 # Tras settings sweep:                                   29
 # Tras contacts + users + tax sweeps:                    18
+# Tras workflow + finance + users sweeps:                0
+# Tras tax sweep (cierre completo):                     0
 ```
 
 ## Referencias

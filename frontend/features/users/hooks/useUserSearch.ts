@@ -1,16 +1,11 @@
 import { useQuery } from '@tanstack/react-query'
 import { usersApi } from "../api/usersApi"
 import type { AppUser } from '@/types/entities'
-
-export const USER_KEYS = {
-    all: ['users'] as const,
-    search: (term: string) => [...USER_KEYS.all, 'search', term] as const,
-    detail: (id: string | number) => [...USER_KEYS.all, 'detail', id] as const,
-}
+import { USER_KEYS } from './queryKeys'
 
 export function useUserSearch(search: string = "", enabled: boolean = true) {
     const query = useQuery({
-        queryKey: USER_KEYS.search(search),
+        queryKey: USER_KEYS.list(search),
         queryFn: async ({ signal }) => {
             const params = new URLSearchParams()
             if (search) params.append("search", search)

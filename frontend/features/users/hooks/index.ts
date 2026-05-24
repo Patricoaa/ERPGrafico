@@ -1,3 +1,4 @@
 export { useUsers } from './useUsers'
-export { useUserSearch, useSingleUser, USER_KEYS } from './useUserSearch'
-export { useGroupSearch, useSingleGroup, GROUP_KEYS } from './useGroupSearch'
+export { useUserSearch, useSingleUser } from './useUserSearch'
+export { useGroupSearch, useSingleGroup } from './useGroupSearch'
+export { USER_KEYS, GROUP_KEYS } from './queryKeys'

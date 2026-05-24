@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useSaleOrderSearch } from "@/features/orders/hooks/useSaleOrderSearch";
-import { useSaleOrderManufacturableLines } from "../../../hooks/useSaleOrderManufacturableLines";
+import { useSaleOrderManufacturableLines } from "../../hooks/useSaleOrderManufacturableLines";
 import { FileText, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

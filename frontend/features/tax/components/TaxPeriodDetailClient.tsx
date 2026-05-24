@@ -1,10 +1,10 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React from "react"
 import { notFound, useRouter } from "next/navigation"
 import { EntityDetailPage, SkeletonShell, FormFooter, CancelButton } from "@/components/shared"
-import { taxApi } from "../api/taxApi"
 import { StatusBadge } from "@/components/shared/StatusBadge"
+import { useTaxPeriod } from "../hooks"
 
 interface TaxPeriodDetailClientProps {
     periodId: string
@@ -12,35 +12,23 @@ interface TaxPeriodDetailClientProps {
 
 export function TaxPeriodDetailClient({ periodId }: TaxPeriodDetailClientProps) {
     const router = useRouter()
-    const [period, setPeriod] = useState<any>(null)
-    const [loading, setLoading] = useState(true)
-    const [error, setError] = useState<number | null>(null)
+    const { data: period, isLoading, error: queryError } = useTaxPeriod(periodId)
 
-    useEffect(() => {
-        const fetchPeriod = async () => {
-            try {
-                const data = await taxApi.getPeriod(periodId)
-                setPeriod(data)
-            } catch (err: any) {
-                setError(err.response?.status || 500)
-            } finally {
-                setLoading(false)
-            }
-        }
-        fetchPeriod()
-    }, [periodId])
+    const errorStatus = queryError
+        ? ((queryError as { response?: { status?: number } })?.response?.status ?? 500)
+        : null
 
-    if (error === 404) return notFound()
-    if (error) return (
+    if (errorStatus === 404) return notFound()
+    if (errorStatus) return (
         <div className="flex-1 flex items-center justify-center p-8 text-destructive text-sm">
             Error al cargar periodo tributario
         </div>
     )
 
-    if (loading || !period) {
+    if (isLoading || !period) {
          return (
              <div className="flex-1 p-8">
-                 <SkeletonShell isLoading={loading || !period} ariaLabel="Cargando detalle de periodo tributario" />
+                 <SkeletonShell isLoading={isLoading || !period} ariaLabel="Cargando detalle de periodo tributario" />
              </div>
          )
      }

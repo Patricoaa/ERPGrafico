@@ -345,10 +345,10 @@ Snapshot inicial. Se actualiza con cada migración en el mismo PR.
 
 Reglas existentes en [frontend/eslint-rules/](../../frontend/eslint-rules/) — agregar dos nuevas siguiendo el patrón de [fsd-no-api-in-component.mjs](../../frontend/eslint-rules/fsd-no-api-in-component.mjs):
 
-| Rule (a crear) | Detecta | Severidad inicial |
+| Rule | Detecta | Severidad |
 |---|---|---|
-| `pagination/no-envelope-discard` | El patrón literal `data.results \|\| data` en `features/*/api/*.ts` y `features/*/hooks/*.ts` | `warn` durante migración → `error` |
-| `pagination/datatable-needs-rowcount` | `<DataTable manualPagination />` sin `rowCount` (JSX AST) | `error` directo (es bug visible) |
+| [`pagination/no-envelope-discard`](../../frontend/eslint-rules/pagination-no-envelope-discard.mjs) | `data.results \|\| data`, `?.results ?? data`, `(data as any).results ?? data`, optional-chained variantes | **`error`** (promovido desde `warn` el 2026-05-23 tras llegar a 0 violaciones) |
+| [`pagination/datatable-needs-rowcount`](../../frontend/eslint-rules/pagination-datatable-needs-rowcount.mjs) | `<DataTable manualPagination />` sin `rowCount` (JSX AST) | `error` desde día uno (es bug visible) |
 
 **Auditoría manual** (correr antes de cada release):
 
