@@ -44,7 +44,7 @@ export function useLazyTaxDeclarations() {
       queryKey: TAX_KEYS.declarations.list(params),
       queryFn: () => taxApi.getDeclarations(params),
     })
-    return (data as { results?: TaxDeclaration[] }).results || (data as TaxDeclaration[])
+    return Array.isArray(data) ? data : ((data as { results?: TaxDeclaration[] })?.results ?? [])
   }
 
   return { fetchDeclarations }
