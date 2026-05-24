@@ -53,6 +53,23 @@ Cuando `isLoading` es `true`, el DataTable sustituye el body de la tabla por `Sh
 
 ---
 
+## 2.5 Paginación — ver contrato dedicado
+
+`DataTable` opera en dos modos de paginación:
+
+| Modo | Cuándo | Props requeridas |
+|---|---|---|
+| **Cliente** (default) | El hook devuelve `T[]` y el dataset cabe entero en memoria (selector, sub-recurso, singleton). | Ninguna; TanStack pagina las filas locales. |
+| **Manual (server-side)** | El hook devuelve `Page<T>` (endpoint paginado por DRF). | `manualPagination`, `pageCount`, `rowCount`, `pagination`, `onPaginationChange` — **las 5 son obligatorias**. |
+
+**Regla núcleo:** si el hook devuelve `Page<T>`, el DataTable MUST estar en modo manual completo. Mezclar (hook paginado + DataTable cliente) trunca datos silenciosamente — es el bug histórico que motivó este contrato.
+
+La prop `rowCount` (total absoluto del backend, no length de `data`) es la fuente de verdad del footer "Mostrando X a Y de Z registros". Sin ella, el footer cuenta filas locales (= page_size) y miente.
+
+Tipo canónico de `Page<T>`, helper `toPage`, anti-patrones, decision tree y checklist completo en [pagination-contract.md](./pagination-contract.md).
+
+---
+
 ## 3. Sistema de vistas — Valores canónicos
 
 Las vistas disponibles en el sistema son:
