@@ -9,7 +9,21 @@ interface WizardState {
   loading: boolean
   viewingStepIndex: number
 
-  // ── implicit task approvals (shared across all approval tabs) ─────────────
+  // ── creation flow state ───────────────────────────────────────────────
+  chosenOtType: "LINKED" | "NONE" | null
+  selectedSaleOrder: string | null
+  selectedSaleLine: string | null
+  selectedProduct: string | null
+  productDescription: string
+  mfgConfig: ManufacturingData | null
+  selectedContact: Contact | null
+  quantity: string
+  uomId: string
+  startDate: Date | null
+  dueDate: Date | null
+  internalNotes: string
+
+  // ── implicit task approvals (shared across all approval tabs) ─────────
   taskNotes: Record<string | number, string>
   taskFiles: Record<string | number, File | null>
 
@@ -49,14 +63,42 @@ interface WizardState {
   ) => void
   setRectificationProducedQty: (qty: number | null) => void
 
+  // ── creation flow actions ───────────────────────────────────────────────
+  setChosenOtType: (otType: "LINKED" | "NONE" | null) => void
+  setSelectedSaleOrder: (saleOrderId: string | null) => void
+  setSelectedSaleLine: (saleLineId: string | null) => void
+  setSelectedProduct: (productId: string | null) => void
+  setProductDescription: (desc: string) => void
+  setMfgConfig: (config: ManufacturingData | null) => void
+  setSelectedContact: (contact: Contact | null) => void
+  setQuantity: (quantity: string) => void
+  setUomId: (uomId: string) => void
+  setStartDate: (date: Date | null) => void
+  setDueDate: (date: Date | null) => void
+  setInternalNotes: (notes: string) => void
+
   /** Reset all state (call when wizard closes) */
   reset: () => void
 }
 
-const INITIAL: Omit<WizardState, keyof Omit<WizardState, 'order' | 'loading' | 'viewingStepIndex' | 'taskNotes' | 'taskFiles' | 'isAnnulModalOpen' | 'isDeleteModalOpen' | 'isBackwardModalOpen' | 'pendingPrevStage' | 'showPOPreview' | 'outsourcedPending' | 'rectificationAdjustments' | 'rectificationOutsourcedAdjustments' | 'rectificationProducedQty'>> = {
+const INITIAL: WizardState = {
   order: null,
   loading: true,
   viewingStepIndex: 0,
+  // Creation flow state
+  chosenOtType: null,
+  selectedSaleOrder: null,
+  selectedSaleLine: null,
+  selectedProduct: null,
+  productDescription: "",
+  mfgConfig: null,
+  selectedContact: null,
+  quantity: "",
+  uomId: "",
+  startDate: null,
+  dueDate: null,
+  internalNotes: "",
+  // Other state
   taskNotes: {},
   taskFiles: {},
   isAnnulModalOpen: false,
@@ -95,6 +137,20 @@ export const useWizardStore = create<WizardState>((set) => ({
   setRectificationAdjustments: (adjustments) => set({ rectificationAdjustments: adjustments }),
   setRectificationOutsourcedAdjustments: (adjustments) => set({ rectificationOutsourcedAdjustments: adjustments }),
   setRectificationProducedQty: (qty) => set({ rectificationProducedQty: qty }),
+
+  // ── creation flow actions ───────────────────────────────────────────────
+  setChosenOtType: (otType) => set({ chosenOtType: otType }),
+  setSelectedSaleOrder: (saleOrderId) => set({ selectedSaleOrder: saleOrderId }),
+  setSelectedSaleLine: (saleLineId) => set({ selectedSaleLine: saleLineId }),
+  setSelectedProduct: (productId) => set({ selectedProduct: productId }),
+  setProductDescription: (desc) => set({ productDescription: desc }),
+  setMfgConfig: (config) => set({ mfgConfig: config }),
+  setSelectedContact: (contact) => set({ selectedContact: contact }),
+  setQuantity: (quantity) => set({ quantity }),
+  setUomId: (uomId) => set({ uomId }),
+  setStartDate: (date) => set({ startDate: date }),
+  setDueDate: (date) => set({ dueDate: date }),
+  setInternalNotes: (notes) => set({ internalNotes: notes }),
 
   reset: () => set(INITIAL),
 }))

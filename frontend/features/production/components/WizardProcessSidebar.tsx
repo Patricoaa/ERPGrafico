@@ -37,17 +37,31 @@ export function WizardProcessSidebar({
                 const isCurrent = actualStepIndex === index
                 const isFuture = actualStepIndex < index
                 
-                // In create mode: Step 0 is unlocked. Step 1 is unlocked if origin chosen. Rest are locked.
-                let isLocked = false
-                if (isCreating) {
-                    if (index === 0) {
-                        isLocked = false
-                    } else if (index === 1) {
-                        isLocked = !chosenOtType
-                    } else {
-                        isLocked = true
-                    }
-                }
+  // In create mode:
+  // Step 0 (ORIGIN_SELECTION) - always unlocked
+  // Step 1 (SALE_ORDER_PRODUCT) - unlocked if origin chosen
+  // Step 2 (PRODUCT_SELECTION) - unlocked only for NONE path
+  // Step 3 (MFG_CONFIG) - unlocked if origin chosen
+  // Step 4+ (MATERIAL_ASSIGNMENT and beyond) - unlocked if origin chosen
+  let isLocked = false
+  if (isCreating) {
+    if (index === 0) {
+      // ORIGIN_SELECTION - always unlocked
+      isLocked = false
+    } else if (index === 1) {
+      // SALE_ORDER_PRODUCT - unlocked if origin chosen (for LINKED path) OR if NONE path (we go straight to PRODUCT_SELECTION at index 2)
+      isLocked = chosenOtType === null
+    } else if (index === 2) {
+      // PRODUCT_SELECTION - only for NONE path
+      isLocked = chosenOtType !== "NONE"
+    } else if (index === 3) {
+      // MFG_CONFIG - unlocked if we've chosen an origin type
+      isLocked = chosenOtType === null
+    } else {
+      // Steps 4+ (MATERIAL_ASSIGNMENT and beyond) - locked until we complete the config steps
+      isLocked = chosenOtType === null
+    }
+  }
 
                 return (
                     <div
