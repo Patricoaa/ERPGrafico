@@ -60,12 +60,14 @@ graph TD
     A -->|Estado de una entidad| C(StatusBadge)
     A -->|Tag o etiqueta genérica| D[Badge de shadcn]
     A -->|Contenedor/Tarjeta simple| E[Card de shadcn]
+    A -->|KPI / métrica / stat| H(StatCard)
     A -->|Sin resultados/Vacio| F(EmptyState)
     A -->|Reporte jerárquico contable| G(ReportTable)
 ```
 
 - **`StatusBadge`**: **Obligatorio** para el estado de las entidades (ej. `in_production`, `paid`). Lee `state-map.md`.
-- **`Card` de shadcn**: Contenedor estándar. [Ver documentación oficial (component-card.md)](./component-card.md).
+- **`StatCard`**: **Obligatorio** para tarjetas de métrica/resumen con label + valor. 3 variantes (default, compact, minimal), 7 acentos, trend, href, onClick. [Ver contrato completo](./component-statcard.md).
+- **`Card` de shadcn**: Contenedor estándar para contenido arbitrario (formularios, charts, tablas). [Ver documentación oficial (component-card.md)](./component-card.md).
 
 ## 3. Inputs y Formularios
 
