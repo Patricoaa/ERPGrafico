@@ -33,7 +33,7 @@ export function ProductSelectionStep({
   const [selectedProduct, setSelectedProduct] = useState<BaseProduct | null>(null);
 
   const {
-    data: pages = [],
+    data,
     fetchNextPage,
     hasNextPage,
     isLoading,
@@ -64,7 +64,7 @@ export function ProductSelectionStep({
     enabled: otType !== null,
   });
 
-  const products = pages.flat();
+  const products = (data?.pages ?? []).flat();
 
   useEffect(() => {
     if (initialProductId && otType === "NONE" && !selectedProduct) {
