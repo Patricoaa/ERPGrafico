@@ -142,15 +142,16 @@ const eslintConfig = defineConfig([...nextVitals, ...nextTs, globalIgnores([
 },
 // Pagination contract — see docs/20-contracts/pagination-contract.md
 // 1. no-envelope-discard: bans `data.results || data` in api/ and hooks/.
-//    `warn` during migration; bump to `error` when the audit grep in
-//    §6 of the contract reaches 0.
+//    Promoted from `warn` to `error` on 2026-05-23 after the global
+//    violation count reached 0 (all 33 + 5 sites migrated). Any new
+//    instance is a regression and blocks the build.
 {
   files: ["features/*/api/**/*.ts", "features/*/hooks/**/*.ts"],
   plugins: {
     pagination: { rules: { "no-envelope-discard": paginationNoEnvelopeDiscard } },
   },
   rules: {
-    "pagination/no-envelope-discard": "warn",
+    "pagination/no-envelope-discard": "error",
   },
 },
 // 2. datatable-needs-rowcount: any <DataTable manualPagination /> without

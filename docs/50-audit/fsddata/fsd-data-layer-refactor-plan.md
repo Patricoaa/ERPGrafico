@@ -332,6 +332,102 @@ Mantener esta tabla actualizada en cada PR que cierre una feature.
 | Sub-entidades olvidadas (variants, lines, etc.) | El acceptance check incluye `grep` recursivo en `components/`. No solo la entidad principal. |
 | Aumento momentáneo del bundle (más hooks/archivos) | Negligible — los hooks son tree-shakeable. Tras migración, los `useQuery` directos desaparecen. |
 
+## Manejo de desviaciones de contrato
+
+Una vez completada la migración, el contrato sigue vivo: features nuevas o refactors pueden desviarse. Este protocolo define cómo se detecta, evalúa y resuelve una desviación entre lo que hace el código y lo que prescriben los contratos ([hook-contracts.md](../../20-contracts/hook-contracts.md), [frontend-fsd.md](../../10-architecture/frontend-fsd.md), invariantes #4/#5 de [CLAUDE.md](../../../CLAUDE.md)).
+
+### 1. Cómo detectar desviaciones
+
+**Señales mecánicas** (CI las atrapa solas):
+
+```bash
+cd frontend && npm run lint -- --max-warnings 0     # bloquea cualquier nueva violación
+cd frontend && npm run type-check                   # bloquea `any` escapados
+```
+
+**Auditoría periódica** (correr mensualmente o tras cualquier merge grande):
+
+```bash
+# 1. Violaciones de invariante #5 (api directo en componentes)
+cd frontend && npm run lint 2>&1 | grep -c "fsd/no-api-in-component"
+
+# 2. Violaciones de invariante #4 (useQuery/useMutation en componentes)
+grep -rE "useQuery\(|useMutation\(" frontend/features/*/components/ | wc -l
+
+# 3. Features sin queryKeys.ts
+for f in frontend/features/*/; do
+  fname=$(basename "$f")
+  [ ! -f "${f}hooks/queryKeys.ts" ] && echo "FALTA: $fname"
+done
+
+# 4. Features sin api/ folder
+for f in frontend/features/*/; do
+  fname=$(basename "$f")
+  [ ! -d "${f}api" ] && echo "FALTA api/: $fname"
+done
+
+# 5. Mutations que olvidan markLocalMutation
+grep -rL "markLocalMutation" frontend/features/*/hooks/ | xargs grep -l "useMutation"
+```
+
+Cualquier número distinto del snapshot anterior es una desviación. Si subió, hay que clasificarla.
+
+### 2. Clasificación de la desviación
+
+| Tipo | Ejemplo | Acción |
+|---|---|---|
+| **A. Regresión** — el código viola un contrato vigente sin justificación | Componente nuevo importa `@/lib/api` en lugar de pasar por un hook | **Rechazar PR** o abrir issue. El código se ajusta al contrato. |
+| **B. Excepción legítima** — el contrato no aplica a este caso y nunca aplicará | Una feature aggregator no debe tener `queryKeys.ts` propios | Documentar la excepción en el contrato (no en el código). El código queda como está. |
+| **C. Contrato desactualizado** — la realidad del proyecto cambió y el contrato no | El equipo decidió que todas las features usen Variant B y ya no se acepta Variant A | **Actualizar el contrato vía ADR** (si toca arquitectura) o vía edición directa con review (si es ajuste menor). Luego ajustar código que no cumpla. |
+| **D. Nueva regla emergente** — un patrón se repite ≥3 veces y conviene contractualizarlo | 3 features han escrito el mismo helper de `useEntitySubscription` | Promover a contrato + posiblemente a `/hooks/` global. ADR si el patrón cambia arquitectura. |
+
+### 3. Procedimiento — paso a paso
+
+1. **Identificar el tipo** (A/B/C/D) con la tabla anterior. Si dudás, asumir A.
+
+2. **Para tipo A (regresión)**:
+   - Devolver el PR con el link al contrato violado.
+   - Si la regla violada todavía no tiene barrera mecánica, abrir issue para añadirla (modificar [frontend/eslint.config.mjs](../../../frontend/eslint.config.mjs) o [frontend/eslint-rules/](../../../frontend/eslint-rules/)).
+
+3. **Para tipo B (excepción legítima)**:
+   - Editar el contrato afectado añadiendo la excepción explícitamente (qué, dónde, por qué).
+   - Ejemplo precedente: el patrón aggregator ya está documentado en [frontend-fsd.md §Aggregator pattern](../../10-architecture/frontend-fsd.md#aggregator-pattern-read-only-feature-without-root-barrel).
+   - Si la excepción aplica a una sola feature, dejar un comentario `// CONTRACT-EXCEPTION: <doc>#<anchor>` en el código.
+
+4. **Para tipo C (contrato desactualizado)**:
+   - Si el cambio es estructural (afecta dataflow, capas, naming convention): nueva ADR en [docs/10-architecture/adr/](../../10-architecture/adr/). Numerar continuando la secuencia.
+   - Si es un refinamiento menor (ajuste de tier de `staleTime`, regla de invalidación adicional): editar el contrato directamente con dos reviewers.
+   - Actualizar este documento (`fsd-data-layer-refactor-plan.md`) o el audit (`fsd-data-layer-audit.md`) si el cambio modifica la metodología o tracking.
+
+5. **Para tipo D (nueva regla emergente)**:
+   - Confirmar la repetición (≥3 usos con `grep`).
+   - Promover a contrato según donde corresponda:
+     - Hook reutilizable → [hook-contracts.md §Global hooks](../../20-contracts/hook-contracts.md#global-hooks-promoted) + mover archivo a `frontend/hooks/`.
+     - Patrón estructural → [frontend-fsd.md](../../10-architecture/frontend-fsd.md) + ADR si redefine capas.
+     - Patrón de componente → [component-contracts.md](../../20-contracts/component-contracts.md).
+
+6. **Después de cualquier cambio de contrato**: actualizar las tablas de estado relevantes (esta tabla, [audit](fsd-data-layer-audit.md#tabla-maestra-por-feature), [hook-contracts §Status per domain](../../20-contracts/hook-contracts.md#status-per-domain)) en el mismo PR.
+
+### 4. Cuándo escalar la severidad mecánica
+
+`fsd/no-api-in-component` está en `warn` mientras quedan violaciones. Reglas para subir a `error`:
+
+| Condición | Acción |
+|---|---|
+| Métrica `grep -c "fsd/no-api-in-component"` == 0 durante 2 semanas | Cambiar `"warn"` → `"error"` en [frontend/eslint.config.mjs](../../../frontend/eslint.config.mjs). |
+| Re-aparece una violación después del cambio | Aplicar el procedimiento (probablemente tipo A). NO bajar a `warn` para desbloquear el merge. |
+| Excepción legítima requiere bypass | Usar `// eslint-disable-next-line fsd/no-api-in-component -- <razón + link a contrato>` con justificación inline. Reviewer obligatorio. |
+
+El mismo principio aplica a cualquier futura regla añadida bajo el patrón "warn durante migración → error tras compliance": empezar permisiva, escalar cuando el contador llega a 0.
+
+### 5. Mantenimiento del audit
+
+[fsd-data-layer-audit.md](fsd-data-layer-audit.md) es un **snapshot** — su valor depende de mantener la frecuencia de re-medición. Convención:
+
+- **Tras cada feature migrada**: actualizar la fila correspondiente en la tabla maestra + el contador de violaciones de la sección "Resumen ejecutivo".
+- **Al detectar regresión vía CI**: añadir una nota en la sección "Top ofensores actuales" con la feature y el commit que la introdujo (para tracking, no para shaming).
+- **Snapshots históricos**: no editar columnas pasadas — añadir una columna nueva. Permite ver la evolución y validar que el patrón "warn → error" funcionó.
+
 ## Referencias
 
 - Audit del estado actual: [fsd-data-layer-audit.md](fsd-data-layer-audit.md)

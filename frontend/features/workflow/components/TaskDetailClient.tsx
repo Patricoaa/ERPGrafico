@@ -3,9 +3,9 @@
 import React, { useState, useEffect } from "react"
 import { notFound, useRouter } from "next/navigation"
 import { EntityDetailPage, FormFooter, CancelButton, SkeletonShell } from "@/components/shared"
-import api from "@/lib/api"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import type { Task } from "@/features/workflow/api/workflowApi"
+import { useTask } from "../hooks/useWorkflowQueries"
 
 // Placeholder tipado para el esqueleto - sigue el patrón del contrato
 interface TaskDetailClientProps {
@@ -36,17 +36,24 @@ export function TaskDetailClient({ taskId }: TaskDetailClientProps) {
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<number | null>(null)
 
-    useEffect(() => {
-        const fetchTask = async () => {
-            try {
-                // Workflow tasks are typically in /workflow/tasks/
-                const response = await api.get(`/workflow/tasks/${taskId}/`)
-                setTask(response.data)
-            } catch (err: any) {
-                setError(err.response?.status || 500)
-            } finally {
-                setLoading(false)
-            }
+    const { data: task, isLoading: loading, error: queryError } = useTask(taskId)
+
+    const error = queryError ? (queryError as any).response?.status || 500 : null
+
+    if (error === 404) return notFound()
+    if (error) return (
+        <div className="flex-1 flex items-center justify-center p-8 text-destructive text-sm">
+            Error al cargar tarea
+        </div>
+    )
+
+    if (loading || !task) {
+         return (
+             <div className="flex-1 p-8">
+                 <SkeletonShell isLoading={loading || !task} ariaLabel="Cargando detalle de tarea" />
+             </div>
+         )
+     }
         }
         fetchTask()
     }, [taskId])

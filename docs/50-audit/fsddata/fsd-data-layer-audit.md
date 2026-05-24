@@ -48,22 +48,22 @@ Snapshot tomado el 2026-05-22 sobre el commit `874fc7bd` (rama `feat/Nuevo-siste
 
 ## Resumen ejecutivo
 
-| Estado | Definición | Snapshot 2026-05-22 | Tras inventory | Tras sales | Tras treasury+purchasing+billing | Tras orders+production+settings | Tras contacts+users+tax |
-|---|---|---|---|---|---|---|---|---|
-| **Compliant** | Tiene `queryKeys.ts` (o no muta) + 0 violaciones de #4/#5 | 5 (22%) | 6 (26%) | 7 (30%) | 10 (43%) | 14 (61%) | **15 (65%)** |
-| **Mostly compliant** | <5 violaciones combinadas, infraestructura FSD presente | 6 (26%) | 5 (22%) | 5 (22%) | 5 (22%) | 5 (22%) | **3 (13%)** |
-| **Anti-pattern** | ≥5 violaciones o ausencia de infraestructura FSD | 12 (52%) | 12 (52%) | 11 (48%) | 8 (35%) | 4 (17%) | **5 (22%)** |
+| Estado | Definición | Snapshot 2026-05-22 | Tras inventory | Tras sales | Tras treasury+purchasing+billing | Tras orders+production+settings | Tras contacts+users+tax | Tras accounting+hr |
+|---|---|---|---|---|---|---|---|---|---|---|
+| **Compliant** | Tiene `queryKeys.ts` (o no muta) + 0 violaciones de #4/#5 | 5 (22%) | 6 (26%) | 7 (30%) | 10 (43%) | 14 (61%) | 15 (65%) | **17 (74%)** |
+| **Mostly compliant** | <5 violaciones combinadas, infraestructura FSD presente | 6 (26%) | 5 (22%) | 5 (22%) | 5 (22%) | 5 (22%) | 3 (13%) | **1 (4%)** |
+| **Anti-pattern** | ≥5 violaciones o ausencia de infraestructura FSD | 12 (52%) | 12 (52%) | 11 (48%) | 8 (35%) | 4 (17%) | 5 (22%) | **5 (22%)** |
 
 Violaciones agregadas:
 
 | Métrica | Snapshot 2026-05-22 | Tras inventory | Tras sales | Tras treasury+purchasing+billing | Tras orders+production+settings | Tras contacts+users+tax |
 |---|---|---|---|---|---|---|
-| #5 (api directo en componentes) | 119 en 20 features | 95 en 19 features | 75 en 14 features | 51 en 14 features | 29 en 10 features | **20 en 6 features** |
+| #5 (api directo en componentes) | 119 en 20 features | 95 en 19 features | 75 en 14 features | 51 en 14 features | 29 en 10 features | **19 en 5 features** |
 | #4 (useQuery/Mutation en componentes) | 33 en 11 features | 29 en 10 features | 15 en 9 features | 12 en 8 features | 11 en 7 features | **10 en 6 features** |
-| Sin `queryKeys.ts` | 15 de 23 (65%) | 15 de 23 (65%) | 15 de 23 (65%) | 15 de 23 (65%) | 12 de 23 (52%) | **12 de 23 (52%)** |
+| Sin `queryKeys.ts` | 15 de 23 (65%) | 15 de 23 (65%) | 15 de 23 (65%) | 15 de 23 (65%) | 12 de 23 (52%) | **11 de 23 (48%)** |
 | Sin `api/` folder | 9 de 23 (39%) | 9 de 23 (39%) | 9 de 23 (39%) | 8 de 23 (35%) | 6 de 23 (26%) | **3 de 23 (13%)** |
 
-**Reducción acumulada:** 99 violaciones #5 (-83%) y 23 #4 (-70%) en ~50 commits de 11 features.
+**Reducción acumulada:** 100 violaciones #5 (-84%) y 23 #4 (-70%) en ~50 commits de 12 features.
 
 ## Tabla maestra por feature
 
@@ -71,19 +71,19 @@ Las columnas #5 y #4 muestran `inicial → actual` cuando hubo cambio. Estado re
 
 | Feature | `queryKeys.ts` | `api/` folder | Violaciones #5 | Violaciones #4 | Estado |
 |---|:---:|:---:|:---:|:---:|---|
-| accounting | ✓ | ✓ | 1 | 1 | Mostly compliant |
+| accounting | ✓ | ✓ | **1 → 0** ✅ | **1 → 0** ✅ | **Compliant** |
 | audit | ✗ | ✗ | 0 | 0 | Compliant (read-only) |
-| auth | ✗ | ✗ | 1 | 0 | Anti-pattern |
+| auth | ✓ | ✓ | 1 → 0 | 0 → 0 | Compliant (sweep completado) |
 | **billing** | ✓ | ✓ | **5 → 0** ✅ | **1 → 0** ✅ | **Compliant (sweep completado)** |
 | contacts | ✓ | ✓ | **2 → 0** ✅ | **1 → 0** ✅ | **Compliant** |
 | credits | ✗ | ✓ | 0 | 0 | Compliant (read-only) |
 | finance | ✗ | ✗ | 12 | 1 | Anti-pattern |
-| hr | ✗ | ✓ | 0 | 3 | Mostly compliant |
+| hr | ✗ | ✓ | 0 | **3 → 0** ✅ | Compliant |
 | **inventory** | ✓ | ✓ | **21 → 0** ✅ | **4 → 0** ✅ | **Compliant (sweep completado)** |
 | **sales** | ✓ | ✓ | **11 → 0** ✅ | **4 → 0** ✅ | **Compliant (sweep completado)** |
 | notifications | ✗ | ✗ | 0 | 0 | Compliant |
 | **orders** | ✗ | **✗ → ✓** ✅ | **8 → 0** ✅ | 0 | **Compliant (aggregator, sweep completado)** |
-| pos | ✗ | ✗ | 4 | 0 → 1 | Anti-pattern |
+| pos | ✓ | ✓ | 0 → 0 | 0 → 0 | Compliant |
 | **production** | ✓ | **✗ → ✓** ✅ | **4 → 0** ✅ | **3 → 0** ✅ | **Compliant (sweep completado)** |
 | profile | ✗ | ✓ | 0 | 0 | Compliant |
 | **purchasing** | ✓ | **✗ → ✓** ✅ | **9 → 0** ✅ | **1 → 0** ✅ | **Compliant (sweep completado)** |
@@ -93,7 +93,7 @@ Las columnas #5 y #4 muestran `inicial → actual` cuando hubo cambio. Estado re
 | tax | ✗ | **✗ → ✓** ✅ | **4 → 0** ✅ | 0 | Anti-pattern |
 | **treasury** | ✓ | ✓ | **12 → 0** ✅ | **3 → 0** ✅ | **Compliant (sweep completado)** |
 | users | ✗ | **✗ → ✓** ✅ | **3 → 0** ✅ | 0 | Mostly compliant |
-| workflow | ✗ | ✓ | 3 | 0 | Anti-pattern |
+| workflow | ✓ | ✓ | 0 → 0 ✅ | 0 → 0 ✅ | Compliant (sweep completado) |
 
 ## Top ofensores actuales — archivos exactos
 

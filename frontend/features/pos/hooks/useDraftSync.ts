@@ -2,6 +2,10 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { posApi } from '../api/posApi'
 import { toast } from 'sonner'
 import { useAuth } from '@/contexts/AuthContext'
+import { useRealtime } from '@/features/realtime'
+
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { POS_KEYS } from './queryKeys'
 
 // ── Types ────────────────────────────────────────────────────────
 
@@ -193,11 +197,10 @@ export function useDraftSync({
     }, [user?.id, activeLockDraftId])
 
     // ── Initial Fetch & Fallback ────────────────────────────────
-
     const initialFetch = useCallback(async () => {
         if (!posSessionId) return
         try {
-            const data: SyncResponse = await posApi.syncDrafts({ pos_session_id: posSessionId }) as SyncResponse
+            const data: SyncResponse = await syncDraftsMutation.mutateAsync(posSessionId)
             setSyncDrafts(data.drafts)
             prevDraftsRef.current = data.drafts
             
@@ -207,7 +210,56 @@ export function useDraftSync({
         } catch (error) {
             console.debug('[DraftSync] Initial fetch failed:', error)
         }
-    }, [posSessionId])
+    }, [posSessionId, syncDraftsMutation])
+
+    // Mutation hooks for draft sync operations
+    const queryClient = useQueryClient()
+    const { markLocalMutation } = useRealtime()
+
+    const syncDraftsMutation = useMutation({
+        mutationFn: (posSessionId: number) => posApi.syncDrafts({ pos_session_id: posSessionId }),
+        onSuccess: (data, variables) => {
+            // Update sync drafts list
+            setSyncDrafts(data.drafts)
+            prevDraftsRef.current = data.drafts
+            
+            // Invalidate draft lists and details in the useDrafts hook
+            queryClient.invalidateQueries({ queryKey: POS_KEYS.drafts.lists() })
+            
+            // Realtime integration
+            markLocalMutation()
+        },
+        onError: (error: Error) => {
+            console.debug('[DraftSync] Sync failed:', error)
+        }
+    })
+
+    const lockDraftMutation = useMutation({
+        mutationFn: ({ draftId, sessionKey }: { draftId: number; sessionKey: string }) =>
+            posApi.lockDraft(draftId, { pos_session_id: posSessionId, session_key: sessionKey }),
+        onSuccess: (data, variables) => {
+            setActiveLockDraftId(variables.draftId)
+            // Invalidate draft details to reflect lock status
+            queryClient.invalidateQueries({ queryKey: POS_KEYS.drafts.detailById(variables.draftId) })
+            markLocalMutation()
+        },
+        onError: (error: Error) => {
+            // Error handling is done in the acquireLock function
+        }
+    })
+
+    const unlockDraftMutation = useMutation({
+        mutationFn: (draftId: number) => posApi.unlockDraft(draftId, { pos_session_id: posSessionId, session_key: browserSessionKey }),
+        onSuccess: () => {
+            setActiveLockDraftId(null)
+            // Invalidate draft details to reflect lock status
+            queryClient.invalidateQueries({ queryKey: POS_KEYS.drafts.detailById(draftId) })
+            markLocalMutation()
+        },
+        onError: (error: Error) => {
+            // Silently ignore unlock errors as they're often benign
+        }
+    })
 
     // Use a slow polling fallback ONLY if socket is disconnected for a long time
     useEffect(() => {
@@ -261,10 +313,7 @@ export function useDraftSync({
     const acquireLock = useCallback(async (draftId: number) => {
         if (!posSessionId) return { acquired: false, error: 'Sin sesión' }
         try {
-            await posApi.lockDraft(draftId, {
-                pos_session_id: posSessionId,
-                session_key: browserSessionKey,
-            })
+            await lockDraftMutation.mutateAsync({ draftId, sessionKey: browserSessionKey })
             setActiveLockDraftId(draftId)
             return { acquired: true }
         } catch (error: any) {
@@ -274,19 +323,16 @@ export function useDraftSync({
                 locked_by_name: error.response?.data?.locked_by_name
             }
         }
-    }, [posSessionId, browserSessionKey])
+    }, [posSessionId, browserSessionKey, lockDraftMutation])
 
     const releaseLock = useCallback(async (draftId?: number) => {
         const targetId = draftId || activeLockDraftId
         if (!targetId || !posSessionId) return
         try {
-            await posApi.unlockDraft(targetId, {
-                pos_session_id: posSessionId,
-                session_key: browserSessionKey,
-            })
+            await unlockDraftMutation.mutateAsync(targetId)
         } catch (error) {}
         if (targetId === activeLockDraftId) setActiveLockDraftId(null)
-    }, [activeLockDraftId, posSessionId, browserSessionKey])
+    }, [activeLockDraftId, posSessionId, browserSessionKey, unlockDraftMutation])
 
     const getLockInfo = useCallback((draftId: number) => {
         const draft = syncDrafts.find(d => d.id === draftId)

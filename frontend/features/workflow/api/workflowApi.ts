@@ -1,5 +1,26 @@
 import api from "@/lib/api"
 
+/**
+ * Resolves a media URL from the backend.
+ * If the path is relative (starts with /media/), it prepends the backend host.
+ * If the path is already absolute, it returns it as-is.
+ */
+export function resolveMediaUrl(path: string | null | undefined): string | null {
+  if (!path) return null
+  if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('data:')) {
+    return path
+  }
+
+  // Derive backend host from baseURL (stripping /api/ if present)
+  const rawBaseURL = process.env.NEXT_PUBLIC_API_URL || ''
+  const backendHost = rawBaseURL.replace(/\/api\/?$/, '')
+
+  // Ensure the path starts with a slash
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`
+
+  return `${backendHost}${normalizedPath}`
+}
+
 // ─── Sub-types ────────────────────────────────────────────
 
 /** Minimal user data embedded in task responses */
@@ -150,6 +171,11 @@ export const completeTask = async (id: number, notes?: string, attachments?: Fil
     return response.data
 }
 
+export const updateTask = async (id: number, payload: Record<string, unknown>) => {
+    const response = await api.patch(`/workflow/tasks/${id}/`, payload)
+    return response.data
+}
+
 // Notifications
 export const getNotifications = async () => {
     const response = await api.get('workflow/notifications/')
@@ -168,6 +194,22 @@ export const markNotificationRead = async (id: number) => {
 
 export const markAllNotificationsRead = async () => {
     const response = await api.post(`workflow/notifications/mark_all_read/`)
+    return response.data
+}
+
+// Notification Rules
+export const getNotificationRules = async () => {
+    const response = await api.get('workflow/notification-rules/')
+    return response.data
+}
+
+export const updateNotificationRule = async (id: number, data: NotificationRulePayload) => {
+    const response = await api.patch(`workflow/notification-rules/${id}/`, data)
+    return response.data
+}
+
+export const createNotificationRule = async (data: NotificationRulePayload) => {
+    const response = await api.post(`workflow/notification-rules/`, data)
     return response.data
 }
 

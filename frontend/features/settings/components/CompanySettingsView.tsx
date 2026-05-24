@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils"
 import { useAutoSaveForm } from "@/hooks/useAutoSaveForm"
 import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard"
 
-import { resolveMediaUrl } from "@/lib/api"
+import { resolveMediaUrl } from "@/features/settings/api/settingsApi"
 import { CompanySettings } from "@/features/settings/types"
 import { contactsApi } from "@/features/contacts/api/contactsApi"
 

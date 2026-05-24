@@ -7,9 +7,11 @@ import { posApi } from '../api/posApi'
 import type { Product, StockLimits } from '@/types/pos'
 import { toast } from 'sonner'
 import * as BOMResolver from '@/features/pos/utils/bom-resolver'
+import { useRealtime } from '@/features/realtime'
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { inventoryApi } from '@/features/inventory/api/inventoryApi'
+import { POS_KEYS } from './queryKeys'
 
 const EMPTY_ARRAY: Product[] = []
 
@@ -123,23 +125,27 @@ export function useProducts() {
         }
     }, [queryClient, setLoading])
 
-    const toggleFavorite = useCallback(async (productId: number) => {
-        try {
-            const data = await posApi.toggleFavorite(productId)
+    const toggleFavoriteMutation = useMutation({
+        mutationFn: posApi.toggleFavorite,
+        onSuccess: (data, variables) => {
             const isFavorite = (data as any).is_favorite
-
-            // Update cache directly for immediate UI response
-            queryClient.setQueryData(['products', { active: true, can_be_sold: true }], (old: Product[] | undefined) => {
-                if (!old) return old
-                return old.map((p: Product) => p.id === productId ? { ...p, is_favorite: isFavorite } : p)
-            })
-
             toast.success(isFavorite ? "Añadido a favoritos" : "Eliminado de favoritos")
-        } catch (error) {
+            
+            // Standard FSD invalidation
+            queryClient.invalidateQueries({ queryKey: POS_KEYS.products.lists() })
+            queryClient.invalidateQueries({ queryKey: POS_KEYS.products.details() })
+            
+            // Realtime integration
+            const { markLocalMutation } = useRealtime()
+            markLocalMutation()
+        },
+        onError: (error: Error) => {
             console.error("Error toggling favorite:", error)
             toast.error("Error al actualizar favorito")
         }
-    }, [queryClient])
+    })
+    
+    const toggleFavorite = toggleFavoriteMutation.mutateAsync
 
     return {
         products,
