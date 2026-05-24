@@ -1,6 +1,5 @@
-import { lazy, Suspense } from "react"
-import { SkeletonShell, PageHeader } from "@/components/shared"
 import { Metadata } from "next"
+import { CompanySettingsView } from "@/features/settings"
 
 export const metadata: Metadata = {
     title: "Configuración de Empresa | ERPGrafico",
@@ -11,20 +10,11 @@ interface PageProps {
     searchParams: Promise<{ tab?: string }>
 }
 
-// Lazy load the CompanySettingsView component
-const CompanySettingsView = lazy(() =>
-    import("@/features/settings").then(module => ({
-        default: module.CompanySettingsView
-    }))
-)
-
 export default async function CompanySettingsPage({ searchParams }: PageProps) {
     const params = await searchParams
     const activeTab = params.tab || "general"
 
     return (
-        <Suspense fallback={<SkeletonShell isLoading={true} ariaLabel="Cargando configuración de empresa" />}>
-            <CompanySettingsView activeTab={activeTab} />
-        </Suspense>
+        <CompanySettingsView activeTab={activeTab} />
     )
 }

@@ -13,9 +13,7 @@ import { Button } from "@/components/ui/button"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Plus, User, ShieldCheck, ShieldAlert } from "lucide-react"
 import { BaseModal } from "@/components/shared/BaseModal"
-import { CancelButton, SubmitButton, LabeledSeparator, LabeledInput, LabeledContainer, FormSection, FormTabs, FormTabsContent, type FormTabItem, FormSplitLayout, FormFooter, LabeledSelect, LabeledSwitch, EntityHeader } from "@/components/shared"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Switch } from "@/components/ui/switch"
+import { CancelButton, SubmitButton, LabeledSeparator, LabeledInput, LabeledContainer, FormSection, FormTabs, FormTabsContent, type FormTabItem, FormSplitLayout, FormFooter, LabeledSelect, LabeledSwitch, EntityHeader, SkeletonShell } from "@/components/shared"
 import { Checkbox } from "@/components/ui/checkbox"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { AppGroup } from "@/types/entities"
@@ -47,6 +45,7 @@ export function UserForm({ auditSidebar, initialData, onSuccess, trigger, open: 
     const open = isControlled ? controlledOpen : internalOpen
     const setOpen = isControlled ? setControlledOpen! : setInternalOpen
     const [loading, setLoading] = useState(false)
+    const [isFetchingDeps, setIsFetchingDeps] = useState(false)
     const [availableRoles, setAvailableRoles] = useState<[string, string][]>([])
     const [availableGroups, setAvailableGroups] = useState<AppGroup[]>([])
     const [activeTab, setActiveTab] = useState("general")
@@ -79,6 +78,7 @@ export function UserForm({ auditSidebar, initialData, onSuccess, trigger, open: 
         if (!open) return
 
         const fetchDisplayData = async () => {
+            setIsFetchingDeps(true)
             try {
                 const [rolesData, groupsData] = await Promise.all([
                     usersApi.getRoles(),
@@ -94,11 +94,15 @@ export function UserForm({ auditSidebar, initialData, onSuccess, trigger, open: 
                 setAvailableGroups(functionalGroupsData)
             } catch (error) {
                 console.error("Error fetching form data", error)
+            } finally {
+                setIsFetchingDeps(false)
             }
         }
 
         fetchDisplayData()
     }, [open])
+
+    const isFetchingInitialData = open && isFetchingDeps
 
     // Sync form values with initialData when modal opens or initialData changes
     const lastResetId = useRef<string | number | undefined>(undefined)
@@ -106,12 +110,12 @@ export function UserForm({ auditSidebar, initialData, onSuccess, trigger, open: 
 
     useEffect(() => {
         const shouldReset = (open && !wasOpen.current) || (open && initialData?.id !== lastResetId.current)
-        
+
         if (shouldReset) {
             form.reset(parsedInitialValues)
             lastResetId.current = initialData?.id
         }
-        
+
         wasOpen.current = open
     }, [open, initialData?.id, form, parsedInitialValues])
 
@@ -243,18 +247,19 @@ export function UserForm({ auditSidebar, initialData, onSuccess, trigger, open: 
                     />
                 }
             >
-                <Form {...form}>
-                    <form id="user-form" onSubmit={form.handleSubmit(onSubmit)} className="h-full flex flex-col">
-                        <FormTabs
-                            items={tabItems}
-                            value={activeTab}
-                            onValueChange={setActiveTab}
-                            orientation="horizontal"
-                            variant="underline"
-                            header={headerSlot}
-                            contentClassName="bg-transparent"
-                            className="flex-1"
-                        >
+                <SkeletonShell isLoading={isFetchingInitialData} ariaLabel="Cargando formulario de usuario" className="flex-1 flex flex-col">
+                    <Form {...form}>
+                        <form id="user-form" onSubmit={form.handleSubmit(onSubmit)} className="h-full flex flex-col">
+                            <FormTabs
+                                items={tabItems}
+                                value={activeTab}
+                                onValueChange={setActiveTab}
+                                orientation="horizontal"
+                                variant="underline"
+                                header={headerSlot}
+                                contentClassName="bg-transparent"
+                                className="flex-1"
+                            >
                                 <fieldset disabled={loading} className="flex-1 min-w-0 transition-opacity disabled:opacity-75 flex flex-col h-full min-h-0">
                                     <FormTabsContent value="general" className="mt-0 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-hidden outline-none">
                                         <FormSplitLayout
@@ -416,9 +421,10 @@ export function UserForm({ auditSidebar, initialData, onSuccess, trigger, open: 
                                         </FormSplitLayout>
                                     </FormTabsContent>
                                 </fieldset>
-                        </FormTabs>
-                    </form>
-                </Form>
+                            </FormTabs>
+                        </form>
+                    </Form>
+                </SkeletonShell>
             </BaseModal>
         </>
     )

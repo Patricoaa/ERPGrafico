@@ -1,14 +1,10 @@
 "use client"
 
 import { lazy, Suspense, useEffect, useState, use } from "react"
-import { LoadingFallback } from "@/components/shared/LoadingFallback"
 import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
-
-const PurchasingOrdersClientView = lazy(() =>
-    import("./components/PurchasingOrdersClientView").then(m => ({ default: m.PurchasingOrdersClientView }))
-)
+import { PurchasingOrdersClientView } from "./components/PurchasingOrdersClientView"
 
 interface PageProps {
     searchParams: Promise<{ modal?: string, selected?: string }>
@@ -59,10 +55,6 @@ export default function PurchaseOrdersPage({ searchParams }: PageProps) {
     )
 
     return (
-        <div className="pt-2 flex-1 min-h-0 flex flex-col">
-            <Suspense fallback={<LoadingFallback />}>
-                <PurchasingOrdersClientView viewMode="orders" externalOpenCheckout={modalOpen} createAction={createAction} />
-            </Suspense>
-        </div>
+        <PurchasingOrdersClientView viewMode="orders" externalOpenCheckout={modalOpen} createAction={createAction} />
     )
 }

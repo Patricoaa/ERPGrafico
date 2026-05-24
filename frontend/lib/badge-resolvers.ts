@@ -202,9 +202,12 @@ const CATEGORY_MAP: Record<CategoryDomain, Record<string, { intent: BadgeIntent;
     contact_type: {
         'CUSTOMER': { intent: 'info', label: 'Cliente' },
         'SUPPLIER': { intent: 'primary', label: 'Proveedor' },
-        'BOTH':     { intent: 'success', label: 'Ambos' },
         'RELATED':  { intent: 'warning', label: 'Relacionado' },
-        'OTHER':    { intent: 'neutral', label: 'Otro' },
+        'PARTNER':  { intent: 'warning', label: 'Socio' },
+        'EMPLOYEE': { intent: 'success', label: 'Empleado' },
+        'USER':     { intent: 'info', label: 'Usuario' },
+        'CARRIER':  { intent: 'neutral', label: 'Transportista' },
+        'NONE':     { intent: 'neutral', label: 'Sin Roles' },
     },
     dte_type: {
         // Fallback for strings from backend

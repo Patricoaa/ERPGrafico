@@ -1,23 +1,15 @@
 "use client"
 
-import { lazy, Suspense, useState, useMemo, useEffect, useRef, useCallback } from "react"
+import { useState, useMemo, useEffect, useRef, useCallback } from "react"
 import { toast } from "sonner"
-import { LoadingFallback } from "@/components/shared/LoadingFallback"
 import { PageHeader } from "@/components/shared/PageHeader"
 import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
 import { useSearchParams, useRouter } from "next/navigation"
-import { PartnerAccountingTab } from "@/features/settings"
+import { PartnerAccountingTab, PartnersSettingsView } from "@/features/settings"
 import Link from "next/link"
 import { BarChart3 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { FINANCES_TABS } from "../FinancesHeader"
-
-// Lazy load the PartnersSettingsView component
-const PartnersSettingsView = lazy(() =>
-    import("@/features/settings").then(module => ({
-        default: module.PartnersSettingsView
-    }))
-)
 
 export default function PartnersPage() {
     const searchParams = useSearchParams()
@@ -138,24 +130,22 @@ export default function PartnersPage() {
             </PageHeader>
 
             <div className="pt-4 flex-1 min-h-0 flex flex-col">
-                <Suspense fallback={<LoadingFallback message="Cargando configuración de socios..." />}>
-                    {(activeTab === 'composition' || activeTab === 'distributions') && (
-                        <PartnersSettingsView
-                            activeTab={activeTab}
-                            onSavingChange={setSaving}
-                            initialFlowOpen={isNewDistributionModal}
-                            initialAddPartnerOpen={isAddPartnerModal}
-                            initialStatsOpen={isStatsModal}
-                            onModalClose={handleModalClose}
-                            createAction={createAction}
-                        />
-                    )}
-                    {activeTab === 'config' && (
-                        <div className="p-1">
-                            <PartnerAccountingTab onSavingChange={setConfigSaving} />
-                        </div>
-                    )}
-                </Suspense>
+                {(activeTab === 'composition' || activeTab === 'distributions') && (
+                    <PartnersSettingsView
+                        activeTab={activeTab}
+                        onSavingChange={setSaving}
+                        initialFlowOpen={isNewDistributionModal}
+                        initialAddPartnerOpen={isAddPartnerModal}
+                        initialStatsOpen={isStatsModal}
+                        onModalClose={handleModalClose}
+                        createAction={createAction}
+                    />
+                )}
+                {activeTab === 'config' && (
+                    <div className="p-1">
+                        <PartnerAccountingTab onSavingChange={setConfigSaving} />
+                    </div>
+                )}
             </div>
         </div>
     )

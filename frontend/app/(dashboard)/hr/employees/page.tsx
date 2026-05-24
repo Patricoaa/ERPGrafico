@@ -64,30 +64,41 @@ export default function EmployeesPage() {
         },
         {
             accessorFn: (row) => row.contact_detail?.name || "",
-            id: "nombre",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Nombre" className="justify-center" />,
+            id: "contact",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Contacto" className="justify-center" />,
             cell: ({ row }) => {
                 const emp = row.original;
                 return (
                     <div>
-                        <DataCell.Text className="font-bold">{emp.contact_detail?.name}</DataCell.Text>
-                        <DataCell.Secondary>{emp.contact_detail?.tax_id}</DataCell.Secondary>
+                        <DataCell.ContactLink contactId={emp.contact} className="font-bold">{emp.contact_detail?.name}</DataCell.ContactLink>
+
                     </div>
                 );
             },
         },
         {
             id: "prevision",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Previsión / Salud" className="justify-center" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Previsión" className="justify-center" />,
             cell: ({ row }) => {
                 const emp = row.original;
                 return (
-                    <div className="items-center justify-center w-full">
+                    <div className="flex justify-center w-full">
                         <DataCell.Text>
-                            AFP: {emp.afp_detail?.name || 'No disp.'}
+                            {emp.afp_detail?.name || 'No disp.'}
                         </DataCell.Text>
+                    </div>
+                );
+            },
+        },
+        {
+            id: "salud",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Salud" className="justify-center" />,
+            cell: ({ row }) => {
+                const emp = row.original;
+                return (
+                    <div className="flex justify-center w-full">
                         <DataCell.Text>
-                            Salud: {emp.salud_type_display}
+                            {emp.salud_type_display || 'No disp.'}
                         </DataCell.Text>
                     </div>
                 );
@@ -144,42 +155,42 @@ export default function EmployeesPage() {
         <div className="space-y-4 h-full flex flex-col">
             <div className="flex-1 min-h-0">
                 <DataTableView
-                entityLabel="hr.employee"
-                columns={columns}
-                data={employees}
-                isLoading={loading}
-                variant="embedded"
-                leftAction={<SmartSearchBar searchDef={employeeSearchDef} placeholder="Buscar por nombre o RUT..." className="w-full" />}
-                defaultPageSize={20}
-                createAction={createAction}
-                renderCustomView={createEntityCardView('hr.employee', {
-                    renderCard: (emp: Employee) => (
-                        <EntityCard key={emp.id} onClick={() => {
-                            const params = new URLSearchParams(searchParams.toString())
-                            params.set('selected', String(emp.id))
-                            router.push(`${pathname}?${params.toString()}`, { scroll: false })
-                        }}>
-                            <EntityCard.Header
-                                title={emp.contact_detail?.name || "Sin nombre"}
-                                subtitle={emp.contact_detail?.tax_id || emp.display_id}
-                                trailing={
-                                    <StatusBadge status={emp.status} label={emp.status_display} size="sm" />
-                                }
-                            />
-                            <EntityCard.Body>
-                                <EntityCard.Field label="Cargo" value={emp.position || '—'} />
-                                <EntityCard.Field label="Dpto." value={emp.department || '—'} />
-                                <EntityCard.Field label="Previsión" value={`AFP: ${emp.afp_detail?.name || 'N/A'}`} />
-                                <EntityCard.Field label="Salud" value={emp.salud_type_display || 'N/A'} />
-                            </EntityCard.Body>
-                            <EntityCard.Footer className="justify-between items-center border-t bg-muted/10 py-2 px-4">
-                                <span className="text-[10px] font-bold text-muted-foreground uppercase">Sueldo Base</span>
-                                <DataCell.Currency value={parseFloat((emp.base_salary as string) || "0")} className="font-bold text-base" />
-                            </EntityCard.Footer>
-                        </EntityCard>
-                    )
-                }                    )}
-            />
+                    entityLabel="hr.employee"
+                    columns={columns}
+                    data={employees}
+                    isLoading={loading}
+                    variant="embedded"
+                    leftAction={<SmartSearchBar searchDef={employeeSearchDef} placeholder="Buscar por nombre o RUT..." className="w-full" />}
+                    defaultPageSize={20}
+                    createAction={createAction}
+                    renderCustomView={createEntityCardView('hr.employee', {
+                        renderCard: (emp: Employee) => (
+                            <EntityCard key={emp.id} onClick={() => {
+                                const params = new URLSearchParams(searchParams.toString())
+                                params.set('selected', String(emp.id))
+                                router.push(`${pathname}?${params.toString()}`, { scroll: false })
+                            }}>
+                                <EntityCard.Header
+                                    title={emp.contact_detail?.name || "Sin nombre"}
+                                    subtitle={emp.contact_detail?.tax_id || emp.display_id}
+                                    trailing={
+                                        <StatusBadge status={emp.status} label={emp.status_display} size="sm" />
+                                    }
+                                />
+                                <EntityCard.Body>
+                                    <EntityCard.Field label="Cargo" value={emp.position || '—'} />
+                                    <EntityCard.Field label="Dpto." value={emp.department || '—'} />
+                                    <EntityCard.Field label="Previsión" value={`AFP: ${emp.afp_detail?.name || 'N/A'}`} />
+                                    <EntityCard.Field label="Salud" value={emp.salud_type_display || 'N/A'} />
+                                </EntityCard.Body>
+                                <EntityCard.Footer className="justify-between items-center border-t bg-muted/10 py-2 px-4">
+                                    <span className="text-[10px] font-bold text-muted-foreground uppercase">Sueldo Base</span>
+                                    <DataCell.Currency value={parseFloat((emp.base_salary as string) || "0")} className="font-bold text-base" />
+                                </EntityCard.Footer>
+                            </EntityCard>
+                        )
+                    })}
+                />
             </div>
             <EmployeeFormModal
                 open={dialogOpen}

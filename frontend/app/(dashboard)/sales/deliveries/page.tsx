@@ -1,15 +1,11 @@
 "use client"
 
-import { Suspense, lazy } from "react"
+import { lazy, Suspense } from "react"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
-import { SkeletonShell } from "@/components/shared"
 import { useRouter } from "next/navigation"
 import { SaleOrder } from "@/features/sales/types"
+import { SalesOrdersView } from "@/features/sales/components/SalesOrdersView"
 
-// Reutilizamos la vista de órdenes como lista base
-const SalesOrdersView = lazy(() =>
-    import("@/features/sales/components/SalesOrdersView").then(m => ({ default: m.SalesOrdersView }))
-)
 const DeliveryModal = lazy(() =>
     import("@/features/sales/components/DeliveryModal").then(m => ({ default: m.default }))
 )
@@ -24,15 +20,13 @@ export default function SalesDeliveriesPage() {
 
     return (
         <div className="pt-2 flex-1 min-h-0 flex flex-col">
-            <Suspense fallback={<SkeletonShell isLoading ariaLabel="Cargando despachos" />}>
-                <SalesOrdersView 
-                    viewMode="orders" 
-                    // Cuando hagan clic en la fila de la orden en vez del hub, podemos 
-                    // forzarlos a abrir deliveries? El click por defecto en SalesOrdersView abre el HubPanel.
-                    // Podemos dejarlo como está, o pasar un onRowClick (pero SalesOrdersView no expone onRowClick para overriding fácil).
-                    // Para despachar, la gente usará universal search -> /sales/deliveries?selected=123
-                />
-            </Suspense>
+            <SalesOrdersView 
+                viewMode="orders" 
+                // Cuando hagan clic en la fila de la orden en vez del hub, podemos 
+                // forzarlos a abrir deliveries? El click por defecto en SalesOrdersView abre el HubPanel.
+                // Podemos dejarlo como está, o pasar un onRowClick (pero SalesOrdersView no expone onRowClick para overriding fácil).
+                // Para despachar, la gente usará universal search -> /sales/deliveries?selected=123
+            />
 
             {/* 2. Montar el modal existente (DeliveryModal) controlado por ?selected */}
             <Suspense fallback={null}>

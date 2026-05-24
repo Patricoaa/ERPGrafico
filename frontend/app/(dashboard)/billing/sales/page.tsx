@@ -1,10 +1,9 @@
 "use client"
 
-import { Suspense, useEffect, useState } from "react"
+import { useEffect, useState } from "react"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { SalesInvoicesClientView } from "@/features/billing"
-import { SkeletonShell } from "@/components/shared"
 
 export default function SalesInvoicesPage() {
     const searchParams = useSearchParams()
@@ -39,10 +38,6 @@ export default function SalesInvoicesPage() {
     }, [isHubOpen, hubEverOpened, selectedId, pathname, searchParams, router])
 
     return (
-        <div className="pt-2 flex-1 min-h-0 flex flex-col">
-            <Suspense fallback={<SkeletonShell isLoading ariaLabel="Cargando..." />}>
-                <SalesInvoicesClientView />
-            </Suspense>
-        </div>
+        <SalesInvoicesClientView />
     )
 }

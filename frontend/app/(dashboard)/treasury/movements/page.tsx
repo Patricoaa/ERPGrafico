@@ -1,7 +1,5 @@
 import { Metadata } from "next"
-import { Suspense } from "react"
 import { TreasuryMovementsClientView } from "@/features/treasury"
-import { SkeletonShell } from "@/components/shared"
 import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
 
 export const metadata: Metadata = {
@@ -25,10 +23,6 @@ export default async function TreasuryMovementsPage({ searchParams }: PageProps)
     )
 
     return (
-        <div className="flex-1 min-h-0 flex flex-col">
-            <Suspense fallback={<SkeletonShell isLoading ariaLabel="Cargando..." />}>
-                <TreasuryMovementsClientView externalOpen={modalOpen} createAction={createAction} />
-            </Suspense>
-        </div>
+        <TreasuryMovementsClientView externalOpen={modalOpen} createAction={createAction} />
     )
 }

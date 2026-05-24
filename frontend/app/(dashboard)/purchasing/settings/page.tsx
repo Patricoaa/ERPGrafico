@@ -1,7 +1,4 @@
-import { Suspense, lazy } from "react"
-import { SkeletonShell } from "@/components/shared"
-
-const PurchasingSettingsView = lazy(() => import("@/features/settings").then(m => ({ default: m.PurchasingSettingsView })))
+import { PurchasingSettingsView } from "@/features/settings"
 
 interface PageProps {
     searchParams: Promise<{ tab?: string }>
@@ -12,8 +9,6 @@ export default async function PurchasingSettingsPage({ searchParams }: PageProps
     const configTab = tab || "global"
 
     return (
-        <Suspense fallback={<SkeletonShell isLoading ariaLabel="Cargando..." />}>
-            <PurchasingSettingsView />
-        </Suspense>
+        <PurchasingSettingsView />
     )
 }

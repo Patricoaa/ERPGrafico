@@ -15,7 +15,7 @@ import { WorkOrderBasicInfo } from "./WorkOrderBasicInfo"
 import { OriginSelectionStep } from "../../steps/OriginSelectionStep"
 import { ManufacturingSpecsEditor, emptyManufacturingData, type ManufacturingData } from "@/components/shared/manufacturing"
 import { workOrderSchema, type WorkOrderFormValues, type WorkOrderInitialData } from "@/types/forms"
-import { LabeledInput } from "@/components/shared"
+import { LabeledInput, SkeletonShell } from "@/components/shared"
 import type { Contact } from "@/features/contacts/types"
 import type { ProductMinimal } from "../../../types"
 import {

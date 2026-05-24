@@ -7,6 +7,7 @@ import { formatEntityDisplay } from "@/lib/entity-registry"
 import { formatRUT } from "@/lib/utils/format"
 import { useContact } from "@/features/contacts/hooks/useContacts"
 import type { Contact } from "@/features/contacts/types"
+import ContactModal from "./ContactModal"
 
 interface ContactDetailClientProps {
     contactId: string
@@ -31,7 +32,7 @@ const CONTACT_DETAIL_SKELETON: Contact = {
 
 export function ContactDetailClient({ contactId }: ContactDetailClientProps) {
     const router = useRouter()
-    const { data: contact, isLoading: loading, error: queryError } = useContact(Number(contactId))
+    const { data: contact, isLoading: loading, error: queryError, refetch: fetchContact } = useContact(Number(contactId))
     const [modalOpen, setModalOpen] = useState(false)
 
     const error = queryError ? (queryError as any)?.response?.status || 500 : null
@@ -82,13 +83,22 @@ export function ContactDetailClient({ contactId }: ContactDetailClientProps) {
                             </p>
                         </div>
                         <div className="space-y-2">
-                            <p className="text-sm text-muted-foreground">Tipo</p>
-                            <div>
-                                <Chip.Category 
-                                    domain="contact_type" 
-                                    value={contact?.contact_type ?? CONTACT_DETAIL_SKELETON.contact_type} 
-                                    size="sm" 
-                                />
+                            <p className="text-sm text-muted-foreground">Roles</p>
+                            <div className="flex flex-wrap gap-2">
+                                {contact?.active_roles ? contact.active_roles.map(role => (
+                                    <Chip.Category 
+                                        key={role}
+                                        domain="contact_type" 
+                                        value={role} 
+                                        size="sm" 
+                                    />
+                                )) : (
+                                    <Chip.Category 
+                                        domain="contact_type" 
+                                        value={CONTACT_DETAIL_SKELETON.contact_type} 
+                                        size="sm" 
+                                    />
+                                )}
                             </div>
                         </div>
                         <div className="space-y-2">

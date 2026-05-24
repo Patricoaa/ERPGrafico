@@ -10,9 +10,8 @@ import {
     Form,
     FormField
 } from "@/components/ui/form"
-import { CancelButton, LabeledInput, LabeledSelect, LabeledSwitch, LabeledContainer, PeriodValidationDateInput, FormSection, FormFooter, FormSplitLayout } from "@/components/shared"
+import { CancelButton, LabeledInput, LabeledSelect, LabeledSwitch, LabeledContainer, PeriodValidationDateInput, FormSection, FormFooter, FormSplitLayout, SkeletonShell } from "@/components/shared"
 
-import { Checkbox } from "@/components/ui/checkbox"
 import { cn } from "@/lib/utils"
 import { useUoMs } from "@/features/inventory/hooks/useUoMs"
 import { usePricingRules } from "@/features/inventory/hooks/usePricingRules"
@@ -63,8 +62,9 @@ interface PricingRuleFormProps {
 }
 
 export function PricingRuleForm({ auditSidebar, initialData, onSuccess, open, onOpenChange, productId, productName }: PricingRuleFormProps) {
-    const { uoms } = useUoMs()
+    const { uoms, isUoMsLoading } = useUoMs()
     const { savePricingRule } = usePricingRules()
+    const isFetchingInitialData = open && isUoMsLoading
     const [selectedProductObj, setSelectedProductObj] = useState<any>(null)
 
     const form = useForm<FormValues>({
@@ -474,18 +474,20 @@ export function PricingRuleForm({ auditSidebar, initialData, onSuccess, open, on
                 sidebar={auditSidebar}
                 className="px-4 pb-4 pt-0"
             >
-                <Form {...form}>
-                    <form id="pricing-rule-form" onSubmit={form.handleSubmit(onSubmit)} className="h-full flex flex-col">
-                        <div className="space-y-6">
-                            {renderValidityTab()}
-                            {renderGeneralTab()}
-                            {renderConditionsTab()}
-                            {renderActionsTab()}
+                <SkeletonShell isLoading={isFetchingInitialData} ariaLabel="Cargando formulario de regla de precio" className="flex-1 flex flex-col">
+                    <Form {...form}>
+                        <form id="pricing-rule-form" onSubmit={form.handleSubmit(onSubmit)} className="h-full flex flex-col">
+                            <div className="space-y-6">
+                                {renderValidityTab()}
+                                {renderGeneralTab()}
+                                {renderConditionsTab()}
+                                {renderActionsTab()}
 
 
-                        </div>
-                    </form>
-                </Form>
+                            </div>
+                        </form>
+                    </Form>
+                </SkeletonShell>
             </FormSplitLayout>
         </BaseModal>
     )

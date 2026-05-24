@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { BaseModal } from "@/components/shared/BaseModal"
-import { CancelButton, LabeledInput, FormFooter, FormSplitLayout, LabeledContainer } from "@/components/shared"
+import { CancelButton, LabeledInput, FormFooter, FormSplitLayout, LabeledContainer, SkeletonShell } from "@/components/shared"
 import {
     Form,
     FormField,
@@ -43,7 +43,8 @@ export function UoMForm({ open: openProp, onOpenChange, initialData, onSuccess }
     const open = openProp !== undefined ? openProp : openState
     const setOpen = onOpenChange || setOpenState
 
-    const { categories, saveUoM, isSaving, refetch } = useUoMs()
+    const { categories, isLoading: isCategoriesLoading, saveUoM, isSaving, refetch } = useUoMs()
+    const isFetchingInitialData = open && isCategoriesLoading
 
     const form = useForm<UoMFormValues>({
         resolver: zodResolver(uomSchema),
@@ -148,6 +149,7 @@ export function UoMForm({ open: openProp, onOpenChange, initialData, onSuccess }
                 ) : undefined}
                 showSidebar={!!initialData?.id}
             >
+                <SkeletonShell isLoading={isFetchingInitialData} ariaLabel="Cargando formulario de unidad de medida">
                 <Form {...form}>
                     <form 
                         id="uom-form" 
@@ -343,6 +345,7 @@ export function UoMForm({ open: openProp, onOpenChange, initialData, onSuccess }
                         </div>
                     </form>
                 </Form>
+                </SkeletonShell>
             </FormSplitLayout>
         </BaseModal>
         

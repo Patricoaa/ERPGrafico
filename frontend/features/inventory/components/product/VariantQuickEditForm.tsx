@@ -9,7 +9,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { Form, FormField } from "@/components/ui/form"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { LabeledInput, LabeledSelect, ActionConfirmModal } from "@/components/shared"
+import { LabeledInput, LabeledSelect, ActionConfirmModal, SkeletonShell } from "@/components/shared"
 import { Factory, Barcode, AlertCircle, Copy, CheckCircle2, PlusCircle, Pencil, Trash2, DollarSign } from "lucide-react"
 import { Chip } from "@/components/shared"
 import { cn } from "@/lib/utils"
@@ -57,8 +57,9 @@ export function VariantQuickEditForm({
   onTabChange,
 }: VariantQuickEditFormProps) {
   const [mounted, setMounted] = useState(false)
-  const { uoms } = useUoMs()
-  const { boms: availableBOMs, deleteBom, refetch: refetchVariantBOMs } = useBOMs({ product_id: variant.id })
+  const { uoms, isUoMsLoading } = useUoMs()
+  const { boms: availableBOMs, deleteBom, refetch: refetchVariantBOMs, isBOMsLoading } = useBOMs({ product_id: variant.id })
+  const isFetchingInitialData = isUoMsLoading || isBOMsLoading
   const { updateProduct } = useProducts()
   const [isBarcodeModalOpen, setIsBarcodeModalOpen] = useState(false)
   const [cloneSourceId, setCloneSourceId] = useState<string>('none')
@@ -200,6 +201,7 @@ export function VariantQuickEditForm({
       <form id="quick-edit-form" onSubmit={(e) => { e.stopPropagation(); form.handleSubmit(onSubmit)(e) }} style={{ display: 'none' }} />,
       document.body
     )}
+    <SkeletonShell isLoading={isFetchingInitialData} ariaLabel="Cargando editor rápido de variante" className="flex-1 flex flex-col">
     <div className="flex flex-col h-full bg-card rounded-md border shadow-sm overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full">
 
@@ -527,6 +529,7 @@ export function VariantQuickEditForm({
         confirmText="Eliminar"
       />
     </div>
+    </SkeletonShell>
     </>
   )
 }

@@ -1,18 +1,10 @@
 import { Metadata } from "next"
 import { Suspense, lazy } from "react"
-import { LoadingFallback } from "@/components/shared/LoadingFallback"
 import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
 import { Tabs } from "@/components/ui/tabs"
 import { redirect } from "next/navigation"
 import { FadeIn } from "@/components/shared"
-
-const CreditPortfolioView = lazy(() =>
-    import("@/features/credits").then(m => ({ default: m.CreditPortfolioView }))
-)
-
-const BlacklistView = lazy(() =>
-    import("@/features/credits").then(m => ({ default: m.BlacklistView }))
-)
+import { CreditPortfolioView, BlacklistView } from "@/features/credits"
 
 export const metadata: Metadata = {
     title: "Cartera de Créditos | ERPGrafico",
@@ -43,19 +35,17 @@ export default async function CreditsPage({ searchParams }: PageProps) {
         <div className="pt-2 flex-1 min-h-0 flex flex-col">
             <Tabs value={activeTab} className="space-y-4 h-full flex flex-col">
                 <div className="mt-0 outline-none flex-1 min-h-0">
-                    <Suspense fallback={<LoadingFallback />}>
-                        <FadeIn key={activeTab}>
-                            {activeTab === 'blacklist' ? (
-                                <BlacklistView />
-                            ) : (
-                                <CreditPortfolioView
-                                    activeTab={activeTab as 'portfolio' | 'history'}
-                                    externalOpen={modalOpen}
-                                    createAction={createAction}
-                                />
-                            )}
-                        </FadeIn>
-                    </Suspense>
+                    <FadeIn key={activeTab}>
+                        {activeTab === 'blacklist' ? (
+                            <BlacklistView />
+                        ) : (
+                            <CreditPortfolioView
+                                activeTab={activeTab as 'portfolio' | 'history'}
+                                externalOpen={modalOpen}
+                                createAction={createAction}
+                            />
+                        )}
+                    </FadeIn>
                 </div>
             </Tabs>
         </div>

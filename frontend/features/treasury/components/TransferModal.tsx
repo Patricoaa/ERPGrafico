@@ -11,7 +11,7 @@ import { useServerDate } from "@/hooks/useServerDate"
 import { useTreasuryAccounts } from "@/features/treasury/hooks/useTreasuryAccounts"
 import { useTransfer } from "@/features/treasury/hooks/useTransfer"
 import { Form, FormField } from "@/components/ui/form"
-import { CancelButton, LabeledInput, FormSection, FormFooter, FormSplitLayout, ActionSlideButton, BaseModal, MoneyDisplay } from "@/components/shared"
+import { CancelButton, LabeledInput, FormSection, FormFooter, FormSplitLayout, ActionSlideButton, BaseModal, MoneyDisplay, SkeletonShell } from "@/components/shared"
 
 const transferSchema = z.object({
     from_account_id: z.string().min(1, "Seleccione una cuenta de origen"),
@@ -33,9 +33,10 @@ interface TransferModalProps {
 }
 
 export function TransferModal({ open, onOpenChange, onSuccess }: TransferModalProps) {
-    const { accounts } = useTreasuryAccounts()
+    const { accounts, isLoading: isAccountsLoading } = useTreasuryAccounts()
     const { createTransfer, isCreating } = useTransfer()
-    const { serverDate } = useServerDate()
+    const { serverDate, isLoading: isServerDateLoading } = useServerDate()
+    const isFetchingInitialData = open && (isAccountsLoading || isServerDateLoading)
     const [isDateValid, setIsDateValid] = useState(true)
 
     const form = useForm<TransferFormValues>({
@@ -110,6 +111,7 @@ export function TransferModal({ open, onOpenChange, onSuccess }: TransferModalPr
                 />
             }
         >
+            <SkeletonShell isLoading={isFetchingInitialData} ariaLabel="Cargando formulario de traspaso">
             <FormSplitLayout>
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
@@ -232,6 +234,7 @@ export function TransferModal({ open, onOpenChange, onSuccess }: TransferModalPr
                     </form>
                 </Form>
             </FormSplitLayout>
+            </SkeletonShell>
         </BaseModal>
     )
 }

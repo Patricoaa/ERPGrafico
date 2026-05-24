@@ -1,5 +1,4 @@
-import { Suspense } from "react"
-import { SkeletonShell, ToolbarCreateButton } from "@/components/shared"
+import { ToolbarCreateButton } from "@/components/shared"
 import EntriesClientView from "./EntriesClientView"
 
 interface PageProps {
@@ -17,10 +16,6 @@ export default async function EntriesPage({ searchParams }: PageProps) {
     )
 
     return (
-        <div className="pt-2 flex-1 min-h-0 flex flex-col">
-            <Suspense fallback={<SkeletonShell isLoading ariaLabel="Cargando..." />}>
-                <EntriesClientView externalOpen={modal === 'new'} createAction={createAction} />
-            </Suspense>
-        </div>
+        <EntriesClientView externalOpen={modal === 'new'} createAction={createAction} />
     )
 }

@@ -1,16 +1,11 @@
 "use client"
 
-import { Suspense, lazy } from "react"
+import { lazy, Suspense } from "react"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
-import { SkeletonShell } from "@/components/shared"
 import { useRouter } from "next/navigation"
 import { SaleOrder } from "@/features/sales/types"
+import { SalesOrdersView } from "@/features/sales/components/SalesOrdersView"
 
-// Reutilizamos la vista de órdenes como lista base (podemos ver notas con viewMode="notes" o dejarlo en orders para ver de qué orden generar la nota)
-// La convención original mostraba la pestaña de notes en /returns.
-const SalesOrdersView = lazy(() =>
-    import("@/features/sales/components/SalesOrdersView").then(m => ({ default: m.SalesOrdersView }))
-)
 const SaleNoteModal = lazy(() =>
     import("@/features/sales/components/SaleNoteModal").then(m => ({ default: m.default }))
 )
@@ -25,11 +20,9 @@ export default function SalesReturnsPage() {
 
     return (
         <div className="pt-2 flex-1 min-h-0 flex flex-col">
-            <Suspense fallback={<SkeletonShell isLoading ariaLabel="Cargando devoluciones" />}>
-                <SalesOrdersView 
-                    viewMode="notes"
-                />
-            </Suspense>
+            <SalesOrdersView 
+                viewMode="notes"
+            />
 
             {/* 2. Montar el modal existente (SaleNoteModal) controlado por ?selected */}
             <Suspense fallback={null}>

@@ -9,6 +9,7 @@ import { NewFiscalYearModal } from './NewFiscalYearModal';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { AccountingPeriod, FiscalYearPreviewResult, FiscalYear } from '../../types';
 
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { useSelectedEntity } from '@/hooks/useSelectedEntity';
 import { DataTableView } from '@/components/shared';
 import { ColumnDef } from '@tanstack/react-table';
@@ -26,6 +27,10 @@ interface AccountingClosuresViewProps {
 }
 
 export function AccountingClosuresView({ externalOpen, onExternalOpenChange }: AccountingClosuresViewProps) {
+    const searchParams = useSearchParams();
+    const router = useRouter();
+    const pathname = usePathname();
+
     const {
         data: fiscalYears,
         isLoading: isLoadingYr,
