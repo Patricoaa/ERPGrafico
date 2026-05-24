@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { motion, AnimatePresence } from 'framer-motion'
-import { AlertTriangle, Package, FileText, Plus, CheckCircle2, Keyboard, FileEdit } from 'lucide-react'
+import { AlertTriangle, Package, FileText, Plus, CheckCircle2, Keyboard, FileEdit, Printer } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { BaseModal } from '@/components/shared/BaseModal'
@@ -138,39 +138,39 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
   // ── mutations (all write ops via hook) ─────────────────────────────────────
   const mutations = useWorkOrderMutations(localOrderId ?? 0, { onSuccess: () => { fetchOrder(); onSuccess?.() } })
 
-   // ── store ──────────────────────────────────────────────────────────────────
-   const {
-     order, loading, viewingStepIndex,
-     taskNotes, taskFiles,
-     isAnnulModalOpen, isDeleteModalOpen, isBackwardModalOpen, pendingPrevStage,
-     showPOPreview, outsourcedPending,
-     rectificationAdjustments, rectificationProducedQty, rectificationOutsourcedAdjustments,
-     // Creation flow state
-     chosenOtType, selectedSaleOrder, selectedSaleLine, selectedProduct, mfgConfig,
-     selectedContact, quantity, uomId, startDate, dueDate, internalNotes,
-     setOrder, setLoading, setViewingStepIndex,
-     setTaskNote, setTaskFile,
-     setIsAnnulModalOpen, setIsDeleteModalOpen, setIsBackwardModalOpen, setPendingPrevStage,
-     setShowPOPreview, setOutsourcedPending,
-     setRectificationAdjustments, setRectificationProducedQty, setRectificationOutsourcedAdjustments,
-     // Creation flow actions
-      setChosenOtType, setSelectedSaleOrder, setSelectedSaleLine, setSelectedProduct, setProductDescription, setMfgConfig,
-     setSelectedContact, setQuantity, setUomId, setStartDate, setDueDate, setInternalNotes,
-     reset: resetStore,
-   } = useWizardStore()
+  // ── store ──────────────────────────────────────────────────────────────────
+  const {
+    order, loading, viewingStepIndex,
+    taskNotes, taskFiles,
+    isAnnulModalOpen, isDeleteModalOpen, isBackwardModalOpen, pendingPrevStage,
+    showPOPreview, outsourcedPending,
+    rectificationAdjustments, rectificationProducedQty, rectificationOutsourcedAdjustments,
+    // Creation flow state
+    chosenOtType, selectedSaleOrder, selectedSaleLine, selectedProduct, mfgConfig,
+    selectedContact, quantity, uomId, startDate, dueDate, internalNotes,
+    setOrder, setLoading, setViewingStepIndex,
+    setTaskNote, setTaskFile,
+    setIsAnnulModalOpen, setIsDeleteModalOpen, setIsBackwardModalOpen, setPendingPrevStage,
+    setShowPOPreview, setOutsourcedPending,
+    setRectificationAdjustments, setRectificationProducedQty, setRectificationOutsourcedAdjustments,
+    // Creation flow actions
+    setChosenOtType, setSelectedSaleOrder, setSelectedSaleLine, setSelectedProduct, setProductDescription, setMfgConfig,
+    setSelectedContact, setQuantity, setUomId, setStartDate, setDueDate, setInternalNotes,
+    reset: resetStore,
+  } = useWizardStore()
 
   const [showCheatsheet, setShowCheatsheet] = useState(false)
 
-// ── derived ────────────────────────────────────────────────────────────────
-const STAGES = isCreating
-  ? [STEP_ORIGIN, STEP_SALE_ORDER_PRODUCT, STEP_PRODUCT_SELECTION, STEP_MFG_CONFIG, ...BASE_STAGES.filter((s) => s.alwaysShow)]
-  : [STEP_BASIC, ...(order ? getFilteredStages(order) : BASE_STAGES.filter((s) => s.alwaysShow))]
-const actualStepIndex = isCreating
-  ? (chosenOtType === null ? 0 
-    : chosenOtType === "LINKED" ? 1
-    : chosenOtType === "NONE" ? 2
-    : 3)
-  : STAGES.findIndex((s) => s.id === order?.current_stage)
+  // ── derived ────────────────────────────────────────────────────────────────
+  const STAGES = isCreating
+    ? [STEP_ORIGIN, STEP_SALE_ORDER_PRODUCT, STEP_PRODUCT_SELECTION, STEP_MFG_CONFIG, ...BASE_STAGES.filter((s) => s.alwaysShow)]
+    : [STEP_BASIC, ...(order ? getFilteredStages(order) : BASE_STAGES.filter((s) => s.alwaysShow))]
+  const actualStepIndex = isCreating
+    ? (chosenOtType === null ? 0
+      : chosenOtType === "LINKED" ? 1
+        : chosenOtType === "NONE" ? 2
+          : 3)
+    : STAGES.findIndex((s) => s.id === order?.current_stage)
   const isViewingCurrentStage = viewingStepIndex === actualStepIndex
   const pendingTasks = selectPendingTasks(order)
   const isBasicInfoEditable = !isCreating && EDITABLE_STAGES.includes(order?.current_stage ?? '')
@@ -221,43 +221,43 @@ const actualStepIndex = isCreating
     }
   }
 
-   // Synchronize state with props during render to avoid useEffect setStates
-   const [prevMode, setPrevMode] = useState(mode)
-   const [prevOpen, setPrevOpen] = useState(open)
+  // Synchronize state with props during render to avoid useEffect setStates
+  const [prevMode, setPrevMode] = useState(mode)
+  const [prevOpen, setPrevOpen] = useState(open)
 
-   if (mode !== prevMode || open !== prevOpen) {
-     setPrevMode(mode)
-     setPrevOpen(open)
-     setLocalOrderId(open && mode.kind === 'manage' ? mode.orderId : null)
-     if (open) {
-       if (mode.kind === 'create') {
-         const defaultType = mode.defaultOtType || null
-         setChosenOtType(defaultType)
-         // Reset creation flow state
-         setSelectedSaleOrder(null)
-         setSelectedSaleLine(null)
-         setSelectedProduct(null)
-         setMfgConfig(null)
-         setSelectedContact(null)
-         setQuantity("")
-         setUomId("")
-         setStartDate(null)
-         setDueDate(null)
-         setInternalNotes("")
-         
-         if (defaultType === "LINKED") {
-           setViewingStepIndex(0) // ORIGIN_SELECTION
-         } else if (defaultType === "NONE") {
-           setViewingStepIndex(0) // ORIGIN_SELECTION (will go to PRODUCT_SELECTION after)
-         } else {
-           setViewingStepIndex(0) // ORIGIN_SELECTION
-         }
-       } else {
-         setChosenOtType(null)
-         // For manage mode, we'll load the order data later
-       }
-     }
-   }
+  if (mode !== prevMode || open !== prevOpen) {
+    setPrevMode(mode)
+    setPrevOpen(open)
+    setLocalOrderId(open && mode.kind === 'manage' ? mode.orderId : null)
+    if (open) {
+      if (mode.kind === 'create') {
+        const defaultType = mode.defaultOtType || null
+        setChosenOtType(defaultType)
+        // Reset creation flow state
+        setSelectedSaleOrder(null)
+        setSelectedSaleLine(null)
+        setSelectedProduct(null)
+        setMfgConfig(null)
+        setSelectedContact(null)
+        setQuantity("")
+        setUomId("")
+        setStartDate(null)
+        setDueDate(null)
+        setInternalNotes("")
+
+        if (defaultType === "LINKED") {
+          setViewingStepIndex(0) // ORIGIN_SELECTION
+        } else if (defaultType === "NONE") {
+          setViewingStepIndex(0) // ORIGIN_SELECTION (will go to PRODUCT_SELECTION after)
+        } else {
+          setViewingStepIndex(0) // ORIGIN_SELECTION
+        }
+      } else {
+        setChosenOtType(null)
+        // For manage mode, we'll load the order data later
+      }
+    }
+  }
 
   useEffect(() => {
     if (open) {
@@ -458,166 +458,166 @@ const actualStepIndex = isCreating
             </div>
 
             <div className="flex-1 overflow-y-auto min-h-0 px-6 relative">
-               {/* Mobile navigation */}
-               <div className="md:hidden sticky top-0 z-10 bg-background/95 backdrop-blur p-3 mb-4">
-                 <LabeledSelect
-                   value={STAGES[viewingStepIndex]?.id}
-                   onChange={(val) => {
-                     const idx = STAGES.findIndex((s) => s.id === val)
-                     if (idx !== -1) setViewingStepIndex(idx)
-                   }}
-                   placeholder="Seleccionar etapa"
-                   options={STAGES.map((s, i) => {
-                     const isPast = actualStepIndex > i
-                     const isCurrent = actualStepIndex === i
-                     let disabled = !isPast && !isCurrent
-                     if (isCreating) {
-                       if (i === 0) {
-                         // ORIGIN_SELECTION - always unlocked
-                         disabled = false
-                       } else if (i === 1) {
-                         // SALE_ORDER_PRODUCT - unlocked if origin chosen
-                         disabled = chosenOtType === null
-                       } else if (i === 2) {
-                         // For LINKED path: MFG_CONFIG - unlocked if NV selected
-                         // For NONE path: PRODUCT_SELECTION - unlocked if we're in NONE path
-                         disabled = !(chosenOtType === "LINKED" || chosenOtType === "NONE")
-                       } else if (i === 3) {
-                         // For NONE path: MFG_CONFIG - unlocked if product selected (simplified)
-                         disabled = chosenOtType !== "NONE"
-                       } else {
-                         // Steps 4+ - locked until we complete creation flow
-                         disabled = chosenOtType === null
-                       }
-                     }
-                     return {
-                       value: s.id,
-                       disabled,
-                       label: (
-                         <div className="flex items-center gap-2">
-                           <s.icon className="h-4 w-4" />
-                           <span>{s.label}</span>
-                           {isPast && <CheckCircle2 className="h-3 w-3 ml-2 text-success" />}
-                         </div>
-                       ),
-                     }
-                   }) as Parameters<typeof LabeledSelect>[0]['options']}
-                 />
-               </div>
+              {/* Mobile navigation */}
+              <div className="md:hidden sticky top-0 z-10 bg-background/95 backdrop-blur p-3 mb-4">
+                <LabeledSelect
+                  value={STAGES[viewingStepIndex]?.id}
+                  onChange={(val) => {
+                    const idx = STAGES.findIndex((s) => s.id === val)
+                    if (idx !== -1) setViewingStepIndex(idx)
+                  }}
+                  placeholder="Seleccionar etapa"
+                  options={STAGES.map((s, i) => {
+                    const isPast = actualStepIndex > i
+                    const isCurrent = actualStepIndex === i
+                    let disabled = !isPast && !isCurrent
+                    if (isCreating) {
+                      if (i === 0) {
+                        // ORIGIN_SELECTION - always unlocked
+                        disabled = false
+                      } else if (i === 1) {
+                        // SALE_ORDER_PRODUCT - unlocked if origin chosen
+                        disabled = chosenOtType === null
+                      } else if (i === 2) {
+                        // For LINKED path: MFG_CONFIG - unlocked if NV selected
+                        // For NONE path: PRODUCT_SELECTION - unlocked if we're in NONE path
+                        disabled = !(chosenOtType === "LINKED" || chosenOtType === "NONE")
+                      } else if (i === 3) {
+                        // For NONE path: MFG_CONFIG - unlocked if product selected (simplified)
+                        disabled = chosenOtType !== "NONE"
+                      } else {
+                        // Steps 4+ - locked until we complete creation flow
+                        disabled = chosenOtType === null
+                      }
+                    }
+                    return {
+                      value: s.id,
+                      disabled,
+                      label: (
+                        <div className="flex items-center gap-2">
+                          <s.icon className="h-4 w-4" />
+                          <span>{s.label}</span>
+                          {isPast && <CheckCircle2 className="h-3 w-3 ml-2 text-success" />}
+                        </div>
+                      ),
+                    }
+                  }) as Parameters<typeof LabeledSelect>[0]['options']}
+                />
+              </div>
 
-               <AnimatePresence mode="wait">
-                 <motion.div
-                   key={viewingStepIndex}
-                   initial={{ opacity: 0, x: 20 }}
-                   animate={{ opacity: 1, x: 0 }}
-                   exit={{ opacity: 0, x: -20 }}
-                   transition={{ duration: 0.2 }}
-                   className={cn('space-y-6 pb-6', !isViewingCurrentStage && currentStageId !== 'ORIGIN_SELECTION' && currentStageId !== 'SALE_ORDER_PRODUCT' && currentStageId !== 'PRODUCT_SELECTION' && currentStageId !== 'MFG_CONFIG' && 'pointer-events-none opacity-80')}
-                 >
-                   {currentStageId === 'ORIGIN_SELECTION' && (
-                     <OriginSelectionStep
-                       onChoose={(type) => {
-                         setChosenOtType(type)
-                         if (type === "LINKED") {
-                           setViewingStepIndex(1) // Go to SALE_ORDER_PRODUCT
-                         } else if (type === "NONE") {
-                           setViewingStepIndex(2) // Go to PRODUCT_SELECTION
-                         }
-                       }}
-                     />
-                   )}
-                   {currentStageId === 'SALE_ORDER_PRODUCT' && (
-                     <SaleOrderProductStep
-                       onChooseProduct={(otType, productId, quantity, uomId, productDescription, saleOrderId, saleLineId) => {
-                         setChosenOtType(otType)
-                         setSelectedSaleOrder(saleOrderId)
-                         setSelectedSaleLine(saleLineId)
-                         setSelectedProduct(productId)
-                         setQuantity(quantity)
-                         setUomId(uomId)
-                         setProductDescription(productDescription)
-                          setViewingStepIndex(3) // Go to MFG_CONFIG
-                       }}
-                       initialOtType={chosenOtType}
-                     />
-                   )}
-                    {currentStageId === 'PRODUCT_SELECTION' && (
-                      <ProductSelectionStep
-                        onChooseProduct={(otType, productId, quantity, uomId, productDescription) => {
-                          setChosenOtType(otType)
-                          setSelectedProduct(productId)
-                          setQuantity(quantity)
-                          setUomId(uomId)
-                          setProductDescription(productDescription)
-                          setViewingStepIndex(3) // Go to MFG_CONFIG
-                        }}
-                        initialOtType={chosenOtType}
-                      />
-                    )}
-                    {currentStageId === 'MFG_CONFIG' && (
-                      <ManufacturingConfigStep
-                        initialData={isCreating ? (mode.kind === 'create' ? mode.initialData : undefined) : (order as unknown as WorkOrderInitialData)}
-                        onSuccess={(workOrderId) => {
-                         if (isCreating) {
-                           wasCreatingRef.current = true
-                           setLocalOrderId(workOrderId)
- 
-                           // Sync URL transition create -> manage
-                           const url = new URL(window.location.href)
-                           url.searchParams.delete('new')
-                           url.searchParams.delete('modal')
-                           url.searchParams.delete('type')
-                           url.searchParams.delete('product_id')
-                           url.searchParams.set('selected', String(workOrderId))
-                           url.searchParams.set('step', 'MATERIAL_ASSIGNMENT')
-                           router.replace(url.pathname + url.search, { scroll: false })
- 
-                           onSuccess?.(workOrderId)
-                         } else {
-                           fetchOrder()
-                           onSuccess?.(workOrderId)
-                         }
-                       }}
-                     />
-                   )}
-                   {isBasicInfoStep && (
-                     <WorkOrderBasicStep
-                       mode={isCreating ? 'create' : isBasicInfoEditable ? 'edit' : 'view'}
-                       initialData={isCreating ? (mode.kind === 'create' ? mode.initialData : undefined) : (order as unknown as WorkOrderInitialData)}
-                       defaultOtType={mode.kind === 'create' ? mode.defaultOtType : undefined}
-                       defaultProductId={mode.kind === 'create' ? mode.defaultProductId : undefined}
-                       chosenOtType={chosenOtType}
-                       onTypeChange={(type) => {
-                         setChosenOtType(type)
-                         if (type === null) {
-                           setViewingStepIndex(0)
-                         }
-                       }}
-                       formId="wizard-basic-form"
-                       onLoadingChange={setLoading}
-                       onSuccess={(workOrderId) => {
-                         if (isCreating) {
-                           wasCreatingRef.current = true
-                           setLocalOrderId(workOrderId)
- 
-                           // Sync URL transition create -> manage
-                           const url = new URL(window.location.href)
-                           url.searchParams.delete('new')
-                           url.searchParams.delete('modal')
-                           url.searchParams.delete('type')
-                           url.searchParams.delete('product_id')
-                           url.searchParams.set('selected', String(workOrderId))
-                           url.searchParams.set('step', 'MATERIAL_ASSIGNMENT')
-                           router.replace(url.pathname + url.search, { scroll: false })
- 
-                           onSuccess?.(workOrderId)
-                         } else {
-                           fetchOrder()
-                           onSuccess?.(workOrderId)
-                         }
-                       }}
-                     />
-                   )}
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={viewingStepIndex}
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.2 }}
+                  className={cn('space-y-6 pb-6', !isViewingCurrentStage && currentStageId !== 'ORIGIN_SELECTION' && currentStageId !== 'SALE_ORDER_PRODUCT' && currentStageId !== 'PRODUCT_SELECTION' && currentStageId !== 'MFG_CONFIG' && 'pointer-events-none opacity-80')}
+                >
+                  {currentStageId === 'ORIGIN_SELECTION' && (
+                    <OriginSelectionStep
+                      onChoose={(type) => {
+                        setChosenOtType(type)
+                        if (type === "LINKED") {
+                          setViewingStepIndex(1) // Go to SALE_ORDER_PRODUCT
+                        } else if (type === "NONE") {
+                          setViewingStepIndex(2) // Go to PRODUCT_SELECTION
+                        }
+                      }}
+                    />
+                  )}
+                  {currentStageId === 'SALE_ORDER_PRODUCT' && (
+                    <SaleOrderProductStep
+                      onChooseProduct={(otType, productId, quantity, uomId, productDescription, saleOrderId, saleLineId) => {
+                        setChosenOtType(otType)
+                        setSelectedSaleOrder(saleOrderId)
+                        setSelectedSaleLine(saleLineId)
+                        setSelectedProduct(productId)
+                        setQuantity(quantity)
+                        setUomId(uomId)
+                        setProductDescription(productDescription)
+                        setViewingStepIndex(3) // Go to MFG_CONFIG
+                      }}
+                      initialOtType={chosenOtType}
+                    />
+                  )}
+                  {currentStageId === 'PRODUCT_SELECTION' && (
+                    <ProductSelectionStep
+                      onChooseProduct={(otType, productId, quantity, uomId, productDescription) => {
+                        setChosenOtType(otType)
+                        setSelectedProduct(productId)
+                        setQuantity(quantity)
+                        setUomId(uomId)
+                        setProductDescription(productDescription)
+                        setViewingStepIndex(3) // Go to MFG_CONFIG
+                      }}
+                      initialOtType={chosenOtType}
+                    />
+                  )}
+                  {currentStageId === 'MFG_CONFIG' && (
+                    <ManufacturingConfigStep
+                      initialData={isCreating ? (mode.kind === 'create' ? mode.initialData : undefined) : (order as unknown as WorkOrderInitialData)}
+                      onSuccess={(workOrderId) => {
+                        if (isCreating) {
+                          wasCreatingRef.current = true
+                          setLocalOrderId(workOrderId)
+
+                          // Sync URL transition create -> manage
+                          const url = new URL(window.location.href)
+                          url.searchParams.delete('new')
+                          url.searchParams.delete('modal')
+                          url.searchParams.delete('type')
+                          url.searchParams.delete('product_id')
+                          url.searchParams.set('selected', String(workOrderId))
+                          url.searchParams.set('step', 'MATERIAL_ASSIGNMENT')
+                          router.replace(url.pathname + url.search, { scroll: false })
+
+                          onSuccess?.(workOrderId)
+                        } else {
+                          fetchOrder()
+                          onSuccess?.(workOrderId)
+                        }
+                      }}
+                    />
+                  )}
+                  {isBasicInfoStep && (
+                    <WorkOrderBasicStep
+                      mode={isCreating ? 'create' : isBasicInfoEditable ? 'edit' : 'view'}
+                      initialData={isCreating ? (mode.kind === 'create' ? mode.initialData : undefined) : (order as unknown as WorkOrderInitialData)}
+                      defaultOtType={mode.kind === 'create' ? mode.defaultOtType : undefined}
+                      defaultProductId={mode.kind === 'create' ? mode.defaultProductId : undefined}
+                      chosenOtType={chosenOtType}
+                      onTypeChange={(type) => {
+                        setChosenOtType(type)
+                        if (type === null) {
+                          setViewingStepIndex(0)
+                        }
+                      }}
+                      formId="wizard-basic-form"
+                      onLoadingChange={setLoading}
+                      onSuccess={(workOrderId) => {
+                        if (isCreating) {
+                          wasCreatingRef.current = true
+                          setLocalOrderId(workOrderId)
+
+                          // Sync URL transition create -> manage
+                          const url = new URL(window.location.href)
+                          url.searchParams.delete('new')
+                          url.searchParams.delete('modal')
+                          url.searchParams.delete('type')
+                          url.searchParams.delete('product_id')
+                          url.searchParams.set('selected', String(workOrderId))
+                          url.searchParams.set('step', 'MATERIAL_ASSIGNMENT')
+                          router.replace(url.pathname + url.search, { scroll: false })
+
+                          onSuccess?.(workOrderId)
+                        } else {
+                          fetchOrder()
+                          onSuccess?.(workOrderId)
+                        }
+                      }}
+                    />
+                  )}
                   {currentStageId === 'MATERIAL_ASSIGNMENT' && (
                     <MaterialAssignmentStep
                       order={order!}
@@ -695,12 +695,12 @@ const actualStepIndex = isCreating
               }
               hasMaterials={orderHasMaterials}
               isRectificationStep={currentStageId === 'RECTIFICATION'}
-               onRectifyAndFinish={handleRectifyAndFinish}
-               isBasicInfoStep={isBasicInfoStep}
-               isCreating={isCreating}
-               isBasicInfoEditable={isBasicInfoEditable}
-               chosenOtType={chosenOtType}
-               onStepChange={setViewingStepIndex}
+              onRectifyAndFinish={handleRectifyAndFinish}
+              isBasicInfoStep={isBasicInfoStep}
+              isCreating={isCreating}
+              isBasicInfoEditable={isBasicInfoEditable}
+              chosenOtType={chosenOtType}
+              onStepChange={setViewingStepIndex}
             />
           </div>
 
