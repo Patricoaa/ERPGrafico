@@ -12,7 +12,7 @@ import { Form, FormField } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { FileText, User, X, ArrowRight } from "lucide-react";
+import { FileText, User, X } from "lucide-react";
 import type { WorkOrderFormValues, WorkOrderInitialData } from "@/types/forms";
 import type { Contact } from "@/features/contacts/types";
 import { useWizardStore } from "../WorkOrderWizardStore";
@@ -423,6 +423,36 @@ export function ManufacturingConfigStep({
                 </div>
               )}
 
+              {/* Fechas */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="start_date"
+                  render={({ field }) => (
+                    <PeriodValidationDateInput
+                      date={startDate ?? undefined}
+                      onDateChange={handleStartDateChange}
+                      label="Fecha Inicio"
+                      validationType="tax"
+                      required
+                    />
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="due_date"
+                  render={({ field }) => (
+                    <PeriodValidationDateInput
+                      date={dueDate ?? undefined}
+                      onDateChange={handleDueDateChange}
+                      label="Fecha Entrega"
+                      validationType="tax"
+                      required
+                    />
+                  )}
+                />
+              </div>
+
               {/* Contacto Relacionado */}
               <LabeledContainer label="Contacto Relacionado">
                 {selectedContact ? (
@@ -465,39 +495,9 @@ export function ManufacturingConfigStep({
                 value={mfgData}
                 onChange={handleMfgChange}
                 showProductDescription={false}
-                showInternalNotes={true}
+                showInternalNotes={false}
                 variant="inline"
               />
-
-              {/* Fechas */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="start_date"
-                  render={({ field }) => (
-                    <PeriodValidationDateInput
-                      date={startDate ?? undefined}
-                      onDateChange={handleStartDateChange}
-                      label="Fecha Inicio"
-                      validationType="tax"
-                      required
-                    />
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="due_date"
-                  render={({ field }) => (
-                    <PeriodValidationDateInput
-                      date={dueDate ?? undefined}
-                      onDateChange={handleDueDateChange}
-                      label="Fecha Entrega"
-                      validationType="tax"
-                      required
-                    />
-                  )}
-                />
-              </div>
 
               {/* Notas Internas */}
               <FormField
@@ -521,35 +521,6 @@ export function ManufacturingConfigStep({
               />
             </div>
           </fieldset>
-
-          <div className="flex justify-end space-x-3 pt-4">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                // Navigate back - would need to be handled by parent
-              }}
-            >
-              Anterior
-            </Button>
-            <Button
-              type="submit"
-              disabled={loading}
-              className="gap-2"
-            >
-              {loading ? (
-                <>
-                  <span className="mr-2">Creando...</span>
-                  <span className="animate-spin">⟳</span>
-                </>
-              ) : (
-                <>
-                  Crear Orden de Trabajo
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </>
-              )}
-            </Button>
-          </div>
         </form>
       </Form>
     </SkeletonShell>
