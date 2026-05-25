@@ -84,6 +84,19 @@ const STEP_BASIC: WorkOrderStage = {
 
 const BASE_STAGES: WorkOrderStage[] = STAGES_ORDERED.filter(s => s.id !== 'CANCELLED')
 
+function getCreateStages(otType: 'LINKED' | 'NONE' | null): WorkOrderStage[] {
+  if (otType === null) return [STEP_ORIGIN]
+
+  const virtualSteps: WorkOrderStage[] = [STEP_ORIGIN]
+  if (otType === "LINKED") {
+    virtualSteps.push(STEP_SALE_ORDER_PRODUCT)
+  } else {
+    virtualSteps.push(STEP_PRODUCT_SELECTION)
+  }
+  virtualSteps.push(STEP_MFG_CONFIG)
+  return [...virtualSteps, ...BASE_STAGES.filter((s) => s.alwaysShow)]
+}
+
 function getFilteredStages(order: WorkOrder): WorkOrderStage[] {
   return BASE_STAGES.filter((stage) => {
     if (stage.alwaysShow) return true
@@ -163,13 +176,10 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
 
   // ── derived ────────────────────────────────────────────────────────────────
   const STAGES = isCreating
-    ? [STEP_ORIGIN, STEP_SALE_ORDER_PRODUCT, STEP_PRODUCT_SELECTION, STEP_MFG_CONFIG, ...BASE_STAGES.filter((s) => s.alwaysShow)]
+    ? getCreateStages(chosenOtType)
     : [STEP_BASIC, ...(order ? getFilteredStages(order) : BASE_STAGES.filter((s) => s.alwaysShow))]
   const actualStepIndex = isCreating
-    ? (chosenOtType === null ? 0
-      : chosenOtType === "LINKED" ? 1
-        : chosenOtType === "NONE" ? 2
-          : 3)
+    ? (chosenOtType === null ? 0 : 1)
     : STAGES.findIndex((s) => s.id === order?.current_stage)
   const isViewingCurrentStage = viewingStepIndex === actualStepIndex
   const pendingTasks = selectPendingTasks(order)
@@ -447,8 +457,6 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
             actualStepIndex={actualStepIndex}
             onStepClick={setViewingStepIndex}
             order={order}
-            isCreating={isCreating}
-            chosenOtType={chosenOtType}
           />
 
           {/* Center content */}
@@ -457,7 +465,7 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
               <h3 className="text-lg font-semibold">{STAGES[viewingStepIndex]?.label}</h3>
             </div>
 
-            <div className="flex-1 overflow-y-auto min-h-0 px-6 relative">
+            <div className="flex flex-1 flex-col min-h-0 px-6 relative">
               {/* Mobile navigation */}
               <div className="md:hidden sticky top-0 z-10 bg-background/95 backdrop-blur p-3 mb-4">
                 <LabeledSelect
@@ -472,23 +480,7 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
                     const isCurrent = actualStepIndex === i
                     let disabled = !isPast && !isCurrent
                     if (isCreating) {
-                      if (i === 0) {
-                        // ORIGIN_SELECTION - always unlocked
-                        disabled = false
-                      } else if (i === 1) {
-                        // SALE_ORDER_PRODUCT - unlocked if origin chosen
-                        disabled = chosenOtType === null
-                      } else if (i === 2) {
-                        // For LINKED path: MFG_CONFIG - unlocked if NV selected
-                        // For NONE path: PRODUCT_SELECTION - unlocked if we're in NONE path
-                        disabled = !(chosenOtType === "LINKED" || chosenOtType === "NONE")
-                      } else if (i === 3) {
-                        // For NONE path: MFG_CONFIG - unlocked if product selected (simplified)
-                        disabled = chosenOtType !== "NONE"
-                      } else {
-                        // Steps 4+ - locked until we complete creation flow
-                        disabled = chosenOtType === null
-                      }
+                      disabled = s.id !== 'ORIGIN_SELECTION' && chosenOtType === null
                     }
                     return {
                       value: s.id,
@@ -512,21 +504,18 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
                   transition={{ duration: 0.2 }}
-                  className={cn('space-y-6 pb-6', !isViewingCurrentStage && currentStageId !== 'ORIGIN_SELECTION' && currentStageId !== 'SALE_ORDER_PRODUCT' && currentStageId !== 'PRODUCT_SELECTION' && currentStageId !== 'MFG_CONFIG' && 'pointer-events-none opacity-80')}
+                  className={cn('flex flex-col flex-1 min-h-0 overflow-y-auto space-y-6 pb-6', !isViewingCurrentStage && currentStageId !== 'ORIGIN_SELECTION' && currentStageId !== 'SALE_ORDER_PRODUCT' && currentStageId !== 'PRODUCT_SELECTION' && currentStageId !== 'MFG_CONFIG' && 'pointer-events-none opacity-80')}
                 >
                   {currentStageId === 'ORIGIN_SELECTION' && (
                     <OriginSelectionStep
                       onChoose={(type) => {
                         setChosenOtType(type)
-                        if (type === "LINKED") {
-                          setViewingStepIndex(1) // Go to SALE_ORDER_PRODUCT
-                        } else if (type === "NONE") {
-                          setViewingStepIndex(2) // Go to PRODUCT_SELECTION
-                        }
+                        const idx = getCreateStages(type).findIndex(s => s.id === (type === "LINKED" ? 'SALE_ORDER_PRODUCT' : 'PRODUCT_SELECTION'))
+                        setViewingStepIndex(idx >= 0 ? idx : 1)
                       }}
                     />
                   )}
-                  {currentStageId === 'SALE_ORDER_PRODUCT' && (
+                  {currentStageId === 'SALE_ORDER_PRODUCT' && chosenOtType === "LINKED" && (
                     <SaleOrderProductStep
                       onChooseProduct={(otType, productId, quantity, uomId, productDescription, saleOrderId, saleLineId) => {
                         setChosenOtType(otType)
@@ -536,12 +525,13 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
                         setQuantity(quantity)
                         setUomId(uomId)
                         setProductDescription(productDescription)
-                        setViewingStepIndex(3) // Go to MFG_CONFIG
+                        const idx = getCreateStages("LINKED").findIndex(s => s.id === 'MFG_CONFIG')
+                        setViewingStepIndex(idx >= 0 ? idx : 1)
                       }}
                       initialOtType={chosenOtType}
                     />
                   )}
-                  {currentStageId === 'PRODUCT_SELECTION' && (
+                  {currentStageId === 'PRODUCT_SELECTION' && chosenOtType === "NONE" && (
                     <ProductSelectionStep
                       onChooseProduct={(otType, productId, quantity, uomId, productDescription) => {
                         setChosenOtType(otType)
@@ -549,7 +539,8 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
                         setQuantity(quantity)
                         setUomId(uomId)
                         setProductDescription(productDescription)
-                        setViewingStepIndex(3) // Go to MFG_CONFIG
+                        const idx = getCreateStages("NONE").findIndex(s => s.id === 'MFG_CONFIG')
+                        setViewingStepIndex(idx >= 0 ? idx : 1)
                       }}
                       initialOtType={chosenOtType}
                     />
