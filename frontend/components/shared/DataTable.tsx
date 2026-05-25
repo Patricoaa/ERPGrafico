@@ -119,7 +119,19 @@ export interface DataTableProps<TData, TValue> {
 const DEFAULT_COLUMN_VISIBILITY: VisibilityState = {}
 const EMPTY_ARRAY: any[] = []
 const DEFAULT_PAGE_SIZE_OPTIONS = [10, 20, 50, 100, 500]
-const SKELETON_CELL_WIDTHS = ['w-3/4', 'w-1/2', 'w-2/3', 'w-3/5', 'w-4/5', 'w-2/5', 'w-7/10', 'w-1/3', 'w-1/2', 'w-3/4']
+function getSkeletonCellContent(columnIndex: number, totalColumns: number): { width: string; height: string; shape: 'bar' | 'pill' | 'icon' | 'code' } {
+    if (columnIndex === totalColumns - 1) {
+        return { width: 'w-8', height: 'h-8', shape: 'icon' }
+    }
+    if (columnIndex === 0) {
+        return { width: 'w-16', height: 'h-4', shape: 'code' }
+    }
+    if (columnIndex % 3 === 2) {
+        return { width: 'w-20', height: 'h-5', shape: 'pill' }
+    }
+    const widths = ['w-3/4', 'w-3/5', 'w-2/5', 'w-4/5', 'w-1/2', 'w-7/10', 'w-1/3']
+    return { width: widths[columnIndex % widths.length], height: 'h-4', shape: 'bar' }
+}
 
 export function DataTable<TData, TValue>({
     columns,
@@ -335,7 +347,7 @@ export function DataTable<TData, TValue>({
                                     {table.getHeaderGroups().map(headerGroup => (
                                         <TableRow key={headerGroup.id}>
                                             {headerGroup.headers.map(header => (
-                                                <TableHead key={header.id} className="h-12">
+                                                <TableHead key={header.id} className="table-header">
                                                     {header.isPlaceholder
                                                         ? null
                                                         : flexRender(
@@ -350,11 +362,22 @@ export function DataTable<TData, TValue>({
                                 <TableBody>
                                     {Array.from({ length: effectiveSkeletonRows }, (_, i) => (
                                         <TableRow key={`skel-${i}`} className="border-b border-border/40">
-                                            {columns.map((_, j) => (
-                                                <TableCell key={`skel-${i}-${j}`} className="py-4">
-                                                    <Skeleton className={cn("h-4", SKELETON_CELL_WIDTHS[j % SKELETON_CELL_WIDTHS.length])} />
-                                                </TableCell>
-                                            ))}
+                                            {columns.map((_, j) => {
+                                                const cell = getSkeletonCellContent(j, columns.length)
+                                                return (
+                                                    <TableCell key={`skel-${i}-${j}`} className="table-cell">
+                                                        <Skeleton
+                                                            className={cn(
+                                                                cell.height,
+                                                                cell.width,
+                                                                cell.shape === 'pill' && 'rounded-full',
+                                                                cell.shape === 'icon' && 'rounded-md',
+                                                                cell.shape === 'code' && 'mx-auto',
+                                                            )}
+                                                        />
+                                                    </TableCell>
+                                                )
+                                            })}
                                         </TableRow>
                                     ))}
                                 </TableBody>
