@@ -23,6 +23,7 @@ import { SkeletonShell } from "@/components/shared/SkeletonShell"
 import { cn } from "@/lib/utils"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { motion, AnimatePresence } from "framer-motion"
+import { Skeleton } from "@/components/ui/skeleton"
 import { SearchX, LucideIcon } from "lucide-react"
 import { EmptyStateContext } from "@/components/shared/EmptyState"
 import { BulkActionDock, BulkActionButtons, type BulkAction } from "@/components/shared"
@@ -118,6 +119,7 @@ export interface DataTableProps<TData, TValue> {
 const DEFAULT_COLUMN_VISIBILITY: VisibilityState = {}
 const EMPTY_ARRAY: any[] = []
 const DEFAULT_PAGE_SIZE_OPTIONS = [10, 20, 50, 100, 500]
+const SKELETON_CELL_WIDTHS = ['w-3/4', 'w-1/2', 'w-2/3', 'w-3/5', 'w-4/5', 'w-2/5', 'w-7/10', 'w-1/3', 'w-1/2', 'w-3/4']
 
 export function DataTable<TData, TValue>({
     columns,
@@ -141,7 +143,7 @@ export function DataTable<TData, TValue>({
     onRowClick,
     variant,
     isLoading = false,
-    skeletonRows = 5,
+    skeletonRows,
     renderSubComponent,
     hidePagination = false,
     toolbarClassName,
@@ -173,6 +175,7 @@ export function DataTable<TData, TValue>({
 }: DataTableProps<TData, TValue>) {
     const isEmbedded = variant === 'embedded'
     const isMinimal = variant === 'minimal'
+    const effectiveSkeletonRows = skeletonRows ?? defaultPageSize
 
     const containerRef = React.useRef<HTMLDivElement>(null)
     const [isInModal, setIsInModal] = React.useState(false)
@@ -345,10 +348,12 @@ export function DataTable<TData, TValue>({
                                     ))}
                                 </TableHeader>
                                 <TableBody>
-                                    {Array.from({ length: skeletonRows }, (_, i) => (
+                                    {Array.from({ length: effectiveSkeletonRows }, (_, i) => (
                                         <TableRow key={`skel-${i}`} className="border-b border-border/40">
                                             {columns.map((_, j) => (
-                                                <TableCell key={`skel-${i}-${j}`} className="py-4" />
+                                                <TableCell key={`skel-${i}-${j}`} className="py-4">
+                                                    <Skeleton className={cn("h-4", SKELETON_CELL_WIDTHS[j % SKELETON_CELL_WIDTHS.length])} />
+                                                </TableCell>
                                             ))}
                                         </TableRow>
                                     ))}
