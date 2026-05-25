@@ -279,7 +279,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     title: 'Usuario',
     titlePlural: 'Usuarios',
     icon: User,
-    shortTemplate: 'USR-{id}',
+    shortTemplate: '{username}',
     listUrl: '/settings/users',
     detailUrlPattern: '/settings/users/{id}',
     viewPolicy: { availableViews: ['list'], defaultView: 'list', cardComponent: 'custom' },

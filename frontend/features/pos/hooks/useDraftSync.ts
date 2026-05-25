@@ -196,6 +196,44 @@ export function useDraftSync({
         })
     }, [user?.id, activeLockDraftId])
 
+    // ── Mutation hooks for draft sync operations ────────────────
+    const queryClient = useQueryClient()
+    const { markLocalMutation } = useRealtime()
+
+    const syncDraftsMutation = useMutation({
+        mutationFn: (posSessionId: number) => posApi.syncDrafts({ pos_session_id: posSessionId }),
+        onSuccess: (data) => {
+            setSyncDrafts(data.drafts)
+            prevDraftsRef.current = data.drafts
+            queryClient.invalidateQueries({ queryKey: POS_KEYS.drafts.lists() })
+            markLocalMutation()
+        },
+        onError: (error: Error) => {
+            console.debug('[DraftSync] Sync failed:', error)
+        }
+    })
+
+    const lockDraftMutation = useMutation({
+        mutationFn: ({ draftId, sessionKey }: { draftId: number; sessionKey: string }) =>
+            posApi.lockDraft(draftId, { pos_session_id: posSessionId, session_key: sessionKey }),
+        onSuccess: (data, variables) => {
+            setActiveLockDraftId(variables.draftId)
+            queryClient.invalidateQueries({ queryKey: POS_KEYS.drafts.detailById(variables.draftId) })
+            markLocalMutation()
+        },
+        onError: () => {}
+    })
+
+    const unlockDraftMutation = useMutation({
+        mutationFn: (draftId: number) => posApi.unlockDraft(draftId, { pos_session_id: posSessionId, session_key: browserSessionKey }),
+        onSuccess: () => {
+            setActiveLockDraftId(null)
+            queryClient.invalidateQueries({ queryKey: POS_KEYS.drafts.detailById(draftId) })
+            markLocalMutation()
+        },
+        onError: () => {}
+    })
+
     // ── Initial Fetch & Fallback ────────────────────────────────
     const initialFetch = useCallback(async () => {
         if (!posSessionId) return
@@ -211,55 +249,6 @@ export function useDraftSync({
             console.debug('[DraftSync] Initial fetch failed:', error)
         }
     }, [posSessionId, syncDraftsMutation])
-
-    // Mutation hooks for draft sync operations
-    const queryClient = useQueryClient()
-    const { markLocalMutation } = useRealtime()
-
-    const syncDraftsMutation = useMutation({
-        mutationFn: (posSessionId: number) => posApi.syncDrafts({ pos_session_id: posSessionId }),
-        onSuccess: (data, variables) => {
-            // Update sync drafts list
-            setSyncDrafts(data.drafts)
-            prevDraftsRef.current = data.drafts
-            
-            // Invalidate draft lists and details in the useDrafts hook
-            queryClient.invalidateQueries({ queryKey: POS_KEYS.drafts.lists() })
-            
-            // Realtime integration
-            markLocalMutation()
-        },
-        onError: (error: Error) => {
-            console.debug('[DraftSync] Sync failed:', error)
-        }
-    })
-
-    const lockDraftMutation = useMutation({
-        mutationFn: ({ draftId, sessionKey }: { draftId: number; sessionKey: string }) =>
-            posApi.lockDraft(draftId, { pos_session_id: posSessionId, session_key: sessionKey }),
-        onSuccess: (data, variables) => {
-            setActiveLockDraftId(variables.draftId)
-            // Invalidate draft details to reflect lock status
-            queryClient.invalidateQueries({ queryKey: POS_KEYS.drafts.detailById(variables.draftId) })
-            markLocalMutation()
-        },
-        onError: (error: Error) => {
-            // Error handling is done in the acquireLock function
-        }
-    })
-
-    const unlockDraftMutation = useMutation({
-        mutationFn: (draftId: number) => posApi.unlockDraft(draftId, { pos_session_id: posSessionId, session_key: browserSessionKey }),
-        onSuccess: () => {
-            setActiveLockDraftId(null)
-            // Invalidate draft details to reflect lock status
-            queryClient.invalidateQueries({ queryKey: POS_KEYS.drafts.detailById(draftId) })
-            markLocalMutation()
-        },
-        onError: (error: Error) => {
-            // Silently ignore unlock errors as they're often benign
-        }
-    })
 
     // Use a slow polling fallback ONLY if socket is disconnected for a long time
     useEffect(() => {

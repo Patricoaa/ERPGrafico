@@ -36,7 +36,7 @@ interface ValueCellProps<T> extends BaseCellProps {
 export const DataCell = {
     /** Standard text cell for primary information */
     Text: ({ children, className, ...props }: BaseCellProps) => (
-        <div className={cn("flex justify-center items-center text-center w-full text-[13px] font-bold text-foreground", className)} {...props}>{children}</div>
+        <div className={cn("flex justify-center items-center text-center w-full text-[13px] font-medium text-muted-primary", className)} {...props}>{children}</div>
     ),
 
     /** Secondary text for categories, descriptions, or subtitles */
@@ -232,7 +232,7 @@ export const DataCell = {
     Date: ({ value, className, showTime = false, ...props }: ValueCellProps<string | Date> & { showTime?: boolean }) => {
         if (!value) return <div className={cn("flex justify-center items-center w-full text-[12px] font-mono text-muted-foreground/50", className)} {...props}>-</div>
         return (
-            <div className={cn("flex justify-center items-center w-full text-[12px] font-mono font-medium text-muted-foreground whitespace-nowrap", className)} {...props}>
+            <div className={cn("flex justify-center items-center w-full text-[13px] font-medium text-muted-primary whitespace-nowrap", className)} {...props}>
                 {formatPlainDate(value)}
                 {showTime && (() => {
                     const date = new Date(value)

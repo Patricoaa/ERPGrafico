@@ -11,6 +11,7 @@ import { Chip } from "@/components/shared"
 import { FileBadge, History, FileEdit, MoreVertical } from "lucide-react"
 import api from "@/lib/api"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { toast } from "sonner"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 import { PaymentModal } from "@/features/treasury/components/PaymentModal"
@@ -242,11 +243,16 @@ export default function PurchaseInvoicesPage() {
             cell: ({ row }) => {
                 const doc = row.original
                 return (
-                    <div className="flex items-center gap-2" title={doc.dte_type_display}>
+                    <div className="flex items-center gap-2">
                         <FileBadge className={`h-4 w-4 ${doc.dte_type === 'NOTA_CREDITO' ? 'text-primary' : doc.dte_type === 'NOTA_DEBITO' ? 'text-warning' : 'text-muted-foreground'}`} />
-                        <span className="text-xs font-bold uppercase hidden md:inline-block">
-                            {getDtePrefix(doc.dte_type)}
-                        </span>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <span className="text-xs font-bold uppercase hidden md:inline-block">
+                                    {getDtePrefix(doc.dte_type)}
+                                </span>
+                            </TooltipTrigger>
+                            <TooltipContent side="top">{doc.dte_type_display}</TooltipContent>
+                        </Tooltip>
                     </div>
                 )
             },

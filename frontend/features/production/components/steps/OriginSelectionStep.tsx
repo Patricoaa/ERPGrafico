@@ -25,18 +25,17 @@ export function OriginSelectionStep({ onChoose }: OriginSelectionStepProps) {
         <Button
           type="button"
           variant="outline"
-          className="group h-[200px] w-full rounded-xl border border-border/30 
+          className="h-[200px] w-full rounded-xl border border-border/30 
                    hover:border-primary/50 hover:bg-primary/[0.03] transition-all duration-300"
           onClick={() => onChoose("LINKED", {
             otType: "LINKED", description: "", sale_order: "", sale_line: "",
             product_description: "", contact_id: "", start_date: null, due_date: null, internal_notes: "",
           } as WorkOrderFormValues)}
         >
-          <div className="absolute inset-0 bg-primary/0 group-hover:bg-primary/5 transition-opacity pointer-events-none" />
           <div className="flex h-full flex-col items-center justify-center p-8 space-y-4">
-            <FileText className="h-8 w-8 text-primary/80 group-hover:text-primary" />
+            <FileText className="h-8 w-8 text-primary/80" />
             <div className="text-center space-y-2">
-              <h3 className="font-semibold text-lg text-foreground group-hover:text-primary">
+              <h3 className="font-semibold text-lg text-foreground">
                 Vincular a Venta
               </h3>
               <p className="text-sm text-muted-foreground max-w-md">
@@ -49,18 +48,17 @@ export function OriginSelectionStep({ onChoose }: OriginSelectionStepProps) {
         <Button
           type="button"
           variant="outline"
-          className="group h-[200px] w-full rounded-xl border border-border/30 
+          className="h-[200px] w-full rounded-xl border border-border/30 
                    hover:border-warning/50 hover:bg-warning/[0.03] transition-all duration-300"
           onClick={() => onChoose("NONE", {
             otType: "NONE", description: "", product_id: "", quantity: "",
             uom_id: "", start_date: null, due_date: null, internal_notes: "",
           } as WorkOrderFormValues)}
         >
-          <div className="absolute inset-0 bg-warning/0 group-hover:bg-warning/5 transition-opacity pointer-events-none" />
           <div className="flex h-full flex-col items-center justify-center p-8 space-y-4">
-            <Plus className="h-8 w-8 text-warning/80 group-hover:text-warning" />
+            <Plus className="h-8 w-8 text-warning/80" />
             <div className="text-center space-y-2">
-              <h3 className="font-semibold text-lg text-foreground group-hover:text-warning">
+              <h3 className="font-semibold text-lg text-foreground">
                 Producción para Stock
               </h3>
               <p className="text-sm text-muted-foreground max-w-md">

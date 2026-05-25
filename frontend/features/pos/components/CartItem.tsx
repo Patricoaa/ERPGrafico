@@ -8,6 +8,7 @@ import { memo } from 'react'
 import { TableRow, TableCell } from '@/components/ui/table'
 import { Input } from '@/components/ui/input'
 import { Chip, DataCell } from "@/components/shared"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { UoMSelector } from '@/components/selectors'
 import { cn } from '@/lib/utils'
 import { formatCurrency } from "@/lib/money"
@@ -87,9 +88,14 @@ function CartItemComponent({
             {/* Product Name */}
             <TableCell className="py-2 align-top">
                 <div className="flex flex-col gap-0.5">
-                    <span className="font-bold text-xs truncate max-w-[150px]" title={item.name}>
-                        {item.name}
-                    </span>
+<Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <span className="font-bold text-xs truncate max-w-[150px]">
+                                                                {item.name}
+                                                            </span>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent side="top">{item.name}</TooltipContent>
+                                                    </Tooltip>
                     <div className="flex flex-wrap gap-1">
                         {item.internal_code && (
                             <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded border border-muted-foreground/20 bg-muted/30 text-muted-foreground opacity-70">

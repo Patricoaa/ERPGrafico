@@ -42,6 +42,7 @@ export const inventoryApi = {
         if (filters?.parent_template__isnull !== undefined) params.append('parent_template__isnull', String(filters.parent_template__isnull))
         if (filters?.search) params.append('search', filters.search)
         if (filters?.product_type) params.append('product_type', filters.product_type)
+        if (filters?.track_inventory !== undefined) params.append('track_inventory', String(filters.track_inventory))
         if (filters?.page_size) params.append('page_size', String(filters.page_size))
         if (filters?.fields) params.append('fields', filters.fields)
 

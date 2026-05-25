@@ -18,6 +18,7 @@ import { useGlobalModalActions } from "@/components/providers/GlobalModalProvide
 import { DataCell, createActionsColumn, FadeIn } from '@/components/shared'
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { EntityCard } from "@/components/shared/EntityCard"
 import { createEntityCardView } from "@/lib/view-helpers"
@@ -125,7 +126,7 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
             ),
             cell: ({ row }: { row: any }) => (
                 <div className="flex flex-col items-center text-center w-full">
-                    <DataCell.Text className="font-bold text-primary uppercase tracking-tight">
+                    <DataCell.Text>
                         {row.original.name}
                     </DataCell.Text>
                     {row.original.bank_name && (
@@ -144,7 +145,7 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
             ),
             cell: ({ row }: { row: any }) => (
                 <div className="flex justify-center w-full">
-                    <DataCell.Text className="text-muted-foreground font-medium text-xs">
+<DataCell.Text>
                         {row.original.account_type_display || typeLabels[row.original.account_type] || row.original.account_type}
                     </DataCell.Text>
                 </div>
@@ -159,9 +160,14 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
                 const name = row.original.account_name
                 if (!name) return <DataCell.Secondary className="italic text-center">No vinculada</DataCell.Secondary>
                 return (
-                    <div className="flex flex-col items-center justify-center w-full" title={`${row.original.account_code || ''} - ${name}`}>
+                    <div className="flex flex-col items-center justify-center w-full">
                         <DataCell.Code>{row.original.account_code}</DataCell.Code>
-                        <DataCell.Secondary className="truncate max-w-[180px]">{name}</DataCell.Secondary>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <DataCell.Secondary>{name}</DataCell.Secondary>
+                            </TooltipTrigger>
+                            <TooltipContent side="top">{row.original.account_code || ''} - {name}</TooltipContent>
+                        </Tooltip>
                     </div>
                 )
             }
@@ -186,8 +192,18 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
         },
         {
             accessorKey: "account_type",
-            header: "Tipo (Filtro)",
+            header: "Tipo",
             enableHiding: true,
+            cell: ({ row }: { row: any }) => {
+                const val = row.original.account_type
+                if (!val) return null
+                const upperVal = String(val).toUpperCase()
+                return (
+                    <DataCell.Text className="text-muted-primary">
+                        {typeLabels[upperVal] || val}
+                    </DataCell.Text>
+                )
+            }
         },
         createActionsColumn<TreasuryAccount>({
             renderActions: (item) => (
@@ -234,7 +250,7 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
                                                 }
                                             />
                                             <EntityCard.Body>
-                                                <EntityCard.Field label="Tipología" value={acc.account_type_display || typeLabels[acc.account_type] || acc.account_type} />
+                                                <EntityCard.Field label="Tipología" value={acc.account_type_display || typeLabels[acc.account_type?.toUpperCase()] || acc.account_type} />
                                                 <EntityCard.Field label="Cuenta Contable" value={
                                                     name ? (
                                                         <div className="flex flex-col gap-0.5">

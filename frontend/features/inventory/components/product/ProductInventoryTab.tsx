@@ -32,7 +32,7 @@ export function ProductInventoryTab({ form, initialData, warehouses = [], uoms =
     const isAdvancedMfg = productType === 'MANUFACTURABLE' && requiresAdvancedmfg
 
     // Determine if switch is disabled based on requirements
-    const isSwitchDisabled = productType === 'STORABLE' || productType === 'CONSUMABLE' || productType === 'SERVICE' || mfgAutoFinalize || isSimpleMfg
+    const isSwitchDisabled = productType === 'STORABLE' || productType === 'CONSUMABLE' || productType === 'SERVICE' || mfgAutoFinalize || isSimpleMfg || isAdvancedMfg
 
     return (
         <div className="space-y-10 animate-in fade-in duration-500">
@@ -126,7 +126,7 @@ export function ProductInventoryTab({ form, initialData, warehouses = [], uoms =
                             <div className="space-y-6">
                                 <LabeledSwitch
                                     label="Seguimiento de Inventario"
-                                    description={mfgAutoFinalize ? "Desactivado: Los productos de fabricación express no requieren seguimiento." : isSimpleMfg ? "Requerido: Los productos de fabricación simple siempre controlan stock." : "Habilita el control de existencias y movimientos para este producto."}
+                                    description={mfgAutoFinalize ? "Desactivado: Los productos de fabricación express no requieren seguimiento." : isAdvancedMfg ? "Desactivado: Los productos de fabricación avanzada no requieren seguimiento." : isSimpleMfg ? "Requerido: Los productos de fabricación simple siempre controlan stock." : "Habilita el control de existencias y movimientos para este producto."}
                                     checked={field.value}
                                     onCheckedChange={(val) => {
                                         requestAnimationFrame(() => {

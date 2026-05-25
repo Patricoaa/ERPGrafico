@@ -108,7 +108,12 @@ const AccountRow = ({ node, level = 0 }: { node: BudgetVarianceNode, level?: num
                             <div className="w-7" />
                         )}
                         <span className="mr-2 text-muted-foreground font-mono text-[10px] w-12 shrink-0">{node.code}</span>
-                        <span className="truncate max-w-[200px]" title={node.name}>{node.name}</span>
+                        <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <span className="truncate max-w-[200px]">{node.name}</span>
+                                </TooltipTrigger>
+                                <TooltipContent side="top">{node.name}</TooltipContent>
+                            </Tooltip>
 
                         {node.is_unbudgeted && (
                             <TooltipProvider>

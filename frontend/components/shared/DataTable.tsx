@@ -121,13 +121,13 @@ const EMPTY_ARRAY: any[] = []
 const DEFAULT_PAGE_SIZE_OPTIONS = [10, 20, 50, 100, 500]
 function getSkeletonCellContent(columnIndex: number, totalColumns: number): { width: string; height: string; shape: 'bar' | 'pill' | 'icon' | 'code' } {
     if (columnIndex === totalColumns - 1) {
-        return { width: 'w-8', height: 'h-8', shape: 'icon' }
+        return { width: 'w-8', height: 'h-4', shape: 'icon' }
     }
     if (columnIndex === 0) {
         return { width: 'w-16', height: 'h-4', shape: 'code' }
     }
     if (columnIndex % 3 === 2) {
-        return { width: 'w-20', height: 'h-5', shape: 'pill' }
+        return { width: 'w-20', height: 'h-4', shape: 'pill' }
     }
     const widths = ['w-3/4', 'w-3/5', 'w-2/5', 'w-4/5', 'w-1/2', 'w-7/10', 'w-1/3']
     return { width: widths[columnIndex % widths.length], height: 'h-4', shape: 'bar' }
@@ -463,11 +463,11 @@ export function DataTable<TData, TValue>({
                             renderRow(row, (
                                 <TableRow
                                     data-state={row.getIsSelected() && "selected"}
-    className={cn(
-        "group border-b border-border/40 table-row-hover transition-all",
-        onRowClick && "cursor-pointer",
-        row.getIsSelected() && "bg-primary/5"
-    )}
+                                    className={cn(
+                                        "group border-b border-border/40 table-row-hover transition-all",
+                                        onRowClick && "cursor-pointer",
+                                        row.getIsSelected() && "bg-primary/5"
+                                    )}
                                     onClick={() => onRowClick?.(row.original)}
                                 >
                                     {row.getVisibleCells().map((cell) => (

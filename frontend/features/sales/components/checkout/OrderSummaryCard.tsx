@@ -4,6 +4,7 @@ import { Separator } from "@/components/ui/separator"
 import { ShoppingBag } from "lucide-react"
 import { formatCurrency } from "@/lib/money"
 import { Chip } from "@/components/shared"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { PricingUtils } from '@/features/inventory/utils/pricing'
 
 import { SaleOrderLine } from "../../types"
@@ -46,9 +47,14 @@ export function OrderSummaryCard({
                             {orderLines.map((line, idx) => (
                                 <div key={idx} className="flex justify-between items-start gap-4 animate-in fade-in duration-500">
                                     <div className="space-y-1.5 flex-1 min-w-0">
-                                        <p className="font-bold text-[13px] leading-tight text-foreground/90 truncate mr-2" title={line.product_name || line.description}>
-                                            {line.product_name || line.description}
-                                        </p>
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <p className="font-bold text-[13px] leading-tight text-foreground/90 truncate mr-2">
+                                                    {line.product_name || line.description}
+                                                </p>
+                                            </TooltipTrigger>
+                                            <TooltipContent side="top">{line.product_name || line.description}</TooltipContent>
+                                        </Tooltip>
                                         <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
                                             {line.internal_code && (
                                                 <Chip size="xs">{line.internal_code}</Chip>

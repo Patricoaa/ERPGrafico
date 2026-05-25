@@ -11,6 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { LabeledSelect, GenericWizard, WizardStep, FormSection, DocumentAttachmentDropzone, LabeledInput } from "@/components/shared"
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
 import { FileUp, Columns, Table as TableIcon, AlertCircle, CheckCircle2, RefreshCw, FileSearch, Landmark, FileText, SlidersHorizontal } from "lucide-react"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { financeApi } from "../../api/financeApi"
 import { cn } from "@/lib/utils"
 import { Chip } from "@/components/shared"
@@ -391,9 +392,14 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess }: 
                                                                 COLUMNA {idx + 1}
                                                             </span>
                                                         </div>
-                                                        <span className="text-xs font-black text-foreground/70 uppercase break-all line-clamp-1 min-h-4" title={String(col)}>
-                                                            {String(col)}
-                                                        </span>
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <span className="text-xs font-black text-foreground/70 uppercase break-all line-clamp-1 min-h-4">
+                                                                    {String(col)}
+                                                                </span>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent side="top">{String(col)}</TooltipContent>
+                                                        </Tooltip>
                                                         <Select
                                                             value={Object.entries(mapping).find((entry) => entry[1] === col)?.[0] || "ignore"}
                                                             onValueChange={(val) => {

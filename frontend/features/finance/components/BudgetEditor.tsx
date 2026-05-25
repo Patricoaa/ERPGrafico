@@ -56,9 +56,14 @@ const BudgetAccountRow = React.memo(({
         <div key={account.id} className="flex items-center border-b hover:bg-muted transition-colors">
             <div className="w-[300px] p-2 border-r flex items-center justify-between group">
                 <div>
-                    <div className="font-semibold text-sm truncate" title={`${account.code} - ${account.name}`}>
-                        {account.code} - {account.name}
-                    </div>
+                    <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <span className="font-semibold text-sm truncate">
+                                        {account.code} - {account.name}
+                                    </span>
+                                </TooltipTrigger>
+                                <TooltipContent side="top">{account.code} - {account.name}</TooltipContent>
+                            </Tooltip>
                     <div className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">{account.account_type_display}</div>
                 </div>
 

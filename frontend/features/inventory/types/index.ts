@@ -130,6 +130,7 @@ export interface ProductFilters {
     category?: number
     page_size?: number
     fields?: string
+    track_inventory?: boolean
 }
 
 export interface ProductUpdatePayload {

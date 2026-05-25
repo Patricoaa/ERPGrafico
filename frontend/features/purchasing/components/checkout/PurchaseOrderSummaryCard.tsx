@@ -2,6 +2,7 @@
 
 import { Separator } from "@/components/ui/separator"
 import { Chip } from "@/components/shared"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { ShoppingBag } from "lucide-react"
 import { formatCurrency } from "@/lib/money"
 import { PricingUtils } from '@/features/inventory/utils/pricing'
@@ -36,9 +37,14 @@ export function PurchaseOrderSummaryCard({
                             {orderLines.map((line, idx) => (
                                 <div key={idx} className="flex justify-between items-start gap-4 animate-in fade-in duration-500">
                                     <div className="space-y-1.5 flex-1 min-w-0">
-                                        <p className="font-bold text-[13px] leading-tight text-foreground/90 truncate mr-2" title={line.name}>
-                                            {line.name}
-                                        </p>
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <p className="font-bold text-[13px] leading-tight text-foreground/90 truncate mr-2">
+                                                    {line.name}
+                                                </p>
+                                            </TooltipTrigger>
+                                            <TooltipContent side="top">{line.name}</TooltipContent>
+                                        </Tooltip>
                                         <div className="flex items-center gap-2">
                                             <Chip size="xs" intent="neutral" className="bg-muted">
                                                 {line.qty || line.quantity} {line.uom_name || 'un'}
