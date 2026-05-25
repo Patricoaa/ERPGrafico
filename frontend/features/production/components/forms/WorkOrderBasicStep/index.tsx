@@ -106,15 +106,15 @@ export function WorkOrderBasicStep({
         }
     }, [chosenOtType, form])
 
-    const { data: uoms = [] } = useUoMs()
+    const { data: uoms = [], isLoading: isUoMsLoading } = useUoMs()
 
-    const { data: defaultProductData } = useProductDetail(defaultProductId, {
+    const { data: defaultProductData, isLoading: isProductDetailLoading } = useProductDetail(defaultProductId, {
         enabled: otType === "NONE",
     })
 
     // 'product_id' only exists in NONE branch; cast is safe
     const watchedProductId = form.watch('product_id' as never) as unknown as string | undefined
-    const { data: activeBom } = useActiveBom(watchedProductId)
+    const { data: activeBom, isLoading: isBomLoading } = useActiveBom(watchedProductId)
 
     useEffect(() => {
         if (!activeBom) return
@@ -323,11 +323,13 @@ export function WorkOrderBasicStep({
         }
     }
 
+    const isFetchingInitialData = isUoMsLoading || (!!defaultProductId && otType === "NONE" && isProductDetailLoading) || loadingLines || isBomLoading
     const isAutoCreated = !!initialData?.sale_line
     const linkedSaleOrder = initialData?.sale_order
     const isViewMode = mode === 'view'
 
     return (
+        <SkeletonShell isLoading={isFetchingInitialData} ariaLabel="Cargando formulario de orden de trabajo">
         <Form {...form}>
             <form id={formId} onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-4">
                 <fieldset disabled={isViewMode} className="block border-0 p-0 m-0 min-w-0">
@@ -381,6 +383,7 @@ export function WorkOrderBasicStep({
                 </fieldset>
             </form>
         </Form>
+        </SkeletonShell>
     )
 }
 

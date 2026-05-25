@@ -9,7 +9,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { Form, FormField } from "@/components/ui/form"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { LabeledInput, LabeledSelect } from "@/components/shared"
+import { LabeledInput, LabeledSelect, SkeletonShell } from "@/components/shared"
 import { Factory, AlertCircle, Copy, PlusCircle, DollarSign, Users } from "lucide-react"
 import { Chip } from "@/components/shared"
 import { cn } from "@/lib/utils"
@@ -18,7 +18,7 @@ import { toast } from "sonner"
 import { BOMFormModal } from "@/features/production/components/BOMFormModal"
 import type { ProductMinimal } from "@/features/production/types"
 import { useUoMs } from "../../hooks/useUoMs"
-import { useProducts } from "../../hooks/useProducts"
+import { useProductMutations } from "../../hooks/useProductMutations"
 
 type ProductWithBomClone = Product & { copy_bom_from?: string }
 
@@ -58,8 +58,8 @@ export function BulkVariantEditFormV2({
   onCancel,
 }: BulkVariantEditFormV2Props) {
   const [mounted, setMounted] = useState(false)
-  const { uoms } = useUoMs()
-  const { updateProduct } = useProducts()
+  const { uoms, isLoading: isUoMsLoading } = useUoMs()
+    const { updateProduct } = useProductMutations()
   const [cloneSourceId, setCloneSourceId] = useState<string>('none')
   const [activeTab, setActiveTab] = useState<string>('precios')
   const [bomModalOpen, setBomModalOpen] = useState(false)
@@ -203,6 +203,7 @@ export function BulkVariantEditFormV2({
       <form id="bulk-edit-form" onSubmit={(e) => { e.stopPropagation(); form.handleSubmit(onSubmit)(e) }} style={{ display: 'none' }} />,
       document.body
     )}
+    <SkeletonShell isLoading={isUoMsLoading} ariaLabel="Cargando edición masiva">
     <div className="flex flex-col h-full bg-card rounded-md border shadow-sm overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full">
 
@@ -429,6 +430,7 @@ export function BulkVariantEditFormV2({
         onSuccess={handleNewBOMSuccess}
       />
     </div>
+    </SkeletonShell>
     </>
   )
 }

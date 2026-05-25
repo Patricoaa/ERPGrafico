@@ -13,7 +13,7 @@ import {
     FormField,
 } from "@/components/ui/form"
 import { Button } from "@/components/ui/button"
-import { useWarehouses } from "../hooks/useWarehouses"
+import { useWarehouseMutations } from "../hooks/useWarehouseMutations"
 import { List } from "lucide-react"
 import { SubmitButton } from "@/components/shared/ActionButtons"
 import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
@@ -41,7 +41,7 @@ export function WarehouseForm({ sidebar, onSuccess, initialData, open: openProp,
     const open = openProp !== undefined ? openProp : openState
     const setOpen = onOpenChange || setOpenState
 
-    const { saveWarehouse } = useWarehouses()
+    const { saveWarehouse } = useWarehouseMutations()
     const [loading, setLoading] = useState(false)
 
     const form = useForm<WarehouseFormValues>({
@@ -88,7 +88,7 @@ export function WarehouseForm({ sidebar, onSuccess, initialData, open: openProp,
         try {
             // saveWarehouse invalida WAREHOUSES_KEYS.all (lista + detalle).
             // El toast de éxito y markLocalMutation() los hace el hook.
-            await saveWarehouse({ id: initialData?.id ?? null, payload: data })
+            await saveWarehouse({ id: initialData?.id ?? null, payload: { ...data, address: data.address || "" } })
             form.reset()
             setOpen(false)
             if (onSuccess) onSuccess()

@@ -177,6 +177,7 @@ Cada formulario opera en un **contexto** que determina su comportamiento, surfac
 | Contexto | Surface típica | Comportamiento | Footer actions | Sidebar |
 |:---|:---|:---|:---|:---|
 | **Creación** | BaseModal (`lg`) | `form.reset()` al abrir, sin datos previos | `CancelButton` + `SubmitButton "Crear {Entidad}"` | No |
+| **Creación con dependencias asíncronas** | BaseModal (`lg`) | Fetch de catálogos al abrir (UoMs, cuentas, etc.); SkeletonShell overlay mientras carga | `CancelButton` + `SubmitButton "Crear {Entidad}"` | No |
 | **Edición** | BaseModal (`xl`) | Pre-fill desde `initialData`, dirty tracking | `CancelButton` + `SubmitButton "Guardar Cambios"` | `FormSplitLayout` + `ActivitySidebar` |
 | **Ficha maestra** | BaseModal (`full`) | Tabs + insights + sidebar, mixta edición/lectura | `CancelButton` + `ActionSlideButton` | `FormSplitLayout` + `ActivitySidebar` |
 | **Configuración** | Page-level o BaseModal (`xl`) | Settings globales, cambios aplican a todo el sistema | `CancelButton` + `SubmitButton "Aplicar"` | Opcional |
@@ -210,6 +211,17 @@ useEffect(() => {
         }
     }
 }, [open, initialData?.id])
+
+// Creación con dependencias asíncronas: SkeletonShell overlay
+// El formulario real se renderiza completo (con placeholders) y
+// el shimmer overlay se oculta cuando todas las dependencias cargan.
+// Ver contrato completo en component-skeleton.md §Estrategia 4.
+const isFetchingInitialData = open && (isUoMsLoading || isAccountsLoading)
+return (
+    <SkeletonShell isLoading={isFetchingInitialData} ariaLabel="Cargando...">
+        <Form {...form}>...</Form>
+    </SkeletonShell>
+)
 ```
 
 ---
@@ -284,6 +296,7 @@ Surface (BaseModal | Page)
 |:---|:---|:---|
 | `FormTabs` / `FormTabsContent` | Navegación por dominios lógicos | [component-contracts.md §FormTabs](./component-contracts.md) |
 | `FormSplitLayout` | Layout form + sidebar de auditoría | [form-layout-architecture.md §5](./form-layout-architecture.md) |
+| `SkeletonShell` | Overlay shimmer para formularios con dependencias asíncronas — wrapping completo del `<Form>` | [component-skeleton.md §Estrategia 4](./component-skeleton.md#estrategia-4-formmodal-first-load-layout-as-skeleton) |
 | `ActivitySidebar` | Historial de cambios — solo en edit mode, solo en sidebar de `FormSplitLayout` | [form-layout-architecture.md §5](./form-layout-architecture.md) |
 | `FormSection` | Separador visual entre grupos de campos | [form-layout-architecture.md §5](./form-layout-architecture.md) |
 | `FormFooter` | Layout del footer (left-actions + right-actions) | [form-layout-architecture.md §7](./form-layout-architecture.md) |

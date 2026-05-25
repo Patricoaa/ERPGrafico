@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useEffect, useCallback } from "react"
-import { DataTable, BulkActionDock, ActionDock, Chip, DataCell, Drawer, AutoSaveStatusBadge } from '@/components/shared'
+import { DataTable, BulkActionDock, ActionDock, Chip, DataCell, Drawer, AutoSaveStatusBadge, SkeletonShell } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
 import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -257,6 +257,7 @@ export function MappingConfigSheet({
                 </div>
             }
         >
+            <SkeletonShell isLoading={isLoading} ariaLabel="Cargando mapeo de cuentas">
             <div className="flex-1 flex flex-col min-h-0">
                 <DataTable
                     columns={columns}
@@ -288,6 +289,7 @@ export function MappingConfigSheet({
                     )}
                 />
             </div>
+            </SkeletonShell>
         </Drawer>
     )
 }

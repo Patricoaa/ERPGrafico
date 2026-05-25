@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button"
 import { CancelButton, SubmitButton } from "@/components/shared/ActionButtons"
 import { Form, FormField } from "@/components/ui/form"
 import { Plus, FileText } from "lucide-react"
-import { LabeledInput, LabeledSelect, FormFooter } from "@/components/shared"
+import { LabeledInput, LabeledSelect, FormFooter, SkeletonShell } from "@/components/shared"
 
 const MONTHS = [
     { value: 1, label: "Enero" }, { value: 2, label: "Febrero" },
@@ -43,12 +43,19 @@ export interface CreatePayrollModalProps {
 export function CreatePayrollModal({ open, onOpenChange, onSaved, trigger }: CreatePayrollModalProps) {
     const [saving, setSaving] = useState(false)
     const [employees, setEmployees] = useState<Employee[]>([])
+    const [isFetchingEmployees, setIsFetchingEmployees] = useState(false)
 
     useEffect(() => {
         if (open) {
-            getEmployees({ status: 'ACTIVE' }).then(setEmployees).catch((e) => showApiError(e, "Error al cargar empleados"))
+            setIsFetchingEmployees(true)
+            getEmployees({ status: 'ACTIVE' })
+                .then(setEmployees)
+                .catch((e) => showApiError(e, "Error al cargar empleados"))
+                .finally(() => setIsFetchingEmployees(false))
         }
     }, [open])
+
+    const isFetchingInitialData = open && isFetchingEmployees
 
     const currentYear = new Date().getFullYear()
     const currentMonth = new Date().getMonth() + 1
@@ -106,6 +113,7 @@ export function CreatePayrollModal({ open, onOpenChange, onSaved, trigger }: Cre
                 />
             }
         >
+            <SkeletonShell isLoading={isFetchingInitialData} ariaLabel="Cargando formulario de liquidación">
             <Form {...form}>
                 <form
                     id="create-payroll-form"
@@ -163,6 +171,7 @@ export function CreatePayrollModal({ open, onOpenChange, onSaved, trigger }: Cre
                     )} />
                 </form>
             </Form>
+            </SkeletonShell>
         </BaseModal>
     )
 }

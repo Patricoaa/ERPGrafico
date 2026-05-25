@@ -18,7 +18,7 @@ import type { ManufacturingData } from "@/components/shared/manufacturing";
 import { ManufacturingSpecsEditor, emptyManufacturingData } from "@/components/shared/manufacturing";
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector";
 import { UoMSelector } from "@/components/selectors/UoMSelector";
-import { LabeledInput, LabeledContainer, PeriodValidationDateInput } from "@/components/shared";
+import { LabeledInput, LabeledContainer, PeriodValidationDateInput, SkeletonShell } from "@/components/shared";
 import { workOrderSchema } from "@/types/forms";
 import { productionApi } from "../../api/productionApi";
 import { useAuth } from "@/contexts/AuthContext";
@@ -78,7 +78,7 @@ export function ManufacturingConfigStep({
   const [internalNotes, setInternalNotes] = useState<string>(internalNotesFromStore);
 
   const { user } = useAuth();
-  const { multiplier: vatMultiplier } = useVatRate();
+  const { multiplier: vatMultiplier, isLoading: isVatLoading } = useVatRate();
 
   // Initialize form with current values
   const form = useForm<WorkOrderFormValues>({
@@ -309,6 +309,7 @@ export function ManufacturingConfigStep({
   };
 
   return (
+    <SkeletonShell isLoading={isVatLoading} ariaLabel="Cargando configuración de fabricación">
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-4">
         <fieldset>
@@ -537,5 +538,6 @@ export function ManufacturingConfigStep({
           </div>
         </form>
       </Form>
+      </SkeletonShell>
     );
 }

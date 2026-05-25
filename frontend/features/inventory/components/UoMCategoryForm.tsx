@@ -14,7 +14,7 @@ import { Ruler } from "lucide-react"
 import { SubmitButton } from "@/components/shared/ActionButtons"
 import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 import { showApiError } from "@/lib/errors"
-import { useUoMs } from "../hooks/useUoMs"
+import { useUoMMutations } from "../hooks/useUoMMutations"
 import { FormSplitLayout } from "@/components/shared"
 
 export interface UoMCategory {
@@ -39,7 +39,7 @@ export function UoMCategoryForm({ open: openProp, onOpenChange, initialData, onS
     const [openState, setOpenState] = useState(false)
     const open = openProp !== undefined ? openProp : openState
     const setOpen = onOpenChange || setOpenState
-    const { saveUoMCategory } = useUoMs()
+    const { saveUoMCategory } = useUoMMutations()
     const [isSaving, setIsSaving] = useState(false)
 
     const form = useForm<CategoryFormValues>({
