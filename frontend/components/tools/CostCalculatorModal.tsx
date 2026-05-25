@@ -85,11 +85,11 @@ export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalP
 
     // Use React Query for shared caching and better performance
     const { data: products = [], isLoading: loadingProducts } = useQuery({
-        queryKey: ['products', { active: true, can_be_sold: true }],
+        queryKey: ['products', { active: true, track_inventory: true }],
         queryFn: async () => {
             const data = await inventoryApi.getProducts({
                 active: true,
-                can_be_sold: true,
+                track_inventory: true,
                 fields: 'id,name,cost_price,image,uom_name,internal_code,barcode,product_type,available_uoms,category,uom'
             })
             return data as any as Product[]

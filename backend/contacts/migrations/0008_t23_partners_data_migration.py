@@ -4,9 +4,9 @@ from django.db import migrations
 
 def promote_existing_partners(apps, schema_editor):
     from contacts.services import ContactPartnerService
-    from contacts.models import Contact as RealContact
+    Contact = apps.get_model('contacts', 'Contact')
     
-    partners = RealContact.objects.filter(is_partner=True)
+    partners = Contact.objects.filter(is_partner=True)
     for partner in partners:
         missing_accounts = not all([
             partner.partner_contribution_account_id,

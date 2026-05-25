@@ -33,6 +33,7 @@ interface TreasuryMovement {
     amount: number
     created_at: string
     date: string
+    created_by: number | null
     created_by_name: string
     notes: string
     pos_session: number | null
@@ -109,22 +110,8 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
         {
             accessorKey: "display_id",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Folio" className="justify-center" />,
-            cell: ({ row }) => {
-                const m = row.original
-                return (
-                    <div className="flex justify-center w-full">
-                        <DataCell.Entity label="treasury.treasurymovement" data={m} />
-                    </div>
-                )
-            },
-        },
-        {
-            accessorKey: "date",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Fecha" className="justify-center" />,
             cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <DataCell.Date value={row.getValue("date")} />
-                </div>
+                <DataCell.Code>{row.getValue("display_id")}</DataCell.Code>
             ),
         },
         {
@@ -163,6 +150,15 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                     </div>
                 )
             },
+        },
+        {
+            accessorKey: "date",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Fecha" className="justify-center" />,
+            cell: ({ row }) => (
+                <div className="flex justify-center w-full">
+                    <DataCell.Date value={row.getValue("date")} />
+                </div>
+            ),
         },
         {
             id: "flow",
@@ -245,7 +241,7 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
             header: ({ column }) => <DataTableColumnHeader column={column} title="Método" className="justify-center" />,
             cell: ({ row }) => (
                 <div className="flex justify-center w-full">
-                    <DataCell.Text className="uppercase font-bold tracking-tighter">
+                    <DataCell.Text className="uppercase">
                         {row.original.payment_method_display}
                     </DataCell.Text>
                 </div>
@@ -273,13 +269,13 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                 return (
                     <div className="flex justify-center w-full">
                         {session ? (
-                            <div className="text-[10px] text-info font-medium">
+                            <DataCell.Text >
                                 POS #{session}
-                            </div>
+                            </DataCell.Text>
                         ) : (
-                            <div className="text-[10px] text-muted-foreground font-medium">
+                            <DataCell.Text>
                                 SISTEMA
-                            </div>
+                            </DataCell.Text>
                         )}
                     </div>
                 )
@@ -288,13 +284,17 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
         {
             accessorKey: "created_by_name",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Usuario" className="justify-center" />,
-            cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <span className="text-xs text-muted-foreground truncate max-w-[100px]">
-                        {row.getValue("created_by_name")}
-                    </span>
-                </div>
-            ),
+            cell: ({ row }) => {
+                const m = row.original
+                if (!m.created_by) return <DataCell.Text className="text-muted-foreground/50">-</DataCell.Text>
+                return (
+                    <DataCell.Entity
+                        entityLabel="core.user"
+                        data={{ id: m.created_by, username: m.created_by_name }}
+                        size="sm"
+                    />
+                )
+            },
         },
         createActionsColumn<TreasuryMovement>({
             renderActions: (item) => (
@@ -305,15 +305,15 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
 
     return (
         <div className="space-y-6 h-full flex flex-col">
-             <SkeletonShell isLoading={isLoading} ariaLabel="Cargando modal de movimiento de tesorería">
-                 <Suspense fallback={<div />}>
-                     <CashMovementModal
-                     open={openModal}
-                     onOpenChange={(open: boolean) => setOpenModal(open)}
-                     onSuccess={refetch}
-                 />
-                 </Suspense>
-             </SkeletonShell>
+            <SkeletonShell isLoading={isLoading} ariaLabel="Cargando modal de movimiento de tesorería">
+                <Suspense fallback={<div />}>
+                    <CashMovementModal
+                        open={openModal}
+                        onOpenChange={(open: boolean) => setOpenModal(open)}
+                        onSuccess={refetch}
+                    />
+                </Suspense>
+            </SkeletonShell>
 
             <div className="flex-1 min-h-0">
                 <DataTableView
@@ -399,20 +399,20 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                 />
             </div>
 
-             <SkeletonShell isLoading={isLoading} ariaLabel="Cargando vista de detalle de movimiento">
-                 <Suspense fallback={<div />}>
-                     <TransactionViewModal
-                     open={detailsOpen}
-                     onOpenChange={(open) => {
-                         setDetailsOpen(open)
-                         if (!open) clearSelection()
-                     }}
-                     type="payment"
-                     id={selectedMovementId!}
-                     view="details"
-                 />
-                 </Suspense>
-             </SkeletonShell>
+            <SkeletonShell isLoading={isLoading} ariaLabel="Cargando vista de detalle de movimiento">
+                <Suspense fallback={<div />}>
+                    <TransactionViewModal
+                        open={detailsOpen}
+                        onOpenChange={(open) => {
+                            setDetailsOpen(open)
+                            if (!open) clearSelection()
+                        }}
+                        type="payment"
+                        id={selectedMovementId!}
+                        view="details"
+                    />
+                </Suspense>
+            </SkeletonShell>
         </div>
     )
 }

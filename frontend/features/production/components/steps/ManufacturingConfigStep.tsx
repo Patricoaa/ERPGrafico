@@ -400,7 +400,6 @@ export function ManufacturingConfigStep({
                   </Label>
                   <div className="space-y-3 mt-2">
                     <div>
-                      <p className="text-xs text-muted-foreground uppercase font-semibold">Producto</p>
                       <p className="font-medium">{productDescriptionFromStore}</p>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

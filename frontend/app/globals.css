@@ -101,6 +101,9 @@
   --ring-raw: 0.65 0.25 301;
   --ring: oklch(var(--ring-raw) / 0.4);
 
+  --muted-primary-raw: 0.55 0.10 301;
+  /* Primary hue, reduced chroma */
+
   --sidebar-raw: 0.96 0.005 240;
   --sidebar: oklch(var(--sidebar-raw));
   --sidebar-foreground-raw: 0.12 0.02 240;
@@ -191,6 +194,9 @@
   --neutral-raw: 0.55 0.02 240;
   --neutral-foreground-raw: 0.10 0.02 240;
 
+  --muted-primary-raw: 0.75 0.08 301;
+  /* Primary hue, reduced chroma */
+
   /* GRAPHIC INDUSTRY TOKENS (Dark Mode) */
   --mark-color: oklch(0.98 0.01 240 / 0.25);
   --grid-line-color: oklch(0.98 0.01 240 / 0.04);
@@ -211,6 +217,7 @@
   --color-secondary-foreground: oklch(var(--secondary-foreground-raw));
   --color-muted: oklch(var(--muted-raw));
   --color-muted-foreground: oklch(var(--muted-foreground-raw));
+  --color-muted-primary: oklch(var(--muted-primary-raw));
   --color-accent: oklch(var(--accent-raw));
   --color-accent-foreground: oklch(var(--accent-foreground-raw));
   --color-destructive: oklch(var(--destructive-raw));

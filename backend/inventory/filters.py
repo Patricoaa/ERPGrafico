@@ -12,7 +12,8 @@ class ProductFilter(filters.FilterSet):
             'can_be_sold': ['exact'],
             'can_be_purchased': ['exact'],
             'parent_template': ['exact', 'isnull'],
-            'has_variants': ['exact']
+            'has_variants': ['exact'],
+            'track_inventory': ['exact'],
         }
 
 class StockMoveFilter(filters.FilterSet):

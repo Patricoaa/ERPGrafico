@@ -135,6 +135,7 @@ export interface TreasuryMovement {
     amount: number
     created_at: string
     date: string
+    created_by: number | null
     created_by_name: string
     notes: string
     pos_session: number | null

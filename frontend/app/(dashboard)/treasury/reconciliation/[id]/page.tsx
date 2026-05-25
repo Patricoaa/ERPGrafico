@@ -1,5 +1,6 @@
 "use client"
 import { formatCurrency } from "@/lib/money"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 
 import { showApiError } from "@/lib/errors"
 import { useState, useEffect, use } from "react"
@@ -143,7 +144,12 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
             ),
             cell: ({ row }) => (
                 <div className="flex flex-col max-w-[200px]">
-                    <span className="font-medium text-xs truncate" title={row.getValue("description")}>{row.getValue("description")}</span>
+                    <Tooltip>
+                            <TooltipTrigger asChild>
+                                <span className="font-medium text-xs truncate">{row.getValue("description")}</span>
+                            </TooltipTrigger>
+                            <TooltipContent side="top">{row.getValue("description")}</TooltipContent>
+                        </Tooltip>
                     {row.original.reference && (
                         <span className="text-[10px] text-muted-foreground truncate"> {/* intentional: badge density */} {row.original.reference}</span>
                     )}

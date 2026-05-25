@@ -596,7 +596,7 @@ interface InsightsTableProps {
     data: any[]
     type: 'sale' | 'purchase' | 'work_order'
     title: string
-    icon: React.ElementType
+    icon: any
     onActionSuccess?: () => void
 }
 

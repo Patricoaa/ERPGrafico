@@ -7,6 +7,7 @@ import { ColumnDef } from "@tanstack/react-table"
 import { SmartSearchBar, useSmartSearch, FadeIn } from "@/components/shared"
 import { purchaseInvoiceSearchDef } from '../searchDef'
 import { FileBadge } from "lucide-react"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { formatCurrency } from "@/lib/money"
 import { billingApi } from "@/features/billing/api/billingApi"
 import { toast } from "sonner"
@@ -137,11 +138,16 @@ export function PurchaseInvoicesClientView() {
                 const doc = row.original
                 const label = getDtePrefix(doc.dte_type)
                 return (
-                    <div className="flex items-center gap-2 justify-center w-full" title={doc.dte_type_display || doc.dte_type}>
+                    <div className="flex items-center gap-2 justify-center w-full">
                         <FileBadge className="h-3.5 w-3.5 text-muted-foreground/50" />
-                        <DataCell.Text className="font-normal uppercase text-[11px]">
-                            {label}
-                        </DataCell.Text>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <DataCell.Text className="font-normal uppercase text-[11px]">
+                                    {label}
+                                </DataCell.Text>
+                            </TooltipTrigger>
+                            <TooltipContent side="top">{doc.dte_type_display || doc.dte_type}</TooltipContent>
+                        </Tooltip>
                     </div>
                 )
             },

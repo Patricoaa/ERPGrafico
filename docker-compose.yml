@@ -160,7 +160,7 @@ services:
       resources:
         limits:
           cpus: '0.2'
-          memory: 128M
+          memory: 256M
 
   # ── Frontend Next.js (Dev Mode) ─────────────────────────
   frontend:
@@ -172,6 +172,7 @@ services:
     env_file: .env.dev
     environment:
       NODE_ENV: development
+      NODE_OPTIONS: --max-old-space-size=1024
       NEXT_TELEMETRY_DISABLED: "1"
       # La API se llama a través de nginx en el navegador (URL pública)
       # Dentro de la red Docker, el backend se llama directamente

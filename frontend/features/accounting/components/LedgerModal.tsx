@@ -5,6 +5,7 @@ import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { useServerDate } from "@/hooks/useServerDate"
 import { Book, ArrowUpRight, ArrowDownRight, Scale, Calculator, Eye, Trash2 } from "lucide-react"
 import { Drawer, DataTable, DataTableColumnHeader, DataCell, createActionsColumn, IconButton, SkeletonShell } from "@/components/shared"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { ColumnDef } from "@tanstack/react-table"
 import { Card, CardContent } from "@/components/ui/card"
 import { DateRangeFilter } from "@/components/shared/DateRangeFilter"
@@ -193,9 +194,14 @@ function LedgerContent({
                 const glosa = mov.label || mov.description
                 return (
                     <div className="flex justify-center w-full">
-                        <div className="max-w-[400px] text-xs leading-relaxed text-center" title={glosa}>
-                            {glosa}
-                        </div>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <div className="max-w-[400px] text-xs leading-relaxed text-center">
+                                    {glosa}
+                                </div>
+                            </TooltipTrigger>
+                            <TooltipContent side="top">{glosa}</TooltipContent>
+                        </Tooltip>
                     </div>
                 )
             },

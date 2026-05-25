@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button"
 import { DataTable } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { Chip } from "@/components/shared"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { useRouter } from "next/navigation"
 import { createActionsColumn, DataCell } from '@/components/shared'
 
@@ -50,9 +51,14 @@ export function DashboardPendingTable({ data, loading }: DashboardPendingTablePr
             accessorKey: "description",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Descripción" />,
             cell: ({ row }) => (
-                <p className="text-xs font-medium text-foreground/70 truncate max-w-[200px]" title={row.getValue("description")}>
-                    {row.getValue("description")}
-                </p>
+<Tooltip>
+                                <TooltipTrigger asChild>
+                                    <p className="text-xs font-medium text-foreground/70 truncate max-w-[200px]">
+                                        {row.getValue("description")}
+                                    </p>
+                                </TooltipTrigger>
+                                <TooltipContent side="top">{row.getValue("description")}</TooltipContent>
+                            </Tooltip>
             ),
         },
         {

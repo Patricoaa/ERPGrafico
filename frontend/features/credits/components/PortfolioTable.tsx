@@ -17,6 +17,7 @@ import {
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { Button } from "@/components/ui/button"
 import { SkeletonShell, ActionConfirmModal } from "@/components/shared"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { DataTable } from '@/components/shared'
 import { type Table as ReactTable, type Row, type HeaderGroup, type Header, type Cell, flexRender, ColumnDef } from "@tanstack/react-table"
 
@@ -59,7 +60,12 @@ function AgingBar({ aging }: { aging: CreditContact["credit_aging"] }) {
             {keys.map((k, i) => {
                 const pct = (Number(aging[k]) / total) * 100
                 return pct > 0 ? (
-                    <div key={k} className={cn("h-full", colors[i])} style={{ width: `${pct}%` }} title={`${agingLabel[k]}: ${fmt(aging[k])}`} />
+                    <Tooltip key={k}>
+                            <TooltipTrigger asChild>
+                                <div className={cn("h-full", colors[i])} style={{ width: `${pct}%` }} />
+                            </TooltipTrigger>
+                            <TooltipContent side="top">{agingLabel[k]}: {fmt(aging[k])}</TooltipContent>
+                        </Tooltip>
                 ) : null
             })}
         </div>

@@ -2,6 +2,7 @@
 
 import { Separator } from "@/components/ui/separator"
 import { Chip } from "@/components/shared"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { ShoppingBag } from "lucide-react"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { formatCurrency } from "@/lib/money"
@@ -42,9 +43,14 @@ export function NoteItemsSummary({
                                 items.map((item, idx) => (
                                     <div key={idx} className="flex justify-between items-start gap-4 animate-in fade-in duration-500">
                                         <div className="space-y-1.5 flex-1 min-w-0">
-                                            <p className="font-bold text-[13px] leading-tight text-foreground/90 truncate mr-2" title={item.product_name}>
-                                                {item.product_name || `Producto ${item.product_id}`}
-                                            </p>
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <p className="font-bold text-[13px] leading-tight text-foreground/90 truncate mr-2">
+                                                        {item.product_name || `Producto ${item.product_id}`}
+                                                    </p>
+                                                </TooltipTrigger>
+                                                <TooltipContent side="top">{item.product_name || `Producto ${item.product_id}`}</TooltipContent>
+                                            </Tooltip>
                                             <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
                                                 <Chip size="xs" intent="neutral" className="bg-muted">
                                                     {item.quantity} {item.uom_name || 'un'}

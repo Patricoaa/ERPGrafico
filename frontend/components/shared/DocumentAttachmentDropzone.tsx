@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Upload, X, FileText } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 
 interface DocumentAttachmentDropzoneProps {
     file: File | null
@@ -67,7 +68,12 @@ export function DocumentAttachmentDropzone({
                             <FileText className="h-4 w-4" />
                         </div>
                         <div className="flex flex-col min-w-0">
-                            <span className="text-xs font-bold truncate max-w-[250px]" title={file.name}>{file.name}</span>
+                            <Tooltip>
+                            <TooltipTrigger asChild>
+                                <span className="text-xs font-bold truncate max-w-[250px]">{file.name}</span>
+                            </TooltipTrigger>
+                            <TooltipContent side="top">{file.name}</TooltipContent>
+                        </Tooltip>
                             <span className="text-[10px] uppercase font-black text-success/50">{(file.size / 1024).toFixed(1)} KB</span>
                         </div>
                     </div>

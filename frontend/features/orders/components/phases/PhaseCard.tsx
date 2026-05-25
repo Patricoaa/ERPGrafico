@@ -309,12 +309,17 @@ export function PhaseCard({
                                                 <div className="flex flex-col justify-center">
                                                     <span className="text-[10px] font-bold text-muted-foreground uppercase">{doc.type}</span>
                                                     <div className="flex items-center gap-2">
-                                                        <span className={cn(
-                                                            "font-black text-foreground/90 truncate",
-                                                            "text-[13px] max-w-full"
-                                                        )} title={doc.number}>
-                                                            {doc.number}
-                                                        </span>
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <span className={cn(
+                                                                    "font-black text-foreground/90 truncate",
+                                                                    "text-[13px] max-w-full"
+                                                                )}>
+                                                                    {doc.number}
+                                                                </span>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent side="top">{doc.number}</TooltipContent>
+                                                        </Tooltip>
                                                         {doc.status === 'CANCELLED' && (
                                                             <StatusBadge status="VOIDED" size="sm" />
                                                         )}

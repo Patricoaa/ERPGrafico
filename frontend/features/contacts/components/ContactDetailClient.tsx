@@ -112,13 +112,11 @@ export function ContactDetailClient({ contactId }: ContactDetailClientProps) {
                         <div className="space-y-2 col-span-2">
                             <p className="text-sm text-muted-foreground">Dirección</p>
                             <p className="font-semibold">
-                                {{
-                                    ...(contact?.address || CONTACT_DETAIL_SKELETON.address),
-                                    ...(contact?.city || CONTACT_DETAIL_SKELETON.city) && {
-                                        toString: () => 
-                                            `${contact?.address || CONTACT_DETAIL_SKELETON.address}${contact?.city || CONTACT_DETAIL_SKELETON.city ? `, ${contact?.city || CONTACT_DETAIL_SKELETON.city}` : ''}`
-                                    }
-                                }.toString()}
+                                {contact?.address || contact?.city ? (
+                                    `${contact.address || ""}${contact.address && contact.city ? ", " : ""}${contact.city || ""}`
+                                ) : (
+                                    CONTACT_DETAIL_SKELETON.address
+                                )}
                             </p>
                         </div>
                     </div>
