@@ -1,7 +1,7 @@
 "use client"
 
 import { showApiError } from "@/lib/errors"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useForm, useWatch, Control } from "react-hook-form"
 import { PaymentInitialData } from "@/types/forms"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -14,14 +14,15 @@ import {
     FormField,
 } from "@/components/ui/form"
 import { Button } from "@/components/ui/button"
-import { financeApi } from "../api/financeApi"
 import { toast } from "sonner"
+import { financeApi } from "../api/financeApi"
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { cn } from "@/lib/utils"
 import { CreditCard, Landmark, Wallet, ClipboardList } from "lucide-react"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
 import { Skeleton, LabeledInput, LabeledSelect, FormFooter, CancelButton } from "@/components/shared"
+import { useBillingInvoices, usePaymentMethodsByFilter } from "@/features/finance/hooks"
 
 // schema and types remain the same
 const paymentSchema = z.object({
@@ -74,10 +75,8 @@ export function PaymentForm({
     const setOpen = onOpenChange || setOpenState
 
     const [loading, setLoading] = useState(false)
-    const [isFetchingMethods, setIsFetchingMethods] = useState(false)
-    const [isFetchingInvoices, setIsFetchingInvoices] = useState(false)
-    const [orders, setOrders] = useState<InvoiceOption[]>([])
-    const [availableMethods, setAvailableMethods] = useState<PaymentMethodOption[]>([])
+
+    const { data: allInvoicesData, isFetching: isFetchingInvoices } = useBillingInvoices()
 
     const form = useForm<PaymentFormValues>({
         resolver: zodResolver(paymentSchema),
@@ -99,66 +98,40 @@ export function PaymentForm({
     const supplierId = useWatch({ control: form.control, name: "supplier_id" })
     const treasuryAccountId = useWatch({ control: form.control, name: "treasury_account" })
 
-    const fetchInvoices = async () => {
-        if (!customerId && !supplierId) {
-            setOrders([])
-            return
-        }
-        setIsFetchingInvoices(true)
-        try {
-            const invoicesData = await financeApi.getBillingInvoices()
-            let results = (invoicesData as any).results || invoicesData
-            if (paymentType === "INBOUND" && customerId) {
-                results = results.filter((i: InvoiceOption) => i.sale_order && i.sale_order.customer === parseInt(customerId) && i.status === 'POSTED')
-            } else if (paymentType === "OUTBOUND" && supplierId) {
-                results = results.filter((i: InvoiceOption) => i.purchase_order && i.purchase_order.supplier === parseInt(supplierId) && i.status === 'POSTED')
+    const { data: methodsData = [], isFetching: isFetchingMethods } = usePaymentMethodsByFilter(
+        treasuryAccountId
+            ? {
+                treasury_account: treasuryAccountId,
+                ...(paymentType === "INBOUND" ? { for_sales: true } : { for_purchases: true }),
             }
-            setOrders(results)
-        } catch (error) {
-            console.error("Error fetching invoices:", error)
-        } finally {
-            setIsFetchingInvoices(false)
+            : null
+    )
+
+    const orders: InvoiceOption[] = useMemo(() => {
+        if (!allInvoicesData) return []
+        const results: InvoiceOption[] = (allInvoicesData as any).results || allInvoicesData || []
+        if (paymentType === "INBOUND" && customerId) {
+            return results.filter((i: InvoiceOption) => i.sale_order && i.sale_order.customer === parseInt(customerId) && i.status === 'POSTED')
+        } else if (paymentType === "OUTBOUND" && supplierId) {
+            return results.filter((i: InvoiceOption) => i.purchase_order && i.purchase_order.supplier === parseInt(supplierId) && i.status === 'POSTED')
         }
-    }
+        return results
+    }, [allInvoicesData, customerId, supplierId, paymentType])
 
+    const availableMethods = methodsData as PaymentMethodOption[]
+
+    // Auto-select first available payment method when methods load
     useEffect(() => {
-        fetchInvoices()
-    }, [customerId, supplierId, paymentType])
-
-    // Load detailed payment methods when account changes
-    useEffect(() => {
-        const fetchAccountMethods = async () => {
-            if (treasuryAccountId) {
-                setIsFetchingMethods(true)
-                try {
-                    const direction = paymentType === "INBOUND" ? "true" : "true"
-                    const methods = await financeApi.getPaymentMethods({
-                        treasury_account: treasuryAccountId,
-                        ...(paymentType === "INBOUND" ? { for_sales: true } : { for_purchases: true })
-                    }) || []
-                    setAvailableMethods(methods)
-
-                    if (methods.length > 0) {
-                        const currentPM = form.getValues("payment_method_new")
-                        const exists = methods.find((m: PaymentMethodOption) => m.id.toString() === currentPM)
-                        if (!exists) {
-                            form.setValue("payment_method_new", methods[0].id.toString())
-                        }
-                    } else {
-                        form.setValue("payment_method_new", null)
-                    }
-                } catch (err) {
-                    setAvailableMethods([])
-                } finally {
-                    setIsFetchingMethods(false)
-                }
-            } else {
-                setAvailableMethods([])
-                form.setValue("payment_method_new", null)
+        if (availableMethods.length > 0) {
+            const currentPM = form.getValues("payment_method_new")
+            const exists = availableMethods.find((m: PaymentMethodOption) => m.id.toString() === currentPM)
+            if (!exists) {
+                form.setValue("payment_method_new", availableMethods[0].id.toString())
             }
+        } else if (!treasuryAccountId) {
+            form.setValue("payment_method_new", null)
         }
-        fetchAccountMethods()
-    }, [treasuryAccountId, paymentType, form])
+    }, [availableMethods, treasuryAccountId, form])
 
     async function onSubmit(data: PaymentFormValues) {
         setLoading(true)

@@ -1,7 +1,7 @@
 "use client"
 import { formatCurrency } from "@/lib/money"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useMemo } from "react"
 import { useServerDate } from "@/hooks/useServerDate"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
@@ -9,19 +9,17 @@ import { LabeledSelect } from "@/components/shared"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
-import { Loader2, Calculator, Search, ChevronDown, Check, MousePointerClick, Landmark } from "lucide-react"
+import { Calculator, Search, ChevronDown, Check, MousePointerClick, Landmark } from "lucide-react"
 import { DateRangeFilter } from "@/components/shared"
 import { toast } from "sonner"
 import { DateRange } from "react-day-picker"
 import { Checkbox } from "@/components/ui/checkbox"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { treasuryApi } from "../api/treasuryApi"
-import { useTerminalProviders, usePaymentMethods } from "@/features/treasury"
-import { useTerminalBatches } from "@/features/treasury/hooks/useTerminalBatches"
+import { useTerminalProviders, usePaymentMethods, useTerminalMovements, useTerminalBatchMutations } from "@/features/treasury"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton"
-import { CancelButton, SubmitButton, LabeledContainer, LabeledInput, FormFooter, FormSection } from "@/components/shared"
+import { CancelButton, SubmitButton, LabeledContainer, LabeledInput, FormFooter, FormSection, SkeletonShell } from "@/components/shared"
 
 interface TerminalBatchFormProps {
     onSuccess: () => void
@@ -29,14 +27,14 @@ interface TerminalBatchFormProps {
 }
 
 export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProps) {
-    const { providers } = useTerminalProviders()
-    const { methods } = usePaymentMethods()
-    const { createBatch, isCreating } = useTerminalBatches()
+    const { providers, isLoading: isProvidersLoading } = useTerminalProviders()
+    const { methods, isLoading: isMethodsLoading } = usePaymentMethods()
+    const { createBatch, isCreating } = useTerminalBatchMutations()
 
     // Form State
     const [providerId, setProviderId] = useState<string>("")
     const [depositMethodId, setDepositMethodId] = useState<string>("")
-    const { serverDate } = useServerDate()
+    const { serverDate, isLoading: isServerDateLoading } = useServerDate()
     const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined)
 
     useEffect(() => {
@@ -58,6 +56,7 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
 
     const calculatedNet = Math.round(gross - (cNet + cTax))
     const netDeposit = calculatedNet.toString()
+    const isFetchingInitialData = isProvidersLoading || isMethodsLoading || isServerDateLoading
     const isValid = gross > 0 && calculatedNet >= 0
 
     const handleAutoCalculate = () => {
@@ -95,6 +94,7 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
     }
 
     return (
+        <SkeletonShell isLoading={isFetchingInitialData} ariaLabel="Cargando formulario de liquidación de lote">
         <form onSubmit={handleSubmit} className="space-y-6 py-4">
             <div className="grid grid-cols-2 gap-8">
                 <div className="space-y-6">
@@ -312,6 +312,7 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
                 }}
             />
         </form>
+        </SkeletonShell>
     )
 }
 
@@ -323,72 +324,51 @@ function SaleSelectionModal({ open, onOpenChange, providerId, dateRange, onConfi
     onConfirm: (movements: any[], ids: Set<number>) => void,
     initialSelectedIds: Set<number>
 }) {
-    const [movements, setMovements] = useState<any[]>([])
+    const { data: rawMovements = [], isLoading: loading } = useTerminalMovements(providerId, dateRange, open)
     const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
-    const [loading, setLoading] = useState(false)
 
+    // Sort: Prioritize selected dates, then by date descending
+    const movements = useMemo(() => {
+        const dateFromStr = dateRange?.from ? format(dateRange.from, "yyyy-MM-dd") : null;
+        const dateToStr = dateRange?.to ? format(dateRange.to, "yyyy-MM-dd") : dateFromStr;
+
+        const isDateInRange = (date: string) => {
+            if (!dateFromStr || !dateToStr) return false;
+            return date >= dateFromStr && date <= dateToStr;
+        };
+
+        return [...rawMovements].sort((a: any, b: any) => {
+            const aInRange = isDateInRange(a.date);
+            const bInRange = isDateInRange(b.date);
+            if (aInRange && !bInRange) return -1
+            if (!aInRange && bInRange) return 1
+            return b.date.localeCompare(a.date)
+        })
+    }, [rawMovements, dateRange])
+
+    // Auto-select when movements load
     useEffect(() => {
-        let isMounted = true
-        if (open && providerId && dateRange?.from) {
-            requestAnimationFrame(() => {
-                if (isMounted) setLoading(true)
+        if (!open || !movements.length) return
+        const dateFromStr = dateRange?.from ? format(dateRange.from, "yyyy-MM-dd") : null;
+        const dateToStr = dateRange?.to ? format(dateRange.to, "yyyy-MM-dd") : dateFromStr;
+
+        const isDateInRange = (date: string) => {
+            if (!dateFromStr || !dateToStr) return false;
+            return date >= dateFromStr && date <= dateToStr;
+        };
+
+        const next = new Set<number>()
+        if (initialSelectedIds.size === 0) {
+            movements.forEach((m: any) => {
+                if (isDateInRange(m.date)) next.add(m.id)
             })
-
-            const params: any = {
-                terminal_provider: providerId,
-                movement_type: 'INBOUND',
-                terminal_batch__isnull: 'True'
-            }
-
-            if (dateRange?.from) {
-                params.date_from = format(dateRange.from, "yyyy-MM-dd")
-            }
-            if (dateRange?.to) {
-                params.date_to = format(dateRange.to, "yyyy-MM-dd")
-            }
-
-            treasuryApi.getMovements(params).then((res: any) => {
-                if (!isMounted) return
-                const data = res.results || res
-
-                // Sort: Prioritize selected dates, then by date descending
-                const dateFromStr = dateRange?.from ? format(dateRange.from, "yyyy-MM-dd") : null;
-                const dateToStr = dateRange?.to ? format(dateRange.to, "yyyy-MM-dd") : dateFromStr;
-
-                const isDateInRange = (date: string) => {
-                    if (!dateFromStr || !dateToStr) return false;
-                    return date >= dateFromStr && date <= dateToStr;
-                };
-
-                const sorted = [...data].sort((a: any, b: any) => {
-                    const aInRange = isDateInRange(a.date);
-                    const bInRange = isDateInRange(b.date);
-                    if (aInRange && !bInRange) return -1
-                    if (!aInRange && bInRange) return 1
-                    return b.date.localeCompare(a.date)
-                })
-
-                setMovements(sorted)
-                requestAnimationFrame(() => {
-                    // Initial auto-selection: only sales for the selected date range
-                    const next = new Set<number>()
-                    if (initialSelectedIds.size === 0) {
-                        sorted.forEach((m: any) => {
-                            if (isDateInRange(m.date)) next.add(m.id)
-                        })
-                    } else {
-                        initialSelectedIds.forEach(id => {
-                            if (sorted.some((m: any) => m.id === id)) next.add(id)
-                        })
-                    }
-                    setSelectedIds(next)
-                })
-            }).finally(() => {
-                if (isMounted) requestAnimationFrame(() => setLoading(false))
+        } else {
+            initialSelectedIds.forEach(id => {
+                if (movements.some((m: any) => m.id === id)) next.add(id)
             })
         }
-        return () => { isMounted = false }
-    }, [open, providerId, dateRange])
+        setSelectedIds(next)
+    }, [open, movements, initialSelectedIds, dateRange])
 
     const toggleAll = () => {
         if (selectedIds.size === movements.length) {
@@ -433,6 +413,7 @@ function SaleSelectionModal({ open, onOpenChange, providerId, dateRange, onConfi
                 />
             )}
         >
+            <SkeletonShell isLoading={loading} ariaLabel="Cargando ventas del proveedor">
             <div className="py-2">
                 <div className="flex items-center justify-between mb-4 px-2">
                     <div className="flex items-center gap-2">
@@ -451,11 +432,7 @@ function SaleSelectionModal({ open, onOpenChange, providerId, dateRange, onConfi
                 </div>
 
                 <div className="h-[300px] border rounded-md relative overflow-hidden">
-                    {loading ? (
-                        <div className="flex items-center justify-center h-full">
-                            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                        </div>
-                    ) : movements.length === 0 ? (
+                    {movements.length === 0 ? (
                         <div className="p-8">
                             <EmptyState
                                 context="search"
@@ -499,6 +476,7 @@ function SaleSelectionModal({ open, onOpenChange, providerId, dateRange, onConfi
                     )}
                 </div>
             </div>
+            </SkeletonShell>
         </BaseModal>
     )
 }

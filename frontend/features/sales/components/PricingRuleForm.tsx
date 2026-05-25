@@ -14,7 +14,7 @@ import { CancelButton, LabeledInput, LabeledSelect, LabeledSwitch, LabeledContai
 
 import { cn } from "@/lib/utils"
 import { useUoMs } from "@/features/inventory/hooks/useUoMs"
-import { usePricingRules } from "@/features/inventory/hooks/usePricingRules"
+import { usePricingRuleMutations } from "@/features/inventory"
 import { toast } from "sonner"
 import { Tags, Layers, Zap, DollarSign, Calendar } from "lucide-react"
 import { PricingUtils } from '@/features/inventory/utils/pricing'
@@ -63,7 +63,7 @@ interface PricingRuleFormProps {
 
 export function PricingRuleForm({ auditSidebar, initialData, onSuccess, open, onOpenChange, productId, productName }: PricingRuleFormProps) {
     const { uoms, isUoMsLoading } = useUoMs()
-    const { savePricingRule } = usePricingRules()
+    const { savePricingRule } = usePricingRuleMutations()
     const isFetchingInitialData = open && isUoMsLoading
     const [selectedProductObj, setSelectedProductObj] = useState<any>(null)
 

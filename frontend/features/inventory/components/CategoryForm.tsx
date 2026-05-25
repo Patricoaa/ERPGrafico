@@ -14,7 +14,7 @@ import {
     Form,
     FormField
 } from "@/components/ui/form"
-import { useCategories } from "../hooks/useCategories"
+import { useCategoryMutations } from "../hooks/useCategoryMutations"
 import { AccountSelector, CategorySelector } from "@/components/selectors"
 import * as LucideIcons from "lucide-react"
 import { Check } from "lucide-react"
@@ -182,7 +182,7 @@ export function CategoryForm({
     const open = openProp !== undefined ? openProp : openState
     const setOpen = onOpenChange || setOpenState
 
-    const { saveCategory } = useCategories()
+    const { saveCategory } = useCategoryMutations()
     const [loading, setLoading] = useState(false)
 
     const form = useForm<CategoryFormValues>({

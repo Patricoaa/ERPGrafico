@@ -153,6 +153,65 @@ return { deleteAccount: deleteMutation.mutateAsync }
 
 ---
 
+## Command/Query Segregation (CQS)
+
+El **canonical feature skeleton** (ver §Canonical feature skeleton) combina queries y mutations en un mismo hook. Este patrón es el recomendado para la mayoría de los casos.
+
+Sin embargo, cuando un componente solo necesita **mutations** de un hook (y el hook también ejecuta queries), se introduce una dependencia asíncrona innecesaria: la query se dispara aunque ningún dato de ella se use en el render.
+
+### Cuándo separar
+
+```tsx
+// ❌ Innecesario — `useUoMs()` dispara GET /inventory/uoms/ + GET /inventory/uom-categories/
+//   pero el componente solo necesita guardar una categoría.
+const { saveUoMCategory } = useUoMs()
+
+// ✅ Correcto — hook dedicado solo a mutations, sin queries.
+const { saveUoMCategory } = useUoMMutations()
+```
+
+### Regla
+
+> Si un componente destructure **solo funciones de mutación** de un hook mixto (queries + mutations), debe usarse un hook `use[Entity]Mutations` dedicado. El hook mixto sigue siendo canónico cuando el componente usa tanto datos como mutaciones.
+
+### Convención de nombre
+
+| Archivo | Propósito | Referencia |
+|---------|-----------|------------|
+| `useUoMMutations.ts` | Solo mutations de UoMs y categorías | Implementado |
+| `useWarehouseMutations.ts` | Solo mutations de bodegas | Implementado |
+| `useWorkOrderMutations.ts` | Solo mutations de órdenes de trabajo | Implementado |
+| `useContactMutations()` en `useContacts.ts` | Solo mutations de contactos | Exportado junto al hook mixto |
+
+### Implementación
+
+El hook mutation-only recibe `useQueryClient` y `useRealtime` propios, y expone solo las funciones de mutación:
+
+```ts
+export function useUoMMutations() {
+    const queryClient = useQueryClient()
+    const { markLocalMutation } = useRealtime()
+
+    const deleteUoM = useMutation({ ... })
+    const saveUoM = useMutation({ ... })
+    const saveUoMCategory = useMutation({ ... })
+    const deleteUoMCategory = useMutation({ ... })
+
+    return {
+        saveUoM: saveUoM.mutateAsync,
+        isSaving: saveUoM.isPending,
+        deleteUoM: deleteUoM.mutateAsync,
+        saveUoMCategory: saveUoMCategory.mutateAsync,
+        isSavingCategory: saveUoMCategory.isPending,
+        deleteUoMCategory: deleteUoMCategory.mutateAsync,
+    }
+}
+```
+
+Las key factories (`queryKeys.ts`) se importan desde el hook original o desde `queryKeys.ts` según corresponda. Las reglas de invalidación (`markLocalMutation`, `invalidateQueries`, `toast`) son **idénticas** a las del hook mixto.
+
+---
+
 ## queryKeys.ts — Per-Domain Architecture
 
 Every feature domain MUST define its query keys in a dedicated `queryKeys.ts` file inside `hooks/`. This prevents circular imports when hooks need to cross-invalidate each other.
@@ -337,6 +396,7 @@ Do not import across features except query key constants. These illustrate the c
 - Invalidating a domain's `.all` key when only a subtype changed — use the narrowest key.
 - Cross-feature imports of hook implementations — only query key constants may be imported across feature boundaries.
 - Omitting `markLocalMutation()` in a mutation's `onSuccess` — the entity bus relies on it to suppress self-echo.
+- Calling a mixed hook (queries + mutations) only for its mutations when a mutation-only hook (`use[Entity]Mutations`) exists for the same domain — see [Command/Query Segregation](#commandquery-segregation-cqs).
 
 ---
 

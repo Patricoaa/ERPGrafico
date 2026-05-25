@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/form"
 import { Button } from "@/components/ui/button"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
-import { useAccounts } from "@/features/accounting/hooks/useAccounts"
+import { useAccountMutations } from "@/features/accounting"
 import { AccountPayload } from "@/features/accounting/types"
 import { LabeledInput, LabeledSelect, FormFooter, CancelButton, FormSplitLayout, ActionSlideButton } from "@/components/shared"
 
@@ -58,7 +58,7 @@ export function AccountForm({
     const open = openProp !== undefined ? openProp : internalOpen
     const setOpen = onOpenChange || setInternalOpen
 
-    const { createAccount, updateAccount, isCreating, isUpdating } = useAccounts()
+    const { createAccount, updateAccount, isCreating, isUpdating } = useAccountMutations()
     const loading = isCreating || isUpdating
 
     useEffect(() => {

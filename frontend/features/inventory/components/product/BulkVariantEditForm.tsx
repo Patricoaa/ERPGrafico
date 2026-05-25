@@ -6,7 +6,7 @@ import { Product } from "@/types/entities"
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Form, FormField } from "@/components/ui/form"
-import { LabeledInput, LabeledSelect, FormSection } from "@/components/shared"
+import { LabeledInput, LabeledSelect, FormSection, SkeletonShell } from "@/components/shared"
 import { CancelButton, SubmitButton, IconButton } from "@/components/shared"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Save, X, Sparkles, DollarSign, AlertCircle } from "lucide-react"
@@ -47,7 +47,7 @@ interface BulkVariantEditFormProps {
 
 export function BulkVariantEditForm({ selectedVariants, availableVariants = [], templateData, onSaved, onCancel }: BulkVariantEditFormProps) {
     const [loading, setLoading] = useState(false)
-    const { uoms } = useUoMs()
+    const { uoms, isLoading: isUoMsLoading } = useUoMs()
 
     // If template has UoM-specific prices, only INHERIT is allowed
     const hasUomPrices = Array.isArray((templateData as any)?.uom_prices)
@@ -133,6 +133,7 @@ export function BulkVariantEditForm({ selectedVariants, availableVariants = [], 
     }
 
     return (
+        <SkeletonShell isLoading={isUoMsLoading} ariaLabel="Cargando edición masiva de variantes">
         <div className="flex flex-col h-full bg-card rounded-md border shadow-sm overflow-hidden animate-in fade-in slide-in-from-right-4 duration-300">
             <div className="p-6 overflow-y-auto flex-1 scrollbar-thin">
                 <Form {...form}>
@@ -314,5 +315,6 @@ export function BulkVariantEditForm({ selectedVariants, availableVariants = [], 
                 </Form>
             </div>
         </div>
+        </SkeletonShell>
     )
 }

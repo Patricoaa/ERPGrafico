@@ -20,7 +20,7 @@ import { BOMFormModal } from "@/features/production/components/BOMFormModal"
 import type { BOM, ProductMinimal } from "@/features/production/types"
 import { useUoMs } from "../../hooks/useUoMs"
 import { useBOMs } from "@/features/production"
-import { useProducts } from "../../hooks/useProducts"
+import { useProductMutations } from "../../hooks/useProductMutations"
 
 const ALL_PRICE_INHERITANCE_OPTIONS = [
   { label: 'Hereda del template', value: 'INHERIT' },
@@ -60,7 +60,7 @@ export function VariantQuickEditForm({
   const { uoms, isUoMsLoading } = useUoMs()
   const { boms: availableBOMs, deleteBom, refetch: refetchVariantBOMs, isBOMsLoading } = useBOMs({ product_id: variant.id })
   const isFetchingInitialData = isUoMsLoading || isBOMsLoading
-  const { updateProduct } = useProducts()
+    const { updateProduct } = useProductMutations()
   const [isBarcodeModalOpen, setIsBarcodeModalOpen] = useState(false)
   const [cloneSourceId, setCloneSourceId] = useState<string>('none')
   const [activeTab, setActiveTab] = useState<string>('precios')

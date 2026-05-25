@@ -127,11 +127,11 @@ export function BOMFormModal({
 
     const { data: allowedDteTypes = ["FACTURA", "BOLETA"], isLoading: isAllowedDteTypesLoading } = useAllowedDteTypes()
 
-    const isFetchingInitialData = open && (isUoMsLoading || isAllowedDteTypesLoading)
-
     const { variants = [], isVariantsLoading: loadingVariants } = useProductionVariants(
         selectedProduct?.has_variants ? selectedProduct.id : undefined
     )
+
+    const isFetchingInitialData = open && (isUoMsLoading || isAllowedDteTypesLoading || loadingVariants)
 
     useEffect(() => {
         if (variants.length > 0 && bomToEdit?.product) {
