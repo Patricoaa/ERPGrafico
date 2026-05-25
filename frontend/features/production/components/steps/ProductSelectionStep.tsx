@@ -1,13 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useInfiniteQuery } from "@tanstack/react-query";
 import { FileText, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import type { BaseProduct, ProductFilters } from "@/features/inventory/types";
+import type { BaseProduct } from "@/features/inventory/types";
 import { ProductSelector } from "@/components/shared/ProductSelector";
-import { inventoryApi } from "@/features/inventory/api/inventoryApi";
+import { useWorkOrderProducts } from "../../hooks/useWorkOrderProducts";
 
 interface ProductSelectionStepProps {
   onChooseProduct: (
@@ -38,33 +37,10 @@ export function ProductSelectionStep({
     hasNextPage,
     isLoading,
     isError,
-  } = useInfiniteQuery<BaseProduct[], Error>({
-    queryKey: ["products", otType, searchTerm],
-    queryFn: async ({ pageParam = 0 }) => {
-      const filters: ProductFilters = {
-        active: "true",
-        can_be_sold: true,
-        search: searchTerm,
-        page_size: 20,
-      };
+  } = useWorkOrderProducts(otType, searchTerm);
 
-      if (otType === "NONE") {
-        filters.product_type = "MANUFACTURABLE";
-      }
-
-      return inventoryApi.getProducts({
-        ...filters,
-        page_size: 20,
-      });
-    },
-    initialPageParam: 0,
-    getNextPageParam: (lastPage, allPages) => {
-      return lastPage.length === 20 ? allPages.length : undefined;
-    },
-    enabled: otType !== null,
-  });
-
-  const products = (data?.pages ?? []).flat();
+  const products = (data?.pages ?? []).flat()
+    .filter(p => !p.mfg_auto_finalize);
 
   useEffect(() => {
     if (initialProductId && otType === "NONE" && !selectedProduct) {
@@ -95,23 +71,21 @@ export function ProductSelectionStep({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col flex-1 min-h-0 space-y-6">
       <div className="flex items-center justify-between mb-4">
       </div>
 
-      <div className="space-y-4">
+      <div className="flex flex-col flex-1 min-h-0">
 
         {isError ? (
           <div className="text-center py-6">
             <p className="text-destructive">Error al cargar productos</p>
           </div>
         ) : (
-          <div className="flex-1 min-h-0">
-            {products.length === 0 && !isLoading ? (
-              <div className="text-center py-8">
-                <p className="text-muted-foreground">
-                  No se encontraron productos. Intente con otro término de búsqueda.
-                </p>
+          <div className="flex flex-col flex-1 min-h-0">
+            {isLoading && products.length === 0 ? (
+              <div className="flex-1 flex items-center justify-center py-8">
+                <p className="text-muted-foreground">Cargando productos...</p>
               </div>
             ) : (
               <ProductSelector
@@ -122,10 +96,7 @@ export function ProductSelectionStep({
                 onSelectCategory={() => { }}
                 selectedCategoryId={null}
                 onProductClick={handleProductSelect}
-                isProductDisabled={(product: BaseProduct) =>
-                  otType === "NONE" &&
-                  (product.requires_advanced_manufacturing || product.mfg_auto_finalize)
-                }
+                priceRenderer={() => null}
               />
             )}
           </div>
