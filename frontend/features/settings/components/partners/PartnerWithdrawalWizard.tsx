@@ -7,19 +7,17 @@ import {
     Package,
     Users,
     Warehouse as WarehouseIcon,
-    Info,
     ArrowUpCircle,
     Banknote,
     AlertTriangle
 } from "lucide-react"
-import { GenericWizard, WizardStep } from "@/components/shared/GenericWizard"
+import { LabeledInput, LabeledSelect, LabeledContainer, PeriodValidationDateInput, Chip, GenericWizard, WizardStep } from "@/components/shared"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
 import { Partner } from "@/features/contacts/types/partner"
 import { TreasuryAccount } from "@/features/treasury/types"
 import { Product } from "@/features/inventory/types"
 import { settingsApi } from "../../hooks"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
-import { LabeledInput, LabeledSelect, LabeledContainer, PeriodValidationDateInput, Chip } from "@/components/shared"
 
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { cn } from "@/lib/utils"

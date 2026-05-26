@@ -1,6 +1,6 @@
 import { formatCurrency } from "@/lib/money"
 import React, { useState, useEffect, Suspense, lazy, useMemo } from 'react';
-import { GenericWizard, WizardStep } from '@/components/shared/GenericWizard';
+import { SkeletonShell, LabeledContainer, CancelButton, SubmitButton, IconButton, BaseModal, GenericWizard, WizardStep } from '@/components/shared';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -16,10 +16,7 @@ import {
     Wallet
 } from 'lucide-react';
 import { FiscalYearPreviewResult } from '../../types';
-
 import { cn } from '@/lib/utils';
-import { SkeletonShell, LabeledContainer, CancelButton, SubmitButton, IconButton } from '@/components/shared';
-import { BaseModal } from '@/components/shared/BaseModal';
 
 // Lazy load TrialBalanceView
 const TrialBalanceView = lazy(() => import('../reports/TrialBalanceView').then(m => ({ default: m.TrialBalanceView })));
