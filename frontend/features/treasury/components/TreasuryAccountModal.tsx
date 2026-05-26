@@ -12,7 +12,7 @@ import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 import { useTreasuryAccounts, treasuryApi } from "@/features/treasury"
 
-import { CancelButton, LabeledInput, LabeledSelect, FormSection, FormFooter, FormSplitLayout, ActionSlideButton, BaseModal, Chip, SkeletonShell } from "@/components/shared"
+import { CancelButton, LabeledInput, LabeledSelect, FormSection, FormFooter, FormSplitLayout, ActionSlideButton, Drawer, Chip, SkeletonShell } from "@/components/shared"
 import { Form, FormField } from "@/components/ui/form"
 
 const treasuryAccountSchema = z.object({
@@ -130,11 +130,11 @@ export function TreasuryAccountModal({ open, onOpenChange, accountId, onSuccess 
     }
 
     return (
-        <BaseModal
+        <Drawer
             open={open}
             onOpenChange={onOpenChange}
-            size={accountId ? "xl" : "md"}
-            hideScrollArea={true}
+            side="left"
+            defaultSize={accountId ? "55%" : "50%"}
             contentClassName="p-0"
             title={
                 <div className="flex items-center gap-3">
@@ -145,7 +145,7 @@ export function TreasuryAccountModal({ open, onOpenChange, accountId, onSuccess 
                     )}
                 </div>
             }
-            description={
+            subtitle={
                 isSystemManaged
                     ? "Esta cuenta es gestionada automáticamente por el proveedor de terminal. No puede modificarse directamente."
                     : accountId
@@ -333,6 +333,6 @@ export function TreasuryAccountModal({ open, onOpenChange, accountId, onSuccess 
                     </Form>
                 </SkeletonShell>
             </FormSplitLayout>
-        </BaseModal>
+        </Drawer>
     )
 }

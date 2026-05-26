@@ -3,7 +3,6 @@
 import { UoM, Warehouse, Product } from "@/types/entities"
 
 import { useState, useEffect, useMemo } from "react"
-import { BaseModal } from "@/components/shared/BaseModal"
 import { useForm, FieldErrors, UseFormReturn } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
@@ -16,7 +15,7 @@ import { ShoppingCart, Package, Truck, Layers, Factory, Loader2, History, Dollar
 import { showApiError } from "@/lib/errors"
 import { Form } from "@/components/ui/form"
 
-import { FormSection, FormFooter, FormSplitLayout, FormTabs, FormTabsContent, type FormTabItem, SkeletonShell } from "@/components/shared"
+import { Drawer, FormSection, FormFooter, FormSplitLayout, FormTabs, FormTabsContent, type FormTabItem, SkeletonShell } from "@/components/shared"
 
 // Import modular components
 import { productSchema, type ProductFormValues } from "./product/schema"
@@ -777,7 +776,7 @@ export function ProductForm({ sidebar, open, onOpenChange, initialData, onSucces
     }
 
     return (
-        <BaseModal
+        <Drawer
             open={open}
             onOpenChange={(newOpen) => {
                 if (!newOpen && Object.keys(form.formState.dirtyFields).length > 0) {
@@ -786,16 +785,14 @@ export function ProductForm({ sidebar, open, onOpenChange, initialData, onSucces
                 }
                 onOpenChange(newOpen)
             }}
-            size="2xl"
+            defaultSize="75%"
             className="h-[90vh]"
-            variant="form-tabs"
             icon={Package}
             title={initialData ? "Editar Producto" : "Nuevo Producto"}
-            description={initialData ? form.watch("name") : "Maestro de Producto"}
-            hideScrollArea={true}
-            allowOverflow={true}
+            subtitle={initialData ? form.watch("name") : "Maestro de Producto"}
             contentClassName="p-0"
             footer={footerSlot}
+            side="left"
         >
             {formContent}
 
@@ -812,6 +809,6 @@ export function ProductForm({ sidebar, open, onOpenChange, initialData, onSucces
                     onOpenChange(false)
                 }}
             />
-        </BaseModal>
+        </Drawer>
     )
 }

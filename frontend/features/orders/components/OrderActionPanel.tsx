@@ -1,20 +1,14 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import {
-    SheetHeader,
-    SheetTitle,
-    SheetDescription,
-} from '@/components/ui/sheet'
-import { CollapsibleSheet } from '@/components/shared/CollapsibleSheet'
+import { CollapsibleSheet, PanelHeader } from '@/components/shared'
 import { Zap } from 'lucide-react'
 import { formatEntityDisplay } from '@/lib/entity-registry'
 import { Chip } from '@/components/shared'
 import { Separator } from '@/components/ui/separator'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Skeleton, CardSkeleton, StatusBadge, EmptyState } from '@/components/shared'
+import { Skeleton, CardSkeleton, StatusBadge, EmptyState, } from '@/components/shared'
 import { Progress } from '@/components/ui/progress'
-import { SheetCloseButton } from '@/components/shared/SheetCloseButton'
 import { toast } from 'sonner'
 import { ActionCategory } from './ActionCategory'
 import { filterAvailableActions } from '@/lib/action-utils'
@@ -117,9 +111,9 @@ export function OrderActionPanel({
             size="md"
         >
             <div className="flex flex-col h-full">
-                <SheetHeader className="px-6 pt-6 pb-4">
-                    <SheetTitle className="text-xl font-black tracking-tight">
-                        {loading ? (
+                <div className="shrink-0 px-6 pt-6 pb-4 border-b">
+                    <PanelHeader
+                        title={loading ? (
                             <div className="flex items-center gap-2">
                                 <Skeleton className="h-7 w-32 font-mono" />
                                 <Skeleton className="h-6 w-20 rounded-full" />
@@ -132,9 +126,7 @@ export function OrderActionPanel({
                                 <StatusBadge status={order?.status || ""} />
                             </div>
                         )}
-                    </SheetTitle>
-                    <SheetDescription>
-                        {loading ? (
+                        description={loading ? (
                             <div className="flex flex-col gap-2">
                                 <Skeleton className="h-5 w-48" />
                                 <Skeleton className="h-3 w-32" />
@@ -149,15 +141,10 @@ export function OrderActionPanel({
                                 </span>
                             </div>
                         )}
-                    </SheetDescription>
-                </SheetHeader>
-
-                <SheetCloseButton
-                    onClick={() => onOpenChange(false)}
-                    className="absolute top-4 right-4 z-[60]"
-                />
-
-                <Separator />
+                        onClose={() => onOpenChange(false)}
+                        closeTooltip="Cerrar panel de acciones"
+                    />
+                </div>
 
                 <ScrollArea className="flex-1 px-6 canvas-prepress">
                     {loading ? (

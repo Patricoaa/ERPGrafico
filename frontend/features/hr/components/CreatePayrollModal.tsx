@@ -8,12 +8,11 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { createPayroll, getEmployees } from '@/features/hr/api/hrApi'
 import type { Employee } from "@/types/hr"
-import { BaseModal } from "@/components/shared/BaseModal"
 import { Button } from "@/components/ui/button"
 import { CancelButton, SubmitButton } from "@/components/shared/ActionButtons"
 import { Form, FormField } from "@/components/ui/form"
 import { Plus, FileText } from "lucide-react"
-import { LabeledInput, LabeledSelect, FormFooter, SkeletonShell } from "@/components/shared"
+import { Drawer, LabeledInput, LabeledSelect, FormFooter, SkeletonShell } from "@/components/shared"
 
 const MONTHS = [
     { value: 1, label: "Enero" }, { value: 2, label: "Febrero" },
@@ -89,12 +88,14 @@ export function CreatePayrollModal({ open, onOpenChange, onSaved, trigger }: Cre
     }
 
     return (
-        <BaseModal
+        <Drawer
             open={open}
             onOpenChange={onOpenChange}
+            side="left"
             icon={Plus}
             title="Nueva Liquidación"
-            description="RRHH • Emisión Mensual"
+            subtitle="RRHH • Emisión Mensual"
+            defaultSize="50%"
             footer={
                 <FormFooter
                     actions={
@@ -172,6 +173,6 @@ export function CreatePayrollModal({ open, onOpenChange, onSaved, trigger }: Cre
                 </form>
             </Form>
             </SkeletonShell>
-        </BaseModal>
+        </Drawer>
     )
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { inventoryApi } from "@/features/inventory/api/inventoryApi";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -12,6 +12,16 @@ import { Form, FormField } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { FileText, User, X } from "lucide-react";
 import type { WorkOrderFormValues, WorkOrderInitialData } from "@/types/forms";
 import type { Contact } from "@/features/contacts/types";
@@ -25,16 +35,36 @@ import { workOrderSchema } from "@/types/forms";
 import { productionApi } from "../../api/productionApi";
 import { useAuth } from "@/contexts/AuthContext";
 import { useVatRate } from "@/hooks/useVatRate";
+import { useUoMs } from "../../hooks";
+import { ManufacturingConfigSummary } from "./ManufacturingConfigSummary";
+import type { WorkOrder } from "../../types";
 
 interface ManufacturingConfigStepProps {
   initialData?: WorkOrderInitialData;
   onSuccess: (workOrderId: number) => void;
+  formId?: string;
+  onRestartComplete?: () => void;
+  onCorrectionComplete?: (newOrderId: number) => void;
 }
 
 export function ManufacturingConfigStep({
   initialData,
-  onSuccess
+  onSuccess,
+  formId,
+  onRestartComplete,
+  onCorrectionComplete,
 }: ManufacturingConfigStepProps) {
+  // Post-creation: show granular summary instead of the creation form
+  if (initialData?.id) {
+    return (
+      <ManufacturingConfigSummary
+        order={initialData as unknown as WorkOrder}
+        onSaved={() => onSuccess(Number(initialData.id))}
+        onRestartComplete={onRestartComplete}
+        onCorrectionComplete={onCorrectionComplete}
+      />
+    )
+  }
   const [loading, setLoading] = useState(false);
 
   // Get data from store
@@ -74,13 +104,14 @@ export function ManufacturingConfigStep({
   const [uomId, setUomId] = useState<string>(
     otType === "LINKED" ? (uomIdFromStore ?? "") : ""
   );
-  const [productDescription, setProductDescription] = useState<string>("");
   const [startDate, setStartDate] = useState<Date | null>(startDateFromStore);
   const [dueDate, setDueDate] = useState<Date | null>(dueDateFromStore);
-  const [internalNotes, setInternalNotes] = useState<string>(internalNotesFromStore);
+  const [isCreateConfirmOpen, setIsCreateConfirmOpen] = useState(false);
+  const pendingDataRef = useRef<WorkOrderFormValues | null>(null);
 
   const { user } = useAuth();
   const { multiplier: vatMultiplier, isLoading: isVatLoading } = useVatRate();
+  const { data: uoms = [] } = useUoMs();
 
   // Fetch product details (UoM, mfg flags) when product is selected
   const { data: selectedProduct } = useQuery({
@@ -96,6 +127,7 @@ export function ManufacturingConfigStep({
       name: selectedProduct.name,
       uom: selectedProduct.uom,
       category: selectedProduct.category_id,
+      allowed_sale_uoms: selectedProduct.allowed_sale_uoms,
     };
   }, [selectedProduct]);
 
@@ -122,16 +154,17 @@ export function ManufacturingConfigStep({
     resolver: zodResolver(workOrderSchema) as unknown as SubmitHandler<WorkOrderFormValues>,
     defaultValues: {
       otType,
-      description: productDescription || "",
+      description: otType === "LINKED" ? (productDescriptionFromStore ?? "") : "",
       sale_order: otType === "LINKED" ? (saleOrderId ?? "") : "",
       sale_line: otType === "LINKED" ? (saleLineId ?? "") : "",
-      product_description: productDescription,
+      product_description: productDescriptionFromStore ?? "",
+      product_id: otType === "NONE" ? (selectedProductId ?? "") : "",
       contact_id: selectedContact?.id?.toString() ?? "",
-      quantity: otType === "LINKED" ? (quantity ?? "") : "",
-      uom_id: otType === "LINKED" ? (uomId ?? "") : "",
+      quantity: otType === "NONE" ? (quantityFromStore ?? "") : "",
+      uom_id: otType === "NONE" ? (uomIdFromStore ?? "") : "",
       start_date: startDate ?? new Date(),
       due_date: dueDate ?? null,
-      internal_notes: internalNotes,
+      internal_notes: "",
     } as WorkOrderFormValues,
   });
 
@@ -151,6 +184,7 @@ export function ManufacturingConfigStep({
             String(initialData.sale_line?.id || "") :
             String(initialData.sale_line || "")) : "",
         product_description: initialData.stage_data?.product_description ?? "",
+        product_id: (!isLinked && initialData.product) ? String(initialData.product.id) : "",
         contact_id: initialData.stage_data?.contact_id?.toString() ?? "",
         quantity: isLinked ? "" : (initialData.stage_data?.quantity?.toString() ?? ""),
         uom_id: isLinked ? "" : (initialData.stage_data?.uom_id?.toString() ?? ""),
@@ -198,8 +232,6 @@ export function ManufacturingConfigStep({
         new Date(initialData.estimated_completion_date) :
         (initialData.sale_order_delivery_date ?
           new Date(initialData.sale_order_delivery_date) : null));
-      setInternalNotes(initialData.stage_data?.internal_notes ?? "");
-      setProductDescription(initialData.stage_data?.product_description ?? "");
     }
   }, [initialData]);
 
@@ -224,6 +256,9 @@ export function ManufacturingConfigStep({
   // Handle manufacturing specs change
   const handleMfgChange = (next: ManufacturingData) => {
     setMfgData(next);
+    form.setValue('product_description', next.product_description);
+    form.setValue('internal_notes', next.internal_notes);
+    form.setValue('description', next.product_description);
   };
 
   // Handle date changes
@@ -237,28 +272,8 @@ export function ManufacturingConfigStep({
     form.setValue('due_date', date ?? undefined);
   };
 
-  // Handle description change
-  const handleDescriptionChange = (value: string) => {
-    setProductDescription(value);
-    form.setValue('product_description', value);
-    form.setValue('description', value);
-  };
-
-  // Submit handler
-  const onSubmit: SubmitHandler<WorkOrderFormValues> = async (data) => {
-    if (loading) return;
-
-    // Validate
-    if (otType === "NONE" && (!quantity || quantity === "0")) {
-      toast.error("La cantidad es requerida y debe ser mayor a cero");
-      return;
-    }
-
-    if (otType === "NONE" && !uomId) {
-      toast.error("La unidad de medida es requerida");
-      return;
-    }
-
+  // Execute the actual API call (used both for direct update and after confirmation)
+  const executeSubmit = async (data: WorkOrderFormValues) => {
     setLoading(true);
 
     try {
@@ -296,8 +311,8 @@ export function ManufacturingConfigStep({
         formData.append('quantity', quantity);
         formData.append('uom_id', uomId);
         formData.append('stage_data', JSON.stringify({
-          product_description: productDescription,
-          internal_notes: internalNotes,
+          product_description: mfgData.product_description,
+          internal_notes: mfgData.internal_notes,
           contact_id: selectedContact?.id,
           contact_name: selectedContact?.name,
           contact_tax_id: selectedContact?.tax_id,
@@ -312,7 +327,7 @@ export function ManufacturingConfigStep({
           print_type: mfgData.print_type,
           design_attachments: [...mfgData.existing_design_files, ...mfgData.design_files.map(f => f.name)],
           quantity,
-          uom_id,
+          uom_id: uomId,
         }));
         formData.append('is_manual', 'true');
       }
@@ -345,28 +360,45 @@ export function ManufacturingConfigStep({
     }
   };
 
+  // Submit handler: validate, then show confirmation for creation
+  const onSubmit: SubmitHandler<WorkOrderFormValues> = async (data) => {
+    if (loading) return;
+
+    if (otType === "NONE" && (!quantity || quantity === "0")) {
+      toast.error("La cantidad es requerida y debe ser mayor a cero");
+      return;
+    }
+
+    if (otType === "NONE" && !uomId) {
+      toast.error("La unidad de medida es requerida");
+      return;
+    }
+
+    // Show confirmation dialog for creation (not update)
+    if (!initialData?.id) {
+      pendingDataRef.current = data;
+      setIsCreateConfirmOpen(true);
+      return;
+    }
+
+    await executeSubmit(data);
+  };
+
+  const handleConfirmCreate = async () => {
+    setIsCreateConfirmOpen(false);
+    if (pendingDataRef.current) {
+      const data = pendingDataRef.current;
+      pendingDataRef.current = null;
+      await executeSubmit(data);
+    }
+  };
+
   return (
     <SkeletonShell isLoading={isVatLoading} ariaLabel="Cargando configuración de fabricación">
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-4">
+        <form id={formId ?? undefined} onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-4">
           <fieldset>
             <div className="space-y-6">
-              {/* Description / Título */}
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field, fieldState }) => (
-                  <LabeledInput
-                    label="Descripción / Título"
-                    placeholder="Ej: Impresión Folletos 1000u"
-                    value={productDescription}
-                    onChange={handleDescriptionChange}
-                    error={fieldState.error?.message}
-                    {...field}
-                  />
-                )}
-              />
-
               {/* Product info (read-only) */}
               {otType === "LINKED" ? (
                 <div className="p-4 bg-muted/20 border rounded-lg">
@@ -414,8 +446,9 @@ export function ManufacturingConfigStep({
                       <UoMSelector
                         value={uomId}
                         onChange={handleUomChange}
-                        uoms={[]}
-                        product={productForUoM}
+                        uoms={uoms as any}
+                        product={productForUoM as any}
+                        context="sale"
                         variant="standalone"
                       />
                     </div>
@@ -494,35 +527,32 @@ export function ManufacturingConfigStep({
               <ManufacturingSpecsEditor
                 value={mfgData}
                 onChange={handleMfgChange}
-                showProductDescription={false}
-                showInternalNotes={false}
+                showProductDescription={true}
+                showInternalNotes={true}
                 variant="inline"
-              />
-
-              {/* Notas Internas */}
-              <FormField
-                control={form.control}
-                name="internal_notes"
-                render={({ field, fieldState }) => (
-                  <LabeledInput
-                    label="Notas Internas (No visible para cliente)"
-                    as="textarea"
-                    placeholder="Observaciones para el equipo de producción..."
-                    value={internalNotes}
-                    onChange={(e) => {
-                      setInternalNotes(e.target.value);
-                      form.setValue('internal_notes', e.target.value);
-                    }}
-                    className="h-24 bg-transparent border-border/40 focus:border-primary/40"
-                    error={fieldState.error?.message}
-                    {...field}
-                  />
-                )}
               />
             </div>
           </fieldset>
         </form>
       </Form>
+
+      <AlertDialog open={isCreateConfirmOpen} onOpenChange={setIsCreateConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Crear Orden de Trabajo</AlertDialogTitle>
+            <AlertDialogDescription>
+              Una vez creada la OT no podrás modificar la configuración de fabricación
+              ni volver a los pasos anteriores. ¿Deseas continuar?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmCreate}>
+              Crear orden
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </SkeletonShell>
   );
 }

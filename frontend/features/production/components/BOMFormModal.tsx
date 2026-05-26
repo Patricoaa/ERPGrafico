@@ -6,7 +6,6 @@ import { useState, useEffect, useRef } from "react"
 import { useForm, useFieldArray, Resolver, FieldValues } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { BaseModal } from "@/components/shared/BaseModal"
 import {
     Form, FormField
 } from "@/components/ui/form"
@@ -21,8 +20,7 @@ import { toast } from "sonner"
 import { productionApi, useAllowedDteTypes } from "../hooks"
 import { useUoMs, useProductionVariants } from "../hooks"
 import type { BOM, BOMLine, ProductMinimal, UoM } from "../types"
-import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
-import { LabeledInput, LabeledSelect, LabeledSwitch, FormSection, FormFooter, FormLineItemsTable, IconButton, SkeletonShell } from "@/components/shared"
+import { Drawer, LabeledInput, LabeledSelect, LabeledSwitch, FormSection, FormFooter, FormLineItemsTable, IconButton, SkeletonShell, ActionSlideButton } from "@/components/shared"
 import { useVatRate } from "@/hooks/useVatRate"
 
 const tableInputClass = "h-9 w-full bg-background border border-border/80 rounded-sm px-2 text-xs focus:border-primary/40 focus:outline-none transition-all disabled:opacity-50"
@@ -298,17 +296,14 @@ export function BOMFormModal({
     }
 
     return (
-        <BaseModal
+        <Drawer
             open={open}
             onOpenChange={onOpenChange}
-            onEscapeKeyDown={(e) => e.stopPropagation()}
-            onPointerDownOutside={(e) => e.stopPropagation()}
-            onInteractOutside={(e) => e.stopPropagation()}
-            size="full"
-            className="max-w-[1200px]"
+            side="left"
+            defaultSize="75%"
             icon={Workflow}
             title={bomToEdit ? "Editar Lista de Materiales" : "Nueva Lista de Materiales"}
-            description={
+            subtitle={
                 selectedVariant
                     ? `Lista de Materiales • Variante: ${selectedVariant.variant_display_name || selectedVariant.name}`
                     : (selectedProduct && selectedProduct.has_variants)
@@ -963,7 +958,7 @@ export function BOMFormModal({
                         </form>
                     </Form>
                 </div>
-            </SkeletonShell>
-        </BaseModal>
+                </SkeletonShell>
+        </Drawer>
     )
 }

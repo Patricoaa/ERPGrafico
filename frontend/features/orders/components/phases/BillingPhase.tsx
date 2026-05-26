@@ -23,6 +23,7 @@ interface BillingPhaseProps {
     onActionSuccess?: () => void
     openDetails: (docType: string, id: number | string) => void
     posSessionId?: number | null
+    isSale?: boolean
     // Accordion props
     collapsible?: boolean
     isOpen?: boolean
@@ -42,13 +43,12 @@ export function BillingPhase({
     onActionSuccess,
     openDetails,
     posSessionId = null,
+    isSale = false,
     collapsible,
     isOpen,
     onOpenChange,
 }: BillingPhaseProps) {
-    const registry = (activeDoc?.document_type as string === 'PURCHASE_ORDER' || activeDoc?.document_type as string === 'SERVICE_OBLIGATION')
-        ? purchaseOrderActions
-        : saleOrderActions
+    const registry = isSale ? saleOrderActions : purchaseOrderActions
     const annulInvoice = useAnnulInvoice()
     const deleteInvoice = useDeleteInvoice()
 

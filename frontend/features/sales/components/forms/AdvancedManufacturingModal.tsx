@@ -14,7 +14,7 @@
  */
 
 import { useState, useEffect } from "react"
-import { BaseModal } from "@/components/shared/BaseModal"
+import { Drawer } from "@/components/shared"
 import { Button } from "@/components/ui/button"
 import { User, Paintbrush, X } from "lucide-react"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
@@ -115,12 +115,12 @@ export function AdvancedManufacturingModal({
     }
 
     return (
-        <BaseModal
+        <Drawer
             open={open}
             onOpenChange={onOpenChange}
-            size="full"
-            className="max-w-[1000px] border-primary/30 shadow-[0_30px_60px_rgba(0,0,0,0.5)] p-0 border-t-4 border-t-primary"
-            hideScrollArea
+            side="left"
+            defaultSize="75%"
+            contentClassName="p-0"
             title={
                 <div className="flex items-center gap-6 p-4">
                     <motion.div
@@ -190,6 +190,6 @@ export function AdvancedManufacturingModal({
                     />
                 </div>
             </div>
-        </BaseModal>
+        </Drawer>
     )
 }

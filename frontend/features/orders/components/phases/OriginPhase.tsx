@@ -42,11 +42,9 @@ export function OriginPhase({
     onEdit,
     userPermissions
 }: OriginPhaseProps) {
-    const registry = (activeDoc?.document_type === 'PURCHASE_ORDER' || activeDoc?.document_type === 'SERVICE_OBLIGATION')
-        ? purchaseOrderActions
-        : saleOrderActions
-    const router = useRouter()
     const isSale = type === 'sale'
+    const registry = isSale ? saleOrderActions : purchaseOrderActions
+    const router = useRouter()
     const orderType = type === 'obligation' ? 'purchase' : type
     const annulOrder = useAnnulOrder(orderType)
     const deleteOrder = useDeleteOrder(orderType)

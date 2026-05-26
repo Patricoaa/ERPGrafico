@@ -76,8 +76,7 @@ export function useWorkOrderMutations(
       }
       const res = await api.post(
         `/production/orders/${orderId}/transition/`,
-        formData,
-        { headers: { 'Content-Type': 'multipart/form-data' } }
+        formData
       )
       return res.data
     },

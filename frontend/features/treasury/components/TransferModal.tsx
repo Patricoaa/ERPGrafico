@@ -11,7 +11,7 @@ import { useServerDate } from "@/hooks/useServerDate"
 import { useTreasuryAccounts } from "@/features/treasury/hooks/useTreasuryAccounts"
 import { useTransfer } from "@/features/treasury/hooks/useTransfer"
 import { Form, FormField } from "@/components/ui/form"
-import { CancelButton, LabeledInput, FormSection, FormFooter, FormSplitLayout, ActionSlideButton, BaseModal, MoneyDisplay, SkeletonShell } from "@/components/shared"
+import { CancelButton, LabeledInput, FormSection, FormFooter, FormSplitLayout, ActionSlideButton, Drawer, MoneyDisplay, SkeletonShell } from "@/components/shared"
 
 const transferSchema = z.object({
     from_account_id: z.string().min(1, "Seleccione una cuenta de origen"),
@@ -80,11 +80,11 @@ export function TransferModal({ open, onOpenChange, onSuccess }: TransferModalPr
     const destAccount = accounts.find(a => a.id.toString() === toAccountId)
 
     return (
-        <BaseModal
+        <Drawer
             open={open}
             onOpenChange={onOpenChange}
-            size="lg"
-            hideScrollArea={true}
+            side="left"
+            defaultSize="55%"
             contentClassName="p-0"
             title={
                 <div className="flex items-center gap-3">
@@ -92,7 +92,7 @@ export function TransferModal({ open, onOpenChange, onSuccess }: TransferModalPr
                     <span>Traspaso entre Cuentas</span>
                 </div>
             }
-            description="Mueva fondos entre sus cuentas de tesorería de forma inmediata."
+            subtitle="Mueva fondos entre sus cuentas de tesorería de forma inmediata."
             footer={
                 <FormFooter
                     actions={
@@ -235,7 +235,7 @@ export function TransferModal({ open, onOpenChange, onSuccess }: TransferModalPr
                 </Form>
             </FormSplitLayout>
             </SkeletonShell>
-        </BaseModal>
+        </Drawer>
     )
 }
 

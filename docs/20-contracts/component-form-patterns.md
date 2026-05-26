@@ -3,7 +3,7 @@ layer: 20-contracts
 doc: component-form-patterns
 status: active
 owner: frontend-team
-last_review: 2026-04-25
+last_review: 2026-05-25
 stability: contract-changes-require-ADR
 preconditions:
   - component-modal.md
@@ -34,17 +34,29 @@ graph TD
     Q2 -->|Sí| WIZ["GenericWizard"]
     Q2 -->|No| Q3{"¿Solo lectura<br/>(detalle/resumen)?"}
     Q3 -->|Sí| Q_READONLY{"¿Es una tabla/histórico<br/>secundario con contexto?"}
-    Q_READONLY -->|Sí| DRAWER["BaseDrawer"]
+    Q_READONLY -->|Sí| DRAWER["BaseDrawer (bottom)"]
     Q_READONLY -->|No| TVM["TransactionViewModal<br/>o CollapsibleSheet"]
     Q3 -->|No| Q4{"¿Cuántos campos<br/>tiene el formulario?"}
-    Q4 -->|"1–6 campos"| SIMPLE["BaseModal (sm/md)"]
+    Q4 -->|"1–6 campos"| Q_CONTEXT{"¿Necesita preservar<br/>contexto de la lista?"}
+    Q_CONTEXT -->|Sí| SIMPLE_DRAWER["BaseDrawer (left, 40%)"]
+    Q_CONTEXT -->|No| SIMPLE["BaseModal (sm/md)"]
     Q4 -->|"7–15 campos"| Q5{"¿Los campos pertenecen<br/>a ≥2 dominios lógicos?"}
-    Q5 -->|No| STANDARD["BaseModal (lg)<br/>+ FormSection"]
+    Q5 -->|No| Q_CONTEXT2{"¿Necesita preservar<br/>contexto de la lista?"}
+    Q_CONTEXT2 -->|Sí| STD_DRAWER["BaseDrawer (left, 50%)<br/>+ FormSection"]
+    Q_CONTEXT2 -->|No| STANDARD["BaseModal (lg)<br/>+ FormSection"]
     Q5 -->|Sí| Q6{"¿Cuántos dominios?"}
-    Q6 -->|"2–3"| TABS_H["BaseModal (lg/xl)<br/>+ FormTabs horizontal"]
-    Q6 -->|"4+"| TABS_V["BaseModal (xl/2xl)<br/>+ FormTabs vertical"]
-    Q4 -->|"16–30 campos"| COMPLEX["BaseModal (xl/2xl)<br/>+ FormTabs vertical"]
-    Q4 -->|"30+ campos"| MASTER["BaseModal (full)<br/>+ FormTabs vertical<br/>+ FormSplitLayout"]
+    Q6 -->|"2–3"| TABS_H_Q{"¿Necesita preservar<br/>contexto de la lista?"}
+    TABS_H_Q -->|Sí| TABS_H_DRAWER["BaseDrawer (left, 55%)<br/>+ FormTabs horizontal"]
+    TABS_H_Q -->|No| TABS_H["BaseModal (lg/xl)<br/>+ FormTabs horizontal"]
+    Q6 -->|"4+"| TABS_V_Q{"¿Necesita preservar<br/>contexto de la lista?"}
+    TABS_V_Q -->|Sí| TABS_V_DRAWER["BaseDrawer (left, 65%)<br/>+ FormTabs vertical"]
+    TABS_V_Q -->|No| TABS_V["BaseModal (xl/2xl)<br/>+ FormTabs vertical"]
+    Q4 -->|"16–30 campos"| Q_COMPLEX{"¿Necesita preservar<br/>contexto de la lista?"}
+    Q_COMPLEX -->|Sí| COMPLEX_DRAWER["BaseDrawer (left, 65%)<br/>+ FormTabs vertical"]
+    Q_COMPLEX -->|No| COMPLEX["BaseModal (xl/2xl)<br/>+ FormTabs vertical"]
+    Q4 -->|"30+ campos"| Q_MASTER{"¿Necesita preservar<br/>contexto de la lista?"}
+    Q_MASTER -->|Sí| MASTER_DRAWER["BaseDrawer (left, 75%)<br/>+ FormTabs vertical<br/>+ FormSplitLayout"]
+    Q_MASTER -->|No| MASTER["BaseModal (full)<br/>+ FormTabs vertical<br/>+ FormSplitLayout"]
 ```
 
 ### Regla de oro
@@ -57,11 +69,11 @@ graph TD
 
 | Categoría | Campos | Modal `size` | Grid | Tabs | Ejemplo real |
 |:---|:---|:---|:---|:---|:---|
-| **Micro** | 1–3 | `sm` / `xs` | N/A (stack) | **Nunca** | `AddPartnerModal`, `InitialCapitalModal` |
-| **Simple** | 4–6 | `md` | `grid-cols-4` | **Nunca** | `TransferModal`, `CategoryForm`, `TreasuryAccountModal` |
-| **Estándar** | 7–15 | `lg` | `grid-cols-4` | **Opcional** horiz. si 2–4 dominios. **Obligatorio** si ≥5 dominios | `PricingRuleForm`, `EmployeeFormModal`, `WarehouseForm` |
-| **Complejo** | 16–30 | `xl` / `2xl` | `grid-cols-4` | **Obligatorio** vertical + `h-[90vh]` | `UserForm`, `ContactModal`, `BOMFormModal` |
-| **Ficha Maestra** | 30+ | `2xl` / `full` | `grid-cols-12` | **Obligatorio** vertical + `h-[90vh]` | `ProductForm`, `CompanySettingsView` |
+| **Micro** | 1–3 | `sm` / `xs` o `BaseDrawer 40%` | N/A (stack) | **Nunca** | `AddPartnerModal`, `InitialCapitalModal` |
+| **Simple** | 4–6 | `md` o `BaseDrawer 40%` | `grid-cols-4` | **Nunca** | `TransferModal`, `CategoryForm`, `TreasuryAccountModal` |
+| **Estándar** | 7–15 | `lg` o `BaseDrawer 50–55%` | `grid-cols-4` | **Opcional** horiz. si 2–4 dominios. **Obligatorio** si ≥5 dominios | `PricingRuleForm`, `EmployeeFormModal`, `WarehouseForm` |
+| **Complejo** | 16–30 | `xl` / `2xl` o `BaseDrawer 65%` | `grid-cols-4` | **Obligatorio** vertical + `h-[90vh]` o `BaseDrawer` | `UserForm`, `ContactModal`, `BOMFormModal` |
+| **Ficha Maestra** | 30+ | `2xl` / `full` o `BaseDrawer 75%` | `grid-cols-12` | **Obligatorio** vertical + `h-[90vh]` o `BaseDrawer` | `ProductForm`, `CompanySettingsView` |
 
 ### Escalamiento Create → Edit
 
@@ -248,7 +260,8 @@ graph TD
 | ≥3 pasos secuenciales con dependencia entre ellos | `GenericWizard` | `SalesCheckoutWizard`, `FiscalYearClosingWizard`, `MovementWizard` |
 | Solo confirmar una acción (destructiva o no) | `ActionConfirmModal` | Eliminar entidad, Anular documento |
 | Mostrar detalle de un documento/entidad | `TransactionViewModal` | Ver factura, ver pago |
-| Mostrar lista/histórico auxiliar con contexto | `BaseDrawer` | `PartnerLedgerModal`, `PayrollDetailSheet`, `SalesOrdersModal` |
+| Mostrar lista/histórico auxiliar con contexto | `BaseDrawer` (bottom) | `PartnerLedgerModal`, `PayrollDetailSheet`, `SalesOrdersModal` |
+| Formulario CRUD preservando contexto de lista | `BaseDrawer` (left, 40–75%) | `CategoryForm`, `ContactModal`, `ProductForm` (post-migración) |
 | Panel secundario de acciones junto a listado | `CollapsibleSheet` | `OrderActionPanel` |
 | Edición masiva de múltiples filas | `DataTable` editable + pattern Bulk | `BulkVariantEditForm` |
 | Completar un documento con folio + adjunto | `DocumentCompletionModal` | Completar factura |
@@ -429,7 +442,7 @@ graph TD
 - ❌ **Tabs manuales** — Nunca implementar navegación por tabs de forma artesanal. Siempre usar `FormTabs`.
 - ❌ **`Dialog` directo** — Siempre envolver en `BaseModal`.
 - ❌ **Formulario sin Zod** — Todos los formularios usan `zodResolver` + `react-hook-form`.
-- ❌ **Footer sin `FormFooter`** — Todo formulario modal **SIEMPRE** usa `FormFooter` en la prop `footer` de `BaseModal`. Nunca un `<div>` raw. Los modales de solo lectura (sin form) pueden usar `<Button>Cerrar</Button>` directo.
+- ❌ **Footer sin `FormFooter`** — Todo formulario en `BaseModal` o `BaseDrawer` **SIEMPRE** usa `FormFooter` en la prop `footer`. Nunca un `<div>` raw. Los overlays de solo lectura (sin form) pueden usar `<Button>Cerrar</Button>` directo.
 - ❌ **Sidebar ad-hoc** — Usar `FormSplitLayout` para el patrón form + sidebar.
 - ❌ **Modal `full` para formularios simples** — Respetar la tabla de dimensionamiento.
 - ❌ **Card envolvente en formularios** — No envolver el contenido de un formulario dentro de un `<div>` con `border`, `rounded-lg`, `bg-muted`, `shadow` etc. El `BaseModal` ya proporciona el contenedor visual. Un card extra es ruido y herencia de patrones legacy.

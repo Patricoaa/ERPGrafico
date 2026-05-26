@@ -105,22 +105,49 @@ export const saleOrderActions: ActionRegistry<any> = {
                 excludedStatus: ['CANCELLED'],
                 checkAvailability: (activeDoc) => {
                     if (!activeDoc) return false
+
+                    // Hide for service-only orders — use confirm-service-delivery instead
+                    const lines = activeDoc.lines || activeDoc.items || []
+                    const allServices = lines.every((l: any) => l.product_type === 'SERVICE')
+                    if (allServices) return false
+
                     const isInvoiced = !!activeDoc.dte_type
 
                     if (isInvoiced) {
-                        // For Debit Note, allow if its own lines are not fully delivered
                         if (activeDoc.dte_type === 'NOTA_DEBITO') {
-                            const lines = activeDoc.lines || []
                             const totalOrdered = lines.reduce((acc: number, line: any) => acc + (parseFloat(line.quantity) || 0), 0)
                             const totalDelivered = lines.reduce((acc: number, line: any) => acc + (parseFloat(line.quantity_delivered || 0) || 0), 0)
                             return totalDelivered < totalOrdered
                         }
-                        // Fallback for regular invoices linked to orders
                         return activeDoc.order_delivery_status !== 'DELIVERED'
                     }
 
-                    // Show if not fully delivered for orders
                     return activeDoc.delivery_status !== 'DELIVERED'
+                },
+                badge: { type: 'pending' }
+            },
+            {
+                id: 'confirm-service-delivery',
+                label: 'Confirmar Entrega de Servicio',
+                icon: FileBadge,
+                requiredPermissions: ['inventory.add_stockmove'],
+                excludedStatus: ['CANCELLED'],
+                checkAvailability: (activeDoc) => {
+                    if (!activeDoc) return false
+                    const lines = activeDoc.lines || activeDoc.items || []
+                    const hasServices = lines.some((l: any) => l.product_type === 'SERVICE')
+                    if (!hasServices) return false
+
+                    const hasPending = lines.some((l: any) => {
+                        if (l.quantity_pending !== undefined) {
+                            return parseFloat(l.quantity_pending) > 0
+                        }
+                        const total = parseFloat(l.quantity) || 0
+                        const delivered = parseFloat(l.quantity_delivered ?? l.delivered_quantity ?? 0)
+                        return delivered < total
+                    })
+
+                    return activeDoc.delivery_status !== 'DELIVERED' && hasPending
                 },
                 badge: { type: 'pending' }
             },

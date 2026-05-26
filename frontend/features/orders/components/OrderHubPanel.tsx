@@ -214,7 +214,7 @@ export function OrderHubPanel({
                         }
                         icon={TopLeftIcon}
                         onClose={onClose}
-                        closeTooltipText="Cerrar Hub"
+                        closeTooltip="Cerrar Hub"
                     />
                 )}
                 {/* ── Scrollable Phase Content ──────────────────────── */}

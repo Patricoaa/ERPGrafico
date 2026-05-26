@@ -128,7 +128,14 @@ class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     def update(self, request, *args, **kwargs):
         """
         Overridden update to handle file attachments.
+        Identity fields (product, sale_order, sale_line) are immutable post-creation.
         """
+        immutable = {'product', 'sale_order', 'sale_line', 'product_id', 'sale_order_id', 'sale_line_id'}
+        if immutable.intersection(request.data.keys()):
+            return Response(
+                {'error': 'Producto y Nota de Venta no pueden modificarse después de crear la OT. Use "Crear OT corregida" para generar una nueva.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
         response = super().update(request, *args, **kwargs)
         
         if response.status_code == 200:
@@ -324,6 +331,65 @@ class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         except Exception as e:
             logger.exception("Error duplicating WorkOrder")
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=['patch'], url_path='update_section')
+    def update_section(self, request, pk=None):
+        """Patch a named section of MFG_CONFIG data after OT creation."""
+        work_order = self.get_object()
+        section = request.data.get('section')
+        payload = request.data.get('payload', {})
+        if not section or not isinstance(payload, dict):
+            return Response({'error': 'Se requiere section y payload.'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            if section == 'volume':
+                quantity = float(payload.get('quantity', 0))
+                uom_id = int(payload.get('uom_id', 0))
+                WorkOrderService.update_volume(work_order, quantity, uom_id, user=request.user)
+            else:
+                WorkOrderService.update_mfg_section(work_order, section, payload, user=request.user)
+            return Response(WorkOrderSerializer(work_order).data)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=['post'], url_path='restart')
+    def restart(self, request, pk=None):
+        """Delete a clean DRAFT OT and return its creation defaults.
+
+        The frontend uses the returned initial_data to reopen the wizard pre-filled.
+        Fails if the OT has any side-effects (POs, stock movements, completed tasks).
+        """
+        work_order = self.get_object()
+
+        if work_order.status != WorkOrder.Status.DRAFT:
+            return Response({'error': 'Solo se pueden reiniciar órdenes en Borrador.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        se = WorkOrderService.check_side_effects(work_order)
+        if any([se['has_confirmed_pos'], se['has_stock_movements'],
+                se['completed_tasks_count'], se['manually_edited_materials_count']]):
+            return Response(
+                {'error': 'La OT tiene actividad registrada y no puede reiniciarse. Use "Crear OT corregida" en su lugar.', 'side_effects': se},
+                status=status.HTTP_409_CONFLICT
+            )
+
+        # Capture initial_data before deletion
+        initial_data = {
+            'sale_order_id': work_order.sale_order_id,
+            'sale_order_number': work_order.sale_order.number if work_order.sale_order else None,
+            'sale_line_id': work_order.sale_line_id,
+            'product_id': work_order.product_id or (work_order.sale_line.product_id if work_order.sale_line else None),
+            'stage_data': work_order.stage_data,
+            'ot_type': 'LINKED' if work_order.sale_order_id else 'NONE',
+        }
+
+        # Cleanup generic relations (same as destroy)
+        from workflow.models import Task, Notification
+        from django.contrib.contenttypes.models import ContentType
+        ct = ContentType.objects.get_for_model(work_order)
+        Task.objects.filter(content_type=ct, object_id=work_order.id).delete()
+        Notification.objects.filter(content_type=ct, object_id=work_order.id).delete()
+        work_order.delete()
+
+        return Response({'initial_data': initial_data}, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['get'])
     def metrics(self, request):

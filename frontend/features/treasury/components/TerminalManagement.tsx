@@ -6,11 +6,10 @@ import { usePaymentMethods, useTerminalDevices } from "@/features/treasury"
 import { treasuryApi } from "../api/treasuryApi"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { BaseModal } from "@/components/shared/BaseModal"
 import { Checkbox } from "@/components/ui/checkbox"
 import { toast } from "sonner"
 import { StatusBadge } from "@/components/shared/StatusBadge"
-import { CancelButton, IconButton, LabeledInput, LabeledSelect, FormSection, FormFooter, FormSplitLayout } from "@/components/shared"
+import { Drawer, CancelButton, IconButton, LabeledInput, LabeledSelect, FormSection, FormFooter, FormSplitLayout, ActionSlideButton } from "@/components/shared"
 import { EntityCard } from "@/components/shared/EntityCard"
 import { DataTableView } from '@/components/shared/DataTableView'
 import { DataTableColumnHeader } from '@/components/shared'
@@ -18,7 +17,6 @@ import { createActionsColumn, DataCell, Chip } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
 import { Plus, Power, PowerOff, Trash2, Settings, MapPin, Smartphone, Banknote, CreditCard, Landmark, MonitorSmartphone } from "lucide-react"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
-import { ActionSlideButton } from "@/components/shared/ActionSlideButton"
 import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 
@@ -378,11 +376,11 @@ function TerminalModal({ open, onOpenChange, terminal, onSuccess }: {
     }, {} as Record<string, any[]>)
 
     return (
-        <BaseModal
+        <Drawer
             open={open}
             onOpenChange={onOpenChange}
-            size={terminal ? "xl" : "lg"}
-            hideScrollArea={true}
+            side="left"
+            defaultSize={terminal ? "65%" : "55%"}
             contentClassName="p-0"
             title={
                 <div className="flex items-center gap-3">
@@ -390,7 +388,7 @@ function TerminalModal({ open, onOpenChange, terminal, onSuccess }: {
                     <span>{terminal ? "Ficha de Caja POS" : "Nueva Caja POS"}</span>
                 </div>
             }
-            description={
+            subtitle={
                 <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
                     {terminal?.code && (
                         <>
@@ -540,7 +538,7 @@ function TerminalModal({ open, onOpenChange, terminal, onSuccess }: {
 
                 </form>
             </FormSplitLayout>
-        </BaseModal>
+        </Drawer>
     )
 }
 

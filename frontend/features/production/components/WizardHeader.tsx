@@ -34,9 +34,6 @@ export function WizardHeader({
     isDeleting,
     isDuplicating
 }: WizardHeaderProps) {
-    const canEditOrDelete = order
-        ? ['MATERIAL_ASSIGNMENT', 'MATERIAL_APPROVAL', 'PREPRESS'].includes(order.current_stage)
-        : false
     const customerName = order?.sale_customer_name || "Manual"
     const creationDate = order?.created_at ? formatPlainDate(order.created_at) : ''
 
@@ -58,9 +55,6 @@ export function WizardHeader({
             <div className="space-y-1 flex-1">
                 <div className="flex items-center gap-2">
                     <h2 className="text-xl font-bold tracking-tight">Gestión de orden de trabajo</h2>
-                    <StatusBadge status={order.status || 'PENDING'} size="md" />
-                    <Chip size="xs">{currentStageLabel}</Chip>
-                    <Chip size="xs">{formatCurrency(order.total_price || 0)}</Chip>
                 </div>
                 <div className="flex items-center gap-2 text-xs text-muted-foreground font-medium uppercase tracking-wider">
                     <span>{formatEntityDisplay('production.workorder', order)}</span>
@@ -73,44 +67,6 @@ export function WizardHeader({
                     </div>
                 </div>
             </div>
-
-            <DataCell.ActionGroup>
-                {canEditOrDelete && (
-                    <DataCell.Action action="edit" onClick={onEdit} />
-                )}
-                <DataCell.Action
-                    action="hub"
-                    title="Configuración de Venta"
-                    onClick={() => order.sale_order && onOpenCommandCenter(order.sale_order.id, 'sale')}
-                    disabled={!order.sale_order}
-                />
-                <div className="w-[1px] h-4 bg-border/60 mx-1" />
-                <DataCell.Action
-                    action="duplicate"
-                    onClick={onDuplicate}
-                    disabled={isDuplicating}
-                />
-                {onSaveAsTemplate && (
-                    <DataCell.Action
-                        icon={BookTemplate}
-                        title="Guardar como plantilla"
-                        onClick={onSaveAsTemplate}
-                    />
-                )}
-                <DataCell.Action
-                    action="annul"
-                    title={order.is_cancellable === false ? "Anulación no permitida en esta etapa" : "Anular OT"}
-                    onClick={onAnnul}
-                    disabled={isAnnuling || order.status === 'CANCELLED' || order.is_cancellable === false}
-                />
-                {canEditOrDelete && (
-                    <DataCell.Action
-                        action="delete"
-                        onClick={onDelete}
-                        disabled={isDeleting}
-                    />
-                )}
-            </DataCell.ActionGroup>
         </div>
     )
 }

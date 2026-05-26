@@ -48,9 +48,7 @@ export function LogisticsPhase({
     isOpen,
     onOpenChange,
 }: LogisticsPhaseProps) {
-    const registry = (activeDoc?.document_type === 'PURCHASE_ORDER' || activeDoc?.document_type === 'SERVICE_OBLIGATION')
-        ? purchaseOrderActions
-        : saleOrderActions
+    const registry = isSale ? saleOrderActions : purchaseOrderActions
 
     const annulLogistics = useAnnulLogistics()
 

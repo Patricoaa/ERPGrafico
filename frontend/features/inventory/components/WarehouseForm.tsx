@@ -6,8 +6,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { WarehouseInitialData } from "@/types/forms"
 import * as z from "zod"
-import { BaseModal } from "@/components/shared/BaseModal"
-import { CancelButton, LabeledInput, FormFooter, FormSplitLayout } from "@/components/shared"
+import { Drawer, CancelButton, LabeledInput, FormFooter, FormSplitLayout } from "@/components/shared"
 import {
     Form,
     FormField,
@@ -179,15 +178,15 @@ export function WarehouseForm({ sidebar, onSuccess, initialData, open: openProp,
             {openProp === undefined && !initialData && (
                 <Button onClick={() => setOpen(true)}>Nuevo Almacén</Button>
             )}
-            <BaseModal
+            <Drawer
                 open={open}
                 onOpenChange={setOpen}
-                size={initialData ? "lg" : "md"}
-                hideScrollArea={true}
+                side="left"
+                defaultSize={initialData ? "50%" : "45%"}
                 contentClassName="p-0"
                 icon={List}
                 title={initialData ? "Editar Almacén" : "Nuevo Almacén"}
-                description={
+                subtitle={
                     form.watch("name")
                         ? `${form.watch("code") ? `${form.watch("code")} | ` : ""}${form.watch("name")}`
                         : (initialData ? undefined : "Nuevo Almacén")
@@ -206,7 +205,7 @@ export function WarehouseForm({ sidebar, onSuccess, initialData, open: openProp,
                 }
             >
                 {formContent}
-            </BaseModal>
+            </Drawer>
         </>
     )
 }

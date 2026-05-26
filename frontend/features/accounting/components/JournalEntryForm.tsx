@@ -8,7 +8,6 @@ import { JournalEntryInitialData } from "@/types/forms"
 import * as z from "zod"
 import { CalendarIcon, Plus, Pencil, BookOpen } from "lucide-react"
 import { format } from "date-fns"
-import { BaseModal } from "@/components/shared/BaseModal"
 import {
     Form,
     FormField,
@@ -20,7 +19,7 @@ import { toast } from "sonner"
 import { accountingApi } from "@/features/accounting/api/accountingApi"
 import { useAccounts } from "@/features/accounting/hooks/useAccounts"
 import { useServerDate } from "@/hooks/useServerDate"
-import { LabeledInput, LabeledContainer, CancelButton, SubmitButton, IconButton, PeriodValidationDateInput, ActionSlideButton, FormFooter, FormSplitLayout, FormSection, AccountingLinesTable, SkeletonShell } from "@/components/shared";
+import { Drawer, LabeledInput, LabeledContainer, CancelButton, SubmitButton, IconButton, PeriodValidationDateInput, ActionSlideButton, FormFooter, FormSplitLayout, FormSection, AccountingLinesTable, SkeletonShell } from "@/components/shared";
 
 // JournalItem and JournalEntry schemas remain the same
 const journalItemSchema = z.object({
@@ -299,15 +298,15 @@ export function JournalEntryForm({
     return (
         <>
             <Trigger />
-            <BaseModal
+            <Drawer
                 open={open}
                 onOpenChange={setOpen}
-                size={initialData ? "xl" : "lg"}
-                hideScrollArea={true}
+                side="left"
+                defaultSize={initialData ? "65%" : "55%"}
                 contentClassName="p-0"
                 icon={BookOpen}
                 title={initialData ? "Editar Asiento" : "Nuevo Asiento Contable"}
-                description={initialData?.reference ? `Ref: ${initialData.reference} • ${form.watch("description") || "Registro manual"}` : (form.watch("description") || "Registro manual de movimiento")}
+                subtitle={initialData?.reference ? `Ref: ${initialData.reference} • ${form.watch("description") || "Registro manual"}` : (form.watch("description") || "Registro manual de movimiento")}
                 footer={
                     <FormFooter
                         actions={
@@ -322,7 +321,7 @@ export function JournalEntryForm({
                 }
             >
                 {formContent}
-            </BaseModal>
+            </Drawer>
         </>
     )
 }

@@ -213,10 +213,6 @@ export interface WorkOrder {
     created_at: string
     status: string
     product_description?: string
-    specifications?: string
-    specifications_prepress?: string
-    specifications_press?: string
-    specifications_postpress?: string
     prepress_archive?: string
     start_date?: string
     sale_order_delivery_date?: string

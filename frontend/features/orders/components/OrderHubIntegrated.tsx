@@ -160,6 +160,7 @@ export function OrderHubIntegrated({
                         collapsible={true}
                         isOpen={openPhases.has('billing')}
                         onOpenChange={togglePhase('billing')}
+                        isSale={type === 'sale'}
                     />
 
                     {/* 3. Tesorería */}
@@ -175,6 +176,7 @@ export function OrderHubIntegrated({
                         collapsible={true}
                         isOpen={openPhases.has('treasury')}
                         onOpenChange={togglePhase('treasury')}
+                        isSale={type === 'sale'}
                     />
 
                     {/* 4. Producción */}
@@ -189,6 +191,7 @@ export function OrderHubIntegrated({
                             collapsible={true}
                             isOpen={openPhases.has('production')}
                             onOpenChange={togglePhase('production')}
+                            isSale={type === 'sale'}
                         />
                     )}
 

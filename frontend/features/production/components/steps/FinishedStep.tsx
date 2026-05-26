@@ -55,43 +55,14 @@ export function FinishedStep({ order, onUploadPhoto, isUploadingPhoto, onPrintCo
       )}
 
       <div className="flex gap-3 flex-wrap justify-center">
-        <Button
-          onClick={() => order.sale_order?.id && openHub({ orderId: order.sale_order.id, type: 'sale' })}
-          className="gap-2 font-semibold"
-        >
-          <LayoutDashboard className="h-4 w-4" />
-          Ir al HUB de Venta
-        </Button>
+
         {onPrintCopy && (
           <Button variant="outline" className="gap-2" disabled={isDuplicating} onClick={onPrintCopy}>
             {isDuplicating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Copy className="h-4 w-4" />}
             Imprimir copia
           </Button>
         )}
-        {onUploadPhoto && (
-          <>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(e) => {
-                const file = e.target.files?.[0]
-                if (file) onUploadPhoto(file)
-                e.target.value = ''
-              }}
-            />
-            <Button
-              variant="outline"
-              className="gap-2"
-              disabled={isUploadingPhoto}
-              onClick={() => fileInputRef.current?.click()}
-            >
-              {isUploadingPhoto ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
-              {hasPhoto ? 'Reemplazar foto' : 'Adjuntar foto'}
-            </Button>
-          </>
-        )}
+
       </div>
     </div>
   )

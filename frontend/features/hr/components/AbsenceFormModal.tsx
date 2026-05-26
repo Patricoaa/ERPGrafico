@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button"
 import { CancelButton, SubmitButton } from "@/components/shared/ActionButtons"
 import { Form, FormField } from "@/components/ui/form"
 import { CalendarX2 } from "lucide-react"
-import { BaseModal, LabeledInput, LabeledSelect, PeriodValidationDateInput, FormFooter } from "@/components/shared"
+import { Drawer, LabeledInput, LabeledSelect, PeriodValidationDateInput, FormFooter } from "@/components/shared"
 
 export const absenceSchema = z.object({
     employee: z.string().min(1, "Empleado requerido"),
@@ -107,14 +107,14 @@ export function AbsenceFormModal({ open, onOpenChange, absence, employees, onSav
     )
 
     return (
-        <BaseModal
+        <Drawer
             open={open}
             onOpenChange={onOpenChange}
+            side="left"
             icon={CalendarX2}
             title={absence ? "Editar Inasistencia" : "Registrar Inasistencia"}
-            description="Ingrese los detalles de la ausencia del empleado."
-            size="xl"
-            hideScrollArea
+            subtitle="Ingrese los detalles de la ausencia del empleado."
+            defaultSize="65%"
             contentClassName="p-0"
             footer={footer}
         >
@@ -217,6 +217,6 @@ export function AbsenceFormModal({ open, onOpenChange, absence, employees, onSav
                     </div>
                 )}
             </div>
-        </BaseModal>
+        </Drawer>
     )
 }

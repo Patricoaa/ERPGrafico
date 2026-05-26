@@ -1357,7 +1357,6 @@ class WorkOrderService:
             'folio_enabled': mfg_data.get('folio_enabled', False),
             'folio_start': mfg_data.get('folio_start', ''),
             'design_attachments': mfg_data.get('design_filenames', []),
-            'design_approved': mfg_data.get('design_approved', False),
             'approval_attachment': mfg_data.get('approval_filename'),
             # Map specs
             'prepress_specs': mfg_data.get('specifications', {}).get('prepress', ''),

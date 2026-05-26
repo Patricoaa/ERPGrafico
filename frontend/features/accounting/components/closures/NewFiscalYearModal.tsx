@@ -1,10 +1,9 @@
 "use client";
 
 import React, { useState } from 'react';
-import { BaseModal } from '@/components/shared/BaseModal';
 import { Calendar, CheckCircle2, AlertCircle, ShieldAlert } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { LabeledContainer, CancelButton, SubmitButton, FormFooter } from '@/components/shared';
+import { Drawer, LabeledContainer, CancelButton, SubmitButton, FormFooter } from '@/components/shared';
 
 interface NewFiscalYearModalProps {
     isOpen: boolean;
@@ -51,14 +50,15 @@ export function NewFiscalYearModal({
     };
 
     return (
-        <BaseModal
+        <Drawer
             open={isOpen}
             onOpenChange={(open) => !open && onClose()}
-            hideScrollArea={true}
+            side="left"
+            defaultSize="50%"
             contentClassName="p-0"
             icon={Calendar}
             title="Inicializar Año Fiscal"
-            description="Apertura de nuevos periodos contables."
+            subtitle="Apertura de nuevos periodos contables."
             footer={
                 <FormFooter
                     actions={
@@ -143,6 +143,6 @@ export function NewFiscalYearModal({
                     </div>
                 </div>
             </div>
-        </BaseModal>
+        </Drawer>
     );
 }

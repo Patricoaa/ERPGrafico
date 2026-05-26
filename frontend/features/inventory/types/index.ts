@@ -110,6 +110,7 @@ export interface Product {
     mfg_press_digital?: boolean
     mfg_press_special?: boolean
     mfg_auto_finalize?: boolean
+    allowed_sale_uoms?: number[]
     uom_prices?: ProductUoMPrice[]
 }
 

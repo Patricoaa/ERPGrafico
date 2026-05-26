@@ -15,7 +15,7 @@ const workOrderBaseFields = {
 
 const workOrderLinkedSchema = z.object({
     otType: z.literal("LINKED"),
-    description: z.string().min(1, "La descripción es requerida"),
+    description: z.string().optional().default(""),
     sale_order: z.string().optional().default(""),
     sale_line: z.string().optional().default(""),
     product_description: z.string().optional().default(""),

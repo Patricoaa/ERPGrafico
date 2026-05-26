@@ -181,16 +181,16 @@ function WorkOrdersClient() {
             meta: { title: "Fecha Inicio" },
         },
         {
-            accessorKey: "description",
+            accessorKey: "product_description",
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Descripción" className="justify-center" />
+                <DataTableColumnHeader column={column} title="Descripción del Trabajo" className="justify-center" />
             ),
             cell: ({ row }) => (
                 <div className="flex justify-center w-full">
-                    <DataCell.Text className="text-center">{row.getValue("description")}</DataCell.Text>
+                    <DataCell.Text className="text-center">{row.getValue("product_description")}</DataCell.Text>
                 </div>
             ),
-            meta: { title: "Descripción" },
+            meta: { title: "Descripción del Trabajo" },
         },
         {
             accessorKey: "status",
@@ -242,24 +242,13 @@ function WorkOrdersClient() {
                 return (
                     <>
                         <DataCell.Action
-                            action="hub"
+                            action="edit"
                             onClick={() => {
                                 const params = new URLSearchParams(searchParams.toString())
                                 params.set('selected', String(order.id))
                                 router.push(`${pathname}?${params.toString()}`, { scroll: false })
                             }}
                         />
-                        {isEditable && (
-                            <DataCell.Action
-                                action="edit"
-                                onClick={() => {
-                                    const params = new URLSearchParams(searchParams.toString())
-                                    params.set('selected', String(order.id))
-                                    params.set('step', 'BASIC_INFO')
-                                    router.push(`${pathname}?${params.toString()}`, { scroll: false })
-                                }}
-                            />
-                        )}
                         <DataCell.ActionMenu items={overflow} />
                     </>
                 )

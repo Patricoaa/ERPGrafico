@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { BaseModal } from "@/components/shared/BaseModal"
+import { Drawer } from "@/components/shared"
 import {
     Form,
     FormControl,
@@ -216,11 +216,11 @@ export function TerminalFormModal({ open, onOpenChange, terminal, onSuccess }: T
     }
 
     return (
-        <BaseModal
+        <Drawer
             open={open}
             onOpenChange={onOpenChange}
-            size={terminal ? "lg" : "md"}
-            hideScrollArea={true}
+            side="left"
+            defaultSize={terminal ? "55%" : "50%"}
             contentClassName="p-0"
             title={
                 <div className="flex items-center gap-3">
@@ -228,7 +228,7 @@ export function TerminalFormModal({ open, onOpenChange, terminal, onSuccess }: T
                     <span>{terminal ? "Ficha de Terminal" : "Nuevo Terminal"}</span>
                 </div>
             }
-            description={
+            subtitle={
                 <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
                     {terminal?.code && (
                         <>
@@ -456,6 +456,6 @@ export function TerminalFormModal({ open, onOpenChange, terminal, onSuccess }: T
                 </Form>
             </FormSplitLayout>
             </SkeletonShell>
-        </BaseModal>
+        </Drawer>
     )
 }

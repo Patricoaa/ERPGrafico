@@ -201,9 +201,62 @@ class WorkOrderSerializer(serializers.ModelSerializer):
     checkout_files = serializers.SerializerMethodField()
     workflow_tasks = serializers.SerializerMethodField()
     production_discrepancy = serializers.SerializerMethodField()
-    
+    side_effects = serializers.SerializerMethodField()
+
+    # Unified accessors for product/volume that work for both LINKED (sale_line)
+    # and MANUAL (product + stage_data) OTs.
+    product_name = serializers.SerializerMethodField()
+    quantity = serializers.SerializerMethodField()
+    uom_id = serializers.SerializerMethodField()
+    uom_name = serializers.SerializerMethodField()
+
     def get_display_id(self, obj):
         return obj.display_id
+
+    def get_side_effects(self, obj):
+        from .services import WorkOrderService
+        return WorkOrderService.check_side_effects(obj)
+
+    def get_product_name(self, obj):
+        if obj.sale_line and obj.sale_line.product:
+            return obj.sale_line.product.name
+        if obj.product:
+            return obj.product.name
+        return ''
+
+    def get_quantity(self, obj):
+        if obj.sale_line and obj.sale_line.quantity is not None:
+            return float(obj.sale_line.quantity)
+        if obj.stage_data and obj.stage_data.get('quantity') is not None:
+            try:
+                return float(obj.stage_data['quantity'])
+            except (TypeError, ValueError):
+                return None
+        return None
+
+    def get_uom_id(self, obj):
+        if obj.sale_line and obj.sale_line.uom_id:
+            return obj.sale_line.uom_id
+        if obj.stage_data and obj.stage_data.get('uom_id'):
+            try:
+                return int(obj.stage_data['uom_id'])
+            except (TypeError, ValueError):
+                return None
+        return None
+
+    def get_uom_name(self, obj):
+        if obj.sale_line and obj.sale_line.uom:
+            return obj.sale_line.uom.name
+        if obj.stage_data and obj.stage_data.get('uom_name'):
+            return obj.stage_data['uom_name']
+        # Fallback: resolve UoM model from id stored in stage_data
+        uom_id = obj.stage_data.get('uom_id') if obj.stage_data else None
+        if uom_id:
+            try:
+                return UoM.objects.get(pk=int(uom_id)).name
+            except (UoM.DoesNotExist, TypeError, ValueError):
+                return None
+        return None
 
     def get_production_discrepancy(self, obj):
         if not obj.sale_line or obj.actual_quantity_produced is None:

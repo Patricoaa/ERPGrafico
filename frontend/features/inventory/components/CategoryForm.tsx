@@ -6,8 +6,7 @@ import { cn } from "@/lib/utils"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { BaseModal } from "@/components/shared/BaseModal"
-import { CancelButton, LabeledInput, LabeledContainer, FormSection, FormFooter, FormSplitLayout, LabeledSwitch } from "@/components/shared"
+import { Drawer, CancelButton, LabeledInput, LabeledContainer, FormSection, FormFooter, FormSplitLayout, LabeledSwitch } from "@/components/shared"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -444,15 +443,15 @@ export function CategoryForm({
     return (
         <>
             <Trigger />
-            <BaseModal
+            <Drawer
                 open={open}
                 onOpenChange={setOpen}
-                size="lg"
-                hideScrollArea={true}
+                side="left"
+                defaultSize="50%"
                 contentClassName="p-0"
                 icon={LucideIcons.Tag}
                 title={initialData ? "Ficha de Categoría" : "Crear Categoría"}
-                description={
+                subtitle={
                     form.watch("name")
                         ? `${form.watch("prefix") ? `${form.watch("prefix")} | ` : ""}${form.watch("name")}`
                         : (initialData ? undefined : "Nueva Categoría")
@@ -471,7 +470,7 @@ export function CategoryForm({
                 }
             >
                 {formContent}
-            </BaseModal>
+            </Drawer>
         </>
     )
 }
