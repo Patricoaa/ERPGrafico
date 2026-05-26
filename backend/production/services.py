@@ -59,7 +59,8 @@ class WorkOrderService:
             status=WorkOrder.Status.DRAFT,
             current_stage=WorkOrder.Stage.MATERIAL_ASSIGNMENT,
             warehouse=delivery_with_wh.warehouse if delivery_with_wh else Warehouse.objects.first(),
-            stage_data={}
+            stage_data={},
+            start_date=timezone.now().date(),
         )
         
         # TASK-113: Flat stage_data — no more nested prepress/press/postpress copies
@@ -201,7 +202,7 @@ class WorkOrderService:
                 component=mat.component,
                 quantity_planned=mat.quantity_planned,
                 uom=mat.uom,
-                source=WorkOrderMaterial.Source.MANUAL,
+                source='MANUAL',
                 is_outsourced=mat.is_outsourced,
                 supplier=mat.supplier,
                 unit_price=mat.unit_price,
@@ -252,7 +253,8 @@ class WorkOrderService:
             status=WorkOrder.Status.DRAFT,
             current_stage=WorkOrder.Stage.MATERIAL_ASSIGNMENT,
             warehouse=delivery_line.delivery.warehouse,
-            stage_data={'quantity': float(delivery_line.quantity)}
+            stage_data={'quantity': float(delivery_line.quantity)},
+            start_date=timezone.now().date(),
         )
         
         # TASK-110: Expand BOM via shared helper
@@ -519,7 +521,7 @@ class WorkOrderService:
                 Stage.PREPRESS, Stage.PRESS, Stage.CANCELLED,
             },
             Stage.PREPRESS: {
-                Stage.PRESS, Stage.POSTPRESS, Stage.CANCELLED,
+                Stage.PRESS, Stage.POSTPRESS, Stage.OUTSOURCING_VERIFICATION, Stage.CANCELLED,
             },
             Stage.PRESS: {
                 Stage.POSTPRESS, Stage.OUTSOURCING_VERIFICATION, Stage.RECTIFICATION, Stage.CANCELLED,
@@ -1368,6 +1370,155 @@ class WorkOrderService:
             'print_type': mfg_data.get('print_type')
         }
         return stage_data
+
+
+    # ── Edit-in-place helpers ──────────────────────────────────────────────────
+
+    @staticmethod
+    def check_side_effects(work_order) -> dict:
+        """Return a dict describing irreversible side-effects for the given OT.
+
+        Used by the restart action (gate) and exposed via the serializer so the
+        frontend can decide which CTAs to show in the Identity card.
+        """
+        from purchasing.models import PurchaseOrder
+        from workflow.models import Task
+        from django.contrib.contenttypes.models import ContentType
+
+        has_confirmed_pos = work_order.purchase_orders.exclude(
+            status=PurchaseOrder.Status.DRAFT
+        ).exists()
+
+        has_stock_movements = ProductionConsumption.objects.filter(
+            work_order=work_order
+        ).exists()
+
+        ct = ContentType.objects.get_for_model(work_order)
+        completed_tasks_count = Task.objects.filter(
+            content_type=ct,
+            object_id=work_order.id,
+            status=Task.Status.COMPLETED,
+        ).count()
+
+        manually_edited_materials_count = work_order.materials.filter(
+            source='MANUAL',
+            is_outsourced=False,
+        ).count()
+
+        return {
+            'has_confirmed_pos': has_confirmed_pos,
+            'has_stock_movements': has_stock_movements,
+            'completed_tasks_count': completed_tasks_count,
+            'manually_edited_materials_count': manually_edited_materials_count,
+        }
+
+    @staticmethod
+    @transaction.atomic
+    def update_volume(work_order, quantity: float, uom_id: int, user=None):
+        """Modify quantity + UoM of a DRAFT OT and recalculate BOM materials proportionally.
+
+        Raises ValidationError if the OT is not in DRAFT or has side-effects that
+        make the recalculation unsafe.
+        """
+        if work_order.status != WorkOrder.Status.DRAFT:
+            raise ValidationError('El volumen solo puede modificarse mientras la OT está en Borrador.')
+
+        if work_order.sale_line_id:
+            raise ValidationError('La cantidad se hereda de la Nota de Venta y no puede modificarse aquí. Edite la línea en la NV o use "Crear OT corregida".')
+
+        if ProductionConsumption.objects.filter(work_order=work_order).exists():
+            raise ValidationError('Existen movimientos de stock asociados. No se puede modificar el volumen.')
+
+        if work_order.purchase_orders.exists():
+            raise ValidationError('Existen Órdenes de Compra asociadas. No se puede modificar el volumen.')
+
+        old_quantity = float(work_order.stage_data.get('quantity', 0) if work_order.stage_data else 0)
+
+        # Recalculate BOM-sourced materials proportionally
+        if old_quantity > 0 and old_quantity != quantity:
+            ratio = quantity / old_quantity
+            bom_materials = work_order.materials.filter(source='BOM')
+            for mat in bom_materials:
+                mat.quantity_planned = round(float(mat.quantity_planned) * ratio, 6)
+                mat.save(update_fields=['quantity_planned'])
+
+        # Update stage_data
+        stage_data = dict(work_order.stage_data or {})
+        stage_data['quantity'] = quantity
+        stage_data['uom_id'] = uom_id
+        work_order.stage_data = stage_data
+        work_order.save(update_fields=['stage_data'])
+
+        WorkOrderHistory.objects.create(
+            work_order=work_order,
+            stage=work_order.current_stage,
+            status=work_order.status,
+            notes=f'Volumen actualizado: {old_quantity} → {quantity}',
+            user=user,
+        )
+
+    @staticmethod
+    @transaction.atomic
+    def update_mfg_section(work_order, section: str, payload: dict, user=None):
+        """Patch a specific section of stage_data after creation.
+
+        Allowed sections: 'planning', 'prepress', 'press', 'postpress'.
+        Volume updates must go through update_volume for BOM recalculation.
+        """
+        SECTION_KEYS = {
+            'planning': ['internal_notes', 'contact_id', 'contact_name', 'contact_tax_id'],
+            'prepress': ['phases', 'prepress_specs', 'specifications', 'design_needed',
+                         'folio_enabled', 'folio_start', 'print_type',
+                         'product_description', 'design_attachments'],
+            'press': ['phases', 'press_specs', 'specifications', 'print_type'],
+            'postpress': ['phases', 'postpress_specs', 'specifications'],
+        }
+
+        if section not in SECTION_KEYS:
+            raise ValidationError(f'Sección no válida: {section}')
+
+        if work_order.status in [WorkOrder.Status.FINISHED, WorkOrder.Status.CANCELLED]:
+            raise ValidationError('La OT está cerrada. No se pueden modificar sus datos.')
+
+        STAGE_ORDER = [
+            WorkOrder.Stage.MATERIAL_ASSIGNMENT, WorkOrder.Stage.MATERIAL_APPROVAL,
+            WorkOrder.Stage.OUTSOURCING_ASSIGNMENT, WorkOrder.Stage.PREPRESS,
+            WorkOrder.Stage.PRESS, WorkOrder.Stage.POSTPRESS,
+            WorkOrder.Stage.OUTSOURCING_VERIFICATION, WorkOrder.Stage.RECTIFICATION,
+            WorkOrder.Stage.FINISHED,
+        ]
+
+        def stage_index(stage_val):
+            try:
+                return STAGE_ORDER.index(stage_val)
+            except ValueError:
+                return -1
+
+        current_idx = stage_index(work_order.current_stage)
+
+        if section == 'prepress' and current_idx >= stage_index(WorkOrder.Stage.PREPRESS):
+            raise ValidationError('La etapa de Pre-Impresión ya ha comenzado.')
+        if section == 'press' and current_idx >= stage_index(WorkOrder.Stage.PRESS):
+            raise ValidationError('La etapa de Impresión ya ha comenzado.')
+        if section == 'postpress' and current_idx >= stage_index(WorkOrder.Stage.POSTPRESS):
+            raise ValidationError('La etapa de Post-Impresión ya ha comenzado.')
+
+        # Only allow known keys for the section to avoid accidental overwrites
+        allowed_keys = SECTION_KEYS[section]
+        filtered_payload = {k: v for k, v in payload.items() if k in allowed_keys}
+
+        stage_data = dict(work_order.stage_data or {})
+        stage_data.update(filtered_payload)
+        work_order.stage_data = stage_data
+        work_order.save(update_fields=['stage_data'])
+
+        WorkOrderHistory.objects.create(
+            work_order=work_order,
+            stage=work_order.current_stage,
+            status=work_order.status,
+            notes=f'Sección "{section}" actualizada manualmente.',
+            user=user,
+        )
 
 
 class WorkOrderPdfService:
