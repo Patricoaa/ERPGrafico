@@ -14,12 +14,11 @@ import { DateRangeFilter } from "@/components/shared"
 import { toast } from "sonner"
 import { DateRange } from "react-day-picker"
 import { Checkbox } from "@/components/ui/checkbox"
-import { BaseModal } from "@/components/shared/BaseModal"
+
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { useTerminalProviders, usePaymentMethods, useTerminalMovements, useTerminalBatchMutations } from "@/features/treasury"
 import { EmptyState } from "@/components/shared/EmptyState"
-import { ActionSlideButton } from "@/components/shared/ActionSlideButton"
-import { CancelButton, SubmitButton, LabeledContainer, LabeledInput, FormFooter, FormSection, SkeletonShell } from "@/components/shared"
+import { Drawer, ActionSlideButton, CancelButton, SubmitButton, LabeledContainer, LabeledInput, FormFooter, FormSection, SkeletonShell } from "@/components/shared"
 
 interface TerminalBatchFormProps {
     onSuccess: () => void
@@ -390,12 +389,13 @@ function SaleSelectionModal({ open, onOpenChange, providerId, dateRange, onConfi
         .reduce((sum, m) => sum + parseFloat(m.amount), 0)
 
     return (
-        <BaseModal
+        <Drawer
             open={open}
             onOpenChange={onOpenChange}
+            side="left"
             title="Seleccionar Ventas a Liquidar"
-            description="Seleccione las transacciones que el proveedor incluyó en esta liquidación."
-            className="sm:max-w-[600px]"
+            subtitle="Seleccione las transacciones que el proveedor incluyó en esta liquidación."
+            defaultSize="50%"
             footer={(
                 <FormFooter
                     actions={
@@ -477,7 +477,7 @@ function SaleSelectionModal({ open, onOpenChange, providerId, dateRange, onConfi
                 </div>
             </div>
             </SkeletonShell>
-        </BaseModal>
+        </Drawer>
     )
 }
 

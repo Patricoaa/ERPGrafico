@@ -5,7 +5,6 @@ import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { BaseModal } from "@/components/shared/BaseModal"
 import {
     Form,
     FormField,
@@ -13,8 +12,7 @@ import {
 import { financeApi } from "../../api/financeApi"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { WalletCards } from "lucide-react"
-import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
-import { LabeledInput, LabeledSelect, FormFooter, CancelButton } from "@/components/shared"
+import { Drawer, LabeledInput, LabeledSelect, FormFooter, CancelButton, ActionSlideButton } from "@/components/shared"
 
 const journalSchema = z.object({
     name: z.string().min(1, "El nombre es requerido"),
@@ -92,13 +90,14 @@ export function BankJournalForm({ auditSidebar,  onSuccess, initialData, open: o
     }
 
     return (
-        <BaseModal
+        <Drawer
             open={open}
             onOpenChange={setOpen}
-            size={initialData ? "lg" : "md"}
+            side="left"
+            defaultSize={initialData ? "55%" : "50%"}
             icon={WalletCards}
             title={initialData ? "Ficha de Caja/Banco" : "Crear Caja o Banco"}
-            description={initialData ? `${(initialData as any).code || ""} • ${form.watch("name") || ""}` : "Tesorería • Configuración de Caja o Banco"}
+            subtitle={initialData ? `${(initialData as any).code || ""} • ${form.watch("name") || ""}` : "Tesorería • Configuración de Caja o Banco"}
             footer={
                 <FormFooter
                     actions={
@@ -185,6 +184,6 @@ export function BankJournalForm({ auditSidebar,  onSuccess, initialData, open: o
                     </div>
                 )}
             </div>
-        </BaseModal>
+        </Drawer>
     )
 }

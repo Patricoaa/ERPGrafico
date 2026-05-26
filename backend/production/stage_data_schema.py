@@ -49,7 +49,6 @@ class StageData(TypedDict, total=False):
 
     design_needed: bool
     design_attachments: List[str]    # filenames
-    design_approved: bool
     approval_attachment: Optional[str]
     folio_enabled: bool
     folio_start: str
@@ -65,8 +64,7 @@ class StageData(TypedDict, total=False):
     # Comments (stored inline — TASK-307 will migrate these to polymorphic Comment model)
     comments: List[Comment]
 
-    # Reserved for future per-stage overrides without breaking the flat layout
-    overrides: dict
+
 
 
 def migrate_stage_data_to_v1(data: dict) -> dict:

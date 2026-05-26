@@ -8,12 +8,11 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { updateAdvance } from '@/features/hr/api/hrApi'
 import type { SalaryAdvance, Employee, Payroll } from "@/types/hr"
-import { BaseModal } from "@/components/shared/BaseModal"
 import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
 import { Button } from "@/components/ui/button"
 import { CancelButton, SubmitButton } from "@/components/shared/ActionButtons"
 import { Form, FormField } from "@/components/ui/form"
-import { LabeledInput, LabeledSelect, PeriodValidationDateInput, FormFooter } from "@/components/shared"
+import { Drawer, LabeledInput, LabeledSelect, PeriodValidationDateInput, FormFooter } from "@/components/shared"
 import { WalletCards } from "lucide-react"
 
 export const advanceSchema = z.object({
@@ -98,16 +97,15 @@ export function AdvanceFormModal({ open, onOpenChange, advance, employees, payro
     const employeePayrolls = payrolls.filter(p => p.employee.toString() === selectedEmployee && p.status === 'DRAFT')
 
     return (
-        <BaseModal
+        <Drawer
             open={open}
             onOpenChange={onOpenChange}
-            size={advance ? "xl" : "md"}
+            side="left"
+            defaultSize={advance ? "65%" : "50%"}
             icon={WalletCards}
             title={advance ? "Ficha de Anticipo" : "Nuevo Anticipo"}
-            description={advance ? "Revise y modifique los datos del anticipo solicitado." : "Registre una entrega de dinero a cuenta de la próxima liquidación."}
-            hideScrollArea={true}
+            subtitle={advance ? "Revise y modifique los datos del anticipo solicitado." : "Registre una entrega de dinero a cuenta de la próxima liquidación."}
             contentClassName="p-0"
-            className="h-[80vh]"
             footer={
                 <FormFooter
                     actions={
@@ -207,6 +205,6 @@ export function AdvanceFormModal({ open, onOpenChange, advance, employees, payro
                     </div>
                 )}
             </div>
-        </BaseModal>
+        </Drawer>
     )
 }

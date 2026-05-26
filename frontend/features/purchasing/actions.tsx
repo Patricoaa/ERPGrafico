@@ -107,7 +107,14 @@ export const purchaseOrderActions: ActionRegistry<any> = {
                     const hasServices = lines.some((l: any) => l.product_type === 'SERVICE')
                     if (!hasServices) return false
 
-                    const hasPending = lines.some((l: any) => (parseFloat(l.quantity_pending || 0) > 0))
+                    const hasPending = lines.some((l: any) => {
+                        if (l.quantity_pending !== undefined) {
+                            return parseFloat(l.quantity_pending) > 0
+                        }
+                        const total = parseFloat(l.quantity) || 0
+                        const received = parseFloat(l.quantity_received ?? l.received_quantity ?? 0)
+                        return received < total
+                    })
 
                     return order.receiving_status !== 'RECEIVED' && hasPending
                 },

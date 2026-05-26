@@ -118,9 +118,6 @@ class WorkOrder(models.Model):
         help_text="Bodega de donde se obtendrán los materiales"
     )
     
-    # Specs
-    specifications = models.TextField(_("Especificaciones Técnicas"), blank=True, help_text="Papel, Tintas, Terminaciones, etc.")
-
     estimated_completion_date = models.DateField(_("Fecha Estimada de Finalización"), null=True, blank=True)
     start_date = models.DateField(_("Fecha de Inicio"), null=True, blank=True)
 

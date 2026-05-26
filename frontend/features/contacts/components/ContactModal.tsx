@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from "react"
 import { useFormWithToast } from "@/hooks/use-form-with-toast"
 import * as z from "zod"
-import { BaseModal } from "@/components/shared/BaseModal"
+import { Drawer } from "@/components/shared"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
     Form,
@@ -230,18 +230,16 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
     ]
 
     return (
-        <BaseModal
+        <Drawer
             open={open}
             onOpenChange={onOpenChange}
-            variant="form-tabs"
             icon={User}
             title={c ? "Editar Contacto" : "Nuevo Contacto"}
-            description="Ficha Maestra • CRM & Finanzas"
-            size="xl"
+            subtitle="Ficha Maestra • CRM & Finanzas"
+            defaultSize="65%"
             className="h-[90vh]"
-            hideScrollArea={true}
-            allowOverflow={true}
             contentClassName="p-0"
+            side="left"
             footer={
                 <FormFooter
                     actions={
@@ -588,7 +586,7 @@ export default function ContactModal({ open, onOpenChange, contact, onSuccess }:
                     </div>
                 }
             />
-        </BaseModal>
+        </Drawer>
     )
 }
 

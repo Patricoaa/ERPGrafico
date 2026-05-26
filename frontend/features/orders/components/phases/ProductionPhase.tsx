@@ -19,6 +19,7 @@ interface ProductionPhaseProps {
     onActionSuccess?: () => void
     openDetails: (docType: string, id: number | string) => void
     showAnimations: boolean
+    isSale?: boolean
     // Accordion props
     collapsible?: boolean
     isOpen?: boolean
@@ -35,10 +36,9 @@ export function ProductionPhase({
     collapsible,
     isOpen,
     onOpenChange,
+    isSale = true,
 }: ProductionPhaseProps) {
-    const registry = (activeDoc?.document_type === 'PURCHASE_ORDER' || activeDoc?.document_type === 'SERVICE_OBLIGATION') 
-        ? purchaseOrderActions 
-        : saleOrderActions
+    const registry = isSale ? saleOrderActions : purchaseOrderActions
 
     const annulWorkOrder = useAnnulWorkOrder()
 

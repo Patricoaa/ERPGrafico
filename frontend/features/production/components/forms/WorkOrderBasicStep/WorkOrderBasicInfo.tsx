@@ -54,21 +54,6 @@ export function WorkOrderBasicInfo({
     return (
         <div className="space-y-6">
             <div className={cn("grid grid-cols-1 gap-4", otType === "NONE" ? "md:grid-cols-1" : "md:grid-cols-2")}>
-                {otType === "LINKED" && (
-                    <FormField
-                        control={form.control}
-                        name="description"
-                        render={({ field, fieldState }) => (
-                            <LabeledInput
-                                label="Descripción / Título"
-                                placeholder="Ej: Impresión Folletos 1000u"
-                                error={fieldState.error?.message}
-                                {...field}
-                            />
-                        )}
-                    />
-                )}
-
                 <div className="flex flex-col gap-2">
                     {isAutoCreated ? (
                         <div className="space-y-2">

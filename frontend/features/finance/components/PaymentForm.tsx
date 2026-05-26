@@ -6,9 +6,6 @@ import { useForm, useWatch, Control } from "react-hook-form"
 import { PaymentInitialData } from "@/types/forms"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { BaseModal } from "@/components/shared/BaseModal"
-
-// ... other imports same
 import {
     Form,
     FormField,
@@ -20,8 +17,7 @@ import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountS
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { cn } from "@/lib/utils"
 import { CreditCard, Landmark, Wallet, ClipboardList } from "lucide-react"
-import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
-import { Skeleton, LabeledInput, LabeledSelect, FormFooter, CancelButton } from "@/components/shared"
+import { Drawer, Skeleton, LabeledInput, LabeledSelect, FormFooter, CancelButton, ActionSlideButton } from "@/components/shared"
 import { useBillingInvoices, usePaymentMethodsByFilter } from "@/features/finance/hooks"
 
 // schema and types remain the same
@@ -175,13 +171,14 @@ export function PaymentForm({
     return (
         <>
             <Trigger />
-            <BaseModal
+            <Drawer
                 open={open}
                 onOpenChange={setOpen}
-                size="lg"
+                side="left"
+                defaultSize="55%"
                 icon={Landmark}
                 title={initialData ? "Editar Pago" : "Registrar Pago"}
-                description={initialData ? "Actualice la información del pago." : "Ingrese los datos para el flujo de tesorería."}
+                subtitle={initialData ? "Actualice la información del pago." : "Ingrese los datos para el flujo de tesorería."}
                 footer={
                     <FormFooter
                         actions={
@@ -364,7 +361,7 @@ export function PaymentForm({
                         </fieldset>
                     </form>
                 </Form>
-            </BaseModal>
+            </Drawer>
         </>
     )
 }

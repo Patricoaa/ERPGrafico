@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react"
 import { useTerminalProviders, useTerminalDevices, type PaymentTerminalProvider, type PaymentTerminalDevice } from "../hooks/useTerminalProviders"
 import { Button } from "@/components/ui/button"
-import { BaseModal, StatusBadge, SubmitButton, CancelButton, IconButton, LabeledInput, LabeledSelect, FormSection, MultiSelectTagInput, SmartSearchBar, useSmartSearch, useClientSearch } from "@/components/shared"
+import { Drawer, StatusBadge, SubmitButton, CancelButton, IconButton, LabeledInput, LabeledSelect, FormSection, MultiSelectTagInput, SmartSearchBar, useSmartSearch, useClientSearch } from "@/components/shared"
 import { deviceSearchDef, providerSearchDef } from "@/features/treasury/searchDef"
 import { toast } from "sonner"
 import {
@@ -466,11 +466,13 @@ function ProviderModal({ open, onOpenChange, provider, onSuccess }: {
     }
 
     return (
-        <BaseModal
+        <Drawer
             open={open}
             onOpenChange={onOpenChange}
+            side="left"
+            defaultSize="50%"
             title={provider ? "Editar Proveedor" : "Nuevo Proveedor de Pago"}
-            description="Configure las cuentas contables para recaudación y comisiones."
+            subtitle="Configure las cuentas contables para recaudación y comisiones."
             footer={
                 <div className="flex justify-end gap-2">
                     <CancelButton onClick={() => onOpenChange(false)} />
@@ -537,7 +539,7 @@ function ProviderModal({ open, onOpenChange, provider, onSuccess }: {
                     </div>
                 </div>
             </form>
-        </BaseModal>
+        </Drawer>
     )
 }
 
@@ -610,11 +612,13 @@ function DeviceModal({ open, onOpenChange, device, providers, onSuccess }: {
     }
 
     return (
-        <BaseModal
+        <Drawer
             open={open}
             onOpenChange={onOpenChange}
+            side="left"
+            defaultSize="50%"
             title={device ? "Editar Dispositivo" : "Registrar Nuevo Hardware"}
-            description="Vincule una terminal física con un proveedor de servicios."
+            subtitle="Vincule una terminal física con un proveedor de servicios."
             footer={
                 <div className="flex justify-end gap-2">
                     <CancelButton onClick={() => onOpenChange(false)} />
@@ -675,7 +679,7 @@ function DeviceModal({ open, onOpenChange, device, providers, onSuccess }: {
                     />
                 </div>
             </form>
-        </BaseModal>
+        </Drawer>
     )
 }
 

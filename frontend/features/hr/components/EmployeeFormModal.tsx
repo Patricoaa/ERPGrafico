@@ -19,7 +19,7 @@ import {
 import { Switch } from "@/components/ui/switch"
 import { cn } from "@/lib/utils"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
-import { BaseModal, LabeledInput, LabeledSelect, FormTabs, FormTabsContent, FormSection, type FormTabItem, FormFooter, DatePicker, LabeledContainer, SkeletonShell } from "@/components/shared"
+import { Drawer, LabeledInput, LabeledSelect, FormTabs, FormTabsContent, FormSection, type FormTabItem, FormFooter, DatePicker, LabeledContainer, SkeletonShell } from "@/components/shared"
 
 export const employeeSchema = z.object({
     contact: z.string().min(1, "Contacto requerido"),
@@ -256,19 +256,17 @@ export function EmployeeFormModal({ open, onOpenChange, employee, onSaved, trigg
     )
 
     return (
-        <BaseModal
+        <Drawer
             open={open}
             onOpenChange={onOpenChange}
-            variant="form-tabs"
             icon={UserCog}
             title={employee ? "Editar Empleado" : "Nuevo Empleado"}
-            description={employee ? `Ficha de Personal • ${employee.display_id} • ${employee.contact_detail?.name}` : "Ficha de Personal • Recursos Humanos"}
-            size="2xl"
+            subtitle={employee ? `Ficha de Personal • ${employee.display_id} • ${employee.contact_detail?.name}` : "Ficha de Personal • Recursos Humanos"}
+            defaultSize="75%"
             className="h-[90vh]"
-            hideScrollArea={true}
             contentClassName="p-0"
-            allowOverflow={true}
             footer={footer}
+            side="left"
         >
             <SkeletonShell isLoading={isFetchingInitialData} ariaLabel="Cargando ficha de empleado" className="flex-1 flex flex-col h-full">
                 <Form {...form}>
@@ -586,6 +584,6 @@ export function EmployeeFormModal({ open, onOpenChange, employee, onSaved, trigg
                     </form>
                 </Form>
             </SkeletonShell>
-        </BaseModal>
+        </Drawer>
     )
 }

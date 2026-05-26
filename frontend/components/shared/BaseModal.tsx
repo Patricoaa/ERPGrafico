@@ -15,23 +15,14 @@ import { type VariantProps } from "class-variance-authority"
 import { dialogContentVariants } from "@/components/ui/dialog"
 import * as DialogPrimitive from "@radix-ui/react-dialog"
 import { SheetCloseButton } from "./SheetCloseButton"
+import { PanelHeader, type PanelBaseProps } from "./PanelHeader"
 
 export type BaseModalVariant = "default" | "transaction" | "wizard" | "form-tabs" | "raw"
 
 export interface BaseModalProps extends
     Omit<React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>, "title">,
-    VariantProps<typeof dialogContentVariants> {
-    open: boolean
-    onOpenChange: (open: boolean) => void
-    icon?: React.ComponentType<{ className?: string }> | React.ReactNode
-    title: string | React.ReactNode
-    description?: string | React.ReactNode
-    children: React.ReactNode
-    footer?: React.ReactNode
-    headerActions?: React.ReactNode
-    contentClassName?: string
-    headerClassName?: string
-    footerClassName?: string
+    VariantProps<typeof dialogContentVariants>,
+    PanelBaseProps {
     hideScrollArea?: boolean
     allowOverflow?: boolean
     variant?: BaseModalVariant
@@ -43,6 +34,7 @@ export function BaseModal({
     onOpenChange,
     icon,
     title,
+    subtitle: _subtitle,
     description,
     children,
     footer,
@@ -52,6 +44,8 @@ export function BaseModal({
     contentClassName,
     headerClassName,
     footerClassName,
+    titleClassName,
+    descriptionClassName,
     hideScrollArea = false,
     allowOverflow = false,
     variant = "default",
@@ -88,15 +82,13 @@ export function BaseModal({
         footerClassName
     )
 
-    let IconElement: React.ReactNode = null
-    if (icon) {
-        if (typeof icon === "function" || (typeof icon === "object" && "render" in (icon as any))) {
-            const IconComponent = icon as React.ComponentType<{ className?: string }>
-            IconElement = <IconComponent className={cn("h-9 w-9 flex-shrink-0", isTransaction ? "text-white" : "text-muted-foreground/80")} />
-        } else {
-            IconElement = icon as React.ReactNode
-        }
-    }
+    const iconElement: React.ReactNode = icon
+        ? (typeof icon === "function" || (typeof icon === "object" && "render" in (icon as any)))
+            ? React.createElement(icon as React.ComponentType<{ className?: string }>, {
+                className: cn("h-9 w-9 flex-shrink-0", isTransaction ? "text-white" : "text-muted-foreground/80")
+            })
+            : icon as React.ReactNode
+        : null
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -124,29 +116,23 @@ export function BaseModal({
                 )}
                 {(title || description || headerActions || icon) && (
                     <DialogHeader className={headerStyles}>
-                        <div className="flex items-center justify-between gap-4 w-full">
-                            <div className="flex flex-row items-center gap-4 min-w-0 flex-1">
-                                {IconElement}
-                                <div className="flex flex-col gap-0.5 min-w-0 flex-1">
-                                    <DialogTitle className={titleStyles}>
-                                        {title}
-                                    </DialogTitle>
-                                    {description && (
-                                        <DialogDescription
-                                            asChild={typeof description !== "string"}
-                                            className={descriptionStyles}
-                                        >
-                                            {description}
-                                        </DialogDescription>
-                                    )}
-                                </div>
-                            </div>
-                            {headerActions && (
-                                <div className="flex items-center gap-2 flex-shrink-0">
-                                    {headerActions}
-                                </div>
-                            )}
-                        </div>
+                        <PanelHeader
+                            icon={iconElement}
+                            title={
+                                <DialogTitle className={titleStyles}>
+                                    {title}
+                                </DialogTitle>
+                            }
+                            description={description ? (
+                                <DialogDescription
+                                    asChild={typeof description !== "string"}
+                                    className={descriptionStyles}
+                                >
+                                    {description}
+                                </DialogDescription>
+                            ) : undefined}
+                            headerActions={headerActions}
+                        />
                     </DialogHeader>
                 )}
 

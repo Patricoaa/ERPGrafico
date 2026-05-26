@@ -5,13 +5,10 @@ import { useForm } from "react-hook-form"
 import { PricingRuleInitialData } from "@/types/forms"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { BaseModal } from "@/components/shared/BaseModal"
 import {
     Form,
     FormField
 } from "@/components/ui/form"
-import { CancelButton, LabeledInput, LabeledSelect, LabeledSwitch, LabeledContainer, PeriodValidationDateInput, FormSection, FormFooter, FormSplitLayout, SkeletonShell } from "@/components/shared"
-
 import { cn } from "@/lib/utils"
 import { useUoMs } from "@/features/inventory/hooks/useUoMs"
 import { usePricingRuleMutations } from "@/features/inventory"
@@ -20,7 +17,7 @@ import { Tags, Layers, Zap, DollarSign, Calendar } from "lucide-react"
 import { PricingUtils } from '@/features/inventory/utils/pricing'
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { UoMSelector } from "@/components/selectors/UoMSelector"
-import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
+import { Drawer, CancelButton, LabeledInput, LabeledSelect, LabeledSwitch, LabeledContainer, PeriodValidationDateInput, FormSection, FormFooter, FormSplitLayout, SkeletonShell, ActionSlideButton } from "@/components/shared"
 
 const formSchema = z.object({
     name: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
@@ -433,11 +430,11 @@ export function PricingRuleForm({ auditSidebar, initialData, onSuccess, open, on
     )
 
     return (
-        <BaseModal
+        <Drawer
             open={open}
             onOpenChange={onOpenChange}
-            size={initialData ? "xl" : "lg"}
-            hideScrollArea={true}
+            side="left"
+            defaultSize={initialData ? "65%" : "55%"}
             contentClassName="p-0"
             title={
                 <div className="flex items-center gap-3">
@@ -445,7 +442,7 @@ export function PricingRuleForm({ auditSidebar, initialData, onSuccess, open, on
                     <span>{initialData ? "Ficha de Regla de Precio" : "Nueva Regla de Precio"}</span>
                 </div>
             }
-            description={
+            subtitle={
                 <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
                     {initialData?.rule_type && (
                         <>
@@ -489,6 +486,6 @@ export function PricingRuleForm({ auditSidebar, initialData, onSuccess, open, on
                     </Form>
                 </SkeletonShell>
             </FormSplitLayout>
-        </BaseModal>
+        </Drawer>
     )
 }

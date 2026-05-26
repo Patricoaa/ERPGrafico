@@ -5,17 +5,17 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { usersApi } from "../api/usersApi"
 
-import { BaseModal } from "@/components/shared/BaseModal"
-
-// ... other imports same
 import {
-    Form,
-    FormField,
-} from "@/components/ui/form"
+    Drawer,
+    ActionSlideButton,
+    LabeledInput,
+    CancelButton,
+    FormFooter,
+    FormSplitLayout,
+} from "@/components/shared"
+import { Form, FormField } from "@/components/ui/form"
 import { toast } from "sonner"
 import { Users } from "lucide-react"
-import { ActionSlideButton } from "@/components/shared/ActionSlideButton"
-import { LabeledInput, CancelButton, FormFooter, FormSplitLayout } from "@/components/shared"
 import { AppGroup } from "@/types/entities"
 
 const formSchema = z.object({
@@ -124,21 +124,18 @@ export function GroupForm({
     return (
         <>
             <RenderTrigger />
-            <BaseModal
+            <Drawer
                 open={isOpen}
                 onOpenChange={setOpen}
-                size="sm"
+                side="left"
+                defaultSize="40%"
                 title={
                     <div className="flex items-center gap-3">
                         <Users className="h-5 w-5 text-muted-foreground" />
                         <span>{initialData ? "Ficha de Grupo" : "Nuevo Grupo"}</span>
                     </div>
                 }
-                description={
-                    <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                        <span>Configuración de grupo funcional y permisos de acceso</span>
-                    </div>
-                }
+                subtitle="Configuración de grupo funcional y permisos de acceso"
                 footer={
                     <FormFooter
                         actions={
@@ -174,7 +171,7 @@ export function GroupForm({
                         </div>
                     </form>
                 </Form>
-            </BaseModal>
+            </Drawer>
         </>
     )
 }

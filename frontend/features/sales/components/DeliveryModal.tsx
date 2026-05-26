@@ -2,9 +2,8 @@
 
 import { showApiError } from "@/lib/errors"
 import { useState, useEffect } from "react"
-import { BaseModal } from "@/components/shared/BaseModal"
 import { StatusBadge } from "@/components/shared/StatusBadge"
-import { LabeledInput, LabeledSelect, PeriodValidationDateInput, FormSection, FormFooter, SubmitButton, CancelButton, Chip } from "@/components/shared"
+import { Drawer, LabeledInput, LabeledSelect, PeriodValidationDateInput, FormSection, FormFooter, SubmitButton, CancelButton, Chip } from "@/components/shared"
 
 import {
     Table,
@@ -70,44 +69,49 @@ export interface DeliveryFormProps {
     id?: string
     onLoadingChange?: (loading: boolean) => void
     onCancel?: () => void
+    filterType?: 'PRODUCT' | 'SERVICE' | 'ALL'
 }
 
 export interface DeliveryModalProps extends Omit<DeliveryFormProps, "id" | "onLoadingChange" | "onCancel" | "order" | "warehouses"> {
     open: boolean
     onOpenChange: (open: boolean) => void
+    filterType?: 'PRODUCT' | 'SERVICE' | 'ALL'
 }
 
 import { useDeliveryData } from "@/features/sales/hooks/useDeliveryData"
-export function DeliveryModal({ open, onOpenChange, orderId, onSuccess }: DeliveryModalProps) {
+export function DeliveryModal({ open, onOpenChange, orderId, onSuccess, filterType = 'ALL' }: DeliveryModalProps) {
     if (!open || !orderId) return null
 
     return (
-        <DeliveryModalInner open={open} onOpenChange={onOpenChange} orderId={orderId} onSuccess={onSuccess} />
+        <DeliveryModalInner open={open} onOpenChange={onOpenChange} orderId={orderId} onSuccess={onSuccess} filterType={filterType} />
     )
 }
 
-function DeliveryModalInner({ open, onOpenChange, orderId, onSuccess }: DeliveryModalProps) {
+function DeliveryModalInner({ open, onOpenChange, orderId, onSuccess, filterType = 'ALL' }: DeliveryModalProps) {
     const [loading, setLoading] = useState(false)
     const formId = "modal-delivery-form"
     const { order, warehouses, isLoading } = useDeliveryData(orderId)
 
     if (isLoading || !order) {
         return (
-            <BaseModal open={open} onOpenChange={onOpenChange} size="xl" title="Cargando despacho...">
+            <Drawer open={open} onOpenChange={onOpenChange} side="left" defaultSize="65%" title="Cargando despacho...">
                 <div className="flex items-center justify-center py-12">
                     <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                 </div>
-            </BaseModal>
+            </Drawer>
         )
     }
 
+    const isServiceMode = filterType === 'SERVICE'
+
     return (
-        <BaseModal
+        <Drawer
             open={open}
             onOpenChange={onOpenChange}
-            size="xl"
-            title={`Despachar Orden`}
-            description={`Ingrese los productos a despachar.`}
+            side="left"
+            defaultSize="65%"
+            title={isServiceMode ? "Confirmar Entrega de Servicios" : "Despachar Orden"}
+            subtitle={isServiceMode ? "Confirme la entrega de los servicios." : "Ingrese los productos a despachar."}
             footer={
                 <FormFooter
                     actions={
@@ -117,19 +121,19 @@ function DeliveryModalInner({ open, onOpenChange, orderId, onSuccess }: Delivery
                                 form={`${formId}-form`}
                                 loading={loading}
                             >
-                                Confirmar Despacho
+                                {isServiceMode ? 'Confirmar Entrega' : 'Confirmar Despacho'}
                             </SubmitButton>
                         </>
                     }
                 />
             }
         >
-            <DeliveryForm id={formId} orderId={orderId} order={order} warehouses={warehouses} onSuccess={() => { onOpenChange(false); if(onSuccess) onSuccess(); }} onLoadingChange={setLoading} onCancel={() => onOpenChange(false)} />
-        </BaseModal>
+            <DeliveryForm id={formId} orderId={orderId} order={order} warehouses={warehouses} onSuccess={() => { onOpenChange(false); if(onSuccess) onSuccess(); }} onLoadingChange={setLoading} onCancel={() => onOpenChange(false)} filterType={filterType} />
+        </Drawer>
     )
 }
 
-export function DeliveryForm({ orderId, order, warehouses, onSuccess, id = "delivery-form", onLoadingChange, onCancel }: DeliveryFormProps) {
+export function DeliveryForm({ orderId, order, warehouses, onSuccess, id = "delivery-form", onLoadingChange, onCancel, filterType = 'ALL' }: DeliveryFormProps) {
     const { dateString } = useServerDate()
     const { dispatchOrder, dispatchOrderPartial } = useSalesOrders()
 
@@ -147,6 +151,13 @@ export function DeliveryForm({ orderId, order, warehouses, onSuccess, id = "deli
     const [deliveryDate, setDeliveryDate] = useState('')
     const [submitting, setSubmitting] = useState(false)
     const [isPartialDispatch, setIsPartialDispatch] = useState(false)
+    const isServiceMode = filterType === 'SERVICE'
+
+    const visibleLines = order.lines.filter((line: SaleOrderLine) => {
+        if (filterType === 'SERVICE') return line.product_type === 'SERVICE'
+        if (filterType === 'PRODUCT') return line.product_type !== 'SERVICE'
+        return true
+    })
 
     // Sync delivery date with server date
     useEffect(() => {
@@ -200,62 +211,64 @@ export function DeliveryForm({ orderId, order, warehouses, onSuccess, id = "deli
     }
 
     const handleDispatch = async () => {
-        if (!selectedWarehouse) {
+        if (!isServiceMode && !selectedWarehouse) {
             toast.error("Seleccione una bodega")
             return
         }
 
-        const insufficientStock = order?.lines.some((line: any) => {
-            const requestedQty = deliveryQuantities[line.id] || 0
-            if (requestedQty <= 0) return false
+        if (!isServiceMode) {
+            const insufficientStock = visibleLines.some((line: any) => {
+                const requestedQty = deliveryQuantities[line.id] || 0
+                if (requestedQty <= 0) return false
 
-            if (line.product_type === 'MANUFACTURABLE' && line.requires_advanced_manufacturing) {
-                const isFinished = line.is_production_finished
-                if (isFinished) return false
-                return false
-            }
-
-            let availableStock = stockLevels[line.product] || 0
-            if (!line.track_inventory) {
-                if (line.product_type === 'MANUFACTURABLE') {
-                    availableStock = line.manufacturable_quantity ?? 0
-                } else {
+                if (line.product_type === 'MANUFACTURABLE' && line.requires_advanced_manufacturing) {
+                    const isFinished = line.is_production_finished
+                    if (isFinished) return false
                     return false
                 }
+
+                let availableStock = stockLevels[line.product] || 0
+                if (!line.track_inventory) {
+                    if (line.product_type === 'MANUFACTURABLE') {
+                        availableStock = line.manufacturable_quantity ?? 0
+                    } else {
+                        return false
+                    }
+                }
+
+                return requestedQty > availableStock
+            })
+
+            if (insufficientStock) {
+                toast.error("Stock insuficiente para algunos productos")
+                return
             }
 
-            return requestedQty > availableStock
-        })
+            const pendingProduction = visibleLines.some((line: any) => {
+                const requestedQty = deliveryQuantities[line.id] || 0
+                if (requestedQty <= 0) return false
 
-        if (insufficientStock) {
-            toast.error("Stock insuficiente para algunos productos")
-            return
-        }
+                const status = getStockStatus(line)
+                return status?.type === 'error' && status.message.includes('Producción Pendiente')
+            })
 
-        const pendingProduction = order?.lines.some((line: any) => {
-            const requestedQty = deliveryQuantities[line.id] || 0
-            if (requestedQty <= 0) return false
-
-            const status = getStockStatus(line)
-            return status?.type === 'error' && status.message.includes('Producción Pendiente')
-        })
-
-        if (pendingProduction) {
-            toast.error("No se pueden despachar productos con producción pendiente")
-            return
+            if (pendingProduction) {
+                toast.error("No se pueden despachar productos con producción pendiente")
+                return
+            }
         }
 
         setSubmitting(true)
         if (onLoadingChange) onLoadingChange(true)
         try {
-            const hasPartialQuantities = order?.lines.some((line: any) => {
+            const hasPartialQuantities = visibleLines.some((line: any) => {
                 const requestedQty = deliveryQuantities[line.id] || 0
                 return requestedQty > 0 && requestedQty < line.quantity_pending
             })
 
             if (hasPartialQuantities || isPartialDispatch) {
                 const lineQuantities: { [key: string]: number } = {}
-                order?.lines.forEach((line: any) => {
+                visibleLines.forEach((line: any) => {
                     const qty = deliveryQuantities[line.id]
                     if (qty > 0) {
                         lineQuantities[line.id.toString()] = qty
@@ -265,7 +278,7 @@ export function DeliveryForm({ orderId, order, warehouses, onSuccess, id = "deli
                 await dispatchOrderPartial({
                     orderId,
                     payload: {
-                        warehouse_id: selectedWarehouse as number,
+                        warehouse_id: (isServiceMode ? warehouses[0]?.id : selectedWarehouse) as number,
                         delivery_date: deliveryDate,
                         line_quantities: lineQuantities,
                     },
@@ -274,17 +287,17 @@ export function DeliveryForm({ orderId, order, warehouses, onSuccess, id = "deli
                 await dispatchOrder({
                     orderId,
                     payload: {
-                        warehouse_id: selectedWarehouse as number,
+                        warehouse_id: (isServiceMode ? warehouses[0]?.id : selectedWarehouse) as number,
                         delivery_date: deliveryDate,
                     },
                 })
             }
 
-            toast.success("Despacho registrado correctamente")
+            toast.success(isServiceMode ? "Entrega de servicios registrada correctamente" : "Despacho registrado correctamente")
             onSuccess?.()
         } catch (error: unknown) {
             console.error("Error dispatching order:", error)
-            showApiError(error, "Error al registrar el despacho")
+            showApiError(error, isServiceMode ? "Error al registrar la entrega de servicios" : "Error al registrar el despacho")
         } finally {
             setSubmitting(false)
             if (onLoadingChange) onLoadingChange(false)
@@ -335,27 +348,29 @@ export function DeliveryForm({ orderId, order, warehouses, onSuccess, id = "deli
         return { type: 'warning', message: 'Despacho parcial', icon: AlertTriangle }
     }
 
-    const canSubmit = selectedWarehouse && !order?.lines.some((line: any) => { const qty = deliveryQuantities[line.id] || 0; if (qty <= 0) return false; const status = getStockStatus(line); return status?.type === 'error'; });
+    const canSubmit = (isServiceMode || selectedWarehouse) && !visibleLines.some((line: any) => { const qty = deliveryQuantities[line.id] || 0; if (qty <= 0) return false; const status = getStockStatus(line); return status?.type === 'error'; });
 
     return (
         <div id={id} className="space-y-4">
             <form id={`${id}-form`} onSubmit={(e) => { e.preventDefault(); if (canSubmit) handleDispatch(); }} className="hidden" />
             <div className="space-y-4">
-                <FormSection title="Configuración de Entrega" icon={Package} />
-                <div className="grid grid-cols-2 gap-4">
-                    <LabeledSelect
-                        label="Bodega de Despacho"
-                        value={selectedWarehouse?.toString() || ''}
-                        onChange={(val) => setSelectedWarehouse(Number(val))}
-                        placeholder="Seleccione bodega"
-                        options={warehouses.map((warehouse: any) => ({
-                            value: warehouse.id.toString(),
-                            label: `${warehouse.name} (${warehouse.code})`,
-                        }))}
-                    />
+                <FormSection title={isServiceMode ? "Configuración de Entrega de Servicios" : "Configuración de Entrega"} icon={Package} />
+                <div className={isServiceMode ? "grid grid-cols-1 gap-4" : "grid grid-cols-2 gap-4"}>
+                    {!isServiceMode && (
+                        <LabeledSelect
+                            label="Bodega de Despacho"
+                            value={selectedWarehouse?.toString() || ''}
+                            onChange={(val) => setSelectedWarehouse(Number(val))}
+                            placeholder="Seleccione bodega"
+                            options={warehouses.map((warehouse: any) => ({
+                                value: warehouse.id.toString(),
+                                label: `${warehouse.name} (${warehouse.code})`,
+                            }))}
+                        />
+                    )}
 
                     <PeriodValidationDateInput
-                        label="Fecha de Despacho"
+                        label={isServiceMode ? "Fecha de Entrega" : "Fecha de Despacho"}
                         date={deliveryDate ? new Date(deliveryDate + 'T12:00:00') : undefined}
                         onDateChange={(d) => {
                             if (!d) {
@@ -370,7 +385,7 @@ export function DeliveryForm({ orderId, order, warehouses, onSuccess, id = "deli
                 </div>
 
                 <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground">Estado de Despacho:</span>
+                    <span className="text-sm text-muted-foreground">Estado de {isServiceMode ? 'Entrega' : 'Despacho'}:</span>
                     <StatusBadge
                         status={
                             order?.delivery_status === 'DELIVERED' ? 'delivered' :
@@ -381,7 +396,7 @@ export function DeliveryForm({ orderId, order, warehouses, onSuccess, id = "deli
                     />
                 </div>
 
-                <FormSection title="Detalle de Productos" icon={Package} />
+                <FormSection title={isServiceMode ? "Detalle de Servicios" : "Detalle de Productos"} icon={Package} />
                 <div className="rounded-md border overflow-hidden">
                     <Table>
                         <TableHeader>
@@ -389,13 +404,13 @@ export function DeliveryForm({ orderId, order, warehouses, onSuccess, id = "deli
                                 <TableHead>Producto</TableHead>
                                 <TableHead className="text-center">Unidad</TableHead>
                                 <TableHead className="text-center">Pendiente</TableHead>
-                                <TableHead className="text-center">Stock</TableHead>
-                                <TableHead className="text-center">A Despachar</TableHead>
+                                {!isServiceMode && <TableHead className="text-center">Stock</TableHead>}
+                                <TableHead className="text-center">{isServiceMode ? 'A Entregar' : 'A Despachar'}</TableHead>
                                 <TableHead>Estado</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {order?.lines.map((line: any) => {
+                            {visibleLines.map((line: any) => {
                                 const stockStatus = getStockStatus(line)
                                 const availableStock = stockLevels[line.product] || 0
 
@@ -415,51 +430,53 @@ export function DeliveryForm({ orderId, order, warehouses, onSuccess, id = "deli
                                         <TableCell className="text-center">
                                             <span className="text-xs font-black">{line.quantity_pending}</span>
                                         </TableCell>
-                                        <TableCell className="text-center">
-                                            <div className="flex flex-col items-center gap-1">
-                                                {line.track_inventory && (
-                                                    <span className={cn(
-                                                        "text-xs font-black",
-                                                        availableStock >= line.quantity_pending ? "text-success" : "text-destructive"
-                                                    )}>
-                                                        {availableStock}
-                                                    </span>
-                                                )}
+                                        {!isServiceMode && (
+                                            <TableCell className="text-center">
+                                                <div className="flex flex-col items-center gap-1">
+                                                    {line.track_inventory && (
+                                                        <span className={cn(
+                                                            "text-xs font-black",
+                                                            availableStock >= line.quantity_pending ? "text-success" : "text-destructive"
+                                                        )}>
+                                                            {availableStock}
+                                                        </span>
+                                                    )}
 
-                                                {line.product_type === 'MANUFACTURABLE' && (
-                                                    <>
-                                                        {!line.track_inventory && (
-                                                            <Chip size="xs" intent="primary">
-                                                                {line.requires_advanced_manufacturing ? 'Fabricación Avanzada' : 'Fabricable'}
-                                                            </Chip>
-                                                        )}
+                                                    {line.product_type === 'MANUFACTURABLE' && (
+                                                        <>
+                                                            {!line.track_inventory && (
+                                                                <Chip size="xs" intent="primary">
+                                                                    {line.requires_advanced_manufacturing ? 'Fabricación Avanzada' : 'Fabricable'}
+                                                                </Chip>
+                                                            )}
 
-                                                        {line.work_order_summary ? (
-                                                            <div className="flex flex-col items-center mt-1">
-                                                                <StatusBadge
-                                                                    status={line.work_order_summary.status.toLowerCase()}
-                                                                    size="sm"
-                                                                />
-                                                                <span className="text-[9px] text-muted-foreground mt-0.5">{line.work_order_summary.number}</span>
-                                                            </div>
-                                                        ) : !line.requires_advanced_manufacturing && !line.track_inventory ? (
-                                                            <span className={cn(
-                                                                "text-[10px] font-black",
-                                                                (line.manufacturable_quantity ?? 0) >= line.quantity_pending ? "text-success" : "text-destructive"
-                                                            )}>
-                                                                {line.manufacturable_quantity ?? 0}
-                                                            </span>
-                                                        ) : line.requires_advanced_manufacturing ? (
-                                                            <span className="text-[9px] text-destructive">Sin OT registrada</span>
-                                                        ) : null}
-                                                    </>
-                                                )}
+                                                            {line.work_order_summary ? (
+                                                                <div className="flex flex-col items-center mt-1">
+                                                                    <StatusBadge
+                                                                        status={line.work_order_summary.status.toLowerCase()}
+                                                                        size="sm"
+                                                                    />
+                                                                    <span className="text-[9px] text-muted-foreground mt-0.5">{line.work_order_summary.number}</span>
+                                                                </div>
+                                                            ) : !line.requires_advanced_manufacturing && !line.track_inventory ? (
+                                                                <span className={cn(
+                                                                    "text-[10px] font-black",
+                                                                    (line.manufacturable_quantity ?? 0) >= line.quantity_pending ? "text-success" : "text-destructive"
+                                                                )}>
+                                                                    {line.manufacturable_quantity ?? 0}
+                                                                </span>
+                                                            ) : line.requires_advanced_manufacturing ? (
+                                                                <span className="text-[9px] text-destructive">Sin OT registrada</span>
+                                                            ) : null}
+                                                        </>
+                                                    )}
 
-                                                {!line.track_inventory && line.product_type !== 'MANUFACTURABLE' && (
-                                                    <Chip size="xs" intent="success">Disponible</Chip>
-                                                )}
-                                            </div>
-                                        </TableCell>
+                                                    {!line.track_inventory && line.product_type !== 'MANUFACTURABLE' && !isServiceMode && (
+                                                        <Chip size="xs" intent="success">Disponible</Chip>
+                                                    )}
+                                                </div>
+                                            </TableCell>
+                                        )}
                                         <TableCell>
                                             <LabeledInput
                                                 type="number"

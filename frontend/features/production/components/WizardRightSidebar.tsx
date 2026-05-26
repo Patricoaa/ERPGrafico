@@ -47,12 +47,11 @@ export function WizardRightSidebar({
     }))
 
     const techSpecs = [
-        { label: "Pre-Impresión", value: stageData?.prepress_specs || order?.specifications_prepress },
+        { label: "Pre-Impresión", value: stageData?.prepress_specs },
         { label: "Diseño Requerido", value: stageData?.design_needed ? "SÍ" : "NO" },
         { label: "Folio Inicial", value: stageData?.folio_start },
-        { label: "Impresión", value: stageData?.press_specs || order?.specifications_press },
-        { label: "Post-Impresión", value: stageData?.postpress_specs || order?.specifications_postpress },
-        { label: "General", value: order?.specifications }
+        { label: "Impresión", value: stageData?.press_specs },
+        { label: "Post-Impresión", value: stageData?.postpress_specs },
     ].filter(s => s.value)
 
     return (

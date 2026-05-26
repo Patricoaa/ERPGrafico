@@ -452,11 +452,10 @@ export function SalesCheckoutWizardContent({
                 lines: currentOrderLines.map((l: SaleOrderLine) => {
                     let cleanMfgData = null
                     if (l.manufacturing_data) {
-                        const { design_files, approval_file, ...rest } = l.manufacturing_data as any
+                        const { design_files, ...rest } = l.manufacturing_data as any
                         cleanMfgData = {
                             ...rest,
                             design_filenames: ((design_files as any) || []).map((f: File) => f.name),
-                            approval_filename: approval_file ? (approval_file as any).name : null
                         }
                     }
                     return {
@@ -481,9 +480,6 @@ export function SalesCheckoutWizardContent({
                         (l.manufacturing_data as any).design_files.forEach((file: File, fileIdx: number) => {
                             formData.append(`line_${lineIdx}_design_${fileIdx}`, file)
                         })
-                    }
-                    if ((l.manufacturing_data as any).approval_file) {
-                        formData.append(`line_${lineIdx}_approval`, (l.manufacturing_data as any).approval_file)
                     }
                 }
             })

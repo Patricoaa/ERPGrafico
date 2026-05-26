@@ -9,17 +9,9 @@ import {
 } from "@/components/ui/sheet"
 import { SheetCloseButton } from "@/components/shared/SheetCloseButton"
 import { cn } from "@/lib/utils"
+import { PanelHeader, type PanelBaseProps } from "./PanelHeader"
 
-export interface DrawerProps {
-    open: boolean
-    onOpenChange: (open: boolean) => void
-    title?: React.ReactNode | string
-    subtitle?: React.ReactNode | string
-    description?: React.ReactNode | string
-    icon?: React.ComponentType<{ className?: string }> | React.ReactNode
-    headerActions?: React.ReactNode
-    children: React.ReactNode
-
+export interface DrawerProps extends PanelBaseProps {
     /**
      * Desde qué borde aparece el Drawer
      */
@@ -49,11 +41,6 @@ export interface DrawerProps {
     maxSize?: number | string
 
     modal?: boolean
-    className?: string
-    contentClassName?: string
-    headerClassName?: string
-    titleClassName?: string
-    descriptionClassName?: string
 }
 
 export function Drawer({
@@ -65,6 +52,7 @@ export function Drawer({
     icon,
     headerActions,
     children,
+    footer,
     side = "bottom",
     boundary = "embedded",
     resizable = false,
@@ -75,6 +63,7 @@ export function Drawer({
     className,
     contentClassName,
     headerClassName,
+    footerClassName,
     titleClassName,
     descriptionClassName,
     modal
@@ -182,15 +171,13 @@ export function Drawer({
         left: "rounded-r-xl border-r-0 !h-full !left-0 !right-auto !top-0 !bottom-0 sm:max-w-none",
     }
 
-    let IconElement: React.ReactNode = null
-    if (icon) {
-        if (typeof icon === "function" || (typeof icon === "object" && "render" in (icon as any))) {
-            const IconComponent = icon as React.ComponentType<{ className?: string }>
-            IconElement = <IconComponent className="h-8 w-8 text-primary flex-shrink-0" />
-        } else {
-            IconElement = icon as React.ReactNode
-        }
-    }
+    const iconElement: React.ReactNode = icon
+        ? (typeof icon === "function" || (typeof icon === "object" && "render" in (icon as any)))
+            ? React.createElement(icon as React.ComponentType<{ className?: string }>, {
+                className: "h-8 w-8 text-primary flex-shrink-0"
+            })
+            : icon as React.ReactNode
+        : null
 
     return (
         <Sheet open={open} onOpenChange={onOpenChange} modal={finalModal}>
@@ -198,7 +185,7 @@ export function Drawer({
                 id={contentId}
                 side={side}
                 hideOverlay={!finalShowOverlay}
-                overlayClassName="!fixed !inset-0"
+                overlayClassName={boundary === "embedded" ? "!absolute !inset-0" : "!fixed !inset-0"}
                 hideCloseButton={true}
                 container={containerElement || undefined}
                 style={{
@@ -254,33 +241,37 @@ export function Drawer({
 
                 {(title || subtitle || description || headerActions || icon) && (
                     <SheetHeader className={cn("px-8 pb-4 pt-8 border-b shrink-0", headerClassName)}>
-                        <div className="flex items-center justify-between gap-4 w-full">
-                            <div className="flex flex-row items-center gap-4 min-w-0 flex-1">
-                                {IconElement}
-                                <div className="flex flex-col gap-1 text-left min-w-0 flex-1">
-                                    <SheetTitle className={cn("text-xl font-black tracking-tight text-foreground leading-none pr-8", titleClassName)}>
-                                        {title}
-                                    </SheetTitle>
-                                    {(subtitle || description) && (
-                                        <span className={cn("text-[10px] font-black uppercase text-muted-foreground tracking-widest mt-0.5 opacity-60 truncate", descriptionClassName)}>
-                                            {subtitle || description}
-                                        </span>
-                                    )}
-                                </div>
-                            </div>
-                            {headerActions && (
-                                <div className="flex items-center gap-2 flex-shrink-0 pr-8">
+                        <PanelHeader
+                            icon={iconElement}
+                            title={
+                                <SheetTitle className={cn("text-xl font-black tracking-tight text-foreground leading-none pr-8", titleClassName)}>
+                                    {title}
+                                </SheetTitle>
+                            }
+                            subtitle={subtitle}
+                            description={description ? (
+                                <span className={cn("text-[10px] font-black uppercase text-muted-foreground tracking-widest mt-0.5 opacity-60 truncate", descriptionClassName)}>
+                                    {description}
+                                </span>
+                            ) : undefined}
+                            headerActions={headerActions && (
+                                <div className="pr-8">
                                     {headerActions}
                                 </div>
                             )}
-                        </div>
+                        />
                     </SheetHeader>
                 )}
 
                 <div className={cn("flex-1 overflow-y-auto px-8 pb-8 scrollbar-thin scrollbar-thumb-primary/10 scrollbar-track-transparent", contentClassName)}>
                     {children}
-
                 </div>
+
+                {footer && (
+                    <div className={cn("border-t px-8 py-4 flex-shrink-0", footerClassName)}>
+                        {footer}
+                    </div>
+                )}
             </SheetContent>
         </Sheet>
     )

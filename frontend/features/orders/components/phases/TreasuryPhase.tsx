@@ -23,6 +23,7 @@ interface TreasuryPhaseProps {
     onActionSuccess?: () => void
     openDetails: (docType: string, id: number | string) => void
     posSessionId?: number | null
+    isSale?: boolean
     // Accordion props
     collapsible?: boolean
     isOpen?: boolean
@@ -38,13 +39,12 @@ export function TreasuryPhase({
     onActionSuccess,
     openDetails,
     posSessionId,
+    isSale = false,
     collapsible,
     isOpen,
     onOpenChange,
 }: TreasuryPhaseProps) {
-    const registry = (activeDoc?.document_type === 'PURCHASE_ORDER' || activeDoc?.document_type === 'SERVICE_OBLIGATION')
-        ? purchaseOrderActions
-        : saleOrderActions
+    const registry = isSale ? saleOrderActions : purchaseOrderActions
 
     const deletePayment = useDeletePayment()
     const annulPayment = useAnnulPayment()

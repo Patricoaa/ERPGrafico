@@ -66,6 +66,12 @@ El contrato completo se formaliza en [`list-modal-edit-pattern.md`](../../20-con
 
 ---
 
+### Surface: BaseModal vs BaseDrawer
+
+Este ADR originalmente asumía `BaseModal` como la única superficie de edición. A partir de [ADR-0027](0027-basedrawer-crud-forms.md), los formularios CRUD pueden montarse también en `BaseDrawer` (left-side embedded) sin cambiar el patrón URL-state: el `?selected={id}` sigue siendo el mecanismo de apertura; solo cambia el componente que se monta en respuesta. Ver ADR-0027 para la guía de selección de superficie.
+
+---
+
 ## 4. Consecuencias
 
 ### Positivas
@@ -96,3 +102,4 @@ La expansión schema-driven queda indefinidamente postergada. Los formularios ri
 ## Changelog
 
 - **2026-05-09**: ADR creado (F8, T-85). Decisión: Opción A adoptada. Opción B descartada. T-84 (`schema-driven-forms.md`) marcado como superseded. `EntityDetailPage` + 23 `DetailClient` programados para decommission en T-95.
+- **2026-05-25**: Actualizado por ADR-0027: se reconoce `BaseDrawer` como surface alternativa para formularios CRUD, manteniendo el patrón URL-state inalterado.

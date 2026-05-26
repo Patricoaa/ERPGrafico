@@ -238,11 +238,10 @@ export function NoteCheckoutWizard({
                 let cleanMfgData = null
                 if (i.manufacturing_data) {
                     const mfgData = i.manufacturing_data as any
-                    const { design_files, approval_file, ...rest } = mfgData
+                    const { design_files, ...rest } = mfgData
                     cleanMfgData = {
                         ...rest,
                         design_filenames: (design_files || []).map((f: File) => f.name),
-                        approval_filename: approval_file ? approval_file.name : null
                     }
                 }
 
@@ -265,9 +264,6 @@ export function NoteCheckoutWizard({
                         mfgData.design_files.forEach((file: File, fileIdx: number) => {
                             formData.append(`line_${itemIdx}_design_${fileIdx}`, file)
                         })
-                    }
-                    if (mfgData.approval_file) {
-                        formData.append(`line_${itemIdx}_approval`, mfgData.approval_file)
                     }
                 }
             })

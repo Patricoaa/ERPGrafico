@@ -4,8 +4,7 @@ import { useState, useEffect, useRef } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { BaseModal } from "@/components/shared/BaseModal"
-import { CancelButton, LabeledInput, FormFooter } from "@/components/shared"
+import { Drawer, CancelButton, LabeledInput, FormFooter } from "@/components/shared"
 import {
     Form,
     FormField,
@@ -122,15 +121,15 @@ export function UoMCategoryForm({ open: openProp, onOpenChange, initialData, onS
     )
 
     return (
-        <BaseModal
+        <Drawer
             open={open}
             onOpenChange={setOpen}
-            size={initialData?.id ? "lg" : "sm"}
-            hideScrollArea={!!initialData?.id}
+            side="left"
+            defaultSize={initialData?.id ? "50%" : "40%"}
             contentClassName={initialData?.id ? "p-0" : undefined}
             icon={Ruler}
             title={initialData?.id ? "Editar Categoría de Medida" : "Nueva Categoría de Medida"}
-            description={initialData?.id ? "Modifique el nombre de la categoría y consulte el historial." : "Define un agrupador para unidades del mismo tipo."}
+            subtitle={initialData?.id ? "Modifique el nombre de la categoría y consulte el historial." : "Define un agrupador para unidades del mismo tipo."}
             footer={
                 <FormFooter
                     actions={
@@ -159,6 +158,6 @@ export function UoMCategoryForm({ open: openProp, onOpenChange, initialData, onS
             ) : (
                 formContent
             )}
-        </BaseModal>
+        </Drawer>
     )
 }

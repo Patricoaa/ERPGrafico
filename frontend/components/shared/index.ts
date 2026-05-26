@@ -19,10 +19,8 @@ export { useSchema } from './EntityForm/hooks/useSchema';
 export * from './ActionConfirmModal';
 export * from './BaseModal';
 export * from './Drawer';
+export * from './PanelHeader';
 export * from './CollapsibleSheet';
-export * from './DocumentCompletionModal';
-export * from './GenericWizard';
-
 export * from './SheetCloseButton';
 export * from './TransactionViewModal';
 export * from './transaction-modal';
@@ -120,7 +118,6 @@ export * from './DataTableCells';
 export * from './DynamicIcon'
 export * from './ErrorBoundary'
 export * from './Numpad'
-export * from './PanelHeader'
 
 // Product Selector family (PR-1, PR-2, PR-3)
 export { SearchBar, CategoryFilter, ProductGrid, VariantSelectorModal, ProductSelector } from './ProductSelector'

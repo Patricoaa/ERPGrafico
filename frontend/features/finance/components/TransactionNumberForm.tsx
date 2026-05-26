@@ -4,7 +4,6 @@ import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { BaseModal } from "@/components/shared/BaseModal"
 import { Hash } from "lucide-react"
 import {
     Form,
@@ -14,8 +13,7 @@ import {
 } from "@/components/ui/form"
 import { financeApi } from "../api/financeApi"
 import { toast } from "sonner"
-import { LabeledInput, FormFooter, CancelButton } from "@/components/shared"
-import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
+import { Drawer, LabeledInput, FormFooter, CancelButton, ActionSlideButton } from "@/components/shared"
 
 const schema = z.object({
     transaction_number: z.string().optional(),
@@ -71,13 +69,14 @@ export function TransactionNumberForm({
     }
 
     return (
-        <BaseModal
+        <Drawer
             open={open}
             onOpenChange={onOpenChange}
-            size="xs"
+            side="left"
+            defaultSize="40%"
             icon={Hash}
             title="Registrar N° de Transacción"
-            description="Ingrese el número de comprobante o transacción bancaria."
+            subtitle="Ingrese el número de comprobante o transacción bancaria."
             footer={
                 <FormFooter
                     actions={
@@ -112,6 +111,6 @@ export function TransactionNumberForm({
                     />
                 </form>
             </Form>
-        </BaseModal>
+        </Drawer>
     )
 }

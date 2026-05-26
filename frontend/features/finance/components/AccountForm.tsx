@@ -5,7 +5,6 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { Plus, BookOpen, Tag } from "lucide-react"
-import { BaseModal } from "@/components/shared/BaseModal"
 import {
     Form,
     FormField,
@@ -14,7 +13,7 @@ import { Button } from "@/components/ui/button"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { useAccountMutations } from "@/features/accounting"
 import { AccountPayload } from "@/features/accounting/types"
-import { LabeledInput, LabeledSelect, FormFooter, CancelButton, FormSplitLayout, ActionSlideButton } from "@/components/shared"
+import { Drawer, LabeledInput, LabeledSelect, FormFooter, CancelButton, FormSplitLayout, ActionSlideButton } from "@/components/shared"
 
 const accountSchema = z.object({
     code: z.string().optional().or(z.literal("")),
@@ -243,14 +242,14 @@ export function AccountForm({
     return (
         <>
             <Trigger />
-            <BaseModal
+            <Drawer
                 open={open}
                 onOpenChange={setOpen}
-                size={initialData ? "lg" : "md"}
+                side="left"
+                defaultSize={initialData ? "55%" : "50%"}
                 icon={BookOpen}
                 title={initialData ? "Ficha de Cuenta" : "Nueva Cuenta Contable"}
-                description={initialData ? `${(initialData as any).code || ""} • ${form.watch("name") || ""}` : "Plan de Cuentas • Contabilidad General"}
-                hideScrollArea={true}
+                subtitle={initialData ? `${(initialData as any).code || ""} • ${form.watch("name") || ""}` : "Plan de Cuentas • Contabilidad General"}
                 contentClassName="p-0"
                 footer={
                     !readonly ? (
@@ -268,7 +267,7 @@ export function AccountForm({
                 }
             >
                 {formContent}
-            </BaseModal>
+            </Drawer>
         </>
     )
 }

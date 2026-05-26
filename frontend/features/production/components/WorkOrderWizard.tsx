@@ -1,10 +1,10 @@
 "use client"
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { motion, AnimatePresence } from 'framer-motion'
-import { AlertTriangle, Package, FileText, Plus, CheckCircle2, Keyboard, FileEdit, Printer } from 'lucide-react'
+import { AlertTriangle, Package, FileText, Plus, CheckCircle2, Keyboard, Printer } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { BaseModal } from '@/components/shared/BaseModal'
@@ -20,6 +20,7 @@ import { useWorkOrderMutations, productionApi } from '../hooks'
 import { completeTask } from '@/features/workflow/api/workflowApi'
 
 import { WizardHeader } from './WizardHeader'
+import { WizardModeBanner } from './WizardModeBanner'
 import { WizardProcessSidebar } from './WizardProcessSidebar'
 import { WizardStickyFooter } from './WizardStickyFooter'
 import { WizardRightSidebar } from './WizardRightSidebar'
@@ -52,6 +53,7 @@ const STEP_ORIGIN: WorkOrderStage = {
   label: 'Origen de Fabricación',
   icon: Package,
   alwaysShow: true,
+  isCreationStep: true,
 }
 
 const STEP_SALE_ORDER_PRODUCT: WorkOrderStage = {
@@ -59,6 +61,7 @@ const STEP_SALE_ORDER_PRODUCT: WorkOrderStage = {
   label: 'Selección de NV y Producto',
   icon: FileText,
   alwaysShow: true,
+  isCreationStep: true,
 }
 
 const STEP_PRODUCT_SELECTION: WorkOrderStage = {
@@ -66,6 +69,7 @@ const STEP_PRODUCT_SELECTION: WorkOrderStage = {
   label: 'Selección de Producto',
   icon: Plus,
   alwaysShow: true,
+  isCreationStep: true,
 }
 
 const STEP_MFG_CONFIG: WorkOrderStage = {
@@ -73,13 +77,7 @@ const STEP_MFG_CONFIG: WorkOrderStage = {
   label: 'Configurar Fabricación',
   icon: Printer,
   alwaysShow: true,
-}
-
-const STEP_BASIC: WorkOrderStage = {
-  id: 'BASIC_INFO',
-  label: 'Información Básica',
-  icon: FileEdit,
-  alwaysShow: true,
+  isCreationStep: true,
 }
 
 const BASE_STAGES: WorkOrderStage[] = STAGES_ORDERED.filter(s => s.id !== 'CANCELLED')
@@ -95,6 +93,27 @@ function getCreateStages(otType: 'LINKED' | 'NONE' | null): WorkOrderStage[] {
   }
   virtualSteps.push(STEP_MFG_CONFIG)
   return [...virtualSteps, ...BASE_STAGES.filter((s) => s.alwaysShow)]
+}
+
+function getUnifiedStages(
+  chosenOtType: 'LINKED' | 'NONE' | null,
+  order: WorkOrder | null
+): WorkOrderStage[] {
+  // Build completed creation steps
+  const creationSteps: WorkOrderStage[] = [{ ...STEP_ORIGIN, alwaysShow: true }]
+  if (chosenOtType === "LINKED") {
+    creationSteps.push({ ...STEP_SALE_ORDER_PRODUCT, alwaysShow: true })
+  } else if (chosenOtType === "NONE") {
+    creationSteps.push({ ...STEP_PRODUCT_SELECTION, alwaysShow: true })
+  }
+  creationSteps.push({ ...STEP_MFG_CONFIG, alwaysShow: true })
+
+  // Build workflow steps (filtered if order is available, otherwise alwaysShow)
+  const workflowStages = order
+    ? [...getFilteredStages(order)]
+    : [...BASE_STAGES.filter((s) => s.alwaysShow)]
+
+  return [...creationSteps, ...workflowStages]
 }
 
 function getFilteredStages(order: WorkOrder): WorkOrderStage[] {
@@ -153,7 +172,7 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
 
   // ── store ──────────────────────────────────────────────────────────────────
   const {
-    order, loading, viewingStepIndex,
+    order, loading, viewingStepIndex, stepMode,
     taskNotes, taskFiles,
     isAnnulModalOpen, isDeleteModalOpen, isBackwardModalOpen, pendingPrevStage,
     showPOPreview, outsourcedPending,
@@ -161,7 +180,7 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
     // Creation flow state
     chosenOtType, selectedSaleOrder, selectedSaleLine, selectedProduct, mfgConfig,
     selectedContact, quantity, uomId, startDate, dueDate, internalNotes,
-    setOrder, setLoading, setViewingStepIndex,
+    setOrder, setLoading, setViewingStepIndex, navigateToStep,
     setTaskNote, setTaskFile,
     setIsAnnulModalOpen, setIsDeleteModalOpen, setIsBackwardModalOpen, setPendingPrevStage,
     setShowPOPreview, setOutsourcedPending,
@@ -175,11 +194,14 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
   const [showCheatsheet, setShowCheatsheet] = useState(false)
 
   // ── derived ────────────────────────────────────────────────────────────────
-  const STAGES = isCreating
-    ? getCreateStages(chosenOtType)
-    : [STEP_BASIC, ...(order ? getFilteredStages(order) : BASE_STAGES.filter((s) => s.alwaysShow))]
+  const STAGES = useMemo(
+    () => isCreating
+      ? getCreateStages(chosenOtType)
+      : getUnifiedStages(chosenOtType, order),
+    [isCreating, chosenOtType, order]
+  )
   const actualStepIndex = isCreating
-    ? (chosenOtType === null ? 0 : 1)
+    ? viewingStepIndex
     : STAGES.findIndex((s) => s.id === order?.current_stage)
   const isViewingCurrentStage = viewingStepIndex === actualStepIndex
   const pendingTasks = selectPendingTasks(order)
@@ -210,20 +232,22 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
     try {
       const orderData = await productionApi.getWorkOrder(localOrderId)
       setOrder(orderData as any)
-      const filteredStages = getFilteredStages(orderData as any)
-      const currentIndex = filteredStages.findIndex((s) => s.id === (orderData as any).current_stage)
-      // +1 offset because STEP_BASIC is at index 0
-      let resolvedIndex = currentIndex !== -1 ? currentIndex + 1 : 1
+
+      // Infer order type from data so STAGES stays consistent
+      const inferredType = orderData.sale_order ? "LINKED" as const : "NONE" as const
+      setChosenOtType(inferredType)
+
+      // Resolve index using the same STAGES the component uses
+      const stages = getUnifiedStages(inferredType, orderData as any)
+      let resolvedIndex = -1
       const targetStage = mode.kind === 'manage' ? mode.targetStage : undefined
       if (targetStage) {
-        if (targetStage === 'BASIC_INFO') {
-          resolvedIndex = 0
-        } else {
-          const targetIndex = filteredStages.findIndex((s) => s.id === targetStage)
-          if (targetIndex !== -1) resolvedIndex = targetIndex + 1
-        }
+        resolvedIndex = stages.findIndex((s) => s.id === targetStage)
       }
-      setViewingStepIndex(resolvedIndex)
+      if (resolvedIndex === -1) {
+        resolvedIndex = stages.findIndex((s) => s.id === (orderData as any).current_stage)
+      }
+      setViewingStepIndex(resolvedIndex >= 0 ? resolvedIndex : 1)
     } catch {
       toast.error('No se pudo cargar la información de la OT')
     } finally {
@@ -263,8 +287,7 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
           setViewingStepIndex(0) // ORIGIN_SELECTION
         }
       } else {
-        setChosenOtType(null)
-        // For manage mode, we'll load the order data later
+        // chosenOtType gets set by fetchOrder after the order loads
       }
     }
   }
@@ -286,13 +309,6 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
-
-  // Post-create: navigate to MATERIAL_ASSIGNMENT once order is loaded
-  useEffect(() => {
-    if (!wasCreatingRef.current || !order) return
-    wasCreatingRef.current = false
-    setViewingStepIndex(1)  // index 1 = MATERIAL_ASSIGNMENT (after STEP_BASIC)
-  }, [order])
 
   // Sync viewing stage to URL step query param
   useEffect(() => {
@@ -423,7 +439,6 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
   const productName = order?.product_name ?? order?.sale_line?.product?.name ?? 'Producto'
   const orderHasMaterials = !!(order?.materials ?? []).some((m: WorkOrderMaterial) => !m.is_outsourced)
   const currentStageId = STAGES[viewingStepIndex]?.id
-  const isBasicInfoStep = currentStageId === 'BASIC_INFO'
 
   return (
     <>
@@ -455,14 +470,27 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
             stages={STAGES}
             viewingStepIndex={viewingStepIndex}
             actualStepIndex={actualStepIndex}
-            onStepClick={setViewingStepIndex}
+            stepMode={stepMode}
+            onStepClick={(index, mode) => {
+              if (mode === 'rewind') {
+                // Trigger backward transition modal without moving the viewing index yet
+                const targetStage = STAGES[index]
+                if (targetStage) {
+                  setPendingPrevStage(targetStage.id)
+                  setIsBackwardModalOpen(true)
+                }
+              } else {
+                navigateToStep(index, mode)
+              }
+            }}
             order={order}
           />
 
           {/* Center content */}
           <div className="flex-1 flex flex-col overflow-hidden relative">
-            <div className="px-6 pt-6 mb-4 flex-shrink-0">
+            <div className="px-6 pt-6 mb-4 flex-shrink-0 space-y-2">
               <h3 className="text-lg font-semibold">{STAGES[viewingStepIndex]?.label}</h3>
+              <WizardModeBanner mode={stepMode} isViewingCurrentStage={isViewingCurrentStage} />
             </div>
 
             <div className="flex flex-1 flex-col min-h-0 px-6 relative">
@@ -504,10 +532,27 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
                   transition={{ duration: 0.2 }}
-                  className={cn('flex flex-col flex-1 min-h-0 overflow-y-auto space-y-6 pb-6', !isViewingCurrentStage && currentStageId !== 'ORIGIN_SELECTION' && currentStageId !== 'SALE_ORDER_PRODUCT' && currentStageId !== 'PRODUCT_SELECTION' && currentStageId !== 'MFG_CONFIG' && 'pointer-events-none opacity-80')}
+                  className={cn(
+                    'flex flex-col flex-1 min-h-0 overflow-y-auto space-y-6 pb-6',
+                    // Lock creation steps (other than MFG_CONFIG which has its own summary)
+                    // once the OT has been created — they become read-only history.
+                    !isCreating && (
+                      currentStageId === 'ORIGIN_SELECTION'
+                      || currentStageId === 'SALE_ORDER_PRODUCT'
+                      || currentStageId === 'PRODUCT_SELECTION'
+                    ) && 'pointer-events-none opacity-70',
+                    // Disable interaction only in view mode for closed workflow steps (not edit-in-place)
+                    stepMode === 'view' && !isViewingCurrentStage
+                      && currentStageId !== 'ORIGIN_SELECTION'
+                      && currentStageId !== 'SALE_ORDER_PRODUCT'
+                      && currentStageId !== 'PRODUCT_SELECTION'
+                      && currentStageId !== 'MFG_CONFIG'
+                      && 'pointer-events-none opacity-70'
+                  )}
                 >
                   {currentStageId === 'ORIGIN_SELECTION' && (
                     <OriginSelectionStep
+                      selected={chosenOtType}
                       onChoose={(type) => {
                         setChosenOtType(type)
                         const idx = getCreateStages(type).findIndex(s => s.id === (type === "LINKED" ? 'SALE_ORDER_PRODUCT' : 'PRODUCT_SELECTION'))
@@ -547,49 +592,16 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
                   )}
                   {currentStageId === 'MFG_CONFIG' && (
                     <ManufacturingConfigStep
-                      initialData={isCreating ? (mode.kind === 'create' ? mode.initialData : undefined) : (order as unknown as WorkOrderInitialData)}
-                      onSuccess={(workOrderId) => {
-                        if (isCreating) {
-                          wasCreatingRef.current = true
-                          setLocalOrderId(workOrderId)
-
-                          // Sync URL transition create -> manage
-                          const url = new URL(window.location.href)
-                          url.searchParams.delete('new')
-                          url.searchParams.delete('modal')
-                          url.searchParams.delete('type')
-                          url.searchParams.delete('product_id')
-                          url.searchParams.set('selected', String(workOrderId))
-                          url.searchParams.set('step', 'MATERIAL_ASSIGNMENT')
-                          router.replace(url.pathname + url.search, { scroll: false })
-
-                          onSuccess?.(workOrderId)
-                        } else {
-                          fetchOrder()
-                          onSuccess?.(workOrderId)
-                        }
-                      }}
-                    />
-                  )}
-                  {isBasicInfoStep && (
-                    <WorkOrderBasicStep
-                      mode={isCreating ? 'create' : isBasicInfoEditable ? 'edit' : 'view'}
-                      initialData={isCreating ? (mode.kind === 'create' ? mode.initialData : undefined) : (order as unknown as WorkOrderInitialData)}
-                      defaultOtType={mode.kind === 'create' ? mode.defaultOtType : undefined}
-                      defaultProductId={mode.kind === 'create' ? mode.defaultProductId : undefined}
-                      chosenOtType={chosenOtType}
-                      onTypeChange={(type) => {
-                        setChosenOtType(type)
-                        if (type === null) {
-                          setViewingStepIndex(0)
-                        }
-                      }}
                       formId="wizard-basic-form"
-                      onLoadingChange={setLoading}
+                      initialData={isCreating ? (mode.kind === 'create' ? mode.initialData : undefined) : (order as unknown as WorkOrderInitialData)}
                       onSuccess={(workOrderId) => {
                         if (isCreating) {
                           wasCreatingRef.current = true
                           setLocalOrderId(workOrderId)
+                          // Navigate to MATERIAL_ASSIGNMENT immediately in unified stages
+                          const unifiedStages = getUnifiedStages(chosenOtType, null)
+                          const matIdx = unifiedStages.findIndex(s => s.id === 'MATERIAL_ASSIGNMENT')
+                          setViewingStepIndex(matIdx >= 0 ? matIdx : 0)
 
                           // Sync URL transition create -> manage
                           const url = new URL(window.location.href)
@@ -606,6 +618,25 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
                           fetchOrder()
                           onSuccess?.(workOrderId)
                         }
+                      }}
+                      onRestartComplete={() => {
+                        // Navigate to create mode — URL change naturally switches wizard from manage → create
+                        const url = new URL(window.location.href)
+                        url.searchParams.delete('selected')
+                        url.searchParams.delete('step')
+                        url.searchParams.set('new', '1')
+                        url.searchParams.set('type', order?.sale_order ? 'sale' : 'stock')
+                        router.push(url.pathname + url.search)
+                      }}
+                      onCorrectionComplete={(newOrderId) => {
+                        // Navigate to the newly created order
+                        const url = new URL(window.location.href)
+                        url.searchParams.delete('new')
+                        url.searchParams.delete('type')
+                        url.searchParams.delete('product_id')
+                        url.searchParams.set('selected', String(newOrderId))
+                        url.searchParams.delete('step')
+                        router.push(url.pathname + url.search)
                       }}
                     />
                   )}
@@ -667,6 +698,8 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
 
             <WizardStickyFooter
               isViewingCurrentStage={isViewingCurrentStage}
+              stepMode={stepMode}
+              onCancelEdit={() => navigateToStep(viewingStepIndex, 'view')}
               onClose={() => onOpenChange(false)}
               pendingTasks={pendingTasks}
               canApproveAll={canApproveAll}
@@ -674,7 +707,7 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
               viewingStepIndex={viewingStepIndex}
               actualStepIndex={actualStepIndex}
               stages={STAGES}
-              transitioning={isBasicInfoStep ? loading : false}
+              transitioning={loading}
               onTransition={handleTransition}
               onBackToCurrent={() => setViewingStepIndex(actualStepIndex)}
               onBack={() => {
@@ -687,7 +720,6 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
               hasMaterials={orderHasMaterials}
               isRectificationStep={currentStageId === 'RECTIFICATION'}
               onRectifyAndFinish={handleRectifyAndFinish}
-              isBasicInfoStep={isBasicInfoStep}
               isCreating={isCreating}
               isBasicInfoEditable={isBasicInfoEditable}
               chosenOtType={chosenOtType}

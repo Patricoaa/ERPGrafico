@@ -12,6 +12,10 @@ export const productionApi = {
         api.put(`/production/orders/${id}/`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' }
         }).then(r => r.data),
+    patchWorkOrder: (id: number, formData: FormData) =>
+        api.patch(`/production/orders/${id}/`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        }).then(r => r.data),
     deleteWorkOrder: (id: number) =>
         api.delete(`/production/orders/${id}/`).then(r => r.data),
     transitionWorkOrder: (id: number, data: Record<string, unknown>) =>
@@ -42,6 +46,10 @@ export const productionApi = {
         api.get('/production/orders/metrics/').then(r => r.data),
     saveTemplate: (orderId: number, name: string) =>
         api.post('/production/templates/save_from_order/', { order_id: orderId, name }).then(r => r.data),
+    restartWorkOrder: (id: number) =>
+        api.post(`/production/orders/${id}/restart/`).then(r => r.data),
+    updateSection: (id: number, section: string, payload: Record<string, unknown>) =>
+        api.patch(`/production/orders/${id}/update_section/`, { section, payload }).then(r => r.data),
 
     // ── BOMs ──
     getBOMs: (params?: Record<string, unknown>) =>

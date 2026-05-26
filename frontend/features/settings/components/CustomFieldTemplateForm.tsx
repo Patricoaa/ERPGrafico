@@ -7,8 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { Plus, Save, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { CancelButton, DataCell, IconButton } from "@/components/shared"
-import { EmptyState } from "@/components/shared/EmptyState"
+import { CancelButton, DataCell, IconButton, Drawer, EmptyState, ActionSlideButton, LabeledInput, LabeledSelect, FormSection, FormFooter } from "@/components/shared"
 import {
     Form,
     FormControl,
@@ -19,11 +18,8 @@ import {
     FormMessage,
 } from "@/components/ui/form"
 import { Switch } from "@/components/ui/switch"
-import { BaseModal } from "@/components/shared/BaseModal"
 import { settingsApi } from "../hooks"
 import { toast } from "sonner"
-import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
-import { LabeledInput, LabeledSelect, FormSection, FormFooter } from "@/components/shared"
 
 const templateSchema = z.object({
     name: z.string().min(1, "Nombre requerido"),
@@ -91,10 +87,11 @@ export function CustomFieldTemplateForm({ open, onOpenChange, onSuccess }: Custo
     }
 
     return (
-        <BaseModal
+        <Drawer
             open={open}
             onOpenChange={onOpenChange}
-            size="sm"
+            side="left"
+            defaultSize="40%"
             title="Nueva Plantilla de Campo Personalizado"
             footer={
                 <FormFooter
@@ -239,6 +236,6 @@ export function CustomFieldTemplateForm({ open, onOpenChange, onSuccess }: Custo
                         )}
                     </form>
             </Form>
-        </BaseModal>
+        </Drawer>
     )
 }

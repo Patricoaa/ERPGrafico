@@ -5,8 +5,7 @@ import { useState, useEffect, useRef } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { BaseModal } from "@/components/shared/BaseModal"
-import { CancelButton, LabeledInput, FormFooter, FormSplitLayout, LabeledContainer, SkeletonShell } from "@/components/shared"
+import { Drawer, CancelButton, LabeledInput, FormFooter, FormSplitLayout, LabeledContainer, SkeletonShell } from "@/components/shared"
 import {
     Form,
     FormField,
@@ -118,15 +117,15 @@ export function UoMForm({ open: openProp, onOpenChange, initialData, onSuccess }
 
     return (
         <>
-        <BaseModal
+        <Drawer
             open={open}
             onOpenChange={setOpen}
-            size={initialData?.id ? "lg" : "sm"}
-            hideScrollArea={true}
+            side="left"
+            defaultSize={initialData?.id ? "50%" : "40%"}
             contentClassName="p-0"
             icon={Ruler}
             title={initialData?.id ? "Editar Unidad de Medida" : "Nueva Unidad de Medida"}
-            description={initialData?.id ? "Modifique los parámetros de conversión y consulte el historial." : "Configure el nombre, categoría y ratio de conversión."}
+            subtitle={initialData?.id ? "Modifique los parámetros de conversión y consulte el historial." : "Configure el nombre, categoría y ratio de conversión."}
             footer={
                 <FormFooter
                     actions={
@@ -347,11 +346,11 @@ export function UoMForm({ open: openProp, onOpenChange, initialData, onSuccess }
                 </Form>
                 </SkeletonShell>
             </FormSplitLayout>
-        </BaseModal>
+        </Drawer>
         
         {isCreateCategoryOpen && (
-            <UoMCategoryForm 
-                open={isCreateCategoryOpen} 
+            <UoMCategoryForm
+                open={isCreateCategoryOpen}
                 onOpenChange={setIsCreateCategoryOpen} 
                 onSuccess={handleCategoryCreated} 
             />

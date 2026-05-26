@@ -163,11 +163,7 @@ export const completeTask = async (id: number, notes?: string, attachments?: Fil
     if (attachments) {
         attachments.forEach(file => formData.append('attachments', file))
     }
-    const response = await api.post(`workflow/tasks/${id}/complete/`, formData, {
-        headers: {
-            'Content-Type': 'multipart/form-data'
-        }
-    })
+    const response = await api.post(`workflow/tasks/${id}/complete/`, formData)
     return response.data
 }
 

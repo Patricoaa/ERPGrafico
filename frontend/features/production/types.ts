@@ -64,6 +64,7 @@ export interface WorkOrderStage {
     label: string
     icon: LucideIcon
     alwaysShow: boolean
+    isCreationStep?: boolean
 }
 
 export interface ProductionComment {
@@ -87,10 +88,6 @@ export interface WorkOrder {
     is_manual: boolean
     description?: string
     product_description?: string
-    specifications?: string
-    specifications_prepress?: string
-    specifications_press?: string
-    specifications_postpress?: string
     prepress_archive?: string
     start_date?: string
     sale_order_delivery_date?: string
@@ -98,6 +95,10 @@ export interface WorkOrder {
     sale_customer_rut?: string
     sale_order_date?: string
     sale_order_number?: string | null
+    // Unified accessors from serializer (works for both LINKED and MANUAL).
+    quantity?: number | null
+    uom_id?: number | null
+    uom_name?: string | null
     due_date?: string
     outsourcing_status?: "none" | "partial" | "full"
     warehouse_name?: string
@@ -138,6 +139,7 @@ export interface WorkOrder {
         sold: number
         delta: number
     } | null
+    side_effects?: WorkOrderSideEffects
 }
 
 export interface BOMLine {
@@ -215,4 +217,25 @@ export interface ProductMinimal {
 export interface ProductVariantMinimal extends ProductMinimal {
     parent_template?: number | string
     technical_description?: string
+}
+
+// ── Wizard navigation governance ──────────────────────────────────────────────
+
+export type WizardStepMode = 'view' | 'edit-in-place' | 'rewind'
+
+export interface StepCapabilities {
+    canView: boolean
+    canEdit: boolean
+    canRewind: boolean
+    rewindBlockedReason?: string
+    editBlockedReason?: string
+}
+
+// Provided by backend serializer (Phase 4); used by governance to avoid
+// re-deriving from client-visible order data.
+export interface WorkOrderSideEffects {
+    has_confirmed_pos: boolean
+    has_stock_movements: boolean
+    completed_tasks_count: number
+    manually_edited_materials_count: number
 }

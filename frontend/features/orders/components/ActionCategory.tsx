@@ -444,6 +444,7 @@ export const ActionCategory = forwardRef(({
                             onOpenChange={closeModal}
                             orderId={order?.id}
                             onSuccess={() => { closeModal(); onActionSuccess?.() }}
+                            filterType={activeModal === 'confirm-service-delivery' ? 'SERVICE' : 'ALL'}
                         />
                     ) : (
                         <ReceiptModal

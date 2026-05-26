@@ -1,13 +1,14 @@
 "use client"
 
 import { create } from 'zustand'
-import type { WorkOrder, WorkOrderMaterial, WorkOrderTask } from '../types'
+import type { WorkOrder, WorkOrderMaterial, WorkOrderTask, WizardStepMode } from '../types'
 
 interface WizardState {
   // ── data ─────────────────────────────────────────────────────────────────
   order: WorkOrder | null
   loading: boolean
   viewingStepIndex: number
+  stepMode: WizardStepMode
 
   // ── creation flow state ───────────────────────────────────────────────
   chosenOtType: "LINKED" | "NONE" | null
@@ -44,6 +45,9 @@ interface WizardState {
   setOrder: (order: WorkOrder | null) => void
   setLoading: (loading: boolean) => void
   setViewingStepIndex: (index: number | ((prev: number) => number)) => void
+  setStepMode: (mode: WizardStepMode) => void
+  /** Atomic: sets index + mode in one render cycle. */
+  navigateToStep: (index: number, mode?: WizardStepMode) => void
 
   setTaskNote: (taskId: string | number, note: string) => void
   setTaskFile: (taskId: string | number, file: File | null) => void
@@ -85,6 +89,7 @@ const INITIAL: WizardState = {
   order: null,
   loading: true,
   viewingStepIndex: 0,
+  stepMode: 'view',
   // Creation flow state
   chosenOtType: null,
   selectedSaleOrder: null,
@@ -117,10 +122,15 @@ export const useWizardStore = create<WizardState>((set) => ({
 
   setOrder: (order) => set({ order }),
   setLoading: (loading) => set({ loading }),
+  // Navigating to a different step always resets the mode to 'view'.
+  // Callers that need 'edit-in-place' or 'rewind' must call setStepMode afterwards.
   setViewingStepIndex: (index) =>
     set((s) => ({
       viewingStepIndex: typeof index === 'function' ? index(s.viewingStepIndex) : index,
+      stepMode: 'view',
     })),
+  setStepMode: (mode) => set({ stepMode: mode }),
+  navigateToStep: (index, mode = 'view') => set({ viewingStepIndex: index, stepMode: mode }),
 
   setTaskNote: (taskId, note) =>
     set((s) => ({ taskNotes: { ...s.taskNotes, [taskId]: note } })),

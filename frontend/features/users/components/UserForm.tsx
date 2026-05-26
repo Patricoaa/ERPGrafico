@@ -12,8 +12,7 @@ import { usersApi } from "../api/usersApi"
 import { Button } from "@/components/ui/button"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Plus, User, ShieldCheck, ShieldAlert } from "lucide-react"
-import { BaseModal } from "@/components/shared/BaseModal"
-import { CancelButton, SubmitButton, LabeledSeparator, LabeledInput, LabeledContainer, FormSection, FormTabs, FormTabsContent, type FormTabItem, FormSplitLayout, FormFooter, LabeledSelect, LabeledSwitch, EntityHeader, SkeletonShell } from "@/components/shared"
+import { Drawer, CancelButton, SubmitButton, LabeledSeparator, LabeledInput, LabeledContainer, FormSection, FormTabs, FormTabsContent, type FormTabItem, FormSplitLayout, FormFooter, LabeledSelect, LabeledSwitch, EntityHeader, SkeletonShell } from "@/components/shared"
 import { Checkbox } from "@/components/ui/checkbox"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { AppGroup } from "@/types/entities"
@@ -225,15 +224,14 @@ export function UserForm({ auditSidebar, initialData, onSuccess, trigger, open: 
                 </Button>
             )}
 
-            <BaseModal
+            <Drawer
                 open={open}
                 onOpenChange={setOpen}
                 headerClassName="sr-only"
                 title="Ficha de Usuario"
-                size={initialData ? "xl" : "lg"}
-                hideScrollArea={true}
-                allowOverflow={true}
+                defaultSize={initialData ? "65%" : "55%"}
                 contentClassName="p-0"
+                side="left"
                 footer={
                     <FormFooter
                         actions={
@@ -425,7 +423,7 @@ export function UserForm({ auditSidebar, initialData, onSuccess, trigger, open: 
                         </form>
                     </Form>
                 </SkeletonShell>
-            </BaseModal>
+            </Drawer>
         </>
     )
 }

@@ -223,7 +223,6 @@ export function WorkOrderBasicStep({
         if (watchedSaleLineId && !initialData?.id) {
             const selectedLine = saleLines.find(l => l.id?.toString() === watchedSaleLineId)
             if (selectedLine) {
-                form.setValue('description', `OT: ${selectedLine.product_name || selectedLine.description}`)
                 form.setValue('product_description' as never, (selectedLine.product_name || selectedLine.description) as never)
                 form.setValue('quantity' as never, selectedLine.quantity.toString() as never)
                 if (selectedLine.uom) {
@@ -237,7 +236,6 @@ export function WorkOrderBasicStep({
         setSelectedManualProduct(product)
         if (product) {
             form.setValue('product_description' as never, product.name as never)
-            form.setValue('description', `OT: ${product.name}`)
             if (product.uom && typeof product.uom === 'object' && 'id' in product.uom) {
                 form.setValue('uom_id' as never, product.uom.id.toString() as never)
             }
