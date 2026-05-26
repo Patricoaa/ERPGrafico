@@ -5,14 +5,12 @@ import React, { useState, useEffect, useMemo } from 'react'
 import { Button } from "@/components/ui/button"
 import { Banknote, LogOut, ArrowRightLeft, AlertTriangle, Info, ShieldAlert, CheckCircle2 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { Numpad } from '@/components/shared'
+import { Numpad, LabeledInput, MoneyDisplay, GenericWizard, WizardStep } from "@/components/shared"
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { treasuryApi } from "../api/treasuryApi"
-import { LabeledInput, MoneyDisplay } from "@/components/shared"
 import { validateAccountingPeriod } from '@/features/accounting/actions'
 import { toast } from 'sonner'
-import { GenericWizard, WizardStep } from '@/components/shared/GenericWizard'
 
 export interface MovementData {
     impact: 'IN' | 'OUT' | 'TRANSFER';

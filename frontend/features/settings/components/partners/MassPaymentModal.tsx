@@ -4,16 +4,14 @@ import { formatCurrency } from "@/lib/money"
 import { showApiError } from "@/lib/errors"
 import React, { useState, useEffect, useMemo } from "react"
 import { useTreasuryAccounts } from "../../hooks"
-import { GenericWizard, WizardStep } from "@/components/shared/GenericWizard"
+import { LabeledSelect, GenericWizard, WizardStep } from "@/components/shared"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { LabeledSelect } from "@/components/shared"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
 import { toast } from "sonner"
 
 import { Wallet, CheckCircle2, Banknote } from "lucide-react"
 import { ProfitDistribution, ProfitDistributionLine } from "@/features/contacts/types/partner"
-import { TreasuryAccount } from "@/features/treasury/types"
 
 interface MassPaymentModalProps {
     open: boolean

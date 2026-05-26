@@ -3,13 +3,12 @@ import { formatCurrency } from "@/lib/money"
 
 import { showApiError } from "@/lib/errors"
 import React, { useState, useEffect, useMemo } from "react"
-import { GenericWizard, WizardStep } from "@/components/shared/GenericWizard"
+import { LabeledInput, PeriodValidationDateInput, GenericWizard, WizardStep } from "@/components/shared"
 import { Input } from "@/components/ui/input"
-import { LabeledInput, PeriodValidationDateInput } from "@/components/shared"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
 import { toast } from "sonner"
 
-import { ArrowRightLeft, CheckCircle2 } from "lucide-react"
+import { ArrowRightLeft } from "lucide-react"
 import { Partner } from "@/features/contacts/types/partner"
 
 interface MobilizeEarningsWizardProps {
