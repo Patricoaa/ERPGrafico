@@ -696,7 +696,14 @@ class BillingService:
         # 2. Confirm Order
         from sales.services import SalesService
         SalesService.confirm_sale(order, line_files=line_files)
-        
+
+        # 2.5 Propagar fecha de entrega como estimated_completion_date en las OT
+        if delivery_date:
+            from production.models import WorkOrder as WO
+            WO.objects.filter(sale_order=order).update(
+                estimated_completion_date=delivery_date,
+            )
+
         # 3. Handle Delivery Scheduling / Action
         if delivery_type == 'IMMEDIATE':
             # Dispatch everything right now from the first available warehouse
@@ -922,7 +929,7 @@ class BillingService:
         Works for Sale Orders, Purchase Orders and Service Obligations.
         """
         from django.utils.dateparse import parse_date
-        from .services import TaxPeriodService, AccountingPeriodService
+        from tax.services import TaxPeriodService, AccountingPeriodService
         
         target_date = date
         if isinstance(target_date, str):
@@ -936,7 +943,7 @@ class BillingService:
             raise ValidationError(f"No se puede registrar este documento. El periodo de {target_date} está Tributariamente CERRADO.")
 
         # 2. Accounting Period Validation
-        if AccountingPeriodService.is_period_closed(target_date, 'accounting'):
+        if AccountingPeriodService.is_period_closed(target_date):
             raise ValidationError(f"No se puede registrar este documento. El periodo de {target_date} está CONTABLE CERRADO.")
         # Allow PAID status because a draft can be fully paid before folio is registered
         if invoice.status not in [Invoice.Status.DRAFT, Invoice.Status.PAID]:
