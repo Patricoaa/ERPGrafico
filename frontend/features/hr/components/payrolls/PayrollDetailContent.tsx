@@ -45,7 +45,7 @@ type ItemFormValues = z.infer<typeof itemSchema>
 
 interface EmployeeBasic {
     id: number
-    contact_detail?: { name?: string } | null
+    contact_detail?: { name?: string; tax_id?: string } | null
     position?: string | null
     department?: string | null
 }

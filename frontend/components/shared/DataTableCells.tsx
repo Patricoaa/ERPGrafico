@@ -145,7 +145,6 @@ export const DataCell = {
         )
     },
 
-    /** @deprecated Use `DataCell.Currency` with `showColor` prop instead. */
     Variance: ({ value, currency = "CLP", className, digits = 0, ...props }: ValueCellProps<number> & { currency?: string, digits?: number }) => {
         return (
             <div className={cn("text-xs font-medium text-foreground flex justify-center items-center", className)} {...props}>

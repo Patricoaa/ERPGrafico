@@ -39,7 +39,7 @@ export function LoginForm() {
         },
     })
 
-    const { mutateAsync: loginMutation, isLoading: isLoggingIn } = useAuthLogin()
+    const { mutateAsync: loginMutation, isPending: isLoggingIn } = useAuthLogin()
 
     async function onSubmit(values: z.infer<typeof formSchema>) {
         setError("")

@@ -108,7 +108,7 @@ export default function WorkbenchPage({ params }: { params: Promise<{ id: string
                 titleActions={
                     statement.reconciliation_progress === 100 && statement.state !== 'CONFIRMED' && (
                         <Button
-                            onClick={confirmAction.requestConfirm}
+                            onClick={() => confirmAction.requestConfirm()}
                             disabled={confirmAction.isConfirming}
                             className="bg-success hover:bg-success/90 shadow-sm px-5 font-bold text-sm"
                         >
@@ -124,7 +124,7 @@ export default function WorkbenchPage({ params }: { params: Promise<{ id: string
 
             <ReconciliationPanel
                 statementId={statement.id}
-                treasuryAccountId={statement.treasury_account}
+                treasuryAccountId={(statement as any).treasury_account || (statement as any).treasury_account_id || 0}
                 onComplete={() => refetch()}
             />
 

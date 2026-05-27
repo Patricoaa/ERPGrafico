@@ -87,7 +87,7 @@ export const PaymentHistorySection = React.memo(({ data, currentType, navigateTo
             header: "Acción",
             id: "actions",
             cell: ({ row }) => (
-                <DataCell.ActionGroup className="justify-end">
+                <DataCell.ActionGroup >
                     <DataCell.Action
                         action="view"
                         onClick={() => navigateTo("payment", row.original.id)}

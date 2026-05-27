@@ -108,9 +108,9 @@ export function ProductSelectionStep({
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                {selectedProduct.image_thumbnail ? (
+                {selectedProduct.image ? (
                   <img
-                    src={selectedProduct.image_thumbnail}
+                    src={selectedProduct.image}
                     alt={selectedProduct.name || ""}
                     className="h-8 w-8 rounded object-cover"
                   />
@@ -150,10 +150,10 @@ export function ProductSelectionStep({
                   <p className="text-xs text-muted-foreground uppercase font-semibold">Precio</p>
                   <p className="font-medium">{selectedProduct.sale_price} {selectedProduct.uom_name}</p>
                 </div>
-                {selectedProduct.stock_available !== undefined && (
+                {selectedProduct.qty_available !== undefined && (
                   <div>
                     <p className="text-xs text-muted-foreground uppercase font-semibold">Stock</p>
-                    <p className="font-medium">{selectedProduct.stock_available}</p>
+                    <p className="font-medium">{selectedProduct.qty_available}</p>
                   </div>
                 )}
                 {selectedProduct.manufacturable_quantity !== null && (

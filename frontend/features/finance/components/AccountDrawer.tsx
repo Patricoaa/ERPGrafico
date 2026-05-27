@@ -225,7 +225,7 @@ export function AccountDrawer({
     const formContent = (
         <FormSplitLayout
             sidebar={initialData?.id ? (
-                <ActivitySidebar entityType="account" entityId={initialData.id} />
+                <ActivitySidebar entityType="account" entityId={initialData.id as number} />
             ) : undefined}
             showSidebar={!!initialData?.id}
         >

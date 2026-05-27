@@ -35,6 +35,7 @@ export function DataTableView<TData, TValue>({
     if (!isCustomView) return undefined
     if (!policy && !externalRenderCustomView) return undefined
     if (externalRenderCustomView) return externalRenderCustomView
+    if (!policy) return undefined
 
     switch (policy.cardComponent) {
       case "domain":

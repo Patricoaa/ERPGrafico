@@ -13,12 +13,12 @@
  *  3. Abrir Universal Search (Ctrl+K), escribir query, hacer click
  *  4. Verificar URL final y que la página renderiza sin error visible
  */
-import { test, expect } from '@playwright/test';
+import { test, expect, Page } from '@playwright/test';
 
 // ---------------------------------------------------------------------------
 // Helper: abre el Universal Search, escribe la query y devuelve el locator
 // ---------------------------------------------------------------------------
-async function openSearchAndType(page: Parameters<typeof test>[1] extends never ? never : Parameters<Parameters<typeof test>[1]>[0], query: string) {
+async function openSearchAndType(page: Page, query: string) {
     await page.goto('/');
     await page.keyboard.press('Control+k');
     await expect(page.getByRole('dialog', { name: /búsqueda/i })).toBeVisible();

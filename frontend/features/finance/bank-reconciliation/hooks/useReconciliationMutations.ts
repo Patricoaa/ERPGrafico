@@ -211,7 +211,7 @@ export function useUpdateReconciliationSettingsMutation(accountId?: number | str
         onSuccess: () => {
             toast.success('Configuración de inteligencia actualizada')
             if (accountId) {
-                queryClient.invalidateQueries({ queryKey: reconciliationKeys.settings(accountId) })
+                queryClient.invalidateQueries({ queryKey: reconciliationKeys.settings(Number(accountId)) })
             } else {
                 queryClient.invalidateQueries({ queryKey: reconciliationKeys.all })
             }

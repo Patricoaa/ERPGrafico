@@ -1,5 +1,5 @@
 import type { FilterState } from '@/components/shared'
-import type { PosDraftFilters } from '../types'
+import type { PosDraftFilters } from '../types/index'
 
 export const POS_KEYS = {
   // Drafts
@@ -7,7 +7,7 @@ export const POS_KEYS = {
     all: ['posDrafts'] as const,
     lists: () => [...POS_KEYS.drafts.all, 'list'] as const,
     list: (filters?: PosDraftFilters) => [...POS_KEYS.drafts.lists(), { filters }] as const,
-    detail: () => [...POS_KEYS.drafts.all, 'detail'] as const,
+    detail: (): readonly ['posDrafts', 'detail'] => [...POS_KEYS.drafts.all, 'detail'] as const,
     detailById: (id: number) => [...POS_KEYS.drafts.detail(), id] as const,
   },
 

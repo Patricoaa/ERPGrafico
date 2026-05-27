@@ -354,7 +354,6 @@ export function PhaseCard({
                                             <DataCell.Action
                                                 action="view"
                                                 title="Ver Detalles"
-                                                compact
                                                 disabled={doc.disabled}
                                                 onClick={(e) => {
                                                     e.stopPropagation();

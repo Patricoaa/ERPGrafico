@@ -2,94 +2,11 @@
 > frontend@0.1.18 type-check
 > tsc --noEmit
 
-app/(dashboard)/contacts/settings/page.tsx(8,17): error TS2322: Type 'Element' is not assignable to type 'ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>'.
-  Types of property '$$typeof' are incompatible.
-    Type 'string | symbol | undefined' is not assignable to type 'symbol'.
-      Type 'undefined' is not assignable to type 'symbol'.
-app/(dashboard)/profile/page.tsx(73,19): error TS2345: Argument of type '{ value: string; label: string; iconName: string; href: string; }' is not assignable to parameter of type '{ value: string; label: string; iconName: string; href: string; subTabs: { value: string; label: string; iconName: string; href: string; }[]; }'.
-  Property 'subTabs' is missing in type '{ value: string; label: string; iconName: string; href: string; }' but required in type '{ value: string; label: string; iconName: string; href: string; subTabs: { value: string; label: string; iconName: string; href: string; }[]; }'.
-app/(dashboard)/treasury/reconciliation/[id]/workbench/page.tsx(111,29): error TS2322: Type '(payload: void) => void' is not assignable to type 'MouseEventHandler<HTMLButtonElement>'.
-  Types of parameters 'payload' and 'event' are incompatible.
-    Type 'MouseEvent<HTMLButtonElement, MouseEvent>' is not assignable to type 'void'.
-app/(dashboard)/treasury/reconciliation/[id]/workbench/page.tsx(112,53): error TS2339: Property 'isConfirming' does not exist on type 'UseConfirmActionReturn<void>'.
-app/(dashboard)/treasury/reconciliation/[id]/workbench/page.tsx(115,44): error TS2339: Property 'isConfirming' does not exist on type 'UseConfirmActionReturn<void>'.
-app/(dashboard)/treasury/reconciliation/[id]/workbench/page.tsx(127,46): error TS2551: Property 'treasury_account' does not exist on type 'BankStatement'. Did you mean 'treasury_account_name'?
-components/shared/DataTableView.tsx(39,13): error TS18048: 'policy' is possibly 'undefined'.
-components/shared/DataTableView.tsx(51,23): error TS18048: 'policy' is possibly 'undefined'.
-components/shared/transaction-modal/TransactionContent.tsx(200,99): error TS2322: Type '{}' is not assignable to type 'ReactNode'.
-components/shared/transaction-modal/TransactionContent.tsx(204,96): error TS2322: Type '{}' is not assignable to type 'ReactNode'.
-components/shared/transaction-modal/TransactionContent.tsx(211,113): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'string | number | null | undefined'.
-components/shared/transaction-modal/TransactionContent.tsx(216,54): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'string | number | null | undefined'.
-components/shared/transaction-modal/TransactionContent.tsx(222,53): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'string | number | null | undefined'.
-components/shared/transaction-modal/TransactionContent.tsx(236,37): error TS2322: Type 'unknown' is not assignable to type 'ReactNode'.
-components/shared/transaction-modal/TransactionContent.tsx(236,92): error TS2322: Type 'unknown' is not assignable to type 'ReactNode'.
-components/shared/transaction-modal/TransactionContent.tsx(236,115): error TS2322: Type 'unknown' is not assignable to type 'ReactNode'.
-e2e/universal-search-routes.spec.ts(21,102): error TS2344: Type 'TestDetails' does not satisfy the constraint '(...args: any) => any'.
-  Type 'TestDetails' provides no match for the signature '(...args: any): any'.
-e2e/universal-search-routes.spec.ts(22,16): error TS2339: Property 'goto' does not exist on type 'never'.
-e2e/universal-search-routes.spec.ts(23,16): error TS2339: Property 'keyboard' does not exist on type 'never'.
-e2e/universal-search-routes.spec.ts(24,23): error TS2339: Property 'getByRole' does not exist on type 'never'.
-e2e/universal-search-routes.spec.ts(25,16): error TS2339: Property 'keyboard' does not exist on type 'never'.
-e2e/universal-search-routes.spec.ts(62,33): error TS2345: Argument of type 'Page' is not assignable to parameter of type 'never'.
-e2e/universal-search-routes.spec.ts(99,33): error TS2345: Argument of type 'Page' is not assignable to parameter of type 'never'.
-e2e/universal-search-routes.spec.ts(137,33): error TS2345: Argument of type 'Page' is not assignable to parameter of type 'never'.
-e2e/universal-search-routes.spec.ts(175,33): error TS2345: Argument of type 'Page' is not assignable to parameter of type 'never'.
-e2e/universal-search-routes.spec.ts(213,33): error TS2345: Argument of type 'Page' is not assignable to parameter of type 'never'.
-e2e/universal-search-routes.spec.ts(252,33): error TS2345: Argument of type 'Page' is not assignable to parameter of type 'never'.
-e2e/universal-search-routes.spec.ts(288,33): error TS2345: Argument of type 'Page' is not assignable to parameter of type 'never'.
-e2e/universal-search-routes.spec.ts(325,33): error TS2345: Argument of type 'Page' is not assignable to parameter of type 'never'.
-e2e/universal-search-routes.spec.ts(361,33): error TS2345: Argument of type 'Page' is not assignable to parameter of type 'never'.
-e2e/universal-search-routes.spec.ts(398,33): error TS2345: Argument of type 'Page' is not assignable to parameter of type 'never'.
-e2e/universal-search-routes.spec.ts(435,33): error TS2345: Argument of type 'Page' is not assignable to parameter of type 'never'.
-e2e/universal-search-routes.spec.ts(472,33): error TS2345: Argument of type 'Page' is not assignable to parameter of type 'never'.
-features/accounting/components/reports/TrialBalanceView.tsx(93,60): error TS2322: Type '{ value: string; className: string; }' is not assignable to type 'IntrinsicAttributes & BaseCellProps'.
-  Property 'value' does not exist on type 'IntrinsicAttributes & BaseCellProps'.
-features/auth/components/LoginForm.tsx(42,41): error TS2339: Property 'isLoading' does not exist on type 'UseMutationResult<LoginResponse, Error, LoginPayload, unknown>'.
-features/credits/components/CreditAssignmentModal.tsx(45,9): error TS2322: Type 'Resolver<{ credit_limit: unknown; }, any, { credit_limit: number | null; }>' is not assignable to type 'Resolver<{ credit_limit: number | null; }, any, { credit_limit: number | null; }>'.
-  Types of parameters 'options' and 'options' are incompatible.
-    Type 'ResolverOptions<{ credit_limit: number | null; }>' is not assignable to type 'ResolverOptions<{ credit_limit: unknown; }>'.
-      Type 'unknown' is not assignable to type 'number | null'.
-features/credits/components/CreditAssignmentModal.tsx(143,64): error TS2339: Property 'credit_balance_used' does not exist on type 'Contact'.
-features/finance/bank-reconciliation/hooks/useReconciliationMutations.ts(214,87): error TS2345: Argument of type 'string | number' is not assignable to parameter of type 'number | undefined'.
-  Type 'string' is not assignable to type 'number'.
-features/finance/bank-reconciliation/hooks/useReconciliationQueries.ts(30,47): error TS2345: Argument of type 'string | number | undefined' is not assignable to parameter of type 'number | undefined'.
-  Type 'string' is not assignable to type 'number'.
-features/finance/bank-reconciliation/hooks/useReconciliationQueries.ts(64,69): error TS2345: Argument of type 'QueryPaginationParams' is not assignable to parameter of type 'Record<string, unknown>'.
-  Index signature for type 'string' is missing in type 'QueryPaginationParams'.
-features/finance/bank-reconciliation/hooks/useReconciliationQueries.ts(86,78): error TS2345: Argument of type 'QueryPaginationParams' is not assignable to parameter of type 'Record<string, unknown>'.
-  Index signature for type 'string' is missing in type 'QueryPaginationParams'.
-features/finance/bank-reconciliation/hooks/useReconciliationQueries.ts(136,67): error TS2345: Argument of type 'QueryPaginationParams' is not assignable to parameter of type 'Record<string, unknown>'.
-  Index signature for type 'string' is missing in type 'QueryPaginationParams'.
-features/finance/components/AccountDrawer.tsx(228,55): error TS2322: Type '{}' is not assignable to type 'string | number'.
-features/finance/components/BudgetDetailView.tsx(178,25): error TS2559: Type 'string' has no properties in common with type '{ title?: string | undefined; description?: string | undefined; icon?: LucideIcon | undefined; action?: ReactNode; context?: EmptyStateContext | undefined; }'.
-features/finance/components/BudgetEditor.tsx(74,25): error TS2322: Type '{ icon: ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>; title: string; compact: true; onClick: () => void | undefined; }' is not assignable to type 'IntrinsicAttributes & { action?: RowActionKey | undefined; icon?: LucideIcon | undefined; onClick?: ((e: MouseEvent<Element, MouseEvent>) => void) | undefined; title?: string | undefined; className?: string | undefined; color?: string | undefined; variant?: "default" | ... 3 more ... | undefined; } & Omit<...>'.
-  Property 'compact' does not exist on type 'IntrinsicAttributes & { action?: RowActionKey | undefined; icon?: LucideIcon | undefined; onClick?: ((e: MouseEvent<Element, MouseEvent>) => void) | undefined; title?: string | undefined; className?: string | undefined; color?: string | undefined; variant?: "default" | ... 3 more ... | undefined; } & Omit<...>'.
-features/finance/components/BudgetVarianceTable.tsx(110,40): error TS2322: Type '{ value: string; className: string; }' is not assignable to type 'IntrinsicAttributes & BaseCellProps'.
-  Property 'value' does not exist on type 'IntrinsicAttributes & BaseCellProps'.
-features/hr/components/FormulaBuilder.tsx(83,45): error TS2322: Type '{ children: string; size: "xs"; intent: "neutral"; className: string; onClick: () => void; }' is not assignable to type 'IntrinsicAttributes & ChipProps'.
-  Property 'onClick' does not exist on type 'IntrinsicAttributes & ChipProps'.
-features/hr/components/PayrollCard.tsx(68,60): error TS2322: Type '{ action: "edit"; compact: true; onClick: () => void | undefined; }' is not assignable to type 'IntrinsicAttributes & { action?: RowActionKey | undefined; icon?: LucideIcon | undefined; onClick?: ((e: MouseEvent<Element, MouseEvent>) => void) | undefined; title?: string | undefined; className?: string | undefined; color?: string | undefined; variant?: "default" | ... 3 more ... | undefined; } & Omit<...>'.
-  Property 'compact' does not exist on type 'IntrinsicAttributes & { action?: RowActionKey | undefined; icon?: LucideIcon | undefined; onClick?: ((e: MouseEvent<Element, MouseEvent>) => void) | undefined; title?: string | undefined; className?: string | undefined; color?: string | undefined; variant?: "default" | ... 3 more ... | undefined; } & Omit<...>'.
-features/hr/components/PayrollCard.tsx(69,62): error TS2322: Type '{ action: "delete"; compact: true; onClick: () => void | undefined; }' is not assignable to type 'IntrinsicAttributes & { action?: RowActionKey | undefined; icon?: LucideIcon | undefined; onClick?: ((e: MouseEvent<Element, MouseEvent>) => void) | undefined; title?: string | undefined; className?: string | undefined; color?: string | undefined; variant?: "default" | ... 3 more ... | undefined; } & Omit<...>'.
-  Property 'compact' does not exist on type 'IntrinsicAttributes & { action?: RowActionKey | undefined; icon?: LucideIcon | undefined; onClick?: ((e: MouseEvent<Element, MouseEvent>) => void) | undefined; title?: string | undefined; className?: string | undefined; color?: string | undefined; variant?: "default" | ... 3 more ... | undefined; } & Omit<...>'.
 features/hr/components/payrolls/PayrollDetailContent.tsx(86,116): error TS2345: Argument of type 'EmployeeBasic | undefined' is not assignable to parameter of type 'EmployeeBasic | undefined'.
   Type 'EmployeeBasic' is not assignable to type 'EmployeeBasic'. Two different types with this name exist, but they are unrelated.
     Types of property 'contact_detail' are incompatible.
-      Type '{ name?: string | undefined; } | null | undefined' is not assignable to type '{ name?: string | undefined; tax_id?: string | undefined; } | undefined'.
+      Type '{ name?: string | undefined; tax_id?: string | undefined; } | null | undefined' is not assignable to type '{ name?: string | undefined; tax_id?: string | undefined; } | undefined'.
         Type 'null' is not assignable to type '{ name?: string | undefined; tax_id?: string | undefined; } | undefined'.
-features/inventory/components/AdjustmentForm.tsx(164,39): error TS2769: No overload matches this call.
-  Overload 1 of 2, '(predicate: (value: UoM, index: number, obj: UoM[]) => value is UoM, thisArg?: any): UoM | undefined', gave the following error.
-    Argument of type '(u: UoM) => boolean' is not assignable to parameter of type '(value: UoM, index: number, obj: UoM[]) => value is UoM'.
-      Types of parameters 'u' and 'value' are incompatible.
-        Type 'import("/home/pato/Nextcloud/Pato/Aplicaciones/ERPGrafico/frontend/features/inventory/hooks/useUoMs").UoM' is not assignable to type 'import("/home/pato/Nextcloud/Pato/Aplicaciones/ERPGrafico/frontend/types/entities").UoM'.
-          Types of property 'ratio' are incompatible.
-            Type 'string' is not assignable to type 'number'.
-  Overload 2 of 2, '(predicate: (value: UoM, index: number, obj: UoM[]) => unknown, thisArg?: any): UoM | undefined', gave the following error.
-    Argument of type '(u: UoM) => boolean' is not assignable to parameter of type '(value: UoM, index: number, obj: UoM[]) => unknown'.
-      Types of parameters 'u' and 'value' are incompatible.
-        Type 'import("/home/pato/Nextcloud/Pato/Aplicaciones/ERPGrafico/frontend/features/inventory/hooks/useUoMs").UoM' is not assignable to type 'import("/home/pato/Nextcloud/Pato/Aplicaciones/ERPGrafico/frontend/types/entities").UoM'.
-          Types of property 'ratio' are incompatible.
-            Type 'string' is not assignable to type 'number'.
 features/inventory/components/AdjustmentForm.tsx(165,20): error TS2345: Argument of type 'UoM | null' is not assignable to parameter of type 'SetStateAction<UoM | null>'.
   Type 'UoM' is not assignable to type 'SetStateAction<UoM | null>'.
     Type 'import("/home/pato/Nextcloud/Pato/Aplicaciones/ERPGrafico/frontend/features/inventory/hooks/useUoMs").UoM' is not assignable to type 'import("/home/pato/Nextcloud/Pato/Aplicaciones/ERPGrafico/frontend/types/entities").UoM'.
@@ -99,7 +16,6 @@ features/inventory/components/AdjustmentForm.tsx(206,31): error TS2345: Argument
   Types of property 'uom_id' are incompatible.
     Type 'string | undefined' is not assignable to type 'string | number'.
       Type 'undefined' is not assignable to type 'string | number'.
-features/inventory/components/AdjustmentForm.tsx(230,24): error TS2362: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
 features/inventory/components/AttributeManager.tsx(284,21): error TS2322: Type 'Attribute[]' is not assignable to type 'ProductAttribute[]'.
   Type 'Attribute' is not assignable to type 'ProductAttribute'.
     Types of property 'values' are incompatible.
@@ -180,7 +96,7 @@ features/inventory/components/product/ProductVariantsTab.tsx(431,62): error TS70
 features/inventory/components/product/VariantQuickEditForm.tsx(129,57): error TS2559: Type '{ sale_price: number; code: string; sale_uom: number | undefined; price_inheritance_mode: "INHERIT" | "OVERRIDE" | "SURCHARGE"; price_surcharge: number | null; }' has no properties in common with type 'ProductUpdatePayload'.
 features/orders/components/ActionButton.tsx(77,29): error TS2367: This comparison appears to be unintentional because the types '"warning" | "info" | "pending" | "completed" | undefined' and '"destructive"' have no overlap.
 features/orders/components/ActionButton.tsx(78,29): error TS2367: This comparison appears to be unintentional because the types '"warning" | "info" | "pending" | "completed" | undefined' and '"default"' have no overlap.
-features/orders/components/phases/PhaseCard.tsx(357,49): error TS2322: Type '{ action: "view"; title: string; compact: true; disabled: boolean | undefined; onClick: (e: MouseEvent<Element, MouseEvent> | MouseEvent<HTMLButtonElement, MouseEvent>) => void; }' is not assignable to type 'IntrinsicAttributes & { action?: RowActionKey | undefined; icon?: LucideIcon | undefined; onClick?: ((e: MouseEvent<Element, MouseEvent>) => void) | undefined; title?: string | undefined; className?: string | undefined; color?: string | undefined; variant?: "default" | ... 3 more ... | undefined; } & Omit<...>'.
+features/orders/components/phases/PhaseCard.tsx(357,49): error TS2322: Type '{ action: "view"; title: string; compact: true; disabled: boolean | undefined; onClick: (e: MouseEvent<HTMLButtonElement, MouseEvent> | MouseEvent<...>) => void; }' is not assignable to type 'IntrinsicAttributes & { action?: RowActionKey | undefined; icon?: LucideIcon | undefined; onClick?: ((e: MouseEvent<Element, MouseEvent>) => void) | undefined; title?: string | undefined; className?: string | undefined; color?: string | undefined; variant?: "default" | ... 3 more ... | undefined; } & Omit<...>'.
   Property 'compact' does not exist on type 'IntrinsicAttributes & { action?: RowActionKey | undefined; icon?: LucideIcon | undefined; onClick?: ((e: MouseEvent<Element, MouseEvent>) => void) | undefined; title?: string | undefined; className?: string | undefined; color?: string | undefined; variant?: "default" | ... 3 more ... | undefined; } & Omit<...>'.
 features/pos/components/CartItem.tsx(232,29): error TS2322: Type '{ action: "delete"; compact: boolean; onClick: () => void; }' is not assignable to type 'IntrinsicAttributes & { action?: RowActionKey | undefined; icon?: LucideIcon | undefined; onClick?: ((e: MouseEvent<Element, MouseEvent>) => void) | undefined; title?: string | undefined; className?: string | undefined; color?: string | undefined; variant?: "default" | ... 3 more ... | undefined; } & Omit<...>'.
   Property 'compact' does not exist on type 'IntrinsicAttributes & { action?: RowActionKey | undefined; icon?: LucideIcon | undefined; onClick?: ((e: MouseEvent<Element, MouseEvent>) => void) | undefined; title?: string | undefined; className?: string | undefined; color?: string | undefined; variant?: "default" | ... 3 more ... | undefined; } & Omit<...>'.

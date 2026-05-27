@@ -70,7 +70,7 @@ export default function ProfilePage() {
         },
     ]
     if (isPartner) {
-        tabs.push({ value: "partner", label: "Socio", iconName: "briefcase", href: "/profile?tab=partner" })
+        tabs.push({ value: "partner", label: "Socio", iconName: "briefcase", href: "/profile?tab=partner", subTabs: [] })
     }
 
     const getHeaderConfig = () => {

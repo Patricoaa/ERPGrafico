@@ -85,10 +85,10 @@ export default function AuditHubPage() {
                 const date = new Date(row.original.date);
                 return (
                     <div className="flex flex-col">
-                        <DataCell.Text className="text-xs font-semibold">
+                        <DataCell.Text>
                             {format(date, "dd/MM/yyyy", { locale: es })}
                         </DataCell.Text>
-                        <DataCell.Secondary className="text-[10px]">
+                        <DataCell.Secondary>
                             {format(date, "HH:mm:ss")}
                         </DataCell.Secondary>
                     </div>
@@ -145,7 +145,7 @@ export default function AuditHubPage() {
 
                 return (
                     <div className="flex items-center gap-2">
-                        <DataCell.Icon icon={icon} className="h-6 w-6" />
+                        <DataCell.Icon icon={icon} />
                         <Chip size="xs" intent={intent}>{label}</Chip>
                     </div>
                 );
@@ -157,7 +157,7 @@ export default function AuditHubPage() {
                 <DataTableColumnHeader column={column} title="Descripción" className="justify-center" />
             ),
             cell: ({ row }) => (
-                <DataCell.Text className="text-xs text-muted-foreground truncate max-w-[500px]">
+                <DataCell.Text>
                     {row.original.description}
                 </DataCell.Text>
             )
@@ -224,17 +224,17 @@ export default function AuditHubPage() {
         <div className="pt-4 space-y-8 h-full flex flex-col">
             <div className="flex-1 min-h-0">
                 <DataTable
-                columns={columns}
-                data={logs}
-                isLoading={loading}
-                variant="embedded"
-                globalFilterFields={["entity_type", "action", "change_summary", "entity_label"]}
-                searchPlaceholder="Buscar en la bitácora..."
-                useAdvancedFilter={true}
-                facetedFilters={facetedFilters}
-                hiddenColumns={["source"]}
-                defaultPageSize={50}
-            />
+                    columns={columns}
+                    data={logs}
+                    isLoading={loading}
+                    variant="embedded"
+                    globalFilterFields={["entity_type", "action", "change_summary", "entity_label"]}
+                    searchPlaceholder="Buscar en la bitácora..."
+                    useAdvancedFilter={true}
+                    facetedFilters={facetedFilters}
+                    hiddenColumns={["source"]}
+                    defaultPageSize={50}
+                />
             </div>
 
             <div

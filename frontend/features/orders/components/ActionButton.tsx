@@ -74,8 +74,8 @@ export function ActionButton({
                 {showBadge && !ghost && (badgeCount !== undefined || badge) && (
                     <Chip
                         intent={
-                            badge?.type === "destructive" ? "destructive" :
-                            badge?.type === "default" ? "primary" : "neutral"
+                            (badge?.type as string) === "destructive" ? "destructive" :
+                            (badge?.type as string) === "default" ? "primary" : "neutral"
                         }
                         size={compact ? "xs" : "sm"}
                         className="ml-auto shrink-0 min-w-[16px] justify-center"
