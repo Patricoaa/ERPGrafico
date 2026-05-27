@@ -14,7 +14,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { useWarehouseMutations } from "../hooks/useWarehouseMutations"
 import { List } from "lucide-react"
-import { SubmitButton } from "@/components/shared/ActionButtons"
+import { ActionSlideButton } from "@/components/shared"
 import { ActivitySidebar } from "@/features/audit/components"
 import { formDrawerWidth } from "@/lib/form-widths"
 
@@ -119,53 +119,44 @@ export function WarehouseDrawer({ onSuccess, initialData, open: openProp, onOpen
                     className="space-y-6 px-4 pb-4 pt-2"
                 >
 
-                    <div className="grid grid-cols-4 gap-4">
-                        <div className="col-span-3">
-                            <FormField
-                                control={form.control}
-                                name="name"
-                                render={({ field, fieldState }) => (
-                                    <LabeledInput
-                                        label="Nombre de Bodega"
-                                        required
-                                        placeholder="Ej: Bodega Central"
-                                        error={fieldState.error?.message}
-                                        {...field}
-                                    />
-                                )}
+                    <FormField
+                        control={form.control}
+                        name="name"
+                        render={({ field, fieldState }) => (
+                            <LabeledInput
+                                label="Nombre de Bodega"
+                                required
+                                placeholder="Ej: Bodega Central"
+                                error={fieldState.error?.message}
+                                {...field}
                             />
-                        </div>
-                        <div className="col-span-1">
-                            <FormField
-                                control={form.control}
-                                name="code"
-                                render={({ field, fieldState }) => (
-                                    <LabeledInput
-                                        label="Código Interno"
-                                        required
-                                        placeholder="Ej: BOD-01"
-                                        error={fieldState.error?.message}
-                                        {...field}
-                                    />
-                                )}
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="code"
+                        render={({ field, fieldState }) => (
+                            <LabeledInput
+                                label="Código Interno"
+                                required
+                                placeholder="Ej: BOD-01"
+                                error={fieldState.error?.message}
+                                {...field}
                             />
-                        </div>
-
-                        <div className="col-span-4">
-                            <FormField
-                                control={form.control}
-                                name="address"
-                                render={({ field, fieldState }) => (
-                                    <LabeledInput
-                                        label="Dirección Física"
-                                        placeholder="Ej: Av. Industrial 1234, Santiago"
-                                        error={fieldState.error?.message}
-                                        {...field}
-                                    />
-                                )}
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="address"
+                        render={({ field, fieldState }) => (
+                            <LabeledInput
+                                label="Dirección Física"
+                                placeholder="Ej: Av. Industrial 1234, Santiago"
+                                error={fieldState.error?.message}
+                                {...field}
                             />
-                        </div>
-                    </div>
+                        )}
+                    />
                 </form>
             </Form>
         </FormSplitLayout>
@@ -196,9 +187,9 @@ export function WarehouseDrawer({ onSuccess, initialData, open: openProp, onOpen
                 footer={
                     <FormFooter>
                         <CancelButton onClick={() => setOpen(false)} />
-                        <SubmitButton form="warehouse-form" loading={loading}>
+                        <ActionSlideButton type="submit" form="warehouse-form" loading={loading}>
                             {initialData ? "Guardar Cambios" : "Crear Almacén"}
-                        </SubmitButton>
+                        </ActionSlideButton>
                     </FormFooter>
                 }
             >

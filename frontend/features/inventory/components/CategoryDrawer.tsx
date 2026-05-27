@@ -293,76 +293,63 @@ export function CategoryDrawer({
             <Form {...form}>
                 <form id="category-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-4 pb-4 pt-2">
 
-                    <div className="grid grid-cols-4 gap-4">
-                        <div className="col-span-3">
-                            <FormField
-                                control={form.control}
-                                name="name"
-                                render={({ field, fieldState }) => (
-                                    <LabeledInput
-                                        label="Nombre de Categoría"
-                                        required
-                                        placeholder="Ej: Insumos de Impresión"
-                                        error={fieldState.error?.message}
-                                        {...field}
-                                    />
-                                )}
+                    <FormField
+                        control={form.control}
+                        name="name"
+                        render={({ field, fieldState }) => (
+                            <LabeledInput
+                                label="Nombre de Categoría"
+                                required
+                                placeholder="Ej: Insumos de Impresión"
+                                error={fieldState.error?.message}
+                                {...field}
                             />
-                        </div>
-
-                        <div className="col-span-1">
-                            <FormField
-                                control={form.control}
-                                name="prefix"
-                                render={({ field, fieldState }) => (
-                                    <LabeledInput
-                                        label="Siglas"
-                                        placeholder="Ej: IMP"
-                                        error={fieldState.error?.message}
-                                        {...field}
-                                        value={field.value || ""}
-                                    />
-                                )}
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="prefix"
+                        render={({ field, fieldState }) => (
+                            <LabeledInput
+                                label="Siglas"
+                                placeholder="Ej: IMP"
+                                error={fieldState.error?.message}
+                                {...field}
+                                value={field.value || ""}
                             />
-                        </div>
-
-                        <div className="col-span-2">
-                            <FormField
-                                control={form.control}
-                                name="icon"
-                                render={({ field, fieldState }) => (
-                                    <RichIconSelector
-                                        label="Icono Visual"
-                                        required
-                                        value={field.value || "Package"}
-                                        onChange={field.onChange}
-                                        error={fieldState.error?.message}
-                                    />
-                                )}
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="icon"
+                        render={({ field, fieldState }) => (
+                            <RichIconSelector
+                                label="Icono Visual"
+                                required
+                                value={field.value || "Package"}
+                                onChange={field.onChange}
+                                error={fieldState.error?.message}
                             />
-                        </div>
-
-                        <div className="col-span-2">
-                            <FormField
-                                control={form.control}
-                                name="parent"
-                                render={({ field, fieldState }) => (
-                                    <CategorySelector
-                                        label="Categoría Superior"
-                                        icon={<LucideIcons.FolderTree className="h-4 w-4" />}
-                                        value={field.value}
-                                        onChange={field.onChange}
-                                        error={fieldState.error?.message}
-                                        placeholder="Sin padre"
-                                        showPlusButton={false}
-                                        excludeId={initialData?.id}
-                                        allowNone={true}
-                                        noneLabel="Raíz (Sin padre)"
-                                    />
-                                )}
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="parent"
+                        render={({ field, fieldState }) => (
+                            <CategorySelector
+                                label="Categoría Superior"
+                                icon={<LucideIcons.FolderTree className="h-4 w-4" />}
+                                value={field.value}
+                                onChange={field.onChange}
+                                error={fieldState.error?.message}
+                                placeholder="Sin padre"
+                                showPlusButton={false}
+                                excludeId={initialData?.id}
+                                allowNone={true}
+                                noneLabel="Raíz (Sin padre)"
                             />
-                        </div>
-                    </div>
+                        )}
+                    />
 
                     <FormSection title="Cuentas Contables por Defecto" icon={LucideIcons.Library} />
 
@@ -382,55 +369,49 @@ export function CategoryDrawer({
                     />
 
                     {form.watch("has_custom_accounting") && (
-                        <div className="grid grid-cols-4 gap-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                            <div className="col-span-2">
-                                <FormField
-                                    control={form.control}
-                                    name="asset_account"
-                                    render={({ field, fieldState }) => (
-                                        <AccountSelector
-                                            label="Activo (Inventario)"
-                                            value={field.value}
-                                            onChange={field.onChange}
-                                            accountType="ASSET"
-                                            placeholder="Cuenta de activo..."
-                                            error={fieldState.error?.message}
-                                        />
-                                    )}
-                                />
-                            </div>
-                            <div className="col-span-2">
-                                <FormField
-                                    control={form.control}
-                                    name="income_account"
-                                    render={({ field, fieldState }) => (
-                                        <AccountSelector
-                                            label="Ingresos (Ventas)"
-                                            value={field.value}
-                                            onChange={field.onChange}
-                                            accountType="INCOME"
-                                            placeholder="Cuenta de ingreso..."
-                                            error={fieldState.error?.message}
-                                        />
-                                    )}
-                                />
-                            </div>
-                            <div className="col-span-2">
-                                <FormField
-                                    control={form.control}
-                                    name="expense_account"
-                                    render={({ field, fieldState }) => (
-                                        <AccountSelector
-                                            label="Gastos (Costo)"
-                                            value={field.value}
-                                            onChange={field.onChange}
-                                            accountType="EXPENSE"
-                                            placeholder="Cuenta de gasto..."
-                                            error={fieldState.error?.message}
-                                        />
-                                    )}
-                                />
-                            </div>
+                        <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                            <FormField
+                                control={form.control}
+                                name="asset_account"
+                                render={({ field, fieldState }) => (
+                                    <AccountSelector
+                                        label="Activo (Inventario)"
+                                        value={field.value}
+                                        onChange={field.onChange}
+                                        accountType="ASSET"
+                                        placeholder="Cuenta de activo..."
+                                        error={fieldState.error?.message}
+                                    />
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="income_account"
+                                render={({ field, fieldState }) => (
+                                    <AccountSelector
+                                        label="Ingresos (Ventas)"
+                                        value={field.value}
+                                        onChange={field.onChange}
+                                        accountType="INCOME"
+                                        placeholder="Cuenta de ingreso..."
+                                        error={fieldState.error?.message}
+                                    />
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="expense_account"
+                                render={({ field, fieldState }) => (
+                                    <AccountSelector
+                                        label="Gastos (Costo)"
+                                        value={field.value}
+                                        onChange={field.onChange}
+                                        accountType="EXPENSE"
+                                        placeholder="Cuenta de gasto..."
+                                        error={fieldState.error?.message}
+                                    />
+                                )}
+                            />
                         </div>
                     )}
                 </form>
@@ -447,6 +428,7 @@ export function CategoryDrawer({
             <Trigger />
             <Drawer
                 open={open}
+                onOpenChange={setOpen}
                 side="left"
                 defaultSize={width}
                 contentClassName="p-0"
@@ -458,6 +440,18 @@ export function CategoryDrawer({
                         : (initialData ? undefined : "Nueva Categoría")
                 }
 
+                footer={
+                    <FormFooter
+                        actions={
+                            <>
+                                <CancelButton onClick={() => setOpen(false)} />
+                                <ActionSlideButton type="submit" form="category-form" loading={loading}>
+                                    {initialData ? "Guardar Cambios" : "Crear Categoría"}
+                                </ActionSlideButton>
+                            </>
+                        }
+                    />
+                }
             >
                 {formContent}
             </Drawer>

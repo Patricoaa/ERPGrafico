@@ -133,6 +133,7 @@ export function GroupDrawer({
                 onOpenChange={setOpen}
                 side="left"
                 defaultSize={width}
+                contentClassName="p-0"
                 title={
                     <div className="flex items-center gap-3">
                         <Users className="h-5 w-5 text-muted-foreground" />
@@ -161,23 +162,19 @@ export function GroupDrawer({
                 >
                     <Form {...form}>
                         <form id="group-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-4 pb-4 pt-4">
-                            <div className="grid grid-cols-4 gap-4">
-                                <div className="col-span-4">
-                                    <FormField
-                                        control={form.control}
-                                        name="name"
-                                        render={({ field, fieldState }) => (
-                                            <LabeledInput
-                                                label="Nombre del Grupo"
-                                                required
-                                                placeholder="Ej: Bodega, Ventas..."
-                                                error={fieldState.error?.message}
-                                                {...field}
-                                            />
-                                        )}
+                            <FormField
+                                control={form.control}
+                                name="name"
+                                render={({ field, fieldState }) => (
+                                    <LabeledInput
+                                        label="Nombre del Grupo"
+                                        required
+                                        placeholder="Ej: Bodega, Ventas..."
+                                        error={fieldState.error?.message}
+                                        {...field}
                                     />
-                                </div>
-                            </div>
+                                )}
+                            />
                         </form>
                     </Form>
                 </FormSplitLayout>

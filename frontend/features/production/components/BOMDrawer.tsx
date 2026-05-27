@@ -22,6 +22,7 @@ import { useUoMs, useProductionVariants } from "../hooks"
 import type { BOM, BOMLine, ProductMinimal, UoM } from "../types"
 import { Drawer, LabeledInput, LabeledSelect, LabeledSwitch, FormSection, FormFooter, FormLineItemsTable, IconButton, SkeletonShell, ActionSlideButton } from "@/components/shared"
 import { useVatRate } from "@/hooks/useVatRate"
+import { formDrawerWidth } from "@/lib/form-widths"
 
 const tableInputClass = "h-9 w-full bg-background border border-border/80 rounded-sm px-2 text-xs focus:border-primary/40 focus:outline-none transition-all disabled:opacity-50"
 
@@ -300,7 +301,8 @@ export function BOMDrawer({
             open={open}
             onOpenChange={onOpenChange}
             side="left"
-            defaultSize="75%"
+            defaultSize={formDrawerWidth("complex", !!bomToEdit)}
+            contentClassName="p-0"
             icon={Workflow}
             title={bomToEdit ? "Editar Lista de Materiales" : "Nueva Lista de Materiales"}
             subtitle={
@@ -344,48 +346,42 @@ export function BOMDrawer({
                             className="space-y-8 pt-4"
                         >
                             {/* 📋 HEADER: IDENTIFICACIÓN Y CONFIGURACIÓN */}
-                            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-start border-b border-border/40 pb-8 mb-2">
+                            <div className="grid grid-cols-2 gap-4 items-start border-b border-border/40 pb-8 mb-2">
                                 {/* FILA 1 */}
-                                <div className="md:col-span-1">
-                                    <FormField
-                                        control={form.control as any}
-                                        name="active"
-                                        render={({ field }) => (
-                                            <LabeledSwitch
-                                                label="Receta Activa"
-                                                checked={field.value}
-                                                onCheckedChange={field.onChange}
-                                                description={field.value ? "Lista Principal" : "Lista de Respaldo"}
-                                                icon={field.value ? <CheckCircle2 className="h-4 w-4 text-primary" /> : <Workflow className="h-4 w-4 text-muted-foreground/30" />}
-                                                className={cn(
-                                                    "transition-all",
-                                                    field.value ? "bg-primary/5 border-primary/20 shadow-sm" : "border-dashed"
-                                                )}
-                                            />
-                                        )}
-                                    />
-                                </div>
+                                <FormField
+                                    control={form.control as any}
+                                    name="active"
+                                    render={({ field }) => (
+                                        <LabeledSwitch
+                                            label="Receta Activa"
+                                            checked={field.value}
+                                            onCheckedChange={field.onChange}
+                                            description={field.value ? "Lista Principal" : "Lista de Respaldo"}
+                                            icon={field.value ? <CheckCircle2 className="h-4 w-4 text-primary" /> : <Workflow className="h-4 w-4 text-muted-foreground/30" />}
+                                            className={cn(
+                                                "transition-all",
+                                                field.value ? "bg-primary/5 border-primary/20 shadow-sm" : "border-dashed"
+                                            )}
+                                        />
+                                    )}
+                                />
 
-                                <div className="md:col-span-1 invisible md:visible" />
-
-                                <div className="md:col-span-2">
-                                    <FormField
-                                        control={form.control as any}
-                                        name="name"
-                                        render={({ field, fieldState }) => (
-                                            <LabeledInput
-                                                label="Nombre de la Receta"
-                                                required
-                                                placeholder="Ej: Versión Estándar 2024"
-                                                error={fieldState.error?.message}
-                                                {...field}
-                                            />
-                                        )}
-                                    />
-                                </div>
+                                <FormField
+                                    control={form.control as any}
+                                    name="name"
+                                    render={({ field, fieldState }) => (
+                                        <LabeledInput
+                                            label="Nombre de la Receta"
+                                            required
+                                            placeholder="Ej: Versión Estándar 2024"
+                                            error={fieldState.error?.message}
+                                            {...field}
+                                        />
+                                    )}
+                                />
 
                                 {/* FILA 2 */}
-                                <div className="md:col-span-2">
+                                <div className="col-span-2">
                                     {!initialProduct ? (
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             <div className={cn(selectedProduct?.has_variants ? "sm:col-span-1" : "sm:col-span-2")}>
@@ -446,7 +442,7 @@ export function BOMDrawer({
                                     )}
                                 </div>
 
-                                <div className="md:col-span-1">
+                                <div className="col-span-1">
                                     <FormField
                                         control={form.control as any}
                                         name="yield_uom"
@@ -465,7 +461,7 @@ export function BOMDrawer({
                                     />
                                 </div>
 
-                                <div className="md:col-span-1">
+                                <div className="col-span-1">
                                     <FormField
                                         control={form.control as any}
                                         name="yield_quantity"

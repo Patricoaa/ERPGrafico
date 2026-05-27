@@ -199,136 +199,118 @@ export function TreasuryAccountDrawer({ open, onOpenChange, accountId, onSuccess
                             {/* Section 1: General Info */}
                             <div className="space-y-4">
                                 <FormSection title="Datos Generales" icon={Landmark} />
-                                <div className="grid grid-cols-4 gap-4">
-                                    <div className="col-span-4">
-                                        <FormField
-                                            control={form.control}
-                                            name="name"
-                                            render={({ field, fieldState }) => (
-                                                <LabeledInput
-                                                    label="Nombre de la Cuenta"
-                                                    placeholder="Ej: Caja Principal"
-                                                    required
-                                                    disabled={isSystemManaged}
-                                                    error={fieldState.error?.message}
-                                                    {...field}
-                                                />
-                                            )}
+                                <FormField
+                                    control={form.control}
+                                    name="name"
+                                    render={({ field, fieldState }) => (
+                                        <LabeledInput
+                                            label="Nombre de la Cuenta"
+                                            placeholder="Ej: Caja Principal"
+                                            required
+                                            disabled={isSystemManaged}
+                                            error={fieldState.error?.message}
+                                            {...field}
                                         />
-                                    </div>
-                                    <div className="col-span-2">
-                                        <FormField
-                                            control={form.control}
-                                            name="account_type"
-                                            render={({ field, fieldState }) => (
-                                                <LabeledSelect
-                                                    label="Tipo de Cuenta"
-                                                    value={field.value}
-                                                    onChange={field.onChange}
-                                                    disabled={isSystemManaged || !!accountId}
-                                                    error={fieldState.error?.message}
-                                                    options={[
-                                                        { value: "CASH", label: "Caja Física (Efectivo)" },
-                                                        { value: "CHECKING", label: "Cuenta Bancaria (Corriente/Vista)" },
-                                                        { value: "DEBIT_CARD", label: "Tarjeta de Débito (Cta. Propia)" },
-                                                        { value: "CREDIT_CARD", label: "Tarjeta de Crédito (Cta. Propia)" },
-                                                        { value: "CHECKBOOK", label: "Chequera / Instrumentos" },
-                                                        { value: "BRIDGE", label: "Cuenta Puente" },
-                                                        { value: "MERCHANT", label: "Cuenta Recaudadora (Pasarela/Wallet)" }
-                                                    ]}
-                                                />
-                                            )}
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="account_type"
+                                    render={({ field, fieldState }) => (
+                                        <LabeledSelect
+                                            label="Tipo de Cuenta"
+                                            value={field.value}
+                                            onChange={field.onChange}
+                                            disabled={isSystemManaged || !!accountId}
+                                            error={fieldState.error?.message}
+                                            options={[
+                                                { value: "CASH", label: "Caja Física (Efectivo)" },
+                                                { value: "CHECKING", label: "Cuenta Bancaria (Corriente/Vista)" },
+                                                { value: "DEBIT_CARD", label: "Tarjeta de Débito (Cta. Propia)" },
+                                                { value: "CREDIT_CARD", label: "Tarjeta de Crédito (Cta. Propia)" },
+                                                { value: "CHECKBOOK", label: "Chequera / Instrumentos" },
+                                                { value: "BRIDGE", label: "Cuenta Puente" },
+                                                { value: "MERCHANT", label: "Cuenta Recaudadora (Pasarela/Wallet)" }
+                                            ]}
                                         />
-                                    </div>
-                                    <div className="col-span-2">
-                                        <FormField
-                                            control={form.control}
-                                            name="currency"
-                                            render={({ field, fieldState }) => (
-                                                <LabeledSelect
-                                                    label="Moneda"
-                                                    value={field.value}
-                                                    onChange={field.onChange}
-                                                    disabled={isSystemManaged}
-                                                    error={fieldState.error?.message}
-                                                    options={[
-                                                        { value: "CLP", label: "Pesos (CLP)" },
-                                                        { value: "USD", label: "Dólar (USD)" }
-                                                    ]}
-                                                />
-                                            )}
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="currency"
+                                    render={({ field, fieldState }) => (
+                                        <LabeledSelect
+                                            label="Moneda"
+                                            value={field.value}
+                                            onChange={field.onChange}
+                                            disabled={isSystemManaged}
+                                            error={fieldState.error?.message}
+                                            options={[
+                                                { value: "CLP", label: "Pesos (CLP)" },
+                                                { value: "USD", label: "Dólar (USD)" }
+                                            ]}
                                         />
-                                    </div>
-                                </div>
+                                    )}
+                                />
                             </div>
 
                             {/* Section 2: Bank Info (Conditional) */}
                             {requiresBank(type) && (
                                 <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
                                     <FormSection title="Configuración Bancaria" icon={CreditCard} />
-                                    <div className="grid grid-cols-4 gap-4">
-                                        <div className="col-span-2">
-                                            <FormField
-                                                control={form.control}
-                                                name="bank"
-                                                render={({ field, fieldState }) => (
-                                                    <LabeledSelect
-                                                        label="Entidad Bancaria"
-                                                        placeholder="Seleccione banco..."
-                                                        value={field.value || ""}
-                                                        onChange={field.onChange}
-                                                        disabled={isSystemManaged}
-                                                        error={fieldState.error?.message}
-                                                        options={banks.map((b: any) => ({
-                                                            value: b.id.toString(),
-                                                            label: b.name
-                                                        }))}
-                                                    />
-                                                )}
+                                    <FormField
+                                        control={form.control}
+                                        name="bank"
+                                        render={({ field, fieldState }) => (
+                                            <LabeledSelect
+                                                label="Entidad Bancaria"
+                                                placeholder="Seleccione banco..."
+                                                value={field.value || ""}
+                                                onChange={field.onChange}
+                                                disabled={isSystemManaged}
+                                                error={fieldState.error?.message}
+                                                options={banks.map((b: any) => ({
+                                                    value: b.id.toString(),
+                                                    label: b.name
+                                                }))}
                                             />
-                                        </div>
-                                        <div className="col-span-2">
-                                            <FormField
-                                                control={form.control}
-                                                name="account_number"
-                                                render={({ field, fieldState }) => (
-                                                    <LabeledInput
-                                                        label="N° de Cuenta Bancaria"
-                                                        placeholder="Ej: 0123456789"
-                                                        disabled={isSystemManaged}
-                                                        error={fieldState.error?.message}
-                                                        {...field}
-                                                    />
-                                                )}
+                                        )}
+                                    />
+                                    <FormField
+                                        control={form.control}
+                                        name="account_number"
+                                        render={({ field, fieldState }) => (
+                                            <LabeledInput
+                                                label="N° de Cuenta Bancaria"
+                                                placeholder="Ej: 0123456789"
+                                                disabled={isSystemManaged}
+                                                error={fieldState.error?.message}
+                                                {...field}
                                             />
-                                        </div>
-                                    </div>
+                                        )}
+                                    />
                                 </div>
                             )}
 
                             {/* Section 3: Accounting */}
                             <div className="space-y-4">
                                 <FormSection title="Integración Contable" icon={Lock} />
-                                <div className="grid grid-cols-4 gap-4">
-                                    <div className="col-span-4">
-                                        <FormField
-                                            control={form.control}
-                                            name="account"
-                                            render={({ field, fieldState }) => (
-                                                <AccountSelector
-                                                    label="Cuenta del Plan de Cuentas"
-                                                    value={field.value}
-                                                    onChange={field.onChange}
-                                                    accountType="ASSET"
-                                                    isReconcilable={true}
-                                                    placeholder="Seleccione cuenta..."
-                                                    disabled={isSystemManaged}
-                                                    error={fieldState.error?.message}
-                                                />
-                                            )}
+                                <FormField
+                                    control={form.control}
+                                    name="account"
+                                    render={({ field, fieldState }) => (
+                                        <AccountSelector
+                                            label="Cuenta del Plan de Cuentas"
+                                            value={field.value}
+                                            onChange={field.onChange}
+                                            accountType="ASSET"
+                                            isReconcilable={true}
+                                            placeholder="Seleccione cuenta..."
+                                            disabled={isSystemManaged}
+                                            error={fieldState.error?.message}
                                         />
-                                    </div>
-                                </div>
+                                    )}
+                                />
                             </div>
                         </form>
                     </Form>

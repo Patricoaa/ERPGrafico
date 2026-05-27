@@ -174,66 +174,58 @@ export function PricingRuleDrawer({ auditSidebar, initialData, onSuccess, open, 
     const renderGeneralTab = () => (
         <div className="space-y-6">
             <FormSection title="Alcance y Referencia" icon={Layers} />
-            <div className="grid grid-cols-4 gap-4">
-                <div className="col-span-3">
-                    <FormField
-                        control={form.control}
-                        name="name"
-                        render={({ field }) => (
-                            <LabeledInput label="Nombre de la Regla" placeholder="Ej: Descuento Mayorista" {...field} />
-                        )}
-                    />
-                </div>
-                <div className="col-span-1">
-                    <FormField
-                        control={form.control}
-                        name="priority"
-                        render={({ field }) => (
-                            <LabeledInput label="Prioridad" type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value))} />
-                        )}
-                    />
-                </div>
+            <div className="grid grid-cols-2 gap-4">
+                <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                        <LabeledInput label="Nombre de la Regla" placeholder="Ej: Descuento Mayorista" {...field} />
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="priority"
+                    render={({ field }) => (
+                        <LabeledInput label="Prioridad" type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value))} />
+                    )}
+                />
             </div>
 
-            <div className="grid grid-cols-4 gap-4">
-                <div className="col-span-3">
-                    <FormField
-                        control={form.control}
-                        name="product"
-                        render={({ field }) => (
-                            <ProductSelector
-                                label="Producto Específico (Opcional)"
-                                value={field.value?.toString() || null}
-                                onChange={(val) => {
-                                    field.onChange(val ? parseInt(val) : null)
-                                    if (!val) setSelectedProductObj(null)
-                                }}
-                                onSelect={(p) => setSelectedProductObj(p)}
-                                disabled={!!productId}
-                                placeholder="Si no se selecciona, aplica a todos"
-                                shouldResolveVariants={false}
-                                customFilter={(p: any) => !p.parent_template}
-                            />
-                        )}
-                    />
-                </div>
-                <div className="col-span-1">
-                    <FormField
-                        control={form.control}
-                        name="uom"
-                        render={({ field }) => (
-                            <UoMSelector
-                                label="Unidad (Filtro)"
-                                variant="standalone"
-                                product={selectedProductObj}
-                                context="sale"
-                                uoms={uoms as unknown as UoM[]}
-                                value={field.value?.toString() || ""}
-                                onChange={(val) => field.onChange(val ? parseInt(val) : null)}
-                            />
-                        )}
-                    />
-                </div>
+            <div className="grid grid-cols-2 gap-4">
+                <FormField
+                    control={form.control}
+                    name="product"
+                    render={({ field }) => (
+                        <ProductSelector
+                            label="Producto Específico (Opcional)"
+                            value={field.value?.toString() || null}
+                            onChange={(val) => {
+                                field.onChange(val ? parseInt(val) : null)
+                                if (!val) setSelectedProductObj(null)
+                            }}
+                            onSelect={(p) => setSelectedProductObj(p)}
+                            disabled={!!productId}
+                            placeholder="Si no se selecciona, aplica a todos"
+                            shouldResolveVariants={false}
+                            customFilter={(p: any) => !p.parent_template}
+                        />
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="uom"
+                    render={({ field }) => (
+                        <UoMSelector
+                            label="Unidad (Filtro)"
+                            variant="standalone"
+                            product={selectedProductObj}
+                            context="sale"
+                            uoms={uoms as unknown as UoM[]}
+                            value={field.value?.toString() || ""}
+                            onChange={(val) => field.onChange(val ? parseInt(val) : null)}
+                        />
+                    )}
+                />
             </div>
         </div>
     )
@@ -241,7 +233,7 @@ export function PricingRuleDrawer({ auditSidebar, initialData, onSuccess, open, 
     const renderConditionsTab = () => (
         <div className="space-y-6">
             <FormSection title="Condición de Activación" icon={Zap} />
-            <div className={cn("grid gap-4", operator === "BT" ? "grid-cols-3" : "grid-cols-2")}>
+            <div className="grid grid-cols-2 gap-4">
                 <FormField
                     control={form.control}
                     name="operator"
@@ -365,68 +357,59 @@ export function PricingRuleDrawer({ auditSidebar, initialData, onSuccess, open, 
     const renderValidityTab = () => (
         <div className="space-y-6">
             <FormSection title="Vigencia y Estado" icon={Calendar} />
-            <div className="grid grid-cols-4 gap-4">
-                <div className="col-span-4">
-                    <FormField
-                        control={form.control}
-                        name="active"
-                        render={({ field }) => (
-                            <LabeledSwitch
-                                label="Estado de la Regla"
-                                description={field.value ? "Regla activa" : "Regla inactiva"}
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                                icon={<Zap className={cn("h-4 w-4 transition-colors", field.value ? "text-success" : "text-muted-foreground/30")} />}
-                                className={cn(field.value ? "bg-success/5 border-success/20 shadow-sm" : "border-dashed")}
-                            />
-                        )}
+            <FormField
+                control={form.control}
+                name="active"
+                render={({ field }) => (
+                    <LabeledSwitch
+                        label="Estado de la Regla"
+                        description={field.value ? "Regla activa" : "Regla inactiva"}
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        icon={<Zap className={cn("h-4 w-4 transition-colors", field.value ? "text-success" : "text-muted-foreground/30")} />}
+                        className={cn(field.value ? "bg-success/5 border-success/20 shadow-sm" : "border-dashed")}
                     />
-                </div>
-                <div className="col-span-2">
-                    <FormField
-                        control={form.control}
-                        name="start_date"
-                        render={({ field }) => (
-                            <PeriodValidationDateInput
-                                date={field.value ? new Date(field.value + 'T12:00:00') : undefined}
-                                onDateChange={(date) => {
-                                    if (!date) {
-                                        field.onChange(null)
-                                        return
-                                    }
-                                    field.onChange(date.toISOString().split('T')[0])
-                                }}
-                                label="Válida Desde"
-                                validationType="tax"
-                                required
-                            />
-                        )}
-                    />
-
-                </div>
-                <div className="col-span-2">
-                    <FormField
-                        control={form.control}
-                        name="end_date"
-                        render={({ field }) => (
-                            <PeriodValidationDateInput
-                                date={field.value ? new Date(field.value + 'T12:00:00') : undefined}
-                                onDateChange={(date) => {
-                                    if (!date) {
-                                        field.onChange(null)
-                                        return
-                                    }
-                                    field.onChange(date.toISOString().split('T')[0])
-                                }}
-                                label="Válida Hasta (Opcional)"
-                                validationType="tax"
-                            />
-                        )}
-                    />
-                </div>
+                )}
+            />
+            <div className="grid grid-cols-2 gap-4">
+                <FormField
+                    control={form.control}
+                    name="start_date"
+                    render={({ field }) => (
+                        <PeriodValidationDateInput
+                            date={field.value ? new Date(field.value + 'T12:00:00') : undefined}
+                            onDateChange={(date) => {
+                                if (!date) {
+                                    field.onChange(null)
+                                    return
+                                }
+                                field.onChange(date.toISOString().split('T')[0])
+                            }}
+                            label="Válida Desde"
+                            validationType="tax"
+                            required
+                        />
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="end_date"
+                    render={({ field }) => (
+                        <PeriodValidationDateInput
+                            date={field.value ? new Date(field.value + 'T12:00:00') : undefined}
+                            onDateChange={(date) => {
+                                if (!date) {
+                                    field.onChange(null)
+                                    return
+                                }
+                                field.onChange(date.toISOString().split('T')[0])
+                            }}
+                            label="Válida Hasta (Opcional)"
+                            validationType="tax"
+                        />
+                    )}
+                />
             </div>
-
-
         </div>
     )
 

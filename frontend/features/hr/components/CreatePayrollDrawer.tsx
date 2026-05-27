@@ -136,32 +136,30 @@ export function CreatePayrollDrawer({ open, onOpenChange, onSaved, trigger }: Cr
                             />
                         )} />
 
-                        <div className="grid grid-cols-2 gap-4">
-                            <FormField control={form.control} name="period_year" render={({ field, fieldState }) => (
-                                <LabeledSelect
-                                    label="Año"
-                                    value={field.value}
-                                    onChange={field.onChange}
-                                    error={fieldState.error?.message}
-                                    options={[currentYear - 1, currentYear, currentYear + 1].map(y => ({
-                                        value: String(y),
-                                        label: String(y)
-                                    }))}
-                                />
-                            )} />
-                            <FormField control={form.control} name="period_month" render={({ field, fieldState }) => (
-                                <LabeledSelect
-                                    label="Mes"
-                                    value={field.value}
-                                    onChange={field.onChange}
-                                    error={fieldState.error?.message}
-                                    options={MONTHS.map(m => ({
-                                        value: String(m.value),
-                                        label: m.label
-                                    }))}
-                                />
-                            )} />
-                        </div>
+                        <FormField control={form.control} name="period_year" render={({ field, fieldState }) => (
+                            <LabeledSelect
+                                label="Año"
+                                value={field.value}
+                                onChange={field.onChange}
+                                error={fieldState.error?.message}
+                                options={[currentYear - 1, currentYear, currentYear + 1].map(y => ({
+                                    value: String(y),
+                                    label: String(y)
+                                }))}
+                            />
+                        )} />
+                        <FormField control={form.control} name="period_month" render={({ field, fieldState }) => (
+                            <LabeledSelect
+                                label="Mes"
+                                value={field.value}
+                                onChange={field.onChange}
+                                error={fieldState.error?.message}
+                                options={MONTHS.map(m => ({
+                                    value: String(m.value),
+                                    label: m.label
+                                }))}
+                            />
+                        )} />
 
                         <FormField control={form.control} name="notes" render={({ field, fieldState }) => (
                             <LabeledInput

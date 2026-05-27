@@ -10,7 +10,7 @@ import { updateAdvance } from '@/features/hr/api/hrApi'
 import type { SalaryAdvance, Employee, Payroll } from "@/types/hr"
 import { ActivitySidebar } from "@/features/audit/components"
 import { Button } from "@/components/ui/button"
-import { CancelButton, SubmitButton } from "@/components/shared/ActionButtons"
+import { CancelButton, ActionSlideButton } from "@/components/shared"
 import { Form, FormField } from "@/components/ui/form"
 import { Drawer, LabeledInput, LabeledSelect, PeriodValidationDateInput, FormFooter, FormSplitLayout } from "@/components/shared"
 import { WalletCards } from "lucide-react"
@@ -114,9 +114,9 @@ export function AdvanceDrawer({ open, onOpenChange, advance, employees, payrolls
                     actions={
                         <>
                             <CancelButton onClick={() => onOpenChange(false)} />
-                            <SubmitButton form="advance-form" loading={saving}>
+                            <ActionSlideButton type="submit" form="advance-form" loading={saving}>
                                 {advance ? "Actualizar" : "Registrar"}
-                            </SubmitButton>
+                            </ActionSlideButton>
                         </>
                     }
                 />
@@ -141,33 +141,31 @@ export function AdvanceDrawer({ open, onOpenChange, advance, employees, payrolls
                                     />
                                 )} />
 
-                                <div className="grid grid-cols-2 gap-4">
-                                    <FormField control={form.control} name="amount" render={({ field, fieldState }) => (
-                                        <LabeledInput
-                                            label="Monto ($)"
-                                            required
-                                            type="number"
-                                            placeholder="0"
-                                            error={fieldState.error?.message}
-                                            {...field}
-                                        />
-                                    )} />
-                                    <FormField control={form.control} name="date" render={({ field, fieldState }) => (
-                                        <PeriodValidationDateInput
-                                            label="Fecha Propuesta"
-                                            required
-                                            date={field.value ? new Date(field.value + 'T12:00:00') : undefined}
-                                            onDateChange={(d) => {
-                                                if (!d) {
-                                                    field.onChange("")
-                                                    return
-                                                }
-                                                field.onChange(d.toISOString().split('T')[0])
-                                            }}
-                                            validationType="accounting"
-                                        />
-                                    )} />
-                                </div>
+                                <FormField control={form.control} name="amount" render={({ field, fieldState }) => (
+                                    <LabeledInput
+                                        label="Monto ($)"
+                                        required
+                                        type="number"
+                                        placeholder="0"
+                                        error={fieldState.error?.message}
+                                        {...field}
+                                    />
+                                )} />
+                                <FormField control={form.control} name="date" render={({ field, fieldState }) => (
+                                    <PeriodValidationDateInput
+                                        label="Fecha Propuesta"
+                                        required
+                                        date={field.value ? new Date(field.value + 'T12:00:00') : undefined}
+                                        onDateChange={(d) => {
+                                            if (!d) {
+                                                field.onChange("")
+                                                return
+                                            }
+                                            field.onChange(d.toISOString().split('T')[0])
+                                        }}
+                                        validationType="accounting"
+                                    />
+                                )} />
 
                                 <FormField control={form.control} name="payroll" render={({ field, fieldState }) => (
                                     <LabeledSelect
@@ -217,33 +215,31 @@ export function AdvanceDrawer({ open, onOpenChange, advance, employees, payrolls
                                     />
                                 )} />
 
-                                <div className="grid grid-cols-2 gap-4">
-                                    <FormField control={form.control} name="amount" render={({ field, fieldState }) => (
-                                        <LabeledInput
-                                            label="Monto ($)"
-                                            required
-                                            type="number"
-                                            placeholder="0"
-                                            error={fieldState.error?.message}
-                                            {...field}
-                                        />
-                                    )} />
-                                    <FormField control={form.control} name="date" render={({ field, fieldState }) => (
-                                        <PeriodValidationDateInput
-                                            label="Fecha Propuesta"
-                                            required
-                                            date={field.value ? new Date(field.value + 'T12:00:00') : undefined}
-                                            onDateChange={(d) => {
-                                                if (!d) {
-                                                    field.onChange("")
-                                                    return
-                                                }
-                                                field.onChange(d.toISOString().split('T')[0])
-                                            }}
-                                            validationType="accounting"
-                                        />
-                                    )} />
-                                </div>
+                                <FormField control={form.control} name="amount" render={({ field, fieldState }) => (
+                                    <LabeledInput
+                                        label="Monto ($)"
+                                        required
+                                        type="number"
+                                        placeholder="0"
+                                        error={fieldState.error?.message}
+                                        {...field}
+                                    />
+                                )} />
+                                <FormField control={form.control} name="date" render={({ field, fieldState }) => (
+                                    <PeriodValidationDateInput
+                                        label="Fecha Propuesta"
+                                        required
+                                        date={field.value ? new Date(field.value + 'T12:00:00') : undefined}
+                                        onDateChange={(d) => {
+                                            if (!d) {
+                                                field.onChange("")
+                                                return
+                                            }
+                                            field.onChange(d.toISOString().split('T')[0])
+                                        }}
+                                        validationType="accounting"
+                                    />
+                                )} />
 
                                 <FormField control={form.control} name="payroll" render={({ field, fieldState }) => (
                                     <LabeledSelect

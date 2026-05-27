@@ -9,7 +9,7 @@ import * as z from "zod"
 import { createAbsence, updateAbsence } from '@/features/hr/api/hrApi'
 import type { Absence, Employee } from "@/types/hr"
 import { Button } from "@/components/ui/button"
-import { CancelButton, SubmitButton } from "@/components/shared/ActionButtons"
+import { CancelButton, ActionSlideButton } from "@/components/shared"
 import { Form, FormField } from "@/components/ui/form"
 import { CalendarX2 } from "lucide-react"
 import { Drawer, LabeledInput, LabeledSelect, PeriodValidationDateInput, FormFooter, FormSplitLayout } from "@/components/shared"
@@ -102,9 +102,9 @@ export function AbsenceDrawer({ open, onOpenChange, absence, employees, onSaved,
             actions={
                 <>
                     <CancelButton onClick={() => onOpenChange(false)} />
-                    <SubmitButton disabled={saving} onClick={form.handleSubmit(onSubmit)} loading={saving}>
+                    <ActionSlideButton type="submit" disabled={saving} onClick={form.handleSubmit(onSubmit)} loading={saving}>
                         {absence ? "Actualizar" : "Registrar"}
-                    </SubmitButton>
+                    </ActionSlideButton>
                 </>
             }
         />
@@ -140,66 +140,62 @@ export function AbsenceDrawer({ open, onOpenChange, absence, employees, onSaved,
                                         }))}
                                     />
                                 )} />
-                                <div className="grid grid-cols-2 gap-4">
-                                    <FormField control={form.control} name="absence_type" render={({ field, fieldState }) => (
-                                        <LabeledSelect
-                                            label="Tipo de Inasistencia"
-                                            value={field.value}
-                                            onChange={field.onChange}
-                                            error={fieldState.error?.message}
-                                            options={[
-                                                { value: "AUSENTISMO", label: "Ausentismo Injustificado" },
-                                                { value: "LICENCIA", label: "Licencia Médica" },
-                                                { value: "PERMISO_SIN_GOCE", label: "Permiso sin Goce de Sueldo" },
-                                                { value: "AUSENCIA_HORAS", label: "Ausencia de Horas" }
-                                            ]}
-                                        />
-                                    )} />
-                                    <FormField control={form.control} name="days" render={({ field, fieldState }) => (
-                                        <LabeledInput
-                                            label="Días Totales"
-                                            type="number"
-                                            step="0.5"
-                                            min="0"
-                                            hint="Para ausencia de horas, calcule su equivalente en días (ej. 0.5)."
-                                            error={fieldState.error?.message}
-                                            {...field}
-                                            onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
-                                        />
-                                    )} />
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <FormField control={form.control} name="start_date" render={({ field, fieldState }) => (
-                                        <PeriodValidationDateInput
-                                            label="Fecha Inicio"
-                                            date={field.value ? new Date(field.value + 'T12:00:00') : undefined}
-                                            onDateChange={(d) => {
-                                                if (!d) {
-                                                    field.onChange("")
-                                                    return
-                                                }
-                                                field.onChange(d.toISOString().split('T')[0])
-                                            }}
-                                            error={fieldState.error?.message}
-                                            validationType="accounting"
-                                        />
-                                    )} />
-                                    <FormField control={form.control} name="end_date" render={({ field, fieldState }) => (
-                                        <PeriodValidationDateInput
-                                            label="Fecha Fin"
-                                            date={field.value ? new Date(field.value + 'T12:00:00') : undefined}
-                                            onDateChange={(d) => {
-                                                if (!d) {
-                                                    field.onChange("")
-                                                    return
-                                                }
-                                                field.onChange(d.toISOString().split('T')[0])
-                                            }}
-                                            error={fieldState.error?.message}
-                                            validationType="accounting"
-                                        />
-                                    )} />
-                                </div>
+                                <FormField control={form.control} name="absence_type" render={({ field, fieldState }) => (
+                                    <LabeledSelect
+                                        label="Tipo de Inasistencia"
+                                        value={field.value}
+                                        onChange={field.onChange}
+                                        error={fieldState.error?.message}
+                                        options={[
+                                            { value: "AUSENTISMO", label: "Ausentismo Injustificado" },
+                                            { value: "LICENCIA", label: "Licencia Médica" },
+                                            { value: "PERMISO_SIN_GOCE", label: "Permiso sin Goce de Sueldo" },
+                                            { value: "AUSENCIA_HORAS", label: "Ausencia de Horas" }
+                                        ]}
+                                    />
+                                )} />
+                                <FormField control={form.control} name="days" render={({ field, fieldState }) => (
+                                    <LabeledInput
+                                        label="Días Totales"
+                                        type="number"
+                                        step="0.5"
+                                        min="0"
+                                        hint="Para ausencia de horas, calcule su equivalente en días (ej. 0.5)."
+                                        error={fieldState.error?.message}
+                                        {...field}
+                                        onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
+                                    />
+                                )} />
+                                <FormField control={form.control} name="start_date" render={({ field, fieldState }) => (
+                                    <PeriodValidationDateInput
+                                        label="Fecha Inicio"
+                                        date={field.value ? new Date(field.value + 'T12:00:00') : undefined}
+                                        onDateChange={(d) => {
+                                            if (!d) {
+                                                field.onChange("")
+                                                return
+                                            }
+                                            field.onChange(d.toISOString().split('T')[0])
+                                        }}
+                                        error={fieldState.error?.message}
+                                        validationType="accounting"
+                                    />
+                                )} />
+                                <FormField control={form.control} name="end_date" render={({ field, fieldState }) => (
+                                    <PeriodValidationDateInput
+                                        label="Fecha Fin"
+                                        date={field.value ? new Date(field.value + 'T12:00:00') : undefined}
+                                        onDateChange={(d) => {
+                                            if (!d) {
+                                                field.onChange("")
+                                                return
+                                            }
+                                            field.onChange(d.toISOString().split('T')[0])
+                                        }}
+                                        error={fieldState.error?.message}
+                                        validationType="accounting"
+                                    />
+                                )} />
                                 <FormField control={form.control} name="notes" render={({ field, fieldState }) => (
                                     <LabeledInput
                                         label="Notas Adicionales"
@@ -232,66 +228,62 @@ export function AbsenceDrawer({ open, onOpenChange, absence, employees, onSaved,
                                         }))}
                                     />
                                 )} />
-                                <div className="grid grid-cols-2 gap-4">
-                                    <FormField control={form.control} name="absence_type" render={({ field, fieldState }) => (
-                                        <LabeledSelect
-                                            label="Tipo de Inasistencia"
-                                            value={field.value}
-                                            onChange={field.onChange}
-                                            error={fieldState.error?.message}
-                                            options={[
-                                                { value: "AUSENTISMO", label: "Ausentismo Injustificado" },
-                                                { value: "LICENCIA", label: "Licencia Médica" },
-                                                { value: "PERMISO_SIN_GOCE", label: "Permiso sin Goce de Sueldo" },
-                                                { value: "AUSENCIA_HORAS", label: "Ausencia de Horas" }
-                                            ]}
-                                        />
-                                    )} />
-                                    <FormField control={form.control} name="days" render={({ field, fieldState }) => (
-                                        <LabeledInput
-                                            label="Días Totales"
-                                            type="number"
-                                            step="0.5"
-                                            min="0"
-                                            hint="Para ausencia de horas, calcule su equivalente en días (ej. 0.5)."
-                                            error={fieldState.error?.message}
-                                            {...field}
-                                            onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
-                                        />
-                                    )} />
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <FormField control={form.control} name="start_date" render={({ field, fieldState }) => (
-                                        <PeriodValidationDateInput
-                                            label="Fecha Inicio"
-                                            date={field.value ? new Date(field.value + 'T12:00:00') : undefined}
-                                            onDateChange={(d) => {
-                                                if (!d) {
-                                                    field.onChange("")
-                                                    return
-                                                }
-                                                field.onChange(d.toISOString().split('T')[0])
-                                            }}
-                                            error={fieldState.error?.message}
-                                            validationType="accounting"
-                                        />
-                                    )} />
-                                    <FormField control={form.control} name="end_date" render={({ field, fieldState }) => (
-                                        <PeriodValidationDateInput
-                                            label="Fecha Fin"
-                                            date={field.value ? new Date(field.value + 'T12:00:00') : undefined}
-                                            onDateChange={(d) => {
-                                                if (!d) {
-                                                    field.onChange("")
-                                                    return
-                                                }
-                                                field.onChange(d.toISOString().split('T')[0])
-                                            }}
-                                            error={fieldState.error?.message}
-                                            validationType="accounting"
-                                        />
-                                    )} />
-                                </div>
+                                <FormField control={form.control} name="absence_type" render={({ field, fieldState }) => (
+                                    <LabeledSelect
+                                        label="Tipo de Inasistencia"
+                                        value={field.value}
+                                        onChange={field.onChange}
+                                        error={fieldState.error?.message}
+                                        options={[
+                                            { value: "AUSENTISMO", label: "Ausentismo Injustificado" },
+                                            { value: "LICENCIA", label: "Licencia Médica" },
+                                            { value: "PERMISO_SIN_GOCE", label: "Permiso sin Goce de Sueldo" },
+                                            { value: "AUSENCIA_HORAS", label: "Ausencia de Horas" }
+                                        ]}
+                                    />
+                                )} />
+                                <FormField control={form.control} name="days" render={({ field, fieldState }) => (
+                                    <LabeledInput
+                                        label="Días Totales"
+                                        type="number"
+                                        step="0.5"
+                                        min="0"
+                                        hint="Para ausencia de horas, calcule su equivalente en días (ej. 0.5)."
+                                        error={fieldState.error?.message}
+                                        {...field}
+                                        onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
+                                    />
+                                )} />
+                                <FormField control={form.control} name="start_date" render={({ field, fieldState }) => (
+                                    <PeriodValidationDateInput
+                                        label="Fecha Inicio"
+                                        date={field.value ? new Date(field.value + 'T12:00:00') : undefined}
+                                        onDateChange={(d) => {
+                                            if (!d) {
+                                                field.onChange("")
+                                                return
+                                            }
+                                            field.onChange(d.toISOString().split('T')[0])
+                                        }}
+                                        error={fieldState.error?.message}
+                                        validationType="accounting"
+                                    />
+                                )} />
+                                <FormField control={form.control} name="end_date" render={({ field, fieldState }) => (
+                                    <PeriodValidationDateInput
+                                        label="Fecha Fin"
+                                        date={field.value ? new Date(field.value + 'T12:00:00') : undefined}
+                                        onDateChange={(d) => {
+                                            if (!d) {
+                                                field.onChange("")
+                                                return
+                                            }
+                                            field.onChange(d.toISOString().split('T')[0])
+                                        }}
+                                        error={fieldState.error?.message}
+                                        validationType="accounting"
+                                    />
+                                )} />
                                 <FormField control={form.control} name="notes" render={({ field, fieldState }) => (
                                     <LabeledInput
                                         label="Notas Adicionales"
