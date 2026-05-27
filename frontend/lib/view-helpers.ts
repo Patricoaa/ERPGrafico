@@ -2,9 +2,7 @@
 
 import React, { useState, useCallback } from "react"
 import { Table as ReactTable, type Row, type VisibilityState } from "@tanstack/react-table"
-import { DomainCard } from "@/components/shared/DomainCard"
-import { EntityCard } from "@/components/shared/EntityCard"
-import { EmptyState } from "@/components/shared/EmptyState"
+import { DomainCard, EntityCard, EmptyState } from "@/components/shared"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -36,7 +34,7 @@ export function createDomainCardView(
     isHubOpen?: boolean
   }
 ) {
-  return (table: ReactTable<any>) => {
+  const DomainCardView = (table: ReactTable<any>) => {
     const rows = table.getRowModel().rows
     if (rows.length === 0) {
       const meta = ENTITY_REGISTRY[entityLabel]
@@ -62,6 +60,8 @@ export function createDomainCardView(
       )
     )
   }
+  DomainCardView.displayName = "DomainCardView"
+  return DomainCardView
 }
 
 /**
@@ -88,7 +88,7 @@ export function createEntityCardView(
     ? "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 pt-2"
     : "grid gap-3 pt-2"
 
-  return (table: ReactTable<any>) => {
+  const EntityCardView = (table: ReactTable<any>) => {
     const rows = table.getRowModel().rows
     if (rows.length === 0) {
       const meta = ENTITY_REGISTRY[entityLabel]
@@ -107,6 +107,8 @@ export function createEntityCardView(
       })
     )
   }
+  EntityCardView.displayName = "EntityCardView"
+  return EntityCardView
 }
 
 /**
@@ -123,7 +125,7 @@ export function createCardLoadingView(
     ? "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 pt-2"
     : "grid gap-3 pt-1"
 
-  return () =>
+  const CardLoadingView = () =>
     React.createElement(
       "div",
       { className: gridClass },
@@ -134,6 +136,8 @@ export function createCardLoadingView(
         })
       )
     )
+  CardLoadingView.displayName = "CardLoadingView"
+  return CardLoadingView
 }
 
 /**

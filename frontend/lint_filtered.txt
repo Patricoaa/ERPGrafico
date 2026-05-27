@@ -1,0 +1,205 @@
+  12:33  error  app/ must import from features/[name]/index.ts barrel, not internals                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               boundaries/dependencies
+  28:13  error  Error: Cannot access variable before it is declared
+   9:36  error  app/ must import from features/[name]/index.ts barrel, not internals                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              boundaries/dependencies
+  16:54  error  app/ must import from features/[name]/index.ts barrel, not internals                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              boundaries/dependencies
+  17:39  error  app/ must import from features/[name]/index.ts barrel, not internals                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              boundaries/dependencies
+  53:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  26:38  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  35:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+   7:45  error  app/ must import from features/[name]/index.ts barrel, not internals  boundaries/dependencies
+  16:29  error  app/ must import from features/[name]/index.ts barrel, not internals  boundaries/dependencies
+   6:88  error  app/ must import from features/[name]/index.ts barrel, not internals                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              boundaries/dependencies
+  16:35  error  app/ must import from features/[name]/index.ts barrel, not internals                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              boundaries/dependencies
+  58:23  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  16:30  error  app/ must import from features/[name]/index.ts barrel, not internals                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               boundaries/dependencies
+  41:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  8:39  error  app/ must import from features/[name]/index.ts barrel, not internals  boundaries/dependencies
+  11:27  error  app/ must import from features/[name]/index.ts barrel, not internals                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               boundaries/dependencies
+  18:28  error  app/ must import from features/[name]/index.ts barrel, not internals                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               boundaries/dependencies
+  43:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+   8:30  error  app/ must import from features/[name]/index.ts barrel, not internals                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 boundaries/dependencies
+  32:23  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  35:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  45:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+   6:27  error  app/ must import from features/[name]/index.ts barrel, not internals  boundaries/dependencies
+   7:33  error  app/ must import from features/[name]/index.ts barrel, not internals  boundaries/dependencies
+  10:12  error  app/ must import from features/[name]/index.ts barrel, not internals  boundaries/dependencies
+  41:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  51:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+   6:27  error  app/ must import from features/[name]/index.ts barrel, not internals  boundaries/dependencies
+   7:33  error  app/ must import from features/[name]/index.ts barrel, not internals  boundaries/dependencies
+  10:12  error  app/ must import from features/[name]/index.ts barrel, not internals  boundaries/dependencies
+  54:9  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  80:9  error  Error: Cannot access variable before it is declared
+  7:35  error  app/ must import from features/[name]/index.ts barrel, not internals  boundaries/dependencies
+  5:85  error  app/ must import from features/[name]/index.ts barrel, not internals  boundaries/dependencies
+  65:13  error  Error: Cannot access variable before it is declared
+  69:35  error  Compilation Skipped: Existing memoization could not be preserved
+  13:10  error  'useQuery' import from '@tanstack/react-query' is restricted. React Query hooks must only be used within feature hooks (features/*/hooks/). Do not import them directly in components  no-restricted-imports
+  12:10  error  'useQuery' import from '@tanstack/react-query' is restricted. React Query hooks must only be used within feature hooks (features/*/hooks/). Do not import them directly in components  no-restricted-imports
+  11:18  error  An interface declaring no members is equivalent to its supertype  @typescript-eslint/no-empty-object-type
+  30:18  error  An interface declaring no members is equivalent to its supertype  @typescript-eslint/no-empty-object-type
+  49:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  90:30  error  Error: Cannot create components during render
+  89:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  99:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  1:1  error  Do not import renderer package "@storybook/react" directly. Use a framework package instead (e.g. @storybook/nextjs, @storybook/react-vite, @storybook/nextjs-vite, @storybook/react-webpack5, @storybook/react-native-web-vite)  storybook/no-renderer-packages
+  6:10  error  'useQuery' import from '@tanstack/react-query' is restricted. React Query hooks must only be used within feature hooks (features/*/hooks/). Do not import them directly in components     no-restricted-imports
+  6:20  error  'useMutation' import from '@tanstack/react-query' is restricted. React Query hooks must only be used within feature hooks (features/*/hooks/). Do not import them directly in components  no-restricted-imports
+  65:9  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+   80:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  109:9   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  245:106  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  245:119  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  60:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  57:10  error  'useQuery' import from '@tanstack/react-query' is restricted. React Query hooks must only be used within feature hooks (features/*/hooks/). Do not import them directly in components  no-restricted-imports
+  32:5  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  80:9  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  69:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+   54:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  154:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  97:17  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+   89:13  error  Error: Cannot access variable before it is declared
+  133:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  139:9   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  97:9  error  Error: Cannot access variable before it is declared
+  61:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  73:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  54:17  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  87:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  169:9   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  199:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  302:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  82:9  error  Error: Cannot access variable before it is declared
+  109:13  error  Error: Cannot access variable before it is declared
+  38:9   error  Error: Cannot access variable before it is declared
+  44:13  error  Error: Cannot access variable before it is declared
+  58:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  78:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  174:14  error  Error: Cannot create components during render
+   55:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  253:18  error  Error: Cannot create components during render
+  259:38  error  Error: Cannot create components during render
+  322:38  error  Error: Cannot create components during render
+  383:38  error  Error: Cannot create components during render
+  50:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  174:5   error  React Hook "useEffect" is called conditionally. React Hooks must be called in the exact same order in every component render. Did you accidentally call a React Hook after an early return?                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      react-hooks/rules-of-hooks
+  467:33  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+   53:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  147:27  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  68:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  155:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  114:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  61:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  188:90   error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  188:101  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  276:87   error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  276:113  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  83:5  error  Error: Cannot access refs during render
+  75:46  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  29:9  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  57:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  68:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  69:13  error  Error: Cannot access variable before it is declared
+  48:13  error  Error: Cannot access variable before it is declared
+  49:13  error  Error: Cannot access variable before it is declared
+  111:9  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  62:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  199:26  error  Error: Cannot call impure function during render
+  138:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  112:17  error  Error: Cannot access variable before it is declared
+  118:21  error  Error: Cannot access variable before it is declared
+  120 |                     console.error('[DraftSync] Error parsing WS message', e)
+> 149 |         const { event, draft, draft_id, error } = data
+  238:38  error  Compilation Skipped: Existing memoization could not be preserved
+   45:37  error  Compilation Skipped: Existing memoization could not be preserved
+  287:9   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  139:43  error  React Hook "useRealtime" is called in function "onSuccess" that is neither a React function component nor a custom React Hook function. React component names must start with an uppercase letter. React Hook names must start with the word "use"  react-hooks/rules-of-hooks
+  44:39  error  React Hook "React.useState" is called conditionally. React Hooks must be called in the exact same order in every component render. Did you accidentally call a React Hook after an early return?  react-hooks/rules-of-hooks
+    4:10   error  'useQuery' import from '@tanstack/react-query' is restricted. React Query hooks must only be used within feature hooks (features/*/hooks/). Do not import them directly in components                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     no-restricted-imports
+  126:5    error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  189:7    error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  336:105  error  Error: Cannot call impure function during render
+  399:68   error  Error: Cannot access refs during render
+  124:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  49:9  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  73:7  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  58:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  77:9   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  90:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  44:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+   63:20  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  104:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  127:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  138:9   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  164:9   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+   76:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+   82:13  error  Error: Cannot access variable before it is declared
+  140:9   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  81:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  87:13  error  Error: Cannot access variable before it is declared
+  167:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  173:13  error  Error: Cannot access variable before it is declared
+  66:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  70:13  error  Error: Cannot access variable before it is declared
+  106:9  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  171:40  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  183:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  244:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  39:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  30:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  95:9  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  39:9  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  53:9  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  44:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  104:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  106:9   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  111:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  117:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  127:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+   60:17  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  253:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  463:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  594:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  727:17  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+   95:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  102:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  128:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  50:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  125:58  error  Error: Cannot reassign variable after render completes
+Reassigning `hasErrors` after render has completed can cause inconsistent behavior on subsequent renders. Consider using state instead.
+  124 |                                             const isError = totalAssigned > available
+> 125 |                                             if (isError) hasErrors = true
+      |                                                          ^^^^^^^^^ Cannot reassign `hasErrors` after render completes
+   79:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  121:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  58:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+   78:9   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  122:48  error  Error: Cannot reassign variable after render completes
+   80:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  122:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  68:9   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  75:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  25:9  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  83:47  error  Error: Cannot access variable before it is declared
+  85:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  95:21  error  Error: Cannot access variable before it is declared
+  99:21  error  Error: Cannot access variable before it is declared
+  369:9  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  90:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  31:20  error  Do not discard the DRF envelope with `x.results || x` or `x.results ?? x`. The pagination metadata (count, next, previous) is lost. Wrap with toPage() from @/lib/pagination and return Page<T>. See docs/20-contracts/pagination-contract.md §2.3  pagination/no-envelope-discard
+  112:17  error  Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               @typescript-eslint/ban-ts-comment
+  114:21  error  Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               @typescript-eslint/ban-ts-comment
+  130:14  error  Error: Cannot create components during render
+  53:9   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  62:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  123:9   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  134:17  error  Error: Cannot access variable before it is declared
+  223:40  error  React Hook "useUpdateTask" is called in function "handleCreditAction" that is neither a React function component nor a custom React Hook function. React component names must start with an uppercase letter. React Hook names must start with the word "use"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              react-hooks/rules-of-hooks
+  14:5  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  44:12  error  Component definition is missing display name  react/display-name
+  10:7  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  18:9  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+  39:13  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  39:18  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+✖ 198 problems (198 errors, 0 warnings)

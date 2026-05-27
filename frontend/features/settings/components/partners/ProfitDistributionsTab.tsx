@@ -17,7 +17,7 @@ import {
 } from "lucide-react"
 import { toast } from "sonner"
 import { CreateDistributionFlow } from "./CreateDistributionFlow"
-import { MassPaymentModal } from "./MassPaymentModal"
+import { MassPaymentModal } from "./MassPaymentWizard"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 
 interface ProfitDistributionsTabProps {
@@ -265,14 +265,14 @@ export function ProfitDistributionsTab({ initialFlowOpen = false, onModalClose, 
         <div className="space-y-6 h-full flex flex-col">
             <div className="flex-1 min-h-0">
                 <DataTable
-                columns={columns}
-                data={state.distributions}
-                isLoading={state.loading}
-                variant="embedded"
-                searchPlaceholder="Buscar por año o resolución..."
-                filterColumn="fiscal_year"
-                createAction={createAction}
-            />
+                    columns={columns}
+                    data={state.distributions}
+                    isLoading={state.loading}
+                    variant="embedded"
+                    searchPlaceholder="Buscar por año o resolución..."
+                    filterColumn="fiscal_year"
+                    createAction={createAction}
+                />
             </div>
 
             {/* Modal Flows */}

@@ -106,7 +106,7 @@ La página `[id]/page.tsx` es un **Server Component** que:
 1. Fetch de la entidad vía API.
 2. Valida permiso `view_*` — devuelve 403 si no autorizado.
 3. Llama `notFound()` si el id no existe.
-4. Renderiza `<EntityDetailPage>` con el form/editor existente como `children`.
+4. **Redirige server-side a `<list_url>?selected={id}`** (ADR-0020). La lista abre el modal/drawer de edición existente con ese `?selected`. No renderiza `EntityDetailPage` (componente decommissionado en T-95).
 
 ### 7.2 Tabla app → módulo frontend
 
@@ -157,9 +157,12 @@ La página `[id]/page.tsx` es un **Server Component** que:
 | `core.user` | `/settings/users` | `/settings/users/{id}` | ❌ (T-77) | No |
 | `core.attachment` | `/files` | `/files/{id}` | ❌ (T-77) | **Sí** |
 
-### 7.4 Shell `EntityDetailPage`
+### 7.4 Shell `EntityDetailPage` ~~(Decommissionado)~~
 
-**Archivo:** `frontend/components/shared/EntityDetailPage.tsx` (T-71)
+> [!CAUTION]
+> **Este componente fue eliminado en T-95 (ADR-0020).** Las secciones 7.4–7.6 se conservan como registro histórico únicamente — **no implementar**. El patrón canónico es el redirect server-side a `<list_url>?selected={id}`, documentado en [list-modal-edit-pattern.md](./list-modal-edit-pattern.md).
+
+**Archivo:** ~~`frontend/components/shared/EntityDetailPage.tsx`~~ (eliminado en T-95)
 
 ```tsx
 <EntityDetailPage

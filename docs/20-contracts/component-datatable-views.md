@@ -24,7 +24,7 @@ El `DataTable` opera en tres modos excluyentes:
 | Valor | Cuándo usar |
 |---|---|
 | `"standalone"` | Tabla autónoma en página propia (ejm: `/inventory/products`). Incluye borde contenedor, header visible, padding externo. |
-| `"embedded"` | Tabla incrustada dentro de un card, modal o panel (ejm: líneas de una orden, historial en `ContactModal`). Sin borde externo; comparte el espacio visual con el contenedor padre. |
+| `"embedded"` | Tabla incrustada dentro de un card, modal o panel (ejm: líneas de una orden, historial en `ContactDrawer`). Sin borde externo; comparte el espacio visual con el contenedor padre. |
 | `"minimal"` | Tabla display-readonly dentro de tabs o paneles de detalle (ejm: variantes de producto, pricing, checkout steps). Sin toolbar, sin paginación. Usa el mismo motor TanStack pero con la mínima UI. |
 
 **Regla:** Siempre declarar `variant` explícitamente. La prop `cardMode` está deprecada y no debe usarse en código nuevo.

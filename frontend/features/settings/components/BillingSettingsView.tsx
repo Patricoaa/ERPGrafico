@@ -47,15 +47,11 @@ export const BillingSettingsView: React.FC<{ activeTab?: string }> = ({ activeTa
             keys.forEach((key) => {
                 const val = settings[key]
                 if (val === null || val === undefined) {
-                    if (key === 'default_vat_rate') {
-                        (formattedSettings as Record<string, unknown>)[key] = 19.00;
-                    } else if (key === 'allowed_dte_types_emit' || key === 'allowed_dte_types_receive') {
+                    if (key === 'allowed_dte_types_emit' || key === 'allowed_dte_types_receive') {
                         (formattedSettings as Record<string, unknown>)[key] = [];
                     } else {
                         (formattedSettings as Record<string, unknown>)[key] = null;
                     }
-                } else if (key === 'default_vat_rate') {
-                    (formattedSettings as Record<string, unknown>)[key] = parseFloat(val.toString())
                 } else {
                     (formattedSettings as Record<string, unknown>)[key] = val
                 }

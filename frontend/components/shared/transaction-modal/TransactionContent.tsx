@@ -191,35 +191,36 @@ export function TransactionContent({
         }
 
         if (type === 'terminal_batch') {
+            const tData = data as any;
             return (
                 <div className="space-y-6">
                     <div className="bg-muted/30 p-8 rounded-lg border border-border/40 space-y-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                             <div className="space-y-1.5">
                                 <span className="text-[10px] font-black uppercase text-muted-foreground tracking-widest opacity-60">Proveedor de Terminal</span>
-                                <div className="font-black text-xl tracking-tighter text-primary">{data.provider_name || 'Particular'}</div>
+                                <div className="font-black text-xl tracking-tighter text-primary">{tData.provider_name || 'Particular'}</div>
                             </div>
                             <div className="space-y-1.5 md:text-right">
                                 <span className="text-[10px] font-black uppercase text-muted-foreground tracking-widest opacity-60">Estado de Liquidación</span>
-                                <div className="font-black text-xl tracking-tighter uppercase">{data.status_display || 'Pendiente'}</div>
+                                <div className="font-black text-xl tracking-tighter uppercase">{tData.status_display || 'Pendiente'}</div>
                             </div>
                         </div>
 
                         <div className="pt-6 border-t border-border/40 grid grid-cols-1 md:grid-cols-3 gap-8">
                             <div className="space-y-1.5">
                                 <span className="text-[10px] font-black uppercase text-muted-foreground tracking-widest opacity-60">Monto Bruto Total</span>
-                                <div className="font-black text-2xl tracking-tighter font-mono">{formatCurrency(data.gross_amount)}</div>
+                                <div className="font-black text-2xl tracking-tighter font-mono">{formatCurrency(tData.gross_amount)}</div>
                             </div>
                             <div className="space-y-1.5 md:text-center">
                                 <span className="text-[10px] font-black uppercase text-muted-foreground tracking-widest opacity-60">Comisiones e IVA</span>
                                 <div className="font-black text-2xl tracking-tighter font-mono text-destructive">
-                                    -{formatCurrency(data.commission_total)}
+                                    -{formatCurrency(tData.commission_total)}
                                 </div>
                             </div>
                             <div className="space-y-1.5 md:text-right">
                                 <span className="text-[10px] font-black uppercase text-muted-foreground tracking-widest opacity-60">Neto a Depositar</span>
                                 <div className="font-black text-4xl tracking-tighter font-mono text-success">
-                                    {formatCurrency(data.net_amount)}
+                                    {formatCurrency(tData.net_amount)}
                                 </div>
                             </div>
                         </div>
@@ -233,16 +234,16 @@ export function TransactionContent({
                             <div className="flex flex-col">
                                 <span className="text-sm font-black uppercase tracking-tight text-primary leading-none">Resumen del Lote</span>
                                 <span className="text-xs text-muted-foreground font-medium mt-1">
-                                    {data.payment_count} transacciones procesadas entre el {data.sales_date} y el {data.sales_date_end || data.sales_date}
+                                    {tData.payment_count} transacciones procesadas entre el {tData.sales_date} y el {tData.sales_date_end || tData.sales_date}
                                 </span>
                             </div>
                         </div>
                     </div>
 
-                    {data.notes && (
+                    {tData.notes && (
                         <div className="p-8 bg-muted/20 rounded-lg border border-border/40">
                             <span className="text-[10px] font-black uppercase text-muted-foreground tracking-widest opacity-60 block mb-2">Notas del Operador</span>
-                            <p className="text-sm font-medium text-foreground/80 leading-relaxed italic">"{data.notes}"</p>
+                            <p className="text-sm font-medium text-foreground/80 leading-relaxed italic">"{tData.notes}"</p>
                         </div>
                     )}
                 </div>

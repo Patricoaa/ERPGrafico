@@ -421,7 +421,7 @@ El ancho del contenedor (drawer o modal) se elige según la **complejidad** del 
 | `"simple"`  | 2–3 campos (ej: `WarehouseForm`, `UoMForm`) | `30%` / `45%` | `sm` / `md` |
 | `"medium"`  | 4–6 campos (ej: `AccountForm`, `AbsenceForm`) | `40%` / `55%` | `md` / `lg` |
 | `"complex"` | 7+ campos / múltiples secciones / field arrays (ej: `ProductForm`, `PurchaseOrderForm`) | `50%` / `65%` | `lg` / `xl` |
-| `"master"`  | Ficha maestra multi-tab (ej: `EmployeeFormModal`) | `65%` / `80%` | `xl` / `2xl` |
+| `"master"`  | Ficha maestra multi-tab (ej: `EmployeeDrawer`) | `65%` / `80%` | `xl` / `2xl` |
 
 La columna **edit** se aplica cuando `hasSidebar` es `true` (presencia del `ActivitySidebar`). Para Drawer es +10–15% absoluto sobre el viewport. Para Modal es un tier discreto arriba.
 
