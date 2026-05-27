@@ -25,7 +25,7 @@ export const SidebarSection = ({ title, children }: { title: string, children: R
 export const SidebarContent = React.memo(({ data: rawData, currentType, closeModal }: { data: TransactionData, currentType: string, closeModal: () => void }) => {
     const data = rawData as any
     const router = useRouter()
-    const { openContact } = useGlobalModalActions()
+    const { openEntity } = useGlobalModalActions()
 
     if (!data) return null
 
@@ -47,7 +47,7 @@ export const SidebarContent = React.memo(({ data: rawData, currentType, closeMod
                             className="text-[13px] font-medium text-foreground leading-tight flex items-center gap-1.5 group cursor-pointer hover:text-primary transition-colors pr-2"
                             onClick={() => {
                                 if (contactId) {
-                                    openContact(Number(contactId));
+                                    openEntity('contacts.contact', Number(contactId));
                                 }
                             }}
                         >

@@ -74,14 +74,14 @@ export const DataCell = {
 
     /** Clickable contact/human identifier */
     ContactLink: ({ children, contactId, onClick, className, ...props }: HTMLAttributes<HTMLButtonElement> & { contactId?: number | string, onClick?: (e: React.MouseEvent) => void }) => {
-        const { openContact } = useGlobalModals();
+        const { openEntity } = useGlobalModals();
         return (
             <div className={cn("flex justify-center items-center w-full group", className)}>
                 <button
                     onClick={(e) => {
                         e.stopPropagation();
                         if (onClick) onClick(e);
-                        else if (contactId) openContact(Number(contactId));
+                        else if (contactId) openEntity('contacts.contact', Number(contactId));
                     }}
                     className={cn("flex justify-center items-center gap-1.5 text-[13px] font-bold hover:underline hover:text-primary/80 transition-colors text-foreground")}
                     {...props}

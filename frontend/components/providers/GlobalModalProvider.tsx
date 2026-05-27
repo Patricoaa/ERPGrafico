@@ -76,7 +76,7 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
     const registerSheet = useCallback((id: string, fullWidth: number, priority: number, forced: boolean = false) => {
         setSheetStack(prev => {
             const existingIndex = prev.findIndex(s => s.id === id)
-            let newStack = [...prev]
+            const newStack = [...prev]
             if (existingIndex !== -1) {
                 if (prev[existingIndex].width === fullWidth && prev[existingIndex].forced === forced && prev[existingIndex].priority === priority) return prev
                 newStack[existingIndex] = { id, width: fullWidth, priority, forced }

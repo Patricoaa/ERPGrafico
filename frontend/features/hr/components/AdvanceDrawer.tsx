@@ -7,6 +7,8 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { updateAdvance } from '@/features/hr/api/hrApi'
+import { useEmployees } from '@/features/hr/hooks/useEmployees'
+import { usePayrolls } from '@/features/hr/hooks/usePayrolls'
 import type { SalaryAdvance, Employee, Payroll } from "@/types/hr"
 import { ActivitySidebar } from "@/features/audit/components"
 import { Button } from "@/components/ui/button"
@@ -30,12 +32,16 @@ export interface AdvanceDrawerProps {
     open: boolean
     onOpenChange: (o: boolean) => void
     advance: SalaryAdvance | null
-    employees: Employee[]
-    payrolls: Payroll[]
+    employees?: Employee[]
+    payrolls?: Payroll[]
     onSaved: (data?: Record<string, unknown>) => void
 }
 
-export function AdvanceDrawer({ open, onOpenChange, advance, employees, payrolls, onSaved }: AdvanceDrawerProps) {
+export function AdvanceDrawer({ open, onOpenChange, advance, employees: employeesProp, payrolls: payrollsProp, onSaved }: AdvanceDrawerProps) {
+    const { employees: fetchedEmployees } = useEmployees()
+    const { payrolls: fetchedPayrolls } = usePayrolls()
+    const employees = employeesProp ?? fetchedEmployees
+    const payrolls = payrollsProp ?? fetchedPayrolls
     const [saving, setSaving] = useState(false)
     
     const width = formDrawerWidth("medium", !!advance)
