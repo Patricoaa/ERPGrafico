@@ -175,7 +175,7 @@ export function BudgetDetailView({ budgetId }: BudgetDetailViewProps) {
                         data={executionData.items}
                         variant="embedded"
                         hidePagination
-                        emptyState="No se encontraron cuentas presupuestarias"
+                        emptyState={{ title: "Sin datos", description: "No se encontraron cuentas presupuestarias" }}
                     />
                 </CardContent>
             </Card>

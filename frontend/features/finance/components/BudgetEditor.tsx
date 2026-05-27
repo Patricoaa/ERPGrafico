@@ -71,7 +71,6 @@ const BudgetAccountRow = React.memo(({
                     <DataCell.Action
                         icon={Split}
                         title="Distribuir Total Equitativamente"
-                        compact
                         onClick={() => onAutoDistribute?.(account.id)}
                     />
                 </div>

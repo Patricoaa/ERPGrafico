@@ -1,16 +1,5 @@
 "use client"
 
-/**
- * CardActions — canonical container for action buttons in EntityCard footers
- * and Kanban cards.
- *
- * Mirrors the table's `DataCell.ActionGroup` + `DataCell.Action` /
- * `DataCell.ActionMenu` primitives so that every surface shares the same icons,
- * tooltips, sizes and ordering rules.
- *
- * @contract docs/20-contracts/component-row-actions.md
- */
-
 import { ReactNode, HTMLAttributes } from "react"
 import { cn } from "@/lib/utils"
 import { DataCell, type ActionMenuItem } from "./DataTableCells"

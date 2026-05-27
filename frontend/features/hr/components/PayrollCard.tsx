@@ -65,8 +65,8 @@ function ItemRow({ item, type, isReadOnly, onEdit, onDeleteRequest }: {
                 <TableCell className="w-[80px] p-0 text-right">
                     <div className="opacity-0 group-hover:opacity-100 transition-opacity">
                         <DataCell.ActionGroup className="justify-end">
-                            <DataCell.Action action="edit" compact onClick={() => onEdit?.(item)} />
-                            <DataCell.Action action="delete" compact onClick={() => onDeleteRequest?.(item)} />
+                            <DataCell.Action action="edit" onClick={() => onEdit?.(item)} />
+                            <DataCell.Action action="delete" onClick={() => onDeleteRequest?.(item)} />
                         </DataCell.ActionGroup>
                     </div>
                 </TableCell>

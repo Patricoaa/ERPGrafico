@@ -1,7 +1,8 @@
 "use client"
 
 import { create } from 'zustand'
-import type { WorkOrder, WorkOrderMaterial, WorkOrderTask, WizardStepMode } from '../types'
+import type { WorkOrder, WorkOrderMaterial, WorkOrderTask, WizardStepMode, ManufacturingData } from '../types'
+import type { Contact } from '@/features/contacts/types'
 
 interface WizardState {
   // ── data ─────────────────────────────────────────────────────────────────

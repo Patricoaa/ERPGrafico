@@ -23,8 +23,8 @@ import { formDrawerWidth } from "@/lib/form-widths"
 
 const uomSchema = z.object({
     name: z.string().min(1, "El nombre es requerido"),
-    category: z.number({ required_error: "La categoría es requerida" }).min(1, "La categoría es requerida"),
-    uom_type: z.enum(["REFERENCE", "BIGGER", "SMALLER"], { required_error: "El tipo es requerido" }),
+    category: z.number({ message: "La categoría es requerida" }).min(1, "La categoría es requerida"),
+    uom_type: z.enum(["REFERENCE", "BIGGER", "SMALLER"], { message: "El tipo es requerido" }),
     ratio: z.coerce.number().min(0.00001, "El ratio debe ser mayor a 0").optional(),
 })
 
@@ -47,7 +47,7 @@ export function UoMDrawer({ open: openProp, onOpenChange, initialData, onSuccess
     const isFetchingInitialData = open && isCategoriesLoading
 
     const form = useForm<UoMFormValues>({
-        resolver: zodResolver(uomSchema),
+        resolver: zodResolver(uomSchema) as any,
         defaultValues: {
             name: "",
             category: undefined,

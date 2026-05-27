@@ -216,7 +216,7 @@ function WorkOrdersClient() {
                 <DataTableColumnHeader column={column} title="Etapa" className="justify-center" />
             ),
             cell: ({ row }) => (
-                <DataCell.Text className="text-center">
+                <DataCell.Text>
                     {translateProductionStage(row.original.current_stage)}
                 </DataCell.Text>
             ),

@@ -374,7 +374,6 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                                                         <DataCell.Action
                                                             icon={Archive}
                                                             title="Archivar variante"
-                                                            compact
                                                             onClick={(e) => handleDeleteVariant(v, e)}
                                                         />
                                                     </DataCell.ActionGroup>
@@ -413,11 +412,8 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                             selectedVariants={selectedVariantsList}
                             availableVariants={variants}
                             templateData={initialData as Product | undefined}
-                            onSaved={(updatedVariants: Product[]) => {
-                                setVariants(prev => prev.map(v => {
-                                    const matching = updatedVariants.find((upd: Product) => upd.id === v.id);
-                                    return matching || v;
-                                }));
+                            onSaved={(_updatedVariants: Product[]) => {
+                                refetchVariants();
                                 setSelectedVariantIds([]);
                             }}
                             onCancel={() => setSelectedVariantIds([])}
@@ -427,8 +423,8 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                             variant={activeEditVariant}
                             templateData={initialData as Product | undefined}
                             availableVariants={variants}
-                            onSaved={(updatedVariant: Product) => {
-                                setVariants(prev => prev.map(v => v.id === updatedVariant.id ? updatedVariant : v));
+                            onSaved={(_updatedVariant: Product) => {
+                                refetchVariants();
                             }}
                             onCancel={() => setSelectedVariantIds([])}
                             onTabChange={(tab: string) => onTabChange?.(tab)}

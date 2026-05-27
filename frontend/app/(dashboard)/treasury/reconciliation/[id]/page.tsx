@@ -145,11 +145,11 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
             cell: ({ row }) => (
                 <div className="flex flex-col max-w-[200px]">
                     <Tooltip>
-                            <TooltipTrigger asChild>
-                                <span className="font-medium text-xs truncate">{row.getValue("description")}</span>
-                            </TooltipTrigger>
-                            <TooltipContent side="top">{row.getValue("description")}</TooltipContent>
-                        </Tooltip>
+                        <TooltipTrigger asChild>
+                            <span className="font-medium text-xs truncate">{row.getValue("description")}</span>
+                        </TooltipTrigger>
+                        <TooltipContent side="top">{row.getValue("description")}</TooltipContent>
+                    </Tooltip>
                     {row.original.reference && (
                         <span className="text-[10px] text-muted-foreground truncate"> {/* intentional: badge density */} {row.original.reference}</span>
                     )}
@@ -164,7 +164,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
             cell: ({ row }) => {
                 const val = parseFloat(row.getValue("debit"))
                 return val > 0 ? (
-                    <DataCell.Currency value={val} className="text-expense font-black" />
+                    <DataCell.Currency value={val} />
                 ) : (
                     <span className="text-muted-foreground/30 ml-4">-</span>
                 )
@@ -178,7 +178,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
             cell: ({ row }) => {
                 const val = parseFloat(row.getValue("credit"))
                 return val > 0 ? (
-                    <DataCell.Currency value={val} className="text-income font-black" />
+                    <DataCell.Currency value={val} />
                 ) : (
                     <span className="text-muted-foreground/30 ml-4">-</span>
                 )
@@ -189,7 +189,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Saldo" />
             ),
-            cell: ({ row }) => <DataCell.Currency value={row.getValue("balance")} className="font-mono text-xs" />,
+            cell: ({ row }) => <DataCell.Currency value={row.getValue("balance")} />,
         },
         {
             accessorKey: "reconciliation_state",

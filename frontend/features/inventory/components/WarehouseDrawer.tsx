@@ -173,7 +173,7 @@ export function WarehouseDrawer({ onSuccess, initialData, open: openProp, onOpen
             )}
             <Drawer
                 open={open}
-                
+                onOpenChange={setOpen}
                 side="left"
                 defaultSize={width}
                 contentClassName="p-0"
@@ -185,12 +185,16 @@ export function WarehouseDrawer({ onSuccess, initialData, open: openProp, onOpen
                         : (initialData ? undefined : "Nuevo Almacén")
                 }
                 footer={
-                    <FormFooter>
-                        <CancelButton onClick={() => setOpen(false)} />
-                        <ActionSlideButton type="submit" form="warehouse-form" loading={loading}>
-                            {initialData ? "Guardar Cambios" : "Crear Almacén"}
-                        </ActionSlideButton>
-                    </FormFooter>
+                    <FormFooter
+                        actions={
+                            <>
+                                <CancelButton onClick={() => setOpen(false)} />
+                                <ActionSlideButton type="submit" form="warehouse-form" loading={loading}>
+                                    {initialData ? "Guardar Cambios" : "Crear Almacén"}
+                                </ActionSlideButton>
+                            </>
+                        }
+                    />
                 }
             >
                 {formContent}

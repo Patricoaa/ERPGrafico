@@ -10,43 +10,25 @@ interface UseConfirmActionReturn<T = void> {
     isOpen: boolean
     /** The payload that was passed when requesting confirmation */
     payload: T | null
+    /** Whether the confirm action is currently executing */
+    isConfirming: boolean
     /** Request confirmation — opens the modal and stores payload */
-    requestConfirm: (payload: T) => void
+    requestConfirm: (payload?: T) => void
     /** Cancel — closes the modal without executing */
     cancel: () => void
     /** Confirm — executes the callback with the stored payload, then closes */
     confirm: () => Promise<void>
 }
 
-/**
- * Hook to replace native `confirm()` with ActionConfirmModal.
- * 
- * Usage:
- * ```tsx
- * const deleteConfirm = useConfirmAction<number>(async (id) => {
- *     await api.delete(`/items/${id}/`)
- *     toast.success("Eliminado")
- * })
- * 
- * // Trigger:
- * <Button onClick={() => deleteConfirm.requestConfirm(item.id)}>Delete</Button>
- * 
- * // Modal:
- * <ActionConfirmModal
- *     open={deleteConfirm.isOpen}
- *     onOpenChange={(open) => { if (!open) deleteConfirm.cancel() }}
- *     onConfirm={deleteConfirm.confirm}
- *     ...
- * />
- * ```
- */
+
 export function useConfirmAction<T = void>(
     onConfirm: (payload: T) => Promise<void>
 ): UseConfirmActionReturn<T> {
     const [state, setState] = useState<ConfirmState<T>>({ open: false, payload: null })
+    const [isConfirming, setIsConfirming] = useState(false)
 
-    const requestConfirm = useCallback((payload: T) => {
-        setState({ open: true, payload })
+    const requestConfirm = useCallback((payload?: T) => {
+        setState({ open: true, payload: payload as T })
     }, [])
 
     const cancel = useCallback(() => {
@@ -55,7 +37,20 @@ export function useConfirmAction<T = void>(
 
     const confirm = useCallback(async () => {
         if (state.payload !== null) {
-            await onConfirm(state.payload)
+            setIsConfirming(true)
+            try {
+                await onConfirm(state.payload)
+            } finally {
+                setIsConfirming(false)
+            }
+        } else {
+            // Support void payload execution
+            setIsConfirming(true)
+            try {
+                await onConfirm(undefined as unknown as T)
+            } finally {
+                setIsConfirming(false)
+            }
         }
         setState({ open: false, payload: null })
     }, [state.payload, onConfirm])
@@ -63,6 +58,7 @@ export function useConfirmAction<T = void>(
     return {
         isOpen: state.open,
         payload: state.payload,
+        isConfirming,
         requestConfirm,
         cancel,
         confirm,

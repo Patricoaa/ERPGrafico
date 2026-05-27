@@ -161,7 +161,7 @@ export function AdjustmentForm({
         const baseId = typeof productUom === 'object' && productUom !== null
             ? (productUom as { id: number }).id
             : (productUom as number | undefined)
-        const base = productUoMs.find((u: UoM) => u.id === baseId) || null
+        const base = productUoMs.find((u: any) => u.id === baseId) || null
         setBaseUoM(base)
         if (base && !form.getValues("uom_id")) {
             form.setValue("uom_id", base.id.toString())
@@ -219,7 +219,7 @@ export function AdjustmentForm({
 
     // Helper: Calculate Total Value Preview
     const totalValue = quantity * unitCost
-    const selectedUoM = productUoMs.find(u => u.id.toString() === selectedUoMId)
+    const selectedUoM = productUoMs.find((u: any) => u.id.toString() === selectedUoMId)
 
     // Helper: Conversion Preview
     const getConversionPreview = () => {
@@ -227,7 +227,7 @@ export function AdjustmentForm({
         if (baseUoM.id === selectedUoM.id) return null
 
         // Ratio logic: Qty Base = Qty * (FromRatio / ToRatio)
-        const factor = selectedUoM.ratio / baseUoM.ratio
+        const factor = Number((selectedUoM as any).ratio) / Number((baseUoM as any).ratio)
         const qtyInBase = quantity * factor
         const costInBase = unitCost / factor
 

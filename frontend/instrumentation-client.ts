@@ -15,4 +15,5 @@ if (dsn) {
   });
 }
 
-export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const onRouterTransitionStart = (Sentry as unknown as any).captureRouterTransitionStart;

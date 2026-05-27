@@ -48,7 +48,6 @@ export function PrepressStep({
                     </div>
                     <DataCell.Action
                       action="download"
-                      compact
                       onClick={() => window.open(att.file, '_blank')}
                     />
                   </div>
@@ -82,7 +81,6 @@ export function PrepressStep({
                       </div>
                       <DataCell.Action
                         action="download"
-                        compact
                         onClick={() => window.open(att.file, '_blank')}
                       />
                     </div>

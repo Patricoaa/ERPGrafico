@@ -107,7 +107,7 @@ const AccountRow = ({ node, level = 0 }: { node: BudgetVarianceNode, level?: num
                         ) : (
                             <div className="w-7" />
                         )}
-                        <DataCell.Code value={node.code} className="mr-2 text-muted-foreground font-mono text-[10px] w-12 shrink-0 justify-start" />
+                        <DataCell.Code className="mr-2 text-muted-foreground font-mono text-[10px] w-12 shrink-0 justify-start">{node.code}</DataCell.Code>
                         <Tooltip>
                             <TooltipTrigger asChild>
                                 <span className="truncate max-w-[200px]">

@@ -148,8 +148,8 @@ export function MaterialAssignmentStep({
                         <td className="p-2">
                           {m.source === 'MANUAL' && isViewingCurrentStage && (
                             <DataCell.ActionGroup>
-                              <DataCell.Action action="edit" compact onClick={() => handleEdit(m)} />
-                              <DataCell.Action action="delete" compact onClick={() => setMaterialToDelete(m)} />
+                              <DataCell.Action action="edit" onClick={() => handleEdit(m)} />
+                              <DataCell.Action action="delete" onClick={() => setMaterialToDelete(m)} />
                             </DataCell.ActionGroup>
                           )}
                         </td>

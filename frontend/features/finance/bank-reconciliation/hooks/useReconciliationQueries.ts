@@ -27,13 +27,14 @@ export function useAccountsQuery() {
 
 export function useReconciliationSettingsQuery(accountId?: number | string) {
     return useQuery({
-        queryKey: reconciliationKeys.settings(accountId),
-        queryFn: () => financeApi.getReconciliationSettings(accountId),
+        queryKey: reconciliationKeys.settings(accountId ? Number(accountId) : undefined),
+        queryFn: () => financeApi.getReconciliationSettings(accountId ? Number(accountId) : undefined),
         enabled: !!accountId
     })
 }
 
 export interface QueryPaginationParams {
+    [key: string]: unknown;
     page?: number
     pageSize?: number
     search?: string

@@ -90,7 +90,7 @@ export function TrialBalanceView() {
                                 {data?.accounts.map((acc) => (
                                     <tr key={acc.id} className="hover:bg-muted/30 transition-colors group">
                                         <td className="px-4 py-2.5">
-                                            <DataCell.Code value={acc.code} className="text-left justify-start" />
+                                            <DataCell.Code className="text-left justify-start">{acc.code}</DataCell.Code>
                                         </td>
                                         <td className="px-4 py-2.5">
                                             <DataCell.Text className="text-left justify-start font-medium text-foreground">{acc.name}</DataCell.Text>
