@@ -5,7 +5,7 @@ import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { Smartphone } from "lucide-react"
-import { useTerminalDevices, type PaymentTerminalProvider } from "@/features/treasury"
+import { useTerminalDevices, useTerminalProviders, type PaymentTerminalProvider } from "@/features/treasury"
 import { Form, FormField } from "@/components/ui/form"
 import { Drawer, CancelButton, ActionSlideButton, LabeledInput, LabeledSelect, FormSection, FormFooter, MultiSelectTagInput } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
@@ -25,12 +25,14 @@ interface DeviceDrawerProps {
     open: boolean
     onOpenChange: (open: boolean) => void
     device?: any | null
-    providers: PaymentTerminalProvider[]
+    providers?: PaymentTerminalProvider[]
     onSuccess?: () => void
 }
 
-export function DeviceDrawer({ open, onOpenChange, device, providers, onSuccess }: DeviceDrawerProps) {
+export function DeviceDrawer({ open, onOpenChange, device, providers: providersProp, onSuccess }: DeviceDrawerProps) {
     const { createDevice, updateDevice } = useTerminalDevices()
+    const { providers: fetchedProviders } = useTerminalProviders()
+    const providers = providersProp ?? fetchedProviders
     const [loading, setLoading] = useState(false)
 
     const form = useForm<DeviceFormValues>({

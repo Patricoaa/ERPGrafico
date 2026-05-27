@@ -595,7 +595,7 @@ interface InsightsTableProps {
 }
 
 function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: InsightsTableProps) {
-    const { openWorkOrder } = useGlobalModals()
+    const { openEntity } = useGlobalModals()
     const { openHub } = useHubPanel()
     const [activeFilter, setActiveFilter] = useState<'all' | 'financial' | 'logistics' | 'billing' | 'pending'>('all')
 
@@ -661,13 +661,13 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
         return createDomainCardView(label, {
             onRowClick: (data: any) => {
                 if (type === 'work_order') {
-                    openWorkOrder(data.id)
+                    openEntity('production.workorder', data.id)
                 } else {
                     openHub({ orderId: data.id, type: type === 'purchase' ? 'purchase' : 'sale', onActionSuccess })
                 }
             },
         })
-    }, [type, openWorkOrder, openHub, onActionSuccess])
+    }, [type, openEntity, openHub, onActionSuccess])
 
     const columns: ColumnDef<Record<string, unknown>>[] = [
         {
@@ -713,7 +713,7 @@ function InsightsTable({ data, type, title, icon: Icon, onActionSuccess }: Insig
                     onClick={() => {
                         const i = item as any
                         if (type === 'work_order') {
-                            openWorkOrder(i.id)
+                            openEntity('production.workorder', i.id)
                         } else {
                             openHub({ orderId: i.id, type: type === 'purchase' ? 'purchase' : 'sale' })
                         }

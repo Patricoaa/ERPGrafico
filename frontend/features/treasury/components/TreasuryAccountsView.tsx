@@ -30,7 +30,7 @@ interface TreasuryAccountsViewProps {
 }
 
 export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ activeTab, externalOpen, createAction }) => {
-    const { openTreasuryAccount } = useGlobalModalActions()
+    const { openEntity, closeEntity } = useGlobalModalActions()
     const { filters } = useSmartSearch(treasuryAccountSearchDef)
     const { accounts, isLoading, deleteAccount } = useTreasuryAccounts({ filters })
     const [isBankModalOpen, setIsBankModalOpen] = useState(false)
@@ -47,9 +47,9 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
 
     useEffect(() => {
         if (selectedFromUrl) {
-            openTreasuryAccount(selectedFromUrl.id)
+            openEntity('treasury.treasuryaccount', selectedFromUrl.id)
         }
-    }, [selectedFromUrl, openTreasuryAccount])
+    }, [selectedFromUrl, openEntity])
 
     const handleCloseModal = () => {
         setIsBankModalOpen(false)
@@ -65,7 +65,7 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
     }
 
     const handleAdd = () => {
-        openTreasuryAccount(null)
+        closeEntity()
     }
 
     const handleEdit = (account: TreasuryAccount) => {

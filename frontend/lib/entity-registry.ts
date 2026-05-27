@@ -144,6 +144,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: 'PRD-{id}',
     listUrl: '/inventory/products',
     detailUrlPattern: '/inventory/products/{id}',
+    hasDrawer: true,
     viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', gridLayout: 'single-column' },
   },
   'inventory.subscription': {
@@ -165,6 +166,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: '{code}',
     listUrl: '/inventory/stock?tab=warehouses',
     detailUrlPattern: '/inventory/warehouses/{id}',
+    hasDrawer: true,
     viewPolicy: { availableViews: ['list'], defaultView: 'list', cardComponent: 'custom' },
   },
   'inventory.category': {
@@ -175,6 +177,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: '{name}',
     listUrl: '/inventory/stock?tab=categories',
     detailUrlPattern: '/inventory/categories/{id}',
+    hasDrawer: true,
     viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity' },
   },
   'inventory.uom': {
@@ -185,6 +188,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: '{name}',
     listUrl: '/inventory/stock?tab=uoms',
     detailUrlPattern: '/inventory/uoms/{id}',
+    hasDrawer: true,
     viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity' },
   },
   'inventory.uomcategory': {
@@ -205,6 +209,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: '{name}',
     listUrl: '/inventory/stock?tab=pricing-rules',
     detailUrlPattern: '/inventory/pricing-rules/{id}',
+    hasDrawer: true,
     viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity' },
   },
   'pos.session': {
@@ -215,6 +220,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: 'POS-{id}',
     listUrl: '/sales/pos-sessions',
     detailUrlPattern: '/sales/pos-sessions/{id}',
+    hasDrawer: true,
     viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'entity', gridLayout: 'single-column' },
   },
   'treasury.treasurymovement': {
@@ -255,6 +261,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: 'CAJ-{id}',
     listUrl: '/treasury/terminals',
     detailUrlPattern: '/treasury/terminals?selected={id}',
+    hasDrawer: true,
     viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'custom' },
   },
   'treasury.terminaldevice': {
@@ -265,6 +272,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: 'DIS-{id}',
     listUrl: '/treasury/hardware',
     detailUrlPattern: '/treasury/hardware?selected={id}',
+    hasDrawer: true,
     viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'custom' },
   },
   'treasury.terminalprovider': {
@@ -275,6 +283,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: 'PROV-{id}',
     listUrl: '/treasury/hardware',
     detailUrlPattern: '/treasury/hardware?selected={id}',
+    hasDrawer: true,
     viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'custom' },
   },
   'treasury.terminalbatch': {
@@ -305,6 +314,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: '{code}',
     listUrl: '/accounting/ledger',
     detailUrlPattern: '/accounting/accounts/{id}/ledger',
+    hasDrawer: true,
   },
   'accounting.budget': {
     label: 'accounting.budget',
@@ -324,6 +334,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: 'AS-{number}',
     listUrl: '/accounting/entries',
     detailUrlPattern: '/accounting/entries/{id}',
+    hasDrawer: true,
     viewPolicy: { availableViews: ['list'], defaultView: 'list', cardComponent: 'custom' },
   },
   'tax.taxperiod': {
@@ -355,6 +366,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: 'EMP-{id}',
     listUrl: '/hr/employees',
     detailUrlPattern: '/hr/employees/{id}',
+    hasDrawer: true,
     viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', gridLayout: 'single-column' },
   },
   'hr.absence': {
@@ -366,6 +378,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     listUrl: '/hr/absences',
     detailUrlPattern: '/hr/absences/{id}',
     partnerField: 'employee_name',
+    hasDrawer: true,
     viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', gridLayout: 'single-column' },
   },
   'hr.payroll': {
@@ -376,6 +389,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: 'LIQ-{id}',
     listUrl: '/hr/payrolls',
     detailUrlPattern: '/hr/payrolls/{id}',
+    hasDrawer: true,
     viewPolicy: { availableViews: ['list'], defaultView: 'list', cardComponent: 'custom' },
   },
   'hr.salaryadvance': {
@@ -386,6 +400,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: 'ANT-{id}',
     listUrl: '/hr/advances',
     detailUrlPattern: '/hr/advances/{id}',
+    hasDrawer: true,
     viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity' },
   },
   'core.user': {
@@ -396,6 +411,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: '{username}',
     listUrl: '/settings/users',
     detailUrlPattern: '/settings/users/{id}',
+    hasDrawer: true,
     viewPolicy: { availableViews: ['list'], defaultView: 'list', cardComponent: 'custom' },
   },
   'workflow.task': {
@@ -406,6 +422,39 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: 'TASK-{id}',
     listUrl: '/workflow/tasks',
     detailUrlPattern: '/workflow/tasks/{id}',
+    viewPolicy: { availableViews: ['list'], defaultView: 'list', cardComponent: 'custom' },
+  },
+  'finance.bankjournal': {
+    label: 'finance.bankjournal',
+    title: 'Diario Banco',
+    titlePlural: 'Diarios de Banco',
+    icon: Landmark,
+    shortTemplate: 'BJ-{id}',
+    listUrl: '/finances/statements',
+    detailUrlPattern: '/finances/statements?selected={id}',
+    hasDrawer: true,
+    viewPolicy: { availableViews: ['list'], defaultView: 'list', cardComponent: 'custom' },
+  },
+  'finance.payment': {
+    label: 'finance.payment',
+    title: 'Pago',
+    titlePlural: 'Pagos',
+    icon: Receipt,
+    shortTemplate: 'PAY-{id}',
+    listUrl: '/finances',
+    detailUrlPattern: '/finances?selected={id}',
+    hasDrawer: true,
+    viewPolicy: { availableViews: ['list'], defaultView: 'list', cardComponent: 'custom' },
+  },
+  'users.group': {
+    label: 'users.group',
+    title: 'Grupo',
+    titlePlural: 'Grupos',
+    icon: Users,
+    shortTemplate: 'GRP-{id}',
+    listUrl: '/settings/users',
+    detailUrlPattern: '/settings/users?selected={id}',
+    hasDrawer: true,
     viewPolicy: { availableViews: ['list'], defaultView: 'list', cardComponent: 'custom' },
   },
 };

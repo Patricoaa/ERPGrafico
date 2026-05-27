@@ -65,7 +65,7 @@ interface TreasuryMovementsClientViewProps {
 }
 
 export function TreasuryMovementsClientView({ externalOpen, createAction }: TreasuryMovementsClientViewProps) {
-    const { openContact, openTreasuryAccount } = useGlobalModalActions()
+    const { openEntity } = useGlobalModalActions()
     const { filters } = useSmartSearch(treasuryMovementsSearchDef)
     const [pageState, setPageState] = useState({ pageIndex: 0, pageSize: 50 })
     const { page, movements, totalCount, isLoading, refetch } = useTreasuryMovements({
@@ -216,7 +216,7 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                         const accountId = m.movement_type === 'INBOUND' && data === destData ? m.to_account : (m.movement_type === 'OUTBOUND' && data === sourceData ? m.from_account : (m.movement_type === 'TRANSFER' || m.movement_type === 'ADJUSTMENT' ? (data === sourceData ? m.from_account : m.to_account) : null));
                         return (
                             <DataCell.Link
-                                onClick={() => { if (accountId) openTreasuryAccount(accountId) }}
+                                onClick={() => { if (accountId) openEntity('treasury.treasuryaccount', accountId) }}
                             >
                                 {data.label}
                             </DataCell.Link>
@@ -299,7 +299,7 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                 <DataCell.Action action="view" onClick={() => handleViewDetails(item.id)} />
             ),
         })
-    ], [openTreasuryAccount, handleViewDetails])
+    ], [openEntity, handleViewDetails])
 
     return (
         <div className="space-y-6 h-full flex flex-col">

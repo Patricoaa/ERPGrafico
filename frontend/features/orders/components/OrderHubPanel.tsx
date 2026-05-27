@@ -63,11 +63,11 @@ export function OrderHubPanel({
         }
     }, [transactionId, transactionType, detailsModal.open])
 
-    const { openWorkOrder } = useGlobalModals()
+    const { openEntity } = useGlobalModals()
 
     const openDetails = (docType: string, docId: number | string) => {
         if (docType === 'work_order') {
-            openWorkOrder(Number(docId))
+            openEntity('production.workorder', Number(docId))
             return
         }
         const params = new URLSearchParams(searchParams.toString())

@@ -7,6 +7,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { createAbsence, updateAbsence } from '@/features/hr/api/hrApi'
+import { useEmployees } from '@/features/hr/hooks/useEmployees'
 import type { Absence, Employee } from "@/types/hr"
 import { Button } from "@/components/ui/button"
 import { CancelButton, ActionSlideButton } from "@/components/shared"
@@ -31,12 +32,14 @@ export interface AbsenceDrawerProps {
     open: boolean
     onOpenChange: (open: boolean) => void
     absence: Absence | null
-    employees: Employee[]
+    employees?: Employee[]
     onSaved: () => void
     trigger?: React.ReactNode
 }
 
-export function AbsenceDrawer({ open, onOpenChange, absence, employees, onSaved, trigger }: AbsenceDrawerProps) {
+export function AbsenceDrawer({ open, onOpenChange, absence, employees: employeesProp, onSaved, trigger }: AbsenceDrawerProps) {
+    const { employees: fetchedEmployees } = useEmployees()
+    const employees = employeesProp ?? fetchedEmployees
     const [saving, setSaving] = useState(false)
     
     const width = formDrawerWidth("medium", !!absence)
@@ -207,7 +210,7 @@ export function AbsenceDrawer({ open, onOpenChange, absence, employees, onSaved,
                             </form>
                         </Form>
                     </div>
-                    <ActivitySidebar entityType="Absence" entityId={absence.id} />
+                    <ActivitySidebar entityType="absence" entityId={absence.id} />
                 </FormSplitLayout>
             ) : (
                 <div className="flex-1 flex overflow-hidden h-[75vh]">
