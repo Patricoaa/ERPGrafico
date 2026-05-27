@@ -5,6 +5,7 @@ status: active
 owner: frontend-team
 last_review: 2026-04-25
 changelog:
+  - 2026-05-26: §4/§6/§7 corregido: padding y anti-patrón ahora mencionan Drawer además de BaseModal. §5 ActivitySidebar: regla "Dentro de BaseDrawer" reemplazada por "Drawer de solo lectura". Sección §6/§7: "BaseModal" generalizado a "Drawer o BaseModal". Ver [component-drawer.md](./component-drawer.md) para API de Drawer.
   - 2026-05-26: §8 reescrito. API por string (`FORM_WIDTHS.X.Y`) reemplazada por helpers tipados `formDrawerWidth()` / `formModalSize()`. Migrados 15 callers; eliminados ~24 accesos rotos por casing. Tier `special` renombrado a `micro`; añadido tier `master`. Drawer y BaseModal usan ahora helpers distintos (no se puede pasar `%` a BaseModal).
   - 2026-04-25: Agregado contrato completo de ActivitySidebar (§5). Reglas de cuándo usar, posición, separadores, entityType válidos. Corrección de padding §4 (px-1→px-4). FormFooter obligatorio en §7.
 stability: contract-changes-require-ADR
@@ -76,10 +77,11 @@ Seguir este orden dentro del flujo vertical del formulario para mejorar la cogni
 
 - **Between Sections**: Use `FormSection` with icons and a standard vertical gap (`space-y-6` on form, but `pt-4` inside `FormSection`).
 - **Between Fields**: `gap-4` (Standard) or `gap-6` (Complex grids).
-- **Internal Padding (forma directa en BaseModal)**: Usar `px-4 pb-4 pt-2` en el contenedor `<form>` cuando el modal mantiene su `ScrollArea` nativa.
-- **Internal Padding (con FormSplitLayout)**: Pasar `contentClassName="p-0"` **y** `hideScrollArea={true}` al `BaseModal`. El padding lo inyecta `FormSplitLayout` en su área principal. Ver [§6](#6-split-layouts-formspitlayout) para el patrón completo.
+- **Internal Padding (forma directa, sin FormSplitLayout)**: Usar `px-4 pb-4 pt-2` en el contenedor `<form>`. El padding del surface (Drawer: default `px-8 pb-8`; BaseModal: `p-6` con ScrollArea) se mantiene intacto.
+- **Internal Padding (con FormSplitLayout en Drawer)**: Pasar `contentClassName="p-0"` al `Drawer`. El padding lo inyecta `FormSplitLayout` en su área principal.
+- **Internal Padding (con FormSplitLayout en BaseModal)**: Pasar `contentClassName="p-0"` **y** `hideScrollArea={true}` al `BaseModal`. El padding lo inyecta `FormSplitLayout`.
 
-> **Anti-patrón "double padding"**: Nunca dejar el padding por defecto de `BaseModal` (`p-6`) activo cuando `FormSplitLayout` es el hijo directo. Obtendrás padding duplicado y dos barras de scroll. Ver [§6](#6-split-layouts-formspitlayout).
+> **Anti-patrón "double padding"**: Nunca dejar el padding por defecto del surface (Drawer: `px-8 pb-8`; BaseModal: `p-6`) activo cuando `FormSplitLayout` es el hijo directo. Obtendrás padding duplicado y dos barras de scroll. Ver [§6](#6-split-layouts-formspitlayout).
 
 ---
 
@@ -212,14 +214,14 @@ Sidebar de auditoría que muestra el historial de cambios de una entidad (via Dj
 | Formulario **Micro o Simple** (1–6 campos) | ❌ No — ocupa demasiado espacio relativo |
 | Dentro de `GenericWizard` | ❌ No — los wizards no tienen modo edición |
 | Dentro de `ActionConfirmModal` | ❌ No — no es un formulario |
-| Dentro de `BaseDrawer` | ❌ No — BaseDrawer ya es una subvista de solo lectura |
+| Dentro de `Drawer` de solo lectura (sin formulario) | ❌ No — ya es una subvista; usar solo en formularios CRUD editables |
 
 #### Posición en el layout
 
 El sidebar **siempre** ocupa el lado derecho del área del formulario. Lo posiciona `FormSplitLayout`; no se debe mover ni reposicionar manualmente.
 
 ```
-BaseModal (hideScrollArea + contentClassName="p-0")
+Drawer (contentClassName="p-0") o BaseModal (hideScrollArea + contentClassName="p-0")
   └─ FormTabs [opcional]
        └─ FormTabsContent
             └─ FormSplitLayout          ← gestiona la bipartición
@@ -316,7 +318,7 @@ Cuando un formulario incluye un sidebar de auditoría o actividad (típicamente 
 
 ### Implementation Pattern
 > [!WARNING]
-> **Anti-Patrón de Doble Padding:** `BaseModal` inyecta padding (`p-6`) y scroll por defecto. `FormSplitLayout` también inyecta su propio padding y scroll. Si usas ambos sin configuración, obtendrás barras de scroll dobles y paddings gigantes. **SIEMPRE** debes pasar `hideScrollArea={true}` y `contentClassName="p-0"` al `BaseModal` cuando su hijo directo sea `FormSplitLayout`.
+> **Anti-Patrón de Doble Padding:** `Drawer` inyecta padding (`px-8 pb-8`) y scroll por defecto. `BaseModal` inyecta padding (`p-6`) y ScrollArea. `FormSplitLayout` también inyecta su propio padding y scroll. Si usas el surface + `FormSplitLayout` sin configuración, obtendrás barras de scroll dobles y paddings gigantes. **SIEMPRE** debes pasar `contentClassName="p-0"` al surface cuando su hijo directo sea `FormSplitLayout`. En `BaseModal` además debes pasar `hideScrollArea={true}`.
 
 ```tsx
 <BaseModal
@@ -341,7 +343,7 @@ Cuando un formulario incluye un sidebar de auditoría o actividad (típicamente 
 
 ## 7. Form Footer
 
-Todo formulario modal **debe** usar `FormFooter` en la prop `footer` de `BaseModal`. Nunca usar `<div>` raw.
+Todo formulario en drawer o modal **debe** usar `FormFooter` en la prop `footer` del surface (`Drawer` o `BaseModal`). Nunca usar `<div>` raw.
 
 **Reglas:**
 - **Primary Action**: `SubmitButton` o `ActionSlideButton` — obligatorio a la derecha.
@@ -439,15 +441,15 @@ export function AccountForm({ open, onOpenChange, initialData }: Props) {
       onOpenChange={onOpenChange}
       side="left"
       defaultSize={width}
-      // ...
+      contentClassName={initialData?.id ? "p-0" : undefined}
+      footer={<FormFooter actions={<><CancelButton/><ActionSlideButton>Guardar</ActionSlideButton></>} />}
     >
-      {initialData?.id ? (
-        <FormSplitLayout sidebar={<ActivitySidebar entityType="account" entityId={initialData.id} />}>
-          {/* form fields */}
-        </FormSplitLayout>
-      ) : (
-        <>{/* form fields, no sidebar */}</>
-      )}
+      <FormSplitLayout
+        showSidebar={!!initialData?.id}
+        sidebar={initialData?.id ? <ActivitySidebar entityType="account" entityId={initialData.id} /> : undefined}
+      >
+        {/* form fields */}
+      </FormSplitLayout>
     </Drawer>
   )
 }

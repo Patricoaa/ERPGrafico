@@ -2,7 +2,7 @@
 import { formatPlainDate } from "@/lib/utils";
 import { formatCurrency } from "@/lib/money"
 
-import React, { useState, useMemo, useCallback } from "react"
+import React, { useState, useMemo, useEffect } from "react"
 import {
     getContactCreditLedger,
     unblockContact,
@@ -14,15 +14,14 @@ import { creditContactSearchDef } from "../searchDef"
 import { useBlacklistedPortfolio } from "../hooks/useCredits"
 
 import { DataTable } from '@/components/shared'
-import { type Table as ReactTable, type Row, type HeaderGroup, type Header, type Cell, ColumnDef, flexRender } from "@tanstack/react-table"
+import { ColumnDef } from "@tanstack/react-table"
 import { DataTableColumnHeader } from '@/components/shared'
 
 import { Button } from "@/components/ui/button"
-import { UserCheck, DollarSign, AlertCircle } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { UserCheck, DollarSign, AlertCircle, ChevronDown, ChevronRight } from "lucide-react"
 
 import { toast } from "sonner"
-import { ExpandableTableRow, SkeletonShell, ActionConfirmModal } from "@/components/shared"
+import { SkeletonShell, ActionConfirmModal } from "@/components/shared"
 import { Input } from "@/components/ui/input"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { DataCell } from '@/components/shared'
@@ -31,17 +30,7 @@ import { formatEntityDisplay } from "@/lib/entity-registry"
 
 // ─── Sub-components ──────────────────────────────────────────────────────────
 
-const agingBg: Record<string, string> = {
-    'written_off': 'bg-destructive/10 text-destructive border-destructive/20',
-    'current': 'bg-success/10 text-success border-success/20',
-    'overdue_30': 'bg-warning/10 text-warning border-warning/20',
-    'overdue_60': 'bg-warning/10 text-warning border-warning/20',
-    'overdue_90': 'bg-destructive/10 text-destructive border-destructive/20',
-    'overdue_90plus': 'bg-destructive/20 text-destructive border-destructive/30',
-}
-
-function ExpandableBlacklistRow({ row, onRefresh }: { row: Row<CreditContact>, onRefresh: () => void }) {
-    const contact = row.original as CreditContact
+function BlacklistContactPanel({ contact, onRefresh }: { contact: CreditContact, onRefresh: () => void }) {
     const [ledger, setLedger] = useState<CreditLedgerEntry[] | null>(null)
     const [loadingLedger, setLoadingLedger] = useState(false)
     const [unblocking, setUnblocking] = useState(false)
@@ -79,24 +68,21 @@ function ExpandableBlacklistRow({ row, onRefresh }: { row: Row<CreditContact>, o
         }
     }
 
+    // Lazy load ledger on first expansion
+    useEffect(() => {
+        if (ledger === null && !loadingLedger) {
+            setLoadingLedger(true)
+            getContactCreditLedger(contact.id, true)
+                .then(setLedger)
+                .catch((err) => {
+                    console.error("Error fetching credit ledger:", err)
+                })
+                .finally(() => setLoadingLedger(false))
+        }
+    }, [ledger, loadingLedger, contact.id])
+
     return (
-        <ExpandableTableRow
-            row={row}
-            cellClassName="py-3 px-4"
-            onExpand={async (isExpanding) => {
-                if (isExpanding && !ledger) {
-                    setLoadingLedger(true)
-                    try {
-                        const data = await getContactCreditLedger(contact.id, true)
-                        setLedger(data)
-                    } catch (error) {
-                        console.error("Error fetching credit ledger:", error)
-                    } finally {
-                        setLoadingLedger(false)
-                    }
-                }
-            }}
-        >
+        <>
             <div className="mb-6 flex items-center justify-between gap-4">
                 <div className="flex items-center gap-2">
                     <AlertCircle className="h-4 w-4 text-destructive" />
@@ -200,7 +186,7 @@ function ExpandableBlacklistRow({ row, onRefresh }: { row: Row<CreditContact>, o
                 variant="default"
                 confirmText="Registrar Pago"
             />
-        </ExpandableTableRow>
+        </>
     )
 }
 
@@ -209,7 +195,29 @@ export function BlacklistView() {
     const { filterFn } = useClientSearch<CreditContact>(creditContactSearchDef)
     const contacts = useMemo(() => filterFn(rawContacts), [rawContacts, filterFn])
 
-    const columns: ColumnDef<CreditContact>[] = [
+    const columns = useMemo<ColumnDef<CreditContact>[]>(() => [
+        {
+            id: "expander",
+            header: () => null,
+            cell: ({ row }) => (
+                <button
+                    onClick={(e) => {
+                        e.stopPropagation()
+                        row.toggleExpanded()
+                    }}
+                    className="p-1 text-muted-foreground hover:text-foreground transition-colors"
+                >
+                    {row.getIsExpanded() ? (
+                        <ChevronDown className="h-4 w-4" />
+                    ) : (
+                        <ChevronRight className="h-4 w-4" />
+                    )}
+                </button>
+            ),
+            size: 40,
+            enableSorting: false,
+            enableHiding: false,
+        },
         {
             accessorKey: "name",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Cliente" className="justify-center" />,
@@ -237,7 +245,7 @@ export function BlacklistView() {
                 </div>
             ),
         }
-    ]
+    ], [])
 
     return (
         <div className="space-y-6 h-full flex flex-col">
@@ -248,40 +256,13 @@ export function BlacklistView() {
                     variant="embedded"
                     isLoading={loading}
                     leftAction={<SmartSearchBar searchDef={creditContactSearchDef} placeholder="Cliente o RUT..." className="w-full" />}
-                    renderCustomView={(table: ReactTable<CreditContact>) => {
-                        const rows = table.getRowModel().rows
-                        if (rows.length === 0 && !loading) {
-                            return (
-                                <EmptyState
-                                    context="search"
-                                    title="Lista Negra Vacía"
-                                    description="No hay clientes bloqueados o en historial de castigos actualmente."
-                                />
-                            )
-                        }
-                        return (
-                            <div className="overflow-x-auto pb-4">
-                                <table className="w-full text-left">
-                                    <thead className="border-b border-border/50">
-                                        {table.getHeaderGroups().map((headerGroup: HeaderGroup<CreditContact>) => (
-                                            <tr key={headerGroup.id}>
-                                                {headerGroup.headers.map((header: Header<CreditContact, unknown>) => (
-                                                    <th key={header.id} className="px-4 py-3 text-muted-foreground font-black text-[10px] uppercase tracking-widest whitespace-nowrap">
-                                                        {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
-                                                    </th>
-                                                ))}
-                                                <th className="px-3 py-3 w-12" />
-                                            </tr>
-                                        ))}
-                                    </thead>
-                                    <tbody className="divide-y divide-border/50">
-                                        {rows.map((row: Row<CreditContact>) => (
-                                            <ExpandableBlacklistRow key={row.id} row={row} onRefresh={fetchData} />
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        )
+                    renderSubComponent={(row) => (
+                        <BlacklistContactPanel contact={row.original} onRefresh={fetchData} />
+                    )}
+                    emptyState={{
+                        context: "search",
+                        title: "Lista Negra Vacía",
+                        description: "No hay clientes bloqueados o en historial de castigos actualmente.",
                     }}
                 />
             </div>

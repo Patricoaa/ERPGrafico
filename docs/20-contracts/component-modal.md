@@ -16,8 +16,6 @@ BaseModal  (primitiva)
 ├── ActionConfirmModal   — confirmación de acción (destructiva o no)
 ├── GenericWizard        — flujo paso a paso
 └── DocumentCompletionModal — completar factura con folio + adjunto
-
-BaseDrawer (primitiva)   — panel inferior (bottom drawer) para contexto amplio
 ```
 
 > **Regla de selección:** usa siempre la especialización más específica.
@@ -27,7 +25,7 @@ BaseDrawer (primitiva)   — panel inferior (bottom drawer) para contexto amplio
 > | Confirmar una acción (destructiva o no) | `ActionConfirmModal` |
 > | Flujo paso a paso | `GenericWizard` |
 > | Completar factura con folio + adjunto | `DocumentCompletionModal` (ver `component-contracts.md`) |
-> | Subvista tabular con contexto visual | `BaseDrawer` |
+> | Drawer lateral / formulario CRUD | `Drawer` (ver [component-drawer.md](./component-drawer.md)) |
 > | Modal completamente custom | `BaseModal` (directo) |
 
 ### ⚠️ Excepciones Autorizadas de Sistema
@@ -222,105 +220,12 @@ States handled: loading (isLoading), step blocked (isValid=false or onNext retur
 
 ---
 
-## BaseDrawer 🟢
+## Drawer
 
-Primitiva para subvistas modales que se despliegan desde los bordes de la pantalla. Compatible con **formularios CRUD** (create/edit), tablas, históricos y libros mayores. Preserva el contexto visual del componente que lo invocó al no ocultar completamente la página subyacente.
-
-> Ver [ADR-0027](../10-architecture/adr/0027-basedrawer-crud-forms.md) para la decisión arquitectónica de expandir BaseDrawer a formularios CRUD.
-
-```tsx
-// Drawer lateral izquierdo embebido — formulario CRUD
-<BaseDrawer
-  open={open}
-  onOpenChange={setOpen}
-  side="left"
-  boundary="embedded"
-  defaultSize="55%"
-  icon={Tag}
-  title="Editar Categoría"
-  subtitle="Código: CAT-001"
-  footer={
-    <FormFooter actions={<><CancelButton/><SubmitButton>Guardar</SubmitButton></>}/>
-  }
->
-  <FormSplitLayout showSidebar>
-    <SkeletonShell isLoading={loading}>
-      <form>{/* fields */}</form>
-    </SkeletonShell>
-  </FormSplitLayout>
-</BaseDrawer>
-
-// Bottom drawer — vista de solo lectura (estilo original)
-<BaseDrawer
-  open={open}
-  onOpenChange={setOpen}
-  side="bottom"
-  defaultSize="75vh"
-  title="Libro Auxiliar"
-  subtitle="Socio: Juan Pérez"
-  icon={History}
->
-  <DataTable columns={columns} data={data} />
-</BaseDrawer>
-```
-
-| prop | type | required | default | notes |
-|------|------|----------|---------|-------|
-| `open` | `boolean` | ✅ | — | |
-| `onOpenChange` | `(open: boolean) => void` | ✅ | — | |
-| `title` | `ReactNode \| string` | ✅ | — | Título principal en la cabecera |
-| `subtitle` | `ReactNode \| string` | ❌ | — | Subtítulo en mayúsculas pequeñas bajo el título |
-| `description` | `ReactNode \| string` | ❌ | — | Descripción opcional; se alinea horizontalmente con el título |
-| `icon` | `React.ElementType \| ReactNode` | ❌ | — | Icono junto al título |
-| `headerActions` | `ReactNode` | ❌ | — | Slot derecho del header (ej. botones de filtro o acciones contextuales) |
-| `footer` | `ReactNode` | ❌ | — | Renderizado en un contenedor con borde superior. **Obligatorio** usar `FormFooter` en formularios CRUD |
-| `children` | `ReactNode` | ✅ | — | Contenido (formulario, tabla, etc.) |
-| `side` | `'top' \| 'right' \| 'bottom' \| 'left'` | ❌ | `'bottom'` | Borde desde el que aparece el drawer. Para CRUD forms: `'left'`. Para subvistas de datos: `'bottom'` |
-| `boundary` | `'screen' \| 'embedded'` | ❌ | `'embedded'` | `'screen'` → `document.body`. `'embedded'` → `#main-content` / `#module-sheets-portal-container` |
-| `defaultSize` | `number \| string` | ❌ | `'400px'` (h) / `'75vh'` (v) | Tamaño inicial. Para CRUD forms usar porcentaje del viewport (ej. `'55%'`). Para bottom drawers usar `'75vh'` |
-| `minSize` | `number \| string` | ❌ | — | Dimensión mínima (px o %) |
-| `maxSize` | `number \| string` | ❌ | `'100vw'` / `'100vh'` | Dimensión máxima |
-| `resizable` | `boolean` | ❌ | `false` | Muestra un handle de arrastre en el borde exterior del drawer |
-| `showOverlay` | `boolean` | ❌ | auto | Fondo oscuro difuminado. Auto: `true` si `embedded`, `false` si `screen` (excepto drawers full-size) |
-| `className` | `string` | ❌ | — | Clases adicionales para el `SheetContent` |
-| `contentClassName` | `string` | ❌ | — | Clases adicionales para el área de contenido scrollable |
-| `headerClassName` | `string` | ❌ | — | Clases adicionales para el `SheetHeader` |
-| `footerClassName` | `string` | ❌ | — | Clases adicionales para el contenedor del footer |
-| `titleClassName` | `string` | ❌ | — | Clases adicionales para el `SheetTitle` |
-| `descriptionClassName` | `string` | ❌ | — | Clases adicionales para la descripción |
-
-### Tamaños recomendados (`defaultSize`)
-
-| Categoría de formulario | `defaultSize` | Ejemplo |
-|-------------------------|---------------|---------|
-| Micro/Simple (1–6 campos) | `"40%"` | `GroupForm`, `CustomFieldTemplateForm` |
-| Estándar (7–15 campos) | `"50%"` | `CategoryForm`, `TreasuryAccountModal` |
-| Estándar + sidebar | `"55%"` | `WarehouseForm`, `PricingRuleForm` |
-| Complejo (16–30 campos) + FormTabs | `"65%"` | `ContactModal`, `UserForm` |
-| Ficha Maestra (30+ campos) + FormTabs | `"75%"` | `ProductForm`, `EmployeeFormModal` |
-
-> **Anchura máxima**: El drawer no debe superar `90%` del viewport. Si un formulario necesita más espacio, usar `BaseModal size="full"`.
-
-### Footer estándar
-
-Todo drawer que contenga un formulario **debe** pasar un `FormFooter` en la prop `footer`:
-
-```tsx
-footer={
-  <FormFooter
-    actions={
-      <>
-        <CancelButton onClick={() => onOpenChange(false)} />
-        <SubmitButton loading={isPending} form="my-form-id">
-          Guardar
-        </SubmitButton>
-      </>
-    }
-  />
-}
-```
-
-Para drawers de solo lectura (sin formulario) se acepta un `<Button>Cerrar</Button>` directo o ningún footer.
-
-> Ver [component-button.md](./component-button.md) para la API completa de `CancelButton` y `SubmitButton`.
+Los **paneles laterales modales** se construyen con el componente `Drawer` de `@/components/shared`.  
+Ver **[component-drawer.md](./component-drawer.md)** para:
+- API completa del componente
+- Tamaños dinámicos según complejidad (`formDrawerWidth()`)
+- Layout de formulario interno (grid, `FormSplitLayout`, `FormFooter`, `ActivitySidebar`)
+- Patrón para drawers de solo lectura
 

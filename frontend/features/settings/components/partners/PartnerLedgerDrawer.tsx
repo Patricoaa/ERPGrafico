@@ -10,7 +10,7 @@ import {
     Wallet,
     LogOut
 } from "lucide-react"
-import { Drawer, DataTable, SkeletonShell, Chip } from "@/components/shared"
+import { Drawer, DataTable, SkeletonShell, DataCell } from "@/components/shared"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
 import { PartnerStatement, PartnerTransaction } from "@/features/contacts/types/partner"
 import { toast } from "sonner"
@@ -103,9 +103,9 @@ export function PartnerLedgerDrawer({
             header: "Concepto",
             cell: ({ row }) => (
                 <div className="flex flex-col gap-0.5">
-                    <Chip size="xs" intent={getTransactionIntent(row.original.transaction_type)}>
+                    <DataCell.Chip intent={getTransactionIntent(row.original.transaction_type)}>
                         {row.original.transaction_type_display}
-                    </Chip>
+                    </DataCell.Chip>
                     <span className="text-[10px] text-muted-foreground italic truncate max-w-[250px] leading-tight">
                         {row.getValue("description")}
                     </span>
@@ -118,9 +118,7 @@ export function PartnerLedgerDrawer({
             cell: ({ row }) => {
                 const val = row.getValue("journal_entry_display")
                 return val ? (
-                    <span className="text-[9px] font-mono py-0.5 px-1 bg-muted rounded border opacity-70">
-                        {val as string}
-                    </span>
+                    <DataCell.Code>{val as string}</DataCell.Code>
                 ) : <span className="text-muted-foreground/30 px-2">-</span>
             }
         },

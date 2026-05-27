@@ -217,6 +217,7 @@ export function PartnerSettingsTab() {
                     columns={columns}
                     data={partners}
                     isLoading={loading}
+                    variant="embedded"
                     searchPlaceholder="Buscar socio..."
                     noBorder={true}
                     globalFilterFields={['name', 'tax_id']}

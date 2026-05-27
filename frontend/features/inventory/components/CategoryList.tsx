@@ -3,8 +3,7 @@
 import { showApiError } from "@/lib/errors"
 import { useState, useMemo, useCallback, useEffect } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
-import { DataTable } from '@/components/shared'
-import { DataTableColumnHeader } from '@/components/shared'
+import { DataTableView, DataTableColumnHeader } from '@/components/shared'
 import { DataCell, createActionsColumn } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
 import { CategoryDrawer } from "./CategoryDrawer"
@@ -144,10 +143,11 @@ export function CategoryList({ externalOpen, onExternalOpenChange, createAction 
     return (
         <div className="space-y-4 h-full flex flex-col">
             <div className="flex-1 min-h-0">
-                <DataTable
+                <DataTableView
                     columns={columns}
                     data={filterFn(categories)}
                     isLoading={isLoading}
+                    entityLabel="inventory.category"
                     variant="embedded"
                     leftAction={<SmartSearchBar searchDef={categorySearchDef} placeholder="Buscar categoría..." className="w-full" />}
                     createAction={createAction}

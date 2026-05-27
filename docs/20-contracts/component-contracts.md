@@ -142,6 +142,76 @@ Regla clave: usar wrappers estáticos para first-load, `SkeletonShell` para refe
 
 ---
 
+## DataCell primitives 🟢
+
+> **File**: `frontend/components/shared/DataTableCells.tsx`  
+> **Import**: `import { DataCell, createActionsColumn } from '@/components/shared'`
+
+Namespace de celdas estandarizadas para `DataTable`. Centra contenido y aplica tipografía consistente. Sub-componentes documentados en contratos específicos:
+- `DataCell.Entity` → [entity-identity.md §7](./entity-identity.md#7-datacellentity)
+- `DataCell.Action` / `ActionGroup` / `ActionMenu` → [component-row-actions.md §5.1](./component-row-actions.md)
+
+### DataCell.Link vs DataCell.ContactLink — cuándo usar cada uno
+
+| | `DataCell.Link` | `DataCell.ContactLink` |
+|---|---|---|
+| **Destino** | URL interna/externa (`href`) o callback (`onClick`) | Abre `ContactModal` via `GlobalModalProvider` |
+| **Cuándo** | Código de documento (OV, OT, factura) | Nombre de persona o empresa |
+| **Requiere** | `href` o `onClick` | `contactId: number` |
+| **Ícono** | `ExternalLink` solo si `external={true}` | `ExternalLink` siempre visible en hover |
+
+```tsx
+// ✅ Enlace a documento
+<DataCell.Link href={`/sales/orders/${id}`}>{order.code}</DataCell.Link>
+
+// ✅ Contacto → abre ContactModal
+<DataCell.ContactLink contactId={order.customer_id}>
+  {order.customer_name}
+</DataCell.ContactLink>
+
+// ❌ No usar ContactLink para navegar a URLs
+// ❌ No usar Link para entidades → usar DataCell.Entity (EntityBadge + ícono)
+```
+
+### DataCell.NumericFlow
+
+Para cantidades con polaridad visual (+/−): movimientos de stock, horas de producción, variaciones de inventario. **No usar para monedas** — usar `DataCell.Currency showColor` que delega a `MoneyDisplay`.
+
+```tsx
+<DataCell.NumericFlow value={movement.qty} unit="un" />
+// → "+10.00 un" verde  |  "−5.00 un" rojo  |  "0.00" gris
+```
+
+| prop | type | required | default | notes |
+|------|------|----------|---------|-------|
+| `value` | `number \| string \| null \| undefined` | ✅ | — | null / '' → dash |
+| `unit` | `string` | ❌ | — | Sufijo (e.g. `'un'`, `'kg'`) |
+| `showSign` | `boolean` | ❌ | `true` | Prefija `+` en positivos |
+| `className` | `string` | ❌ | — | |
+
+Usa `.toFixed(2)` y tokens `text-success` / `text-destructive` / `text-muted-foreground` de `globals.css`.
+
+### DataCell.Progress
+
+Barra de progreso para métricas de completitud (% de entrega, avance de OT, stock vs. demanda).
+
+```tsx
+<DataCell.Progress value={order.qty_delivered} max={order.qty_ordered}
+  label="Entregado" subLabel="75%" />
+```
+
+| prop | type | required | default | notes |
+|------|------|----------|---------|-------|
+| `value` | `number \| null \| undefined` | ✅ | — | Valor actual |
+| `max` | `number` | ❌ | `100` | Denominador |
+| `label` | `string` | ❌ | — | Texto izquierda sobre la barra |
+| `subLabel` | `string` | ❌ | — | Texto derecha sobre la barra |
+| `className` | `string` | ❌ | — | |
+
+`value >= max` → barra completa en `bg-success` con glow. `value < max` → `bg-primary`. Valor clamped a `[0, 100]%`.
+
+---
+
 ## DataTable & ExpandableTableRow 🟢
 
 > 📄 Documentación completa de arquitectura y vistas en **[component-datatable-views.md](./component-datatable-views.md)**.

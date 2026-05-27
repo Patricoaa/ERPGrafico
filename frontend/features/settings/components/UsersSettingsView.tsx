@@ -7,10 +7,9 @@ import { DataTable } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { DataCell, createActionsColumn } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
-import { StatusBadge } from "@/components/shared/StatusBadge"
 import { FadeIn, Chip } from "@/components/shared"
 import { SmartSearchBar } from '@/components/shared/SmartSearchBar'
-import { Edit, Shield, Users } from "lucide-react"
+import { Edit, Users } from "lucide-react"
 import { UserDrawer } from "@/features/users/components/UserDrawer"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { GroupManagement } from "@/features/settings/components/GroupManagement"
@@ -42,11 +41,7 @@ export function UsersSettingsView({ activeTab }: UsersSettingsViewProps) {
 
     useEffect(() => {
         if (selectedFromUrl) {
-            const transformedUser = {
-                ...selectedFromUrl,
-                groups: selectedFromUrl.groups?.map(g => typeof g === 'string' ? g : g.name)
-            }
-            setUserToEdit(transformedUser)
+            setUserToEdit(selectedFromUrl)
             setIsUserModalOpen(true)
         }
     }, [selectedFromUrl])
@@ -57,7 +52,7 @@ export function UsersSettingsView({ activeTab }: UsersSettingsViewProps) {
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Usuario" />
             ),
-            cell: ({ row }) => <div className="font-medium">{row.getValue("username")}</div>,
+            cell: ({ row }) => <DataCell.Text>{row.getValue("username")}</DataCell.Text>,
         },
         {
             accessorKey: "email",
@@ -99,13 +94,9 @@ export function UsersSettingsView({ activeTab }: UsersSettingsViewProps) {
                 }
 
                 return (
-                    <Chip
-                        size="xs"
-                        intent={roleIntent[systemRole] || 'neutral'}
-                        icon={Shield}
-                    >
+                    <DataCell.Chip intent={roleIntent[systemRole] || 'neutral'}>
                         {systemRole}
-                    </Chip>
+                    </DataCell.Chip>
                 )
             },
         },
@@ -137,9 +128,7 @@ export function UsersSettingsView({ activeTab }: UsersSettingsViewProps) {
             accessorKey: "is_active",
             header: "Estado",
             cell: ({ row }) => (
-                <StatusBadge
-                    status={row.original.is_active ? "active" : "inactive"}
-                />
+                <DataCell.Status status={row.original.is_active ? "active" : "inactive"} />
             ),
         },
         createActionsColumn<AppUser>({

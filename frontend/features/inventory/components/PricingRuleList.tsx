@@ -4,8 +4,7 @@ import { showApiError } from "@/lib/errors"
 
 import React, { useState, useMemo } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
-import { DataTable } from '@/components/shared'
-import { DataTableColumnHeader } from '@/components/shared'
+import { DataTableView, DataTableColumnHeader } from '@/components/shared'
 import { DataCell, createActionsColumn } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
 // useDeletePricingRule consumido vía usePricingRules.
@@ -157,7 +156,7 @@ export function PricingRuleList({ externalOpen, onExternalOpenChange, createActi
         {
             accessorKey: "rule_type_display",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Tipo" className="justify-center" />,
-            cell: ({ row }) => <div className="flex justify-center w-full text-center">{row.getValue("rule_type_display")}</div>,
+            cell: ({ row }) => <DataCell.Text>{row.getValue("rule_type_display")}</DataCell.Text>,
         },
         {
             id: "value",
@@ -228,10 +227,11 @@ export function PricingRuleList({ externalOpen, onExternalOpenChange, createActi
             />
 
             <div className="flex-1 min-h-0">
-                <DataTable
+                <DataTableView
                     columns={columns}
                     data={rules}
                     isLoading={isLoading}
+                    entityLabel="inventory.pricingrule"
                     variant="embedded"
                     leftAction={<SmartSearchBar searchDef={pricingRuleSearchDef} placeholder="Buscar reglas de precio..." className="w-full" />}
                     createAction={createAction}

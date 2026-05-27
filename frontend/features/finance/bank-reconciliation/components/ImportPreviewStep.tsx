@@ -5,7 +5,7 @@ import React from "react"
 import { formatCurrency } from "@/lib/money"
 import { AlertCircle, CheckCircle2, AlertTriangle, Calendar, FileText, DollarSign, Wallet } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { DataTable, Chip, FormSection } from "@/components/shared"
+import { DataTable, DataCell, Chip, FormSection } from "@/components/shared"
 import type { ColumnDef } from "@tanstack/react-table"
 
 export interface DryRunWarning {
@@ -146,17 +146,17 @@ function WarningTable({ warnings }: { warnings: DryRunWarning[] }) {
         {
             header: "Línea",
             cell: ({ row }) => (
-                <span className="text-xs font-mono font-medium">{row.original.line ?? "General"}</span>
+                <DataCell.Code>{row.original.line ?? "General"}</DataCell.Code>
             ),
         },
         {
             header: "Tipo",
-            cell: () => <Chip intent="warning">Advertencia</Chip>,
+            cell: () => <DataCell.Chip intent="warning">Advertencia</DataCell.Chip>,
         },
         {
             header: "Mensaje",
             cell: ({ row }) => (
-                <span className="text-xs text-muted-foreground font-medium">{row.original.message}</span>
+                <DataCell.Secondary>{row.original.message}</DataCell.Secondary>
             ),
         },
     ]

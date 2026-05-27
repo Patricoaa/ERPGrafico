@@ -4,6 +4,7 @@ import {
   Hash, Users, User, UserCheck, Book, PiggyBank, ShoppingCart, Receipt,
   List, LayoutDashboard, LayoutGrid, Kanban, CalendarDays, ClipboardCheck,
   Building2, Smartphone, CreditCard, Calendar, CalendarX2, Repeat,
+  Tag, Percent, Ruler, PieChart, HandCoins, ClipboardList,
   type LucideIcon 
 } from 'lucide-react';
 
@@ -109,6 +110,16 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     workflowType: 'order',
     viewPolicy: { availableViews: ['list', 'kanban'], defaultView: 'list', cardComponent: 'custom' },
   },
+  'production.bom': {
+    label: 'production.bom',
+    title: 'Lista de Materiales',
+    titlePlural: 'Listas de Materiales',
+    icon: ClipboardList,
+    shortTemplate: 'BOM-{id}',
+    listUrl: '/production/boms',
+    detailUrlPattern: '/production/boms/{id}',
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity' },
+  },
   'inventory.stockmove': {
     label: 'inventory.stockmove',
     title: 'Movimiento de Stock',
@@ -138,6 +149,66 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     detailUrlPattern: '/inventory/products/{id}',
     partnerField: 'customer_name',
     viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', gridLayout: 'single-column' },
+  },
+  'inventory.warehouse': {
+    label: 'inventory.warehouse',
+    title: 'Bodega',
+    titlePlural: 'Bodegas',
+    icon: Building2,
+    shortTemplate: '{code}',
+    listUrl: '/inventory/stock?tab=warehouses',
+    detailUrlPattern: '/inventory/warehouses/{id}',
+    viewPolicy: { availableViews: ['list'], defaultView: 'list', cardComponent: 'custom' },
+  },
+  'inventory.category': {
+    label: 'inventory.category',
+    title: 'Categoría',
+    titlePlural: 'Categorías',
+    icon: Tag,
+    shortTemplate: '{name}',
+    listUrl: '/inventory/stock?tab=categories',
+    detailUrlPattern: '/inventory/categories/{id}',
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity' },
+  },
+  'inventory.uom': {
+    label: 'inventory.uom',
+    title: 'Unidad de Medida',
+    titlePlural: 'Unidades de Medida',
+    icon: Ruler,
+    shortTemplate: '{name}',
+    listUrl: '/inventory/stock?tab=uoms',
+    detailUrlPattern: '/inventory/uoms/{id}',
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity' },
+  },
+  'inventory.uomcategory': {
+    label: 'inventory.uomcategory',
+    title: 'Categoría de UDM',
+    titlePlural: 'Categorías de UDM',
+    icon: List,
+    shortTemplate: '{name}',
+    listUrl: '/inventory/stock?tab=uom-categories',
+    detailUrlPattern: '/inventory/uom-categories/{id}',
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity' },
+  },
+  'inventory.pricingrule': {
+    label: 'inventory.pricingrule',
+    title: 'Regla de Precio',
+    titlePlural: 'Reglas de Precio',
+    icon: Percent,
+    shortTemplate: '{name}',
+    listUrl: '/inventory/stock?tab=pricing-rules',
+    detailUrlPattern: '/inventory/pricing-rules/{id}',
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity' },
+  },
+  'pos.session': {
+    label: 'pos.session',
+    title: 'Sesión POS',
+    titlePlural: 'Sesiones POS',
+    icon: ShoppingCart,
+    shortTemplate: 'POS-{id}',
+    listUrl: '/sales/pos-sessions',
+    detailUrlPattern: '/sales/pos-sessions/{id}',
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'entity', gridLayout: 'single-column' },
   },
   'treasury.treasurymovement': {
     label: 'treasury.treasurymovement',
@@ -175,6 +246,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     icon: CreditCard,
     shortTemplate: 'CAJ-{id}',
     listUrl: '/treasury/terminals',
+    detailUrlPattern: '/treasury/terminals?selected={id}',
     viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'custom' },
   },
   'treasury.terminaldevice': {
@@ -184,6 +256,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     icon: Smartphone,
     shortTemplate: 'DIS-{id}',
     listUrl: '/treasury/hardware',
+    detailUrlPattern: '/treasury/hardware?selected={id}',
     viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'custom' },
   },
   'treasury.terminalprovider': {
@@ -193,6 +266,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     icon: Building2,
     shortTemplate: 'PROV-{id}',
     listUrl: '/treasury/hardware',
+    detailUrlPattern: '/treasury/hardware?selected={id}',
     viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'custom' },
   },
   'treasury.terminalbatch': {
@@ -212,6 +286,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     icon: Calendar,
     shortTemplate: 'EJ-{year}',
     listUrl: '/accounting/closures',
+    detailUrlPattern: '/accounting/closures/{id}',
     viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'custom' },
   },
   'accounting.account': {
@@ -223,6 +298,16 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     listUrl: '/accounting/ledger',
     detailUrlPattern: '/accounting/accounts/{id}/ledger',
   },
+  'accounting.budget': {
+    label: 'accounting.budget',
+    title: 'Presupuesto',
+    titlePlural: 'Presupuestos',
+    icon: PieChart,
+    shortTemplate: 'BUD-{id}',
+    listUrl: '/finance/budgets',
+    detailUrlPattern: '/finance/budgets/{id}',
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity' },
+  },
   'accounting.journalentry': {
     label: 'accounting.journalentry',
     title: 'Asiento Contable',
@@ -232,6 +317,16 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     listUrl: '/accounting/entries',
     detailUrlPattern: '/accounting/entries/{id}',
     viewPolicy: { availableViews: ['list'], defaultView: 'list', cardComponent: 'custom' },
+  },
+  'tax.taxperiod': {
+    label: 'tax.taxperiod',
+    title: 'Período Tributario',
+    titlePlural: 'Períodos Tributarios',
+    icon: Calendar,
+    shortTemplate: '{month_display}-{year}',
+    listUrl: '/tax/declarations',
+    detailUrlPattern: '/tax/periods/{id}',
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'card', cardComponent: 'custom', gridLayout: 'single-column' },
   },
   'contacts.contact': {
     label: 'contacts.contact',
@@ -273,6 +368,16 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     listUrl: '/hr/payrolls',
     detailUrlPattern: '/hr/payrolls/{id}',
     viewPolicy: { availableViews: ['list'], defaultView: 'list', cardComponent: 'custom' },
+  },
+  'hr.salaryadvance': {
+    label: 'hr.salaryadvance',
+    title: 'Anticipo de Sueldo',
+    titlePlural: 'Anticipos de Sueldo',
+    icon: HandCoins,
+    shortTemplate: 'ANT-{id}',
+    listUrl: '/hr/advances',
+    detailUrlPattern: '/hr/advances/{id}',
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity' },
   },
   'core.user': {
     label: 'core.user',
@@ -400,6 +505,38 @@ export function getViewOptions(label: string) {
 }
 
 /**
+ * Maps snake_case docType keys (used in transaction-modal, serializers) to registry labels.
+ * Single source of truth — consumed by DataCell.Entity and any other resolver that needs it.
+ * To add a new type, register the entity in ENTITY_REGISTRY first, then add the mapping here.
+ */
+export const LEGACY_TYPE_LABEL_MAP: Record<string, string> = {
+  // Core transactional documents
+  'sale_order':      'sales.saleorder',
+  'purchase_order':  'purchasing.purchaseorder',
+  'invoice':         'billing.invoice',
+  'payment':         'treasury.treasurymovement',
+  'journal_entry':   'accounting.journalentry',
+  'work_order':      'production.workorder',
+  // Logistics
+  'sale_delivery':   'sales.saledelivery',
+  'sale_return':     'sales.salereturn',
+  // Stock / inventory movements
+  'stock_move':      'inventory.stockmove',
+  'inventory':       'inventory.stockmove',   // alias used in transaction-modal
+  // Treasury
+  'cash_movement':   'treasury.treasurymovement',
+  'terminal_batch':  'treasury.terminalbatch',
+  // Note: 'purchase_receipt' and 'purchase_return' are intentionally absent —
+  // their backend models (purchasing.PurchaseReceipt / PurchaseReturn) are not yet
+  // in the ENTITY_REGISTRY. Add them here once the registry entries exist.
+};
+
+/** Resolves a legacy snake_case docType to a registry label. Returns undefined if unknown. */
+export function resolveLegacyEntityType(type: string): string | undefined {
+  return LEGACY_TYPE_LABEL_MAP[type];
+}
+
+/**
  * Detects the entity label (registry key) from a string (e.g. task type or title).
  * Used for smart navigation and dynamic identity formatting.
  */
@@ -415,6 +552,7 @@ export function detectEntityLabel(text: string): string | null {
   if (t.includes('EMP_') || t.includes('EMP-')) return 'hr.employee';
   if (t.includes('LIQ_') || t.includes('LIQ-')) return 'hr.payroll';
   if (t.includes('PRD_') || t.includes('PRD-')) return 'inventory.product';
+  if (t.includes('BOD_') || t.includes('BOD-')) return 'inventory.warehouse';
   if (t.includes('CON_') || t.includes('CON-')) return 'contacts.contact';
   if (t.includes('USR_') || t.includes('USR-')) return 'core.user';
   if (t.includes('CAR_') || t.includes('CAR-')) return 'treasury.bankstatement';

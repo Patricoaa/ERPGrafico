@@ -21,7 +21,7 @@ import { ActivitySidebar } from "@/features/audit/components"
 
 // Import dialogs
 import { PricingRuleDrawer } from "@/features/sales/components/PricingRuleDrawer"
-import { CancelButton, SubmitButton } from "@/components/shared"
+import { CancelButton, ActionSlideButton } from "@/components/shared"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { formDrawerWidth } from "@/lib/form-widths"
 
@@ -622,9 +622,9 @@ export function ProductDrawer({ sidebar, open, onOpenChange, initialData, onSucc
             actions={
                 <>
                     <CancelButton onClick={() => onOpenChange(false)} disabled={form.formState.isSubmitting} />
-                    <SubmitButton form="product-form" loading={form.formState.isSubmitting}>
+                    <ActionSlideButton type="submit" form="product-form" loading={form.formState.isSubmitting}>
                         {initialData ? "Guardar Cambios" : "Crear Producto"}
-                    </SubmitButton>
+                    </ActionSlideButton>
                 </>
             }
         />
@@ -635,100 +635,96 @@ export function ProductDrawer({ sidebar, open, onOpenChange, initialData, onSucc
             <Form {...form}>
                 <form id="product-form" onSubmit={form.handleSubmit(onSubmit, onSubmitError)} className="flex-1 w-full h-full flex flex-col min-h-0 overflow-visible">
                     <SkeletonShell isLoading={isFetchingInitialData} ariaLabel="Cargando ficha de producto" className="flex-1 flex flex-col h-full">
-                        <div className="flex-1 flex overflow-hidden min-h-[400px] w-full">
-                            {/* Contenido Principal con Pestañas Horizontales */}
-                            <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
-                                <FormTabs
-                                    items={tabItems}
-                                    value={activeTab}
-                                    onValueChange={setActiveTab}
-                                    orientation="horizontal"
-                                    variant="underline"
-                                    header={inline ? tabHeader : undefined}
-                                    className="flex-1"
-                                    contentClassName="bg-transparent"
-                                >
-                                    <fieldset disabled={loading} className="flex-1 min-w-0 transition-opacity disabled:opacity-75 flex flex-col h-full min-h-0">
-                                        <FormTabsContent value="general" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin">
-                                            <div className="space-y-8 pr-2">
-                                                <ProductBasicInfo
-                                                    form={form}
-                                                    isEditing={!!initialData}
-                                                    imagePreview={imagePreview}
-                                                    setImagePreview={setImagePreview}
-                                                    lockedType={lockedType}
-                                                />
-                                            </div>
-                                        </FormTabsContent>
-
-                                        <FormTabsContent value="manufacturing" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin">
-                                            <ProductManufacturingTab
+                        <FormSplitLayout
+                            showSidebar={!!initialData?.id}
+                            sidebar={
+                                <ActivitySidebar entityId={initialData.id.toString()} entityType="product" />
+                            }
+                            className="min-w-0 h-full overflow-hidden p-0"
+                        >
+                            <FormTabs
+                                items={tabItems}
+                                value={activeTab}
+                                onValueChange={setActiveTab}
+                                orientation="horizontal"
+                                variant="underline"
+                                header={inline ? tabHeader : undefined}
+                                className="flex-1"
+                                contentClassName="bg-transparent"
+                            >
+                                <fieldset disabled={loading} className="flex-1 min-w-0 transition-opacity disabled:opacity-75 flex flex-col h-full min-h-0">
+                                    <FormTabsContent value="general" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin">
+                                        <div className="space-y-8 pr-2">
+                                            <ProductBasicInfo
                                                 form={form}
-                                                initialData={initialData}
-                                                products={products}
-                                                uoms={uoms}
-                                                variantMode={variantMode}
-                                            />
-                                        </FormTabsContent>
-
-                                        <FormTabsContent forceMount value="variants" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 data-[state=inactive]:hidden overflow-y-auto scrollbar-thin">
-                                            <ProductVariantsTab
-                                                key={variantsRefreshKey}
-                                                form={form}
-                                                initialData={initialData}
-                                                onTabChange={(tab: string) => setActiveTab(tab)}
-                                                onEditVariant={(v) => {
-                                                    window.open(`/inventory/products?selected=${v.id}`, '_blank');
-                                                }}
-                                            />
-                                        </FormTabsContent>
-
-                                        <FormTabsContent value="logistics" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin">
-                                            <ProductInventoryTab
-                                                form={form}
-                                                initialData={initialData}
-                                                warehouses={warehouses}
-                                                uoms={uoms}
                                                 isEditing={!!initialData}
+                                                imagePreview={imagePreview}
+                                                setImagePreview={setImagePreview}
+                                                lockedType={lockedType}
                                             />
-                                        </FormTabsContent>
+                                        </div>
+                                    </FormTabsContent>
 
-                                        <FormTabsContent value="commercial" className="mt-0 animate-in fade-in duration-300 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin">
-                                            <ProductSubscriptionTab form={form} isEditing={!!initialData} />
-                                        </FormTabsContent>
+                                    <FormTabsContent value="manufacturing" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin">
+                                        <ProductManufacturingTab
+                                            form={form}
+                                            initialData={initialData}
+                                            products={products}
+                                            uoms={uoms}
+                                            variantMode={variantMode}
+                                        />
+                                    </FormTabsContent>
 
-                                        <FormTabsContent value="pricing" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin">
-                                            <div className="space-y-8 pr-2">
-                                                <ProductPricingSection
-                                                    form={form}
-                                                    initialData={initialData}
-                                                    canBeSold={canBeSold}
-                                                    uoms={uoms}
-                                                />
-                                                <ProductPricingTab
-                                                    initialData={initialData}
-                                                    pricingRules={pricingRules}
-                                                    fetchPricingRules={refetchPricingRules}
-                                                    onOpenRuleDialog={(rule) => {
-                                                        setSelectedPricingRule(rule || null)
-                                                        setPricingRuleDialogOpen(true)
-                                                    }}
-                                                    isDynamicPricing={form.watch('is_dynamic_pricing')}
-                                                    isVariant={!!initialData?.parent_template}
-                                                />
-                                            </div>
-                                        </FormTabsContent>
-                                    </fieldset>
-                                </FormTabs>
-                            </div>
+                                    <FormTabsContent forceMount value="variants" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 data-[state=inactive]:hidden overflow-y-auto scrollbar-thin">
+                                        <ProductVariantsTab
+                                            key={variantsRefreshKey}
+                                            form={form}
+                                            initialData={initialData}
+                                            onTabChange={(tab: string) => setActiveTab(tab)}
+                                            onEditVariant={(v) => {
+                                                window.open(`/inventory/products?selected=${v.id}`, '_blank');
+                                            }}
+                                        />
+                                    </FormTabsContent>
 
-                            {/* Barra Lateral de Actividad persistente */}
-                            {!!initialData?.id && (
-                                <aside className="w-72 border-l flex flex-col pt-4 hidden lg:flex shrink-0 bg-background/50">
-                                    <ActivitySidebar entityId={initialData.id.toString()} entityType="product" />
-                                </aside>
-                            )}
-                        </div>
+                                    <FormTabsContent value="logistics" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin">
+                                        <ProductInventoryTab
+                                            form={form}
+                                            initialData={initialData}
+                                            warehouses={warehouses}
+                                            uoms={uoms}
+                                            isEditing={!!initialData}
+                                        />
+                                    </FormTabsContent>
+
+                                    <FormTabsContent value="commercial" className="mt-0 animate-in fade-in duration-300 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin">
+                                        <ProductSubscriptionTab form={form} isEditing={!!initialData} />
+                                    </FormTabsContent>
+
+                                    <FormTabsContent value="pricing" className="mt-0 pt-6 px-6 pb-8 data-[state=active]:flex data-[state=active]:flex-1 data-[state=active]:flex-col data-[state=active]:min-h-0 overflow-y-auto scrollbar-thin">
+                                        <div className="space-y-8 pr-2">
+                                            <ProductPricingSection
+                                                form={form}
+                                                initialData={initialData}
+                                                canBeSold={canBeSold}
+                                                uoms={uoms}
+                                            />
+                                            <ProductPricingTab
+                                                initialData={initialData}
+                                                pricingRules={pricingRules}
+                                                fetchPricingRules={refetchPricingRules}
+                                                onOpenRuleDialog={(rule) => {
+                                                    setSelectedPricingRule(rule || null)
+                                                    setPricingRuleDialogOpen(true)
+                                                }}
+                                                isDynamicPricing={form.watch('is_dynamic_pricing')}
+                                                isVariant={!!initialData?.parent_template}
+                                            />
+                                        </div>
+                                    </FormTabsContent>
+                                </fieldset>
+                            </FormTabs>
+                        </FormSplitLayout>
                     </SkeletonShell>
                 </form>
             </Form>

@@ -10,7 +10,7 @@ import { DataCell } from '@/components/shared'
 import { Button } from "@/components/ui/button"
 import { ArrowRight, ArrowLeft } from "lucide-react"
 import api from "@/lib/api"
-import { PurchaseOrderForm } from "@/features/purchasing/components/PurchaseOrderForm"
+import { PurchaseOrderModal } from "@/features/purchasing"
 import { toast } from "sonner"
 import { DocumentRegistrationModal } from "@/features/purchasing/components/DocumentRegistrationModal"
 import { DocumentCompletionModal } from "@/components/shared/DocumentCompletionModal"
@@ -191,7 +191,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
             ),
             cell: ({ row }) => (
                 <div className="flex flex-col items-center">
-                    <DataCell.Entity type={row.original.dte_type as any} number={row.getValue("number")} />
+                    <DataCell.Entity entityLabel="billing.invoice" data={row.original} />
                 </div>
             ),
             meta: { title: "Folio" },
@@ -387,7 +387,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
     return (
         <div className="space-y-6 h-full flex flex-col">
             {editingOrder && (
-                <PurchaseOrderForm
+                <PurchaseOrderModal
                     initialData={editingOrder as unknown as any}
                     open={!!editingOrder}
                     onOpenChange={(open) => {
@@ -438,7 +438,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                         onOpenChange={(open) => !open && setCompletingInvoice(null)}
                         invoiceId={completingInvoice.id}
                         invoiceType={completingInvoice.type}
-                        contactId={invoicingOrder?.supplier || orders.find((o: PurchaseOrder) => o.related_documents?.invoices?.some((i: Record<string, unknown>) => i.id === completingInvoice.id))?.supplier || undefined}
+                        contactId={invoicingOrder?.supplier || ((orders as unknown as PurchaseOrder[]).find((o) => o.related_documents?.invoices?.some((i: Record<string, unknown>) => i.id === completingInvoice.id))?.supplier ?? undefined)}
                         isPurchase={true}
                         onComplete={async (invoiceId, formData) => {
                             await api.post(`/billing/invoices/${invoiceId}/confirm/`, formData, {
@@ -474,7 +474,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                         onOpenChange={setFolioModalOpen}
                         invoiceId={selectedInvoice.id}
                         invoiceType={selectedInvoice.type}
-                        contactId={invoicingOrder?.supplier || orders.find((o: PurchaseOrder) => o.related_documents?.invoices?.some((i: Record<string, unknown>) => i.id === selectedInvoice.id))?.supplier || undefined}
+                        contactId={invoicingOrder?.supplier || ((orders as unknown as PurchaseOrder[]).find((o) => o.related_documents?.invoices?.some((i: Record<string, unknown>) => i.id === selectedInvoice.id))?.supplier ?? undefined)}
                         isPurchase={true}
                         onComplete={async (invoiceId, formData) => {
                             await api.post(`/billing/invoices/${invoiceId}/confirm/`, formData, {

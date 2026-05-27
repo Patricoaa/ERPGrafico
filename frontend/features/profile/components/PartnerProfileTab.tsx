@@ -271,6 +271,7 @@ export function PartnerProfileTab({ contactId }: Props) {
                                 <DataTable
                                     columns={columns}
                                     data={statement.transactions}
+                                    variant="minimal"
                                     noBorder={true}
                                     defaultPageSize={10}
                                 />

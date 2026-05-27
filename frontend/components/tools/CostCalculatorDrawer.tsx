@@ -39,9 +39,6 @@ interface Product {
     category?: number | { id: number; name: string; icon?: string | null }
 }
 
-// ProductCategory is imported via useQuery → inventoryApi.getCategories() return type
-// Shape: { id: number; name: string; icon?: string | null } — matches ProductCategory from inventory types
-
 interface SelectedItem {
     id: string
     product: Product
@@ -52,17 +49,16 @@ interface SelectedItem {
     subtotal: number
 }
 
-interface CostCalculatorModalProps {
+interface CostCalculatorDrawerProps {
     open: boolean
     onOpenChange: (open: boolean) => void
 }
 
 import { useQuery } from "@tanstack/react-query"
 import { inventoryApi } from "@/features/inventory/api/inventoryApi"
-
 import { useWindowWidth } from "@/hooks/useWindowWidth"
 
-export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalProps) {
+export function CostCalculatorDrawer({ open, onOpenChange }: CostCalculatorDrawerProps) {
     const [selectedItems, setSelectedItems] = useState<SelectedItem[]>([])
     const idCounterRef = React.useRef(0)
     const [searchTerm, setSearchTerm] = useState("")
@@ -74,16 +70,14 @@ export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalP
 
     const handleOpenChangeProxy = (newOpen: boolean) => {
         if (newOpen && isSheetCollapsed("COST_CALCULATOR")) {
-            // Jump behavior: Close Hub if we are opening from a collapsed tab
             closeHub()
         }
         if (!newOpen) handleClose()
         else onOpenChange(newOpen)
     }
 
-    const fullWidth = Math.min(windowWidth * 0.85, 1600) // Match the 85vw logic
+    const fullWidth = Math.min(windowWidth * 0.85, 1600)
 
-    // Use React Query for shared caching and better performance
     const { data: products = [], isLoading: loadingProducts } = useQuery({
         queryKey: ['products', { active: true, track_inventory: true }],
         queryFn: async () => {
@@ -95,7 +89,7 @@ export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalP
             return data as any as Product[]
         },
         enabled: open,
-        staleTime: 1000 * 60 * 5, // 5 minutes cache
+        staleTime: 1000 * 60 * 5,
     })
 
     const { data: categories = [], isLoading: loadingCategories } = useQuery({
@@ -105,11 +99,10 @@ export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalP
             return data
         },
         enabled: open,
-        staleTime: 1000 * 60 * 60, // 1 hour cache
+        staleTime: 1000 * 60 * 60,
     })
 
     const loading = loadingProducts || loadingCategories
-
 
     const addItem = (product: Product) => {
         const existingItem = selectedItems.find(item => item.product.id === product.id)
@@ -204,7 +197,6 @@ export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalP
         <Drawer
             open={open}
             onOpenChange={onOpenChange}
-
             title="Calculadora de Costos"
             subtitle="Simulación rápida de materiales para determinar costos de producción"
             icon={Calculator}
@@ -214,9 +206,7 @@ export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalP
             showOverlay={true}
             defaultSize="100%"
             contentClassName="p-0 flex flex-col overflow-hidden"
-
         >
-
             <div className="flex-1 overflow-hidden flex divide-x">
                 {/* Panel Izquierdo: Catálogo */}
                 <div className="w-[60%] flex flex-col p-4 gap-4 bg-muted/20 min-h-0">
@@ -316,7 +306,7 @@ export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalP
                                                     <SelectContent>
                                                         {(item.product.available_uoms || []).map(uom => (
                                                             <SelectItem key={uom.id} value={String(uom.id)} className="text-[10px]">
-                                                                {uom.name}
+                                                                 {uom.name}
                                                             </SelectItem>
                                                         ))}
                                                     </SelectContent>
@@ -356,7 +346,6 @@ export function CostCalculatorModal({ open, onOpenChange }: CostCalculatorModalP
                                 </div>
                                 <div className="flex justify-between items-center pt-3 border-t">
                                     <div className="flex flex-col">
-
                                         <span className="text-lg font-black text-primary uppercase tracking-tighter">
                                             Total
                                         </span>

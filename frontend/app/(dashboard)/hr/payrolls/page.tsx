@@ -8,8 +8,7 @@ import { CreatePayrollDrawer, PayrollDetailDrawer } from "@/features/hr"
 import { deletePayroll, paySalary, payPrevired, createAdvance } from '@/features/hr/api/hrApi'
 import type { Payroll } from "@/types/hr"
 import { ColumnDef } from "@tanstack/react-table"
-import { DataTable } from '@/components/shared'
-import { DataTableColumnHeader } from '@/components/shared'
+import { DataTableView, DataTableColumnHeader } from '@/components/shared'
 import { createActionsColumn, DataCell } from '@/components/shared'
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { Eye, Trash2, Coins, CreditCard, Wallet, FileText } from "lucide-react"
@@ -337,10 +336,11 @@ export default function PayrollsPage() {
             />
 
             <div className="flex-1 min-h-0">
-                <DataTable
+                <DataTableView
                 columns={columns}
                 data={payrolls}
                 isLoading={loading}
+                entityLabel="hr.payroll"
                 variant="embedded"
                 leftAction={<SmartSearchBar searchDef={payrollSearchDef} placeholder="Buscar por empleado o período..." className="w-full" />}
                 defaultPageSize={20}

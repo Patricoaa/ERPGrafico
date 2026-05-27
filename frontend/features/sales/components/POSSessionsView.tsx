@@ -4,8 +4,7 @@ import { useState, useEffect } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 
-import { DataTable } from '@/components/shared'
-import { DataTableColumnHeader } from '@/components/shared'
+import { DataTableView, DataTableColumnHeader } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
 import { DataCell, createActionsColumn } from '@/components/shared'
 import { StatusBadge } from "@/components/shared/StatusBadge"
@@ -183,11 +182,12 @@ export const POSSessionsView = ({ hideHeader = false }: POSSessionsViewProps) =>
     return (
         <div className="h-full flex flex-col">
             <div className="flex-1 min-h-0">
-                <DataTable
+                <DataTableView
                     columns={columns}
                     data={sessions}
                     variant="embedded"
                     isLoading={isLoading}
+                    entityLabel="pos.session"
                     leftAction={<SmartSearchBar searchDef={posSessionSearchDef} placeholder="Buscar sesiones..." className="w-full" />}
                     defaultPageSize={10}
                 />

@@ -4,9 +4,8 @@ import React, { useState, useEffect } from "react"
 import { financeApi } from "../api/financeApi"
 import { Download, ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Progress } from "@/components/ui/progress"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { DataTable, PageHeader, LoadingFallback, MoneyDisplay, StatCard } from "@/components/shared"
+import { DataTable, PageHeader, LoadingFallback, MoneyDisplay, StatCard, DataCell } from "@/components/shared"
 import { toast } from "sonner"
 import Link from "next/link"
 import type { ColumnDef } from "@tanstack/react-table"
@@ -54,19 +53,14 @@ const columns: ColumnDef<BudgetExecutionItem>[] = [
         header: "Presupuesto",
         accessorKey: "budgeted",
         cell: ({ row }) => (
-            <div className="text-right font-mono">
-                <MoneyDisplay amount={row.original.budgeted} digits={0} />
-            </div>
+            <DataCell.Currency value={row.original.budgeted} digits={0} />
         ),
-        meta: { align: "right" as const },
     },
     {
         header: "Real",
         accessorKey: "actual",
         cell: ({ row }) => (
-            <div className="text-right font-mono">
-                <MoneyDisplay amount={row.original.actual} digits={0} />
-            </div>
+            <DataCell.Currency value={row.original.actual} digits={0} />
         ),
         meta: { align: "right" as const },
     },
@@ -74,10 +68,7 @@ const columns: ColumnDef<BudgetExecutionItem>[] = [
         header: "Ejecución",
         id: "percentage",
         cell: ({ row }) => (
-            <div className="flex items-center gap-2">
-                <Progress value={Math.min(row.original.percentage, 100)} className="h-2" />
-                <span className="text-xs w-10 text-right">{row.original.percentage.toFixed(0)}%</span>
-            </div>
+            <DataCell.Progress value={row.original.percentage} subLabel={`${row.original.percentage.toFixed(0)}%`} />
         ),
     },
 ]

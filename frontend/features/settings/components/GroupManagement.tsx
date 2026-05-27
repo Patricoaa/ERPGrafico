@@ -55,7 +55,7 @@ export function GroupManagement({ externalOpen, onExternalOpenChange, createActi
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Miembros" />
             ),
-            cell: ({ row }) => <div className="pl-4 text-xs">{row.getValue("user_count")}</div>,
+            cell: ({ row }) => <DataCell.Number value={row.getValue("user_count")} />,
         },
         createActionsColumn<Record<string, unknown>>({
             renderActions: (group) => (

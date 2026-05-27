@@ -1,11 +1,12 @@
 
 import { cn, translateStatus, formatPlainDate } from "@/lib/utils"
+import { resolveLegacyEntityType } from "@/lib/entity-registry"
 import { ExternalLink, LucideIcon, MoreVertical } from "lucide-react"
 import Link from "next/link"
 import { ReactNode, HTMLAttributes } from "react"
 import type { ColumnDef } from "@tanstack/react-table"
 
-import { MoneyDisplay, StatusBadge, EntityBadge } from "@/components/shared"
+import { MoneyDisplay, StatusBadge, EntityBadge, Chip as ChipComponent } from "@/components/shared"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { Button } from "@/components/ui/button"
 import {
@@ -53,28 +54,8 @@ export const DataCell = {
 
     /** Standardized Entity ID with prefix and padding (Uses EntityBadge, matches Status badge typography/size) */
     Entity: ({ entityLabel, type, number, label, data, className, size = "sm", ...props }: { entityLabel?: string, type?: string, number?: string | number | null | undefined, label?: string, data?: any, className?: string, size?: 'sm' | 'md' | 'lg' | 'xl' }) => {
-        // Resolve label: prefer entityLabel > label > legacy type mapping
-        let resolvedLabel = entityLabel || label;
-
-        if (!resolvedLabel && type) {
-            const TYPE_TO_LABEL: Record<string, string> = {
-                'sale_order': 'sales.saleorder',
-                'purchase_order': 'purchasing.purchaseorder',
-                'invoice': 'billing.invoice',
-                'payment': 'treasury.treasurymovement',
-                'journal_entry': 'accounting.journalentry',
-                'inventory': 'inventory.stockmove',
-                'stock_move': 'inventory.stockmove',
-                'work_order': 'production.workorder',
-                'sale_delivery': 'sales.saledelivery',
-                'purchase_receipt': 'inventory.warehouse',
-                'sale_return': 'sales.salereturn',
-                'purchase_return': 'sales.salereturn',
-                'cash_movement': 'treasury.treasurymovement',
-                'terminal_batch': 'treasury.treasurymovement',
-            };
-            resolvedLabel = TYPE_TO_LABEL[type];
-        }
+        // Resolve label: prefer entityLabel > label > legacy type mapping (see entity-registry.ts)
+        const resolvedLabel = entityLabel || label || (type ? resolveLegacyEntityType(type) : undefined);
 
         const finalData = data || { id: number, number, display_id: number };
 
@@ -110,7 +91,7 @@ export const DataCell = {
     Link: ({ children, href, onClick, className, external, ...props }: HTMLAttributes<HTMLElement> & { href?: string, onClick?: () => void, external?: boolean }) => {
         if (href) {
             return (
-                <div className={cn("ftext-xs font-mono font-medium text-foreground/90 flex justify-center items-center", className)}>
+                <div className={cn("text-xs font-mono font-medium text-foreground/90 flex justify-center items-center", className)}>
                     <Link
                         href={href}
                         target={external ? "_blank" : undefined}
@@ -149,25 +130,20 @@ export const DataCell = {
         )
     },
 
-    /** Currency formatted cell */
-    Currency: ({ value, currency = "CLP", className, digits = 0, ...props }: ValueCellProps<number | string> & { currency?: string, digits?: number }) => {
+    /** Currency formatted cell. Pass `showColor` to color red/green based on sign (variance use case). */
+    Currency: ({ value, currency = "CLP", className, digits = 0, showColor = false, ...props }: ValueCellProps<number | string> & { currency?: string, digits?: number, showColor?: boolean }) => {
         return (
             <div className={cn("text-xs font-mono font-medium text-foreground/90 flex justify-center items-center w-full", className)} {...props}>
-                <MoneyDisplay amount={value} currency={currency} digits={digits} />
+                <MoneyDisplay amount={value} currency={currency} digits={digits} showColor={showColor} />
             </div>
         )
     },
 
-    /** Variance cell that colors red/green based on value */
-    Variance: ({ value, currency = "CLP", className, digits = 0, ...props }: ValueCellProps<number> & { currency?: string | boolean, digits?: number }) => {
+    /** @deprecated Use `DataCell.Currency` with `showColor` prop instead. */
+    Variance: ({ value, currency = "CLP", className, digits = 0, ...props }: ValueCellProps<number> & { currency?: string, digits?: number }) => {
         return (
             <div className={cn("text-xs font-mono font-medium text-foreground/90 flex justify-center items-center", className)} {...props}>
-                <MoneyDisplay
-                    amount={value}
-                    currency={typeof currency === "string" ? currency : "CLP"}
-                    digits={digits}
-                    showColor={true}
-                />
+                <MoneyDisplay amount={value} currency={currency} digits={digits} showColor={true} />
             </div>
         )
     },
@@ -191,13 +167,13 @@ export const DataCell = {
         return (
             <div className={cn("text-xs font-mono font-medium text-foreground/90 flex justify-center items-center", className)} {...props}>
                 <span className={cn(
-                    "text-xs font-mono font-medium text-foreground/90 flex justify-center items-center-hover:scale-110",
+                    "text-xs font-mono font-medium flex justify-center items-center",
                     colorClass
                 )}>
                     {sign}{numValue.toFixed(2)}
                 </span>
                 {unit && (
-                    <span className="text-xs font-mono font-medium text-foreground/90 flex justify-center items-center-hover:opacity-100 text-muted-foreground mt-0.5">
+                    <span className="text-xs font-mono text-muted-foreground mt-0.5 ml-1">
                         {unit}
                     </span>
                 )}
@@ -245,7 +221,7 @@ export const DataCell = {
     // --- Status & Badges ---
 
     /** Mapped status badge - Internally uses the standardized StatusBadge */
-    Status: ({ status, label, map, variant = "default", className }: { status: string, label?: string, map?: Record<string, { label: string, className: string }>, variant?: "default" | "hub" | "dot", className?: string }) => {
+    Status: ({ status, label, variant = "default", className }: { status: string, label?: string, variant?: "default" | "hub" | "dot", className?: string }) => {
         return (
             <div className={cn("flex justify-center items-center w-full", className)}>
                 <StatusBadge
@@ -257,6 +233,13 @@ export const DataCell = {
             </div>
         )
     },
+
+    /** Chip for intent-based labels within table cells (wraps shared Chip component) */
+    Chip: ({ children, intent = "neutral", size = "xs", className, ...props }: { children: ReactNode, intent?: "neutral" | "primary" | "success" | "warning" | "destructive" | "info", size?: "xs" | "sm" | "md", className?: string } & HTMLAttributes<HTMLDivElement>) => (
+        <div className={cn("flex justify-center items-center w-full", className)} {...props}>
+            <ChipComponent intent={intent} size={size}>{children}</ChipComponent>
+        </div>
+    ),
 
     /** Icon with optional tooltip (wrapper needed in parent for tooltip provider usually, but here just the icon structure) */
     Icon: ({ icon: Icon, className, color, ...props }: { icon: LucideIcon, className?: string, color?: string } & HTMLAttributes<HTMLDivElement>) => (
@@ -288,7 +271,6 @@ export const DataCell = {
         className,
         color,
         variant = "ghost",
-        compact = false,
         ...props
     }: {
         action?: RowActionKey,
@@ -298,7 +280,6 @@ export const DataCell = {
         className?: string,
         color?: string,
         variant?: "ghost" | "outline" | "default" | "secondary",
-        compact?: boolean
     } & Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'title'>) => {
         const def = action ? ROW_ACTIONS[action] : undefined
         const Icon = iconProp ?? def?.icon
@@ -365,13 +346,11 @@ export const DataCell = {
         title = "Más acciones",
         className,
         align = "end",
-        compact = false,
     }: {
         items: ActionMenuItem[],
         title?: string,
         className?: string,
         align?: "start" | "center" | "end",
-        compact?: boolean,
     }) => (
         <TooltipProvider delayDuration={400}>
             <Tooltip>
@@ -467,9 +446,9 @@ interface ActionsColumnConfig<TData> {
 
 /**
  * createActionsColumn — Standard factory for the actions column.
- * 
- * @contract component-contracts.md §14
- * 
+ *
+ * @contract component-row-actions.md §5.1
+ *
  * Usage:
  * ```tsx
  * const columns = [

@@ -1,7 +1,6 @@
 "use client"
 
-import { useState, useCallback } from "react"
-import { ExpandableTableRow } from "@/components/shared"
+import { useState, useMemo, useEffect } from "react"
 import {
     getContactCreditLedger,
     writeOffDebt,
@@ -12,14 +11,14 @@ import {
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import {
-    RefreshCw, ShieldAlert, Gavel
+    RefreshCw, ShieldAlert, Gavel, ChevronDown, ChevronRight
 } from "lucide-react"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { Button } from "@/components/ui/button"
 import { SkeletonShell, ActionConfirmModal } from "@/components/shared"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { DataTable } from '@/components/shared'
-import { type Table as ReactTable, type Row, type HeaderGroup, type Header, type Cell, flexRender, ColumnDef } from "@tanstack/react-table"
+import { ColumnDef } from "@tanstack/react-table"
 
 import { EmptyState } from "@/components/shared/EmptyState"
 import { StatusBadge } from "@/components/shared/StatusBadge"
@@ -72,8 +71,7 @@ function AgingBar({ aging }: { aging: CreditContact["credit_aging"] }) {
     )
 }
 
-function ExpandableContactRow({ row, onRefresh }: { row: Row<CreditContact>, onRefresh: () => void }) {
-    const contact = row.original
+function PortfolioContactPanel({ contact, onRefresh }: { contact: CreditContact, onRefresh: () => void }) {
     const [ledger, setLedger] = useState<CreditLedgerEntry[] | null>(null)
     const [loadingLedger, setLoadingLedger] = useState(false)
     const [writingOff, setWritingOff] = useState(false)
@@ -85,6 +83,20 @@ function ExpandableContactRow({ row, onRefresh }: { row: Row<CreditContact>, onR
     const isDefault = contact.is_default_customer
     const [writingOffDocId, setWritingOffDocId] = useState<number | null>(null)
     const [showWriteOffDocDialog, setShowWriteOffDocDialog] = useState<{ id: number, number: string, balance: number } | null>(null)
+
+    // Lazy load ledger on first expansion
+    useEffect(() => {
+        if (ledger === null && !loadingLedger) {
+            setLoadingLedger(true)
+            getContactCreditLedger(contact.id)
+                .then(setLedger)
+                .catch(() => {
+                    toast.error("Error al cargar historial de documentos")
+                    setLedger([])
+                })
+                .finally(() => setLoadingLedger(false))
+        }
+    }, [ledger, loadingLedger, contact.id])
 
     const handleWriteOff = async () => {
         setWritingOff(true)
@@ -121,24 +133,7 @@ function ExpandableContactRow({ row, onRefresh }: { row: Row<CreditContact>, onR
     const agingBuckets = ['current', 'overdue_30', 'overdue_60', 'overdue_90', 'overdue_90plus'] as const;
 
     return (
-        <ExpandableTableRow
-            row={row}
-            onExpand={async (isExpanding) => {
-                if (isExpanding && !ledger) {
-                    setLoadingLedger(true)
-                    try {
-                        const data = await getContactCreditLedger(contact.id)
-                        setLedger(data)
-                    } catch (error) {
-                        console.error("Error fetching credit ledger:", error)
-                        toast.error("Error al cargar historial de documentos")
-                        setLedger([])
-                    } finally {
-                        setLoadingLedger(false)
-                    }
-                }
-            }}
-        >
+        <>
             <div className="mb-6 flex items-center gap-4">
                 <div className="flex-1">
                     <AgingBar aging={aging} />
@@ -284,7 +279,7 @@ function ExpandableContactRow({ row, onRefresh }: { row: Row<CreditContact>, onR
             <ActionConfirmModal
                 open={!!showWriteOffDocDialog}
                 onOpenChange={(o) => !o && setShowWriteOffDocDialog(null)}
-                onConfirm={() => showWriteOffDocDialog && handleWriteOffDoc(showWriteOffDocDialog.id)}
+                onConfirm={() => showWriteOffDocDialog ? handleWriteOffDoc(showWriteOffDocDialog.id) : undefined}
                 title={`¿Castigar Documento NV-${showWriteOffDocDialog?.number}?`}
                 description={
                     <div className="space-y-3 pt-1 text-sm leading-relaxed">
@@ -295,7 +290,7 @@ function ExpandableContactRow({ row, onRefresh }: { row: Row<CreditContact>, onR
                 icon={ShieldAlert}
                 confirmText="Confirmar Castigo"
             />
-        </ExpandableTableRow>
+        </>
     )
 }
 
@@ -314,51 +309,48 @@ export function PortfolioTable({
     createAction?: React.ReactNode,
     leftAction?: React.ReactNode,
 }) {
-    const renderPortfolioCustomView = useCallback((table: ReactTable<CreditContact>) => {
-        const rows = table.getRowModel().rows
-        if (rows.length === 0 && !isLoading) {
-            return (
-                <EmptyState
-                    context="finance"
-                    title="No hay clientes con crédito"
-                    description="Habilite cupos de crédito para sus clientes para comenzar el seguimiento."
-                />
-            )
-        }
-        return (
-            <div className="overflow-x-auto pb-4">
-                <table className="w-full text-left">
-                    <thead className="border-b border-border/50">
-                        {table.getHeaderGroups().map((headerGroup: HeaderGroup<CreditContact>) => (
-                            <tr key={headerGroup.id}>
-                                {headerGroup.headers.map((header: Header<CreditContact, unknown>) => (
-                                    <th key={header.id} className="px-4 py-3 text-muted-foreground font-black text-[10px] uppercase tracking-widest whitespace-nowrap text-center">
-                                        {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
-                                    </th>
-                                ))}
-                                <th className="px-3 py-3 w-12" />
-                            </tr>
-                        ))}
-                    </thead>
-                    <tbody className="divide-y divide-border/50">
-                        {table.getRowModel().rows.map((row: Row<CreditContact>) => (
-                            <ExpandableContactRow key={row.id} row={row} onRefresh={onRefresh} />
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-        )
-    }, [isLoading, onRefresh])
+    const columnsWithExpander = useMemo<ColumnDef<CreditContact>[]>(() => [
+        {
+            id: "expander",
+            header: () => null,
+            cell: ({ row }) => (
+                <button
+                    onClick={(e) => {
+                        e.stopPropagation()
+                        row.toggleExpanded()
+                    }}
+                    className="p-1 text-muted-foreground hover:text-foreground transition-colors"
+                >
+                    {row.getIsExpanded() ? (
+                        <ChevronDown className="h-4 w-4" />
+                    ) : (
+                        <ChevronRight className="h-4 w-4" />
+                    )}
+                </button>
+            ),
+            size: 40,
+            enableSorting: false,
+            enableHiding: false,
+        },
+        ...columns,
+    ], [columns])
 
     return (
         <div className="h-full flex flex-col">
             <div className="flex-1 min-h-0">
                 <DataTable
-                    columns={columns}
+                    columns={columnsWithExpander}
                     data={data}
                     variant="embedded"
                     isLoading={isLoading}
-                    renderCustomView={renderPortfolioCustomView}
+                    renderSubComponent={(row) => (
+                        <PortfolioContactPanel contact={row.original} onRefresh={onRefresh} />
+                    )}
+                    emptyState={{
+                        context: "finance",
+                        title: "No hay clientes con crédito",
+                        description: "Habilite cupos de crédito para sus clientes para comenzar el seguimiento.",
+                    }}
                     createAction={createAction}
                     leftAction={leftAction}
                 />

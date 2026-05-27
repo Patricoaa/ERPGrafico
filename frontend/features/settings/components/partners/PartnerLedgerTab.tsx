@@ -14,7 +14,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { TableRow, TableCell } from "@/components/ui/table"
 
-import { Chip } from "@/components/shared"
+import { DataCell } from "@/components/shared"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
 import { Partner, PartnerTransaction } from "@/features/contacts/types/partner"
 import { toast } from "sonner"
@@ -140,7 +140,7 @@ export function PartnerLedgerTab() {
         {
             accessorKey: "partner_name",
             header: "Socio",
-            cell: ({ row }) => <span className="text-[11px] font-black tracking-tight">{row.getValue("partner_name")}</span>,
+            cell: ({ row }) => <DataCell.Text>{row.getValue("partner_name") as string}</DataCell.Text>,
             filterFn: (row, id, value) => {
                 // value comes from selection
                 return value.length === 0 || value.includes(row.original.partner?.toString()) || value.includes(row.original.partner_name)
@@ -151,7 +151,7 @@ export function PartnerLedgerTab() {
             header: "Concepto",
             cell: ({ row }) => (
                 <div className="flex flex-col gap-0.5">
-                    <Chip size="xs" intent={getTransactionIntent(row.original.transaction_type)}>{row.original.transaction_type_display}</Chip>
+                    <DataCell.Chip intent={getTransactionIntent(row.original.transaction_type)}>{row.original.transaction_type_display}</DataCell.Chip>
                     <span className="text-[10px] text-muted-foreground italic truncate max-w-[180px] leading-tight">
                         {row.getValue("description")}
                     </span>
@@ -164,10 +164,8 @@ export function PartnerLedgerTab() {
             cell: ({ row }) => {
                 const val = row.getValue("journal_entry_display")
                 return val ? (
-                    <Button variant="ghost" className="h-6 px-2 text-[9px] font-mono hover:bg-primary/5 hover:text-primary transition-all rounded-sm">
-                        {val as string}
-                    </Button>
-                ) : <span className="text-muted-foreground/30 px-2">-</span>
+                    <DataCell.Code>{val as string}</DataCell.Code>
+                ) : <DataCell.Code>{''}</DataCell.Code>
             }
         },
         {

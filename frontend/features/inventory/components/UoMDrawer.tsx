@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip"
 import { Ruler, ChevronDown, Search, Check, Plus } from "lucide-react"
-import { SubmitButton } from "@/components/shared/ActionButtons"
+import { ActionSlideButton } from "@/components/shared"
 import { ActivitySidebar } from "@/features/audit/components"
 import { useUoMs, type UoM } from "@/features/inventory/hooks/useUoMs"
 import { UoMCategoryDrawer, type UoMCategory } from "./UoMCategoryDrawer"
@@ -134,9 +134,9 @@ export function UoMDrawer({ open: openProp, onOpenChange, initialData, onSuccess
                         actions={
                             <>
                                 <CancelButton onClick={() => setOpen(false)} disabled={isSaving} />
-                                <SubmitButton form="uom-form" loading={isSaving}>
+                                <ActionSlideButton type="submit" form="uom-form" loading={isSaving}>
                                     Guardar Unidad
-                                </SubmitButton>
+                                </ActionSlideButton>
                             </>
                         }
                     />

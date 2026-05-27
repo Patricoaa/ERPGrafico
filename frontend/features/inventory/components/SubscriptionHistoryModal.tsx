@@ -1,6 +1,5 @@
 "use client"
 import { formatCurrency } from "@/lib/money";
-import { formatPlainDate } from "@/lib/utils";
 
 import { SkeletonShell } from "@/components/shared"
 
@@ -271,9 +270,7 @@ function OrderTable({ orders, onOpenHub }: { orders: OrderHistoryEntry[]; onOpen
         },
         {
             header: "Fecha",
-            cell: ({ row }) => (
-                <span className="text-xs font-medium">{formatPlainDate(row.original.date)}</span>
-            ),
+            cell: ({ row }) => <DataCell.Date value={row.original.date} />,
         },
         {
             header: "Estado",
@@ -344,9 +341,7 @@ function NoteTable({ notes, onOpenHub }: { notes: NoteHistoryEntry[]; onOpenHub:
         },
         {
             header: "Fecha",
-            cell: ({ row }) => (
-                <span className="text-xs font-medium">{formatPlainDate(row.original.date)}</span>
-            ),
+            cell: ({ row }) => <DataCell.Date value={row.original.date} />,
         },
         {
             header: "Estado",
