@@ -12,7 +12,7 @@ import { usersApi } from "../api/usersApi"
 import { Button } from "@/components/ui/button"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Plus, User, ShieldCheck, ShieldAlert } from "lucide-react"
-import { Drawer, CancelButton, SubmitButton, LabeledSeparator, LabeledInput, LabeledContainer, FormSection, FormTabs, FormTabsContent, type FormTabItem, FormSplitLayout, FormFooter, LabeledSelect, LabeledSwitch, EntityHeader, SkeletonShell } from "@/components/shared"
+import { Drawer, CancelButton, ActionSlideButton, LabeledSeparator, LabeledInput, LabeledContainer, FormSection, FormTabs, FormTabsContent, type FormTabItem, FormSplitLayout, FormFooter, LabeledSelect, LabeledSwitch, EntityHeader, SkeletonShell } from "@/components/shared"
 import { Checkbox } from "@/components/ui/checkbox"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { AppGroup } from "@/types/entities"
@@ -52,11 +52,12 @@ export function UserDrawer({ auditSidebar, initialData, onSuccess, trigger, open
 
     // Helper to parse groups from initialData
     const parsedInitialValues = useMemo(() => {
-        const groups = initialData?.groups || []
+        const rawGroups = initialData?.groups || []
+        const groups: string[] = rawGroups.map((g) => (typeof g === 'string' ? g : g.name))
         const systemRoles = ['ADMIN', 'MANAGER', 'OPERATOR', 'READ_ONLY']
 
-        const primaryRole = groups.find((g: string) => systemRoles.includes(g)) || "OPERATOR"
-        const functionalGroups = groups.filter((g: string) => !systemRoles.includes(g))
+        const primaryRole = groups.find((g) => systemRoles.includes(g)) || "OPERATOR"
+        const functionalGroups = groups.filter((g) => !systemRoles.includes(g))
 
         return {
             username: initialData?.username || "",
@@ -73,7 +74,7 @@ export function UserDrawer({ auditSidebar, initialData, onSuccess, trigger, open
         defaultValues: parsedInitialValues
     })
     
-    const width = formDrawerWidth("medium", !!initialData?.id)
+    const width = formDrawerWidth("master", !!initialData?.id)
 
     // Fetch static data once when opened
     useEffect(() => {
@@ -231,6 +232,7 @@ export function UserDrawer({ auditSidebar, initialData, onSuccess, trigger, open
                 onOpenChange={setOpen}
                 headerClassName="sr-only"
                 title="Ficha de Usuario"
+                subtitle="Gestión de cuentas, roles y permisos de acceso."
                 defaultSize={width}
                 contentClassName="p-0"
                 side="left"
@@ -239,9 +241,9 @@ export function UserDrawer({ auditSidebar, initialData, onSuccess, trigger, open
                         actions={
                             <>
                                 <CancelButton onClick={() => setOpen(false)} disabled={loading} />
-                                <SubmitButton onClick={form.handleSubmit(onSubmit)} loading={loading}>
+                                <ActionSlideButton type="submit" onClick={form.handleSubmit(onSubmit)} loading={loading}>
                                     {initialData ? "Guardar Cambios" : "Crear Usuario"}
-                                </SubmitButton>
+                                </ActionSlideButton>
                             </>
                         }
                     />

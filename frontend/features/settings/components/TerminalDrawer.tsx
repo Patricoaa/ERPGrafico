@@ -221,7 +221,7 @@ export function TerminalDrawer({ open, onOpenChange, terminal, onSuccess }: Term
             open={open}
             onOpenChange={onOpenChange}
             side="left"
-            defaultSize={formDrawerWidth("medium", !!terminal)}
+            defaultSize={formDrawerWidth("complex", !!terminal)}
             contentClassName="p-0"
             title={
                 <div className="flex items-center gap-3">
@@ -270,74 +270,66 @@ export function TerminalDrawer({ open, onOpenChange, terminal, onSuccess }: Term
                             {/* Section 1: Device Identity */}
                             <div className="space-y-4">
                                 <FormSection title="Identificación del Dispositivo" icon={MonitorSmartphone} />
-                                <div className="grid grid-cols-4 gap-4">
-                                    <div className="col-span-3">
-                                        <FormField
-                                            control={form.control}
-                                            name="name"
-                                            render={({ field, fieldState }) => (
-                                                <LabeledInput
-                                                    label="Nombre de Terminal"
-                                                    placeholder="Ej: Caja Principal"
-                                                    error={fieldState.error?.message}
-                                                    required
-                                                    {...field}
-                                                />
-                                            )}
-                                        />
-                                    </div>
-                                    <div className="col-span-1">
-                                        <FormField
-                                            control={form.control}
-                                            name="code"
-                                            render={({ field, fieldState }) => (
-                                                <LabeledInput
-                                                    label="Código"
-                                                    placeholder="TERM-01"
-                                                    className="uppercase"
-                                                    error={fieldState.error?.message}
-                                                    required
-                                                    {...field}
-                                                />
-                                            )}
-                                        />
-                                    </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <FormField
+                                        control={form.control}
+                                        name="name"
+                                        render={({ field, fieldState }) => (
+                                            <LabeledInput
+                                                label="Nombre de Terminal"
+                                                placeholder="Ej: Caja Principal"
+                                                error={fieldState.error?.message}
+                                                required
+                                                {...field}
+                                            />
+                                        )}
+                                    />
+                                    <FormField
+                                        control={form.control}
+                                        name="code"
+                                        render={({ field, fieldState }) => (
+                                            <LabeledInput
+                                                label="Código"
+                                                placeholder="TERM-01"
+                                                className="uppercase"
+                                                error={fieldState.error?.message}
+                                                required
+                                                {...field}
+                                            />
+                                        )}
+                                    />
                                 </div>
                             </div>
 
                             {/* Section 2: Connectivity & Location */}
                             <div className="space-y-4">
                                 <FormSection title="Conectividad y Ubicación" icon={LucideIcons.Wifi || MonitorSmartphone} />
-                                <div className="grid grid-cols-4 gap-4">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <FormField
+                                        control={form.control}
+                                        name="serial_number"
+                                        render={({ field, fieldState }) => (
+                                            <LabeledInput
+                                                label="N° Serie / Hardware"
+                                                placeholder="SN-XXXX"
+                                                error={fieldState.error?.message}
+                                                {...field}
+                                            />
+                                        )}
+                                    />
+                                    <FormField
+                                        control={form.control}
+                                        name="ip_address"
+                                        render={({ field, fieldState }) => (
+                                            <LabeledInput
+                                                label="IP / Dirección de Red"
+                                                placeholder="192.168.1.XX"
+                                                error={fieldState.error?.message}
+                                                {...field}
+                                            />
+                                        )}
+                                    />
                                     <div className="col-span-2">
-                                        <FormField
-                                            control={form.control}
-                                            name="serial_number"
-                                            render={({ field, fieldState }) => (
-                                                <LabeledInput
-                                                    label="N° Serie / Hardware"
-                                                    placeholder="SN-XXXX"
-                                                    error={fieldState.error?.message}
-                                                    {...field}
-                                                />
-                                            )}
-                                        />
-                                    </div>
-                                    <div className="col-span-2">
-                                        <FormField
-                                            control={form.control}
-                                            name="ip_address"
-                                            render={({ field, fieldState }) => (
-                                                <LabeledInput
-                                                    label="IP / Dirección de Red"
-                                                    placeholder="192.168.1.XX"
-                                                    error={fieldState.error?.message}
-                                                    {...field}
-                                                />
-                                            )}
-                                        />
-                                    </div>
-                                    <div className="col-span-4">
                                         <FormField
                                             control={form.control}
                                             name="location"

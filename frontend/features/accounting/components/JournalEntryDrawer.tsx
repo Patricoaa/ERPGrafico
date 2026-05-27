@@ -138,7 +138,7 @@ export function JournalEntryDrawer({
         defaultValues,
     })
     
-    const width = formDrawerWidth("complex", !!initialData?.id)
+    const width = formDrawerWidth("master", !!initialData?.id)
 
     const selectedDate = form.watch("date")
 

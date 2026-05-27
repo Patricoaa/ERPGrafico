@@ -10,7 +10,7 @@ const DRAWER_BASE: Record<FormComplexity, string> = {
   simple: "30%",
   medium: "40%",
   complex: "50%",
-  master: "65%",
+  master: "75%",
 }
 
 const DRAWER_WITH_SIDEBAR: Record<FormComplexity, string> = {
@@ -18,7 +18,7 @@ const DRAWER_WITH_SIDEBAR: Record<FormComplexity, string> = {
   simple: "45%",
   medium: "55%",
   complex: "65%",
-  master: "80%",
+  master: "90%",
 }
 
 const MODAL_BASE: Record<FormComplexity, BaseModalSize> = {

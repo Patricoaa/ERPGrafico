@@ -128,38 +128,36 @@ export function BankJournalDrawer({ auditSidebar, onSuccess, initialData, open: 
                                     />
                                 )}
                             />
-                            <div className="grid grid-cols-2 gap-4">
-                                <FormField
-                                    control={form.control}
-                                    name="code"
-                                    render={({ field, fieldState }) => (
-                                        <LabeledInput
-                                            label="Código"
-                                            placeholder="BEST-CTE"
-                                            error={fieldState.error?.message}
-                                            {...field}
-                                        />
-                                    )}
-                                />
-                                <FormField
-                                    control={form.control}
-                                    name="currency"
-                                    render={({ field, fieldState }) => (
-                                        <LabeledSelect
-                                            label="Moneda"
-                                            value={field.value}
-                                            onChange={field.onChange}
-                                            error={fieldState.error?.message}
-                                            options={[
-                                                { value: "CLP", label: "CLP (Peso Chileno)" },
-                                                { value: "USD", label: "USD (Dólar)" },
-                                                { value: "EUR", label: "EUR (Euro)" }
-                                            ]}
-                                            placeholder="Seleccione moneda"
-                                        />
-                                    )}
-                                />
-                            </div>
+                            <FormField
+                                control={form.control}
+                                name="code"
+                                render={({ field, fieldState }) => (
+                                    <LabeledInput
+                                        label="Código"
+                                        placeholder="BEST-CTE"
+                                        error={fieldState.error?.message}
+                                        {...field}
+                                    />
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="currency"
+                                render={({ field, fieldState }) => (
+                                    <LabeledSelect
+                                        label="Moneda"
+                                        value={field.value}
+                                        onChange={field.onChange}
+                                        error={fieldState.error?.message}
+                                        options={[
+                                            { value: "CLP", label: "CLP (Peso Chileno)" },
+                                            { value: "USD", label: "USD (Dólar)" },
+                                            { value: "EUR", label: "EUR (Euro)" }
+                                        ]}
+                                        placeholder="Seleccione moneda"
+                                    />
+                                )}
+                            />
                             <FormField
                                 control={form.control}
                                 name="account"
