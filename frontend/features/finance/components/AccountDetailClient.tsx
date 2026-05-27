@@ -4,7 +4,7 @@ import React, { useState } from "react"
 import { notFound, useRouter } from "next/navigation"
 import { useAccountDetail } from "../hooks"
 import { EntityDetailPage, FormFooter, SubmitButton, CancelButton, SkeletonShell } from "@/components/shared"
-import { AccountForm } from "@/features/finance/components/AccountForm"
+import { AccountDrawer } from "@/features/finance/components/AccountDrawer"
 import { Button } from "@/components/ui/button"
 import { Book } from "lucide-react"
 
@@ -66,7 +66,7 @@ export function AccountDetailClient({ accountId }: AccountDetailClientProps) {
             }
         >
             <div className="max-w-5xl mx-auto h-full">
-                <AccountForm 
+                <AccountDrawer 
                     open={true}
                     inline={true}
                     onOpenChange={(open) => {

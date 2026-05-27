@@ -10,7 +10,7 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover"
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip"
-import { useDebounce } from "@/hooks/use-debounce"
+import { useDebounce } from "@/hooks/useDebounce"
 import { formatRUT } from "@/lib/utils/format"
 import { useContactSearch, useSingleContact } from "@/features/contacts/hooks/useContactSearch"
 import { EmptyState } from "@/components/shared/EmptyState"
@@ -18,7 +18,7 @@ import { Contact } from "@/types/entities"
 import { CardSkeleton, LabeledContainer } from "@/components/shared"
 import React, { Suspense } from "react"
 
-const ContactModal = React.lazy(() => import("@/features/contacts/components/ContactModal"))
+const ContactDrawer = React.lazy(() => import("@/features/contacts/components/ContactDrawer"))
 
 interface AdvancedContactSelectorProps {
     value?: string | number | null
@@ -246,7 +246,7 @@ export function AdvancedContactSelector({
 
             {isCreateModalOpen && (
                 <Suspense fallback={<div />}>
-                    <ContactModal
+                    <ContactDrawer
                         open={isCreateModalOpen}
                         onOpenChange={setIsCreateModalOpen}
                         onSuccess={handleCreateSuccess as any}

@@ -7,7 +7,7 @@ import { DataTable } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { DataCell, createActionsColumn } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
-import { CategoryForm } from "./CategoryForm"
+import { CategoryDrawer } from "./CategoryDrawer"
 
 import { toast } from "sonner"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
@@ -154,8 +154,8 @@ export function CategoryList({ externalOpen, onExternalOpenChange, createAction 
                 />
             </div>
 
-            {/* Unified Modal — CategoryForm keeps rich selectors + audit for both create and edit */}
-            <CategoryForm
+            {/* Unified Modal — CategoryDrawer keeps rich selectors + audit for both create and edit */}
+            <CategoryDrawer
                 onSuccess={() => { void refetch() }}
                 open={isFormOpen || isCreateOpen}
                 onOpenChange={(open) => {

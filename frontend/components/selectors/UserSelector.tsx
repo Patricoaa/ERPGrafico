@@ -11,7 +11,7 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover"
 import { EmptyState } from "@/components/shared/EmptyState"
-import { useDebounce } from "@/hooks/use-debounce"
+import { useDebounce } from "@/hooks/useDebounce"
 import { useUserSearch, useSingleUser } from "@/features/users/hooks/useUserSearch"
 import { CardSkeleton } from "@/components/shared"
 import type { AppUser } from "@/types/entities"

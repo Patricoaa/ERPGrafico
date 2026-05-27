@@ -17,7 +17,7 @@ import {
 
 import { ReportTable } from "@/components/shared/ReportTable"
 import { CashFlowTable } from "@/features/finance/components/CashFlowTable"
-import { MappingConfigSheet } from "@/features/finance/components/MappingConfigSheet"
+import { MappingConfigDrawer } from "@/features/finance/components/MappingConfigDrawer"
 import { DateRangeFilter } from "@/components/shared"
 import { DateRange } from "react-day-picker"
 import { format, startOfYear, subYears } from "date-fns"
@@ -401,7 +401,7 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
                 </FadeIn>
             </div>
 
-            <MappingConfigSheet
+            <MappingConfigDrawer
                 open={mappingOpen}
                 onOpenChange={setMappingOpen}
                 mappingType={activeTab === 'pl' ? 'is' : activeTab === 'cf' ? 'cf' : 'bs'}

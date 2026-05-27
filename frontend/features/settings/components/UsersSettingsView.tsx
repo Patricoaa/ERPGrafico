@@ -11,7 +11,7 @@ import { StatusBadge } from "@/components/shared/StatusBadge"
 import { FadeIn, Chip } from "@/components/shared"
 import { SmartSearchBar } from '@/components/shared/SmartSearchBar'
 import { Edit, Shield, Users } from "lucide-react"
-import { UserForm } from "@/features/users/components/UserForm"
+import { UserDrawer } from "@/features/users/components/UserDrawer"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { GroupManagement } from "@/features/settings/components/GroupManagement"
 import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
@@ -160,7 +160,7 @@ export function UsersSettingsView({ activeTab }: UsersSettingsViewProps) {
     ], [refetch])
 
     const usersCreateAction = useMemo(() => (
-        <UserForm
+        <UserDrawer
             onSuccess={refetch}
             trigger={<ToolbarCreateButton label="Nuevo Usuario" />}
         />
@@ -191,7 +191,7 @@ export function UsersSettingsView({ activeTab }: UsersSettingsViewProps) {
                             />
                         </div>
                         {isUserModalOpen && (
-                            <UserForm
+                            <UserDrawer
                                 open={isUserModalOpen}
                                 onOpenChange={(open) => {
                                     setIsUserModalOpen(open)

@@ -116,8 +116,6 @@ export function SalesCheckoutWizardContent({
         line.product_type === 'MANUFACTURABLE' && line.requires_advanced_manufacturing
     ), [initialOrderLines]);
 
-    const isOnlyService = currentOrderLines.every((line: SaleOrderLine) => line.product_type === 'SERVICE');
-
     const steps = useMemo(() => {
         const s: { id: string; label: string }[] = [
             { id: 'customer_dte', label: 'Cliente & Doc' },
@@ -125,12 +123,10 @@ export function SalesCheckoutWizardContent({
         if (hasManufacturing) {
             s.push({ id: 'manufacturing', label: 'Fabricación' })
         }
-        if (!isOnlyService) {
-            s.push({ id: 'delivery', label: 'Entrega' })
-        }
+        s.push({ id: 'delivery', label: 'Entrega' })
         s.push({ id: 'payment', label: 'Pago' })
         return s
-    }, [hasManufacturing, isOnlyService])
+    }, [hasManufacturing])
 
     const totalSteps = steps.length;
 
@@ -155,7 +151,6 @@ export function SalesCheckoutWizardContent({
     const [deliveryData, setDeliveryData] = useState<CheckoutDeliveryData>(initialDeliveryData || {
         type: 'IMMEDIATE',
         date: null,
-        notes: ''
     })
     const [isFolioValid, setIsFolioValid] = useState(true)
 
@@ -502,8 +497,6 @@ export function SalesCheckoutWizardContent({
 
             formData.append('delivery_type', deliveryData.type)
             if (deliveryData.date) formData.append('delivery_date', deliveryData.date)
-            if (deliveryData.notes) formData.append('delivery_notes', deliveryData.notes)
-
             if (deliveryData.type === 'PARTIAL' && deliveryData.partialQuantities) {
                 formData.append('immediate_lines', JSON.stringify(deliveryData.partialQuantities.map(pq => ({
                     line_id: pq.lineId,

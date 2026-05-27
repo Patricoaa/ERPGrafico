@@ -1,4 +1,4 @@
-export * from './BOMFormModal';
+export * from './BOMDrawer';
 export * from './BOMManager';
 export * from './MaterialAssignmentTabs';
 export * from './WizardHeader';

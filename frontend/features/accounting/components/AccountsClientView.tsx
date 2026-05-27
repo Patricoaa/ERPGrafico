@@ -9,8 +9,8 @@ import { DataTableColumnHeader } from '@/components/shared'
 import { Book, Trash2, Pencil, Plus } from "lucide-react"
 import { IconButton } from "@/components/shared"
 
-import { AccountForm } from "@/features/finance/components/AccountForm"
-import { LedgerModal } from "@/features/accounting/components/LedgerModal"
+import { AccountDrawer } from "@/features/finance/components/AccountDrawer"
+import { LedgerDrawer } from "@/features/accounting/components/LedgerDrawer"
 import { useAccounts } from "@/features/accounting/hooks/useAccounts"
 import { Account } from "@/features/accounting/types"
 import { DataCell, createActionsColumn } from '@/components/shared'
@@ -225,7 +225,7 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
             renderActions: (account) => (
                 <>
                     {account.is_selectable && (
-                        <LedgerModal
+                        <LedgerDrawer
                             accountId={account.id}
                             accountName={account.name}
                             accountCode={account.code}
@@ -271,7 +271,7 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
                 />
             </div>
 
-            <AccountForm
+            <AccountDrawer
                 accounts={flatAccounts as any}
                 initialData={editingAccount as any}
                 parentId={formParentId || undefined}

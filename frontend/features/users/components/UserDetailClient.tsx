@@ -5,7 +5,7 @@ import { notFound, useRouter } from "next/navigation"
 import { EntityDetailPage, SkeletonShell, FormFooter, CancelButton, ActionSlideButton } from "@/components/shared"
 import { formatEntityDisplay } from "@/lib/entity-registry"
 import { StatusBadge } from "@/components/shared/StatusBadge"
-import { UserForm } from "@/features/users/components/UserForm"
+import { UserDrawer } from "@/features/users/components/UserDrawer"
 import { useSingleUser } from "../hooks/useUserSearch"
 
 interface UserDetailClientProps {
@@ -43,7 +43,7 @@ export function UserDetailClient({ userId }: UserDetailClientProps) {
                     actions={
                         <>
                             <CancelButton onClick={() => router.push("/settings/users")}>Volver</CancelButton>
-                            <UserForm 
+                            <UserDrawer 
                                 initialData={user} 
                                 trigger={
                                     <ActionSlideButton>

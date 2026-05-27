@@ -9,12 +9,12 @@ const WorkOrderWizard = dynamic(() => import("@/features/production").then(mod =
      loading: () => <SkeletonShell isLoading={true} ariaLabel="Cargando asistente de orden de trabajo" />
  })
 
-const ContactModal = dynamic(() => import("@/features/contacts/components/ContactModal"), {
+const ContactDrawer = dynamic(() => import("@/features/contacts/components/ContactDrawer"), {
      ssr: false,
      loading: () => <SkeletonShell isLoading={true} ariaLabel="Cargando modal de contacto" />
  })
 
-const TreasuryAccountModal = dynamic(() => import("@/features/treasury/components/TreasuryAccountModal").then(mod => mod.TreasuryAccountModal), {
+const TreasuryAccountDrawer = dynamic(() => import("@/features/treasury/components/TreasuryAccountDrawer").then(mod => mod.TreasuryAccountDrawer), {
      ssr: false,
      loading: () => <SkeletonShell isLoading={true} ariaLabel="Cargando modal de cuenta de tesorería" />
  })
@@ -196,7 +196,7 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
                 />
             )}
             {contactId !== null && (
-                <ContactModal
+                <ContactDrawer
                     open={contactId !== null}
                     onOpenChange={(open) => !open && setContactId(null)}
                     contact={tempContact || { id: contactId }}
@@ -204,7 +204,7 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
                 />
             )}
             {treasuryAccount.isOpen && (
-                <TreasuryAccountModal
+                <TreasuryAccountDrawer
                     open={treasuryAccount.isOpen}
                     onOpenChange={(open) => !open && setTreasuryAccount({ isOpen: false, id: null })}
                     accountId={treasuryAccount.id}

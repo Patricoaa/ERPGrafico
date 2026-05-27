@@ -6,8 +6,8 @@ import { useRouter } from "next/navigation"
 import { SaleOrder } from "@/features/sales/types"
 import { SalesOrdersView } from "@/features/sales/components/SalesOrdersView"
 
-const DeliveryModal = lazy(() =>
-    import("@/features/sales/components/DeliveryModal").then(m => ({ default: m.default }))
+const DeliveryDrawer = lazy(() =>
+    import("@/features/sales/components/DeliveryDrawer").then(m => ({ default: m.default }))
 )
 
 export default function SalesDeliveriesPage() {
@@ -28,10 +28,10 @@ export default function SalesDeliveriesPage() {
                 // Para despachar, la gente usará universal search -> /sales/deliveries?selected=123
             />
 
-            {/* 2. Montar el modal existente (DeliveryModal) controlado por ?selected */}
+            {/* 2. Montar el modal existente (DeliveryDrawer) controlado por ?selected */}
             <Suspense fallback={null}>
                 {(selectedOrder || isLoading) && (
-                    <DeliveryModal
+                    <DeliveryDrawer
                         open={!!selectedOrder || isLoading}
                         onOpenChange={(open) => {
                             if (!open) clearSelection()

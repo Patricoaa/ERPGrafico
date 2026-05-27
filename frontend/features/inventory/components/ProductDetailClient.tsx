@@ -3,7 +3,7 @@
 import React, { useState } from "react"
 import { notFound, useRouter } from "next/navigation"
 import { EntityDetailPage, FormFooter, SubmitButton, CancelButton, SkeletonShell } from "@/components/shared"
-import { ProductForm } from "./ProductForm"
+import { ProductDrawer } from "./ProductDrawer"
 import { useProduct } from "../hooks/useProducts"
 
 interface ProductDetailClientProps {
@@ -126,7 +126,7 @@ export function ProductDetailClient({ productId }: ProductDetailClientProps) {
                 }
             >
                 <div className="h-full">
-                    <ProductForm
+                    <ProductDrawer
                         open={true}
                         inline={true}
                         onOpenChange={(open) => {

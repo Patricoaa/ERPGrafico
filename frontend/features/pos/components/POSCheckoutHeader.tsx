@@ -12,8 +12,6 @@ export function POSCheckoutHeader() {
     const hasManufacturing = items.some(line =>
         line.product_type === 'MANUFACTURABLE' && line.requires_advanced_manufacturing
     )
-    const isOnlyService = items.every(line => line.product_type === 'SERVICE')
-
     // Define steps
     const steps = [
         { id: 1, label: 'Carrito', icon: ShoppingCart },
@@ -24,9 +22,7 @@ export function POSCheckoutHeader() {
     if (hasManufacturing) {
         steps.push({ id: nextStepId++, label: 'Fabricación', icon: Factory })
     }
-    if (!isOnlyService) {
-        steps.push({ id: nextStepId++, label: 'Entrega', icon: Truck })
-    }
+    steps.push({ id: nextStepId++, label: 'Entrega', icon: Truck })
     steps.push({ id: nextStepId++, label: 'Pago', icon: WalletIcon })
 
     return (

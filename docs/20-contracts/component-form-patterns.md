@@ -21,6 +21,7 @@ Este contrato define **cuándo, cómo y en qué contenedor** renderizar formular
 > - [component-visual-hierarchy.md](./component-visual-hierarchy.md) — tipografía de 3 capas (FormSection → Legend → Value)
 > - [component-modal.md](./component-modal.md) — API de BaseModal, tamaños y variantes
 > - [component-decision-tree.md](./component-decision-tree.md) — árbol de decisión de inputs individuales
+> - [naming-conventions.md](../90-governance/naming-conventions.md) — sufijos de componentes (`Drawer`, `Modal`, `Form`…)
 
 ---
 

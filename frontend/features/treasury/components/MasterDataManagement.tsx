@@ -8,7 +8,7 @@ import {
     Plus, CreditCard, Landmark, Lock
 } from "lucide-react"
 import { DataCell, createActionsColumn } from '@/components/shared'
-import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
+import { ActivitySidebar } from "@/features/audit/components"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"

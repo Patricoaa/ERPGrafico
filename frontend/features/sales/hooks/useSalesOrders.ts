@@ -122,7 +122,7 @@ export function useSalesNotes({ filters }: { filters?: SaleNoteFilters } = {}) {
         queryFn: () => salesApi.getSalesNotes(filters),
     })
 
-    return { data: data ?? [], isLoading, refetch }
+    return { notes: data ?? [], isLoading, refetch }
 }
 
 /**

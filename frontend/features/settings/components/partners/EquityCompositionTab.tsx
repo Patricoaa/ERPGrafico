@@ -41,8 +41,8 @@ import { PartnerWithdrawalWizard } from "@/features/settings/components/partners
 import { AddPartnerModal } from "@/features/settings/components/partners/AddPartnerModal"
 import { InitialCapitalModal } from "@/features/settings/components/InitialCapitalModal"
 import { MobilizeEarningsWizard } from "@/features/settings/components/partners/MobilizeEarningsWizard"
-import { PartnerLedgerModal } from "@/features/settings/components/partners/PartnerLedgerModal"
-import { EquityStatsSheet } from "@/features/settings/components/partners/EquityStatsSheet"
+import { PartnerLedgerDrawer } from "@/features/settings/components/partners/PartnerLedgerDrawer"
+import { EquityStatsDrawer } from "@/features/settings/components/partners/EquityStatsDrawer"
 import { ColumnDef } from "@tanstack/react-table"
 
 export function EquityCompositionTab({
@@ -401,7 +401,7 @@ export function EquityCompositionTab({
                 onSuccess={fetchData}
                 initialPartnerId={selectedPartnerId?.toString()}
             />
-            <PartnerLedgerModal
+            <PartnerLedgerDrawer
                 open={isLedgerOpen}
                 onOpenChange={(open) => {
                     if (!open) {
@@ -414,7 +414,7 @@ export function EquityCompositionTab({
                 partnerName={selectedPartnerName}
             />
             {summary && (
-                <EquityStatsSheet
+                <EquityStatsDrawer
                     open={isStatsOpen}
                     onOpenChange={(open) => {
                         setIsStatsOpen(open)

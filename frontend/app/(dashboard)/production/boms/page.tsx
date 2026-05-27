@@ -9,7 +9,7 @@ import { DataTable } from '@/components/shared'
 import { createActionsColumn, DataCell } from '@/components/shared'
 import { Pencil, Trash2, Layers } from "lucide-react"
 import api from "@/lib/api"
-import { BOMFormModal } from "@/features/production/components/BOMFormModal"
+import { BOMDrawer } from "@/features/production/components/BOMDrawer"
 import { toast } from "sonner"
 import { Chip } from "@/components/shared"
 
@@ -196,7 +196,7 @@ export default function BOMsPage() {
                 />
             </div>
 
-            <BOMFormModal
+            <BOMDrawer
                 open={isFormOpen}
                 onOpenChange={handleFormClose}
                 onSuccess={refetchBoms}

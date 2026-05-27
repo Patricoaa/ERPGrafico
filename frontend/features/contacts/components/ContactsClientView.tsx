@@ -18,7 +18,7 @@ import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
 
 // Lazy load heavy components
-const ContactModal = lazy(() => import("./ContactModal"))
+const ContactDrawer = lazy(() => import("./ContactDrawer"))
 const ActionConfirmModal = lazy(() => import("@/components/shared/ActionConfirmModal").then(m => ({ default: m.ActionConfirmModal })))
 
 
@@ -265,7 +265,7 @@ export function ContactsClientView({ isNewModalOpen = false, createAction }: Con
             </div>
 
             <Suspense fallback={<LoadingFallback />}>
-                <ContactModal
+                <ContactDrawer
                     open={modalOpen}
                     onOpenChange={handleCloseModal}
                     contact={selectedContact}

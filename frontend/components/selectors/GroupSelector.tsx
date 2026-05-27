@@ -10,7 +10,7 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover"
-import { useDebounce } from "@/hooks/use-debounce"
+import { useDebounce } from "@/hooks/useDebounce"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { useGroupSearch } from "@/features/users/hooks/useGroupSearch"
 import { AppGroup as Group } from "@/types/entities"

@@ -1,7 +1,7 @@
 "use client"
 
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
+import { ActivitySidebar } from "@/features/audit/components"
 import { CommentSystem } from "@/components/shared/CommentSystem"
 import { useSaleOrderComments } from "../hooks/useSaleOrderComments"
 

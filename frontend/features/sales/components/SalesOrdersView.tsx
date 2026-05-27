@@ -51,7 +51,7 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
             pos_session: posSessionId || undefined,
         }
     })
-    const { data: notes, isLoading: isLoadingNotes, refetch: refetchNotes } = useSalesNotes({
+    const { notes, isLoading: isLoadingNotes, refetch: refetchNotes } = useSalesNotes({
         filters: {
             customer_name: (smartFilters as Record<string, string>).customer_name,
             date_after: (smartFilters as Record<string, string>).date_after,

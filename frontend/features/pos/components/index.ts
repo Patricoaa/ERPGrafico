@@ -4,7 +4,7 @@ export * from './NumpadModal';
 export * from './PINPadModal';
 export * from './POSReport';
 export * from './POSVariantSelectorModal';
-export * from './SalesOrdersModal';
+export * from './SalesOrdersDrawer';
 export * from './ScannerFeedback';
 export * from './SessionCloseModal';
 export * from './SessionControl';

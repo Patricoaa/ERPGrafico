@@ -9,7 +9,7 @@ import { DataTableColumnHeader } from '@/components/shared'
 import { DataCell, createActionsColumn } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
 // useDeletePricingRule consumido vía usePricingRules.
-import { PricingRuleForm } from "@/features/sales/components/PricingRuleForm"
+import { PricingRuleDrawer } from "@/features/sales/components/PricingRuleDrawer"
 import { toast } from "sonner"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 
@@ -214,7 +214,7 @@ export function PricingRuleList({ externalOpen, onExternalOpenChange, createActi
 
     return (
         <div className="space-y-4 h-full flex flex-col">
-            <PricingRuleForm
+            <PricingRuleDrawer
                 initialData={editingRule || undefined}
                 onSuccess={refetch}
                 open={isFormOpen || !!externalOpen}

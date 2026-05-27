@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react"
 import { toast } from "sonner"
-import { AdvanceFormModal } from "@/features/hr"
+import { AdvanceDrawer } from "@/features/hr"
 import { createAdvance, updateAdvance, deleteAdvance, getEmployees, getPayrolls } from '@/features/hr/api/hrApi'
 import { PaymentModal } from "@/features/treasury"
 import type { SalaryAdvance, Employee, Payroll } from "@/types/hr"
@@ -161,7 +161,7 @@ export default function AdvancesPage() {
                 />
             </div>
 
-            <AdvanceFormModal
+            <AdvanceDrawer
                 open={dialogOpen}
                 onOpenChange={(o) => { setDialogOpen(o); if (!o) setEditingAdvance(null) }}
                 advance={editingAdvance}

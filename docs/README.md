@@ -57,6 +57,7 @@
 | "deploy", "pipeline", "CI failure" | [ci-cd.md](40-quality/ci-cd.md) | 40 |
 | "any type", "TypeScript unknown", "type escape hatch" | [zero-any-policy.md](90-governance/zero-any-policy.md) | 90 |
 | "versioning", "release process", "SemVer", "how to version" | [versioning-policy.md](90-governance/versioning-policy.md) | 90 |
+| "naming", "sufijo de componente", "FormModal prohibido", "cómo nombrar", "Drawer vs Modal", "nombre de archivo", "naming hook", "naming type" | [naming-conventions.md](90-governance/naming-conventions.md) | 90 |
 | "ADR", "decision record", "major change" | [adr/README.md](10-architecture/adr/README.md) | 10 |
 | "signals", "signal receiver", "post_save hook", "cross-app event" | [workflow-signals-registry.md](10-architecture/workflow-signals-registry.md) | 10 |
 | "entity identity", "entity prefix", "registry", "display id", "centralized icons" | [entity-identity.md](20-contracts/entity-identity.md) | 20 |
@@ -87,6 +88,7 @@
 6. **All forms** use Zod + `react-hook-form` in `schema.ts`.
 7. **All shared components** handle `loading` / `empty` / `error` states.
 8. **Every public API change** requires ADR.
+9. **Component suffix must match surface** — `Drawer` = slide-over, `Modal` = dialog, `Form` = no surface. `FormModal`/`FormDrawer` are prohibited. See [naming-conventions.md](90-governance/naming-conventions.md).
 
 ## Agentic model instructions
 

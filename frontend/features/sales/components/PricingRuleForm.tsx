@@ -18,6 +18,7 @@ import { PricingUtils } from '@/features/inventory/utils/pricing'
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { UoMSelector } from "@/components/selectors/UoMSelector"
 import { Drawer, CancelButton, LabeledInput, LabeledSelect, LabeledSwitch, LabeledContainer, PeriodValidationDateInput, FormSection, FormFooter, FormSplitLayout, SkeletonShell, ActionSlideButton } from "@/components/shared"
+import { formDrawerWidth } from "@/lib/form-widths"
 
 const formSchema = z.object({
     name: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
@@ -434,7 +435,7 @@ export function PricingRuleForm({ auditSidebar, initialData, onSuccess, open, on
             open={open}
             onOpenChange={onOpenChange}
             side="left"
-            defaultSize={initialData ? "65%" : "55%"}
+            defaultSize={formDrawerWidth("complex", !!initialData)}
             contentClassName="p-0"
             title={
                 <div className="flex items-center gap-3">

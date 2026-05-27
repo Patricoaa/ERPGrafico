@@ -8,7 +8,7 @@ import { DataTableColumnHeader } from '@/components/shared'
 import { DataCell, createActionsColumn } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
 import { Checkbox } from "@/components/ui/checkbox"
-import { WarehouseForm } from "./WarehouseForm"
+import { WarehouseDrawer } from "./WarehouseDrawer"
 import { Trash2 } from "lucide-react"
 import { toast } from "sonner"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
@@ -182,7 +182,7 @@ export function WarehouseList({ externalOpen, onExternalOpenChange, createAction
                 />
             </div>
 
-            <WarehouseForm
+            <WarehouseDrawer
                 onSuccess={refetch}
                 open={isFormOpen || !!externalOpen}
                 onOpenChange={(open) => {

@@ -10,7 +10,7 @@ import { DataTableColumnHeader } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import type { BulkAction } from "@/components/shared"
-import { ProductForm } from "./ProductForm"
+import { ProductDrawer } from "./ProductDrawer"
 import { ChevronDown, Plus, AlertTriangle, Layers } from "lucide-react"
 import { toast } from "sonner"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -494,7 +494,7 @@ export function ProductList({ externalOpen, onExternalOpenChange, createAction }
                 />
             </div>
 
-            <ProductForm
+            <ProductDrawer
                 open={isFormOpen || !!externalOpen}
                 onOpenChange={(open) => {
                     if (!open) {

@@ -25,10 +25,6 @@ export const accountingApi = {
         const { data } = await api.get('/accounting/entries/', { params })
         return data
     },
-    getEntries: async (params?: Record<string, unknown>) => {
-        const { data } = await api.get('/accounting/entries/', { params })
-        return data
-    },
     getEntry: async (id: number | string) => {
         const { data } = await api.get(`/accounting/entries/${id}/`)
         return data

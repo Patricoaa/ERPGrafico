@@ -6,7 +6,7 @@
  * Reusable controlled form for capturing outsourced service data.
  * Used by:
  *   - OutsourcingAssignmentStep  (inline add/edit panel inside the wizard)
- *   - BOMFormModal               (as the data-shape for each service_lines row)
+ *   - BOMDrawer                  (as the data-shape for each service_lines row)
  *
  * The component owns NO state — it is fully controlled by the parent via
  * `value` / `onChange`. This keeps it compatible with both react-hook-form

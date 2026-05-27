@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Form, FormField } from "@/components/ui/form"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { Loader2, Building2, RefreshCw, Palette, Mail, Phone, MapPin, Globe, Upload, Pencil, Trash2 } from "lucide-react"
-import ContactModal from "@/features/contacts/components/ContactModal"
+import ContactDrawer from "@/features/contacts/components/ContactDrawer"
 import { AutoSaveStatusBadge, DataCell, LabeledInput, LabeledSelect, FadeIn } from "@/components/shared"
 import { Button } from "@/components/ui/button"
 import { formatRUT } from "@/lib/utils/format"
@@ -448,7 +448,7 @@ export function CompanySettingsView({ activeTab }: { activeTab: string }) {
                     </FadeIn>
                 </Tabs>
 
-                <ContactModal
+                <ContactDrawer
                     open={isEditContactOpen}
                     onOpenChange={setIsEditContactOpen}
                     contact={selectedContact}

@@ -10,6 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { toast } from "sonner"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { Drawer, CancelButton, IconButton, LabeledInput, LabeledSelect, FormSection, FormFooter, FormSplitLayout, ActionSlideButton } from "@/components/shared"
+import { formDrawerWidth } from "@/lib/form-widths"
 import { EntityCard } from "@/components/shared/EntityCard"
 import { DataTableView } from '@/components/shared/DataTableView'
 import { DataTableColumnHeader } from '@/components/shared'
@@ -17,7 +18,7 @@ import { createActionsColumn, DataCell, Chip } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
 import { Plus, Power, PowerOff, Trash2, Settings, MapPin, Smartphone, Banknote, CreditCard, Landmark, MonitorSmartphone } from "lucide-react"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
-import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
+import { ActivitySidebar } from "@/features/audit/components"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 
 
@@ -380,7 +381,7 @@ function TerminalModal({ open, onOpenChange, terminal, onSuccess }: {
             open={open}
             onOpenChange={onOpenChange}
             side="left"
-            defaultSize={terminal ? "65%" : "55%"}
+            defaultSize={formDrawerWidth("complex", !!terminal)}
             contentClassName="p-0"
             title={
                 <div className="flex items-center gap-3">

@@ -15,7 +15,7 @@ import { SkeletonShell } from "@/components/shared"
 // Lazy Loaded Modals to satisfy PERF-01 (Prevent massive bundle on Hub Engine)
 // Lazy Loaded Modals - More robust import pattern to handle default/named exports and prevent load failures
 const DocumentCompletionModal = dynamic(() => import("@/components/shared/DocumentCompletionModal").then(m => m.DocumentCompletionModal))
-const DeliveryModal = dynamic(() => import("@/features/sales").then(m => m.DeliveryModal))
+const DeliveryDrawer = dynamic(() => import("@/features/sales").then(m => m.DeliveryDrawer))
 const ReceiptModal = dynamic(() => import("@/features/purchasing/components/ReceiptModal").then(m => m.ReceiptModal))
 const PaymentHistoryModal = dynamic(() => import("./PaymentHistoryModal").then(m => m.PaymentHistoryModal))
 const PaymentModal = dynamic(() => import("@/features/treasury/components/PaymentModal").then(m => m.PaymentModal))
@@ -439,7 +439,7 @@ export const ActionCategory = forwardRef(({
                     />
                 ) : (
                     isSale ? (
-                        <DeliveryModal
+                        <DeliveryDrawer
                             open={true}
                             onOpenChange={closeModal}
                             orderId={order?.id}

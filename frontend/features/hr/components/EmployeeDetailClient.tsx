@@ -6,7 +6,8 @@ import { EntityDetailPage, SkeletonShell, FormFooter, CancelButton, ActionSlideB
 import { formatEntityDisplay } from "@/lib/entity-registry"
 import { useEmployee } from "../hooks/useEmployees"
 import type { Employee } from "@/types/hr"
-import { EmployeeFormModal } from "@/features/hr/components/EmployeeFormModal"
+import { EmployeeDrawer } from "./EmployeeDrawer"
+import { formatCurrency } from "@/lib/money"
 
 interface EmployeeDetailClientProps {
     employeeId: string
@@ -88,7 +89,7 @@ export function EmployeeDetailClient({ employeeId }: EmployeeDetailClientProps) 
                     </div>
                 </div>
                 
-                <EmployeeFormModal 
+                <EmployeeDrawer 
                     open={modalOpen} 
                     onOpenChange={setModalOpen} 
                     employee={employee} 

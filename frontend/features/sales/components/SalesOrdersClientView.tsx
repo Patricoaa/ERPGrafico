@@ -14,7 +14,7 @@ const SALES_ORDER_LIST_KEYS = [[...SALES_KEYS.all, 'orders']] as const
 
 // Lazy load heavy components
 const SalesCheckoutWizard = lazy(() => import("./SalesCheckoutWizard"))
-const DeliveryModal = lazy(() => import("./DeliveryModal"))
+const DeliveryDrawer = lazy(() => import("./DeliveryDrawer"))
 const DocumentCompletionModal = lazy(() => import("@/components/shared/DocumentCompletionModal"))
 const SaleNoteModal = lazy(() => import("./SaleNoteModal"))
 
@@ -76,7 +76,7 @@ export function SalesOrdersClientView({ viewMode }: SalesOrdersClientViewProps) 
 
              {dispatchingOrder && (
                  <SkeletonShell isLoading={true} ariaLabel="Cargando modal de entrega">
-                     <DeliveryModal
+                     <DeliveryDrawer
                          open={!!dispatchingOrder}
                          onOpenChange={(open: boolean) => !open && setDispatchingOrder(null)}
                          orderId={dispatchingOrder}
