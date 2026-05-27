@@ -2,6 +2,11 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Agent compatibility
+
+These rules and conventions apply to any LLM agent used in this repository (Claude, Codex/Cursor, or others).
+If style differences exist across agents, this document's invariants and playbooks always take precedence.
+
 ## Primary entry point for agentic work
 
 **Start here:** [docs/README.md](docs/README.md) — layered documentation with explicit task routing. Match the user's intent to a playbook in the routing table, read the playbook's preconditions, then execute.
@@ -72,6 +77,30 @@ Before writing any code, verify:
 7. **`StatusBadge` is the only authorized status renderer.**
 8. **All forms** use `react-hook-form` + `zodResolver` with schema in `components/forms/schema.ts`.
 9. **Views ≤ 20 lines** per Django action — business logic goes in `services.py`.
+
+## Rule precedence
+
+If a conflict appears, apply this priority order:
+
+1. Global invariants (PR reject rules)
+2. Task-specific playbook (`docs/30-playbooks`)
+3. Component/API/state contracts (`docs/20-contracts`)
+4. Architecture and style conventions
+
+## Definition of done (minimum)
+
+Before considering a task complete:
+
+- Frontend: `npm run type-check` and `npm run lint` pass with no errors
+- Tests: run at least the test scope affected by the change
+- Global invariants remain respected (zero `any`, allowed imports, hooks policy, etc.)
+- If contracts changed, update relevant documentation/contracts
+
+## Planning vs execution
+
+- Plan mode: define approach, scope, risks, and files to touch; no code changes
+- Execution mode: implement following the selected playbook and validate the minimum DoD
+- If the task is ambiguous or has major trade-offs, plan first
 
 ## Stack (short)
 

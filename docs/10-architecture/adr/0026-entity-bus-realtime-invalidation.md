@@ -1,7 +1,7 @@
 ---
 id: 0026
 title: Entity-bus WebSocket for realtime query invalidation
-status: Proposed
+status: Accepted
 date: 2026-05-22
 author: core-team
 ---

@@ -72,8 +72,8 @@ graph TD
 |:---|:---|:---|:---|:---|:---|
 | **Micro** | 1–3 | `sm` / `xs` o `Drawer 40%` | N/A (stack) | **Nunca** | `AddPartnerModal`, `InitialCapitalModal` |
 | **Simple** | 4–6 | `md` o `Drawer 40%` | `grid-cols-4` | **Nunca** | `TransferModal`, `CategoryForm`, `TreasuryAccountModal` |
-| **Estándar** | 7–15 | `lg` o `Drawer 50–55%` | `grid-cols-4` | **Opcional** horiz. si 2–4 dominios. **Obligatorio** si ≥5 dominios | `PricingRuleForm`, `EmployeeFormModal`, `WarehouseForm` |
-| **Complejo** | 16–30 | `xl` / `2xl` o `Drawer 65%` | `grid-cols-4` | **Obligatorio** vertical + `h-[90vh]` o `Drawer` | `UserForm`, `ContactModal`, `BOMFormModal` |
+| **Estándar** | 7–15 | `lg` o `Drawer 50–55%` | `grid-cols-4` | **Opcional** horiz. si 2–4 dominios. **Obligatorio** si ≥5 dominios | `PricingRuleForm`, `EmployeeDrawer`, `WarehouseForm` |
+| **Complejo** | 16–30 | `xl` / `2xl` o `Drawer 65%` | `grid-cols-4` | **Obligatorio** vertical + `h-[90vh]` o `Drawer` | `UserForm`, `ContactDrawer`, `BOMDrawer` |
 | **Ficha Maestra** | 30+ | `2xl` / `full` o `Drawer 75%` | `grid-cols-12` | **Obligatorio** vertical + `h-[90vh]` o `Drawer` | `ProductForm`, `CompanySettingsView` |
 
 ### Escalamiento Create → Edit
@@ -262,7 +262,7 @@ graph TD
 | Solo confirmar una acción (destructiva o no) | `ActionConfirmModal` | Eliminar entidad, Anular documento |
 | Mostrar detalle de un documento/entidad | `TransactionViewModal` | Ver factura, ver pago |
 | Mostrar lista/histórico auxiliar con contexto | `Drawer` (bottom) | `PartnerLedgerModal`, `PayrollDetailSheet`, `SalesOrdersModal` |
-| Formulario CRUD preservando contexto de lista | `Drawer` (left, 40–75%) | `CategoryForm`, `ContactModal`, `ProductForm` (post-migración) |
+| Formulario CRUD preservando contexto de lista | `Drawer` (left, 40–75%) | `CategoryForm`, `ContactDrawer`, `ProductForm` (post-migración) |
 | Panel secundario de acciones junto a listado | `CollapsibleSheet` | `OrderActionPanel` |
 | Edición masiva de múltiples filas | `DataTable` editable + pattern Bulk | `BulkVariantEditForm` |
 | Completar un documento con folio + adjunto | `DocumentCompletionModal` | Completar factura |

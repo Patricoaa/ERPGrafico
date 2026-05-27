@@ -132,7 +132,7 @@ Feature hook: `useProductSearch` from `features/inventory`.
 
 ## AdvancedContactSelector 🟡
 
-Combobox for customers/suppliers. Debounced search, RUT display. Lazy-loads `ContactModal` for quick contact creation.
+Combobox for customers/suppliers. Debounced search, RUT display. Lazy-loads `ContactDrawer` for quick contact creation.
 
 ```tsx
 <AdvancedContactSelector

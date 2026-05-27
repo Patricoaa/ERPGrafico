@@ -22,7 +22,7 @@ Sistema centralizado de identidad de entidades ERP. Define el **único lugar** d
 3. [DynamicIcon](#3-dynamicicon)
 4. [EntityBadge](#4-entitybadge)
 5. [EntityHeader](#5-entityheader)
-6. [EntityDetailPage](#6-entitydetailpage)
+6. [EntityDetailPage](#6-entitydetailpage) ~~(Decommissionado — T-95)~~
 7. [DataCell.Entity](#7-datacellEntity)
 8. [PageHeader — integración con iconos](#8-pageheader--integración-con-iconos)
 9. [Tabla maestra de prefijos](#9-tabla-maestra-de-prefijos)
@@ -377,7 +377,8 @@ Todos los prefijos canónicos del sistema. **No usar prefijos que no estén en e
 
 - Leer metadata via `getEntityMetadata()`, `getEntityIcon()`, `formatEntityDisplay()`.
 - Renderizar identificadores via `EntityBadge` o `DataCell.Entity`.
-- Usar `EntityHeader` / `EntityDetailPage` en todas las rutas `[id]/page.tsx`.
+- Usar `EntityHeader` en todas las superficies que muestren la identidad de una entidad (modales, drawers, headers).
+- ~~Usar `EntityDetailPage` en rutas `[id]/page.tsx`~~ — **Decommissionado (T-95)**. Las rutas `[id]` redirigen server-side a `<list_url>?selected={id}` (ADR-0020).
 - Agregar entidades nuevas al registry con ADR previo si cambia la interfaz `EntityMetadata`.
 
 ### ❌ Prohibido
@@ -395,7 +396,7 @@ Todos los prefijos canónicos del sistema. **No usar prefijos que no estén en e
 
 // ❌ Título de entidad hardcodeado
 <h1>Orden de Compra #{id}</h1>
-// → usar EntityDetailPage con entityLabel
+// → usar EntityHeader con entityLabel dentro del drawer/modal de edición
 
 // ❌ Agregar un registro al ENTITY_REGISTRY sin actualizar detectEntityLabel()
 ```
@@ -406,8 +407,10 @@ Todos los prefijos canónicos del sistema. **No usar prefijos que no estén en e
 - [ ] Regla en `detectEntityLabel()` para el prefijo canónico
 - [ ] Backend: `AppConfig.ready()` registra la entidad con `title_singular`, `title_plural`, `short_display_template` (si es buscable)
 - [ ] Vista de lista: `DataCell.Entity` usa `entityLabel` o `type` en snake_case correcto
-- [ ] Vista de detalle: `EntityDetailPage` usa `entityLabel`
+- [ ] ~~Vista de detalle: `EntityDetailPage` usa `entityLabel`~~ — No aplica (T-95). La ruta `[id]` redirige a `<list_url>?selected={id}`.
 
 ---
 
-*Fuentes: `frontend/lib/entity-registry.ts` · `frontend/components/shared/EntityBadge.tsx` · `frontend/components/shared/EntityHeader.tsx` · `frontend/components/shared/EntityDetailPage.tsx` · `frontend/components/shared/DataTableCells.tsx` · `frontend/components/ui/dynamic-icon.tsx`*
+*Fuentes: `frontend/lib/entity-registry.ts` · `frontend/components/shared/EntityBadge.tsx` · `frontend/components/shared/EntityHeader.tsx` · `frontend/components/shared/DataTableCells.tsx` · `frontend/components/ui/dynamic-icon.tsx`*
+
+> **Nota histórica:** `EntityDetailPage.tsx` fue eliminado en T-95. Ver [list-modal-edit-pattern.md](./list-modal-edit-pattern.md) para el patrón canónico actual.

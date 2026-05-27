@@ -1,7 +1,7 @@
 ---
 id: 0027
 title: BaseDrawer as Primary Surface for Embedded CRUD Forms
-status: Proposed
+status: Accepted
 date: 2026-05-25
 author: pato
 ---
@@ -78,8 +78,8 @@ This ADR covers **only CRUD forms** (create/edit/detail of entities). Explicitly
    | Micro/Simple (1-6 fields) | `"40%"` | `GroupForm`, `CustomFieldTemplateForm` |
    | Standard (7-15 fields) | `"50%"` | `CategoryForm`, `TreasuryAccountModal` |
    | Standard + sidebar | `"55%"` | `WarehouseForm`, `PricingRuleForm` |
-   | Complex (16-30 fields) + FormTabs | `"65%"` | `ContactModal`, `UserForm` |
-   | Master (30+ fields) + FormTabs | `"75%"` | `ProductForm`, `EmployeeFormModal` |
+   | Complex (16-30 fields) + FormTabs | `"65%"` | `ContactDrawer`, `UserForm` |
+   | Master (30+ fields) + FormTabs | `"75%"` | `ProductForm`, `EmployeeDrawer` |
 
 ## Consequences
 

@@ -160,7 +160,7 @@ Namespace de celdas estandarizadas para `DataTable`. Centra contenido y aplica t
 |---|---|---|---|
 | **`DataCell.Entity`** | Ficha de la entidad registrada en el ERP (con prefijo e ícono de la entidad). | **Siempre** que se represente un documento de negocio del ERP (OV, OT, OCS, Factura, Producto). | `entityLabel: string` y `data: any` |
 | **`DataCell.Link`** | URL interna/externa genérica (`href`) o callback (`onClick`). | **Solo para enlaces genéricos no registrales** (ej. descargar plantilla, enlace externo de tracking de courier). | `href` o `onClick` |
-| **`DataCell.ContactLink`** | Abre el `ContactModal` lateral a nivel global. | Nombre de persona o empresa (Clientes/Proveedores). | `contactId: number` |
+| **`DataCell.ContactLink`** | Abre el `ContactDrawer` lateral a nivel global. | Nombre de persona o empresa (Clientes/Proveedores). | `contactId: number` |
 
 ```tsx
 // ✅ CORRECTO: Los documentos del ERP se renderizan como Entidades (con su prefijo, ícono y enlace automático)
@@ -169,7 +169,7 @@ Namespace de celdas estandarizadas para `DataTable`. Centra contenido y aplica t
 // ✅ CORRECTO: Enlaces genéricos, externos o descargas
 <DataCell.Link href={`/downloads/template.csv`} external>Descargar Plantilla</DataCell.Link>
 
-// ✅ CORRECTO: Contactos (abre el modal lateral en hover/click)
+// ✅ CORRECTO: Contactos (abre el drawer lateral en hover/click)
 <DataCell.ContactLink contactId={order.customer_id}>
   {order.customer_name}
 </DataCell.ContactLink>
