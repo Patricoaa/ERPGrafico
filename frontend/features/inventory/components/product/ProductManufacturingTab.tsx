@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
 import { FormLineItemsTable } from "@/components/shared/FormLineItemsTable"
 import { useBOMs } from "@/features/production/hooks/useBOMs"
-import { BOMFormModal } from "@/features/production/components/BOMFormModal"
+import { BOMDrawer } from "@/features/production/components/BOMDrawer"
 import { BOM } from "@/features/production/types"
 import { useState } from "react"
 import { Badge } from "@/components/ui/badge"
@@ -284,7 +284,7 @@ export function ProductManufacturingTab({ form, products, uoms, variantMode = fa
             )}
 
             {isBomModalOpen && (
-                <BOMFormModal
+                <BOMDrawer
                     open={isBomModalOpen}
                     onOpenChange={setIsBomModalOpen}
                     product={initialData as any}

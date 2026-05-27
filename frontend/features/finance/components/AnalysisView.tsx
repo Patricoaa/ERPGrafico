@@ -8,7 +8,7 @@ import { DateRange } from "react-day-picker"
 import { startOfYear, subYears } from "date-fns"
 import { useServerDate } from "@/hooks/useServerDate"
 import { CardSkeleton } from "@/components/shared"
-import { MappingConfigSheet } from "@/features/finance/components/MappingConfigSheet"
+import { MappingConfigDrawer } from "@/features/finance/components/MappingConfigDrawer"
 import { PageContainer, FadeIn } from "@/components/shared"
 import { Button } from "@/components/ui/button"
 import { SlidersHorizontal, ChevronDown, GitCompare } from "lucide-react"
@@ -187,7 +187,7 @@ export function AnalysisView({ activeTab }: AnalysisViewProps) {
                 </FadeIn>
             </div>
             
-            <MappingConfigSheet
+            <MappingConfigDrawer
                 open={mappingOpen}
                 onOpenChange={setMappingOpen}
                 mappingType="bs" // Defaulting to Balance Sheet mappings for Ratios

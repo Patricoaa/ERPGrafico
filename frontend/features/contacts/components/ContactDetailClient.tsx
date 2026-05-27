@@ -7,7 +7,7 @@ import { formatEntityDisplay } from "@/lib/entity-registry"
 import { formatRUT } from "@/lib/utils/format"
 import { useContact } from "@/features/contacts/hooks/useContacts"
 import type { Contact } from "@/features/contacts/types"
-import ContactModal from "./ContactModal"
+import ContactDrawer from "./ContactDrawer"
 
 interface ContactDetailClientProps {
     contactId: string
@@ -122,7 +122,7 @@ export function ContactDetailClient({ contactId }: ContactDetailClientProps) {
                     </div>
 
                     {modalOpen && (
-                        <ContactModal 
+                    <ContactDrawer 
                             open={modalOpen} 
                             onOpenChange={setModalOpen} 
                             contact={contact} 

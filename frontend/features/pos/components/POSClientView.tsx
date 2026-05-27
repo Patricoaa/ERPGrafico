@@ -55,7 +55,7 @@ import { SalesCheckoutWizardContent } from '@/features/sales/components/checkout
 import { SessionControl, SessionControlHandle } from '@/features/pos/components/SessionControl'
 import { ScannerFeedback, ScannerFeedbackHandle } from '@/features/pos/components/ScannerFeedback'
 import { PricingUtils } from '@/features/inventory/utils/pricing'
-import { SalesOrdersModal } from '@/features/pos/components/SalesOrdersModal'
+import { SalesOrdersDrawer } from '@/features/pos/components/SalesOrdersDrawer'
 import { AdvancedContactSelector } from '@/components/selectors/AdvancedContactSelector'
 import { Label } from '@/components/ui/label'
 import { useTouchMode } from '@/hooks/useTouchMode'
@@ -383,10 +383,9 @@ export function POSClientView() {
         }
 
         if (!selectedCustomerId && defaultCustomerId) setSelectedCustomerId(defaultCustomerId)
-        const isOnlyService = items.every(line => line.product_type === 'SERVICE')
         const hasMfg = items.some(line => line.product_type === 'MANUFACTURABLE' && line.requires_advanced_manufacturing)
-        const lastStep = (isOnlyService ? 3 : 4) + (hasMfg ? 1 : 0)
-        setWizardState({ step: lastStep, isQuickSale: true, dteData: { type: 'BOLETA', number: '', date: new Date().toISOString().split('T')[0], attachment: null, isPending: false }, deliveryData: { type: 'IMMEDIATE', date: null, notes: '' } } as any)
+        const lastStep = 3 + (hasMfg ? 1 : 0)
+        setWizardState({ step: lastStep, isQuickSale: true, dteData: { type: 'BOLETA', number: '', date: new Date().toISOString().split('T')[0], attachment: null, isPending: false }, deliveryData: { type: 'IMMEDIATE', date: null } } as any)
         setTimeout(() => setPosMode('CHECKOUT'), 0)
     }
 
@@ -424,9 +423,8 @@ export function POSClientView() {
                 {/* Right: Actions & Menu */}
                 <div className="flex items-center gap-2 flex-1 justify-end">
                     {(() => {
-                        const isOnlyService = items.every(line => line.product_type === 'SERVICE')
                         const hasMfg = items.some(line => line.product_type === 'MANUFACTURABLE' && line.requires_advanced_manufacturing)
-                        const totalSteps = (isOnlyService ? 3 : 4) + (hasMfg ? 1 : 0)
+                        const totalSteps = 3 + (hasMfg ? 1 : 0)
                         const isPaymentStep = wizardState?.step === totalSteps
 
                         // Prioritize current draft in quick view
@@ -619,7 +617,7 @@ export function POSClientView() {
             <DraftCartsList open={draftsListOpen} onOpenChange={setDraftsListOpen} posSessionId={currentSession?.id || null} onLoadDraft={handleLoadDraft} showTrigger={false} syncDrafts={syncDrafts as any} getLockInfo={getLockInfo} />
             <NumpadModal open={numpadOpen} onOpenChange={setNumpadOpen} title={numpadConfig?.field === 'qty' ? "Cantidad" : "Precio"} value={numpadValue} onChange={setNumpadValue} onConfirm={() => handleNumpadConfirm(parseFloat(numpadValue))} allowDecimal />
             <ScannerFeedback ref={scannerFeedbackRef} />
-            <SalesOrdersModal open={ordersModalOpen} onOpenChange={setOrdersModalOpen} posSessionId={currentSession?.id} />
+            <SalesOrdersDrawer open={ordersModalOpen} onOpenChange={setOrdersModalOpen} posSessionId={currentSession?.id} />
 
             <BaseModal
                 open={!!completedSaleData}

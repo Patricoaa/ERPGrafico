@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils"
 import { showApiError } from "@/lib/errors"
 import { toast } from "sonner"
 import { BarcodeModal } from "@/features/inventory/components/BarcodeModal"
-import { BOMFormModal } from "@/features/production/components/BOMFormModal"
+import { BOMDrawer } from "@/features/production/components/BOMDrawer"
 import type { BOM, ProductMinimal } from "@/features/production/types"
 import { useUoMs } from "../../hooks/useUoMs"
 import { useBOMs } from "@/features/production"
@@ -504,7 +504,7 @@ export function VariantQuickEditForm({
       </Tabs>
 
       {/* BOM create / edit modal */}
-      <BOMFormModal
+      <BOMDrawer
         open={bomModalOpen}
         onOpenChange={(open) => {
           setBomModalOpen(open)

@@ -3,10 +3,10 @@
  *
  * Shared controlled component for manufacturing phase configuration.
  * Replaces the ~10 useState variables in WorkOrderForm/index.tsx and
- * the duplicated phase UI in AdvancedManufacturingModal and WorkOrderMaterials.
+ * the duplicated phase UI in AdvancedManufacturingDrawer and WorkOrderMaterials.
  *
  * Consumers:
- *   - AdvancedManufacturingModal  (sales checkout, variant="modal", showContact)
+ *   - AdvancedManufacturingDrawer  (sales checkout, variant="modal", showContact)
  *   - WorkOrderForm/WorkOrderMaterials (production form, variant="inline")
  */
 

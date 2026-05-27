@@ -136,7 +136,6 @@ export interface CheckoutPaymentData {
 export interface CheckoutDeliveryData {
     type: 'IMMEDIATE' | 'SCHEDULED' | 'PARTIAL'
     date: string | null
-    notes: string
     partialQuantities?: Array<{
         lineId: number
         productId: number

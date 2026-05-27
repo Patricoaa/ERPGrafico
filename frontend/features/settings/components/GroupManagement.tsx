@@ -8,7 +8,7 @@ import { DataTableColumnHeader } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
 import { DataCell, createActionsColumn } from '@/components/shared'
 import { Users } from "lucide-react"
-import { GroupForm } from "@/features/users/components/GroupForm"
+import { GroupDrawer } from "@/features/users/components/GroupDrawer"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { SmartSearchBar, useClientSearch } from "@/components/shared"
 import { groupSearchDef } from "@/features/settings/searchDef"
@@ -60,7 +60,7 @@ export function GroupManagement({ externalOpen, onExternalOpenChange, createActi
         createActionsColumn<Record<string, unknown>>({
             renderActions: (group) => (
                 <>
-                    <GroupForm
+                    <GroupDrawer
                         initialData={group as { id: number; name: string }}
                         onSuccess={fetchGroups}
                         trigger={<DataCell.Action action="edit" />}
@@ -87,7 +87,7 @@ export function GroupManagement({ externalOpen, onExternalOpenChange, createActi
                 />
             </div>
 
-            <GroupForm
+            <GroupDrawer
                 open={showCreateModal}
                 onOpenChange={(open) => {
                     setShowCreateModal(open)

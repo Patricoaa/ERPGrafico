@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { EmployeeFormModal } from "@/features/hr"
+import { EmployeeDrawer } from "@/features/hr"
 import type { Employee } from "@/types/hr"
 import { ColumnDef } from "@tanstack/react-table"
 import { DataTableView } from '@/components/shared'
@@ -192,7 +192,7 @@ export default function EmployeesPage() {
                     })}
                 />
             </div>
-            <EmployeeFormModal
+            <EmployeeDrawer
                 open={dialogOpen}
                 onOpenChange={setDialogOpen}
                 employee={editingEmployee}

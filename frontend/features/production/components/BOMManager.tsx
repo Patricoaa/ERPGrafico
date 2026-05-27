@@ -6,7 +6,7 @@ import {
     Plus, Edit, Trash2, Workflow, Box, Layers, Copy, History
 } from "lucide-react"
 import { StatusBadge } from "@/components/shared/StatusBadge"
-import { BOMFormModal } from "./BOMFormModal"
+import { BOMDrawer } from "./BOMDrawer"
 
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu"
@@ -354,7 +354,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
                 </div>
             </div>
 
-            <BOMFormModal
+            <BOMDrawer
                 open={dialogOpen}
                 onOpenChange={setDialogOpen}
                 product={

@@ -299,13 +299,6 @@ export const settingsApi = {
          return data
      },
 
-     // ========== Custom Field Templates ==========
-
-     createCustomFieldTemplate: async (payload: Record<string, unknown>): Promise<unknown> => {
-         const { data } = await api.post('/inventory/custom-field-templates/', payload)
-         return data
-     },
-
      // ========== IFRS Chart of Accounts ==========
 
      populateIfrsChart: async (): Promise<{ message: string }> => {

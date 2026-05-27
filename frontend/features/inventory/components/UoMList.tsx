@@ -12,7 +12,7 @@ import { Trash2 } from "lucide-react"
 import { DataCell, createActionsColumn } from '@/components/shared'
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import type { BulkAction } from "@/components/shared"
-import { UoMForm } from "./UoMForm"
+import { UoMDrawer } from "./UoMDrawer"
 
 import { toast } from "sonner"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
@@ -183,7 +183,7 @@ export function UoMList({ externalOpen, onExternalOpenChange, createAction }: Uo
 
             {/* Unified Modal — UoMForm keeps rich FK + audit widgets for both create and edit.
                 Edit mode driven by ?selected={id} (ADR-0020); create mode driven by externalOpen. */}
-            <UoMForm
+            <UoMDrawer
                 open={!!selectedUoM || isLoadingSelected || !!externalOpen}
                 onOpenChange={(open) => { if (!open) handleCloseModal() }}
                 initialData={selectedUoM ?? undefined}

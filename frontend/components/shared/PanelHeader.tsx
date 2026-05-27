@@ -57,11 +57,9 @@ export function PanelHeader({
     onClose,
     closeTooltip,
 }: PanelHeaderProps) {
-    const resolvedIcon = icon && (
-        typeof icon === "function"
-            ? React.createElement(icon as React.ComponentType<{ className?: string }>, { className: "h-8 w-8" })
-            : icon
-    )
+    const resolvedIcon = React.isValidElement(icon)
+        ? icon
+        : icon && React.createElement(icon as React.ComponentType<{ className?: string }>, { className: "h-8 w-8" })
 
     return (
         <div className={cn("flex items-center justify-between gap-4 w-full", className)}>

@@ -185,6 +185,7 @@ export function Drawer({
                 id={contentId}
                 side={side}
                 hideOverlay={!finalShowOverlay}
+                isPlainOverlay={!finalModal}
                 overlayClassName={boundary === "embedded" ? "!absolute !inset-0" : "!fixed !inset-0"}
                 hideCloseButton={true}
                 container={containerElement || undefined}

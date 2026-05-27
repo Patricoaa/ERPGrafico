@@ -25,6 +25,7 @@ Rules apply to every PR. Violations block merge unless an accepted ADR waives th
 8. Constants (config, enum-ish): `UPPER_SNAKE_CASE`.
 9. Files: match exported symbol (`SaleOrder.tsx` exports `SaleOrder`).
 10. Feature folder: singular lowercase (`invoice`, not `invoices`).
+11. **Component suffix must match the surface it renders** — see [naming-conventions.md](./naming-conventions.md) for the full suffix table (`Drawer`, `Modal`, `Sheet`, `Wizard`, `View`, `Form`, `Step`…). `FormModal` and `FormDrawer` are prohibited.
 
 ## 3. Visual system
 

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { DataTable } from "@/components/shared"
 import { AlertCircle, Edit, CheckCircle2, Settings2 } from "lucide-react"
-import { AdvancedManufacturingModal } from "../forms/AdvancedManufacturingModal"
+import { AdvancedManufacturingDrawer } from "../forms/AdvancedManufacturingDrawer"
 
 import { SaleOrderLine } from "../../types"
 
@@ -144,7 +144,7 @@ export function Step2_ManufacturingDetails({ orderLines, setOrderLines }: Step2_
             </div>
 
             {editingLine && (
-                <AdvancedManufacturingModal
+                <AdvancedManufacturingDrawer
                     open={editingLineIndex !== null}
                     onOpenChange={(open) => !open && setEditingLineIndex(null)}
                     product={{

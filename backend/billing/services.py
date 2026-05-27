@@ -507,7 +507,7 @@ class BillingService:
     def _pos_checkout_internal(order_data, dte_type, payment_method, transaction_number=None,
                      is_pending_registration=False, payment_is_pending=False, amount=None, treasury_account_id=None,
                      document_number=None, document_date=None, document_attachment=None,
-                     delivery_type='IMMEDIATE', delivery_date=None, delivery_notes='', immediate_lines=None, payment_type='INBOUND',
+                     delivery_type='IMMEDIATE', delivery_date=None, immediate_lines=None, payment_type='INBOUND',
                      line_files=None, pos_session_id=None, user=None, payment_method_id=None, credit_approval_task_id=None, draft_id=None, direct_credit_approval=False):
         """
         Complete POS checkout: Create Order -> Confirm -> Invoice -> Payment -> (Optional) Delivery.
@@ -777,18 +777,27 @@ class BillingService:
                 if delivery_date:
                     order.delivery_date = delivery_date
                 
-                notes_prefix = "Despacho Parcial: " if delivery_type == 'PARTIAL' else ""
-                if delivery_notes:
-                    order.notes = f"{order.notes}\n{notes_prefix}Notas Despacho: {delivery_notes}".strip()
                 order.save()
 
         elif delivery_type == 'SCHEDULED':
-            order.delivery_status = SaleOrder.DeliveryStatus.PENDING
-            if delivery_date:
-                order.delivery_date = delivery_date
-            if delivery_notes:
-                order.notes = f"{order.notes}\nNotas Despacho: {delivery_notes}".strip()
-            order.save()
+            service_lines = order.lines.filter(
+                product__product_type='SERVICE',
+                quantity_pending__gt=0
+            )
+            non_service_pending = order.lines.exclude(
+                product__product_type='SERVICE'
+            ).filter(quantity_pending__gt=0)
+
+            if service_lines.exists() and not non_service_pending.exists():
+                warehouse = Warehouse.objects.first()
+                if not warehouse:
+                    raise ValidationError("Debe existir al menos una bodega para registrar cumplimiento.")
+                SalesService.dispatch_order(order, warehouse, delivery_date=delivery_date)
+            else:
+                order.delivery_status = SaleOrder.DeliveryStatus.PENDING
+                if delivery_date:
+                    order.delivery_date = delivery_date
+                order.save()
         elif delivery_type == 'PICKUP':
             # Could be handled similarly to IMMEDIATE or just marked as PENDING for now
             order.delivery_status = SaleOrder.DeliveryStatus.PENDING

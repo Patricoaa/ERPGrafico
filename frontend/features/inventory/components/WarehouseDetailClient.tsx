@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { notFound, useRouter } from "next/navigation"
 import { EntityDetailPage, FormFooter, SubmitButton, CancelButton, SkeletonShell } from "@/components/shared"
-import { WarehouseForm } from "./WarehouseForm"
+import { WarehouseDrawer } from "./WarehouseDrawer"
 import { useWarehouse, type Warehouse } from "../hooks/useWarehouses"
 
 interface WarehouseDetailClientProps {
@@ -54,7 +54,7 @@ export function WarehouseDetailClient({ warehouseId }: WarehouseDetailClientProp
                 }
             >
                 <div className="max-w-5xl mx-auto h-full">
-                    <WarehouseForm
+                    <WarehouseDrawer
                         open={true}
                         inline={true}
                         onOpenChange={(open) => {

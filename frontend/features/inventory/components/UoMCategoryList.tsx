@@ -12,7 +12,7 @@ import { ColumnDef } from "@tanstack/react-table"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Trash2 } from "lucide-react"
 import type { BulkAction } from "@/components/shared"
-import { UoMCategoryForm } from "./UoMCategoryForm"
+import { UoMCategoryDrawer } from "./UoMCategoryDrawer"
 import { toast } from "sonner"
 
 import { useConfirmAction } from "@/hooks/useConfirmAction"
@@ -152,7 +152,7 @@ export function UoMCategoryList({ externalOpen, onExternalOpenChange, createActi
                 />
             </div>
 
-            <UoMCategoryForm
+            <UoMCategoryDrawer
                 open={isModalOpen || !!externalOpen}
                 onOpenChange={(open) => {
                     if (!open) {

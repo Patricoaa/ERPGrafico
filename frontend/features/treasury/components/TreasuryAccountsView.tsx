@@ -145,7 +145,7 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
             ),
             cell: ({ row }: { row: any }) => (
                 <div className="flex justify-center w-full">
-<DataCell.Text>
+                    <DataCell.Text>
                         {row.original.account_type_display || typeLabels[row.original.account_type] || row.original.account_type}
                     </DataCell.Text>
                 </div>
@@ -199,7 +199,7 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
                 if (!val) return null
                 const upperVal = String(val).toUpperCase()
                 return (
-                    <DataCell.Text className="text-muted-primary">
+                    <DataCell.Text>
                         {typeLabels[upperVal] || val}
                     </DataCell.Text>
                 )

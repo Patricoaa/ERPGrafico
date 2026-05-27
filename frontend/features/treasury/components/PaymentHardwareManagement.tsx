@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from "react"
 import { useTerminalProviders, useTerminalDevices, type PaymentTerminalProvider, type PaymentTerminalDevice } from "../hooks/useTerminalProviders"
 import { Button } from "@/components/ui/button"
-import { Drawer, StatusBadge, SubmitButton, CancelButton, IconButton, LabeledInput, LabeledSelect, FormSection, MultiSelectTagInput, SmartSearchBar, useSmartSearch, useClientSearch } from "@/components/shared"
+import { Drawer, StatusBadge, SubmitButton, CancelButton, IconButton, LabeledInput, LabeledSelect, FormSection, MultiSelectTagInput, SmartSearchBar, useSmartSearch, useClientSearch, FormFooter } from "@/components/shared"
+import { formDrawerWidth } from "@/lib/form-widths"
 import { deviceSearchDef, providerSearchDef } from "@/features/treasury/searchDef"
 import { toast } from "sonner"
 import {
@@ -470,16 +471,20 @@ function ProviderModal({ open, onOpenChange, provider, onSuccess }: {
             open={open}
             onOpenChange={onOpenChange}
             side="left"
-            defaultSize="50%"
+            defaultSize={formDrawerWidth("medium", !!provider)}
             title={provider ? "Editar Proveedor" : "Nuevo Proveedor de Pago"}
             subtitle="Configure las cuentas contables para recaudación y comisiones."
             footer={
-                <div className="flex justify-end gap-2">
-                    <CancelButton onClick={() => onOpenChange(false)} />
-                    <SubmitButton loading={loading} onClick={handleSubmit}>
-                        {provider ? "Guardar Cambios" : "Crear Proveedor"}
-                    </SubmitButton>
-                </div>
+                <FormFooter
+                    actions={
+                        <>
+                            <CancelButton onClick={() => onOpenChange(false)} />
+                            <SubmitButton loading={loading} onClick={handleSubmit}>
+                                {provider ? "Guardar Cambios" : "Crear Proveedor"}
+                            </SubmitButton>
+                        </>
+                    }
+                />
             }
         >
             <form className="space-y-4 py-2">
@@ -616,7 +621,7 @@ function DeviceModal({ open, onOpenChange, device, providers, onSuccess }: {
             open={open}
             onOpenChange={onOpenChange}
             side="left"
-            defaultSize="50%"
+            defaultSize={formDrawerWidth("medium", !!device)}
             title={device ? "Editar Dispositivo" : "Registrar Nuevo Hardware"}
             subtitle="Vincule una terminal física con un proveedor de servicios."
             footer={

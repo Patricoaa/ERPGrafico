@@ -12,7 +12,7 @@ import { ColumnDef } from "@tanstack/react-table"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
 import { PartnerSummary } from "@/features/contacts/types/partner"
 import { CashMovementModal } from "@/features/treasury/components/CashMovementModal"
-import { PartnerEditModal } from "./PartnerEditModal"
+import { PartnerEditDrawer } from "./PartnerEditDrawer"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { accountingApi } from "@/features/accounting/api/accountingApi"
@@ -242,7 +242,7 @@ export function PartnerSettingsTab() {
                 }}
             />
 
-            <PartnerEditModal
+            <PartnerEditDrawer
                 open={isEditModalOpen}
                 onOpenChange={setIsEditModalOpen}
                 contact={selectedPartner}

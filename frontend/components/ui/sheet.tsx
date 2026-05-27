@@ -43,15 +43,30 @@ function SheetPortal({
 
 function SheetOverlay({
   className,
+  isPlain = false,
   ...props
-}: React.ComponentProps<typeof SheetPrimitive.Overlay>) {
+}: React.ComponentProps<typeof SheetPrimitive.Overlay> & { isPlain?: boolean }) {
+  const classes = cn(
+    "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed top-20 inset-x-0 bottom-0 z-50 bg-black/50 backdrop-blur-sm ease-[cubic-bezier(0.16,1,0.3,1)] duration-500",
+    className
+  )
+
+  if (isPlain) {
+    const { forceMount, asChild, ...divProps } = props
+    return (
+      <div
+        data-slot="sheet-overlay"
+        data-state="open"
+        className={classes}
+        {...divProps}
+      />
+    )
+  }
+
   return (
     <SheetPrimitive.Overlay
       data-slot="sheet-overlay"
-      className={cn(
-        "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed top-20 inset-x-0 bottom-0 z-50 bg-black/50 backdrop-blur-sm ease-[cubic-bezier(0.16,1,0.3,1)] duration-500",
-        className
-      )}
+      className={classes}
       {...props}
     />
   )
@@ -62,6 +77,7 @@ function SheetContent({
   children,
   side = "right",
   hideOverlay = false,
+  isPlainOverlay = false,
   onPointerDownOutside,
   onFocusOutside,
   onInteractOutside,
@@ -75,11 +91,12 @@ function SheetContent({
   onInteractOutside?: (event: Event) => void
   container?: HTMLElement
   overlayClassName?: string
+  isPlainOverlay?: boolean
 }) {
   const { hideCloseButton, container, overlayClassName, ...restProps } = props
   return (
     <SheetPortal container={container}>
-      {!hideOverlay && <SheetOverlay className={overlayClassName} />}
+      {!hideOverlay && <SheetOverlay className={overlayClassName} isPlain={isPlainOverlay} />}
       <SheetPrimitive.Content
         data-slot="sheet-content"
         className={cn(

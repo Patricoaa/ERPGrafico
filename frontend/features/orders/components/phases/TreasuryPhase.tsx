@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 import { useDeletePayment, useAnnulPayment } from "../../hooks/useOrdersMutations"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
-import { TransactionNumberForm } from "@/features/finance/components/TransactionNumberForm"
+import { TransactionNumberDrawer } from "@/features/finance/components/TransactionNumberDrawer"
 import { saleOrderActions } from '@/features/sales/actions'
 import { purchaseOrderActions } from '@/features/purchasing/actions'
 import { Order, PhaseDocument, Payment } from "../../types"
@@ -205,7 +205,7 @@ export function TreasuryPhase({
                 )}
             </PhaseCard>
 
-            <TransactionNumberForm
+            <TransactionNumberDrawer
                 open={trForm.open}
                 onOpenChange={(open) => setTrForm({ ...trForm, open })}
                 paymentId={trForm.id}

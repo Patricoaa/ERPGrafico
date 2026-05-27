@@ -15,7 +15,7 @@ import { Chip } from "@/components/shared"
 import { cn } from "@/lib/utils"
 import { showApiError } from "@/lib/errors"
 import { toast } from "sonner"
-import { BOMFormModal } from "@/features/production/components/BOMFormModal"
+import { BOMDrawer } from "@/features/production/components/BOMDrawer"
 import type { ProductMinimal } from "@/features/production/types"
 import { useUoMs } from "../../hooks/useUoMs"
 import { useProductMutations } from "../../hooks/useProductMutations"
@@ -423,7 +423,7 @@ export function BulkVariantEditFormV2({
       </Tabs>
 
       {/* BOM create modal — anchored to first selected variant */}
-      <BOMFormModal
+      <BOMDrawer
         open={bomModalOpen}
         onOpenChange={(open) => setBomModalOpen(open)}
         product={anchorVariant}

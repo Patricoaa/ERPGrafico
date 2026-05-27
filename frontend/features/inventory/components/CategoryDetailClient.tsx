@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { notFound, useRouter } from "next/navigation"
 import { EntityDetailPage, FormFooter, SubmitButton, CancelButton, SkeletonShell } from "@/components/shared"
-import { CategoryForm } from "./CategoryForm"
+import { CategoryDrawer } from "./CategoryDrawer"
 import { useCategory, type Category } from "../hooks/useCategories"
 
 interface CategoryDetailClientProps {
@@ -57,7 +57,7 @@ export function CategoryDetailClient({ categoryId }: CategoryDetailClientProps) 
                 }
             >
                 <div className="max-w-5xl mx-auto h-full">
-                    <CategoryForm
+                    <CategoryDrawer
                         open={true}
                         inline={true}
                         onOpenChange={(open) => {

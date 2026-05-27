@@ -7,7 +7,7 @@ import {
 
 import { toast } from "sonner"
 import { StatusBadge } from "@/components/shared"
-import { JournalEntryForm } from "@/features/accounting/components/JournalEntryForm"
+import { JournalEntryDrawer } from "@/features/accounting/components/JournalEntryDrawer"
 import api from "@/lib/api"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 import { Trash2, CheckCircle, Eye, Pencil } from "lucide-react"
@@ -231,7 +231,7 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
                     createAction={createAction}
                 />
 
-                <JournalEntryForm
+                <JournalEntryDrawer
                     accounts={accounts as any}
                     initialData={editingEntry as unknown as import('@/types/forms').JournalEntryInitialData | undefined}
                     onSuccess={() => {

@@ -20,7 +20,7 @@ import {
 import { toast } from "sonner"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { StatusBadge, Chip, EntityCard } from "@/components/shared"
-import { ProductForm } from "@/features/inventory/components/ProductForm"
+import { ProductDrawer } from "@/features/inventory/components/ProductDrawer"
 import { SubscriptionHistoryModal } from "@/features/inventory/components/SubscriptionHistoryModal"
 import { ArchivingRestrictionsModal } from "@/features/inventory/components/ArchivingRestrictionsModal"
 import { DataTableView } from '@/components/shared'
@@ -463,7 +463,7 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false, cr
                 </div>
             </div>
 
-            <ProductForm
+            <ProductDrawer
                 open={isFormOpen || !!externalOpen}
                 onOpenChange={(open) => {
                     if (!open) {

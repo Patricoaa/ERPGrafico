@@ -5,7 +5,7 @@ import { useFiscalYears } from '../../hooks/useFiscalYears';
 import { useAccountingPeriods } from '../../hooks/useAccountingPeriods';
 import { FiscalYearCard } from './FiscalYearCard';
 import { FiscalYearClosingWizard } from './FiscalYearClosingWizard';
-import { NewFiscalYearModal } from './NewFiscalYearModal';
+import { NewFiscalYearDrawer } from './NewFiscalYearDrawer';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { AccountingPeriod, FiscalYearPreviewResult, FiscalYear } from '../../types';
 
@@ -177,7 +177,7 @@ export function AccountingClosuresView({ externalOpen, onExternalOpenChange }: A
                     title="Aún no hay periodos contables"
                     description="Los periodos y cierres se activan automáticamente al registrar el primer asiento contable."
                 />
-                <NewFiscalYearModal
+                <NewFiscalYearDrawer
                     isOpen={newFYModalOpen}
                     onClose={handleCloseNewFY}
                     onConfirm={handleCreateFY}
@@ -304,7 +304,7 @@ export function AccountingClosuresView({ externalOpen, onExternalOpenChange }: A
                 isLoading={previewLoading}
             />
 
-            <NewFiscalYearModal
+            <NewFiscalYearDrawer
                 isOpen={newFYModalOpen}
                 onClose={handleCloseNewFY}
                 onConfirm={handleCreateFY}

@@ -41,6 +41,7 @@ Task routing — common intents:
 | Module layout / navigation tabs / dynamic header | [module-layout-navigation.md](docs/20-contracts/module-layout-navigation.md) |
 | TypeScript error / `any` escape hatch | [resolve-type-errors.md](docs/30-playbooks/resolve-type-errors.md) |
 | Loading state / skeleton / refetch CLS / loading.tsx | [component-skeleton.md](docs/20-contracts/component-skeleton.md) |
+| Naming a component / hook / file / type / sufijo incorrecto | [naming-conventions.md](docs/90-governance/naming-conventions.md) |
 
 Full routing table in [docs/README.md](docs/README.md).
 
@@ -64,6 +65,7 @@ Before writing any code, verify:
 7. **`StatusBadge` is the only authorized status renderer.**
 8. **All forms** use `react-hook-form` + `zodResolver` with schema in `components/forms/schema.ts`.
 9. **Views ≤ 20 lines** per Django action — business logic goes in `services.py`.
+10. **Component suffix must match its surface** — `Drawer` (slide-over), `Modal` (dialog), `Sheet`, `Wizard`, `Form` (no surface), `View` (page-level). `FormModal` / `FormDrawer` are **prohibited**. See [naming-conventions.md](docs/90-governance/naming-conventions.md).
 
 ## Stack (short)
 

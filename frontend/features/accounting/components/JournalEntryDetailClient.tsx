@@ -3,7 +3,7 @@
 import React, { useState } from "react"
 import { notFound, useRouter } from "next/navigation"
 import { EntityDetailPage, FormFooter, SubmitButton, CancelButton, SkeletonShell } from "@/components/shared"
-import { JournalEntryForm } from "./JournalEntryForm"
+import { JournalEntryDrawer } from "./JournalEntryDrawer"
 import { useJournalEntry } from "../hooks/useJournalEntries"
 
 interface JournalEntryDetailClientProps {
@@ -57,7 +57,7 @@ export function JournalEntryDetailClient({ entryId }: JournalEntryDetailClientPr
             }
         >
             <div className="max-w-5xl mx-auto h-full">
-                <JournalEntryForm 
+                <JournalEntryDrawer 
                     open={true}
                     inline={true}
                     onOpenChange={(open) => {

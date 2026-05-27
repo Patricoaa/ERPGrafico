@@ -15,7 +15,7 @@ import api from "@/lib/api"
 import { EmptyState, LabeledContainer } from "@/components/shared"
 import { ProductCategory } from "@/types/entities"
 import { CATEGORIES_QUERY_KEY } from "@/features/inventory/hooks/useCategories"
-import { CategoryForm } from "@/features/inventory/components/CategoryForm"
+import { CategoryDrawer } from "@/features/inventory/components/CategoryDrawer"
 
 interface CategorySelectorProps {
     value?: string | number | null
@@ -209,7 +209,7 @@ export function CategorySelector({
                     </div>
                 </PopoverContent>
             </Popover>
-            <CategoryForm
+            <CategoryDrawer
                 open={isCreateModalOpen}
                 onOpenChange={setIsCreateModalOpen}
                 onSuccess={handleCreateSuccess}

@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import Link from "next/link"
 import { toast } from "sonner"
-import { CreatePayrollModal, PayrollDetailSheet } from "@/features/hr"
+import { CreatePayrollDrawer, PayrollDetailDrawer } from "@/features/hr"
 import { deletePayroll, paySalary, payPrevired, createAdvance } from '@/features/hr/api/hrApi'
 import type { Payroll } from "@/types/hr"
 import { ColumnDef } from "@tanstack/react-table"
@@ -330,7 +330,7 @@ export default function PayrollsPage() {
 
     return (
         <div className="space-y-4 h-full flex flex-col">
-            <CreatePayrollModal
+            <CreatePayrollDrawer
                 open={dialogOpen}
                 onOpenChange={handleOpenChange}
                 onSaved={(id) => { handleOpenChange(false); openDetail(id) }}
@@ -349,7 +349,7 @@ export default function PayrollsPage() {
             />
             </div>
 
-            <PayrollDetailSheet
+            <PayrollDetailDrawer
                 payrollId={activePayrollId}
                 open={detailSheetOpen}
                 onOpenChange={(open) => {

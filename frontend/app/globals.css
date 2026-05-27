@@ -98,6 +98,8 @@
   /* GEOMETRY & TYPOGRAPHY */
   --radius: 0.5rem;
   /* Base Radius (8px) — Industrial Atomic unit */
+  --sidebar-width: 4rem; /* 64px - Activity Sidebar width */
+  --sidebar-gap: 1rem;   /* 16px - Gap between sidebar and main content */
   --ring-raw: 0.65 0.25 301;
   --ring: oklch(var(--ring-raw) / 0.4);
 
@@ -1122,5 +1124,59 @@ table [data-notched-field] {
     background-color: inherit !important;
     border-top-left-radius: inherit !important;
     border-top-right-radius: inherit !important;
+  }
+
+  /* 
+   * EMBEDDED DRAWER OVERLAY & BLUR FIX
+   * 1. Overrides the viewport-wide width of the overlay when embedded inside #main-content, keeping it within container boundaries.
+   * 2. Bypasses browser compositing bugs where backdrop-filter is disabled on absolute elements inside
+   *    containers with overflow: hidden and border-radius. We apply a direct blur filter on the main page content wrapper.
+   */
+  #main-content [data-slot="sheet-overlay"] {
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding-right: 0 !important;
+  }
+
+  #main-content > div:first-child {
+    transition: filter 400ms var(--ease-premium);
+  }
+
+  #main-content:has([data-slot="sheet-overlay"]) > div:first-child {
+    filter: blur(6px) brightness(0.65);
+  }
+
+  /*
+   * EMBEDDED DRAWER — PREMIUM FLOATING EFFECT
+   * When a sheet-content is rendered inside #main-content (embedded boundary), lift it visually
+   * above the blurred canvas with:
+   *   - A multi-layer box-shadow that creates depth and a soft primary-color ambient glow
+   *   - A luminous border using the primary color at low opacity
+   *   - A smooth translateY lift that enters from slightly below, reinforcing the "modal on top" feel
+   */
+  #main-content [data-slot="sheet-content"] {
+    --embedded-glow: oklch(from var(--primary) l c h / 0.18);
+    --embedded-shadow:
+      0 0 0 1px oklch(from var(--primary) l c h / 0.22),
+      0 4px 16px -4px rgba(0, 0, 0, 0.55),
+      0 16px 48px -8px rgba(0, 0, 0, 0.45),
+      0 0 80px -16px var(--embedded-glow);
+    box-shadow: var(--embedded-shadow) !important;
+    border-color: oklch(from var(--primary) l c h / 0.28) !important;
+    transition:
+      box-shadow 400ms var(--ease-premium),
+      border-color 400ms var(--ease-premium),
+      transform 500ms var(--ease-premium) !important;
+  }
+
+  #main-content [data-slot="sheet-content"][data-state="open"] {
+    transform: none !important;
+  }
+
+  #main-content [data-slot="sheet-content"][data-state="closed"] {
+    box-shadow: none !important;
+    border-color: transparent !important;
   }
 }
