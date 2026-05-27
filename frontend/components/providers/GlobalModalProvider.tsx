@@ -1,27 +1,28 @@
 "use client"
 
 import React, { createContext, useContext, useState, ReactNode, useCallback, useMemo, useEffect } from "react"
-import dynamic from "next/dynamic"
-import { SkeletonShell } from "@/components/shared"
+import { ENTITY_DRAWERS, hasEntityDrawer } from "@/lib/entity-drawers"
 
-const WorkOrderWizard = dynamic(() => import("@/features/production").then(mod => mod.WorkOrderWizard), {
-     ssr: false,
-     loading: () => <SkeletonShell isLoading={true} ariaLabel="Cargando asistente de orden de trabajo" />
- })
-
-const ContactDrawer = dynamic(() => import("@/features/contacts/components/ContactDrawer"), {
-     ssr: false,
-     loading: () => <SkeletonShell isLoading={true} ariaLabel="Cargando modal de contacto" />
- })
-
-const TreasuryAccountDrawer = dynamic(() => import("@/features/treasury/components/TreasuryAccountDrawer").then(mod => mod.TreasuryAccountDrawer), {
-     ssr: false,
-     loading: () => <SkeletonShell isLoading={true} ariaLabel="Cargando modal de cuenta de tesorería" />
- })
+interface OpenEntityState {
+    label: string
+    id: number
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    data?: any
+}
 
 interface GlobalModalActionsContextType {
+    /**
+     * Open the drawer registered in lib/entity-drawers.tsx for the given entity.
+     * Throws if no drawer is registered for the label — check `hasEntityDrawer(label)` first
+     * or rely on EntityBadge's automatic fallback to navigation.
+     */
+    openEntity: (label: string, id: number, data?: unknown) => void
+    closeEntity: () => void
+    /** @deprecated Use `openEntity('production.workorder', id)` */
     openWorkOrder: (id: number) => void
-    openContact: (id: number, contact?: any) => void
+    /** @deprecated Use `openEntity('contacts.contact', id, contact)` */
+    openContact: (id: number, contact?: unknown) => void
+    /** @deprecated Use `openEntity('treasury.treasuryaccount', id)` */
     openTreasuryAccount: (id: number | null) => void
     registerSheet: (id: string, fullWidth: number, priority: number, forceCollapse?: boolean) => void
     unregisterSheet: (id: string) => void
@@ -39,14 +40,10 @@ interface GlobalModalStateContextType {
 const GlobalModalActionsContext = createContext<GlobalModalActionsContextType | undefined>(undefined)
 const GlobalModalStateContext = createContext<GlobalModalStateContextType | undefined>(undefined)
 
-// For backwards compatibility
 type CombinedContextType = GlobalModalActionsContextType & GlobalModalStateContextType
 
 export function GlobalModalProvider({ children }: { children: ReactNode }) {
-    const [woId, setWoId] = useState<number | null>(null)
-    const [contactId, setContactId] = useState<number | null>(null)
-    const [tempContact, setTempContact] = useState<any>(null)
-    const [treasuryAccount, setTreasuryAccount] = useState<{isOpen: boolean, id: number | null}>({ isOpen: false, id: null })
+    const [openedEntity, setOpenedEntity] = useState<OpenEntityState | null>(null)
     const [sheetStack, setSheetStack] = useState<{id: string, width: number, priority: number, forced: boolean}[]>([])
     const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1600)
 
@@ -57,37 +54,26 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
         return () => window.removeEventListener('resize', handleResize)
     }, [])
 
-    const openWorkOrder = useCallback((id: number) => {
-        setContactId(null)
-        setTreasuryAccount({ isOpen: false, id: null })
-        setWoId(id)
+    const openEntity = useCallback((label: string, id: number, data?: unknown) => {
+        if (!hasEntityDrawer(label)) {
+            // eslint-disable-next-line no-console
+            console.warn(`[GlobalModalProvider] No drawer registered for entity "${label}". Register it in lib/entity-drawers.tsx.`)
+            return
+        }
+        setOpenedEntity({ label, id, data })
     }, [])
 
-    const openContact = useCallback((id: number, contact?: any) => {
-        setWoId(null)
-        setTreasuryAccount({ isOpen: false, id: null })
-        setContactId(id)
-        setTempContact(contact || null)
-    }, [])
+    const closeEntity = useCallback(() => setOpenedEntity(null), [])
 
+    // Backward-compatible specific openers — delegate to the generic one.
+    const openWorkOrder = useCallback((id: number) => openEntity('production.workorder', id), [openEntity])
+    const openContact = useCallback((id: number, contact?: unknown) => openEntity('contacts.contact', id, contact), [openEntity])
     const openTreasuryAccount = useCallback((id: number | null) => {
-        setWoId(null)
-        setContactId(null)
-        setTreasuryAccount({ isOpen: true, id })
-    }, [])
+        if (id === null) { closeEntity(); return }
+        openEntity('treasury.treasuryaccount', id)
+    }, [openEntity, closeEntity])
 
-    const handleContactSuccess = useCallback(() => {
-        setContactId(null)
-        setTempContact(null)
-    }, [])
-
-    const handleWorkOrderSuccess = useCallback(() => {
-        setWoId(null)
-    }, [])
-
-    // Tab Management Logic
     const registerSheet = useCallback((id: string, fullWidth: number, priority: number, forced: boolean = false) => {
-        console.log("registerSheet called:", { id, fullWidth, priority, forced })
         setSheetStack(prev => {
             const existingIndex = prev.findIndex(s => s.id === id)
             let newStack = [...prev]
@@ -98,25 +84,21 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
                 newStack.push({ id, width: fullWidth, priority, forced })
             }
             newStack.sort((a, b) => a.priority - b.priority)
-            console.log("Updated sheetStack after register:", newStack)
             return newStack
         })
     }, [])
 
     const unregisterSheet = useCallback((id: string) => {
-        console.log("unregisterSheet called:", id)
         setSheetStack(prev => {
             if (!prev.find(s => s.id === id)) return prev
-            const newStack = prev.filter(s => s.id !== id)
-            console.log("Updated sheetStack after unregister:", newStack)
-            return newStack
+            return prev.filter(s => s.id !== id)
         })
     }, [])
 
     const getSheetOffset = useCallback((id: string) => {
         const index = sheetStack.findIndex(s => s.id === id)
         if (index === -1 || index === 0) return 0
-        
+
         let totalOffset = 0
         for (let i = 0; i < index; i++) {
             const sheet = sheetStack[i]
@@ -124,8 +106,7 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
                 totalOffset += sheet.width + 16
             }
         }
-        
-        // Prevent leftmost sheets from going off-screen. We leave a 96px left margin (for layout sidebar + gaps)
+
         const currentSheet = sheetStack[index]
         const maxOffset = Math.max(0, windowWidth - currentSheet.width - 96)
         return Math.min(totalOffset, maxOffset)
@@ -148,8 +129,7 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
                 total += sheet.width + 16
             }
         })
-        
-        // Capping total width to guarantee the main content canvas always has at least 400px (or 30% of viewport) width
+
         const minCanvasWidth = Math.max(400, windowWidth * 0.3)
         const maxTotalWidth = Math.max(0, windowWidth - minCanvasWidth - 96)
         return Math.min(total, maxTotalWidth)
@@ -157,7 +137,6 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
 
     const expandedSheetWidth = totalSheetsWidth
 
-    // Centrally synchronize the data-side-panel-width attribute on document.body
     useEffect(() => {
         if (typeof window === 'undefined') return
         if (expandedSheetWidth > 0) {
@@ -168,48 +147,42 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
     }, [expandedSheetWidth])
 
     const actionsValue = useMemo(() => ({
+        openEntity,
+        closeEntity,
         openWorkOrder,
         openContact,
         openTreasuryAccount,
         registerSheet,
         unregisterSheet,
-    }), [openWorkOrder, openContact, openTreasuryAccount, registerSheet, unregisterSheet])
+    }), [openEntity, closeEntity, openWorkOrder, openContact, openTreasuryAccount, registerSheet, unregisterSheet])
 
     const stateValue = useMemo(() => ({
-        isSubModalActive: !!(woId || contactId || treasuryAccount.isOpen),
+        isSubModalActive: openedEntity !== null,
         getSheetOffset,
         getSheetIndex,
         isSheetCollapsed,
         expandedSheetWidth,
         totalSheetsWidth
-    }), [woId, contactId, treasuryAccount.isOpen, getSheetOffset, getSheetIndex, isSheetCollapsed, expandedSheetWidth, totalSheetsWidth])
+    }), [openedEntity, getSheetOffset, getSheetIndex, isSheetCollapsed, expandedSheetWidth, totalSheetsWidth])
+
+    const renderEntityDrawer = () => {
+        if (!openedEntity) return null
+        const render = ENTITY_DRAWERS[openedEntity.label]
+        if (!render) return null
+        return render({
+            id: openedEntity.id,
+            data: openedEntity.data,
+            open: true,
+            onOpenChange: (open) => { if (!open) setOpenedEntity(null) },
+            onSuccess: () => setOpenedEntity(null),
+        })
+    }
 
     return (
         <GlobalModalActionsContext.Provider value={actionsValue}>
         <GlobalModalStateContext.Provider value={stateValue}>
             {children}
-            {woId !== null && (
-                <WorkOrderWizard
-                    mode={{ kind: 'manage', orderId: woId }}
-                    open={woId !== null}
-                    onOpenChange={(open) => !open && setWoId(null)}
-                />
-            )}
-            {contactId !== null && (
-                <ContactDrawer
-                    open={contactId !== null}
-                    onOpenChange={(open) => !open && setContactId(null)}
-                    contact={tempContact || { id: contactId }}
-                    onSuccess={handleContactSuccess}
-                />
-            )}
-            {treasuryAccount.isOpen && (
-                <TreasuryAccountDrawer
-                    open={treasuryAccount.isOpen}
-                    onOpenChange={(open) => !open && setTreasuryAccount({ isOpen: false, id: null })}
-                    accountId={treasuryAccount.id}
-                />
-            )}
+            {renderEntityDrawer()}
         </GlobalModalStateContext.Provider>
         </GlobalModalActionsContext.Provider>
     )

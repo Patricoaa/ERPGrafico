@@ -4,7 +4,7 @@ import { formatCurrency } from "@/lib/money"
 import React, { useEffect, useState } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { ColumnDef } from "@tanstack/react-table"
-import { DataTableView, DataTableColumnHeader } from '@/components/shared'
+import { DataTableView, DataTableColumnHeader, EntityCard, StatusBadge } from '@/components/shared'
 import { createActionsColumn, DataCell } from '@/components/shared'
 import { Pencil, Trash2, Layers } from "lucide-react"
 import api from "@/lib/api"
@@ -193,6 +193,21 @@ export default function BOMsPage() {
                     defaultPageSize={20}
                     leftAction={<SmartSearchBar searchDef={bomSearchDef} placeholder="Buscar por producto..." className="w-full" />}
                     createAction={<ToolbarCreateButton label="Nueva Lista" href="/production/boms?modal=new" />}
+                    renderCard={(bom: BOMListItem) => (
+                        <EntityCard onClick={() => handleEdit(bom.id!)}>
+                            <EntityCard.Header
+                                title={bom.name}
+                                subtitle={bom.product_name}
+                                trailing={<StatusBadge status={bom.active ? 'active' : 'inactive'} size="sm" />}
+                            />
+                            <EntityCard.Body>
+                                {bom.product_internal_code && (
+                                    <EntityCard.Field label="Código" value={<DataCell.Code>{bom.product_internal_code}</DataCell.Code>} />
+                                )}
+                                <EntityCard.Field label="Componentes" value={<DataCell.Number value={bom.lines_count} />} />
+                            </EntityCard.Body>
+                        </EntityCard>
+                    )}
                 />
             </div>
 

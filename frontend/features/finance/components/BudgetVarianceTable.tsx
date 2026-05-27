@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { EmptyState } from "@/components/shared/EmptyState";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { SkeletonShell } from "@/components/shared";
+import { SkeletonShell, DataCell } from "@/components/shared";
 
 export interface BudgetVarianceNode {
     id: number;
@@ -65,16 +65,16 @@ const VarianceCell = ({ value, percentage, type }: { value: number, percentage: 
     return (
         <TableCell className="text-right p-2">
             <div className="flex flex-col items-end">
-                <MoneyDisplay
-                    amount={value}
+                <DataCell.Currency
+                    value={value}
                     className={cn(
-                        "font-mono text-xs font-bold",
+                        "justify-end font-mono text-xs font-bold w-auto p-0 inline-flex",
                         value === 0 ? "text-muted-foreground" : (isGood ? "text-emerald-600 dark:text-emerald-400" : "text-destructive")
                     )}
                 />
                 <span className={cn(
                     "text-[10px] opacity-70",
-                    value === 0 ? "" : (isGood ? "text-success" : "text-destructive")
+                    value === 0 ? "" : (isGood ? "text-success font-bold" : "text-destructive font-bold")
                 )}>
                     {percentage.toFixed(1)}%
                 </span>
@@ -107,13 +107,15 @@ const AccountRow = ({ node, level = 0 }: { node: BudgetVarianceNode, level?: num
                         ) : (
                             <div className="w-7" />
                         )}
-                        <span className="mr-2 text-muted-foreground font-mono text-[10px] w-12 shrink-0">{node.code}</span>
+                        <DataCell.Code value={node.code} className="mr-2 text-muted-foreground font-mono text-[10px] w-12 shrink-0 justify-start" />
                         <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <span className="truncate max-w-[200px]">{node.name}</span>
-                                </TooltipTrigger>
-                                <TooltipContent side="top">{node.name}</TooltipContent>
-                            </Tooltip>
+                            <TooltipTrigger asChild>
+                                <span className="truncate max-w-[200px]">
+                                    <DataCell.Text className="truncate justify-start text-left inline font-inherit p-0 text-inherit">{node.name}</DataCell.Text>
+                                </span>
+                            </TooltipTrigger>
+                            <TooltipContent side="top">{node.name}</TooltipContent>
+                        </Tooltip>
 
                         {node.is_unbudgeted && (
                             <TooltipProvider>
@@ -130,19 +132,19 @@ const AccountRow = ({ node, level = 0 }: { node: BudgetVarianceNode, level?: num
 
                 {/* Month Columns */}
                 <TableCell className="text-right p-2">
-                    <MoneyDisplay amount={node.month_actual} showColor={false} className="font-mono text-xs" />
+                    <DataCell.Currency value={node.month_actual} className="justify-end font-mono text-xs text-foreground font-inherit" />
                 </TableCell>
                 <TableCell className="text-right p-2">
-                    <MoneyDisplay amount={node.month_budget} showColor={false} className="font-mono text-xs text-muted-foreground/70" />
+                    <DataCell.Currency value={node.month_budget} className="justify-end font-mono text-xs text-muted-foreground/70" />
                 </TableCell>
                 <VarianceCell value={node.month_variance} percentage={node.month_percentage} type={node.type} />
 
                 {/* YTD Columns */}
                 <TableCell className="text-right p-2 bg-muted/10">
-                    <MoneyDisplay amount={node.ytd_actual} showColor={false} className="font-mono text-xs font-semibold" />
+                    <DataCell.Currency value={node.ytd_actual} className="justify-end font-mono text-xs font-semibold" />
                 </TableCell>
                 <TableCell className="text-right p-2 bg-muted/10">
-                    <MoneyDisplay amount={node.ytd_budget} showColor={false} className="font-mono text-xs text-muted-foreground/70" />
+                    <DataCell.Currency value={node.ytd_budget} className="justify-end font-mono text-xs text-muted-foreground/70" />
                 </TableCell>
                 <VarianceCell value={node.ytd_variance} percentage={node.ytd_percentage} type={node.type} />
             </TableRow>

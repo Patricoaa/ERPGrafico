@@ -15,13 +15,10 @@ import {
 } from "lucide-react"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { Button } from "@/components/ui/button"
-import { SkeletonShell, ActionConfirmModal } from "@/components/shared"
+import { SkeletonShell, ActionConfirmModal, DataCell, EntityBadge } from "@/components/shared"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { DataTable } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
-
-import { EmptyState } from "@/components/shared/EmptyState"
-import { StatusBadge } from "@/components/shared/StatusBadge"
 
 const fmt = (v: string | number | undefined) =>
     Number(v || 0).toLocaleString("es-CL", { style: "currency", currency: "CLP", maximumFractionDigits: 0 })
@@ -60,11 +57,11 @@ function AgingBar({ aging }: { aging: CreditContact["credit_aging"] }) {
                 const pct = (Number(aging[k]) / total) * 100
                 return pct > 0 ? (
                     <Tooltip key={k}>
-                            <TooltipTrigger asChild>
-                                <div className={cn("h-full", colors[i])} style={{ width: `${pct}%` }} />
-                            </TooltipTrigger>
-                            <TooltipContent side="top">{agingLabel[k]}: {fmt(aging[k])}</TooltipContent>
-                        </Tooltip>
+                        <TooltipTrigger asChild>
+                            <div className={cn("h-full", colors[i])} style={{ width: `${pct}%` }} />
+                        </TooltipTrigger>
+                        <TooltipContent side="top">{agingLabel[k]}: {fmt(aging[k])}</TooltipContent>
+                    </Tooltip>
                 ) : null
             })}
         </div>
@@ -208,42 +205,53 @@ function PortfolioContactPanel({ contact, onRefresh }: { contact: CreditContact,
                                 <tr key={entry.id} className="text-[12px] group">
                                     <td className="py-2 pr-4 text-center">
                                         <button
-                                            className="font-bold text-primary hover:underline flex items-center justify-center gap-1 mx-auto"
+                                            className="mx-auto block hover:opacity-85 transition-opacity"
                                             onClick={(e) => {
                                                 e.stopPropagation()
                                                 openHub({ orderId: entry.id, type: 'sale' })
                                             }}
                                         >
-                                            NV-{entry.number}
+                                            <EntityBadge label="sales.saleorder" data={{ id: entry.id, number: entry.number }} link={false} size="sm" />
                                         </button>
                                     </td>
-                                    <td className="py-2 pr-4 text-muted-foreground text-center">{entry.date}</td>
-                                    <td className="py-2 pr-4 text-muted-foreground text-center">
-                                        {entry.due_date}
-                                        {entry.days_overdue > 0 && (
-                                            <span className="ml-1 text-destructive font-bold">({entry.days_overdue}d)</span>
-                                        )}
+                                    <td className="py-2 pr-4 text-center">
+                                        <DataCell.Date value={entry.date} />
                                     </td>
-                                    <td className="py-2 pr-4 text-center font-mono">{fmt(entry.effective_total)}</td>
-                                    <td className="py-2 pr-4 text-center font-mono text-success font-medium">{fmt(entry.paid_amount)}</td>
-                                    <td className="py-2 pr-4 text-center font-mono font-bold">{fmt(entry.balance)}</td>
+                                    <td className="py-2 pr-4 text-center">
+                                        <div className="flex justify-center items-center gap-1.5 w-full">
+                                            <DataCell.Date value={entry.due_date} />
+                                            {entry.days_overdue > 0 && (
+                                                <span className="text-destructive font-bold text-[11px]">({entry.days_overdue}d)</span>
+                                            )}
+                                        </div>
+                                    </td>
+                                    <td className="py-2 pr-4 text-center">
+                                        <DataCell.Currency value={entry.effective_total} />
+                                    </td>
+                                    <td className="py-2 pr-4 text-center">
+                                        <DataCell.Currency value={entry.paid_amount} className="text-success font-medium" />
+                                    </td>
+                                    <td className="py-2 pr-4 text-center">
+                                        <DataCell.Currency value={entry.balance} className="font-bold" />
+                                    </td>
                                     <td className="py-2 pr-4 text-center">
                                         <div className="flex justify-center">
                                             {entry.credit_assignment_origin_display ? (
-                                                <span className={cn("text-[9px] font-bold px-1.5 py-0.5 rounded border whitespace-nowrap", originBg[entry.credit_assignment_origin || ""])}>
+                                                <DataCell.Chip
+                                                    intent={entry.credit_assignment_origin === "MANUAL" ? "neutral" : entry.credit_assignment_origin === "SALE" ? "info" : "warning"}
+                                                    size="xs"
+                                                    className="w-fit"
+                                                >
                                                     {entry.credit_assignment_origin_display}
-                                                </span>
+                                                </DataCell.Chip>
                                             ) : <span className="text-muted-foreground/30">—</span>}
                                         </div>
                                     </td>
                                     <td className="py-2 pr-4 text-center">
-                                        <div className="flex justify-center">
-                                            <StatusBadge
-                                                variant="default"
-                                                status={entry.aging_bucket === 'current' ? 'SUCCESS' : (entry.days_overdue > 60 ? 'ERROR' : 'WARNING')}
-                                                label={agingLabel[entry.aging_bucket]}
-                                            />
-                                        </div>
+                                        <DataCell.Status
+                                            status={entry.aging_bucket === 'current' ? 'SUCCESS' : (entry.days_overdue > 60 ? 'ERROR' : 'WARNING')}
+                                            label={agingLabel[entry.aging_bucket]}
+                                        />
                                     </td>
                                     <td className="py-2 pr-2 text-center">
                                         <div className="flex justify-center gap-1">

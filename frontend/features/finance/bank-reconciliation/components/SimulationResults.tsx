@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { financeApi } from "../../api/financeApi"
-import { DataTable } from "@/components/shared"
-import { SkeletonShell } from "@/components/shared"
+import { DataTable, SkeletonShell, DataCell } from "@/components/shared"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { formatPlainDate, cn } from "@/lib/utils"
 import type { ColumnDef } from "@tanstack/react-table"
@@ -56,10 +55,15 @@ export function SimulationResults({ rule }: { rule: Record<string, unknown> }) {
         {
             header: "Línea Banco",
             cell: ({ row }) => (
-                <div>
-                    <div className="text-xs font-black uppercase text-foreground/80">{row.original.line.description}</div>
-                    <div className="text-[10px] font-mono text-muted-foreground mt-1">
-                        {formatPlainDate(row.original.line.date)} • <span className="font-bold text-foreground/60">${row.original.line.amount}</span>
+                <div className="flex flex-col items-start justify-start text-left w-full gap-0.5">
+                    <DataCell.Text className="text-left justify-start font-black text-foreground/80">
+                        {row.original.line.description}
+                    </DataCell.Text>
+                    <div className="text-[10px] font-mono text-muted-foreground mt-0.5">
+                        {formatPlainDate(row.original.line.date)} •{" "}
+                        <span className="font-bold text-foreground/60">
+                            {Number(row.original.line.amount).toLocaleString("es-CL", { style: "currency", currency: "CLP", maximumFractionDigits: 0 })}
+                        </span>
                     </div>
                 </div>
             ),
@@ -67,10 +71,15 @@ export function SimulationResults({ rule }: { rule: Record<string, unknown> }) {
         {
             header: "Coincidencia Sistema",
             cell: ({ row }) => (
-                <div>
-                    <div className="text-xs font-black uppercase text-foreground/80">{row.original.payment.partner || 'Concepto General'}</div>
-                    <div className="text-[10px] font-mono text-muted-foreground mt-1">
-                        Ref: <span className="font-bold">{row.original.payment.reference || 'N/A'}</span> • <span className="font-bold">${row.original.payment.amount}</span>
+                <div className="flex flex-col items-start justify-start text-left w-full gap-0.5">
+                    <DataCell.Text className="text-left justify-start font-black text-foreground/80">
+                        {row.original.payment.partner || 'Concepto General'}
+                    </DataCell.Text>
+                    <div className="text-[10px] font-mono text-muted-foreground mt-0.5">
+                        Ref: <span className="font-bold">{row.original.payment.reference || 'N/A'}</span> •{" "}
+                        <span className="font-bold">
+                            {Number(row.original.payment.amount).toLocaleString("es-CL", { style: "currency", currency: "CLP", maximumFractionDigits: 0 })}
+                        </span>
                     </div>
                 </div>
             ),
@@ -78,15 +87,13 @@ export function SimulationResults({ rule }: { rule: Record<string, unknown> }) {
         {
             header: "Score",
             cell: ({ row }) => {
-                const score = row.original.score
+                const score = Math.round(row.original.score)
+                const intent = score >= 90 ? "success" : score >= 70 ? "warning" : "neutral"
                 return (
-                    <div className={cn(
-                        "inline-flex items-center justify-center h-7 px-2 font-mono font-black text-[12px] rounded-sm border",
-                        score >= 90 ? "bg-success/10 text-success border-success/20" :
-                        score >= 70 ? "bg-warning/10 text-warning border-warning/20" :
-                        "bg-muted/50 text-muted-foreground border-border/40"
-                    )}>
-                        {Math.round(score)}%
+                    <div className="flex justify-end w-full">
+                        <DataCell.Chip intent={intent} size="xs" className="w-fit font-mono font-black">
+                            {score}%
+                        </DataCell.Chip>
                     </div>
                 )
             },

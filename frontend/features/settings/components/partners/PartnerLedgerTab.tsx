@@ -257,9 +257,9 @@ export function PartnerLedgerTab() {
                                 <div className="space-y-1">
                                     <p className="text-[10px] font-black uppercase text-muted-foreground tracking-tighter">Resumen de Selección</p>
                                     <div className="flex items-center gap-2">
-                                        <Chip size="xs" intent="primary" className="bg-primary/5 border-primary/20">
+                                        <DataCell.Chip intent="primary" className="bg-primary/5 border-primary/20">
                                             {rows.length} MOVIMIENTOS
-                                        </Chip>
+                                        </DataCell.Chip>
                                     </div>
                                 </div>
                             </TableCell>

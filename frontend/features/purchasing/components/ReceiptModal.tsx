@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { showApiError } from "@/lib/errors"
 import { BaseModal } from "@/components/shared/BaseModal"
-import { LabeledInput, LabeledSelect, PeriodValidationDateInput, Chip, FormFooter, CancelButton, SubmitButton } from "@/components/shared"
+import { LabeledInput, LabeledSelect, PeriodValidationDateInput, Chip, FormFooter, CancelButton, SubmitButton, DataCell } from "@/components/shared"
 import {
     Table,
     TableBody,
@@ -328,16 +328,24 @@ export function ReceiptModal({
                                         return (
                                             <TableRow key={line.id}>
                                                 <TableCell>
-                                                    <div>
-                                                        <div className="font-medium">{line.product_name}</div>
-                                                        <div className="text-xs text-muted-foreground">Original: ${line.unit_cost}</div>
+                                                    <div className="flex flex-col gap-0.5 items-start text-left w-full">
+                                                        <DataCell.Text className="justify-start text-left w-full font-medium">
+                                                            {line.product_name}
+                                                        </DataCell.Text>
+                                                        <div className="flex items-center gap-1">
+                                                            <span className="text-[10px] text-muted-foreground">Original:</span>
+                                                            <DataCell.Currency
+                                                                value={line.unit_cost}
+                                                                className="justify-start text-[10px] text-muted-foreground font-normal w-auto"
+                                                            />
+                                                        </div>
                                                     </div>
                                                 </TableCell>
                                                 <TableCell className="text-center">
-                                                    <Chip size="xs" intent="neutral" className="font-normal border-none bg-muted/50">{line.uom_name}</Chip>
+                                                    <DataCell.Chip size="xs" intent="neutral" className="font-normal border-none bg-muted/50">{line.uom_name}</DataCell.Chip>
                                                 </TableCell>
                                                 <TableCell className="text-center">
-                                                    <Chip size="xs" intent="neutral">{line.quantity_pending}</Chip>
+                                                    <DataCell.Chip size="xs" intent="neutral">{line.quantity_pending}</DataCell.Chip>
                                                 </TableCell>
                                                 <TableCell className="text-center">
                                                     <LabeledInput
@@ -362,18 +370,20 @@ export function ReceiptModal({
                                                 </TableCell>
                                                 <TableCell>
                                                     {status && (
-                                                        <div className="flex items-center gap-1 text-xs">
-                                                            {status.type === 'error' && <AlertTriangle className="h-3 w-3 text-destructive" />}
-                                                            {status.type === 'success' && <CheckCircle2 className="h-3 w-3 text-success" />}
-                                                            {status.type === 'warning' && <AlertTriangle className="h-3 w-3 text-warning" />}
-                                                            <span className={
-                                                                status.type === 'error' ? 'text-destructive' :
-                                                                    status.type === 'success' ? 'text-success' :
-                                                                        'text-warning'
-                                                            }>
-                                                                {status.message}
-                                                            </span>
-                                                        </div>
+                                                        <DataCell.Chip
+                                                            intent={
+                                                                status.type === 'error' ? 'destructive' :
+                                                                    status.type === 'success' ? 'success' :
+                                                                        'warning'
+                                                            }
+                                                            size="xs"
+                                                            className="flex items-center gap-1 w-fit"
+                                                        >
+                                                            {status.type === 'error' && <AlertTriangle className="h-3 w-3" />}
+                                                            {status.type === 'success' && <CheckCircle2 className="h-3 w-3" />}
+                                                            {status.type === 'warning' && <AlertTriangle className="h-3 w-3" />}
+                                                            <span>{status.message}</span>
+                                                        </DataCell.Chip>
                                                     )}
                                                 </TableCell>
                                             </TableRow>

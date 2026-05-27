@@ -207,7 +207,6 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                         return (
                             <DataCell.ContactLink
                                 contactId={data.id}
-                                className="text-[11px] font-bold"
                             >
                                 {data.label}
                             </DataCell.ContactLink>
@@ -218,13 +217,12 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                         return (
                             <DataCell.Link
                                 onClick={() => { if (accountId) openTreasuryAccount(accountId) }}
-                                className="text-[11px] font-bold"
                             >
                                 {data.label}
                             </DataCell.Link>
                         );
                     }
-                    return <DataCell.Text className="text-[11px] font-bold opacity-70">{data.label}</DataCell.Text>;
+                    return <DataCell.Text>{data.label}</DataCell.Text>;
                 };
 
                 return (
@@ -241,7 +239,7 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
             header: ({ column }) => <DataTableColumnHeader column={column} title="Método" className="justify-center" />,
             cell: ({ row }) => (
                 <div className="flex justify-center w-full">
-                    <DataCell.Text className="uppercase">
+                    <DataCell.Text>
                         {row.original.payment_method_display}
                     </DataCell.Text>
                 </div>
@@ -256,7 +254,7 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                 const signedAmount = type === 'OUTBOUND' ? -amount : amount
                 return (
                     <div className="flex justify-center w-full">
-                        <DataCell.Currency value={signedAmount} className="font-bold" />
+                        <DataCell.Currency value={signedAmount} />
                     </div>
                 )
             },
@@ -286,7 +284,7 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
             header: ({ column }) => <DataTableColumnHeader column={column} title="Usuario" className="justify-center" />,
             cell: ({ row }) => {
                 const m = row.original
-                if (!m.created_by) return <DataCell.Text className="text-muted-foreground/50">-</DataCell.Text>
+                if (!m.created_by) return <DataCell.Secondary>-</DataCell.Secondary>
                 return (
                     <DataCell.Entity
                         entityLabel="core.user"
@@ -382,7 +380,7 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                                         trailing={
                                             <div className="flex flex-col items-end gap-2">
                                                 <StatusBadge status={status} label={label} size="sm" className="uppercase font-bold tracking-tight" />
-                                                <DataCell.Currency value={signedAmount} className="font-bold text-base" />
+                                                <DataCell.Currency value={signedAmount} />
                                             </div>
                                         }
                                     />

@@ -3,7 +3,7 @@ import { formatCurrency } from "@/lib/money"
 
 import { showApiError } from "@/lib/errors"
 import React, { useState, useEffect, useMemo } from "react"
-import { LabeledInput, LabeledSelect, PeriodValidationDateInput, GenericWizard, WizardStep } from "@/components/shared"
+import { LabeledInput, LabeledSelect, PeriodValidationDateInput, GenericWizard, WizardStep, DataCell } from "@/components/shared"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
@@ -333,7 +333,7 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
                     <div className="grid grid-cols-2 gap-4">
                         <Card className="rounded-none border-dashed bg-card/50 shadow-sm p-4 bg-muted/20">
                             <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest mb-1">Monto a Distribuir</p>
-                            <p className="text-xl font-mono font-bold text-primary">{formatCurrency(draftResolution?.net_result || 0)}</p>
+                            <DataCell.Currency value={draftResolution?.net_result || 0} className="justify-start text-xl font-bold text-primary" />
                         </Card>
                         <Card className="rounded-none border-dashed bg-card/50 shadow-sm p-4 bg-muted/20">
                             <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest mb-1">Ejercicio</p>
@@ -384,13 +384,25 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
 
                                     return (
                                         <tr key={line.id} className="hover:bg-muted/30">
-                                            <td className="px-3 py-2 font-black">{line.partner_name}</td>
-                                            <td className="px-3 py-2 text-right font-bold text-muted-foreground">{line.percentage_at_date}%</td>
+                                            <td className="px-3 py-2">
+                                                <DataCell.Text className="justify-start text-left font-black">{line.partner_name}</DataCell.Text>
+                                            </td>
                                             <td className="px-3 py-2 text-right">
-                                                <div className="flex flex-col text-[10px]">
-                                                    <span className="text-success">Bruto: {formatCurrency(line.gross_amount)}</span>
-                                                    <span className="text-destructive">Retiros: {parseFloat(line.provisional_withdrawals_offset) > 0 ? `-${formatCurrency(line.provisional_withdrawals_offset)}` : '0'}</span>
-                                                    <span className="font-bold text-primary text-[11px]">Neto: {formatCurrency(line.net_amount)}</span>
+                                                <span className="font-bold text-muted-foreground">{line.percentage_at_date}%</span>
+                                            </td>
+                                            <td className="px-3 py-2 text-right">
+                                                <div className="flex flex-col text-[10px] items-end">
+                                                    <span className="text-success flex items-center gap-1">
+                                                        Bruto: <DataCell.Currency value={line.gross_amount} className="w-auto p-0 inline-flex font-mono text-[10px] text-success" />
+                                                    </span>
+                                                    <span className="text-destructive flex items-center gap-1">
+                                                        Retiros: {parseFloat(line.provisional_withdrawals_offset) > 0 ? (
+                                                            <DataCell.Currency value={-parseFloat(line.provisional_withdrawals_offset)} className="w-auto p-0 inline-flex font-mono text-[10px] text-destructive" />
+                                                        ) : '0'}
+                                                    </span>
+                                                    <span className="font-bold text-primary text-[11px] flex items-center gap-1">
+                                                        Neto: <DataCell.Currency value={line.net_amount} className="w-auto p-0 inline-flex font-mono text-[11px] font-bold text-primary" />
+                                                    </span>
                                                 </div>
                                             </td>
                                             {isCompensated ? (
@@ -426,16 +438,18 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
                                                             placeholder="0"
                                                         />
                                                     </td>
-                                                    <td className="px-3 py-2 text-right font-mono text-[11px]">
-                                                        <span className={Math.abs(remaining) <= 0.01 ? "text-success" : remaining < 0 ? "text-destructive" : "text-muted-foreground"}>
-                                                            {remaining > 0 ? '+' : ''}{formatCurrency(remaining)}
-                                                        </span>
+                                                    <td className="px-3 py-2 text-right">
+                                                        <div className={cn("font-mono text-[11px] flex items-center justify-end gap-0.5", Math.abs(remaining) <= 0.01 ? "text-success" : remaining < 0 ? "text-destructive" : "text-muted-foreground")}>
+                                                            {remaining > 0 ? '+' : ''}
+                                                            <DataCell.Currency value={remaining} className="w-auto p-0 inline-flex font-mono text-[11px] text-current" />
+                                                        </div>
                                                     </td>
                                                 </>
                                             ) : (
                                                 <td className="px-3 py-2 text-[10px] font-bold text-muted-foreground">
                                                     <div className="flex items-center gap-2">
-                                                        <span>Monto Automático a Absorber: {formatCurrency(Math.abs(parseFloat(line.net_amount)))}</span>
+                                                        <span>Monto Automático a Absorber: </span>
+                                                        <DataCell.Currency value={Math.abs(parseFloat(line.net_amount))} className="w-auto p-0 inline-flex text-muted-foreground" />
                                                     </div>
                                                 </td>
                                             )}

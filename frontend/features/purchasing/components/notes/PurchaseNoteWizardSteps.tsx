@@ -6,7 +6,7 @@ import { Separator } from "@/components/ui/separator"
 import { CheckCircle2, FileText, Package, AlertCircle, UploadCloud, ShieldAlert } from "lucide-react"
 import { formatCurrency } from "@/lib/money"
 import { cn } from "@/lib/utils"
-import { BaseModal, ActionSlideButton, MoneyDisplay, LabeledInput, LabeledContainer, EmptyState } from "@/components/shared"
+import { BaseModal, ActionSlideButton, MoneyDisplay, LabeledInput, LabeledContainer, EmptyState, DataCell } from "@/components/shared"
 import { PaymentMethodCardSelector, PaymentData } from "@/features/treasury/components/PaymentMethodCardSelector"
 import { DocumentAttachmentDropzone } from "@/components/shared/DocumentAttachmentDropzone"
 import { PeriodValidationDateInput } from "@/components/shared/PeriodValidationDateInput"
@@ -204,23 +204,29 @@ export function Step2_LineItems({ lines, setLines, noteType }: Step2Props) {
                                         isSelected ? (noteType === 'NOTA_CREDITO' ? "bg-warning/10/40" : "bg-primary/10/40") : ""
                                     )}
                                 >
-                                    <td className="px-4 py-3 text-center text-xs text-muted-foreground font-mono">
-                                        {idx + 1}
+                                    <td className="px-4 py-3 text-center">
+                                        <DataCell.Code>{idx + 1}</DataCell.Code>
                                     </td>
                                     <td className="px-4 py-3">
                                         <div className="flex items-center gap-3">
-                                            <Package className="h-4 w-4 text-muted-foreground" />
-                                            <div>
-                                                <p className="font-bold text-sm text-foreground">{line.product_name}</p>
-                                                <p className="text-[10px] font-mono text-muted-foreground uppercase">{line.product_code || '-'}</p>
+                                            <Package className="h-4 w-4 text-muted-foreground shrink-0" />
+                                            <div className="flex flex-col gap-0.5 items-start text-left w-full">
+                                                <DataCell.Text className="justify-start text-left font-bold text-sm text-foreground">
+                                                    {line.product_name}
+                                                </DataCell.Text>
+                                                <DataCell.Code className="justify-start text-left text-[10px] text-muted-foreground">
+                                                    {line.product_code || '-'}
+                                                </DataCell.Code>
                                             </div>
                                         </div>
                                     </td>
-                                    <td className="px-4 py-3 text-center text-xs font-bold text-muted-foreground">
-                                        {line.uom_name || 'UN'}
+                                    <td className="px-4 py-3 text-center">
+                                        <DataCell.Chip size="xs" intent="neutral" className="font-bold text-muted-foreground">
+                                            {line.uom_name || 'UN'}
+                                        </DataCell.Chip>
                                     </td>
-                                    <td className="px-4 py-3 text-center font-mono text-sm text-muted-foreground">
-                                        {line.quantity}
+                                    <td className="px-4 py-3 text-center">
+                                        <DataCell.Number value={line.quantity} className="font-mono text-sm text-muted-foreground justify-center" />
                                     </td>
                                     <td className="px-4 py-3">
                                         <Input
@@ -264,8 +270,11 @@ export function Step2_LineItems({ lines, setLines, noteType }: Step2Props) {
                                             />
                                         </div>
                                     </td>
-                                    <td className="px-4 py-3 text-right font-black font-mono text-sm">
-                                        {formatCurrency(line.note_quantity * line.note_unit_cost)}
+                                    <td className="px-4 py-3">
+                                        <DataCell.Currency
+                                            value={line.note_quantity * line.note_unit_cost}
+                                            className="justify-end font-black text-sm"
+                                        />
                                     </td>
                                 </tr>
                             )
@@ -345,16 +354,23 @@ export function Step3_Review({
                             <span className="text-xs font-bold bg-muted px-2 py-1 rounded">{selectedLines.length}</span>
                         </div>
 
-                        <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
+                         <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
                             {selectedLines.map((line, idx) => (
-                                <div key={idx} className="flex justify-between text-sm py-2 border-b border-dashed last:border-0">
-                                    <div className="flex-1">
+                                <div key={idx} className="flex justify-between items-center text-sm py-2 border-b border-dashed last:border-0">
+                                    <div className="flex-1 flex flex-col gap-0.5">
                                         <p className="font-medium truncate">{line.product_name}</p>
-                                        <p className="text-xs text-muted-foreground font-mono">{line.note_quantity} x {formatCurrency(line.note_unit_cost)}</p>
+                                        <div className="flex items-center gap-1">
+                                            <span className="text-xs text-muted-foreground font-mono">{line.note_quantity} x </span>
+                                            <DataCell.Currency
+                                                value={line.note_unit_cost}
+                                                className="justify-start text-xs text-muted-foreground font-mono w-auto"
+                                            />
+                                        </div>
                                     </div>
-                                    <div className="font-bold text-right">
-                                        {formatCurrency(line.note_quantity * line.note_unit_cost)}
-                                    </div>
+                                    <DataCell.Currency
+                                        value={line.note_quantity * line.note_unit_cost}
+                                        className="justify-end font-bold w-auto"
+                                    />
                                 </div>
                             ))}
                         </div>
@@ -363,17 +379,17 @@ export function Step3_Review({
                     <Separator />
 
                     <div className="bg-muted/20 p-4 rounded-lg space-y-2">
-                        <div className="flex justify-between text-sm">
+                        <div className="flex justify-between items-center text-sm">
                             <span className="text-muted-foreground">Monto Neto</span>
-                            <span className="font-mono font-medium">{formatCurrency(totals.net)}</span>
+                            <DataCell.Currency value={totals.net} className="justify-end font-mono font-medium w-auto" />
                         </div>
-                        <div className="flex justify-between text-sm">
+                        <div className="flex justify-between items-center text-sm">
                             <span className="text-muted-foreground">IVA (19%)</span>
-                            <span className="font-mono font-medium">{formatCurrency(totals.tax)}</span>
+                            <DataCell.Currency value={totals.tax} className="justify-end font-mono font-medium w-auto" />
                         </div>
-                        <div className="flex justify-between text-lg font-black pt-2 border-t border-dashed">
+                        <div className="flex justify-between items-center text-lg font-black pt-2 border-t border-dashed">
                             <span>Total Final</span>
-                            <span className="text-primary">{formatCurrency(totals.total)}</span>
+                            <DataCell.Currency value={totals.total} className="justify-end text-primary w-auto text-lg" />
                         </div>
                     </div>
 

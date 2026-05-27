@@ -3,7 +3,7 @@ import { formatCurrency } from "@/lib/money"
 
 import { showApiError } from "@/lib/errors"
 import React, { useState, useEffect, useMemo } from "react"
-import { LabeledInput, PeriodValidationDateInput, GenericWizard, WizardStep } from "@/components/shared"
+import { LabeledInput, PeriodValidationDateInput, GenericWizard, WizardStep, DataCell } from "@/components/shared"
 import { Input } from "@/components/ui/input"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
 import { toast } from "sonner"
@@ -96,7 +96,7 @@ export function MobilizeEarningsWizard({ open, onOpenChange, onSuccess, initialP
                         <div className="flex justify-between items-end mb-4">
                             <div>
                                 <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Total a Movilizar</p>
-                                <p className="text-2xl font-mono font-bold text-primary mt-1">{formatCurrency(totalMobilized)}</p>
+                                <DataCell.Currency value={totalMobilized} className="justify-start text-2xl font-bold text-primary mt-1" />
                             </div>
                         </div>
 
@@ -126,11 +126,11 @@ export function MobilizeEarningsWizard({ open, onOpenChange, onSuccess, initialP
 
                                             return (
                                                 <tr key={partner.id} className="hover:bg-muted/30 transition-colors">
-                                                    <td className="py-3 px-3 font-medium">
-                                                        {partner.name}
+                                                    <td className="py-3 px-3">
+                                                        <DataCell.Text className="justify-start text-left font-medium">{partner.name}</DataCell.Text>
                                                     </td>
-                                                    <td className="py-3 px-3 text-right font-mono text-muted-foreground">
-                                                        {formatCurrency(available)}
+                                                    <td className="py-3 px-3 text-right">
+                                                        <DataCell.Currency value={available} className="justify-end" />
                                                     </td>
                                                     <td className="py-3 px-3">
                                                         <Input
@@ -198,11 +198,11 @@ export function MobilizeEarningsWizard({ open, onOpenChange, onSuccess, initialP
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-1 border p-3 rounded-lg bg-card">
                                 <p className="text-[10px] uppercase text-muted-foreground font-bold tracking-wider">A Dividendos Pagar</p>
-                                <p className="text-xl font-mono text-foreground font-semibold">{formatCurrency(totalDividend)}</p>
+                                <DataCell.Currency value={totalDividend} className="justify-start text-xl font-semibold text-foreground" />
                             </div>
                             <div className="space-y-1 border p-3 rounded-lg bg-card">
                                 <p className="text-[10px] uppercase text-muted-foreground font-bold tracking-wider">A Re-Inversión</p>
-                                <p className="text-xl font-mono text-muted-foreground font-semibold">{formatCurrency(totalReinvest)}</p>
+                                <DataCell.Currency value={totalReinvest} className="justify-start text-xl font-semibold text-muted-foreground" />
                             </div>
                         </div>
 

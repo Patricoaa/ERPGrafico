@@ -1,11 +1,12 @@
 "use client"
 import { formatCurrency } from "@/lib/money"
+import { cn } from "@/lib/utils"
 
 import { showApiError } from "@/lib/errors"
 import React, { useEffect, useState, useMemo } from "react"
 import { CancelButton, SubmitButton } from "@/components/shared"
 import { BaseModal } from "@/components/shared/BaseModal"
-import { DataTable, LabeledInput, LabeledContainer, PeriodValidationDateInput } from "@/components/shared"
+import { DataTable, LabeledInput, LabeledContainer, PeriodValidationDateInput, DataCell } from "@/components/shared"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
 import { Partner } from "@/features/contacts/types/partner"
 import { toast } from "sonner"
@@ -177,18 +178,16 @@ const projColumns: ColumnDef<ProjectionRow>[] = [
         header: "Socio",
         accessorKey: "name",
         cell: ({ row }) => (
-            <span className={row.original.type === "new" ? "text-xs text-primary" : "text-xs font-medium"}>
+            <DataCell.Text className={cn("text-left justify-start text-xs font-semibold", row.original.type === "new" && "text-primary")}>
                 {row.original.name}
-            </span>
+            </DataCell.Text>
         ),
     },
     {
         header: "Capital Actual",
         accessorKey: "capital",
         cell: ({ row }) => (
-            <span className={`text-right text-xs font-mono${row.original.type === "new" ? " text-primary" : ""}`}>
-                {formatCurrencyExcludingSymbol(row.original.capital)}
-            </span>
+            <DataCell.Currency value={row.original.capital} className={cn(row.original.type === "new" && "text-primary font-bold")} />
         ),
         meta: { align: "right" as const },
     },
@@ -196,7 +195,7 @@ const projColumns: ColumnDef<ProjectionRow>[] = [
         header: "Actual %",
         id: "currentPerc",
         cell: ({ row }) => (
-            <span className="text-right text-xs">{row.original.currentPerc}</span>
+            <DataCell.Text className="text-right text-xs font-mono">{row.original.currentPerc}</DataCell.Text>
         ),
         meta: { align: "right" as const },
     },
@@ -204,9 +203,9 @@ const projColumns: ColumnDef<ProjectionRow>[] = [
         header: "Proyectado %",
         id: "projectedPerc",
         cell: ({ row }) => (
-            <span className="text-right text-xs font-bold text-primary">
+            <DataCell.Text className="text-right text-xs font-bold text-primary font-mono">
                 {row.original.projectedPerc}
-            </span>
+            </DataCell.Text>
         ),
         meta: { align: "right" as const },
     },

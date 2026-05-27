@@ -147,30 +147,35 @@ Regla clave: usar wrappers estáticos para first-load, `SkeletonShell` para refe
 > **File**: `frontend/components/shared/DataTableCells.tsx`  
 > **Import**: `import { DataCell, createActionsColumn } from '@/components/shared'`
 
-Namespace de celdas estandarizadas para `DataTable`. Centra contenido y aplica tipografía consistente. Sub-componentes documentados en contratos específicos:
-- `DataCell.Entity` → [entity-identity.md §7](./entity-identity.md#7-datacellentity)
-- `DataCell.Action` / `ActionGroup` / `ActionMenu` → [component-row-actions.md §5.1](./component-row-actions.md)
+Namespace de celdas estandarizadas para `DataTable`. Centra contenido y aplica tipografía consistente.
 
-### DataCell.Link vs DataCell.ContactLink — cuándo usar cada uno
+### Clasificación de Textos Estándar
 
-| | `DataCell.Link` | `DataCell.ContactLink` |
-|---|---|---|
-| **Destino** | URL interna/externa (`href`) o callback (`onClick`) | Abre `ContactModal` via `GlobalModalProvider` |
-| **Cuándo** | Código de documento (OV, OT, factura) | Nombre de persona o empresa |
-| **Requiere** | `href` o `onClick` | `contactId: number` |
-| **Ícono** | `ExternalLink` solo si `external={true}` | `ExternalLink` siempre visible en hover |
+* **`DataCell.Text` (Texto Primario)**: Todo texto que no encaje en las definiciones restantes (identificadores, fechas, números, badges, etc.). Es el contenedor de texto principal por defecto (fuente `13px`, peso mediano).
+* **`DataCell.Secondary` (Texto Secundario)**: Todo dato complementario que se muestre junto a o debajo de un texto primario, entidad, contacto, moneda, estado, metadato, etc., aportando contexto adicional (ej. categorías, notas, descripciones secundarias; fuente `11px`, peso normal, mayúsculas, tracking espaciado).
+
+### Identidad y Enlaces: DataCell.Entity vs DataCell.Link vs DataCell.ContactLink
+
+| Primitivo | Destino / Propósito | Cuándo usar | Requiere |
+|---|---|---|---|
+| **`DataCell.Entity`** | Ficha de la entidad registrada en el ERP (con prefijo e ícono de la entidad). | **Siempre** que se represente un documento de negocio del ERP (OV, OT, OCS, Factura, Producto). | `entityLabel: string` y `data: any` |
+| **`DataCell.Link`** | URL interna/externa genérica (`href`) o callback (`onClick`). | **Solo para enlaces genéricos no registrales** (ej. descargar plantilla, enlace externo de tracking de courier). | `href` o `onClick` |
+| **`DataCell.ContactLink`** | Abre el `ContactModal` lateral a nivel global. | Nombre de persona o empresa (Clientes/Proveedores). | `contactId: number` |
 
 ```tsx
-// ✅ Enlace a documento
-<DataCell.Link href={`/sales/orders/${id}`}>{order.code}</DataCell.Link>
+// ✅ CORRECTO: Los documentos del ERP se renderizan como Entidades (con su prefijo, ícono y enlace automático)
+<DataCell.Entity entityLabel="sales.saleorder" data={row.original} />
 
-// ✅ Contacto → abre ContactModal
+// ✅ CORRECTO: Enlaces genéricos, externos o descargas
+<DataCell.Link href={`/downloads/template.csv`} external>Descargar Plantilla</DataCell.Link>
+
+// ✅ CORRECTO: Contactos (abre el modal lateral en hover/click)
 <DataCell.ContactLink contactId={order.customer_id}>
   {order.customer_name}
 </DataCell.ContactLink>
 
-// ❌ No usar ContactLink para navegar a URLs
-// ❌ No usar Link para entidades → usar DataCell.Entity (EntityBadge + ícono)
+// ❌ INCORRECTO: No usar Link genérico para documentos/entidades del ERP (rompe consistencia de íconos/prefijos)
+<DataCell.Link href={`/sales/orders/${id}`}>{order.code}</DataCell.Link>
 ```
 
 ### DataCell.NumericFlow
@@ -593,7 +598,7 @@ Font: always `font-mono font-bold tabular-nums`. Do NOT render currency with raw
 Componente hermano de `MoneyDisplay` exclusivo para cantidades de producción, inventario y medidas físicas (kg, metros, unidades).
 
 ```tsx
-<QuantityDisplay value={150.5} uom="kg" decimals={2} />
+<QuantityDisplay value={150.5} uom="kg"/>
 <QuantityDisplay value={diff} showSign />
 ```
 

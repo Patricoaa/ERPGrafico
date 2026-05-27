@@ -10,7 +10,7 @@ import { ColumnDef } from "@tanstack/react-table"
 import { DataTableView } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { createActionsColumn, DataCell } from '@/components/shared'
-import { StatusBadge, EntityCard } from "@/components/shared"
+import { EntityCard } from "@/components/shared"
 import { Pencil, Trash2 } from "lucide-react"
 import { ToolbarCreateButton, SmartSearchBar, useSmartSearch } from "@/components/shared"
 import { useAbsences } from "@/features/hr/hooks/useAbsences"
@@ -66,11 +66,8 @@ export default function AbsencesPage() {
         {
             accessorKey: "absence_type_display",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Tipo" className="justify-center" />,
-            cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <StatusBadge status={row.original.absence_type} label={row.original.absence_type_display} />
-                </div>
-            ),
+            cell: ({ row }) =>
+                <DataCell.Status status={row.original.absence_type} label={row.original.absence_type_display} />,
         },
         {
             accessorKey: "start_date",

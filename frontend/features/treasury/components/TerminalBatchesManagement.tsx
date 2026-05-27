@@ -1,14 +1,14 @@
 "use client"
 
 import React, { useState, useEffect, lazy, Suspense, useMemo } from "react"
-import { DataTableView } from '@/components/shared'
+import { DataTableView, EntityCard, StatusBadge } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import type { ColumnDef } from "@tanstack/react-table"
 import { Plus, Building2 } from "lucide-react"
 import { format } from "date-fns"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { useTerminalBatches } from "@/features/treasury"
-import { StatusBadge } from "@/components/shared/StatusBadge"
+import type { TerminalBatch } from "@/features/treasury/types"
 import { DataCell, createActionsColumn } from '@/components/shared'
 import { SkeletonShell, SmartSearchBar, useSmartSearch } from "@/components/shared"
 import { terminalBatchSearchDef } from "@/features/treasury/searchDef"
@@ -56,7 +56,7 @@ export function TerminalBatchesManagement({
         }
     }, [isMounted, externalOpenInvoice])
 
-    const columns = useMemo<ColumnDef<any>[]>(() => [
+    const columns = useMemo<ColumnDef<TerminalBatch>[]>(() => [
         {
             accessorKey: "sales_date",
             header: ({ column }: any) => <DataTableColumnHeader column={column} title="Fecha Ventas" className="justify-center" />,
@@ -112,17 +112,14 @@ export function TerminalBatchesManagement({
         {
             accessorKey: "status",
             header: ({ column }: any) => <DataTableColumnHeader column={column} title="Estado" className="justify-center" />,
-            cell: ({ row }: any) => (
-                <div className="flex justify-center w-full">
-                    <StatusBadge status={row.original.status} />
-                </div>
-            ),
+            cell: ({ row }: any) =>
+                <DataCell.Status status={row.original.status} />,
             meta: {
                 title: "Estado"
             }
         },
-        createActionsColumn<any>({
-            renderActions: () => null // Vacío como en el original
+        createActionsColumn<TerminalBatch>({
+            renderActions: () => null
         })
     ], [])
 
@@ -137,6 +134,25 @@ export function TerminalBatchesManagement({
                     variant="embedded"
                     leftAction={<SmartSearchBar searchDef={terminalBatchSearchDef} placeholder="Buscar liquidaciones..." className="w-full" />}
                     createAction={createAction}
+                    renderCard={(batch: TerminalBatch) => (
+                        <EntityCard onClick={() => setOpenCreate(true)}>
+                            <EntityCard.Header
+                                title={batch.batch_number}
+                                subtitle={batch.provider_name ?? 'Sin proveedor'}
+                                trailing={
+                                    <StatusBadge
+                                        status={batch.is_settled ? 'settled' : 'pending'}
+                                        label={batch.is_settled ? 'Liquidado' : 'Pendiente'}
+                                        size="sm"
+                                    />
+                                }
+                            />
+                            <EntityCard.Body>
+                                <EntityCard.Field label="Transacciones" value={<DataCell.Number value={batch.transaction_count} />} />
+                                <EntityCard.Field label="Neto" value={<DataCell.Currency value={batch.net_amount} />} />
+                            </EntityCard.Body>
+                        </EntityCard>
+                    )}
                 />
             </div>
 

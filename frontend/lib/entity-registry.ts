@@ -39,6 +39,12 @@ export interface EntityMetadata {
   workflowType?: 'order' | 'invoice' | 'note';
   /** Declarative view mode policy */
   viewPolicy?: ViewPolicy;
+  /**
+   * If true, this entity has a drawer registered in lib/entity-drawers.tsx.
+   * EntityBadge and openEntity() will open the drawer in-context instead of
+   * navigating to detailUrlPattern. The drawer registration is the source of truth.
+   */
+  hasDrawer?: boolean;
 }
 
 export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
@@ -109,6 +115,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     partnerField: 'name',
     workflowType: 'order',
     viewPolicy: { availableViews: ['list', 'kanban'], defaultView: 'list', cardComponent: 'custom' },
+    hasDrawer: true,
   },
   'production.bom': {
     label: 'production.bom',
@@ -229,6 +236,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     listUrl: '/treasury/terminals?tab=accounts',
     detailUrlPattern: '/treasury/terminals?tab=accounts&selected={id}',
     viewPolicy: { availableViews: ['list', 'grid'], defaultView: 'list', cardComponent: 'entity-compact', gridLayout: 'multi-column' },
+    hasDrawer: true,
   },
   'treasury.bankstatement': {
     label: 'treasury.bankstatement',
@@ -337,6 +345,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     listUrl: '/contacts',
     detailUrlPattern: '/contacts/{id}',
     viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', gridLayout: 'single-column' },
+    hasDrawer: true,
   },
   'hr.employee': {
     label: 'hr.employee',

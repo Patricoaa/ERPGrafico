@@ -1,5 +1,5 @@
 "use client"
-import { formatCurrency } from "@/lib/money"
+
 
 import { showApiError } from "@/lib/errors"
 import { useState, useEffect, useRef } from "react"
@@ -20,7 +20,7 @@ import { toast } from "sonner"
 import { productionApi, useAllowedDteTypes } from "../hooks"
 import { useUoMs, useProductionVariants } from "../hooks"
 import type { BOM, BOMLine, ProductMinimal, UoM } from "../types"
-import { Drawer, LabeledInput, LabeledSelect, LabeledSwitch, FormSection, FormFooter, FormLineItemsTable, IconButton, SkeletonShell, ActionSlideButton } from "@/components/shared"
+import { Drawer, LabeledInput, LabeledSelect, LabeledSwitch, FormSection, FormFooter, FormLineItemsTable, IconButton, SkeletonShell, ActionSlideButton, DataCell } from "@/components/shared"
 import { useVatRate } from "@/hooks/useVatRate"
 import { formDrawerWidth } from "@/lib/form-widths"
 
@@ -504,13 +504,13 @@ export function BOMDrawer({
                                     const totalLineCost = materials.reduce((sum: number, m: any) => sum + ((Number(m.quantity) || 0) * (Number(m.component_cost) || 0)), 0)
                                     return (
                                         <div className="flex flex-col items-end text-[10px] font-black uppercase text-foreground/80 pr-12 gap-1">
-                                            <div className="flex gap-4">
+                                            <div className="flex items-center gap-4">
                                                 <span className="text-muted-foreground">Total Unitarios:</span>
-                                                <span className="text-primary">{formatCurrency(totalUnitCost)}</span>
+                                                <DataCell.Currency value={totalUnitCost} className="text-primary w-auto justify-end font-bold text-[10px]" />
                                             </div>
-                                            <div className="flex gap-4 pt-1">
+                                            <div className="flex items-center gap-4 pt-1">
                                                 <span className="text-muted-foreground">Total Receta:</span>
-                                                <span className="text-primary">{formatCurrency(totalLineCost)}</span>
+                                                <DataCell.Currency value={totalLineCost} className="text-primary w-auto justify-end font-bold text-[10px]" />
                                             </div>
                                         </div>
                                     )
@@ -698,16 +698,18 @@ export function BOMDrawer({
 
                                             {/* Costo Est. */}
                                             <TableCell className="py-1 px-3">
-                                                <div className="text-[10px] font-medium font-mono text-right text-muted-foreground pr-1">
-                                                    {formatCurrency(form.watch(`lines.${index}.component_cost`) || 0)}
-                                                </div>
+                                                <DataCell.Currency
+                                                    value={form.watch(`lines.${index}.component_cost`) || 0}
+                                                    className="justify-end font-medium text-muted-foreground pr-1 text-[10px]"
+                                                />
                                             </TableCell>
 
                                             {/* Costo Total */}
                                             <TableCell className="py-1 px-3">
-                                                <div className="text-[10px] font-bold font-mono text-right text-primary pr-1">
-                                                    {formatCurrency((Number(form.watch(`lines.${index}.quantity`)) || 0) * (Number(form.watch(`lines.${index}.component_cost`)) || 0))}
-                                                </div>
+                                                <DataCell.Currency
+                                                    value={(Number(form.watch(`lines.${index}.quantity`)) || 0) * (Number(form.watch(`lines.${index}.component_cost`)) || 0)}
+                                                    className="justify-end font-bold text-primary pr-1 text-[10px]"
+                                                />
                                             </TableCell>
 
                                             {/* Eliminar */}
@@ -763,7 +765,10 @@ export function BOMDrawer({
                                     return (
                                         <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-foreground/80 pr-24">
                                             <span className="text-muted-foreground">Total Bruto Unit.:</span>
-                                            <span className="text-primary">{formatCurrency(totalGrossPrice)}</span>
+                                            <DataCell.Currency
+                                                value={totalGrossPrice}
+                                                className="w-auto font-black text-primary text-[10px]"
+                                            />
                                         </div>
                                     )
                                 })()}

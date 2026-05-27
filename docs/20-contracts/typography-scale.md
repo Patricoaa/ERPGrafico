@@ -162,6 +162,7 @@ Solo usar tokens semánticos. Nunca `text-blue-500`, `text-red-400`, etc.
 |-------|---------------|-----|
 | `text-foreground` | Casi negro/blanco según modo | Texto principal, valores de datos |
 | `text-muted-foreground` | Gris medio | Descripciones, labels de campos |
+| `text-muted-primary` | Violeta reducido (primary hue, chroma reducido) | **Prohibido para texto de tabla** — no está en la escala body. Definido en globals.css pero sin uso autorizado en tipografía. |
 | `text-primary` | Electric violet | Acciones primarias, énfasis de marca |
 | `text-accent` | Golden amber | Acentos cálidos, highlights |
 | `text-success` | Verde | Positivo, activo, aprobado |
