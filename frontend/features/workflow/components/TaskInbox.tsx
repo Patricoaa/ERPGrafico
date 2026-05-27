@@ -25,6 +25,39 @@ const HUB_STAGE_LABELS: Record<string, string> = {
     treasury: 'Tesorería',
 }
 
+const CollapsibleSection = ({
+    title,
+    count,
+    expanded,
+    onToggle,
+    children
+}: {
+    title: string
+    count: number
+    expanded: boolean
+    onToggle: () => void
+    children: React.ReactNode
+}) => (
+    <div className="mb-4">
+        <button
+            onClick={onToggle}
+            className="flex items-center justify-between w-full p-2 text-sm font-semibold text-muted-foreground uppercase tracking-wide hover:text-foreground transition-colors rounded-md hover:bg-muted/50"
+        >
+            <span>{title} ({count})</span>
+            {expanded ? (
+                <ChevronDown className="h-4 w-4" />
+            ) : (
+                <ChevronRight className="h-4 w-4" />
+            )}
+        </button>
+        {expanded && (
+            <div className="mt-2 space-y-2">
+                {children}
+            </div>
+        )}
+    </div>
+)
+
 export function TaskInbox() {
     const [approvalTasks, setApprovalTasks] = useState<Task[]>([])
     const [operationalTasks, setOperationalTasks] = useState<Task[]>([])
@@ -33,7 +66,7 @@ export function TaskInbox() {
     const [activeTab, setActiveTab] = useState("approvals")
     const [approvalsExpanded, setApprovalsExpanded] = useState(true)
     const [completedExpanded, setCompletedExpanded] = useState(false)
-    const { openWorkOrder, openContact } = useGlobalModalActions()
+    const { openEntity } = useGlobalModalActions()
     const { openHub } = useHubPanel()
     const { user } = useAuth()
     const searchParams = useSearchParams()
@@ -122,11 +155,11 @@ export function TaskInbox() {
             if (saleOrderId) {
                 openHub({ orderId: saleOrderId, type: 'sale', onActionSuccess: () => fetchTasks() })
             } else {
-                openWorkOrder(task.object_id)
+                openEntity('production.workorder', task.object_id)
             }
         } else if (task.task_type?.includes('OT_')) {
             // Work Order approval tasks
-            openWorkOrder(task.object_id)
+            openEntity('production.workorder', task.object_id)
         } else if (task.task_type?.includes('OC_')) {
             // Purchase Order tasks
             openHub({ orderId: task.object_id, type: 'purchase', onActionSuccess: () => fetchTasks() })
@@ -345,7 +378,7 @@ export function TaskInbox() {
                                 className="text-[10px] font-bold text-muted-foreground uppercase flex items-center gap-2 hover:text-primary transition-colors group/name"
                                 onClick={(e) => {
                                     e.stopPropagation();
-                                    if (task.data?.customer_id) openContact(task.data.customer_id);
+                                    if (task.data?.customer_id) openEntity('contacts.contact', task.data.customer_id);
                                 }}
                             >
                                 <User className="h-3 w-3" />
@@ -405,38 +438,7 @@ export function TaskInbox() {
     const approvalsPending = approvalTasks.filter(t => t.status === 'PENDING')
     const approvalsCompleted = approvalTasks.filter(t => t.status === 'COMPLETED')
 
-    const CollapsibleSection = ({
-        title,
-        count,
-        expanded,
-        onToggle,
-        children
-    }: {
-        title: string
-        count: number
-        expanded: boolean
-        onToggle: () => void
-        children: React.ReactNode
-    }) => (
-        <div className="mb-4">
-            <button
-                onClick={onToggle}
-                className="flex items-center justify-between w-full p-2 text-sm font-semibold text-muted-foreground uppercase tracking-wide hover:text-foreground transition-colors rounded-md hover:bg-muted/50"
-            >
-                <span>{title} ({count})</span>
-                {expanded ? (
-                    <ChevronDown className="h-4 w-4" />
-                ) : (
-                    <ChevronRight className="h-4 w-4" />
-                )}
-            </button>
-            {expanded && (
-                <div className="mt-2 space-y-2">
-                    {children}
-                </div>
-            )}
-        </div>
-    )
+
 
     return (
         <div className="space-y-4 p-4 h-full overflow-auto">

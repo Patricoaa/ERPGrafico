@@ -51,6 +51,12 @@ export function PurchaseCheckoutWizard({
     const [currentOrderLines, setCurrentOrderLines] = useState<CheckoutLine[]>(orderLines)
     const [currentTotal, setCurrentTotal] = useState(total)
     const { dateString } = useServerDate()
+    
+    const [selectedSupplierId, setSelectedSupplierId] = useState<string | null>(initialSupplierId)
+    const [selectedSupplierName, setSelectedSupplierName] = useState("")
+    const [selectedWorkOrderId, setSelectedWorkOrderId] = useState<string | null>(null)
+    const [selectedWarehouseId, setSelectedWarehouseId] = useState(initialWarehouseId)
+    const [selectedWarehouseName, setSelectedWarehouseName] = useState("")
 
     // Sync internal order if prop changes
     useEffect(() => {
@@ -132,11 +138,6 @@ export function PurchaseCheckoutWizard({
         setCurrentTotal(newTotal)
     }, [currentOrderLines, dteData.type])
 
-    const [selectedSupplierId, setSelectedSupplierId] = useState<string | null>(initialSupplierId)
-    const [selectedSupplierName, setSelectedSupplierName] = useState("")
-    const [selectedWorkOrderId, setSelectedWorkOrderId] = useState<string | null>(null)
-    const [selectedWarehouseId, setSelectedWarehouseId] = useState(initialWarehouseId)
-    const [selectedWarehouseName, setSelectedWarehouseName] = useState("")
 
     const [paymentData, setPaymentData] = useState<PaymentData>({
         method: null,

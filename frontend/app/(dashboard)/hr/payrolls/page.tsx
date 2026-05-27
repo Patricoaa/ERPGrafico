@@ -4,8 +4,7 @@ import React, { useState, useEffect } from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import Link from "next/link"
 import { toast } from "sonner"
-import { CreatePayrollDrawer, PayrollDetailDrawer } from "@/features/hr"
-import { deletePayroll, paySalary, payPrevired, createAdvance } from '@/features/hr/api/hrApi'
+import { CreatePayrollDrawer, PayrollDetailDrawer, deletePayroll, paySalary, payPrevired, createAdvance } from '@/features/hr'
 import type { Payroll } from "@/types/hr"
 import { ColumnDef } from "@tanstack/react-table"
 import { DataTableView, DataTableColumnHeader } from '@/components/shared'
@@ -21,8 +20,7 @@ import {
 } from "@/components/ui/tooltip"
 import { ToolbarCreateButton, SmartSearchBar, useSmartSearch } from "@/components/shared"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
-import { usePayrolls } from "@/features/hr/hooks/usePayrolls"
-import { payrollSearchDef } from "@/features/hr/searchDef"
+import { usePayrolls, payrollSearchDef } from "@/features/hr"
 
 // Schema and dialog moved to features/hr/components/CreatePayrollDialog
 
@@ -60,9 +58,15 @@ export default function PayrollsPage() {
         endpoint: '/hr/payrolls'
     })
 
+    // State for Detail Sheet
+    const [detailSheetOpen, setDetailSheetOpen] = useState(false)
+    const [activePayrollId, setActivePayrollId] = useState<number | null>(null)
+
     useEffect(() => {
         if (selectedFromUrl) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setActivePayrollId(selectedFromUrl.id)
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setDetailSheetOpen(true)
         }
     }, [selectedFromUrl])
@@ -71,6 +75,7 @@ export default function PayrollsPage() {
     const [dialogOpen, setDialogOpen] = useState(isNewModalOpen)
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setDialogOpen(isNewModalOpen)
     }, [isNewModalOpen])
 
@@ -80,7 +85,7 @@ export default function PayrollsPage() {
             const executeAction = async () => {
                 if (confirm("¿Generar automáticamente liquidaciones borrador para todos los empleados activos este mes?")) {
                     try {
-                        const { triggerDraftPayrolls } = await import('@/features/hr/api/hrApi')
+                        const { triggerDraftPayrolls } = await import('@/features/hr')
                         const res = await triggerDraftPayrolls()
                         toast.success(res.detail)
                         fetchPayrolls()
@@ -116,9 +121,6 @@ export default function PayrollsPage() {
     const [selectedPayroll, setSelectedPayroll] = useState<Payroll | null>(null)
     const [paymentMode, setPaymentMode] = useState<'SALARY' | 'PREVIRED' | 'ADVANCE' | null>(null)
 
-    // State for Detail Sheet
-    const [detailSheetOpen, setDetailSheetOpen] = useState(false)
-    const [activePayrollId, setActivePayrollId] = useState<number | null>(null)
 
     const openDetail = (id: number) => {
         const params = new URLSearchParams(searchParams.toString())
