@@ -128,11 +128,8 @@ export function PaymentHardwareManagement({
             accessorKey: "is_active",
             id: "status",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" className="justify-center" />,
-            cell: ({ row }) => (
-                <div className="flex justify-center">
-                    <StatusBadge status={row.original.is_active ? "active" : "inactive"} size="sm" />
-                </div>
-            ),
+            cell: ({ row }) =>
+                <DataCell.Status status={row.original.is_active ? "active" : "inactive"} />,
             filterFn: (row, id, value) => value.includes(row.getValue(id) ? "ACTIVE" : "INACTIVE")
         },
         createActionsColumn<PaymentTerminalProvider>({
@@ -174,11 +171,8 @@ export function PaymentHardwareManagement({
             accessorKey: "is_active",
             id: "status",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" className="justify-center" />,
-            cell: ({ row }) => (
-                <div className="flex justify-center">
-                    <StatusBadge status={row.original.is_active ? "active" : "inactive"} size="sm" />
-                </div>
-            ),
+            cell: ({ row }) =>
+                <DataCell.Status status={row.original.is_active ? "active" : "inactive"} />,
             filterFn: (row, id, value) => value.includes(row.getValue(id) ? "ACTIVE" : "INACTIVE")
         },
         createActionsColumn<PaymentTerminalDevice>({

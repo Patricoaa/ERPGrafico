@@ -10,7 +10,6 @@ import type { Payroll } from "@/types/hr"
 import { ColumnDef } from "@tanstack/react-table"
 import { DataTableView, DataTableColumnHeader } from '@/components/shared'
 import { createActionsColumn, DataCell } from '@/components/shared'
-import { StatusBadge } from "@/components/shared/StatusBadge"
 import { Eye, Trash2, Coins, CreditCard, Wallet, FileText } from "lucide-react"
 import { PaymentModal } from "@/features/treasury"
 import { Button } from "@/components/ui/button"
@@ -230,29 +229,20 @@ export default function PayrollsPage() {
         {
             accessorKey: "status",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" className="justify-center" />,
-            cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <StatusBadge status={row.getValue("status") as string} />
-                </div>
-            )
+            cell: ({ row }) =>
+                <DataCell.Status status={row.getValue("status") as string} />
         },
         {
             accessorKey: "remuneration_paid_status",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Remuneración" className="justify-center" />,
-            cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <StatusBadge status={(row.original as Payroll & Record<string, string>).remuneration_paid_status || ""} />
-                </div>
-            )
+            cell: ({ row }) =>
+                <DataCell.Status status={(row.original as Payroll & Record<string, string>).remuneration_paid_status || ""} />
         },
         {
             accessorKey: "previred_paid_status",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Previred" className="justify-center" />,
-            cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <StatusBadge status={(row.original as Payroll & Record<string, string>).previred_paid_status || ""} />
-                </div>
-            )
+            cell: ({ row }) =>
+                <DataCell.Status status={(row.original as Payroll & Record<string, string>).previred_paid_status || ""} />
         },
         createActionsColumn<Payroll>({
             headerLabel: "Acciones",

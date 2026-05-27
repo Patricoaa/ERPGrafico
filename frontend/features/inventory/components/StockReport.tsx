@@ -90,7 +90,6 @@ export function StockReport() {
                     <div className="flex flex-col items-center">
                         <DataCell.Number
                             value={qty}
-                            decimals={2}
                             className={cn(
                                 "text-[14px]",
                                 qty <= 0 ? "text-destructive" : qty < 10 ? "text-warning" : "text-foreground/80"
@@ -110,7 +109,6 @@ export function StockReport() {
                 <div className="flex flex-col items-center">
                     <DataCell.Number
                         value={row.getValue("qty_reserved")}
-                        decimals={2}
                     />
                     <DataCell.Secondary className="text-[10px] opacity-50 uppercase tracking-tighter">
                         {row.original.uom_name}
@@ -127,7 +125,6 @@ export function StockReport() {
                     <div className="flex flex-col items-center">
                         <DataCell.Number
                             value={qty}
-                            decimals={2}
                             className={cn(
                                 "text-[14px]",
                                 qty <= 0 ? "text-destructive" : "text-primary font-black"

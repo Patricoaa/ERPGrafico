@@ -1,5 +1,5 @@
 "use client"
-import { formatPlainDate } from "@/lib/utils";
+
 import { formatCurrency } from "@/lib/money"
 
 import React, { useState, useMemo, useEffect } from "react"
@@ -25,7 +25,6 @@ import { SkeletonShell, ActionConfirmModal } from "@/components/shared"
 import { Input } from "@/components/ui/input"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { DataCell } from '@/components/shared'
-import { StatusBadge } from "@/components/shared/StatusBadge"
 import { formatEntityDisplay } from "@/lib/entity-registry"
 
 // ─── Sub-components ──────────────────────────────────────────────────────────
@@ -151,9 +150,7 @@ function BlacklistContactPanel({ contact, onRefresh }: { contact: CreditContact,
                                         <DataCell.Currency value={entry.balance} className="font-bold" />
                                     </td>
                                     <td className="py-2 text-center">
-                                        <div className="flex justify-center">
-                                            <StatusBadge status={String(entry.aging_bucket).toUpperCase()} />
-                                        </div>
+                                        <DataCell.Status status={String(entry.aging_bucket).toUpperCase()} />
                                     </td>
                                 </tr>
                             ))}
@@ -241,7 +238,7 @@ export function BlacklistView() {
             header: ({ column }) => <DataTableColumnHeader column={column} title="Bloqueado desde" className="justify-center text-muted-foreground" />,
             cell: ({ row }) => (
                 <div className="flex justify-center w-full">
-                    <div className="text-center text-[11px] text-muted-foreground font-medium">{row.original.credit_last_evaluated ? formatPlainDate(row.original.credit_last_evaluated) : "—"}</div>
+                    <DataCell.Date value={row.original.credit_last_evaluated} />
                 </div>
             ),
         }

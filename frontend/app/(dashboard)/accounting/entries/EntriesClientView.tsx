@@ -6,7 +6,6 @@ import {
 } from "@tanstack/react-table"
 
 import { toast } from "sonner"
-import { StatusBadge } from "@/components/shared"
 import { JournalEntryDrawer } from "@/features/accounting/components/JournalEntryDrawer"
 import api from "@/lib/api"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
@@ -134,11 +133,7 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Folio" className="justify-center" />
             ),
-            cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <DataCell.Entity entityLabel="accounting.journalentry" data={row.original} />
-                </div>
-            ),
+            cell: ({ row }) => <DataCell.Code>{row.getValue("number")}</DataCell.Code>,
         },
         {
             accessorKey: "date",
@@ -157,7 +152,7 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
                 <DataTableColumnHeader column={column} title="Descripción" className="justify-center" />
             ),
             cell: ({ row }) => (
-                <DataCell.Text className="text-center">
+                <DataCell.Text>
                     <span className="truncate max-w-[300px]">{row.getValue("description")}</span>
                 </DataCell.Text>
             )
@@ -167,11 +162,8 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Estado" className="justify-center" />
             ),
-            cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <StatusBadge status={row.getValue("state")} />
-                </div>
-            ),
+            cell: ({ row }) =>
+                <DataCell.Status status={row.getValue("state")} />,
         },
         createActionsColumn<JournalEntry>({
             renderActions: (entry) => (
@@ -200,7 +192,6 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
                             <DataCell.Action
                                 icon={CheckCircle}
                                 title="Publicar"
-                                className="text-muted-foreground hover:text-success"
                                 onClick={() => handlePost(entry.id)}
                             />
                         </>
@@ -208,7 +199,6 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
                     <DataCell.Action
                         icon={Trash2}
                         title="Eliminar"
-                        className="text-muted-foreground hover:text-destructive"
                         onClick={() => handleDelete(entry.id)}
                     />
                 </>

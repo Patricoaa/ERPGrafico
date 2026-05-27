@@ -15,7 +15,7 @@ import { useProductionVariants, productionApi } from '../../hooks'
 import { MaterialAssignmentTabs } from '../MaterialAssignmentTabs'
 import { useVatRate } from '@/hooks/useVatRate'
 import { useWorkOrderMutations } from '../../hooks'
-import { formatCurrency } from "@/lib/money"
+
 import { cn } from '@/lib/utils'
 import { showApiError } from '@/lib/errors'
 import type { WorkOrder, WorkOrderMaterial, ProductMinimal } from '../../types'
@@ -139,7 +139,9 @@ export function MaterialAssignmentStep({
                             <p className="text-[10px] text-muted-foreground">Disponible</p>
                           </div>
                         </td>
-                        <td className="p-2 text-right font-bold">{formatCurrency(m.total_cost)}</td>
+                        <td className="p-2 text-right">
+                          <DataCell.Currency value={m.total_cost} className="justify-end font-bold text-xs" />
+                        </td>
                         <td className="p-2">
                           <Chip size="xs">{m.source}</Chip>
                         </td>
@@ -266,16 +268,20 @@ export function MaterialAssignmentStep({
                           <span>•</span>
                           <span>Cant: {m.quantity_planned} {m.uom_name}</span>
                           <span>•</span>
-                          <span>{formatCurrency(parseFloat(m.unit_price ?? '0') * vatMultiplier)} (Bruto) c/u</span>
+                          <span className="inline-flex items-center gap-1">
+                            <DataCell.Currency value={parseFloat(m.unit_price ?? '0') * vatMultiplier} className="w-auto justify-start font-bold text-[10px] text-muted-foreground p-0 inline-flex" />
+                            <span>(Bruto) c/u</span>
+                          </span>
                         </div>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
-                      <div className="text-right mr-2">
+                      <div className="text-right mr-2 flex flex-col items-end">
                         <p className="text-[10px] font-bold uppercase text-muted-foreground">Total Estimado</p>
-                        <p className="text-sm font-bold text-primary">
-                          {formatCurrency(parseFloat(String(m.quantity_planned)) * parseFloat(m.unit_price ?? '0') * vatMultiplier)}
-                        </p>
+                        <DataCell.Currency
+                          value={parseFloat(String(m.quantity_planned)) * parseFloat(m.unit_price ?? '0') * vatMultiplier}
+                          className="justify-end font-bold text-sm text-primary w-auto p-0 inline-flex"
+                        />
                       </div>
                       {isViewingCurrentStage && !m.purchase_order_number && (
                         <DataCell.ActionGroup>

@@ -4,10 +4,9 @@ import { useState, useEffect } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 
-import { DataTableView, DataTableColumnHeader } from '@/components/shared'
+import { DataTableView, DataTableColumnHeader, EntityCard, StatusBadge } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
 import { DataCell, createActionsColumn } from '@/components/shared'
-import { StatusBadge } from "@/components/shared/StatusBadge"
 import { FileText, Lock } from "lucide-react"
 import { toast } from "sonner"
 import { POSReport } from "@/features/pos/components/POSReport"
@@ -149,11 +148,8 @@ export const POSSessionsView = ({ hideHeader = false }: POSSessionsViewProps) =>
         {
             accessorKey: "status",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" className="justify-center" />,
-            cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <StatusBadge status={row.original.status} />
-                </div>
-            ),
+            cell: ({ row }) =>
+                <DataCell.Status status={row.original.status} />,
         },
         createActionsColumn<POSSession>({
             renderActions: (session) => (
@@ -190,6 +186,27 @@ export const POSSessionsView = ({ hideHeader = false }: POSSessionsViewProps) =>
                     entityLabel="pos.session"
                     leftAction={<SmartSearchBar searchDef={posSessionSearchDef} placeholder="Buscar sesiones..." className="w-full" />}
                     defaultPageSize={10}
+                    renderCard={(session: POSSession) => (
+                        <EntityCard onClick={() => {
+                            const params = new URLSearchParams(searchParams.toString())
+                            params.set('selected', String(session.id))
+                            router.push(`${pathname}?${params.toString()}`, { scroll: false })
+                        }}>
+                            <EntityCard.Header
+                                title={session.id_display}
+                                subtitle={session.user_name}
+                                trailing={<StatusBadge status={session.status} label={session.status_display} size="sm" />}
+                            />
+                            <EntityCard.Body>
+                                <EntityCard.Field label="Cuenta" value={session.treasury_account_name} />
+                                <EntityCard.Field label="Apertura" value={<DataCell.Date value={session.opened_at} showTime />} />
+                            </EntityCard.Body>
+                            <EntityCard.Footer className="justify-between items-center border-t bg-muted/10 py-2 px-4">
+                                <span className="text-[10px] font-black text-muted-foreground uppercase">Ventas</span>
+                                <DataCell.Currency value={(session.total_cash_sales ?? 0) + (session.total_card_sales ?? 0)} className="font-bold" />
+                            </EntityCard.Footer>
+                        </EntityCard>
+                    )}
                 />
             </div>
 

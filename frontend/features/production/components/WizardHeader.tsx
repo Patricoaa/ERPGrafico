@@ -1,9 +1,7 @@
 "use client"
-import { formatCurrency } from "@/lib/money"
 
 import { CalendarIcon, BookTemplate } from "lucide-react"
 import { formatPlainDate } from "@/lib/utils"
-import { Chip, DataCell, StatusBadge } from "@/components/shared"
 import type { WorkOrder } from "../types"
 import { formatEntityDisplay } from "@/lib/entity-registry"
 

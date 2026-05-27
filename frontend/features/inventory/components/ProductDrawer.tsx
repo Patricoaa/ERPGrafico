@@ -25,6 +25,16 @@ import { CancelButton, ActionSlideButton } from "@/components/shared"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { formDrawerWidth } from "@/lib/form-widths"
 
+// Product subcomponents and schema
+import { ProductBasicInfo } from "./product/ProductBasicInfo"
+import { ProductManufacturingTab } from "./product/ProductManufacturingTab"
+import { ProductVariantsTab } from "./product/ProductVariantsTab"
+import { ProductInventoryTab } from "./product/ProductInventoryTab"
+import { ProductSubscriptionTab } from "./product/ProductSubscriptionTab"
+import { ProductPricingSection } from "./product/ProductPricingSection"
+import { ProductPricingTab } from "./product/ProductPricingTab"
+import { productSchema, type ProductFormValues } from "./product/schema"
+
 interface ProductDrawerProps {
     sidebar?: React.ReactNode
     open: boolean
@@ -638,7 +648,9 @@ export function ProductDrawer({ sidebar, open, onOpenChange, initialData, onSucc
                         <FormSplitLayout
                             showSidebar={!!initialData?.id}
                             sidebar={
-                                <ActivitySidebar entityId={initialData.id.toString()} entityType="product" />
+                                initialData?.id ? (
+                                    <ActivitySidebar entityId={initialData.id.toString()} entityType="product" />
+                                ) : undefined
                             }
                             className="min-w-0 h-full overflow-hidden p-0"
                         >
@@ -669,8 +681,8 @@ export function ProductDrawer({ sidebar, open, onOpenChange, initialData, onSucc
                                         <ProductManufacturingTab
                                             form={form}
                                             initialData={initialData}
-                                            products={products}
-                                            uoms={uoms}
+                                            products={products as unknown as Product[]}
+                                            uoms={uoms as unknown as UoM[]}
                                             variantMode={variantMode}
                                         />
                                     </FormTabsContent>
@@ -692,7 +704,7 @@ export function ProductDrawer({ sidebar, open, onOpenChange, initialData, onSucc
                                             form={form}
                                             initialData={initialData}
                                             warehouses={warehouses}
-                                            uoms={uoms}
+                                            uoms={uoms as unknown as UoM[]}
                                             isEditing={!!initialData}
                                         />
                                     </FormTabsContent>
@@ -707,7 +719,7 @@ export function ProductDrawer({ sidebar, open, onOpenChange, initialData, onSucc
                                                 form={form}
                                                 initialData={initialData}
                                                 canBeSold={canBeSold}
-                                                uoms={uoms}
+                                                uoms={uoms as unknown as UoM[]}
                                             />
                                             <ProductPricingTab
                                                 initialData={initialData}

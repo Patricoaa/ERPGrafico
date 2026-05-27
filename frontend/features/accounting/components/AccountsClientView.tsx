@@ -188,7 +188,6 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
                 <div className="flex justify-center w-full">
                     <DataCell.Currency
                         value={parseFloat(row.getValue("debit_total") || "0")}
-                        className="text-muted-foreground font-normal"
                     />
                 </div>
             ),
@@ -202,7 +201,6 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
                 <div className="flex justify-center w-full">
                     <DataCell.Currency
                         value={parseFloat(row.getValue("credit_total") || "0")}
-                        className="text-muted-foreground font-normal"
                     />
                 </div>
             ),
@@ -216,7 +214,6 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
                 <div className="flex justify-center w-full">
                     <DataCell.Currency
                         value={parseFloat(row.getValue("balance") || "0")}
-                        className="font-bold"
                     />
                 </div>
             ),
@@ -246,7 +243,6 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
                     <DataCell.Action
                         icon={Trash2}
                         title="Eliminar"
-                        className="text-muted-foreground/30 hover:text-destructive"
                         onClick={() => handleDelete(account.id)}
                     />
                 </>

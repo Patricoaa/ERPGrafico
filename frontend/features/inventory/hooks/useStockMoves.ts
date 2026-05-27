@@ -6,6 +6,7 @@ import { PRODUCTS_KEYS } from './queryKeys'
 
 export interface StockMove {
     id: number
+    display_id?: string
     date: string
     product_name: string
     product_internal_code?: string

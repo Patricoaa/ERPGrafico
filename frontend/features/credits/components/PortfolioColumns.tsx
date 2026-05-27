@@ -3,7 +3,7 @@
 import { ColumnDef } from "@tanstack/react-table"
 import { DataTableColumnHeader } from '@/components/shared'
 import { DataCell } from '@/components/shared'
-import { StatusBadge, EntityBadge } from "@/components/shared"
+import { EntityBadge } from "@/components/shared"
 import { CreditContact, CreditHistoryEntry } from "@/features/credits/api/creditsApi"
 import { cn } from "@/lib/utils"
 import { AlertCircle } from "lucide-react"
@@ -116,9 +116,7 @@ export const getPortfolioColumns = (onEdit: (c: CreditContact) => void): ColumnD
                         totalDebt > 0 ? "Activo" : "Al día";
 
             return (
-                <div className="flex justify-center w-full">
-                    <StatusBadge variant="default" status={statusKey} label={label} />
-                </div>
+                <DataCell.Status status={statusKey} label={label} />
             )
         },
     },
@@ -168,13 +166,10 @@ export const historyColumns: ColumnDef<CreditHistoryEntry>[] = [
         accessorKey: "credit_assignment_origin",
         header: ({ column }) => <DataTableColumnHeader column={column} title="Origen" className="justify-center" />,
         cell: ({ row }) => (
-            <div className="flex justify-center w-full">
-                <StatusBadge
-                    variant="default"
-                    status={`ORIGIN_${row.original.credit_assignment_origin}`}
-                    label={row.original.credit_assignment_origin_display}
-                />
-            </div>
+            <DataCell.Status
+                status={`ORIGIN_${row.original.credit_assignment_origin}`}
+                label={row.original.credit_assignment_origin_display}
+            />
         )
     },
 ]

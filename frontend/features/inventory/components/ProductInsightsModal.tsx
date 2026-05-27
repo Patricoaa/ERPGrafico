@@ -167,13 +167,13 @@ export function ProductInsightsModal({ productId, productName, open, onOpenChang
             description={productName || undefined}
         >
             <div className="flex flex-col h-full overflow-visible">
-                 {loading || !data ? (
-                     <SkeletonShell isLoading={loading || !data} ariaLabel="Cargando insights del producto">
-                         <div className="p-6">
-                             {/* Content will be rendered by SkeletonShell when loading */}
-                         </div>
-                     </SkeletonShell>
-                 ) : (
+                {loading || !data ? (
+                    <SkeletonShell isLoading={loading || !data} ariaLabel="Cargando insights del producto">
+                        <div className="p-6">
+                            {/* Content will be rendered by SkeletonShell when loading */}
+                        </div>
+                    </SkeletonShell>
+                ) : (
                     <FormTabs
                         value={activeTab}
                         onValueChange={setActiveTab}
@@ -435,7 +435,7 @@ function KardexTable({ entries, onOpenWorkOrder, onOpenTransaction }: {
             header: "Cantidad",
             cell: ({ row }) => {
                 const m = row.original
-                return <DataCell.Number value={m.quantity} className="text-left" suffix={m.uom} decimals={2} />
+                return <DataCell.Number value={m.quantity} className="text-left" suffix={m.uom} />
             },
         },
         {
@@ -517,7 +517,7 @@ function ProductionUsageTable({ entries, onOpenWorkOrder }: {
         {
             header: "Cantidad Consumida",
             cell: ({ row }) => (
-                <DataCell.Number value={row.original.quantity} className="text-left" decimals={2} />
+                <DataCell.Number value={row.original.quantity} className="text-left" />
             ),
         },
         {

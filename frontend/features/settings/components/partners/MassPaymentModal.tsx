@@ -4,7 +4,7 @@ import { formatCurrency } from "@/lib/money"
 import { showApiError } from "@/lib/errors"
 import React, { useState, useEffect, useMemo } from "react"
 import { useTreasuryAccounts } from "../../hooks"
-import { LabeledSelect, GenericWizard, WizardStep } from "@/components/shared"
+import { LabeledSelect, GenericWizard, WizardStep, DataCell } from "@/components/shared"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
@@ -86,7 +86,7 @@ export function MassPaymentModal({ open, onOpenChange, resolution, onSuccess }: 
                         <div className="flex justify-between items-end mb-2">
                             <div>
                                 <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Suma a Pagar</p>
-                                <p className="text-2xl font-mono font-bold text-success mt-1">{formatCurrency(totalToPay)}</p>
+                                <DataCell.Currency value={totalToPay} className="justify-start text-2xl font-bold text-success mt-1" />
                             </div>
                             <div className="flex gap-4">
                                 <Button
@@ -132,8 +132,12 @@ export function MassPaymentModal({ open, onOpenChange, resolution, onSuccess }: 
                                         const isOver = currentVal > line.pendingAmount
                                         return (
                                             <tr key={line.id} className="hover:bg-muted/30">
-                                                <td className="px-3 py-2 font-black">{line.partner_name}</td>
-                                                <td className="px-3 py-2 text-right font-mono font-bold text-primary">{formatCurrency(line.pendingAmount)}</td>
+                                                <td className="px-3 py-2">
+                                                    <DataCell.Text className="justify-start text-left font-black">{line.partner_name}</DataCell.Text>
+                                                </td>
+                                                <td className="px-3 py-2 text-right">
+                                                    <DataCell.Currency value={line.pendingAmount} className="justify-end" />
+                                                </td>
                                                 <td className="px-3 py-2">
                                                     <Input
                                                         type="number"
@@ -160,48 +164,48 @@ export function MassPaymentModal({ open, onOpenChange, resolution, onSuccess }: 
                 isValid: !!selectedAccountId,
                 component: (
                     <div className="space-y-4">
-                        <div className="bg-success/5 border border-success/20 rounded-sm p-4 flex flex-col items-center justify-center">
-                            <span className="text-[10px] uppercase font-black text-success tracking-widest opacity-80 mb-1">Monto de la Transacción ({partnersCount} pagos)</span>
-                            <span className="text-3xl font-mono font-bold text-success">{formatCurrency(totalToPay)}</span>
-                        </div>
+                         <div className="bg-success/5 border border-success/20 rounded-sm p-4 flex flex-col items-center justify-center">
+                             <span className="text-[10px] uppercase font-black text-success tracking-widest opacity-80 mb-1">Monto de la Transacción ({partnersCount} pagos)</span>
+                             <DataCell.Currency value={totalToPay} className="justify-center text-3xl font-bold text-success w-auto" />
+                         </div>
 
-                        <div>
-                            <LabeledSelect
-                                label="Cuenta de Tesorería (Salida de Dinero)"
-                                value={selectedAccountId}
-                                onChange={setSelectedAccountId}
-                                placeholder="Seleccione banco o caja"
-                                options={treasuryAccounts.map(a => ({ value: a.id.toString(), label: `${a.name} (${a.identifier})` }))}
-                            />
-                            <p className="text-[10px] text-muted-foreground mt-1 pl-1 font-medium">
-                                Esta será la cuenta bancaria de donde se extraerán los fondos para liquidar los dividendos seleccionados.
-                            </p>
-                        </div>
-                    </div>
-                )
-            },
-            {
-                id: 3,
-                title: "Confirmación",
-                isValid: true,
-                component: (
-                    <div className="space-y-6 py-4">
-                        <div className="flex flex-col items-center justify-center text-center space-y-4">
-                            <Banknote className="h-8 w-8" />
-                            <div>
-                                <h3 className="text-xl font-heading font-black uppercase tracking-tighter">Ejecutar Pagos Masivos</h3>
-                                <p className="text-sm text-muted-foreground max-w-md mt-2">
-                                    Se registrará la salida del dinero de la tesorería y la disminución de la deuda de &quot;Dividendos por Pagar&quot; con {partnersCount} miembros.
-                                </p>
-                            </div>
-                        </div>
+                         <div>
+                             <LabeledSelect
+                                 label="Cuenta de Tesorería (Salida de Dinero)"
+                                 value={selectedAccountId}
+                                 onChange={setSelectedAccountId}
+                                 placeholder="Seleccione banco o caja"
+                                 options={treasuryAccounts.map(a => ({ value: a.id.toString(), label: `${a.name} (${a.identifier})` }))}
+                             />
+                             <p className="text-[10px] text-muted-foreground mt-1 pl-1 font-medium">
+                                 Esta será la cuenta bancaria de donde se extraerán los fondos para liquidar los dividendos seleccionados.
+                             </p>
+                         </div>
+                     </div>
+                 )
+             },
+             {
+                 id: 3,
+                 title: "Confirmación",
+                 isValid: true,
+                 component: (
+                     <div className="space-y-6 py-4">
+                         <div className="flex flex-col items-center justify-center text-center space-y-4">
+                             <Banknote className="h-8 w-8" />
+                             <div>
+                                 <h3 className="text-xl font-heading font-black uppercase tracking-tighter">Ejecutar Pagos Masivos</h3>
+                                 <p className="text-sm text-muted-foreground max-w-md mt-2">
+                                     Se registrará la salida del dinero de la tesorería y la disminución de la deuda de &quot;Dividendos por Pagar&quot; con {partnersCount} miembros.
+                                 </p>
+                             </div>
+                         </div>
 
-                        <div className="grid gap-3 bg-muted/40 p-5 rounded-sm border">
-                            <div className="flex items-center gap-3 text-xs font-medium">
-                                <CheckCircle2 className="h-4 w-4 text-success" />
-                                <span>Total Neto Desembolsado: <strong className="font-mono">{formatCurrency(totalToPay)}</strong></span>
-                            </div>
-                        </div>
+                         <div className="grid gap-3 bg-muted/40 p-5 rounded-sm border">
+                             <div className="flex items-center gap-3 text-xs font-medium">
+                                 <CheckCircle2 className="h-4 w-4 text-success" />
+                                 <span className="flex items-center gap-1">Total Neto Desembolsado: <DataCell.Currency value={totalToPay} className="w-auto p-0 inline-flex font-bold" /></span>
+                             </div>
+                         </div>
                     </div>
                 )
             }

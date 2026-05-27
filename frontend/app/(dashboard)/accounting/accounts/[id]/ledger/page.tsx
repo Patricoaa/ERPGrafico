@@ -8,6 +8,9 @@ import { Button } from "@/components/ui/button"
 import { ArrowLeft } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
+import { JournalEntryDrawer } from "@/features/accounting"
+import { useJournalEntry } from "@/features/accounting/hooks/useJournalEntries"
+import type { JournalEntryInitialData } from "@/types/forms"
 
 export default function AccountLedgerPage() {
     const params = useParams()
@@ -17,6 +20,8 @@ export default function AccountLedgerPage() {
     const [account, setAccount] = useState<{ id: number, code: string, name: string } | null>(null)
     const [movements, setMovements] = useState<Record<string, unknown>[]>([])
     const [loading, setLoading] = useState(true)
+    const [selectedEntryId, setSelectedEntryId] = useState<number | null>(null)
+    const { data: selectedEntryData } = useJournalEntry(selectedEntryId ?? undefined)
 
     useEffect(() => {
         if (accountId) {
@@ -49,7 +54,7 @@ export default function AccountLedgerPage() {
                 const mov = row.original as { reference?: string, entry_id?: number, source_document?: { url: string, type: string, name: string } }
                 return (
                     <div className="flex flex-col">
-                        <DataCell.Link href={`/accounting/entries`}>
+                        <DataCell.Link onClick={() => setSelectedEntryId(mov.entry_id as number)}>
                             {mov.reference || `Asiento ${mov.entry_id}`}
                         </DataCell.Link>
                         {mov.source_document && (
@@ -127,6 +132,13 @@ export default function AccountLedgerPage() {
                 defaultPageSize={50}
             />
             </div>
+
+            <JournalEntryDrawer
+                open={selectedEntryId !== null}
+                onOpenChange={(open) => { if (!open) setSelectedEntryId(null) }}
+                initialData={selectedEntryData as unknown as JournalEntryInitialData}
+                onSuccess={() => { fetchLedger(); setSelectedEntryId(null) }}
+            />
         </div>
     )
 }

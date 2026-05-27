@@ -99,7 +99,7 @@ export function ContactsClientView({ isNewModalOpen = false, createAction }: Con
     const columns: ColumnDef<Contact>[] = [
         {
             accessorKey: "display_id",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Código" className="justify-center" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Código Interno" className="justify-center" />,
             cell: ({ row }) => <DataCell.Code>{row.original.display_id}</DataCell.Code>,
         },
         {
@@ -117,7 +117,7 @@ export function ContactsClientView({ isNewModalOpen = false, createAction }: Con
                 const contact = row.original as Contact
                 return (
                     <div className="flex items-center justify-center gap-2 w-full">
-                        <DataCell.Text className="w-auto">{contact.name}</DataCell.Text>
+                        <DataCell.Text>{contact.name}</DataCell.Text>
                         <div className="flex gap-1 shrink-0">
                             {contact.is_default_customer && (
                                 <TooltipProvider>
@@ -190,7 +190,7 @@ export function ContactsClientView({ isNewModalOpen = false, createAction }: Con
         {
             accessorKey: "email",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Email" className="justify-center" />,
-            cell: ({ row }) => <DataCell.Text className="lowercase">{row.getValue("email") || "-"}</DataCell.Text>,
+            cell: ({ row }) => <DataCell.Text>{row.getValue("email") || "-"}</DataCell.Text>,
         },
         {
             accessorKey: "phone",

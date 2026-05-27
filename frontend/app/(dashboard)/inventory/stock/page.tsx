@@ -1,7 +1,7 @@
 import { Metadata } from "next"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { redirect } from "next/navigation"
-import { WarehouseList, MovementList, StockReport } from "@/features/inventory"
+import { WarehouseClientView, MovementClientView, StockReport } from "@/features/inventory"
 import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
 import { FadeIn } from "@/components/shared"
 
@@ -34,7 +34,7 @@ export default async function UnifiedStockPage({ searchParams }: PageProps) {
                     </TabsContent>
                     <TabsContent value="movements" className="h-full mt-0 outline-none">
                         <FadeIn className="h-full">
-                            <MovementList
+                            <MovementClientView
                             externalOpen={activeTab === 'movements' && modal === 'adjustment'}
                             createAction={
                                 <ToolbarCreateButton
@@ -47,7 +47,7 @@ export default async function UnifiedStockPage({ searchParams }: PageProps) {
                 </TabsContent>
                     <TabsContent value="warehouses" className="h-full mt-0 outline-none">
                         <FadeIn className="h-full">
-                            <WarehouseList
+                            <WarehouseClientView
                             externalOpen={activeTab === 'warehouses' && modal === 'new'}
                             createAction={
                                 <ToolbarCreateButton

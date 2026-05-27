@@ -189,11 +189,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Folio" />
             ),
-            cell: ({ row }) => (
-                <div className="flex flex-col items-center">
-                    <DataCell.Entity entityLabel="billing.invoice" data={row.original} />
-                </div>
-            ),
+            cell: ({ row }) => <DataCell.Code>{row.original.display_id ?? row.original.number}</DataCell.Code>,
             meta: { title: "Folio" },
         },
         {
@@ -275,11 +271,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Folio" />
             ),
-            cell: ({ row }) => (
-                <div className="flex flex-col items-center">
-                    <DataCell.Entity type="purchase_order" number={row.getValue("number")} />
-                </div>
-            ),
+            cell: ({ row }) => <DataCell.Code>{row.original.display_id ?? row.original.number}</DataCell.Code>,
             meta: { title: "Folio" },
         },
         {
@@ -303,7 +295,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Almacén" />
             ),
-            cell: ({ row }) => <DataCell.Text className="font-normal">{row.getValue("warehouse_name")}</DataCell.Text>,
+            cell: ({ row }) => <DataCell.Secondary>{row.getValue("warehouse_name")}</DataCell.Secondary>,
             meta: { title: "Almacén" },
         },
         {

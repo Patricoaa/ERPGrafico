@@ -124,7 +124,7 @@ export function PurchaseInvoicesClientView() {
         {
             accessorKey: "number",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Folio" className="justify-center" />,
-            cell: ({ row }) => <DataCell.Entity label="billing.invoice" data={row.original} />,
+            cell: ({ row }) => <DataCell.Code>{row.original.display_id ?? row.original.number}</DataCell.Code>,
         },
         {
             accessorKey: "date",
@@ -142,9 +142,9 @@ export function PurchaseInvoicesClientView() {
                         <FileBadge className="h-3.5 w-3.5 text-muted-foreground/50" />
                         <Tooltip>
                             <TooltipTrigger asChild>
-                                <DataCell.Text className="font-normal uppercase text-[11px]">
+                                <DataCell.Secondary>
                                     {label}
-                                </DataCell.Text>
+                                </DataCell.Secondary>
                             </TooltipTrigger>
                             <TooltipContent side="top">{doc.dte_type_display || doc.dte_type}</TooltipContent>
                         </Tooltip>
@@ -177,7 +177,6 @@ export function PurchaseInvoicesClientView() {
                             value={percentage}
                             label={`${percentage}%`}
                             subLabel={formatCurrency(paid)}
-                            className="w-32"
                         />
                     </div>
                 )

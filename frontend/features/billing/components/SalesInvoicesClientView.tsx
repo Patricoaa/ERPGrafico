@@ -106,7 +106,7 @@ export function SalesInvoicesClientView() {
         {
             accessorKey: "number",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Folio" className="justify-center" />,
-            cell: ({ row }) => <DataCell.Entity label="billing.invoice" data={row.original} />,
+            cell: ({ row }) => <DataCell.Code>{row.original.display_id ?? row.original.number}</DataCell.Code>,
         },
         {
             accessorKey: "date",
@@ -116,7 +116,7 @@ export function SalesInvoicesClientView() {
         {
             accessorKey: "dte_type_display",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Tipo" className="justify-center" />,
-            cell: ({ row }) => <DataCell.Text className="font-normal uppercase text-[11px]">{row.getValue("dte_type_display")}</DataCell.Text>
+            cell: ({ row }) => <DataCell.Secondary>{row.getValue("dte_type_display")}</DataCell.Secondary>
         },
         {
             accessorKey: "partner_name",

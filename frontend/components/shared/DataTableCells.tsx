@@ -35,12 +35,18 @@ interface ValueCellProps<T> extends BaseCellProps {
 // --- Text Cells ---
 
 export const DataCell = {
-    /** Standard text cell for primary information */
+    /**
+     * Texto primario: Todo texto que no encaje en las definiciones restantes
+     * (identificadores, fechas, números, badges, etc.). Es el contenedor de texto principal por defecto.
+     */
     Text: ({ children, className, ...props }: BaseCellProps) => (
-        <div className={cn("flex justify-center items-center text-center w-full text-[13px] font-medium text-muted-primary", className)} {...props}>{children}</div>
+        <div className={cn("flex justify-center items-center text-center w-full text-[13px] font-medium text-foreground", className)} {...props}>{children}</div>
     ),
 
-    /** Secondary text for categories, descriptions, or subtitles */
+    /**
+     * Texto secundario: Todo dato complementario que se muestre junto a o debajo de un texto primario,
+     * entidad, contacto, moneda, estado, metadato, etc., aportando contexto adicional (ej. categorías, notas, descripciones secundarias).
+     */
     Secondary: ({ children, className, ...props }: BaseCellProps) => (
         <div className={cn("flex justify-center items-center text-center w-full text-[11px] font-medium text-muted-foreground uppercase tracking-wider", className)} {...props}>{children}</div>
     ),
@@ -121,20 +127,20 @@ export const DataCell = {
 
     /** Right-aligned number with tabular figures */
     Number: ({ value, suffix, prefix, className, decimals = 0, ...props }: ValueCellProps<number | string> & { suffix?: string, prefix?: string, decimals?: number }) => {
-        if (value === null || value === undefined) return <div className={cn("text-xs font-mono font-medium text-foreground/90 flex justify-center items-center", className)} {...props}>-</div>
+        if (value === null || value === undefined) return <div className={cn("text-xs font-medium tabular-nums text-foreground flex justify-center items-center", className)} {...props}>-</div>
         const num = typeof value === 'string' ? parseFloat(value) : value
         return (
-            <div className={cn("text-xs font-mono font-medium text-foreground/90 flex justify-center items-center", className)} {...props}>
-                {prefix}{num.toLocaleString('es-CL', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })} {suffix && <span className="text-xs font-mono font-medium text-foreground/90 flex justify-center items-center">{suffix}</span>}
+            <div className={cn("text-xs font-medium tabular-nums text-foreground flex justify-center items-center", className)} {...props}>
+                {prefix}{num.toLocaleString('es-CL', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })} {suffix && <span className="text-xs font-medium text-foreground flex justify-center items-center">{suffix}</span>}
             </div>
         )
     },
 
     /** Currency formatted cell. Pass `showColor` to color red/green based on sign (variance use case). */
-    Currency: ({ value, currency = "CLP", className, digits = 0, showColor = false, ...props }: ValueCellProps<number | string> & { currency?: string, digits?: number, showColor?: boolean }) => {
+    Currency: ({ value, currency = "CLP", className, digits = 0, showColor = false, showZeroAsDash = false, ...props }: ValueCellProps<number | string> & { currency?: string, digits?: number, showColor?: boolean, showZeroAsDash?: boolean }) => {
         return (
-            <div className={cn("text-xs font-mono font-medium text-foreground/90 flex justify-center items-center w-full", className)} {...props}>
-                <MoneyDisplay amount={value} currency={currency} digits={digits} showColor={showColor} />
+            <div className={cn("text-xs font-medium text-foreground flex justify-center items-center w-full", className)} {...props}>
+                <MoneyDisplay amount={value} currency={currency} digits={digits} showColor={showColor} showZeroAsDash={showZeroAsDash} />
             </div>
         )
     },
@@ -142,7 +148,7 @@ export const DataCell = {
     /** @deprecated Use `DataCell.Currency` with `showColor` prop instead. */
     Variance: ({ value, currency = "CLP", className, digits = 0, ...props }: ValueCellProps<number> & { currency?: string, digits?: number }) => {
         return (
-            <div className={cn("text-xs font-mono font-medium text-foreground/90 flex justify-center items-center", className)} {...props}>
+            <div className={cn("text-xs font-medium text-foreground flex justify-center items-center", className)} {...props}>
                 <MoneyDisplay amount={value} currency={currency} digits={digits} showColor={true} />
             </div>
         )
@@ -156,7 +162,7 @@ export const DataCell = {
         if (value === null || value === undefined || value === "") return <div className="flex justify-center text-muted-foreground text-xs">-</div>
 
         const numValue = Number(value)
-        if (isNaN(numValue)) return <div className="text-xs font-mono font-medium text-foreground/90 flex justify-center items-center">-</div>
+        if (isNaN(numValue)) return <div className="text-xs font-medium text-foreground flex justify-center items-center">-</div>
 
         const isPositive = numValue > 0;
         const isNegative = numValue < 0;
@@ -165,15 +171,15 @@ export const DataCell = {
         const sign = showSign ? (isPositive ? "+" : "") : "";
 
         return (
-            <div className={cn("text-xs font-mono font-medium text-foreground/90 flex justify-center items-center", className)} {...props}>
+            <div className={cn("text-xs font-medium tabular-nums text-foreground flex justify-center items-center", className)} {...props}>
                 <span className={cn(
-                    "text-xs font-mono font-medium flex justify-center items-center",
+                    "text-xs font-medium tabular-nums flex justify-center items-center",
                     colorClass
                 )}>
-                    {sign}{numValue.toFixed(2)}
+                    {sign}{Math.abs(numValue).toLocaleString('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                 </span>
                 {unit && (
-                    <span className="text-xs font-mono text-muted-foreground mt-0.5 ml-1">
+                    <span className="text-xs text-muted-foreground mt-0.5 ml-1">
                         {unit}
                     </span>
                 )}
@@ -206,9 +212,9 @@ export const DataCell = {
 
     /** Standard date format */
     Date: ({ value, className, showTime = false, ...props }: ValueCellProps<string | Date> & { showTime?: boolean }) => {
-        if (!value) return <div className={cn("flex justify-center items-center w-full text-[12px] font-mono text-muted-foreground/50", className)} {...props}>-</div>
+        if (!value) return <div className={cn("flex justify-center items-center w-full text-[12px] text-muted-foreground/50", className)} {...props}>-</div>
         return (
-            <div className={cn("flex justify-center items-center w-full text-[13px] font-medium text-muted-primary whitespace-nowrap", className)} {...props}>
+            <div className={cn("flex justify-center items-center w-full text-[13px] font-medium text-foreground whitespace-nowrap", className)} {...props}>
                 {formatPlainDate(value)}
                 {showTime && (() => {
                     const date = new Date(value)
@@ -395,7 +401,7 @@ export const DataCell = {
                                         e.stopPropagation()
                                         if ('onClick' in item && item.onClick) item.onClick(e as unknown as React.MouseEvent)
                                     }}
-                                    className="text-[11px] font-medium uppercase tracking-wider rounded-none cursor-pointer"
+                                    className="text-[11px] font-black uppercase tracking-widest rounded-none cursor-pointer"
                                 >
                                     <Icon className="h-3.5 w-3.5" />
                                     {label}

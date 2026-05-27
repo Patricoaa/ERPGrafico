@@ -5,7 +5,7 @@ import { showApiError } from "@/lib/errors"
 import React, { useState, useEffect } from "react"
 import { BaseModal } from "@/components/shared/BaseModal"
 import { Button } from "@/components/ui/button"
-import { CancelButton, SubmitButton, IconButton } from "@/components/shared"
+import { CancelButton, SubmitButton, IconButton, DataCell } from "@/components/shared"
 import { Input } from "@/components/ui/input"
 import { LabeledContainer } from "@/components/shared/LabeledContainer"
 import { toast } from "sonner"
@@ -156,12 +156,12 @@ export function InitialCapitalModal({ open, onOpenChange, onSuccess }: InitialCa
                                         const percentage = totalCapital > 0 ? (entry.amount / totalCapital) * 100 : 0
                                         return (
                                             <tr key={entry.contact_id} className="hover:bg-muted/20 transition-colors">
-                                                <td className="p-3 font-medium">
+                                                <td className="p-3">
                                                     <div className="flex items-center gap-2">
-                                                        <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary">
+                                                        <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary shrink-0">
                                                             #{index + 1}
                                                         </div>
-                                                        {entry.name}
+                                                        <DataCell.Text className="justify-start text-left font-medium">{entry.name}</DataCell.Text>
                                                     </div>
                                                 </td>
                                                 <td className="p-3">
@@ -177,9 +177,9 @@ export function InitialCapitalModal({ open, onOpenChange, onSuccess }: InitialCa
                                                     </div>
                                                 </td>
                                                 <td className="p-3 text-center">
-                                                    <span className="inline-flex items-center px-2 py-1 rounded-md bg-primary/10 text-primary font-bold text-xs">
+                                                    <DataCell.Chip size="sm" intent="primary" className="font-bold">
                                                         {percentage.toFixed(2)}%
-                                                    </span>
+                                                    </DataCell.Chip>
                                                 </td>
                                                 <td className="p-3 text-center">
                                                     <IconButton
@@ -199,8 +199,8 @@ export function InitialCapitalModal({ open, onOpenChange, onSuccess }: InitialCa
                                 <tfoot className="bg-muted/30 font-bold border-t">
                                     <tr>
                                         <td className="p-4 text-right">TOTAL CAPITAL SUSCRITO</td>
-                                        <td className="p-4 text-right text-lg text-primary font-mono">
-                                            {formatCurrency(totalCapital)}
+                                        <td className="p-4 text-right">
+                                            <DataCell.Currency value={totalCapital} className="justify-end text-lg font-bold text-primary" />
                                         </td>
                                         <td className="p-4 text-center">100%</td>
                                         <td></td>

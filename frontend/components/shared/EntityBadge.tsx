@@ -19,6 +19,8 @@ import React from 'react'
 import Link from 'next/link'
 import { Badge } from '@/components/shared/Badge'
 import { resolveEntity } from '@/lib/badge-resolvers'
+import { hasEntityDrawer } from '@/lib/entity-drawers'
+import { useGlobalModals } from '@/components/providers/GlobalModalProvider'
 import { Package } from 'lucide-react'
 
 export interface EntityBadgeProps {
@@ -48,21 +50,20 @@ export const EntityBadge: React.FC<EntityBadgeProps> = ({
     rounded = true,
     className,
 }) => {
+    const { openEntity } = useGlobalModals()
+
     if (!data) return null
 
     const { displayCode, icon: ResolvedIcon, href } = resolveEntity(label, data)
     const Icon = showIcon ? (ResolvedIcon ?? Package) : undefined
 
-    // EntityBadge uses a specific, subtle "secondary" style to avoid clashing with
-    // more important semantic colors (status, warnings, etc).
-    // We achieve this by overriding the default intent via className.
     const customStyle = "bg-secondary/30 text-secondary-foreground border-secondary/50 hover:bg-secondary/50 hover:border-secondary"
 
     const badgeEl = (
         <Badge
-            intent="neutral" // Base intent, overridden by className
+            intent="neutral"
             size={size}
-            tracking="tight" // Long IDs (OC-2025-001) need tight spacing
+            tracking="tight"
             shape={rounded ? 'pill' : 'square'}
             icon={Icon}
             className={`${customStyle} max-w-[200px] truncate ${className ?? ''}`}
@@ -71,7 +72,23 @@ export const EntityBadge: React.FC<EntityBadgeProps> = ({
         </Badge>
     )
 
-    if (link && href) {
+    if (!link) return badgeEl
+
+    // Prefer in-context drawer when registered. Fallback to navigation.
+    const entityId = data?.id
+    if (hasEntityDrawer(label) && entityId !== undefined && entityId !== null) {
+        return (
+            <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); openEntity(label, Number(entityId), data) }}
+                className="inline-block outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded-md transition-shadow"
+            >
+                {badgeEl}
+            </button>
+        )
+    }
+
+    if (href) {
         return (
             <Link
                 href={href}

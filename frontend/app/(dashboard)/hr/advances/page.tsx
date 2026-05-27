@@ -9,7 +9,6 @@ import type { SalaryAdvance, Employee, Payroll } from "@/types/hr"
 import { Pencil, Trash2 } from "lucide-react"
 import { DataTableView, DataTableColumnHeader } from '@/components/shared'
 import { createActionsColumn, DataCell } from '@/components/shared'
-import { StatusBadge } from "@/components/shared/StatusBadge"
 import { ColumnDef } from "@tanstack/react-table"
 import { useSearchParams } from "next/navigation"
 
@@ -100,14 +99,11 @@ export default function AdvancesPage() {
         {
             accessorKey: "is_discounted",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" className="justify-center" />,
-            cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <StatusBadge
-                        status={row.original.is_discounted ? "DISCOUNTED" : "PENDING"}
-                        label={row.original.is_discounted ? "Descontado" : "Pendiente"}
-                    />
-                </div>
-            )
+            cell: ({ row }) =>
+                <DataCell.Status
+                    status={row.original.is_discounted ? "DISCOUNTED" : "PENDING"}
+                    label={row.original.is_discounted ? "Descontado" : "Pendiente"}
+                />,
         },
         {
             accessorKey: "payroll_display_id",

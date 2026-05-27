@@ -1,7 +1,7 @@
 import { Metadata } from "next"
 import { redirect } from "next/navigation"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
-import { ProductList, CategoryList, PricingRuleList, SubscriptionsView } from "@/features/inventory"
+import { ProductClientView, CategoryClientView, PricingRuleClientView, SubscriptionsView } from "@/features/inventory"
 import { ToolbarCreateButton, FadeIn } from "@/components/shared"
 
 export const metadata: Metadata = {
@@ -44,7 +44,7 @@ export default async function UnifiedProductsPage({ searchParams }: PageProps) {
             <div className="flex-1 min-h-0">
                 <TabsContent value="products" className="h-full mt-0 outline-none">
                     <FadeIn className="h-full">
-                        <ProductList
+                        <ProductClientView
                             externalOpen={activeTab === 'products' && resolvedParams.modal === 'new'}
                             createAction={activeTab === 'products' ? createAction : null}
                         />
@@ -52,7 +52,7 @@ export default async function UnifiedProductsPage({ searchParams }: PageProps) {
                 </TabsContent>
                 <TabsContent value="categories" className="h-full mt-0 outline-none">
                     <FadeIn className="h-full">
-                        <CategoryList
+                        <CategoryClientView
                             externalOpen={activeTab === 'categories' && resolvedParams.modal === 'new'}
                             createAction={activeTab === 'categories' ? createAction : null}
                         />
@@ -60,7 +60,7 @@ export default async function UnifiedProductsPage({ searchParams }: PageProps) {
                 </TabsContent>
                 <TabsContent value="pricing-rules" className="h-full mt-0 outline-none">
                     <FadeIn className="h-full">
-                        <PricingRuleList
+                        <PricingRuleClientView
                             externalOpen={activeTab === 'pricing-rules' && resolvedParams.modal === 'new'}
                             createAction={activeTab === 'pricing-rules' ? createAction : null}
                         />

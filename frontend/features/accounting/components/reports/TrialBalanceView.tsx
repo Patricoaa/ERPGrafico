@@ -1,5 +1,4 @@
 "use client"
-import { formatCurrency } from "@/lib/money";
  
 import React, { useState } from 'react';
 import { useTrialBalance } from '../../hooks/useTrialBalance';
@@ -7,9 +6,7 @@ import { EmptyState } from '@/components/shared/EmptyState';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Calculator, Calendar, CheckCircle2, AlertCircle } from 'lucide-react';
-import { SkeletonShell } from '@/components/shared';
- 
-import { PeriodValidationDateInput } from '@/components/shared';
+import { SkeletonShell, PeriodValidationDateInput, DataCell } from '@/components/shared';
 
 export function TrialBalanceView() {
     // Default dates: current year start to now
@@ -22,10 +19,6 @@ export function TrialBalanceView() {
     const [endDate, setEndDate] = useState(defaultEnd);
 
     const { data, isLoading } = useTrialBalance(startDate, endDate);
-
-    const formatNum = (val: number) => {
-        return val === 0 ? '—' : formatCurrency(val);
-    };
 
     return (
         <SkeletonShell isLoading={isLoading && !data} ariaLabel="Cargando balance de comprobación">
@@ -96,14 +89,30 @@ export function TrialBalanceView() {
                             <tbody className="divide-y divide-border/40">
                                 {data?.accounts.map((acc) => (
                                     <tr key={acc.id} className="hover:bg-muted/30 transition-colors group">
-                                        <td className="px-4 py-2.5 text-xs font-mono text-muted-foreground">{acc.code}</td>
-                                        <td className="px-4 py-2.5 text-xs font-medium text-foreground">{acc.name}</td>
-                                        <td className="px-4 py-2.5 text-xs text-right bg-primary/5 font-medium">{formatNum(acc.initial_balance)}</td>
-                                        <td className="px-4 py-2.5 text-xs text-right text-muted-foreground group-hover:text-foreground">{formatNum(acc.debit)}</td>
-                                        <td className="px-4 py-2.5 text-xs text-right text-muted-foreground group-hover:text-foreground">{formatNum(acc.credit)}</td>
-                                        <td className="px-4 py-2.5 text-xs text-right bg-primary/5 font-bold">{formatNum(acc.closing_balance)}</td>
-                                        <td className="px-4 py-2.5 text-xs text-right font-medium text-success">{formatNum(acc.saldo_deudor)}</td>
-                                        <td className="px-4 py-2.5 text-xs text-right font-medium text-warning">{formatNum(acc.saldo_acreedor)}</td>
+                                        <td className="px-4 py-2.5">
+                                            <DataCell.Code value={acc.code} className="text-left justify-start" />
+                                        </td>
+                                        <td className="px-4 py-2.5">
+                                            <DataCell.Text className="text-left justify-start font-medium text-foreground">{acc.name}</DataCell.Text>
+                                        </td>
+                                        <td className="px-4 py-2.5 bg-primary/5">
+                                            <DataCell.Currency value={acc.initial_balance} showZeroAsDash className="text-right justify-end font-medium" />
+                                        </td>
+                                        <td className="px-4 py-2.5">
+                                            <DataCell.Currency value={acc.debit} showZeroAsDash className="text-right justify-end text-muted-foreground group-hover:text-foreground transition-colors" />
+                                        </td>
+                                        <td className="px-4 py-2.5">
+                                            <DataCell.Currency value={acc.credit} showZeroAsDash className="text-right justify-end text-muted-foreground group-hover:text-foreground transition-colors" />
+                                        </td>
+                                        <td className="px-4 py-2.5 bg-primary/5">
+                                            <DataCell.Currency value={acc.closing_balance} showZeroAsDash className="text-right justify-end font-bold" />
+                                        </td>
+                                        <td className="px-4 py-2.5">
+                                            <DataCell.Currency value={acc.saldo_deudor} showZeroAsDash className="text-right justify-end font-medium text-success" />
+                                        </td>
+                                        <td className="px-4 py-2.5">
+                                            <DataCell.Currency value={acc.saldo_acreedor} showZeroAsDash className="text-right justify-end font-medium text-warning" />
+                                        </td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -111,11 +120,19 @@ export function TrialBalanceView() {
                                 <tfoot className="bg-muted/80 border-t-2 border-border/80">
                                     <tr className="font-bold">
                                         <td colSpan={3} className="px-4 py-4 text-xs text-right uppercase tracking-wider">Totales de Control</td>
-                                        <td className="px-4 py-4 text-xs text-right border-x border-border/20">{formatCurrency(data.total_debit)}</td>
-                                        <td className="px-4 py-4 text-xs text-right border-x border-border/20">{formatCurrency(data.total_credit)}</td>
-                                        <td className="px-4 py-4 text-xs text-right bg-primary/10">—</td>
-                                        <td className="px-4 py-4 text-xs text-right border-x border-border/20 text-success">{formatCurrency(data.total_saldo_deudor)}</td>
-                                        <td className="px-4 py-4 text-xs text-right border-x border-border/20 text-warning">{formatCurrency(data.total_saldo_acreedor)}</td>
+                                        <td className="px-4 py-4 border-x border-border/20">
+                                            <DataCell.Currency value={data.total_debit} className="text-right justify-end font-bold" />
+                                        </td>
+                                        <td className="px-4 py-4 border-x border-border/20">
+                                            <DataCell.Currency value={data.total_credit} className="text-right justify-end font-bold" />
+                                        </td>
+                                        <td className="px-4 py-4 bg-primary/10 text-center text-xs font-mono font-bold">—</td>
+                                        <td className="px-4 py-4 border-x border-border/20">
+                                            <DataCell.Currency value={data.total_saldo_deudor} className="text-right justify-end font-bold text-success" />
+                                        </td>
+                                        <td className="px-4 py-4 border-x border-border/20">
+                                            <DataCell.Currency value={data.total_saldo_acreedor} className="text-right justify-end font-bold text-warning" />
+                                        </td>
                                     </tr>
                                 </tfoot>
                             )}
