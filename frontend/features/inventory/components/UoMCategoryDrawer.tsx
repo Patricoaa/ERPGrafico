@@ -10,7 +10,7 @@ import {
     FormField,
 } from "@/components/ui/form"
 import { Ruler } from "lucide-react"
-import { SubmitButton } from "@/components/shared/ActionButtons"
+import { ActionSlideButton } from "@/components/shared"
 import { ActivitySidebar } from "@/features/audit/components"
 import { showApiError } from "@/lib/errors"
 import { useUoMMutations } from "../hooks/useUoMMutations"
@@ -128,7 +128,7 @@ export function UoMCategoryDrawer({ open: openProp, onOpenChange, initialData, o
                 onOpenChange={setOpen}
                 side="left"
                 defaultSize={width}
-                contentClassName={initialData?.id ? "p-0" : undefined}
+                contentClassName="p-0"
                 icon={Ruler}
                 title={initialData?.id ? "Editar Categoría de Medida" : "Nueva Categoría de Medida"}
                 subtitle={initialData?.id ? "Modifique el nombre de la categoría y consulte el historial." : "Define un agrupador para unidades del mismo tipo."}
@@ -137,9 +137,9 @@ export function UoMCategoryDrawer({ open: openProp, onOpenChange, initialData, o
                         actions={
                             <>
                                 <CancelButton onClick={() => setOpen(false)} disabled={isSaving} />
-                                <SubmitButton form="uom-category-form" loading={isSaving}>
+                                <ActionSlideButton type="submit" form="uom-category-form" loading={isSaving}>
                                     Guardar
-                                </SubmitButton>
+                                </ActionSlideButton>
                             </>
                         }
                     />

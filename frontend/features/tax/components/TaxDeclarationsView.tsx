@@ -1,7 +1,7 @@
 "use client"
 import { formatCurrency } from "@/lib/money";
 
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import {
@@ -19,15 +19,14 @@ import { DeclarationWizard } from "@/features/tax/components/DeclarationWizard"
 import { F29PaymentModal } from "@/features/tax/components/F29PaymentModal"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { useServerDate } from "@/hooks/useServerDate"
-import { DataTable } from '@/components/shared'
-import { DataTableColumnHeader } from '@/components/shared'
+import { DataTableView, DataTableColumnHeader } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
 import { DataCell, createActionsColumn } from '@/components/shared'
 import { cn } from "@/lib/utils"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { TaxPeriod, TaxDeclaration, TaxPaymentData } from "../types"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
-import { Row } from "@tanstack/react-table"
+import { type Row, type Table } from "@tanstack/react-table"
 import { CardSkeleton, SmartSearchBar, useClientSearch } from "@/components/shared"
 import { taxPeriodSearchDef } from "@/features/tax/searchDef"
 import { EntityCard } from "@/components/shared/EntityCard"
@@ -350,22 +349,23 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange, create
             </div>
 
             <div className="flex-1 min-h-0">
-                <DataTable
+                <DataTableView
                     columns={columns}
                     data={filteredPeriods}
                     isLoading={isLoading}
+                    entityLabel="tax.taxperiod"
                     variant="embedded"
                     leftAction={<SmartSearchBar searchDef={taxPeriodSearchDef} placeholder="Buscar período..." className="w-full" />}
                     showToolbarSort={true}
                     createAction={createAction}
-                    renderLoadingView={() => (
+                    renderLoadingView={useCallback(() => (
                         <div className="grid gap-3 pt-2">
                             {Array.from({ length: 6 }).map((_, i) => (
                                 <EntityCard.Skeleton key={i} variant="compact" />
                             ))}
                         </div>
-                    )}
-                    renderCustomView={(table) => {
+                    ), [])}
+                    renderCustomView={useCallback((table: Table<TaxPeriod>) => {
                         const rows = table.getRowModel().rows
 
                         if (rows.length === 0) {
@@ -448,7 +448,7 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange, create
                                 })}
                             </div>
                         )
-                    }}
+                    }, [handleOpenWizard, handleOpenPayment])}
                 />
             </div>
             <DeclarationWizard

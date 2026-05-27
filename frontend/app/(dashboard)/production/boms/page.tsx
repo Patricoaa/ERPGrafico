@@ -4,8 +4,7 @@ import { formatCurrency } from "@/lib/money"
 import React, { useEffect, useState } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { ColumnDef } from "@tanstack/react-table"
-import { DataTableColumnHeader } from '@/components/shared'
-import { DataTable } from '@/components/shared'
+import { DataTableView, DataTableColumnHeader } from '@/components/shared'
 import { createActionsColumn, DataCell } from '@/components/shared'
 import { Pencil, Trash2, Layers } from "lucide-react"
 import api from "@/lib/api"
@@ -185,10 +184,11 @@ export default function BOMsPage() {
         <div className="pt-2 flex-1 min-h-0 flex flex-col">
 
             <div className="flex-1 min-h-0">
-                <DataTable
+                <DataTableView
                     columns={columns}
                     data={boms as unknown as BOMListItem[]}
                     isLoading={loading}
+                    entityLabel="production.bom"
                     variant="embedded"
                     defaultPageSize={20}
                     leftAction={<SmartSearchBar searchDef={bomSearchDef} placeholder="Buscar por producto..." className="w-full" />}

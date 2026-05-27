@@ -210,6 +210,7 @@ export interface PurchaseOrderLine {
 
 export interface PurchaseOrderInitialData {
     id?: number
+    supplier?: number | string
     notes?: string
     lines: PurchaseOrderLine[]
 }
@@ -263,7 +264,7 @@ export interface UserInitialData {
     username?: string
     primary_role?: string
     functional_groups?: string[]
-    groups?: string[]
+    groups?: (string | { id: number; name: string })[]
     contact?: number
     password?: string
     is_active?: boolean

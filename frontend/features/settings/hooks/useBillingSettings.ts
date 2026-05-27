@@ -7,6 +7,7 @@ export const BILLING_SETTINGS_QUERY_KEY = ['settings-billing']
 
 interface UseBillingSettingsReturn {
     settings: BillingSettings
+    isLoading: boolean
     saving: boolean
     updateSettings: (payload: BillingSettingsUpdatePayload) => Promise<void>
     refetch: () => Promise<unknown>

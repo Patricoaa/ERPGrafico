@@ -107,7 +107,7 @@ graph TD
 - **`PageHeader`**: Para el título de la vista principal, migas de pan y acciones globales arriba a la derecha.
 - **`PageTabs`**: Para navegación secundaria dentro de una página.
 - **`CollapsibleSheet`**: Cuando necesites un panel lateral con contenido secundario (ej. Ver el detalle de una orden al lado de un listado).
-- **`BaseDrawer`**: Superficie modal que se despliega desde los bordes de la página. Compatible con **formularios CRUD** (create/edit) y subvistas de datos (tablas, históricos, libros mayores). Preserva el contexto visual de la página subyacente. Para formularios, usar `side="left" boundary="embedded"` y dimensionar según la tabla en [component-modal.md §BaseDrawer](./component-modal.md). Ver [ADR-0027](../10-architecture/adr/0027-basedrawer-crud-forms.md).
+- **`Drawer`**: Superficie modal que se despliega desde los bordes de la página. Compatible con **formularios CRUD** (create/edit) y subvistas de datos (tablas, históricos, libros mayores). Preserva el contexto visual de la página subyacente. Para formularios, usar `side="left"` y dimensionar según la tabla en [component-drawer.md](./component-drawer.md).
 - **`EntityDetailPage`**: ~~Shell de página completa para rutas `[id]`.~~ **Deprecado — en proceso de decommission (T-95).** Las rutas `[id]` redirigen server-side a `<list_url>?selected={id}` per ADR-0020. Ver [list-modal-edit-pattern.md](./list-modal-edit-pattern.md).
 - **Skeletons (`SkeletonShell`, `CardSkeleton`, `TableSkeleton`)**: Úsalos durante el renderizado inicial y las transiciones asíncronas para evitar el salto de layout (CLS).
 
@@ -125,14 +125,13 @@ graph TD
     A -->|"Solo confirmar (Sí/No)"| B(ActionConfirmModal)
     A -->|"Flujo paso a paso (≥3 pasos)"| C(GenericWizard)
     A -->|"CRUD simple (1–6 campos)"| D["BaseModal (sm/md)"]
-    A -->|"CRUD estándar (7–15 campos)"| E["BaseModal (lg/xl)<br/>o BaseDrawer (50–55%)"]
-    A -->|"Ficha maestra (16+ campos, ≥5 dominios)"| F["BaseModal (full)<br/>+ FormTabs vertical<br/>o BaseDrawer (65–75%)"]
-    A -->|"Panel junto a listado"| G(CollapsibleSheet)
-    A -->|"Historial / subvista sin perder contexto de página"| H(BaseDrawer)
+    A -->|"CRUD estándar (7–15 campos)"| E["BaseModal (lg/xl)<br/>o Drawer (50–55%)"]
+    A -->|"Ficha maestra (16+ campos, ≥5 dominios)"| F["BaseModal (full)<br/>+ FormTabs vertical<br/>o Drawer (65–75%)"]
+    A -->|"Historial / subvista sin perder contexto de página"| H(Drawer)
 ```
 
 - **`FormTabs`**: Obligatorio en Complejo/Ficha Maestra, y en Estándar con ≥5 dominios. Horizontal para 2–4 tabs; Vertical (sawtooth) para ≥5 tabs o modal `xl`+. Ver [component-form-patterns.md §3](./component-form-patterns.md).
 - **`FormSplitLayout`**: Obligatorio en modo edición para integrar `ActivitySidebar`.
 - **`FormSection`**: Separador visual dentro de un tab o formulario sin tabs.
 - **`FormFooter`**: **Obligatorio** en todo formulario modal. Layout de botones: danger (izquierda) + cancel/submit (derecha). Nunca `<div>` raw.
-- **`BaseDrawer`**: Para subvistas que se superponen sobre la página sin perder su contexto. Compatible con formularios CRUD (ver [ADR-0027](../10-architecture/adr/0027-basedrawer-crud-forms.md)) y subvistas de solo lectura (tablas, históricos). Ancho recomendado: `40%–75%` según categoría del formulario (ver [component-modal.md §BaseDrawer](./component-modal.md)).
+- **`Drawer`**: Para subvistas que se superponen sobre la página sin perder su contexto. Compatible con formularios CRUD y subvistas de solo lectura (tablas, históricos). Ancho recomendado: `40%–75%` según categoría del formulario (ver [component-drawer.md](./component-drawer.md)).

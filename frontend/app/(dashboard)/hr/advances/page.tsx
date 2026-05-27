@@ -7,8 +7,7 @@ import { createAdvance, updateAdvance, deleteAdvance, getEmployees, getPayrolls 
 import { PaymentModal } from "@/features/treasury"
 import type { SalaryAdvance, Employee, Payroll } from "@/types/hr"
 import { Pencil, Trash2 } from "lucide-react"
-import { DataTable } from '@/components/shared'
-import { DataTableColumnHeader } from '@/components/shared'
+import { DataTableView, DataTableColumnHeader } from '@/components/shared'
 import { createActionsColumn, DataCell } from '@/components/shared'
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { ColumnDef } from "@tanstack/react-table"
@@ -150,10 +149,11 @@ export default function AdvancesPage() {
     return (
         <div className="space-y-4 h-full flex flex-col">
             <div className="flex-1 min-h-0">
-                <DataTable
+                <DataTableView
                     columns={columns}
                     data={advances}
                     isLoading={loading}
+                    entityLabel="hr.salaryadvance"
                     variant="embedded"
                     leftAction={<SmartSearchBar searchDef={salaryAdvanceSearchDef} placeholder="Buscar anticipos..." className="w-full" />}
                     defaultPageSize={20}

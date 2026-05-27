@@ -6,7 +6,7 @@ import { Separator } from "@/components/ui/separator"
 import { SheetCloseButton } from "../SheetCloseButton"
 import type { TransactionType, TransactionData } from "@/types/transactions"
 
-import { getEntityMetadata, formatEntityDisplay, ENTITY_REGISTRY } from "@/lib/entity-registry"
+import { getEntityMetadata, formatEntityDisplay, ENTITY_REGISTRY, resolveLegacyEntityType } from "@/lib/entity-registry"
 
 import { EntityHeader } from "../EntityHeader"
 import {
@@ -28,23 +28,6 @@ export interface TransactionHeaderProps {
     onClose: () => void
 }
 
-const TYPE_TO_LABEL: Record<string, string> = {
-    'sale_order': 'sales.saleorder',
-    'purchase_order': 'purchasing.purchaseorder',
-    'invoice': 'billing.invoice',
-    'payment': 'treasury.treasurymovement',
-    'journal_entry': 'accounting.journalentry',
-    'inventory': 'inventory.stockmove',
-    'stock_move': 'inventory.stockmove',
-    'work_order': 'production.workorder',
-    'sale_delivery': 'sales.saledelivery',
-    'purchase_receipt': 'inventory.warehouse',
-    'sale_return': 'sales.salereturn',
-    'purchase_return': 'sales.salereturn',
-    'cash_movement': 'treasury.treasurymovement',
-    'terminal_batch': 'treasury.treasurymovement', // or batch label if added
-}
-
 export function TransactionHeader({
     type,
     entityLabel,
@@ -57,7 +40,7 @@ export function TransactionHeader({
 }: TransactionHeaderProps) {
 
     // Transition logic: prefer entityLabel if provided, fallback to legacy type mapping
-    const label = entityLabel || (type ? TYPE_TO_LABEL[type] : '');
+    const label = entityLabel || (type ? resolveLegacyEntityType(type) : undefined) || '';
     const metadata = getEntityMetadata(label || '');
 
     const getHeaderInfo = () => {

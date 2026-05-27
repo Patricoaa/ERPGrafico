@@ -2,7 +2,6 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { useRealtime } from '@/features/realtime'
 import * as workflowApi from '../api/workflowApi'
-import type { Task } from '@/types/entities'
 import { WORKFLOW_KEYS } from './queryKeys'
 import { showApiError } from '@/lib/errors'
 
@@ -11,10 +10,10 @@ export function useCompleteTask() {
   const { markLocalMutation } = useRealtime()
   
   return useMutation({
-    mutationFn: workflowApi.completeTask,
-    onSuccess: (_, variables) => {
+    mutationFn: (id: number) => workflowApi.completeTask(id),
+    onSuccess: (_, id) => {
       markLocalMutation()
-      queryClient.invalidateQueries({ queryKey: WORKFLOW_KEYS.taskDetail(variables.id) })
+      queryClient.invalidateQueries({ queryKey: WORKFLOW_KEYS.taskDetail(id) })
       queryClient.invalidateQueries({ queryKey: WORKFLOW_KEYS.tasks() })
       toast.success('Tarea completada exitosamente')
     },

@@ -8,8 +8,7 @@ import { Pencil, FileText, Calendar, Wallet } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { LabeledInput, FormFooter, CancelButton } from "@/components/shared"
 import { toast } from "sonner"
-import { DataTable } from '@/components/shared'
-import { DataTableColumnHeader } from '@/components/shared'
+import { DataTableView, DataTableColumnHeader } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
 import { BaseModal } from "@/components/shared/BaseModal"
 
@@ -161,11 +160,12 @@ export function BudgetsListView({ externalOpen, onExternalOpenChange, createActi
 
         <div className="h-full flex flex-col">
             <div className="flex-1 min-h-0">
-                <DataTable
+                <DataTableView
                     columns={columns}
                     data={budgets}
                     variant="embedded"
                     isLoading={isLoading}
+                    entityLabel="accounting.budget"
                     globalFilterFields={["name"]}
                     searchPlaceholder="Buscar presupuestos..."
                     useAdvancedFilter={true}

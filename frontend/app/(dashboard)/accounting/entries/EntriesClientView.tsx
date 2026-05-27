@@ -11,8 +11,7 @@ import { JournalEntryDrawer } from "@/features/accounting/components/JournalEntr
 import api from "@/lib/api"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
 import { Trash2, CheckCircle, Eye, Pencil } from "lucide-react"
-import { DataTable } from '@/components/shared'
-import { DataTableColumnHeader } from '@/components/shared'
+import { DataTableView, DataTableColumnHeader } from '@/components/shared'
 import { DataCell, createActionsColumn } from '@/components/shared'
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { useJournalEntries, type JournalEntry } from "@/features/accounting/hooks/useJournalEntries"
@@ -221,10 +220,11 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
     return (
         <div className="h-full flex flex-col">
             <div className="pt-2 flex-1 min-h-0">
-                <DataTable
+                <DataTableView
                     columns={columns}
                     data={entries}
                     isLoading={isLoading}
+                    entityLabel="accounting.journalentry"
                     variant="embedded"
                     leftAction={<SmartSearchBar searchDef={journalEntrySearchDef} placeholder="Buscar asientos..." className="w-full" />}
                     defaultPageSize={20}

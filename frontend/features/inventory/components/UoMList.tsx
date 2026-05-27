@@ -4,8 +4,7 @@ import { showApiError } from "@/lib/errors"
 
 import React, { useMemo } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
-import { DataTable } from '@/components/shared'
-import { DataTableColumnHeader } from '@/components/shared'
+import { DataTableView, DataTableColumnHeader } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Trash2 } from "lucide-react"
@@ -170,10 +169,11 @@ export function UoMList({ externalOpen, onExternalOpenChange, createAction }: Uo
     return (
         <div className="space-y-4 h-full flex flex-col">
             <div className="flex-1 min-h-0">
-                <DataTable
+                <DataTableView
                     columns={columns}
                     data={uoms}
                     isLoading={isLoading}
+                    entityLabel="inventory.uom"
                     variant="embedded"
                     leftAction={<SmartSearchBar searchDef={uomSearchDef} placeholder="Buscar unidad..." className="w-full" />}
                     bulkActions={bulkActions}

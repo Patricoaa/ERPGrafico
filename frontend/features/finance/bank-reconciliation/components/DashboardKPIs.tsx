@@ -1,5 +1,5 @@
 import { Progress } from "@/components/ui/progress"
-import { Chip, CardSkeleton, StatCard } from "@/components/shared"
+import { Chip, CardSkeleton, StatCard, MoneyDisplay } from "@/components/shared"
 import { CheckCircle2, Clock, AlertTriangle, FileText } from "lucide-react"
 import type { DashboardKPIData } from "../types"
 
@@ -40,7 +40,7 @@ export function DashboardKPIs({ data, loading }: DashboardKPIsProps) {
 
             <StatCard
                 label="Diferencias"
-                value={`$${differences.total_amount.toLocaleString()}`}
+                value={<MoneyDisplay amount={differences.total_amount} />}
                 icon={AlertTriangle}
                 accent={differences.count > 0 ? "destructive" : "muted"}
             >

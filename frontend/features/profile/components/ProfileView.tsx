@@ -717,6 +717,7 @@ function PersonalTab({
                                                         <DataTable
                                                             columns={unifiedPaymentColumns}
                                                             data={relatedPayments}
+                                                            variant="minimal"
                                                             noBorder={true}
                                                             hidePagination={true}
                                                             defaultPageSize={100}

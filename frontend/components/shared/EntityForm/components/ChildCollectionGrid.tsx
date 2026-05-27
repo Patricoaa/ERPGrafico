@@ -94,7 +94,6 @@ export const ChildCollectionGrid: React.FC<ChildCollectionGridProps> = ({
                             ))}
                             <DataCell.Action
                                 action="delete"
-                                compact
                                 onClick={() => remove(idx)}
                             />
                         </div>

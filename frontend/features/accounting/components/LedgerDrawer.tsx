@@ -179,9 +179,7 @@ function LedgerContent({
                 <DataTableColumnHeader column={column} title="Fecha" className="justify-center" />
             ),
             cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <span className="text-xs">{format(new Date(row.original.date), 'dd/MM/yyyy')}</span>
-                </div>
+                <DataCell.Date value={row.original.date} />
             )
         },
         {
@@ -278,7 +276,7 @@ function LedgerContent({
                             <Calculator className="h-4 w-4 text-muted-foreground" />
                         </div>
                         <div className={`text-xl font-bold mt-1 ${data?.opening_balance && data.opening_balance < 0 ? 'text-destructive' : ''}`}>
-                            ${data?.opening_balance?.toLocaleString() || '0'}
+                            <MoneyDisplay amount={data?.opening_balance} />
                         </div>
                         <p className="text-[10px] text-muted-foreground mt-1">
                             Al {dateRange?.from ? format(dateRange.from, "PPP", { locale: es }) : '-'}
@@ -292,7 +290,7 @@ function LedgerContent({
                             <ArrowUpRight className="h-4 w-4 text-success" />
                         </div>
                         <div className="text-xl font-bold mt-1 text-success">
-                            ${data?.period_debit?.toLocaleString() || '0'}
+                            <MoneyDisplay amount={data?.period_debit} />
                         </div>
                         <p className="text-[10px] text-success/70 mt-1">Total del periodo</p>
                     </CardContent>
@@ -304,7 +302,7 @@ function LedgerContent({
                             <ArrowDownRight className="h-4 w-4 text-destructive" />
                         </div>
                         <div className="text-xl font-bold mt-1 text-destructive">
-                            ${data?.period_credit?.toLocaleString() || '0'}
+                            <MoneyDisplay amount={data?.period_credit} />
                         </div>
                         <p className="text-[10px] text-destructive/70 mt-1">Total del periodo</p>
                     </CardContent>
@@ -316,7 +314,7 @@ function LedgerContent({
                             <Scale className="h-4 w-4 text-primary" />
                         </div>
                         <div className={`text-xl font-bold mt-1 ${data?.closing_balance && data.closing_balance < 0 ? 'text-destructive' : 'text-primary'}`}>
-                            ${data?.closing_balance?.toLocaleString() || '0'}
+                            <MoneyDisplay amount={data?.closing_balance} />
                         </div>
                         <p className="text-[10px] text-muted-foreground mt-1">
                             Al {dateRange?.to ? format(dateRange.to, "PPP", { locale: es }) : '-'}

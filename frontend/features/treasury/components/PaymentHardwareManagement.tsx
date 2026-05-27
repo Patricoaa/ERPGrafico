@@ -3,10 +3,8 @@
 import React, { useState, useEffect } from "react"
 import { useTerminalProviders, useTerminalDevices, type PaymentTerminalProvider, type PaymentTerminalDevice } from "../hooks/useTerminalProviders"
 import { Button } from "@/components/ui/button"
-import { Drawer, StatusBadge, SubmitButton, CancelButton, IconButton, LabeledInput, LabeledSelect, FormSection, MultiSelectTagInput, SmartSearchBar, useSmartSearch, useClientSearch, FormFooter } from "@/components/shared"
-import { formDrawerWidth } from "@/lib/form-widths"
+import { StatusBadge, IconButton, SmartSearchBar, useSmartSearch, useClientSearch } from "@/components/shared"
 import { deviceSearchDef, providerSearchDef } from "@/features/treasury/searchDef"
-import { toast } from "sonner"
 import {
     Settings,
     Trash2,
@@ -17,8 +15,6 @@ import {
     Link as LinkIcon,
     User as UserIcon
 } from "lucide-react"
-import { AccountSelector } from "@/components/selectors/AccountSelector"
-import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { DataTableView } from '@/components/shared'
@@ -26,6 +22,8 @@ import { DataTableColumnHeader } from '@/components/shared'
 import { createActionsColumn, DataCell } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
 import { EntityCard } from "@/components/shared/EntityCard"
+import { ProviderDrawer } from "./ProviderDrawer"
+import { DeviceDrawer } from "./DeviceDrawer"
 
 interface PaymentHardwareManagementProps {
     externalDeviceOpen?: boolean
@@ -343,7 +341,7 @@ export function PaymentHardwareManagement({
             )}
 
             {/* Dialogs */}
-            <ProviderModal
+            <ProviderDrawer
                 open={providerDialogOpen}
                 onOpenChange={(v) => {
                     setProviderDialogOpen(v)
@@ -353,7 +351,7 @@ export function PaymentHardwareManagement({
                 onSuccess={refetchProviders}
             />
 
-            <DeviceModal
+            <DeviceDrawer
                 open={deviceDialogOpen}
                 onOpenChange={(v) => {
                     setDeviceDialogOpen(v)
@@ -387,306 +385,6 @@ export function PaymentHardwareManagement({
 }
 
 
-
-/**
- * Modal for creating/editing Providers
- */
-function ProviderModal({ open, onOpenChange, provider, onSuccess }: {
-    open: boolean,
-    onOpenChange: (v: boolean) => void,
-    provider: PaymentTerminalProvider | null,
-    onSuccess: () => void
-}) {
-    const { createProvider, updateProvider } = useTerminalProviders()
-    const [name, setName] = useState("")
-    const [type, setType] = useState<PaymentTerminalProvider['provider_type']>("MANUAL")
-    const [supplierId, setSupplierId] = useState<number | null>(null)
-    const [receivableAccount, setReceivableAccount] = useState<number | null>(null)
-    const [expenseAccount, setExpenseAccount] = useState<number | null>(null)
-    const [ivaAccount, setIvaAccount] = useState<number | null>(null)
-    const [loading, setLoading] = useState(false)
-
-    useEffect(() => {
-        if (open) {
-            requestAnimationFrame(() => {
-                if (provider) {
-                    setName(provider.name)
-                    setType(provider.provider_type)
-                    setSupplierId(provider.supplier)
-                    setReceivableAccount(provider.receivable_account)
-                    setExpenseAccount(provider.commission_expense_account)
-                    setIvaAccount(provider.commission_iva_account || null)
-                } else {
-                    setName("")
-                    setType("MANUAL")
-                    setSupplierId(null)
-                    setReceivableAccount(null)
-                    setExpenseAccount(null)
-                    setIvaAccount(null)
-                }
-            })
-        }
-    }, [open, provider])
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault()
-        setLoading(true)
-        try {
-            const data = {
-                name: name.trim() || undefined, // Send undefined if empty to let backend handle it? No, backend needs a name.
-                // We'll ensure name is set before sending.
-                provider_type: type,
-                supplier: supplierId,
-                receivable_account: receivableAccount ? Number(receivableAccount) : undefined,
-                commission_expense_account: expenseAccount ? Number(expenseAccount) : undefined,
-                commission_iva_account: ivaAccount ? Number(ivaAccount) : undefined,
-                is_active: true
-            }
-
-            // Fallback: If name is still empty, we use the contact name
-            // But we don't have the contact object here unless we store it.
-            // Actually, we can just ensure the form doesn't submit without a name, or auto-fill it.
-
-            if (!data.name) {
-                toast.error("Por favor, asigne un nombre o seleccione un contacto.")
-                setLoading(false)
-                return
-            }
-
-            if (provider) {
-                await updateProvider({ id: provider.id, data: data as any })
-            } else {
-                await createProvider(data as any)
-            }
-            onSuccess()
-            onOpenChange(false)
-        } catch (error) {
-        } finally {
-            setLoading(false)
-        }
-    }
-
-    return (
-        <Drawer
-            open={open}
-            onOpenChange={onOpenChange}
-            side="left"
-            defaultSize={formDrawerWidth("medium", !!provider)}
-            title={provider ? "Editar Proveedor" : "Nuevo Proveedor de Pago"}
-            subtitle="Configure las cuentas contables para recaudación y comisiones."
-            footer={
-                <FormFooter
-                    actions={
-                        <>
-                            <CancelButton onClick={() => onOpenChange(false)} />
-                            <SubmitButton loading={loading} onClick={handleSubmit}>
-                                {provider ? "Guardar Cambios" : "Crear Proveedor"}
-                            </SubmitButton>
-                        </>
-                    }
-                />
-            }
-        >
-            <form className="space-y-4 py-2">
-                <FormSection title="Información General" icon={Building2} />
-                <div className="space-y-4">
-                    <div className="space-y-2">
-                        <AdvancedContactSelector
-                            value={supplierId?.toString() || null}
-                            onChange={(val) => setSupplierId(val ? parseInt(val) : null)}
-                            onSelectContact={(contact) => {
-                                if (!name) setName(contact.name)
-                            }}
-                            label="Contacto / Entidad (Proveedor)"
-                        />
-                    </div>
-
-                    <div className="space-y-2">
-                        <LabeledInput
-                            label="Nombre / Alias"
-                            required
-                            value={name}
-                            onChange={e => setName(e.target.value)}
-                            placeholder="Ej: Transbank Local Primary"
-
-                        />
-                    </div>
-                </div>
-
-                <FormSection title="Configuración Contable" icon={Settings} className="my-4" />
-
-                <div className="space-y-4">
-                    <div className="space-y-2">
-                        <AccountSelector
-                            value={receivableAccount?.toString() || null}
-                            onChange={(v) => setReceivableAccount(v ? parseInt(v) : null)}
-                            accountType="ASSET"
-                            label="Cuenta Puente Recaudación"
-                        />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <AccountSelector
-                                value={expenseAccount?.toString() || null}
-                                onChange={(v) => setExpenseAccount(v ? parseInt(v) : null)}
-                                accountType="EXPENSE"
-                                label="Cuenta Gasto Comisiones"
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <AccountSelector
-                                value={ivaAccount?.toString() || null}
-                                onChange={(v) => setIvaAccount(v ? parseInt(v) : null)}
-                                accountType="ASSET"
-                                label="Cuenta Puente IVA de Comisiones"
-                            />
-                        </div>
-                    </div>
-                </div>
-            </form>
-        </Drawer>
-    )
-}
-
-/**
- * Modal for creating/editing Devices
- */
-function DeviceModal({ open, onOpenChange, device, providers, onSuccess }: {
-    open: boolean,
-    onOpenChange: (v: boolean) => void,
-    device: PaymentTerminalDevice | null,
-    providers: PaymentTerminalProvider[],
-    onSuccess: () => void
-}) {
-    const { createDevice, updateDevice } = useTerminalDevices()
-    const [name, setName] = useState("")
-    const [providerId, setProviderId] = useState<string>("")
-    const [serialNumber, setSerialNumber] = useState("")
-    const [model, setModel] = useState("")
-    const [supportedMethods, setSupportedMethods] = useState<number[]>([])
-    const [loading, setLoading] = useState(false)
-
-    useEffect(() => {
-        if (open) {
-            requestAnimationFrame(() => {
-                if (device) {
-                    setName(device.name)
-                    setProviderId(device.provider.toString())
-                    setSerialNumber(device.serial_number)
-                    setModel(device.model || "")
-                    setSupportedMethods(device.supported_payment_methods || [])
-                } else {
-                    setName("")
-                    setProviderId("")
-                    setSerialNumber("")
-                    setModel("")
-                    setSupportedMethods([1, 2])
-                }
-            })
-        }
-    }, [open, device])
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault()
-        if (!providerId) {
-            toast.error("Seleccione un proveedor")
-            return
-        }
-        setLoading(true)
-        try {
-            const data = {
-                name,
-                provider: parseInt(providerId),
-                serial_number: serialNumber,
-                model: model || undefined,
-                supported_payment_methods: supportedMethods,
-                is_active: true
-            }
-
-            if (device) {
-                await updateDevice({ id: device.id, data })
-            } else {
-                await createDevice(data)
-            }
-            onSuccess()
-            onOpenChange(false)
-        } catch (error) {
-        } finally {
-            setLoading(false)
-        }
-    }
-
-    return (
-        <Drawer
-            open={open}
-            onOpenChange={onOpenChange}
-            side="left"
-            defaultSize={formDrawerWidth("medium", !!device)}
-            title={device ? "Editar Dispositivo" : "Registrar Nuevo Hardware"}
-            subtitle="Vincule una terminal física con un proveedor de servicios."
-            footer={
-                <div className="flex justify-end gap-2">
-                    <CancelButton onClick={() => onOpenChange(false)} />
-                    <SubmitButton loading={loading} onClick={handleSubmit}>
-                        {device ? "Guardar Cambios" : "Registrar"}
-                    </SubmitButton>
-                </div>
-            }
-        >
-            <form className="space-y-4 py-2">
-                <FormSection title="Información General" icon={Smartphone} />
-                <LabeledInput
-                    label="Nombre descriptivo"
-                    required
-                    value={name}
-                    onChange={e => setName(e.target.value)}
-                    placeholder="Ej: Maquinita TUU 01"
-                />
-
-                <div className="grid grid-cols-2 gap-4">
-                    <LabeledSelect
-                        label="Proveedor"
-                        required
-                        value={providerId}
-                        onChange={setProviderId}
-                        placeholder="Seleccione..."
-                        options={providers.map(p => ({ value: p.id.toString(), label: p.name }))}
-                    />
-                    <div>
-                        <LabeledInput
-                            label="Número de Serie / TID"
-                            required
-                            value={serialNumber}
-                            onChange={e => setSerialNumber(e.target.value)}
-                            placeholder="Número serie físico"
-                        />
-                    </div>
-                </div>
-
-                <LabeledInput
-                    label="Modelo (Opcional)"
-                    value={model}
-                    onChange={e => setModel(e.target.value)}
-                    placeholder="Ej: Pax A920"
-                />
-
-                <div className="space-y-3 pt-2">
-                    <MultiSelectTagInput
-                        label="Capacidades del Hardware"
-                        options={[
-                            { label: "DÉBITO", value: "2" },
-                            { label: "CRÉDITO", value: "1" }
-                        ]}
-                        value={supportedMethods.map(m => m.toString())}
-                        onChange={(vals) => setSupportedMethods(vals.map(v => parseInt(v)))}
-                        placeholder="Seleccione capacidades..."
-                        hint="Marque solo los métodos que su terminal física permite procesar."
-                    />
-                </div>
-            </form>
-        </Drawer>
-    )
-}
 
 
 

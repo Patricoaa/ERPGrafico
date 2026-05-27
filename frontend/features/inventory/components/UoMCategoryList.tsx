@@ -5,8 +5,7 @@ import { showApiError } from "@/lib/errors"
 import React, { useEffect, useState, useMemo } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 // deleteUoMCategory consumido vía useUoMs.
-import { DataTable } from '@/components/shared'
-import { DataTableColumnHeader } from '@/components/shared'
+import { DataTableView, DataTableColumnHeader } from '@/components/shared'
 import { DataCell, createActionsColumn } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -140,10 +139,11 @@ export function UoMCategoryList({ externalOpen, onExternalOpenChange, createActi
     return (
         <div className="space-y-4 h-full flex flex-col">
             <div className="flex-1 min-h-0">
-                <DataTable
+                <DataTableView
                     columns={columns}
                     data={filterFn(categories)}
                     isLoading={isLoading}
+                    entityLabel="inventory.uomcategory"
                     variant="embedded"
                     leftAction={<SmartSearchBar searchDef={uomCategorySearchDef} placeholder="Buscar categoría..." className="w-full" />}
                     pageSizeOptions={[10, 20]}

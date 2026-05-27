@@ -2,24 +2,18 @@
 
 import { useState, useEffect } from "react"
 import { useTerminals, type Terminal } from "@/features/treasury"
-import { usePaymentMethods, useTerminalDevices } from "@/features/treasury"
-import { treasuryApi } from "../api/treasuryApi"
-import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
-import { toast } from "sonner"
 import { StatusBadge } from "@/components/shared/StatusBadge"
-import { Drawer, CancelButton, IconButton, LabeledInput, LabeledSelect, FormSection, FormFooter, FormSplitLayout, ActionSlideButton } from "@/components/shared"
-import { formDrawerWidth } from "@/lib/form-widths"
+import { IconButton } from "@/components/shared"
 import { EntityCard } from "@/components/shared/EntityCard"
 import { DataTableView } from '@/components/shared/DataTableView'
 import { DataTableColumnHeader } from '@/components/shared'
 import { createActionsColumn, DataCell, Chip } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
-import { Plus, Power, PowerOff, Trash2, Settings, MapPin, Smartphone, Banknote, CreditCard, Landmark, MonitorSmartphone } from "lucide-react"
+import { Plus, Power, PowerOff, Trash2, Settings, MapPin, Smartphone, Banknote, CreditCard, Landmark } from "lucide-react"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
-import { ActivitySidebar } from "@/features/audit/components"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
+import { TerminalDrawer } from "./TerminalDrawer"
 
 
 
@@ -83,21 +77,19 @@ export function TerminalManagement({ externalOpen, onExternalOpenChange, createA
         {
             accessorKey: "name",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Nombre" className="justify-center" />,
-            cell: ({ row }) => <div className="flex justify-center font-semibold text-sm">{row.getValue("name")}</div>,
+            cell: ({ row }) => <DataCell.Text>{row.getValue("name")}</DataCell.Text>,
         },
         {
             accessorKey: "location",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Ubicación" className="justify-center" />,
-            cell: ({ row }) => <div className="flex justify-center text-muted-foreground">{row.getValue("location")}</div>,
+            cell: ({ row }) => <DataCell.Secondary>{row.getValue("location")}</DataCell.Secondary>,
         },
         {
             accessorKey: "is_active",
             id: "status",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" className="justify-center" />,
             cell: ({ row }) => (
-                <div className="flex justify-center">
-                    <StatusBadge status={row.original.is_active ? "active" : "inactive"} size="sm" className="uppercase font-bold tracking-tight" />
-                </div>
+                <DataCell.Status status={row.original.is_active ? "active" : "inactive"} />
             ),
             filterFn: (row, id, value) => value.includes(row.getValue(id) ? "ACTIVE" : "INACTIVE")
         },
@@ -223,7 +215,7 @@ export function TerminalManagement({ externalOpen, onExternalOpenChange, createA
                 />
             </div>
 
-            <TerminalModal
+            <TerminalDrawer
                 open={dialogOpen}
                 onOpenChange={(open: boolean) => {
                     setDialogOpen(open)
@@ -242,304 +234,6 @@ export function TerminalManagement({ externalOpen, onExternalOpenChange, createA
                 variant="destructive"
             />
         </div>
-    )
-}
-
-
-function TerminalModal({ open, onOpenChange, terminal, onSuccess }: {
-    open: boolean
-    onOpenChange: (open: boolean) => void
-    terminal: Terminal | null
-    onSuccess: () => void
-}) {
-    const [isSubmitting, setIsSubmitting] = useState(false)
-    const [name, setName] = useState("")
-    const [code, setCode] = useState("")
-    const [location, setLocation] = useState("")
-    const [serialNumber, setSerialNumber] = useState("")
-    const [ipAddress, setIpAddress] = useState("")
-    const [deviceId, setDeviceId] = useState<string>("")
-    const [selectedMethodIds, setSelectedMethodIds] = useState<number[]>([])
-
-    const { methods: allPaymentMethods } = usePaymentMethods()
-    const { devices: allDevices } = useTerminalDevices()
-
-    const allMethods = allPaymentMethods.filter(m => m.is_active && m.allow_for_sales === true)
-
-    useEffect(() => {
-        if (open) {
-            requestAnimationFrame(() => {
-                if (terminal) {
-                    setName(terminal.name)
-                    setCode(terminal.code)
-                    setLocation(terminal.location || "")
-                    setSerialNumber(terminal.serial_number || "")
-                    setIpAddress(terminal.ip_address || "")
-                    const dId = terminal.payment_terminal_device as any;
-                    const deviceIdValue = dId?.id ? dId.id.toString() : dId?.toString() || "";
-                    setDeviceId(deviceIdValue);
-                    setSelectedMethodIds(terminal.allowed_payment_methods.map(m => m.id))
-                } else {
-                    setName("")
-                    setCode("")
-                    setLocation("")
-                    setSerialNumber("")
-                    setIpAddress("")
-                    setDeviceId("")
-                    setSelectedMethodIds([])
-                }
-            })
-        }
-    }, [open, terminal])
-
-    const toggleMethod = (methodId: number) => {
-        setSelectedMethodIds(prev => {
-            const isSelected = prev.includes(methodId)
-            if (isSelected) {
-                return prev.filter(id => id !== methodId)
-            } else {
-                // Validation: Max 1 CASH method
-                const methodToAdd = allMethods.find(m => m.id === methodId)
-                if (methodToAdd?.method_type === 'CASH') {
-                    const existingCash = allMethods.find(m =>
-                        prev.includes(m.id) && m.method_type === 'CASH'
-                    )
-                    if (existingCash) {
-                        toast.warning("Solo se puede seleccionar 1 método de EFECTIVO (Caja) por terminal.")
-                        return prev
-                    }
-                }
-
-                return [...prev, methodId]
-            }
-        })
-    }
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault()
-        setIsSubmitting(true)
-
-        const selectedCashMethod = allMethods.find(m =>
-            selectedMethodIds.includes(m.id) && m.method_type === 'CASH'
-        )
-        const defaultAccount = selectedCashMethod ? selectedCashMethod.treasury_account : null
-
-        const payload = {
-            name,
-            code,
-            location,
-            serial_number: serialNumber || "",
-            ip_address: ipAddress || null,
-            payment_terminal_device: (deviceId === "none" || !deviceId) ? null : Number(deviceId),
-            allowed_payment_method_ids: selectedMethodIds,
-            default_treasury_account: defaultAccount
-        }
-
-        try {
-            if (terminal) {
-                await treasuryApi.updateTerminal(terminal.id, payload as any)
-            } else {
-                await treasuryApi.createTerminal(payload as any)
-            }
-            onSuccess()
-            onOpenChange(false)
-        } catch (error: unknown) {
-            const err = error as any
-            console.error("Error saving terminal:", err.response?.data || err)
-        } finally {
-            setIsSubmitting(false)
-        }
-    }
-
-    const typeOrder = ['CASH', 'CARD', 'TRANSFER', 'CHECK', 'OTHER']
-
-    const getTypeLabel = (type: string) => {
-        const labels: Record<string, string> = {
-            'CASH': 'Efectivo (Cajas)',
-            'CARD': 'Tarjetas (Débito / Crédito)',
-            'TRANSFER': 'Transferencias',
-            'CHECK': 'Cheques',
-            'OTHER': 'Otros'
-        }
-        return labels[type] || type
-    }
-
-    // Group methods by simplified type (CARD includes DEBIT_CARD and CREDIT_CARD)
-    const methodsGrouped = allMethods.reduce((acc, method) => {
-        let type = method.method_type
-        // Group DEBIT_CARD and CREDIT_CARD under 'CARD'
-        if (type === 'DEBIT_CARD' || type === 'CREDIT_CARD') {
-            type = 'CARD'
-        }
-        if (!acc[type]) acc[type] = []
-        acc[type].push(method)
-        return acc
-    }, {} as Record<string, any[]>)
-
-    return (
-        <Drawer
-            open={open}
-            onOpenChange={onOpenChange}
-            side="left"
-            defaultSize={formDrawerWidth("complex", !!terminal)}
-            contentClassName="p-0"
-            title={
-                <div className="flex items-center gap-3">
-                    <MonitorSmartphone className="h-5 w-5 text-muted-foreground" />
-                    <span>{terminal ? "Ficha de Caja POS" : "Nueva Caja POS"}</span>
-                </div>
-            }
-            subtitle={
-                <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                    {terminal?.code && (
-                        <>
-                            <span>{terminal.code}</span>
-                            <span className="opacity-30">|</span>
-                        </>
-                    )}
-                    <span>{terminal ? "Modifique la configuración de la caja POS y revise su historial." : "Configuración de la caja POS y asignación de métodos de pago."}</span>
-                </div>
-            }
-            footer={
-                <FormFooter
-                    actions={
-                        <>
-                            <CancelButton onClick={() => onOpenChange(false)} />
-                            <ActionSlideButton type="submit" form="terminal-form" loading={isSubmitting} disabled={isSubmitting}>
-                                {terminal ? "Guardar Cambios" : "Crear Caja POS"}
-                            </ActionSlideButton>
-                        </>
-                    }
-                />
-            }
-        >
-            <FormSplitLayout
-                showSidebar={!!terminal?.id}
-                sidebar={
-                    <ActivitySidebar
-                        entityType="terminal"
-                        entityId={terminal?.id || 0}
-                        className="h-full border-none"
-                        title="Historial"
-                    />
-                }
-            >
-                <form id="terminal-form" onSubmit={handleSubmit} className="space-y-6 px-4 pb-4 pt-2">
-                    <div className="grid grid-cols-2 gap-4">
-                        <LabeledInput
-                            label="Nombre"
-                            required
-                            value={name}
-                            onChange={e => setName(e.target.value)}
-                            placeholder="Ej: Caja 1"
-                        />
-                        <LabeledInput
-                            label="Código"
-                            required
-                            value={code}
-                            onChange={e => setCode(e.target.value)}
-                            placeholder="TERM-01"
-                            className="uppercase"
-                        />
-                        <LabeledInput
-                            label="Ubicación"
-                            value={location}
-                            onChange={e => setLocation(e.target.value)}
-                            placeholder="Ej: Entrada"
-                        />
-                        <LabeledInput
-                            label="IP (Opcional)"
-                            value={ipAddress}
-                            onChange={e => setIpAddress(e.target.value)}
-                            placeholder="192.168.1.100"
-                        />
-                    </div>
-
-                    <div className="space-y-2">
-                        <LabeledSelect
-                            label="Dispositivo de Terminal"
-                            placeholder="Sin dispositivo integrado"
-                            value={deviceId}
-                            onChange={setDeviceId}
-                            options={[
-                                { value: "none", label: "Ninguno (Manual)" },
-                                ...allDevices.map(dev => ({
-                                    value: dev.id.toString(),
-                                    label: `${dev.name} (${dev.provider_name})`
-                                }))
-                            ]}
-
-                        />
-                    </div>
-
-
-                    <div className="mt-2">
-                        <FormSection title="Métodos de Pago Permitidos" icon={CreditCard} />
-
-                        <div className="mt-6 px-2 lg:px-6">
-
-
-                            <div className="max-h-[500px] overflow-y-auto pr-4 scrollbar-thin space-y-8 py-2">
-                                {typeOrder.map(type => {
-                                    const groupMethods = methodsGrouped[type] || []
-                                    if (groupMethods.length === 0) return null
-
-                                    return (
-                                        <div key={type} className="space-y-4">
-                                            <div className="flex items-center gap-3 text-muted-foreground/70 pl-1">
-                                                {type === 'CASH' && <Banknote className="h-4 w-4" />}
-                                                {type === 'TERMINAL' && <Smartphone className="h-4 w-4" />}
-                                                {type === 'CARD' && <CreditCard className="h-4 w-4" />}
-                                                {type === 'TRANSFER' && <Landmark className="h-4 w-4" />}
-                                                <h4 className="text-[11px] font-black uppercase tracking-[0.2em]">
-                                                    {getTypeLabel(type)}
-                                                </h4>
-                                            </div>
-
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                                {groupMethods.map(method => {
-                                                    const isSelected = selectedMethodIds.includes(method.id)
-                                                    return (
-                                                        <div
-                                                            key={method.id}
-                                                            onClick={() => toggleMethod(method.id)}
-                                                            className={cn(
-                                                                "flex items-center space-x-3 p-3 rounded-md border transition-all cursor-pointer group",
-                                                                isSelected
-                                                                    ? "bg-primary/5 border-primary/40 shadow-sm ring-1 ring-primary/20"
-                                                                    : "bg-background hover:bg-muted/30 border-border/60 hover:border-border"
-                                                            )}
-                                                        >
-                                                            <Checkbox
-                                                                checked={isSelected}
-                                                                onCheckedChange={() => toggleMethod(method.id)}
-                                                                className={isSelected ? "text-primary border-primary" : "border-muted-foreground/40 group-hover:border-primary/50"}
-                                                            />
-                                                            <div className="flex flex-col">
-                                                                <span className={cn(
-                                                                    "text-sm font-semibold transition-colors",
-                                                                    isSelected ? "text-foreground" : "text-muted-foreground"
-                                                                )}>
-                                                                    {method.name}
-                                                                </span>
-                                                                <span className="text-[10px] text-muted-foreground/70 font-medium">
-                                                                    Cta: {method.treasury_account_name}
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                    )
-                                                })}
-                                            </div>
-                                        </div>
-                                    )
-                                })}
-                            </div>
-                        </div>
-                    </div>
-
-                </form>
-            </FormSplitLayout>
-        </Drawer>
     )
 }
 

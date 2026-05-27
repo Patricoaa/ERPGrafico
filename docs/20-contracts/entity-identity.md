@@ -219,10 +219,12 @@ Header estandarizado para páginas de detalle `[id]/page.tsx`. Renderiza el íco
 
 ## 6. EntityDetailPage
 
+> ⚠️ **Deprecado — en proceso de decommission (T-95).** Las rutas `[id]` redirigen server-side a `<list_url>?selected={id}` per ADR-0020. No usar en código nuevo. Ver [list-modal-edit-pattern.md](./list-modal-edit-pattern.md) y [component-decision-tree.md §4](./component-decision-tree.md).
+
 **Archivo**: `frontend/components/shared/EntityDetailPage.tsx`  
 **Import**: `import { EntityDetailPage } from '@/components/shared'`
 
-Shell completo para rutas `[id]/page.tsx`. Orquesta `EntityHeader` + `FormSplitLayout` + `ActivitySidebar` + footer pegajoso. **Usar este componente para toda página de detalle de entidad.**
+~~Shell completo para rutas `[id]/page.tsx`. Orquesta `EntityHeader` + `FormSplitLayout` + `ActivitySidebar` + footer pegajoso. **Usar este componente para toda página de detalle de entidad.**~~
 
 ```tsx
 <EntityDetailPage
@@ -259,8 +261,8 @@ Shell completo para rutas `[id]/page.tsx`. Orquesta `EntityHeader` + `FormSplitL
 
 ## 7. DataCell.Entity
 
-**Archivo**: `frontend/components/ui/data-table-cells.tsx`  
-**Import**: `import { DataCell } from '@/components/ui/data-table-cells'`
+**Archivo**: `frontend/components/shared/DataTableCells.tsx`  
+**Import**: `import { DataCell, createActionsColumn } from '@/components/shared'`
 
 Celda de tabla estandarizada para mostrar identificadores de documentos. Internamente usa `EntityBadge`.
 
@@ -408,4 +410,4 @@ Todos los prefijos canónicos del sistema. **No usar prefijos que no estén en e
 
 ---
 
-*Fuentes: `frontend/lib/entity-registry.ts` · `frontend/components/shared/EntityBadge.tsx` · `frontend/components/shared/EntityHeader.tsx` · `frontend/components/shared/EntityDetailPage.tsx` · `frontend/components/ui/data-table-cells.tsx` · `frontend/components/ui/dynamic-icon.tsx`*
+*Fuentes: `frontend/lib/entity-registry.ts` · `frontend/components/shared/EntityBadge.tsx` · `frontend/components/shared/EntityHeader.tsx` · `frontend/components/shared/EntityDetailPage.tsx` · `frontend/components/shared/DataTableCells.tsx` · `frontend/components/ui/dynamic-icon.tsx`*

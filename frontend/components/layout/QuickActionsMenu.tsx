@@ -7,8 +7,8 @@ import { usePathname } from "next/navigation"
 import { ShoppingBag, ShoppingCart, Printer, Home, Inbox, Calculator, Users } from "lucide-react"
 
 // Lazy load: solo se descarga y compila cuando el usuario abre la calculadora
-const CostCalculatorModal = dynamic(
-    () => import("@/components/tools/CostCalculatorModal").then(m => ({ default: m.CostCalculatorModal })),
+const CostCalculatorDrawer = dynamic(
+    () => import("@/components/tools/CostCalculatorDrawer").then(m => ({ default: m.CostCalculatorDrawer })),
     { ssr: false }
 )
 import { cn } from "@/lib/utils"
@@ -183,7 +183,7 @@ export function QuickActionsMenu({ isInboxOpen, onInboxToggle }: QuickActionsMen
                         </TooltipContent>
                     </Tooltip>
 
-                    <CostCalculatorModal open={isCalculatorOpen} onOpenChange={setIsCalculatorOpen} />
+                    <CostCalculatorDrawer open={isCalculatorOpen} onOpenChange={setIsCalculatorOpen} />
                 </TooltipProvider>
             </div>
         </div>

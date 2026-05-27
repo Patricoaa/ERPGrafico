@@ -3,9 +3,7 @@
 import { showApiError } from "@/lib/errors"
 import { useEffect, useState, useMemo } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
-import { DataTable } from '@/components/shared'
-import { DataTableColumnHeader } from '@/components/shared'
-import { DataCell, createActionsColumn } from '@/components/shared'
+import { DataTableView, DataTableColumnHeader, DataCell, createActionsColumn } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
 import { Checkbox } from "@/components/ui/checkbox"
 import { WarehouseDrawer } from "./WarehouseDrawer"
@@ -171,7 +169,8 @@ export function WarehouseList({ externalOpen, onExternalOpenChange, createAction
     return (
         <div className="space-y-6 h-full flex flex-col">
             <div className="flex-1 min-h-0">
-                <DataTable
+                <DataTableView
+                    entityLabel="inventory.warehouse"
                     columns={columns}
                     data={filterFn(warehouses)}
                     isLoading={isLoading}

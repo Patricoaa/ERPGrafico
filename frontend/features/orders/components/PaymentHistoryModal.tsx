@@ -1,8 +1,7 @@
 "use client"
-import { formatCurrency } from "@/lib/money"
 import { BaseModal } from "@/components/shared/BaseModal"
-import { DataTable, Chip } from "@/components/shared"
-import { formatPlainDate } from "@/lib/utils"
+import { DataTable, DataCell } from "@/components/shared"
+import { formatCurrency } from "@/lib/money"
 import { Landmark, User, Hash, FileText } from "lucide-react"
 import { formatEntityDisplay } from "@/lib/entity-registry"
 import type { TransactionData } from "@/types/transactions"
@@ -38,7 +37,7 @@ export function PaymentHistoryModal({
             header: "Fecha",
             cell: ({ row }) => (
                 <div className="flex flex-col gap-0.5">
-                    <span className="font-bold">{formatPlainDate(row.original.date)}</span>
+                    <DataCell.Date value={row.original.date} />
                     {row.original.created_by_name && (
                         <span className="text-[10px] text-muted-foreground flex items-center gap-1">
                             <User className="h-3 w-3" /> {row.original.created_by_name}
@@ -50,7 +49,7 @@ export function PaymentHistoryModal({
         {
             header: "Método de Pago",
             cell: ({ row }) => (
-                <Chip size="xs" intent="primary">{row.original.payment_method_display || row.original.payment_method}</Chip>
+                <DataCell.Chip intent="primary">{row.original.payment_method_display || row.original.payment_method}</DataCell.Chip>
             ),
         },
         {
@@ -79,11 +78,8 @@ export function PaymentHistoryModal({
         {
             header: "Monto",
             cell: ({ row }) => (
-                <span className="font-black text-lg tracking-tighter text-primary">
-                    {formatCurrency(row.original.amount)}
-                </span>
+                <DataCell.Currency value={row.original.amount} />
             ),
-            meta: { align: "right" } as const,
         },
     ]
 

@@ -1,6 +1,8 @@
 import { useQuery } from "@tanstack/react-query"
 import api from "@/lib/api"
 import type { WorkflowRule, NotificationRule } from "@/types/entities"
+import * as workflowApi from '../api/workflowApi'
+import { WORKFLOW_KEYS } from './queryKeys'
 
 export interface WorkflowRecurrentSettings {
     f29_creation_day?: number
@@ -46,5 +48,14 @@ export function useWorkflowRecurrentSettingsQuery() {
             return res.data as WorkflowRecurrentSettings
         },
         staleTime: 10 * 60 * 1000, // 10 min — datos de configuración
+    })
+}
+
+export function useTask(taskId: number | string) {
+    return useQuery({
+        queryKey: WORKFLOW_KEYS.taskDetail(taskId),
+        queryFn: () => workflowApi.getTask(taskId),
+        staleTime: 30 * 1000,
+        enabled: !!taskId,
     })
 }

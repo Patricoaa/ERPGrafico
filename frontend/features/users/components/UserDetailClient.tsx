@@ -73,9 +73,13 @@ export function UserDetailClient({ userId }: UserDetailClientProps) {
                     <div className="space-y-2">
                         <p className="text-sm text-muted-foreground">Rol Principal</p>
                         <div>
-                            {user.primary_role ? (
-                                <StatusBadge status={user.primary_role.name} label={user.primary_role.name} size="sm" />
-                            ) : "—"}
+                            {(() => {
+                                const systemRoles = ['ADMIN', 'MANAGER', 'OPERATOR', 'READ_ONLY']
+                                const role = user.groups?.find(g => systemRoles.includes(g.name))
+                                return role
+                                    ? <StatusBadge status={role.name} label={role.name} size="sm" />
+                                    : "—"
+                            })()}
                         </div>
                     </div>
                     <div className="space-y-2">

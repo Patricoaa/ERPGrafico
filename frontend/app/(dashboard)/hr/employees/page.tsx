@@ -130,9 +130,7 @@ export default function EmployeesPage() {
             accessorKey: "status",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" className="justify-center" />,
             cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <StatusBadge status={row.getValue("status") as string} label={row.original.status_display} />
-                </div>
+                <DataCell.Status status={row.getValue("status") as string} label={row.original.status_display} />
             ),
         },
         createActionsColumn<Employee>({

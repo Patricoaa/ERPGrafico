@@ -5,7 +5,6 @@ import { useReactToPrint } from "react-to-print"
 import { Loader2 } from "lucide-react"
 
 import { BaseModal } from "@/components/shared/BaseModal"
-import { PurchaseOrderForm } from "@/features/purchasing/components/PurchaseOrderForm"
 import { PaymentDrawer } from "@/features/finance/components/PaymentDrawer"
 import { toast } from "sonner"
 import { deletePayment } from "./transaction-modal/hooks/useDeletePayment"

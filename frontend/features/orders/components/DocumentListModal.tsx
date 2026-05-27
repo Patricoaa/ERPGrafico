@@ -2,11 +2,8 @@
 "use client"
 
 import { BaseModal } from "@/components/shared/BaseModal"
-import { formatCurrency } from "@/lib/money"
-import { DataTable } from "@/components/shared"
-import { StatusBadge } from "@/components/shared"
-import { FileText, Package, Truck, ClipboardList, Download, ExternalLink } from "lucide-react"
-import { formatPlainDate } from "@/lib/utils"
+import { DataTable, DataCell } from "@/components/shared"
+import { FileText, Package, Truck, ClipboardList, ExternalLink } from "lucide-react"
 import { formatEntityDisplay } from "@/lib/entity-registry"
 import type { ColumnDef } from "@tanstack/react-table"
 
@@ -64,33 +61,33 @@ const config = {
 
 function InvoiceColumns(onItemClick?: (type: 'invoice' | 'inventory' | 'work_order', id: number | string) => void): ColumnDef<DocumentItem>[] {
     return [
-        { header: "Folio", accessorKey: "number", cell: ({ row }) => <span className="font-bold">{row.original.number || 'Borrador'}</span> },
-        { header: "Tipo", cell: ({ row }) => <span className="text-xs">{row.original.type_display || 'Factura'}</span> },
-        { header: "Fecha", cell: ({ row }) => <span className="text-xs">{formatPlainDate(row.original.date || row.original.created_at)}</span> },
-        { header: "Monto", cell: ({ row }) => <span className="font-bold text-primary">{formatCurrency(row.original.total)}</span> },
-        { header: "Estado", cell: ({ row }) => <StatusBadge status={row.original.status_display || row.original.status || ""} /> },
+        { header: "Folio", accessorKey: "number", cell: ({ row }) => <DataCell.Code>{row.original.number || 'Borrador'}</DataCell.Code> },
+        { header: "Tipo", cell: ({ row }) => <DataCell.Text>{row.original.type_display || 'Factura'}</DataCell.Text> },
+        { header: "Fecha", cell: ({ row }) => <DataCell.Date value={row.original.date || row.original.created_at} /> },
+        { header: "Monto", cell: ({ row }) => <DataCell.Currency value={row.original.total} /> },
+        { header: "Estado", cell: ({ row }) => <DataCell.Status status={row.original.status_display || row.original.status || ""} /> },
         { header: "", cell: ({ row }) => <ActionsCell item={row.original} onClick={onItemClick} /> },
     ]
 }
 
 function WorkOrderColumns(onItemClick?: (type: 'invoice' | 'inventory' | 'work_order', id: number | string) => void): ColumnDef<DocumentItem>[] {
     return [
-        { header: "N° OT", cell: ({ row }) => <span className="font-bold">{formatEntityDisplay('production.workorder', row.original)}</span> },
-        { header: "Producto", cell: ({ row }) => <span className="text-xs truncate max-w-[200px]">{row.original.product_name}</span> },
-        { header: "Cantidad", cell: ({ row }) => <span className="font-bold">{row.original.quantity} {row.original.unit}</span> },
-        { header: "Vencimiento", cell: ({ row }) => <span className="text-xs">{formatPlainDate(row.original.due_date)}</span> },
-        { header: "Estado", cell: ({ row }) => <StatusBadge status={row.original.status_display || row.original.status || ""} /> },
+        { header: "N° OT", cell: ({ row }) => <DataCell.Code>{formatEntityDisplay('production.workorder', row.original)}</DataCell.Code> },
+        { header: "Producto", cell: ({ row }) => <DataCell.Text>{row.original.product_name}</DataCell.Text> },
+        { header: "Cantidad", cell: ({ row }) => <DataCell.Number value={row.original.quantity!} suffix={row.original.unit} /> },
+        { header: "Vencimiento", cell: ({ row }) => <DataCell.Date value={row.original.due_date} /> },
+        { header: "Estado", cell: ({ row }) => <DataCell.Status status={row.original.status_display || row.original.status || ""} /> },
         { header: "", cell: ({ row }) => <ActionsCell item={row.original} onClick={onItemClick} /> },
     ]
 }
 
 function StockMoveColumns(onItemClick?: (type: 'invoice' | 'inventory' | 'work_order', id: number | string) => void): ColumnDef<DocumentItem>[] {
     return [
-        { header: "N°", cell: ({ row }) => <span className="font-bold">{formatEntityDisplay('inventory.stockmove', row.original)}</span> },
-        { header: "Folio Guía", cell: ({ row }) => <span className="text-xs font-mono">{row.original.reference || '--'}</span> },
-        { header: "Fecha", cell: ({ row }) => <span className="text-xs">{formatPlainDate(row.original.date)}</span> },
-        { header: "Ítems", cell: ({ row }) => <span className="text-xs">{row.original.items_count || 0} ítems</span> },
-        { header: "Estado", cell: () => <StatusBadge status="COMPLETED" /> },
+        { header: "N°", cell: ({ row }) => <DataCell.Code>{formatEntityDisplay('inventory.stockmove', row.original)}</DataCell.Code> },
+        { header: "Folio Guía", cell: ({ row }) => <DataCell.Code>{row.original.reference || '--'}</DataCell.Code> },
+        { header: "Fecha", cell: ({ row }) => <DataCell.Date value={row.original.date} /> },
+        { header: "Ítems", cell: ({ row }) => <DataCell.Number value={row.original.items_count || 0} suffix="ítems" /> },
+        { header: "Estado", cell: () => <DataCell.Status status="COMPLETED" /> },
         { header: "", cell: ({ row }) => <ActionsCell item={row.original} onClick={onItemClick} /> },
     ]
 }
@@ -99,9 +96,10 @@ function ActionsCell({ item, onClick }: { item: DocumentItem; onClick?: (type: '
     return (
         <div className="flex gap-1">
             {item.pdf_url && (
-                <a href={item.pdf_url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
-                    <Download className="h-4 w-4 text-muted-foreground hover:text-primary transition-colors cursor-pointer" />
-                </a>
+                <DataCell.Action
+                    action="download"
+                    onClick={() => window.open(item.pdf_url!, '_blank', 'noopener,noreferrer')}
+                />
             )}
             <ExternalLink
                 className="h-4 w-4 text-muted-foreground hover:text-primary transition-colors cursor-pointer"

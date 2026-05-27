@@ -4,5 +4,5 @@ export * from './PurchaseNoteModal';
 export * from './ReceiptModal';
 export * from './checkout';
 export * from './notes';
-export * from './PurchaseOrderForm';
+export * from './PurchaseOrderModal';
 export * from './PurchaseOrderDetailClient';

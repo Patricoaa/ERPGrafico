@@ -3,7 +3,7 @@
 import { showApiError } from "@/lib/errors"
 import { useState, useEffect } from "react"
 import { StatusBadge } from "@/components/shared/StatusBadge"
-import { Drawer, LabeledInput, LabeledSelect, PeriodValidationDateInput, FormSection, FormFooter, SubmitButton, CancelButton, Chip } from "@/components/shared"
+import { Drawer, LabeledInput, LabeledSelect, PeriodValidationDateInput, FormSection, FormFooter, ActionSlideButton, CancelButton, Chip } from "@/components/shared"
 
 import {
     Table,
@@ -94,7 +94,7 @@ function DeliveryDrawerInner({ open, onOpenChange, orderId, onSuccess, filterTyp
 
     if (isLoading || !order) {
         return (
-            <Drawer open={open} onOpenChange={onOpenChange} side="right" defaultSize="65%" title="Cargando despacho...">
+            <Drawer open={open} onOpenChange={onOpenChange} side="right" defaultSize="65%" title="Cargando despacho..." contentClassName="p-0">
                 <div className="flex items-center justify-center py-12">
                     <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                 </div>
@@ -110,6 +110,7 @@ function DeliveryDrawerInner({ open, onOpenChange, orderId, onSuccess, filterTyp
             onOpenChange={onOpenChange}
             side="left"
             defaultSize="65%"
+            contentClassName="p-0"
             title={isServiceMode ? "Confirmar Entrega de Servicios" : "Despachar Orden"}
             subtitle={isServiceMode ? "Confirme la entrega de los servicios." : "Ingrese los productos a despachar."}
             footer={
@@ -117,12 +118,13 @@ function DeliveryDrawerInner({ open, onOpenChange, orderId, onSuccess, filterTyp
                     actions={
                         <>
                             <CancelButton onClick={() => onOpenChange(false)} disabled={loading} />
-                            <SubmitButton
+                            <ActionSlideButton
+                                type="submit"
                                 form={`${formId}-form`}
                                 loading={loading}
                             >
                                 {isServiceMode ? 'Confirmar Entrega' : 'Confirmar Despacho'}
-                            </SubmitButton>
+                            </ActionSlideButton>
                         </>
                     }
                 />

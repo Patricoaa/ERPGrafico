@@ -1,7 +1,6 @@
 "use client"
 
 import { showApiError, getErrorMessage } from "@/lib/errors"
-import { EmptyState } from "@/components/shared/EmptyState"
 import { useState, useEffect } from "react"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
@@ -19,13 +18,10 @@ import { ReceiptModal } from "@/features/purchasing/components/ReceiptModal"
 import { PurchaseNoteModal } from "@/features/purchasing/components/PurchaseNoteModal"
 import { DocumentCompletionModal } from "@/components/shared/DocumentCompletionModal"
 import { Progress } from "@/components/ui/progress"
-import { DataTable } from '@/components/shared'
-import { DataCell } from '@/components/shared'
-import { DataTableColumnHeader } from '@/components/shared'
+import { DataTableView, DataCell, DataTableColumnHeader } from '@/components/shared'
 import { formatPlainDate } from "@/lib/utils"
 import { useSmartSearch, SmartSearchBar, StatusBadge } from "@/components/shared"
 import { getDtePrefix } from "@/lib/entity-registry"
-import { DomainCard } from "@/components/shared/DomainCard"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { usePurchaseInvoices } from "@/features/billing/hooks/usePurchaseInvoices"
@@ -223,7 +219,7 @@ export default function PurchaseInvoicesPage() {
                 <DataTableColumnHeader column={column} title="Folio" />
             ),
             cell: ({ row }) => (
-                <DataCell.Entity type={row.original.dte_type} number={row.getValue("number")} />
+                <DataCell.Entity entityLabel="billing.invoice" data={row.original} />
             ),
         },
         {
@@ -393,12 +389,12 @@ export default function PurchaseInvoicesPage() {
     return (
         <div className="flex-1 min-h-0 flex flex-col">
             <div className="flex-1 min-h-0">
-                <DataTable
+                <DataTableView
                     columns={columns}
-                    data={invoices}
+                    data={invoices as PurchaseDocument[]}
                     variant="embedded"
                     isLoading={isDataLoading}
-                    // Smart Search Integration
+                    entityLabel="billing.invoice"
                     leftAction={
                         <SmartSearchBar
                             searchDef={purchaseInvoiceSearchDef}
@@ -406,6 +402,16 @@ export default function PurchaseInvoicesPage() {
                         />
                     }
                     onReset={clearAll}
+                    isHubOpen={isHubOpen}
+                    isSelected={(doc: PurchaseDocument) => selectedId === String(doc.id)}
+                    onRowClick={(doc: PurchaseDocument) => {
+                        openHub({
+                            orderId: doc.purchase_order || null,
+                            invoiceId: doc.id,
+                            type: 'purchase',
+                            onActionSuccess: refetch,
+                        })
+                    }}
                     facetedFilters={[
                         {
                             column: "status",
@@ -420,41 +426,6 @@ export default function PurchaseInvoicesPage() {
                     ]}
                     useAdvancedFilter={true}
                     defaultPageSize={20}
-                    renderCustomView={(table) => {
-                        const rows = table.getRowModel().rows
-                        if (rows.length === 0) {
-                            return (
-                                <EmptyState
-                                    context="inventory"
-                                    variant="full"
-                                    title="No se encontraron documentos"
-                                    className="bg-muted/30 rounded-lg border-2 border-dashed"
-                                />
-                            )
-                        }
-                        return (
-                            <div className="grid gap-3 pt-2">
-                                {rows.map((row: { original: PurchaseDocument }) => {
-                                    const doc: PurchaseDocument = row.original
-                                    return (
-                                        <DomainCard
-                                            key={doc.id}
-                                            label="billing.invoice"
-                                            data={doc}
-                                            onClick={() => {
-                                                openHub({
-                                                    orderId: doc.purchase_order || null,
-                                                    invoiceId: doc.id,
-                                                    type: 'purchase',
-                                                    onActionSuccess: refetch
-                                                })
-                                            }}
-                                        />
-                                    )
-                                })}
-                            </div>
-                        )
-                    }}
                 />
             </div>
 

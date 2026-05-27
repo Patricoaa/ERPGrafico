@@ -2,14 +2,12 @@
 
 import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { DataTable } from '@/components/shared'
-import { DataTableColumnHeader } from '@/components/shared'
+import { DataTable, DataCell, SkeletonShell } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
-import { SkeletonShell } from "@/components/shared"
 
 export default function AccountLedgerPage() {
     const params = useParams()
@@ -41,9 +39,8 @@ export default function AccountLedgerPage() {
     const columns: ColumnDef<Record<string, unknown>>[] = [
         {
             accessorKey: "date",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Fecha" />
-            ),
+            header: "Fecha",
+            cell: ({ row }) => <DataCell.Date value={row.getValue("date") as string} />,
         },
         {
             id: "reference",
@@ -52,13 +49,13 @@ export default function AccountLedgerPage() {
                 const mov = row.original as { reference?: string, entry_id?: number, source_document?: { url: string, type: string, name: string } }
                 return (
                     <div className="flex flex-col">
-                        <a href={`/accounting/entries`} className="text-primary hover:underline text-sm font-medium">
+                        <DataCell.Link href={`/accounting/entries`}>
                             {mov.reference || `Asiento ${mov.entry_id}`}
-                        </a>
+                        </DataCell.Link>
                         {mov.source_document && (
-                            <a href={mov.source_document.url} className="text-[10px] text-muted-foreground hover:text-primary underline uppercase font-bold">
+                            <DataCell.Link href={mov.source_document.url} external>
                                 {mov.source_document.type}: {mov.source_document.name}
-                            </a>
+                            </DataCell.Link>
                         )}
                     </div>
                 )
@@ -66,44 +63,34 @@ export default function AccountLedgerPage() {
         },
         {
             accessorKey: "description",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Descripción" />
-            ),
-            cell: ({ row }) => <div className="max-w-md truncate">{row.getValue("description")}</div>,
+            header: "Descripción",
+            cell: ({ row }) => <DataCell.Text className="max-w-md truncate">{row.getValue("description") as string}</DataCell.Text>,
         },
         {
             accessorKey: "partner",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Tercero" />
-            ),
-            cell: ({ row }) => <div className="text-sm text-muted-foreground">{row.getValue("partner")}</div>,
+            header: "Tercero",
+            cell: ({ row }) => <DataCell.Secondary>{row.getValue("partner") as string}</DataCell.Secondary>,
         },
         {
             accessorKey: "debit",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Debe" />
-            ),
+            header: "Debe",
             cell: ({ row }) => {
-                const debit = parseFloat(row.getValue("debit"));
-                return <div className="text-right font-mono">{debit > 0 ? `$${debit.toLocaleString()}` : '-'}</div>
+                const debit = parseFloat(row.getValue("debit") as string);
+                return debit > 0 ? <DataCell.Currency value={debit} /> : <DataCell.Currency value={null} />;
             },
         },
         {
             accessorKey: "credit",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Haber" />
-            ),
+            header: "Haber",
             cell: ({ row }) => {
-                const credit = parseFloat(row.getValue("credit"));
-                return <div className="text-right font-mono">{credit > 0 ? `$${credit.toLocaleString()}` : '-'}</div>
+                const credit = parseFloat(row.getValue("credit") as string);
+                return credit > 0 ? <DataCell.Currency value={credit} /> : <DataCell.Currency value={null} />;
             },
         },
         {
             accessorKey: "balance",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Saldo" />
-            ),
-            cell: ({ row }) => <div className="text-right font-mono font-bold">${parseFloat(row.getValue("balance")).toLocaleString()}</div>,
+            header: "Saldo",
+            cell: ({ row }) => <DataCell.Currency value={parseFloat(row.getValue("balance") as string)} />,
         },
     ]
 

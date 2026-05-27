@@ -566,9 +566,9 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
             cell: ({ row }) => {
                 const isCredit = parseFloat(row.original.credit) > parseFloat(row.original.debit)
                 return (
-                    <Chip size="xs" intent={isCredit ? "success" : "destructive"}>
+                    <DataCell.Chip intent={isCredit ? "success" : "destructive"}>
                         {isCredit ? "Abono" : "Cargo"}
-                    </Chip>
+                    </DataCell.Chip>
                 )
             },
             size: 70,
@@ -689,9 +689,9 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                 if (item.movement_type === 'ADJUSTMENT') label = "Ajuste"
 
                 return (
-                    <Chip size="xs" intent={isDeposit ? "success" : "destructive"}>
+                    <DataCell.Chip intent={isDeposit ? "success" : "destructive"}>
                         {label}
-                    </Chip>
+                    </DataCell.Chip>
                 )
             },
             size: 90,

@@ -3,7 +3,7 @@
 import React, { useState } from "react"
 import { notFound, useRouter } from "next/navigation"
 import { EntityDetailPage, FormFooter, SubmitButton, CancelButton, SkeletonShell } from "@/components/shared"
-import { PurchaseOrderForm } from "./PurchaseOrderForm"
+import { PurchaseOrderModal } from "./PurchaseOrderModal"
 import { usePurchasingOrder } from "../hooks/usePurchasing"
 
 interface PurchaseOrderDetailClientProps {
@@ -49,7 +49,7 @@ export function PurchaseOrderDetailClient({ orderId }: PurchaseOrderDetailClient
             }
         >
             <div className="max-w-5xl mx-auto">
-                <PurchaseOrderForm 
+                <PurchaseOrderModal 
                     {...{ initialData: order, onLoadingChange: setIsSaving } as any}
                     onSuccess={() => {
                         router.push('/purchasing/orders')

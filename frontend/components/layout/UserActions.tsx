@@ -38,8 +38,8 @@ import { motion } from "framer-motion"
 import { cn } from "@/lib/utils"
 
 // Lazy load cost calculator
-const CostCalculatorModal = dynamic(
-    () => import("@/components/tools/CostCalculatorModal").then(m => ({ default: m.CostCalculatorModal })),
+const CostCalculatorDrawer = dynamic(
+    () => import("@/components/tools/CostCalculatorDrawer").then(m => ({ default: m.CostCalculatorDrawer })),
     { ssr: false }
 )
 
@@ -291,7 +291,7 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                 </DropdownMenu>
             </TooltipProvider>
 
-            <CostCalculatorModal open={isCalculatorOpen} onOpenChange={setIsCalculatorOpen} />
+            <CostCalculatorDrawer open={isCalculatorOpen} onOpenChange={setIsCalculatorOpen} />
         </div>
     )
 }
