@@ -54,17 +54,6 @@ export function ManufacturingConfigStep({
   onRestartComplete,
   onCorrectionComplete,
 }: ManufacturingConfigStepProps) {
-  // Post-creation: show granular summary instead of the creation form
-  if (initialData?.id) {
-    return (
-      <ManufacturingConfigSummary
-        order={initialData as unknown as WorkOrder}
-        onSaved={() => onSuccess(Number(initialData.id))}
-        onRestartComplete={onRestartComplete}
-        onCorrectionComplete={onCorrectionComplete}
-      />
-    )
-  }
   const [loading, setLoading] = useState(false);
 
   // Get data from store
@@ -344,8 +333,7 @@ export function ManufacturingConfigStep({
         workOrderId = Number(initialData.id);
       } else {
         const data = await productionApi.createWorkOrder(formData, {
-          'Idempotency-Key': Math.random().toString(36).substring(2, 15) +
-            Math.random().toString(36).substring(2, 15)
+          'Idempotency-Key': typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2)
         });
         toast.success("Orden de Trabajo creada correctamente");
         workOrderId = (data as { id: number }).id;
@@ -392,6 +380,18 @@ export function ManufacturingConfigStep({
       await executeSubmit(data);
     }
   };
+
+  // Post-creation: show granular summary instead of the creation form
+  if (initialData?.id) {
+    return (
+      <ManufacturingConfigSummary
+        order={initialData as unknown as WorkOrder}
+        onSaved={() => onSuccess(Number(initialData.id))}
+        onRestartComplete={onRestartComplete}
+        onCorrectionComplete={onCorrectionComplete}
+      />
+    )
+  }
 
   return (
     <SkeletonShell isLoading={isVatLoading} ariaLabel="Cargando configuración de fabricación">

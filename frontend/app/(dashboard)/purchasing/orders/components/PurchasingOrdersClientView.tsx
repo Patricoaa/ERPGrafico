@@ -12,9 +12,8 @@ import { ArrowRight, ArrowLeft } from "lucide-react"
 import api from "@/lib/api"
 import { PurchaseOrderModal } from "@/features/purchasing"
 import { toast } from "sonner"
-import { DocumentRegistrationModal } from "@/features/purchasing/components/DocumentRegistrationModal"
+import { DocumentRegistrationModal, PurchaseCheckoutWizard } from "@/features/purchasing"
 import { DocumentCompletionModal } from "@/components/shared/DocumentCompletionModal"
-import { PurchaseCheckoutWizard } from "@/features/purchasing/components/PurchaseCheckoutWizard"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { DomainHubStatus } from "@/components/shared"
 import { getHubStatuses } from "@/lib/workflow-status"
@@ -24,7 +23,7 @@ import { Tabs } from "@/components/ui/tabs"
 
 
 
-import type { Order } from "@/features/orders/types"
+import type { Order } from "@/features/orders"
 
 interface PurchaseOrder extends Order {
     supplier_name: string
@@ -48,9 +47,8 @@ interface PurchasingOrdersClientViewProps {
     createAction?: React.ReactNode
 }
 
-import { usePurchasingOrders, usePurchasingNotes } from "@/features/purchasing/hooks/usePurchasing"
+import { usePurchasingOrders, usePurchasingNotes, purchaseOrderSearchDef } from "@/features/purchasing"
 import { SmartSearchBar, useSmartSearch, FadeIn } from "@/components/shared"
-import { purchaseOrderSearchDef } from "@/features/purchasing/searchDef"
 
 export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, createAction }: PurchasingOrdersClientViewProps) {
     const { filters } = useSmartSearch(purchaseOrderSearchDef)
@@ -87,6 +85,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
 
     useEffect(() => {
         if (externalOpenCheckout) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setCheckoutOpen(true)
         }
     }, [externalOpenCheckout])

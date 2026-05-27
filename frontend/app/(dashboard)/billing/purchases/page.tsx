@@ -13,9 +13,8 @@ import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { toast } from "sonner"
 import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
-import { PaymentModal } from "@/features/treasury/components/PaymentModal"
-import { ReceiptModal } from "@/features/purchasing/components/ReceiptModal"
-import { PurchaseNoteModal } from "@/features/purchasing/components/PurchaseNoteModal"
+import { PaymentModal } from "@/features/treasury"
+import { ReceiptModal, PurchaseNoteModal } from "@/features/purchasing"
 import { DocumentCompletionModal } from "@/components/shared/DocumentCompletionModal"
 import { Progress } from "@/components/ui/progress"
 import { DataTableView, DataCell, DataTableColumnHeader } from '@/components/shared'
@@ -24,8 +23,7 @@ import { useSmartSearch, SmartSearchBar, StatusBadge } from "@/components/shared
 import { getDtePrefix } from "@/lib/entity-registry"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
-import { usePurchaseInvoices } from "@/features/billing/hooks/usePurchaseInvoices"
-import { purchaseInvoiceSearchDef } from "@/features/billing/searchDef"
+import { usePurchaseInvoices, purchaseInvoiceSearchDef } from "@/features/billing"
 
 interface PurchaseDocument {
     id: number
@@ -119,6 +117,7 @@ export default function PurchaseInvoicesPage() {
     }, [selectedId, openHub])
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         if (isHubOpen && selectedId) setHubEverOpened(true)
     }, [isHubOpen, selectedId])
 
@@ -127,6 +126,7 @@ export default function PurchaseInvoicesPage() {
             const params = new URLSearchParams(searchParams.toString())
             params.delete('selected')
             const query = params.toString()
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setHubEverOpened(false)
             router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
         }
