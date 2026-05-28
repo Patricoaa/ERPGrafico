@@ -69,6 +69,7 @@ export function AccountDetailClient({ accountId }: AccountDetailClientProps) {
                 <AccountDrawer 
                     open={true}
                     inline={true}
+                    mode={account.children_count > 0 ? 'view' : 'edit'}
                     onOpenChange={(open) => {
                         if (!open) router.push('/accounting/ledger')
                     }}

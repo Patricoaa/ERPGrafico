@@ -50,6 +50,8 @@ interface AccountingLinesTableProps {
     name: string
     /** Loading state */
     isLoading?: boolean
+    /** Disable all interactive elements */
+    disabled?: boolean
 }
 
 // ─────────────────────────────────────────────────────────
@@ -80,7 +82,7 @@ const COLUMNS = [
  * - Payment registrations with accounting impacts
  * - Manual accounting adjustments
  */
-export function AccountingLinesTable({ control, name, isLoading }: AccountingLinesTableProps) {
+export function AccountingLinesTable({ control, name, isLoading, disabled }: AccountingLinesTableProps) {
     const { fields, append, remove } = useFieldArray({ control, name })
 
     return (
@@ -90,6 +92,7 @@ export function AccountingLinesTable({ control, name, isLoading }: AccountingLin
             addButtonText="Agregar Línea"
             footer={<TotalBalance control={control} name={name} />}
             isLoading={isLoading}
+            disabledAdd={disabled}
         >
             <TableBody>
                 {fields.map((field, index) => (
@@ -102,7 +105,7 @@ export function AccountingLinesTable({ control, name, isLoading }: AccountingLin
                                 render={({ field }) => (
                                     <FormItem className="space-y-0">
                                         <FormControl>
-                                            <AccountSelector value={field.value} onChange={field.onChange} className="w-full" />
+                                            <AccountSelector value={field.value} onChange={field.onChange} className="w-full" disabled={disabled} />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>

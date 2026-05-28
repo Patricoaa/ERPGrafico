@@ -65,7 +65,7 @@ import { ReconciliationIntelligence } from "./ReconciliationIntelligence"
 
 
 import { DataTable } from '@/components/shared'
-import { TransactionDrawerRouter } from "@/features/_shared/transaction-drawer"
+import { LazyDrawer } from "@/features/_shared/transaction-drawer"
 import { ColumnDef, RowSelectionState, PaginationState, Updater } from "@tanstack/react-table"
 import { DataTableColumnHeader } from '@/components/shared'
 import { createActionsColumn, DataCell } from '@/components/shared'
@@ -1438,7 +1438,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                 />
 
                 {selectedMovement && (
-                    <TransactionDrawerRouter
+                    <LazyDrawer
                         type={selectedMovement.type}
                         id={Number(selectedMovement.id)}
                         open={detailsOpen}

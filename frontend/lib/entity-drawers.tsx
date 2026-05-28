@@ -219,7 +219,7 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
 
     // ── Treasury ──────────────────────────────────────────────────────────────
     "treasury.treasuryaccount": ({ id, open, onOpenChange }) => (
-        <TreasuryAccountDrawer open={open} onOpenChange={onOpenChange} accountId={id} />
+        <TreasuryAccountDrawer mode="view" open={open} onOpenChange={onOpenChange} accountId={id} />
     ),
 
     // ── Production ────────────────────────────────────────────────────────────
@@ -235,6 +235,7 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
     // * requires full entry data (lines, items) — EntityBadge always provides it
     "accounting.journalentry": ({ open, onOpenChange, data, onSuccess }) => (
         <JournalEntryDrawer
+            mode={data ? 'view' : 'create'}
             open={open}
             onOpenChange={onOpenChange}
             initialData={data}
@@ -246,6 +247,7 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
     // * requires full product data — EntityBadge always provides it
     "inventory.product": ({ open, onOpenChange, data, onSuccess }) => (
         <ProductDrawer
+            mode={data ? 'view' : 'create'}
             open={open}
             onOpenChange={onOpenChange}
             initialData={data}
@@ -264,6 +266,7 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
     // * requires full warehouse data — EntityBadge always provides it
     "inventory.warehouse": ({ open, onOpenChange, data, onSuccess }) => (
         <WarehouseDrawer
+            mode={data ? 'view' : 'create'}
             open={open}
             onOpenChange={onOpenChange}
             initialData={data}
@@ -273,6 +276,7 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
     // * requires full UoM data — EntityBadge always provides it
     "inventory.uom": ({ open, onOpenChange, data, onSuccess }) => (
         <UoMDrawer
+            mode={data ? 'view' : 'create'}
             open={open}
             onOpenChange={onOpenChange}
             initialData={data}
@@ -282,6 +286,7 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
     // * requires full pricing rule data — EntityBadge always provides it
     "inventory.pricingrule": ({ open, onOpenChange, data, onSuccess }) => (
         <PricingRuleDrawer
+            mode={data ? 'view' : 'create'}
             open={open}
             onOpenChange={onOpenChange}
             initialData={data}
@@ -312,6 +317,7 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
     // * requires full account data — EntityBadge always provides it
     "accounting.account": ({ open, onOpenChange, data, onSuccess }) => (
         <AccountDrawer
+            mode={data ? 'view' : 'create'}
             open={open}
             onOpenChange={onOpenChange}
             initialData={data}
@@ -323,6 +329,7 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
     // * requires full user data — EntityBadge always provides it
     "core.user": ({ open, onOpenChange, data, onSuccess }) => (
         <UserDrawer
+            mode={data ? 'view' : 'create'}
             open={open}
             onOpenChange={onOpenChange}
             initialData={data}
@@ -342,6 +349,7 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
     ),
     "treasury.terminalprovider": ({ open, onOpenChange, data, onSuccess }) => (
         <ProviderDrawer
+            mode={data ? 'view' : 'create'}
             open={open}
             onOpenChange={onOpenChange}
             provider={data ?? null}
@@ -362,6 +370,7 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
     // * requires full absence data — EntityBadge always provides it
     "hr.absence": ({ open, onOpenChange, data, onSuccess }) => (
         <AbsenceDrawer
+            mode={data ? 'view' : 'create'}
             open={open}
             onOpenChange={onOpenChange}
             absence={data ?? null}
@@ -371,6 +380,7 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
     // * requires full advance data — EntityBadge always provides it
     "hr.salaryadvance": ({ open, onOpenChange, data, onSuccess }) => (
         <AdvanceDrawer
+            mode={data ? 'view' : 'create'}
             open={open}
             onOpenChange={onOpenChange}
             advance={data ?? null}
@@ -382,6 +392,7 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
     // * requires full device data — EntityBadge always provides it
     "treasury.terminaldevice": ({ open, onOpenChange, data, onSuccess }) => (
         <DeviceDrawer
+            mode={data ? 'view' : 'create'}
             open={open}
             onOpenChange={onOpenChange}
             device={data ?? null}
@@ -393,6 +404,7 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
     // * requires full bank journal data — EntityBadge always provides it
     "finance.bankjournal": ({ open, onOpenChange, data, onSuccess }) => (
         <BankJournalDrawer
+            mode={data ? 'view' : 'create'}
             open={open}
             onOpenChange={onOpenChange}
             initialData={data}
@@ -402,6 +414,7 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
     // * requires full payment data — EntityBadge always provides it
     "finance.payment": ({ open, onOpenChange, data, onSuccess }) => (
         <PaymentDrawer
+            mode={data ? 'view' : 'create'}
             open={open}
             onOpenChange={onOpenChange}
             initialData={data}
@@ -413,6 +426,7 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
     // * requires full group data — EntityBadge always provides it
     "users.group": ({ open, onOpenChange, data, onSuccess }) => (
         <GroupDrawer
+            mode={data ? 'view' : 'create'}
             open={open}
             onOpenChange={onOpenChange}
             initialData={data}

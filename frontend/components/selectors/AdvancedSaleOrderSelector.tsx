@@ -13,7 +13,7 @@ import {
 import api from "@/lib/api"
 import { useDebounce } from "@/hooks/useDebounce"
 import { format } from "date-fns"
-import { TransactionDrawerRouter } from "@/features/_shared/transaction-drawer"
+import { SaleOrderDrawer } from "@/features/sales/components/SaleOrderDrawer"
 import { Badge } from "@/components/ui/badge"
 import { useSaleOrderSearch } from "@/features/orders/hooks/useSaleOrderSearch"
 import { EmptyState } from "@/components/shared/EmptyState"
@@ -235,8 +235,7 @@ export function AdvancedSaleOrderSelector({
             )}
 
             {previewId && (
-                <TransactionDrawerRouter
-                    type="sale_order"
+                <SaleOrderDrawer
                     id={previewId}
                     open={previewOpen}
                     onOpenChange={setPreviewOpen}

@@ -6,6 +6,7 @@ export interface SearchResult {
     title_plural: string
     icon: string
     id: number
+    content_type_id: number
     display: string
     subtitle?: string
     extra_info?: string

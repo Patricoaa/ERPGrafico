@@ -3,7 +3,7 @@
 import React, { useRef } from "react"
 import { Drawer, SkeletonShell, StatusBadge } from "@/components/shared"
 import { Button } from "@/components/ui/button"
-import { Printer, X, PackageCheck } from "lucide-react"
+import { Printer, PackageCheck } from "lucide-react"
 import { useReactToPrint } from "react-to-print"
 import { formatCurrency } from "@/lib/money"
 import { formatPlainDate } from "@/lib/utils"
@@ -68,19 +68,10 @@ export function PurchaseReceiptDrawer({ receiptId, open, onOpenChange }: Purchas
                 side="left"
                 boundary="embedded"
                 defaultSize="50%"
-                title={receipt ? `Recepción ${(receipt as any).number}` : "Recepción de Compra"}
+                title={<><span>{receipt ? `Recepción ${(receipt as any).number}` : "Recepción de Compra"}</span><Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button></>}
                 subtitle={(receipt as any)?.supplier_name}
                 icon={PackageCheck}
-                headerActions={
-                    <div className="flex items-center gap-2">
-                        <Button variant="ghost" size="icon" onClick={() => handlePrint()}>
-                            <Printer className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)}>
-                            <X className="h-4 w-4" />
-                        </Button>
-                    </div>
-                }
+
             >
                 {isLoading ? (
                     <SkeletonShell isLoading={true} ariaLabel="Cargando recepción" />

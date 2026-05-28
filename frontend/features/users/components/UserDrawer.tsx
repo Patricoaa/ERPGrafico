@@ -11,11 +11,14 @@ import { toast } from "sonner"
 import { usersApi } from "../api/usersApi"
 import { Button } from "@/components/ui/button"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { Plus, User, ShieldCheck, ShieldAlert } from "lucide-react"
+import { Plus, User, ShieldCheck, ShieldAlert, Printer } from "lucide-react"
 import { Drawer, CancelButton, ActionSlideButton, LabeledSeparator, LabeledInput, LabeledContainer, FormSection, FormTabs, FormTabsContent, type FormTabItem, FormSplitLayout, FormFooter, LabeledSelect, LabeledSwitch, EntityHeader, SkeletonShell } from "@/components/shared"
 import { Checkbox } from "@/components/ui/checkbox"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { AppGroup } from "@/types/entities"
+import { useReactToPrint } from "react-to-print"
+import { PrintableLayout } from "@/features/_shared/transaction-drawer"
+import type { DrawerMode } from "@/features/_shared/drawer/types"
 import { cn } from "@/lib/utils"
 import { formDrawerWidth } from "@/lib/form-widths"
 
@@ -37,9 +40,10 @@ interface UserDrawerProps {
     trigger?: React.ReactNode
     open?: boolean
     onOpenChange?: (open: boolean) => void
+    mode?: DrawerMode
 }
 
-export function UserDrawer({ auditSidebar, initialData, onSuccess, trigger, open: controlledOpen, onOpenChange: setControlledOpen }: UserDrawerProps) {
+export function UserDrawer({ auditSidebar, initialData, onSuccess, trigger, open: controlledOpen, onOpenChange: setControlledOpen, mode: modeProp }: UserDrawerProps) {
     const [internalOpen, setInternalOpen] = useState(false)
     const isControlled = controlledOpen !== undefined
     const open = isControlled ? controlledOpen : internalOpen
@@ -49,6 +53,10 @@ export function UserDrawer({ auditSidebar, initialData, onSuccess, trigger, open
     const [availableRoles, setAvailableRoles] = useState<[string, string][]>([])
     const [availableGroups, setAvailableGroups] = useState<AppGroup[]>([])
     const [activeTab, setActiveTab] = useState("general")
+    const mode: DrawerMode = modeProp ?? (initialData ? 'edit' : 'create')
+    const isView = mode === 'view'
+    const printRef = useRef<HTMLDivElement>(null)
+    const handlePrint = useReactToPrint({ contentRef: printRef })
 
     // Helper to parse groups from initialData
     const parsedInitialValues = useMemo(() => {
@@ -206,6 +214,12 @@ export function UserDrawer({ auditSidebar, initialData, onSuccess, trigger, open
         />
     )
 
+    const drawerTitle = isView
+        ? `Ficha de Usuario${initialData?.id ? ` #${initialData.id}` : ""}`
+        : mode === 'create'
+            ? "Nuevo Usuario"
+            : "Editar Usuario"
+
     return (
         <>
             {trigger ? (
@@ -227,16 +241,27 @@ export function UserDrawer({ auditSidebar, initialData, onSuccess, trigger, open
                 </Button>
             )}
 
+            {(mode === 'view' || mode === 'edit') && initialData?.id && (
+                <PrintableLayout ref={printRef} title="Ficha de Usuario" displayId={`#${initialData.id}`}>
+                    <div className="text-[9px] space-y-1 mb-2">
+                        <div className="flex justify-between">
+                            <span>Usuario:</span>
+                            <span>{initialData?.username ?? '-'}</span>
+                        </div>
+                    </div>
+                </PrintableLayout>
+            )}
+
             <Drawer
                 open={open}
                 onOpenChange={setOpen}
                 headerClassName="sr-only"
-                title="Ficha de Usuario"
+                title={<><span>{drawerTitle}</span>{(mode === 'view' || mode === 'edit') && initialData?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}</>}
                 subtitle="Gestión de cuentas, roles y permisos de acceso."
                 defaultSize={width}
                 contentClassName="p-0"
                 side="left"
-                footer={
+                footer={isView ? undefined : (
                     <FormFooter
                         actions={
                             <>
@@ -247,11 +272,12 @@ export function UserDrawer({ auditSidebar, initialData, onSuccess, trigger, open
                             </>
                         }
                     />
-                }
+                )}
             >
                 <SkeletonShell isLoading={isFetchingInitialData} ariaLabel="Cargando formulario de usuario" className="flex-1 flex flex-col">
                     <Form {...form}>
                         <form id="user-form" onSubmit={form.handleSubmit(onSubmit)} className="h-full flex flex-col">
+                            <fieldset disabled={isView} className="contents">
                             <FormTabs
                                 items={tabItems}
                                 value={activeTab}
@@ -410,6 +436,7 @@ export function UserDrawer({ auditSidebar, initialData, onSuccess, trigger, open
                                     </FormTabsContent>
                                 </fieldset>
                             </FormTabs>
+                            </fieldset>
                         </form>
                     </Form>
                 </SkeletonShell>

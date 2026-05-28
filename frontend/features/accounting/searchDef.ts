@@ -93,6 +93,9 @@ export const journalEntrySearchDef: SearchDefinition = {
       options: [
         { label: 'Borrador', value: 'DRAFT' },
         { label: 'Publicado', value: 'POSTED' },
+        { label: 'Cerrado', value: 'CLOSED' },
+        { label: 'Reversión', value: 'REVERSAL' },
+        { label: 'Anulado', value: 'CANCELLED' },
       ],
     },
     {

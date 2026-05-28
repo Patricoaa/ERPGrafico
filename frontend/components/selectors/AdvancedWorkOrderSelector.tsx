@@ -13,7 +13,7 @@ import {
 import api from "@/lib/api"
 import { useDebounce } from "@/hooks/useDebounce"
 import { format } from "date-fns"
-import { TransactionDrawerRouter } from "@/features/_shared/transaction-drawer"
+import { WorkOrderWizard } from "@/features/production"
 import { useWorkOrderSearch } from "@/features/production/hooks/useWorkOrderSearch"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { WorkOrder } from "@/types/entities"
@@ -229,9 +229,8 @@ export function AdvancedWorkOrderSelector({
             )}
 
             {previewId && (
-                <TransactionDrawerRouter
-                    type="work_order"
-                    id={previewId}
+                <WorkOrderWizard
+                    mode={{ kind: 'manage', orderId: previewId }}
                     open={previewOpen}
                     onOpenChange={setPreviewOpen}
                 />

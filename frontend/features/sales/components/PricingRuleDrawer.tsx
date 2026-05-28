@@ -13,12 +13,16 @@ import { cn } from "@/lib/utils"
 import { useUoMs } from "@/features/inventory/hooks/useUoMs"
 import { usePricingRuleMutations } from "@/features/inventory"
 import { toast } from "sonner"
-import { Tags, Layers, Zap, DollarSign, Calendar } from "lucide-react"
+import { Tags, Layers, Zap, DollarSign, Calendar, Printer } from "lucide-react"
 import { PricingUtils } from '@/features/inventory/utils/pricing'
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { UoMSelector } from "@/components/selectors/UoMSelector"
 import { Drawer, CancelButton, LabeledInput, LabeledSelect, LabeledSwitch, LabeledContainer, PeriodValidationDateInput, FormSection, FormFooter, FormSplitLayout, SkeletonShell, ActionSlideButton } from "@/components/shared"
+import { Button } from "@/components/ui/button"
 import { formDrawerWidth } from "@/lib/form-widths"
+import { useReactToPrint } from "react-to-print"
+import { PrintableLayout } from "@/features/_shared/transaction-drawer"
+import type { DrawerMode } from "@/features/_shared/drawer/types"
 
 const formSchema = z.object({
     name: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
@@ -57,13 +61,19 @@ interface PricingRuleDrawerProps {
     onOpenChange: (open: boolean) => void
     productId?: number
     productName?: string
+    mode?: DrawerMode
 }
 
-export function PricingRuleDrawer({ auditSidebar, initialData, onSuccess, open, onOpenChange, productId, productName }: PricingRuleDrawerProps) {
+export function PricingRuleDrawer({ auditSidebar, initialData, onSuccess, open, onOpenChange, productId, productName, mode: modeProp }: PricingRuleDrawerProps) {
     const { uoms, isUoMsLoading } = useUoMs()
     const { savePricingRule } = usePricingRuleMutations()
     const isFetchingInitialData = open && isUoMsLoading
     const [selectedProductObj, setSelectedProductObj] = useState<any>(null)
+
+    const mode: DrawerMode = modeProp ?? (initialData ? 'edit' : 'create')
+    const isView = mode === 'view'
+    const printRef = useRef<HTMLDivElement>(null)
+    const handlePrint = useReactToPrint({ contentRef: printRef })
 
     const form = useForm<FormValues>({
         resolver: zodResolver(formSchema),
@@ -413,43 +423,63 @@ export function PricingRuleDrawer({ auditSidebar, initialData, onSuccess, open, 
         </div>
     )
 
+    const drawerTitle = isView
+        ? `Ficha de Regla de Precio${initialData?.id ? ` #${initialData.id}` : ""}`
+        : mode === 'create'
+            ? "Nueva Regla de Precio"
+            : "Editar Regla de Precio"
+
     return (
-        <Drawer
-            open={open}
-            onOpenChange={onOpenChange}
-            side="left"
-            defaultSize={formDrawerWidth("complex", !!initialData)}
-            contentClassName="p-0"
-            title={
-                <div className="flex items-center gap-3">
-                    <Tags className="h-5 w-5 text-muted-foreground" />
-                    <span>{initialData ? "Ficha de Regla de Precio" : "Nueva Regla de Precio"}</span>
-                </div>
-            }
-            subtitle={
-                <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                    {initialData?.rule_type && (
-                        <>
-                            <span>{initialData.rule_type === "FIXED" ? "Monto Fijo" : initialData.rule_type === "PACKAGE_FIXED" ? "Paquete Fijo" : "Descuento"}</span>
-                            <span className="opacity-30">|</span>
-                        </>
-                    )}
-                    <span>{form.watch("name") || "Configuración de regla activa"}</span>
-                </div>
-            }
-            footer={
-                <FormFooter
-                    actions={
-                        <>
-                            <CancelButton onClick={() => onOpenChange(false)} />
-                            <ActionSlideButton type="submit" form="pricing-rule-form">
-                                {initialData ? "Actualizar" : "Crear"} Regla
-                            </ActionSlideButton>
-                        </>
-                    }
-                />
-            }
-        >
+        <>
+            {(mode === 'view' || mode === 'edit') && initialData?.id && (
+                <PrintableLayout
+                    ref={printRef}
+                    title="Pricing Rule"
+                    displayId={`#${initialData.id}`}
+                >
+                    <div className="text-[9px] space-y-1 mb-2">
+                        <div className="flex justify-between">
+                            <span>Nombre:</span>
+                            <span>{initialData?.name ?? '-'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span>Tipo:</span>
+                            <span>{initialData?.rule_type ?? '-'}</span>
+                        </div>
+                    </div>
+                </PrintableLayout>
+            )}
+            <Drawer
+                open={open}
+                onOpenChange={onOpenChange}
+                side="left"
+                defaultSize={formDrawerWidth("complex", !!initialData)}
+                contentClassName="p-0"
+                title={<><span>{drawerTitle}</span>{(mode === 'view' || mode === 'edit') && initialData?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}</>}
+                subtitle={
+                    <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                        {initialData?.rule_type && (
+                            <>
+                                <span>{initialData.rule_type === "FIXED" ? "Monto Fijo" : initialData.rule_type === "PACKAGE_FIXED" ? "Paquete Fijo" : "Descuento"}</span>
+                                <span className="opacity-30">|</span>
+                            </>
+                        )}
+                        <span>{form.watch("name") || "Configuración de regla activa"}</span>
+                    </div>
+                }
+                footer={isView ? undefined : (
+                    <FormFooter
+                        actions={
+                            <>
+                                <CancelButton onClick={() => onOpenChange(false)} />
+                                <ActionSlideButton type="submit" form="pricing-rule-form">
+                                    {mode === 'create' ? "Crear Regla" : "Guardar Cambios"}
+                                </ActionSlideButton>
+                            </>
+                        }
+                    />
+                )}
+            >
             <FormSplitLayout
                 showSidebar={!!initialData?.id}
                 sidebar={auditSidebar}
@@ -458,6 +488,7 @@ export function PricingRuleDrawer({ auditSidebar, initialData, onSuccess, open, 
                 <SkeletonShell isLoading={isFetchingInitialData} ariaLabel="Cargando formulario de regla de precio" className="flex-1 flex flex-col">
                     <Form {...form}>
                         <form id="pricing-rule-form" onSubmit={form.handleSubmit(onSubmit)} className="h-full flex flex-col">
+                            <fieldset disabled={isView} className="contents">
                             <div className="space-y-6">
                                 {renderValidityTab()}
                                 {renderGeneralTab()}
@@ -466,10 +497,12 @@ export function PricingRuleDrawer({ auditSidebar, initialData, onSuccess, open, 
 
 
                             </div>
+                            </fieldset>
                         </form>
                     </Form>
                 </SkeletonShell>
             </FormSplitLayout>
         </Drawer>
+        </>
     )
 }

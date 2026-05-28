@@ -1,7 +1,7 @@
 "use client"
 
 import { showApiError } from "@/lib/errors"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -9,11 +9,15 @@ import {
     Form,
     FormField,
 } from "@/components/ui/form"
+import { Button } from "@/components/ui/button"
 import { financeApi } from "../../api/financeApi"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
-import { WalletCards } from "lucide-react"
+import { WalletCards, Printer } from "lucide-react"
 import { Drawer, LabeledInput, LabeledSelect, FormFooter, CancelButton, ActionSlideButton } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
+import { useReactToPrint } from "react-to-print"
+import { PrintableLayout } from "@/features/_shared/transaction-drawer"
+import type { DrawerMode } from "@/features/_shared/drawer/types"
 
 const journalSchema = z.object({
     name: z.string().min(1, "El nombre es requerido"),
@@ -30,14 +34,21 @@ interface BankJournalDrawerProps {
     initialData?: Record<string, unknown> | null
     open?: boolean
     onOpenChange?: (open: boolean) => void
+    mode?: DrawerMode
 }
 
-export function BankJournalDrawer({ auditSidebar, onSuccess, initialData, open: openProp, onOpenChange }: BankJournalDrawerProps) {
+export function BankJournalDrawer({ auditSidebar, onSuccess, initialData, open: openProp, onOpenChange, mode: modeProp }: BankJournalDrawerProps) {
     const [openState, setOpenState] = useState(false)
     const open = openProp !== undefined ? openProp : openState
     const setOpen = onOpenChange || setOpenState
 
+    const mode: DrawerMode = modeProp ?? (initialData ? 'edit' : 'create')
+    const isView = mode === 'view'
+    const printRef = useRef<HTMLDivElement>(null)
+    const handlePrint = useReactToPrint({ contentRef: printRef })
+
     const [loading, setLoading] = useState(false)
+    const width = formDrawerWidth("simple", !!initialData)
 
     const form = useForm<JournalFormValues>({
         resolver: zodResolver(journalSchema),
@@ -90,32 +101,59 @@ export function BankJournalDrawer({ auditSidebar, onSuccess, initialData, open: 
         }
     }
 
+    const drawerTitle = isView
+        ? `Ficha de Caja/Banco${(initialData as any)?.id ? ` #${(initialData as any).id}` : ""}`
+        : mode === 'create'
+            ? "Crear Caja o Banco"
+            : "Editar Caja/Banco"
+
     return (
-        <Drawer
-            open={open}
-            onOpenChange={setOpen}
-            side="left"
-            defaultSize={formDrawerWidth("medium", !!initialData)}
-            icon={WalletCards}
-            title={initialData ? "Ficha de Caja/Banco" : "Crear Caja o Banco"}
-            subtitle={initialData ? `${(initialData as any).code || ""} • ${form.watch("name") || ""}` : "Tesorería • Configuración de Caja o Banco"}
-            footer={
-                <FormFooter
-                    actions={
-                        <>
-                            <CancelButton onClick={() => setOpen(false)} />
-                            <ActionSlideButton type="submit" form="bank-journal-form" loading={loading}>
-                                {initialData ? "Guardar Cambios" : "Crear Caja/Banco"}
-                            </ActionSlideButton>
-                        </>
-                    }
-                />
-            }
-        >
+        <>
+            {(mode === 'view' || mode === 'edit') && (initialData as any)?.id && (
+                <PrintableLayout
+                    ref={printRef}
+                    title="BankJournal"
+                    displayId={`#${(initialData as any).id}`}
+                >
+                    <div className="text-[9px] space-y-1 mb-2">
+                        <div className="flex justify-between">
+                            <span>Nombre:</span>
+                            <span>{(initialData as any)?.name ?? '-'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span>Código:</span>
+                            <span>{(initialData as any)?.code ?? '-'}</span>
+                        </div>
+                    </div>
+                </PrintableLayout>
+            )}
+            <Drawer
+                open={open}
+                onOpenChange={setOpen}
+                side="left"
+                defaultSize={width}
+                contentClassName="p-0"
+                icon={WalletCards}
+                title={<><span>{drawerTitle}</span>{(mode === 'view' || mode === 'edit') && (initialData as any)?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}</>}
+                subtitle={initialData ? `${(initialData as any).code || ""} • ${form.watch("name") || ""}` : "Tesorería • Configuración de Caja o Banco"}
+                footer={isView ? undefined : (
+                    <FormFooter
+                        actions={
+                            <>
+                                <CancelButton onClick={() => setOpen(false)} />
+                                <ActionSlideButton type="submit" form="bank-journal-form" loading={loading}>
+                                    {mode === 'create' ? "Crear Caja/Banco" : "Guardar Cambios"}
+                                </ActionSlideButton>
+                            </>
+                        }
+                    />
+                )}
+            >
             <div className="flex-1 flex overflow-hidden min-h-[400px]">
                 <div className="flex-1 flex flex-col overflow-y-auto pt-4 scrollbar-thin">
                     <Form {...form}>
                         <form id="bank-journal-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pr-4 pl-1 pb-4">
+                            <fieldset disabled={isView} className="contents">
                             <FormField
                                 control={form.control}
                                 name="name"
@@ -173,6 +211,7 @@ export function BankJournalDrawer({ auditSidebar, onSuccess, initialData, open: 
                                     />
                                 )}
                             />
+                        </fieldset>
                         </form>
                     </Form>
                 </div>
@@ -184,5 +223,6 @@ export function BankJournalDrawer({ auditSidebar, onSuccess, initialData, open: 
                 )}
             </div>
         </Drawer>
+        </>
     )
 }

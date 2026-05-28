@@ -169,8 +169,12 @@ export interface JournalEntryInitialData {
     id?: number
     date: string | Date
     description: string
-    reference?: string
     items: JournalEntryItem[]
+    is_manual?: boolean
+    source_document?: {
+        content_type_id: number
+        object_id: number
+    }
 }
 
 // ─── Account Form ────────────────────────────────────────

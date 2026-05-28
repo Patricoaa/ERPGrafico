@@ -12,7 +12,7 @@ import api from "@/lib/api"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { toast } from "sonner"
-import { TransactionDrawerRouter } from "@/features/_shared/transaction-drawer"
+import { LazyDrawer } from "@/features/_shared/transaction-drawer"
 import { PaymentModal } from "@/features/treasury"
 import { ReceiptModal, PurchaseNoteModal } from "@/features/purchasing"
 import { DocumentCompletionModal } from "@/components/shared/DocumentCompletionModal"
@@ -417,8 +417,8 @@ export default function PurchaseInvoicesPage() {
 
             {
                 viewingTransaction && (
-                    <TransactionDrawerRouter
-                        type={viewingTransaction.type as any}
+                    <LazyDrawer
+                        type={viewingTransaction.type}
                         id={Number(viewingTransaction.id)}
                         open={!!viewingTransaction}
                         onOpenChange={(open: boolean) => !open && closeTransaction()}

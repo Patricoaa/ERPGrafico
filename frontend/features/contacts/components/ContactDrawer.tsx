@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useMemo } from "react"
+import { useEffect, useState, useMemo, useRef } from "react"
 import { useFormWithToast } from "@/hooks/useFormWithToast"
 import * as z from "zod"
 import { Drawer } from "@/components/shared"
@@ -14,6 +14,7 @@ import {
     FormLabel,
 
 } from "@/components/ui/form"
+import { Button } from "@/components/ui/button"
 import { ActionSlideButton, CancelButton } from "@/components/shared"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
@@ -26,7 +27,10 @@ import { useDefaultCustomer, useDefaultVendor } from "../hooks/useContactDefault
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { ActivitySidebar } from "@/features/audit/components"
 import { StatusBadge } from "@/components/shared/StatusBadge"
-import { ShoppingCart, Package, Wand2, User, Banknote, Scale, Truck, Receipt, ClipboardList, LayoutDashboard, Calendar, ArrowRight, Mail, MapPin } from "lucide-react"
+import { ShoppingCart, Package, Wand2, User, Banknote, Scale, Truck, Receipt, ClipboardList, LayoutDashboard, Calendar, ArrowRight, Mail, MapPin, Printer } from "lucide-react"
+import { useReactToPrint } from "react-to-print"
+import { PrintableLayout } from "@/features/_shared/transaction-drawer"
+import type { DrawerMode } from "@/features/_shared/drawer/types"
 import { createDomainCardView } from "@/lib/view-helpers"
 import { DataCell, createActionsColumn, EmptyState, Chip } from '@/components/shared'
 import { Separator } from "@/components/ui/separator"
@@ -57,12 +61,18 @@ interface ContactDrawerProps {
     onOpenChange: (open: boolean) => void
     contact?: Contact | null
     onSuccess: (contact?: Contact) => void
+    mode?: DrawerMode
 }
 
-export default function ContactDrawer({ open, onOpenChange, contact, onSuccess }: ContactDrawerProps) {
+export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, mode: modeProp }: ContactDrawerProps) {
     const [confirmReplacement, setConfirmReplacement] = useState<{ type: 'customer' | 'vendor' | null, name: string }>({ type: null, name: "" })
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false)
     const [pendingValues, setPendingValues] = useState<z.infer<typeof contactSchema> | null>(null)
+
+    const mode: DrawerMode = modeProp ?? (contact ? 'edit' : 'create')
+    const isView = mode === 'view'
+    const printRef = useRef<HTMLDivElement>(null)
+    const handlePrint = useReactToPrint({ contentRef: printRef })
 
     const [activeTab, setActiveTab] = useState("profile")
     const c = contact
@@ -230,34 +240,64 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess }
         },
     ]
 
+    const drawerTitle = isView
+        ? `Ficha de Contacto${contact?.id ? ` #${contact.id}` : ""}`
+        : mode === 'create'
+            ? "Nuevo Contacto"
+            : "Editar Contacto"
+
     return (
-        <Drawer
-            open={open}
-            onOpenChange={onOpenChange}
-            icon={User}
-            title={c ? "Editar Contacto" : "Nuevo Contacto"}
-            subtitle="Ficha Maestra • CRM & Finanzas"
-            defaultSize={formDrawerWidth("master", !!c)}
-            className="h-[90vh]"
-            contentClassName="p-0"
-            side="left"
-            footer={
-                <FormFooter
-                    actions={
-                        <>
-                            <CancelButton onClick={() => onOpenChange(false)} disabled={form.formState.isSubmitting} />
-                            <ActionSlideButton type="submit" form="contact-form" loading={form.formState.isSubmitting}>
-                                {c ? "Guardar Cambios" : "Crear Contacto"}
-                            </ActionSlideButton>
-                        </>
-                    }
-                />
-            }
-        >
+        <>
+            {contact?.id && (mode === 'view' || mode === 'edit') && (
+                <PrintableLayout
+                    ref={printRef}
+                    title="Contact"
+                    displayId={`#${contact.id}`}
+                >
+                    <div className="text-[9px] space-y-1 mb-2">
+                        <div className="flex justify-between">
+                            <span>Nombre:</span>
+                            <span>{contact?.name ?? '-'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span>RUT:</span>
+                            <span>{contact?.tax_id ?? '-'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span>Email:</span>
+                            <span>{contact?.email ?? '-'}</span>
+                        </div>
+                    </div>
+                </PrintableLayout>
+            )}
+            <Drawer
+                open={open}
+                onOpenChange={onOpenChange}
+                icon={User}
+                title={<><span>{drawerTitle}</span>{contact?.id && (mode === 'view' || mode === 'edit') && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}</>}
+                subtitle="Ficha Maestra • CRM & Finanzas"
+                defaultSize={formDrawerWidth("master", !!c)}
+                className="h-[90vh]"
+                contentClassName="p-0"
+                side="left"
+                footer={isView ? undefined : (
+                    <FormFooter
+                        actions={
+                            <>
+                                <CancelButton onClick={() => onOpenChange(false)} disabled={form.formState.isSubmitting} />
+                                <ActionSlideButton type="submit" form="contact-form" loading={form.formState.isSubmitting}>
+                                    {mode === 'create' ? "Crear Contacto" : "Guardar Cambios"}
+                                </ActionSlideButton>
+                            </>
+                        }
+                    />
+                )}
+            >
             <SkeletonShell isLoading={isFetchingInitialData} ariaLabel="Cargando ficha de contacto" className="flex-1 flex flex-col h-full">
                 <Form {...form}>
 
                     <form id="contact-form" onSubmit={form.handleSubmit(onSubmit)} className="flex-1 w-full h-full flex flex-col min-h-0 overflow-visible">
+                        <fieldset disabled={isView} className="contents">
                         <FormSplitLayout
                             showSidebar={!!contact?.id}
                             sidebar={contact?.id ? (
@@ -557,6 +597,7 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess }
                                 </FormTabsContent>
                             </FormTabs>
                         </FormSplitLayout>
+                    </fieldset>
                     </form>
                 </Form>
             </SkeletonShell>
@@ -583,6 +624,7 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess }
                 }
             />
         </Drawer>
+        </>
     )
 }
 

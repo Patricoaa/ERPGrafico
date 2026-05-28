@@ -3,7 +3,7 @@
 import React, { useRef } from 'react'
 import { Drawer, StatusBadge, SkeletonShell } from '@/components/shared'
 import { Button } from '@/components/ui/button'
-import { Printer, X, ChartPie } from 'lucide-react'
+import { Printer, ChartPie } from 'lucide-react'
 import { useReactToPrint } from 'react-to-print'
 import { formatCurrency } from '@/lib/money'
 import { formatPlainDate } from '@/lib/utils'
@@ -59,19 +59,10 @@ export function ProfitDistributionDrawer({ id, open, onOpenChange, distributionI
         side="left"
         defaultSize="55%"
         icon={ChartPie}
-        title={displayId}
+        title={<><span>{displayId}</span><Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button></>}
         subtitle={isProfit ? 'Utilidad' : 'Pérdida'}
         description={`Ejercicio ${distribution?.fiscal_year ?? ''} · ${formatPlainDate(distribution?.resolution_date)}`}
-        headerActions={
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" onClick={() => handlePrint()}>
-              <Printer className="h-4 w-4" />
-            </Button>
-                        <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)}>
-                            <X className="h-4 w-4" />
-                        </Button>
-          </div>
-        }
+
       >
         <SkeletonShell isLoading={isLoading} ariaLabel="Cargando distribución">
           {distribution && (

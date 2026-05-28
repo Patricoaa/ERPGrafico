@@ -3,7 +3,7 @@
 import React, { useRef } from 'react'
 import { Drawer, StatusBadge, SkeletonShell } from '@/components/shared'
 import { Button } from '@/components/ui/button'
-import { Printer, X, Layers } from 'lucide-react'
+import { Printer, Layers } from 'lucide-react'
 import { useReactToPrint } from 'react-to-print'
 import { formatCurrency } from '@/lib/money'
 import { formatPlainDate } from '@/lib/utils'
@@ -52,19 +52,10 @@ export function TerminalBatchDrawer({ id, open, onOpenChange, batchId }: Termina
         side="left"
         defaultSize="50%"
         icon={Layers}
-        title={displayId}
+        title={<><span>{displayId}</span><Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button></>}
         subtitle="Lote de Liquidación"
         description={batch?.provider_name ?? batch?.payment_method ?? ''}
-        headerActions={
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" onClick={() => handlePrint()}>
-              <Printer className="h-4 w-4" />
-            </Button>
-                        <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)}>
-                            <X className="h-4 w-4" />
-                        </Button>
-          </div>
-        }
+
       >
         <SkeletonShell isLoading={isLoading} ariaLabel="Cargando lote de terminal">
           {batch && (

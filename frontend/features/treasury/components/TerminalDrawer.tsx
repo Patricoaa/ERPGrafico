@@ -1,19 +1,23 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { toast } from "sonner"
-import { MonitorSmartphone, Banknote, CreditCard, Landmark, Smartphone } from "lucide-react"
+import { MonitorSmartphone, Banknote, CreditCard, Landmark, Smartphone, Printer } from "lucide-react"
 import { usePaymentMethods, useTerminalDevices, type Terminal } from "@/features/treasury"
 import { treasuryApi } from "../api/treasuryApi"
 import { cn } from "@/lib/utils"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Button } from "@/components/ui/button"
 import { Form, FormField } from "@/components/ui/form"
 import { Drawer, CancelButton, LabeledInput, LabeledSelect, FormSection, FormFooter, FormSplitLayout, ActionSlideButton } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { ActivitySidebar } from "@/features/audit/components"
+import { useReactToPrint } from "react-to-print"
+import { PrintableLayout } from "@/features/_shared/transaction-drawer"
+import type { DrawerMode } from "@/features/_shared/drawer/types"
 
 const terminalSchema = z.object({
     name: z.string().min(1, "El nombre es requerido"),
@@ -31,9 +35,15 @@ interface TerminalDrawerProps {
     onOpenChange: (open: boolean) => void
     terminal?: Terminal | null
     onSuccess?: () => void
+    mode?: DrawerMode
 }
 
-export function TerminalDrawer({ open, onOpenChange, terminal, onSuccess }: TerminalDrawerProps) {
+export function TerminalDrawer({ open, onOpenChange, terminal, onSuccess, mode: modeProp }: TerminalDrawerProps) {
+    const mode: DrawerMode = modeProp ?? (terminal ? 'edit' : 'create')
+    const isView = mode === 'view'
+    const printRef = useRef<HTMLDivElement>(null)
+    const handlePrint = useReactToPrint({ contentRef: printRef })
+
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [selectedMethodIds, setSelectedMethodIds] = useState<number[]>([])
 
@@ -86,6 +96,7 @@ export function TerminalDrawer({ open, onOpenChange, terminal, onSuccess }: Term
     }, [open, terminal, form])
 
     const toggleMethod = (methodId: number) => {
+        if (isView) return
         setSelectedMethodIds(prev => {
             const isSelected = prev.includes(methodId)
             if (isSelected) {
@@ -165,43 +176,77 @@ export function TerminalDrawer({ open, onOpenChange, terminal, onSuccess }: Term
         return acc
     }, {} as Record<string, any[]>)
 
+    const drawerTitle = isView
+        ? `Ficha de Caja POS${terminal?.id ? ` #${terminal.id}` : ""}`
+        : mode === 'create'
+            ? "Nueva Caja POS"
+            : "Editar Caja POS"
+
     return (
-        <Drawer
-            open={open}
-            onOpenChange={onOpenChange}
-            side="left"
-            defaultSize={formDrawerWidth("complex", !!terminal)}
-            contentClassName="p-0"
-            title={
-                <div className="flex items-center gap-3">
-                    <MonitorSmartphone className="h-5 w-5 text-muted-foreground" />
-                    <span>{terminal ? "Ficha de Caja POS" : "Nueva Caja POS"}</span>
-                </div>
-            }
-            subtitle={
-                <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                    {terminal?.code && (
-                        <>
-                            <span>{terminal.code}</span>
-                            <span className="opacity-30">|</span>
-                        </>
-                    )}
-                    <span>{terminal ? "Modifique la configuración de la caja POS y revise su historial." : "Configuración de la caja POS y asignación de métodos de pago."}</span>
-                </div>
-            }
-            footer={
-                <FormFooter
-                    actions={
-                        <>
-                            <CancelButton onClick={() => onOpenChange(false)} />
-                            <ActionSlideButton type="submit" form="terminal-form" loading={isSubmitting} disabled={isSubmitting}>
-                                {terminal ? "Guardar Cambios" : "Crear Caja POS"}
-                            </ActionSlideButton>
-                        </>
-                    }
-                />
-            }
-        >
+        <>
+            {terminal?.id && (mode === 'view' || mode === 'edit') && (
+                <PrintableLayout
+                    ref={printRef}
+                    title="Terminal"
+                    displayId={terminal.code ? `#${terminal.code}` : `#${terminal.id}`}
+                >
+                    <div className="text-[9px] space-y-1 mb-2">
+                        <div className="flex justify-between">
+                            <span>Nombre:</span>
+                            <span>{terminal?.name ?? '-'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span>Código:</span>
+                            <span>{terminal?.code ?? '-'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span>Ubicación:</span>
+                            <span>{terminal?.location ?? '-'}</span>
+                        </div>
+                    </div>
+                </PrintableLayout>
+            )}
+            <Drawer
+                open={open}
+                onOpenChange={onOpenChange}
+                side="left"
+                defaultSize={formDrawerWidth("complex", !!terminal)}
+                contentClassName="p-0"
+                title={
+                    <div className="flex items-center gap-3">
+                        <MonitorSmartphone className="h-5 w-5 text-muted-foreground" />
+                        <span>{drawerTitle}</span>
+                        {terminal?.id && (mode === 'view' || mode === 'edit') && (
+                            <Button variant="ghost" size="icon" onClick={() => handlePrint()}>
+                                <Printer className="h-4 w-4" />
+                            </Button>
+                        )}
+                    </div>
+                }
+                subtitle={
+                    <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                        {terminal?.code && (
+                            <>
+                                <span>{terminal.code}</span>
+                                <span className="opacity-30">|</span>
+                            </>
+                        )}
+                        <span>{terminal ? "Modifique la configuración de la caja POS y revise su historial." : "Configuración de la caja POS y asignación de métodos de pago."}</span>
+                    </div>
+                }
+                footer={isView ? undefined : (
+                    <FormFooter
+                        actions={
+                            <>
+                                <CancelButton onClick={() => onOpenChange(false)} />
+                                <ActionSlideButton type="submit" form="terminal-form" loading={isSubmitting} disabled={isSubmitting}>
+                                    {mode === 'create' ? "Crear Caja POS" : "Guardar Cambios"}
+                                </ActionSlideButton>
+                            </>
+                        }
+                    />
+                )}
+            >
             <FormSplitLayout
                 showSidebar={!!terminal?.id}
                 sidebar={terminal?.id ? (
@@ -215,6 +260,7 @@ export function TerminalDrawer({ open, onOpenChange, terminal, onSuccess }: Term
             >
                 <Form {...form}>
                     <form id="terminal-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-4 pb-4 pt-2">
+                        <fieldset disabled={isView} className="contents">
                         <div className="grid grid-cols-2 gap-4">
                             <FormField
                                 control={form.control}
@@ -314,16 +360,18 @@ export function TerminalDrawer({ open, onOpenChange, terminal, onSuccess }: Term
                                                         return (
                                                             <div
                                                                 key={method.id}
-                                                                onClick={() => toggleMethod(method.id)}
-                                                                className={cn(
-                                                                    "flex items-center space-x-3 p-3 rounded-md border transition-all cursor-pointer group",
-                                                                    isSelected
+                                                            onClick={() => toggleMethod(method.id)}
+                                                            className={cn(
+                                                                "flex items-center space-x-3 p-3 rounded-md border transition-all group",
+                                                                isView ? "cursor-default opacity-70" : "cursor-pointer",
+                                                                isSelected
                                                                         ? "bg-primary/5 border-primary/40 shadow-sm ring-1 ring-primary/20"
                                                                         : "bg-background hover:bg-muted/30 border-border/60 hover:border-border"
                                                                 )}
                                                             >
                                                                 <Checkbox
                                                                     checked={isSelected}
+                                                                    disabled={isView}
                                                                     onCheckedChange={() => toggleMethod(method.id)}
                                                                     className={isSelected ? "text-primary border-primary" : "border-muted-foreground/40 group-hover:border-primary/50"}
                                                                 />
@@ -348,10 +396,12 @@ export function TerminalDrawer({ open, onOpenChange, terminal, onSuccess }: Term
                                 </div>
                             </div>
                         </div>
+                    </fieldset>
                     </form>
                 </Form>
             </FormSplitLayout>
         </Drawer>
+        </>
     )
 }
 

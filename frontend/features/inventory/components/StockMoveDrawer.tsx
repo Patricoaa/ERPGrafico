@@ -1,14 +1,15 @@
 'use client'
 
 import React, { useRef } from 'react'
-import { Drawer, StatusBadge, SkeletonShell } from '@/components/shared'
+import { Drawer, StatusBadge, SkeletonShell, FormSplitLayout } from '@/components/shared'
 import { Button } from '@/components/ui/button'
-import { Printer, X, Package } from 'lucide-react'
+import { Printer, Package } from 'lucide-react'
 import { useReactToPrint } from 'react-to-print'
 import { formatCurrency } from '@/lib/money'
 import { formatPlainDate } from '@/lib/utils'
 import { PrintableLayout } from '@/features/_shared/transaction-drawer'
 import { useStockMove } from '@/features/inventory/hooks/useStockMoves'
+import { ActivitySidebar } from '@/features/audit/components'
 import type { TransactionDrawerProps } from '@/features/_shared/transaction-drawer'
 
 interface StockMoveDrawerProps extends TransactionDrawerProps {
@@ -56,21 +57,12 @@ export function StockMoveDrawer({ id, open, onOpenChange, stockMoveId }: StockMo
                 side="left"
                 defaultSize="50%"
                 icon={Package}
-                title={displayId}
+                title={<><span>{displayId}</span><Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button></>}
                 subtitle={move?.product_name}
                 description={`${move?.move_type ?? ''} · ${formatPlainDate(move?.date)}`}
-                headerActions={
-                    <div className="flex items-center gap-2">
-                        <Button variant="ghost" size="icon" onClick={() => handlePrint()}>
-                            <Printer className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)}>
-                            <X className="h-4 w-4" />
-                        </Button>
-                    </div>
-                }
             >
-                <SkeletonShell isLoading={isLoading} ariaLabel="Cargando movimiento de stock">
+                <FormSplitLayout sidebar={entityId ? <ActivitySidebar entityType="stock_move" entityId={entityId} /> : undefined} showSidebar={!!entityId}>
+                    <SkeletonShell isLoading={isLoading} ariaLabel="Cargando movimiento de stock">
                     {move && (
                         <div className="p-4 space-y-4">
                             <StatusBadge status={move.move_type} />
@@ -115,6 +107,7 @@ export function StockMoveDrawer({ id, open, onOpenChange, stockMoveId }: StockMo
                         </div>
                     )}
                 </SkeletonShell>
+                </FormSplitLayout>
             </Drawer>
         </>
     )

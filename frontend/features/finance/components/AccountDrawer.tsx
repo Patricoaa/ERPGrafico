@@ -1,10 +1,10 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { Plus, BookOpen, Tag } from "lucide-react"
+import { Plus, BookOpen, Printer } from "lucide-react"
 import {
     Form,
     FormField,
@@ -16,6 +16,9 @@ import { AccountPayload } from "@/features/accounting/types"
 import { Drawer, LabeledInput, LabeledSelect, FormFooter, CancelButton, FormSplitLayout, ActionSlideButton } from "@/components/shared"
 import { ActivitySidebar } from "@/features/audit/components"
 import { formDrawerWidth } from "@/lib/form-widths"
+import { PrintableLayout } from "@/features/_shared/transaction-drawer"
+import { useReactToPrint } from "react-to-print"
+import type { DrawerMode } from "@/features/_shared/drawer/types"
 
 const accountSchema = z.object({
     code: z.string().optional().or(z.literal("")),
@@ -38,7 +41,7 @@ interface AccountDrawerProps {
     onOpenChange?: (open: boolean) => void
     inline?: boolean
     onLoadingChange?: (loading: boolean) => void
-    readonly?: boolean
+    mode?: DrawerMode
 }
 
 export function AccountDrawer({
@@ -53,8 +56,12 @@ export function AccountDrawer({
     auditSidebar,
     inline = false,
     onLoadingChange,
-    readonly = false
+    mode: modeProp,
 }: AccountDrawerProps) {
+    const mode = modeProp ?? (initialData?.id ? 'view' : 'create')
+    const isViewMode = mode === 'view'
+    const printRef = useRef<HTMLDivElement>(null)
+    const handlePrint = useReactToPrint({ contentRef: printRef })
     const [internalOpen, setInternalOpen] = useState(false)
     const open = openProp !== undefined ? openProp : internalOpen
     const setOpen = onOpenChange || setInternalOpen
@@ -184,7 +191,7 @@ export function AccountDrawer({
                             required
                             placeholder="Ej: Caja Chica"
                             error={fieldState.error?.message}
-                            disabled={readonly}
+                            disabled={isViewMode}
                             {...field}
                         />
                     )}
@@ -198,7 +205,7 @@ export function AccountDrawer({
                             value={field.value}
                             onChange={field.onChange}
                             error={fieldState.error?.message}
-                            disabled={readonly || hasParent || hasPostedItems || hasChildren || (!!parentId && parentId !== "__none__" && parentId !== "none")}
+                            disabled={isViewMode || hasParent || hasPostedItems || hasChildren || (!!parentId && parentId !== "__none__" && parentId !== "none")}
                             options={[
                                 { value: "ASSET", label: "Activo" },
                                 { value: "LIABILITY", label: "Pasivo" },
@@ -220,7 +227,7 @@ export function AccountDrawer({
                             showAll={true}
                             placeholder="Sin padre (Raíz)"
                             error={fieldState.error?.message}
-                            disabled={readonly || hasPostedItems || hasChildren}
+                            disabled={isViewMode || hasPostedItems || hasChildren}
                         />
                     )}
                 />
@@ -243,32 +250,62 @@ export function AccountDrawer({
         return <>{formContent}</>
     }
 
+    const drawerTitle = isViewMode
+        ? `Ficha de Cuenta #${initialData?.id}`
+        : mode === 'create'
+            ? "Nueva Cuenta Contable"
+            : "Editar Cuenta Contable"
+
+    const drawerSubtitle = isViewMode
+        ? `${(initialData as any)?.code || ""} • ${form.watch("name") || "Vista de detalle"}`
+        : `${(initialData as any)?.code || ""} • ${form.watch("name") || "Plan de Cuentas • Contabilidad General"}`
+
     return (
         <>
-            <Trigger />
+            {!isViewMode && <Trigger />}
+            {(isViewMode || mode === 'edit') && initialData?.id && (
+                <PrintableLayout
+                    ref={printRef}
+                    title="Comprobante Contable"
+                    displayId={(initialData as any)?.code || `#${initialData.id}`}
+                >
+                    <div className="text-[9px] space-y-1 mb-2">
+                        <div className="flex justify-between">
+                            <span>Nombre:</span>
+                            <span>{(initialData as any)?.name ?? '-'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span>Código:</span>
+                            <span>{(initialData as any)?.code ?? '-'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span>Tipo:</span>
+                            <span>{(initialData as any)?.account_type ?? '-'}</span>
+                        </div>
+                    </div>
+                </PrintableLayout>
+            )}
             <Drawer
                 open={open}
                 onOpenChange={setOpen}
                 side="left"
                 defaultSize={width}
                 icon={BookOpen}
-                title={initialData ? "Ficha de Cuenta" : "Nueva Cuenta Contable"}
-                subtitle={initialData ? `${(initialData as any).code || ""} • ${form.watch("name") || ""}` : "Plan de Cuentas • Contabilidad General"}
+                title={<><span>{drawerTitle}</span>{(mode === 'view' || mode === 'edit') && initialData?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}</>}
+                subtitle={drawerSubtitle}
                 contentClassName="p-0"
-                footer={
+                footer={isViewMode ? undefined : (
                     <FormFooter
                         actions={
                             <>
                                 <CancelButton onClick={() => setOpen(false)} />
-                                {!readonly && (
-                                    <ActionSlideButton type="submit" form="account-form" loading={loading}>
-                                        {initialData ? "Guardar Cambios" : "Crear Cuenta"}
-                                    </ActionSlideButton>
-                                )}
+                                <ActionSlideButton type="submit" form="account-form" loading={loading}>
+                                    {mode === 'create' ? "Crear Cuenta" : "Guardar Cambios"}
+                                </ActionSlideButton>
                             </>
                         }
                     />
-                }
+                )}
             >
                 {formContent}
             </Drawer>

@@ -15,8 +15,12 @@ import {
 } from "@/components/shared"
 import { ActivitySidebar } from "@/features/audit/components"
 import { Form, FormField } from "@/components/ui/form"
+import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
-import { Users } from "lucide-react"
+import { Users, Printer } from "lucide-react"
+import { useReactToPrint } from "react-to-print"
+import { PrintableLayout } from "@/features/_shared/transaction-drawer"
+import type { DrawerMode } from "@/features/_shared/drawer/types"
 import { AppGroup } from "@/types/entities"
 import { formDrawerWidth } from "@/lib/form-widths"
 
@@ -30,6 +34,7 @@ interface GroupDrawerProps {
     onSuccess?: () => void
     open?: boolean
     onOpenChange?: (open: boolean) => void
+    mode?: DrawerMode
 }
 
 export function GroupDrawer({
@@ -37,7 +42,8 @@ export function GroupDrawer({
     trigger,
     onSuccess,
     open: controlledOpen,
-    onOpenChange: setControlledOpen
+    onOpenChange: setControlledOpen,
+    mode: modeProp
 }: GroupDrawerProps) {
     const [internalOpen, setInternalOpen] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
@@ -59,6 +65,11 @@ export function GroupDrawer({
         },
     })
     
+    const mode: DrawerMode = modeProp ?? (initialData ? 'edit' : 'create')
+    const isView = mode === 'view'
+    const printRef = useRef<HTMLDivElement>(null)
+    const handlePrint = useReactToPrint({ contentRef: printRef })
+
     const width = formDrawerWidth("micro", !!initialData?.id)
 
     const lastResetId = useRef<number | undefined>(undefined)
@@ -125,23 +136,34 @@ export function GroupDrawer({
         )
     }
 
+    const drawerTitle = isView
+        ? `Ficha de Grupo${initialData?.id ? ` #${initialData.id}` : ""}`
+        : mode === 'create'
+            ? "Nuevo Grupo"
+            : "Editar Grupo"
+
     return (
         <>
             <RenderTrigger />
+            {(mode === 'view' || mode === 'edit') && initialData?.id && (
+                <PrintableLayout ref={printRef} title="Ficha de Grupo" displayId={`#${initialData.id}`}>
+                    <div className="text-[9px] space-y-1 mb-2">
+                        <div className="flex justify-between">
+                            <span>Nombre:</span>
+                            <span>{initialData?.name ?? '-'}</span>
+                        </div>
+                    </div>
+                </PrintableLayout>
+            )}
             <Drawer
                 open={isOpen}
                 onOpenChange={setOpen}
                 side="left"
                 defaultSize={width}
                 contentClassName="p-0"
-                title={
-                    <div className="flex items-center gap-3">
-                        <Users className="h-5 w-5 text-muted-foreground" />
-                        <span>{initialData ? "Ficha de Grupo" : "Nuevo Grupo"}</span>
-                    </div>
-                }
+                title={<><span>{drawerTitle}</span>{(mode === 'view' || mode === 'edit') && initialData?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}</>}
                 subtitle="Configuración de grupo funcional y permisos de acceso"
-                footer={
+                footer={isView ? undefined : (
                     <FormFooter
                         actions={
                             <>
@@ -152,7 +174,7 @@ export function GroupDrawer({
                             </>
                         }
                     />
-                }
+                )}
             >
                 <FormSplitLayout
                     sidebar={initialData?.id ? (
@@ -162,19 +184,21 @@ export function GroupDrawer({
                 >
                     <Form {...form}>
                         <form id="group-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-4 pb-4 pt-4">
-                            <FormField
-                                control={form.control}
-                                name="name"
-                                render={({ field, fieldState }) => (
-                                    <LabeledInput
-                                        label="Nombre del Grupo"
-                                        required
-                                        placeholder="Ej: Bodega, Ventas..."
-                                        error={fieldState.error?.message}
-                                        {...field}
-                                    />
-                                )}
-                            />
+                            <fieldset disabled={isView} className="contents">
+                                <FormField
+                                    control={form.control}
+                                    name="name"
+                                    render={({ field, fieldState }) => (
+                                        <LabeledInput
+                                            label="Nombre del Grupo"
+                                            required
+                                            placeholder="Ej: Bodega, Ventas..."
+                                            error={fieldState.error?.message}
+                                            {...field}
+                                        />
+                                    )}
+                                />
+                            </fieldset>
                         </form>
                     </Form>
                 </FormSplitLayout>

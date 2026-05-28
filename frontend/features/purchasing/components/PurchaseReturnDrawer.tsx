@@ -3,7 +3,7 @@
 import React, { useRef } from "react"
 import { Drawer, SkeletonShell, StatusBadge } from "@/components/shared"
 import { Button } from "@/components/ui/button"
-import { Printer, X, Undo2 } from "lucide-react"
+import { Printer, Undo2 } from "lucide-react"
 import { useReactToPrint } from "react-to-print"
 import { formatCurrency } from "@/lib/money"
 import { PrintableLayout } from "@/features/_shared/transaction-drawer"
@@ -66,19 +66,10 @@ export function PurchaseReturnDrawer({ returnId, open, onOpenChange }: PurchaseR
                 side="left"
                 boundary="embedded"
                 defaultSize="50%"
-                title={returnData ? `Devolución ${(returnData as any).number}` : "Devolución de Compra"}
+                title={<><span>{returnData ? `Devolución ${(returnData as any).number}` : "Devolución de Compra"}</span><Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button></>}
                 subtitle={(returnData as any)?.supplier_name}
                 icon={Undo2}
-                headerActions={
-                    <div className="flex items-center gap-2">
-                        <Button variant="ghost" size="icon" onClick={() => handlePrint()}>
-                            <Printer className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)}>
-                            <X className="h-4 w-4" />
-                        </Button>
-                    </div>
-                }
+
             >
                 {isLoading ? (
                     <SkeletonShell isLoading={true} ariaLabel="Cargando devolución" />

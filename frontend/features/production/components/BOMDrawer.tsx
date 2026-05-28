@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/form"
 import { CancelButton } from "@/components/shared/ActionButtons"
 import { TableBody, TableCell, TableRow } from "@/components/ui/table"
-import { Trash2, Save, Workflow, Box, CheckCircle2, Truck, Package } from "lucide-react"
+import { Trash2, Save, Workflow, Box, CheckCircle2, Truck, Package, Printer } from "lucide-react"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { UoMSelector } from "@/components/selectors/UoMSelector"
@@ -23,6 +23,10 @@ import type { BOM, BOMLine, ProductMinimal, UoM } from "../types"
 import { Drawer, LabeledInput, LabeledSelect, LabeledSwitch, FormSection, FormFooter, FormLineItemsTable, IconButton, SkeletonShell, ActionSlideButton, DataCell } from "@/components/shared"
 import { useVatRate } from "@/hooks/useVatRate"
 import { formDrawerWidth } from "@/lib/form-widths"
+import { Button } from "@/components/ui/button"
+import { useReactToPrint } from "react-to-print"
+import { PrintableLayout } from "@/features/_shared/transaction-drawer"
+import type { DrawerMode } from "@/features/_shared/drawer/types"
 
 const tableInputClass = "h-9 w-full bg-background border border-border/80 rounded-sm px-2 text-xs focus:border-primary/40 focus:outline-none transition-all disabled:opacity-50"
 
@@ -78,6 +82,7 @@ interface BOMDrawerProps {
     product?: ProductMinimal
     bomToEdit?: BOM
     onSuccess: () => void
+    mode?: DrawerMode
 }
 
 export function BOMDrawer({
@@ -85,10 +90,17 @@ export function BOMDrawer({
     onOpenChange,
     product: initialProduct,
     bomToEdit,
-    onSuccess
+    onSuccess,
+    mode: modeProp
 }: BOMDrawerProps) {
     const { multiplier: vatMultiplier } = useVatRate()
     const [loading, setLoading] = useState(false)
+
+    const mode: DrawerMode = modeProp ?? (bomToEdit ? 'edit' : 'create')
+    const isView = mode === 'view'
+    const printRef = useRef<HTMLDivElement>(null)
+    const handlePrint = useReactToPrint({ contentRef: printRef })
+
     const [selectedProduct, setSelectedProduct] = useState<ProductMinimal | null>(initialProduct || null)
     const [selectedVariant, setSelectedVariant] = useState<ProductMinimal | null>(null)
     const [lineVariantsCache, setLineVariantsCache] = useState<Record<string, ProductMinimal[]>>({})
@@ -296,7 +308,28 @@ export function BOMDrawer({
         }
     }
 
+    const drawerTitle = isView
+        ? `Ficha de Lista de Materiales${bomToEdit?.id ? ` #${bomToEdit.id}` : ""}`
+        : mode === 'create'
+            ? "Nueva Lista de Materiales"
+            : "Editar Lista de Materiales"
+
     return (
+        <>
+            {isView && bomToEdit?.id && (
+                <PrintableLayout ref={printRef} title="BOM" displayId={`#${bomToEdit.id}`}>
+                    <div className="text-[9px] space-y-1 mb-2">
+                        <div className="flex justify-between">
+                            <span>Nombre:</span>
+                            <span>{bomToEdit.name ?? '-'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span>Rendimiento:</span>
+                            <span>{bomToEdit.yield_quantity ?? '-'}</span>
+                        </div>
+                    </div>
+                </PrintableLayout>
+            )}
         <Drawer
             open={open}
             onOpenChange={onOpenChange}
@@ -304,7 +337,7 @@ export function BOMDrawer({
             defaultSize={formDrawerWidth("complex", !!bomToEdit)}
             contentClassName="p-0"
             icon={Workflow}
-            title={bomToEdit ? "Editar Lista de Materiales" : "Nueva Lista de Materiales"}
+            title={<><span>{drawerTitle}</span>{(mode === 'view' || mode === 'edit') && bomToEdit?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}</>}
             subtitle={
                 selectedVariant
                     ? `Lista de Materiales • Variante: ${selectedVariant.variant_display_name || selectedVariant.name}`
@@ -314,7 +347,7 @@ export function BOMDrawer({
                             ? `Lista de Materiales • P: ${selectedProduct.name}`
                             : "Lista de Materiales • Receta de Fabricación"
             }
-            footer={
+            footer={isView ? undefined : (
                 <FormFooter
                     actions={
                         <>
@@ -331,7 +364,7 @@ export function BOMDrawer({
                         </>
                     }
                 />
-            }
+            )}
         >
             <SkeletonShell isLoading={isFetchingInitialData} ariaLabel="Cargando formulario de lista de materiales" className="flex-1 flex flex-col">
                 <div className="px-1">
@@ -345,6 +378,7 @@ export function BOMDrawer({
                             }}
                             className="space-y-8 pt-4"
                         >
+                            <fieldset disabled={isView} className="contents">
                             {/* 📋 HEADER: IDENTIFICACIÓN Y CONFIGURACIÓN */}
                             <div className="grid grid-cols-2 gap-4 items-start border-b border-border/40 pb-8 mb-2">
                                 {/* FILA 1 */}
@@ -496,7 +530,7 @@ export function BOMDrawer({
                                     { header: "Costo Total", width: "w-[15%]", align: "right" },
                                     { header: "", width: "w-[10%]" },
                                 ]}
-                                onAdd={() => appendMaterial({ component: "", quantity: 1, uom: "", component_cost: 0, notes: "" })}
+                                onAdd={isView ? undefined : () => appendMaterial({ component: "", quantity: 1, uom: "", component_cost: 0, notes: "" })}
                                 addButtonText="Agregar Línea"
                                 footer={(() => {
                                     const materials = form.watch("lines") || []
@@ -716,6 +750,7 @@ export function BOMDrawer({
                                             <TableCell className="py-2 px-3 text-center">
                                                 <IconButton
                                                     onClick={() => removeMaterial(index)}
+                                                    disabled={isView}
                                                     className="h-8 w-8 text-muted-foreground/30 hover:text-destructive"
                                                     title="Eliminar línea"
                                                 >
@@ -753,7 +788,7 @@ export function BOMDrawer({
                                     { header: "Doc.", width: "w-[10%]" },
                                     { header: "", width: "w-[10%]" },
                                 ]}
-                                onAdd={() => appendService({
+                                onAdd={isView ? undefined : () => appendService({
                                     component: "", quantity: 1, uom: "",
                                     supplier: "", supplier_name: "",
                                     gross_price: 0, document_type: "FACTURA", notes: ""
@@ -944,6 +979,7 @@ export function BOMDrawer({
                                             <TableCell className="py-2 px-3 text-center">
                                                 <IconButton
                                                     onClick={() => removeService(index)}
+                                                    disabled={isView}
                                                     className="h-8 w-8 text-muted-foreground/30 hover:text-destructive"
                                                     title="Eliminar servicio"
                                                 >
@@ -956,10 +992,12 @@ export function BOMDrawer({
                             </FormLineItemsTable>
 
 
+                        </fieldset>
                         </form>
                     </Form>
                 </div>
                 </SkeletonShell>
         </Drawer>
+        </>
     )
 }

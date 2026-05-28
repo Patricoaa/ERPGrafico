@@ -1,15 +1,16 @@
 'use client'
 
 import React from 'react'
-import { Drawer, StatusBadge, SkeletonShell } from '@/components/shared'
+import { Drawer, StatusBadge, SkeletonShell, FormSplitLayout } from '@/components/shared'
 import { Button } from '@/components/ui/button'
-import { Printer, X, Pencil, FileText } from 'lucide-react'
+import { Printer, FileText } from 'lucide-react'
 import { useSaleOrder } from '@/features/sales/hooks/useSalesOrders'
 import { useReactToPrint } from 'react-to-print'
 import { useRef } from 'react'
 import { formatCurrency } from '@/lib/money'
 import { formatPlainDate } from '@/lib/utils'
 import { PrintableLayout } from '@/features/_shared/transaction-drawer'
+import { ActivitySidebar } from '@/features/audit/components'
 import type { TransactionDrawerProps } from '@/features/_shared/transaction-drawer'
 
 interface SaleOrderDrawerProps extends TransactionDrawerProps {
@@ -21,8 +22,6 @@ export function SaleOrderDrawer({ id, open, onOpenChange, mode = 'view', orderId
     const { data: order, isLoading } = useSaleOrder(entityId)
     const printRef = useRef<HTMLDivElement>(null)
     const handlePrint = useReactToPrint({ contentRef: printRef })
-
-    const isEditable = mode === 'edit' && order?.status === 'DRAFT'
 
     return (
         <>
@@ -53,21 +52,12 @@ export function SaleOrderDrawer({ id, open, onOpenChange, mode = 'view', orderId
                 side="left"
                 defaultSize="50%"
                 icon={FileText}
-                title={order?.number ?? 'Nota de Venta'}
+                title={<><span>{order?.number ?? 'Nota de Venta'}</span><Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button></>}
                 subtitle={order?.customer_name}
                 description={`${formatPlainDate(order?.date)} · ${order?.channel_display ?? ''}`}
-                headerActions={
-                    <div className="flex items-center gap-2">
-                        <Button variant="ghost" size="icon" onClick={() => handlePrint()}>
-                            <Printer className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)}>
-                            <X className="h-4 w-4" />
-                        </Button>
-                    </div>
-                }
             >
-                <SkeletonShell isLoading={isLoading} ariaLabel="Cargando nota de venta">
+                <FormSplitLayout sidebar={entityId ? <ActivitySidebar entityType="sale_order" entityId={entityId} /> : undefined} showSidebar={!!entityId}>
+                    <SkeletonShell isLoading={isLoading} ariaLabel="Cargando nota de venta">
                     {order && (
                         <div className="p-4 space-y-4">
                             <StatusBadge status={order.status} />
@@ -107,17 +97,10 @@ export function SaleOrderDrawer({ id, open, onOpenChange, mode = 'view', orderId
                                 </div>
                             )}
 
-                            {isEditable && (
-                                <div className="flex justify-end pt-4">
-                                    <Button>
-                                        <Pencil className="mr-2 h-4 w-4" />
-                                        Editar
-                                    </Button>
-                                </div>
-                            )}
                         </div>
                     )}
                 </SkeletonShell>
+                </FormSplitLayout>
             </Drawer>
         </>
     )

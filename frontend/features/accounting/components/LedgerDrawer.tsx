@@ -9,7 +9,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { ColumnDef } from "@tanstack/react-table"
 import { Card, CardContent } from "@/components/ui/card"
 import { DateRangeFilter } from "@/components/shared/DateRangeFilter"
-import { TransactionDrawerRouter } from "@/features/_shared/transaction-drawer"
+import { JournalEntryDrawer } from "@/features/accounting/components/JournalEntryDrawer"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { format } from "date-fns"
@@ -351,9 +351,9 @@ function LedgerContent({
             />
 
             {viewingEntry && (
-                <TransactionDrawerRouter
-                    type="journal_entry"
-                    id={Number(viewingEntry.id)}
+                <JournalEntryDrawer
+                    journalEntryId={Number(viewingEntry.id)}
+                    mode="view"
                     open={!!viewingEntry}
                     onOpenChange={(open) => !open && closeEntry()}
                 />

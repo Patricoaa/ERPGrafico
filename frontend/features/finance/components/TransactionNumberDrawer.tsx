@@ -1,17 +1,21 @@
 "use client"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { Hash } from "lucide-react"
+import { Hash, Printer } from "lucide-react"
 import {
     Form,
     FormControl,
     FormField,
     FormItem,
 } from "@/components/ui/form"
+import { Button } from "@/components/ui/button"
 import { financeApi } from "../api/financeApi"
 import { toast } from "sonner"
+import { useReactToPrint } from "react-to-print"
+import { PrintableLayout } from "@/features/_shared/transaction-drawer"
+import type { DrawerMode } from "@/features/_shared/drawer/types"
 import { Drawer, LabeledInput, FormFooter, FormSplitLayout, CancelButton, ActionSlideButton } from "@/components/shared"
 import { ActivitySidebar } from "@/features/audit/components"
 import { formDrawerWidth } from "@/lib/form-widths"
@@ -28,6 +32,7 @@ interface TransactionNumberDrawerProps {
     paymentId: number | null
     initialValue?: string
     onSuccess?: () => void
+    mode?: DrawerMode
 }
 
 export function TransactionNumberDrawer({
@@ -35,8 +40,13 @@ export function TransactionNumberDrawer({
     onOpenChange,
     paymentId,
     initialValue = "",
-    onSuccess
+    onSuccess,
+    mode: modeProp
 }: TransactionNumberDrawerProps) {
+    const mode: DrawerMode = modeProp ?? 'edit'
+    const isView = mode === 'view'
+    const printRef = useRef<HTMLDivElement>(null)
+    const handlePrint = useReactToPrint({ contentRef: printRef })
     const [loading, setLoading] = useState(false)
 
     const form = useForm<FormData>({
@@ -71,28 +81,43 @@ export function TransactionNumberDrawer({
 
     const width = formDrawerWidth("micro", !!paymentId)
 
+    const drawerTitle = isView
+        ? `Ficha de Transacción${paymentId ? ` #${paymentId}` : ""}`
+        : "Registrar N° de Transacción"
+
     return (
-        <Drawer
-            open={open}
-            onOpenChange={onOpenChange}
-            side="left"
-            defaultSize={width}
-            icon={Hash}
-            title="Registrar N° de Transacción"
-            subtitle="Ingrese el número de comprobante o transacción bancaria."
-            footer={
-                <FormFooter
-                    actions={
-                        <>
-                            <CancelButton onClick={() => onOpenChange(false)} />
-                            <ActionSlideButton type="submit" form="transaction-number-form" loading={loading}>
-                                Guardar
-                            </ActionSlideButton>
-                        </>
-                    }
-                />
-            }
-        >
+        <>
+            {(mode === 'view' || mode === 'edit') && paymentId && (
+                <PrintableLayout ref={printRef} title="N° de Transacción" displayId={`#${paymentId}`}>
+                    <div className="text-[9px] space-y-1 mb-2">
+                        <div className="flex justify-between">
+                            <span>N° de Transacción:</span>
+                            <span>{initialValue ?? '-'}</span>
+                        </div>
+                    </div>
+                </PrintableLayout>
+            )}
+            <Drawer
+                open={open}
+                onOpenChange={onOpenChange}
+                side="left"
+                defaultSize={width}
+                icon={Hash}
+                title={<><span>{drawerTitle}</span>{(mode === 'view' || mode === 'edit') && paymentId && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}</>}
+                subtitle="Ingrese el número de comprobante o transacción bancaria."
+                footer={isView ? undefined : (
+                    <FormFooter
+                        actions={
+                            <>
+                                <CancelButton onClick={() => onOpenChange(false)} />
+                                <ActionSlideButton type="submit" form="transaction-number-form" loading={loading}>
+                                    Guardar
+                                </ActionSlideButton>
+                            </>
+                        }
+                    />
+                )}
+            >
             <FormSplitLayout
               sidebar={paymentId ? (
                 <ActivitySidebar
@@ -104,26 +129,29 @@ export function TransactionNumberDrawer({
             >
                 <Form {...form}>
                     <form id="transaction-number-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                        <FormField
-                            control={form.control}
-                            name="transaction_number"
-                            render={({ field, fieldState }) => (
-                                <FormItem>
-                                    <FormControl>
-                                        <LabeledInput
-                                            label="N° de Transacción"
-                                            placeholder="Ex: 543210"
-                                            error={fieldState.error?.message}
-                                            autoFocus
-                                            {...field}
-                                        />
-                                    </FormControl>
-                                </FormItem>
-                            )}
-                        />
+                        <fieldset disabled={isView} className="contents">
+                            <FormField
+                                control={form.control}
+                                name="transaction_number"
+                                render={({ field, fieldState }) => (
+                                    <FormItem>
+                                        <FormControl>
+                                            <LabeledInput
+                                                label="N° de Transacción"
+                                                placeholder="Ex: 543210"
+                                                error={fieldState.error?.message}
+                                                autoFocus
+                                                {...field}
+                                            />
+                                        </FormControl>
+                                    </FormItem>
+                                )}
+                            />
+                        </fieldset>
                     </form>
                 </Form>
             </FormSplitLayout>
         </Drawer>
+        </>
     );
 }

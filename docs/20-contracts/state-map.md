@@ -115,10 +115,16 @@ Single source of truth for every entity state. `StatusBadge` variants must match
 | Status | Intent | Transitions allowed to |
 |--------|--------|------------------------|
 | `DRAFT` | `info` | `POSTED`, `CANCELLED` |
-| `POSTED` | `success` | `CANCELLED` (via reversal) |
+| `POSTED` | `success` | `CLOSED` (period closed), — (creates `REVERSAL` linked via `reversal_of`, original unchanged) |
+| `CLOSED` | `warning` | `POSTED` (period reopened), — (creates `REVERSAL` linked via `reversal_of`, original unchanged) |
+| `REVERSAL` | `primary` | — |
 | `CANCELLED` | `destructive` | — |
 
-**Edit restrictions:** Solo editable en `DRAFT`. Campos inmutables: `id`, `number`, `status`.
+**Balance-affecting statuses:** `POSTED`, `CLOSED`, `REVERSAL` — these filter into ledger, budget, and account balance calculations.
+
+**Reversal flow:** When reversing a `POSTED` or `CLOSED` entry, a new `REVERSAL` entry is created with mirrored items. The original entry **remains unchanged** for audit trail. Double reversal is prevented by checking `reversal_of` FK existence.
+
+**Edit restrictions:** Solo editable en `DRAFT`. Campos inmutables: `id`, `number`, `status`, `reversal_of`.
 
 ## SaleDelivery
 

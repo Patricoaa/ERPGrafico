@@ -276,7 +276,7 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
                         <ActivitySidebar entityId={editingAccount.id} entityType="account" />
                     ) : undefined
                 }
-                readonly={false}
+                mode="create"
                 onSuccess={() => {
                     refetch()
                 }}

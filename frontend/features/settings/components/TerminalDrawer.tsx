@@ -23,6 +23,11 @@ import { formDrawerWidth } from "@/lib/form-widths"
 import { ActionSlideButton } from "@/components/shared/ActionSlideButton"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { ActivitySidebar } from "@/features/audit/components"
+import { Printer } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { useReactToPrint } from "react-to-print"
+import { PrintableLayout } from "@/features/_shared/transaction-drawer"
+import type { DrawerMode } from "@/features/_shared/drawer/types"
 
 export interface Terminal {
     id: number
@@ -56,6 +61,7 @@ interface TerminalDrawerProps {
     onOpenChange: (open: boolean) => void
     terminal: Terminal | null
     onSuccess: () => void
+    mode?: DrawerMode
 }
 
 const formSchema = z.object({
@@ -70,10 +76,15 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>
 
-export function TerminalDrawer({ open, onOpenChange, terminal, onSuccess }: TerminalDrawerProps) {
+export function TerminalDrawer({ open, onOpenChange, terminal, onSuccess, mode: modeProp }: TerminalDrawerProps) {
     const [loading, setLoading] = useState(false)
     const [isFetchingDeps, setIsFetchingDeps] = useState(false)
     const [treasuryAccounts, setTreasuryAccounts] = useState<TreasuryAccount[]>([])
+
+    const mode: DrawerMode = modeProp ?? (terminal ? 'edit' : 'create')
+    const isView = mode === 'view'
+    const printRef = useRef<HTMLDivElement>(null)
+    const handlePrint = useReactToPrint({ contentRef: printRef })
 
     const form = useForm<FormValues>({
         resolver: zodResolver(formSchema),
@@ -216,7 +227,28 @@ export function TerminalDrawer({ open, onOpenChange, terminal, onSuccess }: Term
         }
     }
 
+    const drawerTitle = isView
+        ? `Ficha de Terminal${terminal?.id ? ` #${terminal.id}` : ""}`
+        : mode === 'create'
+            ? "Nuevo Terminal"
+            : "Editar Terminal"
+
     return (
+        <>
+            {isView && terminal?.id && (
+                <PrintableLayout ref={printRef} title="Terminal" displayId={`#${terminal.id}`}>
+                    <div className="text-[9px] space-y-1 mb-2">
+                        <div className="flex justify-between">
+                            <span>Nombre:</span>
+                            <span>{terminal.name ?? '-'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span>Código:</span>
+                            <span>{terminal.code ?? '-'}</span>
+                        </div>
+                    </div>
+                </PrintableLayout>
+            )}
         <Drawer
             open={open}
             onOpenChange={onOpenChange}
@@ -226,7 +258,12 @@ export function TerminalDrawer({ open, onOpenChange, terminal, onSuccess }: Term
             title={
                 <div className="flex items-center gap-3">
                     <MonitorSmartphone className="h-5 w-5 text-muted-foreground" />
-                    <span>{terminal ? "Ficha de Terminal" : "Nuevo Terminal"}</span>
+                    <span>{drawerTitle}</span>
+                    {(mode === 'view' || mode === 'edit') && terminal?.id && (
+                        <Button variant="ghost" size="icon" onClick={() => handlePrint()}>
+                            <Printer className="h-4 w-4" />
+                        </Button>
+                    )}
                 </div>
             }
             subtitle={
@@ -240,7 +277,7 @@ export function TerminalDrawer({ open, onOpenChange, terminal, onSuccess }: Term
                     <span>{form.watch("name") || "Configuración básica del TPV"}</span>
                 </div>
             }
-            footer={
+            footer={isView ? undefined : (
                 <FormFooter
                     actions={
                         <>
@@ -251,7 +288,7 @@ export function TerminalDrawer({ open, onOpenChange, terminal, onSuccess }: Term
                         </>
                     }
                 />
-            }
+            )}
         >
             <SkeletonShell isLoading={isFetchingInitialData} ariaLabel="Cargando formulario de terminal" className="flex-1 flex flex-col">
                 <FormSplitLayout
@@ -267,6 +304,7 @@ export function TerminalDrawer({ open, onOpenChange, terminal, onSuccess }: Term
                 >
                     <Form {...form}>
                         <form id="terminal-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                            <fieldset disabled={isView} className="contents">
                             {/* Section 1: Device Identity */}
                             <div className="space-y-4">
                                 <FormSection title="Identificación del Dispositivo" icon={MonitorSmartphone} />
@@ -374,7 +412,7 @@ export function TerminalDrawer({ open, onOpenChange, terminal, onSuccess }: Term
                                                                     "flex items-center space-x-3 p-2 rounded-lg cursor-pointer border transition-all duration-200",
                                                                     isSelected ? 'bg-primary/5 border-primary/30 shadow-sm' : 'hover:bg-accent border-transparent'
                                                                 )}
-                                                                onClick={() => toggleAccountSelection(
+                                                                onClick={() => !isView && toggleAccountSelection(
                                                                     account.id,
                                                                     field.value,
                                                                     field.onChange,
@@ -384,7 +422,8 @@ export function TerminalDrawer({ open, onOpenChange, terminal, onSuccess }: Term
                                                             >
                                                                 <Checkbox
                                                                     checked={isSelected}
-                                                                    onCheckedChange={() => toggleAccountSelection(
+                                                                    disabled={isView}
+                                                                    onCheckedChange={() => !isView && toggleAccountSelection(
                                                                         account.id,
                                                                         field.value,
                                                                         field.onChange,
@@ -445,10 +484,12 @@ export function TerminalDrawer({ open, onOpenChange, terminal, onSuccess }: Term
                                     />
                                 )}
                             </div>
+                        </fieldset>
                         </form>
                     </Form>
                 </FormSplitLayout>
             </SkeletonShell>
         </Drawer>
+        </>
     )
 }

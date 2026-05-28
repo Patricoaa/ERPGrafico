@@ -1,10 +1,14 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useRef } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { ArrowLeftRight, DollarSign } from "lucide-react"
+import { ArrowLeftRight, DollarSign, Printer } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { useReactToPrint } from "react-to-print"
+import { PrintableLayout } from "@/features/_shared/transaction-drawer"
+import type { DrawerMode } from "@/features/_shared/drawer/types"
 import { TreasuryAccountSelector } from "@/components/selectors"
 import { PeriodValidationDateInput } from "@/components/shared"
 import { useServerDate } from "@/hooks/useServerDate"
@@ -31,12 +35,17 @@ interface TransferDrawerProps {
     open: boolean
     onOpenChange: (open: boolean) => void
     onSuccess?: () => void
+    mode?: DrawerMode
 }
 
-export function TransferDrawer({ open, onOpenChange, onSuccess }: TransferDrawerProps) {
+export function TransferDrawer({ open, onOpenChange, onSuccess, mode: modeProp }: TransferDrawerProps) {
     const { accounts, isLoading: isAccountsLoading } = useTreasuryAccounts()
     const { createTransfer, isCreating } = useTransfer()
     const { serverDate, isLoading: isServerDateLoading } = useServerDate()
+    const mode: DrawerMode = modeProp ?? 'create'
+    const isView = mode === 'view'
+    const printRef = useRef<HTMLDivElement>(null)
+    const handlePrint = useReactToPrint({ contentRef: printRef })
     const isFetchingInitialData = open && (isAccountsLoading || isServerDateLoading)
     const [isDateValid, setIsDateValid] = useState(true)
 
@@ -80,42 +89,41 @@ export function TransferDrawer({ open, onOpenChange, onSuccess }: TransferDrawer
     const sourceAccount = accounts.find(a => a.id.toString() === fromAccountId)
     const destAccount = accounts.find(a => a.id.toString() === toAccountId)
 
+    const drawerTitle = isView ? "Ficha de Traspaso" : "Traspaso entre Cuentas"
+
     return (
-        <Drawer
-            open={open}
-            onOpenChange={onOpenChange}
-            side="left"
-            defaultSize={formDrawerWidth("medium", false)}
-            contentClassName="p-0"
-            title={
-                <div className="flex items-center gap-3">
-                    <ArrowLeftRight className="h-5 w-5 text-muted-foreground" />
-                    <span>Traspaso entre Cuentas</span>
-                </div>
-            }
-            subtitle="Mueva fondos entre sus cuentas de tesorería de forma inmediata."
-            footer={
-                <FormFooter
-                    actions={
-                        <>
-                            <CancelButton onClick={() => onOpenChange(false)} disabled={isCreating} />
-                            <ActionSlideButton
-                                loading={isCreating}
-                                onClick={form.handleSubmit(onSubmit)}
-                                disabled={isCreating || !isDateValid}
-                                className="bg-warning hover:bg-warning/90 shadow-warning/10"
-                            >
-                                Confirmar Traspaso
-                            </ActionSlideButton>
-                        </>
-                    }
-                />
-            }
-        >
+        <>
+            <Drawer
+                open={open}
+                onOpenChange={onOpenChange}
+                side="left"
+                defaultSize={formDrawerWidth("medium", false)}
+                contentClassName="p-0"
+                title={<><span>{drawerTitle}</span></>}
+                subtitle="Mueva fondos entre sus cuentas de tesorería de forma inmediata."
+                footer={isView ? undefined : (
+                    <FormFooter
+                        actions={
+                            <>
+                                <CancelButton onClick={() => onOpenChange(false)} disabled={isCreating} />
+                                <ActionSlideButton
+                                    loading={isCreating}
+                                    onClick={form.handleSubmit(onSubmit)}
+                                    disabled={isCreating || !isDateValid}
+                                    className="bg-warning hover:bg-warning/90 shadow-warning/10"
+                                >
+                                    Confirmar Traspaso
+                                </ActionSlideButton>
+                            </>
+                        }
+                    />
+                )}
+            >
             <SkeletonShell isLoading={isFetchingInitialData} ariaLabel="Cargando formulario de traspaso">
                 <FormSplitLayout>
                     <Form {...form}>
                         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                            <fieldset disabled={isView} className="contents">
                             {/* Section 1: Accounts */}
                             <div className="space-y-4">
                                 <FormSection title="Flujo de Fondos" icon={ArrowLeftRight} />
@@ -212,11 +220,13 @@ export function TransferDrawer({ open, onOpenChange, onSuccess }: TransferDrawer
                                     )}
                                 />
                             </div>
+                            </fieldset>
                         </form>
                     </Form>
                 </FormSplitLayout>
             </SkeletonShell>
         </Drawer>
+        </>
     )
 }
 

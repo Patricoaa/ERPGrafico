@@ -32,7 +32,7 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { SkeletonShell, Skeleton } from "@/components/shared"
 
-import { TransactionDrawerRouter } from "@/features/_shared/transaction-drawer"
+import { PaymentDrawer } from "@/features/finance/components/PaymentDrawer"
 
 interface Props {
     contactId: number;
@@ -271,9 +271,9 @@ export function PartnerProfileTab({ contactId }: Props) {
             </Accordion>
 
             {selectedMovementId && (
-                <TransactionDrawerRouter
-                    type="payment"
-                    id={selectedMovementId}
+                <PaymentDrawer
+                    paymentId={selectedMovementId}
+                    mode="view"
                     open={detailsOpen}
                     onOpenChange={(open) => !open && closeDetails()}
                 />

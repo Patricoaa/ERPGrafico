@@ -14,7 +14,7 @@ import {
     FileText,
     Receipt
 } from "lucide-react"
-import { TransactionDrawerRouter } from "@/features/_shared/transaction-drawer"
+import { LazyDrawer } from "@/features/_shared/transaction-drawer"
 import { useOrderHubData } from "@/hooks/useOrderHubData"
 import { OrderHubIntegrated } from "./OrderHubIntegrated"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -212,8 +212,8 @@ export function OrderHubPanel({
                 </ScrollArea>
 
                 {/* Shared Modal for viewing Details */}
-                <TransactionDrawerRouter
-                    type={detailsModal.type as any}
+                <LazyDrawer
+                    type={detailsModal.type}
                     id={Number(detailsModal.id)}
                     open={detailsModal.open}
                     onOpenChange={(open) => !open && closeDetails()}

@@ -9,12 +9,10 @@ import { ColumnDef } from "@tanstack/react-table"
 
 import { Eye, ArrowRightLeft, Plus } from "lucide-react"
 import { Chip } from "@/components/shared/Chip"
-import { TransactionDrawerRouter } from "@/features/_shared/transaction-drawer"
+import { LazyDrawer, type TransactionType } from "@/features/_shared/transaction-drawer"
 import { AdjustmentForm } from "@/features/inventory/components/AdjustmentForm"
 import { CancelButton, SubmitButton, FormFooter } from "@/components/shared"
 import { BaseModal } from "@/components/shared/BaseModal"
-
-import type { TransactionType } from "@/features/_shared/transaction-drawer"
 
 interface StockMove {
     id: number
@@ -193,7 +191,7 @@ export function MovementClientView({ externalOpen, onExternalOpenChange, createA
             </div>
 
             {viewingTransaction && (
-                <TransactionDrawerRouter
+                <LazyDrawer
                     type={viewingTransaction.type}
                     id={Number(viewingTransaction.id)}
                     open={!!viewingTransaction}

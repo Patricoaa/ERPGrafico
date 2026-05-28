@@ -2,7 +2,7 @@
 
 import { UoM, Warehouse, Product } from "@/types/entities"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useRef } from "react"
 import { useForm, FieldErrors, UseFormReturn } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
@@ -11,7 +11,7 @@ import { useProducts } from "../hooks/useProducts"
 import { useUoMs } from "../hooks/useUoMs"
 import { useWarehouses } from "../hooks/useWarehouses"
 import { useProductPricingRules } from "../hooks/usePricingRules"
-import { ShoppingCart, Package, Truck, Layers, Factory, Loader2, History, DollarSign, Fingerprint } from "lucide-react"
+import { ShoppingCart, Package, Truck, Layers, Factory, Loader2, History, DollarSign, Fingerprint, Printer } from "lucide-react"
 import { showApiError } from "@/lib/errors"
 import { Form } from "@/components/ui/form"
 
@@ -20,10 +20,14 @@ import { ActivitySidebar } from "@/features/audit/components"
 // Removed Badge import for governance compliance
 
 // Import dialogs
+import { Button } from "@/components/ui/button"
 import { PricingRuleDrawer } from "@/features/sales/components/PricingRuleDrawer"
 import { CancelButton, ActionSlideButton } from "@/components/shared"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { formDrawerWidth } from "@/lib/form-widths"
+import { useReactToPrint } from "react-to-print"
+import { PrintableLayout } from "@/features/_shared/transaction-drawer"
+import type { DrawerMode } from "@/features/_shared/drawer/types"
 
 // Product subcomponents and schema
 import { ProductBasicInfo } from "./product/ProductBasicInfo"
@@ -45,13 +49,19 @@ interface ProductDrawerProps {
     variantMode?: boolean
     inline?: boolean
     onLoadingChange?: (loading: boolean) => void
+    mode?: DrawerMode
 }
 
-export function ProductDrawer({ sidebar, open, onOpenChange, initialData, onSuccess, lockedType, variantMode = false, inline = false, onLoadingChange }: ProductDrawerProps) {
+export function ProductDrawer({ sidebar, open, onOpenChange, initialData, onSuccess, lockedType, variantMode = false, inline = false, onLoadingChange, mode: modeProp }: ProductDrawerProps) {
     const { saveProduct, products, isLoading: isLoadingProducts } = useProducts()
     const { uoms, isUoMsLoading: isLoadingUoMs } = useUoMs()
     const { warehouses, isLoading: isLoadingWarehouses } = useWarehouses()
     const { rules: pricingRules, isLoading: isLoadingPricingRules, refetch: refetchPricingRules } = useProductPricingRules(initialData?.id ?? null)
+
+    const mode: DrawerMode = modeProp ?? (initialData ? 'edit' : 'create')
+    const isView = mode === 'view'
+    const printRef = useRef<HTMLDivElement>(null)
+    const handlePrint = useReactToPrint({ contentRef: printRef })
 
     const [loading, setLoading] = useState(false)
     const [imagePreview, setImagePreview] = useState<string | null>(null)
@@ -611,13 +621,19 @@ export function ProductDrawer({ sidebar, open, onOpenChange, initialData, onSucc
         },
     ]
 
+    const drawerTitle = isView
+        ? `Ficha de Producto${initialData?.id ? ` #${initialData.id}` : ""}`
+        : mode === 'create'
+            ? "Nuevo Producto"
+            : "Editar Producto"
+
     const tabHeader = (
         <div className="flex flex-col p-6 pb-2">
             <h1 className="text-xl font-bold tracking-tight text-foreground flex items-center gap-3">
                 <Package className="h-6 w-6 text-primary" />
                 <div className="flex flex-col">
                     <span className="text-xs font-medium text-muted-foreground uppercase tracking-widest mb-0.5">
-                        {initialData ? "Editar Producto" : "Nuevo Producto"}
+                        {drawerTitle}
                     </span>
                     <span className="truncate max-w-[300px]">
                         {initialData ? form.watch("name") : "Maestro de Producto"}
@@ -627,13 +643,13 @@ export function ProductDrawer({ sidebar, open, onOpenChange, initialData, onSucc
         </div>
     )
 
-    const footerSlot = (
+    const footerSlot = isView ? undefined : (
         <FormFooter
             actions={
                 <>
                     <CancelButton onClick={() => onOpenChange(false)} disabled={form.formState.isSubmitting} />
                     <ActionSlideButton type="submit" form="product-form" loading={form.formState.isSubmitting}>
-                        {initialData ? "Guardar Cambios" : "Crear Producto"}
+                        {mode === 'create' ? "Crear Producto" : "Guardar Cambios"}
                     </ActionSlideButton>
                 </>
             }
@@ -644,6 +660,7 @@ export function ProductDrawer({ sidebar, open, onOpenChange, initialData, onSucc
         <>
             <Form {...form}>
                 <form id="product-form" onSubmit={form.handleSubmit(onSubmit, onSubmitError)} className="flex-1 w-full h-full flex flex-col min-h-0 overflow-visible">
+                    <fieldset disabled={isView} className="contents h-full">
                     <SkeletonShell isLoading={isFetchingInitialData} ariaLabel="Cargando ficha de producto" className="flex-1 flex flex-col h-full">
                         <FormSplitLayout
                             showSidebar={!!initialData?.id}
@@ -738,6 +755,7 @@ export function ProductDrawer({ sidebar, open, onOpenChange, initialData, onSucc
                             </FormTabs>
                         </FormSplitLayout>
                     </SkeletonShell>
+                </fieldset>
                 </form>
             </Form>
 
@@ -777,24 +795,43 @@ export function ProductDrawer({ sidebar, open, onOpenChange, initialData, onSucc
     }
 
     return (
-        <Drawer
-            open={open}
-            onOpenChange={(newOpen) => {
-                if (!newOpen && Object.keys(form.formState.dirtyFields).length > 0) {
-                    setConfirmCloseOpen(true)
-                    return
-                }
-                onOpenChange(newOpen)
-            }}
-            defaultSize={width}
-            className="h-[90vh]"
-            icon={Package}
-            title={initialData ? "Editar Producto" : "Nuevo Producto"}
-            subtitle={initialData ? form.watch("name") : "Maestro de Producto"}
-            contentClassName="p-0"
-            footer={footerSlot}
-            side="left"
-        >
+        <>
+            {(mode === 'view' || mode === 'edit') && initialData?.id && (
+                <PrintableLayout
+                    ref={printRef}
+                    title="Product"
+                    displayId={`#${initialData.id}`}
+                >
+                    <div className="text-[9px] space-y-1 mb-2">
+                        <div className="flex justify-between">
+                            <span>Nombre:</span>
+                            <span>{initialData?.name ?? '-'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span>Código:</span>
+                            <span>{initialData?.code ?? '-'}</span>
+                        </div>
+                    </div>
+                </PrintableLayout>
+            )}
+            <Drawer
+                open={open}
+                onOpenChange={(newOpen) => {
+                    if (!newOpen && Object.keys(form.formState.dirtyFields).length > 0) {
+                        setConfirmCloseOpen(true)
+                        return
+                    }
+                    onOpenChange(newOpen)
+                }}
+                defaultSize={width}
+                className="h-[90vh]"
+                icon={Package}
+                title={<><span>{drawerTitle}</span>{(mode === 'view' || mode === 'edit') && initialData?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}</>}
+                subtitle={initialData ? form.watch("name") : "Maestro de Producto"}
+                contentClassName="p-0"
+                footer={footerSlot}
+                side="left"
+            >
             {formContent}
 
             {/* ActionConfirmModal for closing with unsaved changes */}
@@ -811,5 +848,6 @@ export function ProductDrawer({ sidebar, open, onOpenChange, initialData, onSucc
                 }}
             />
         </Drawer>
+        </>
     )
 }

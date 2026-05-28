@@ -1,13 +1,17 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useRef } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { toast } from "sonner"
 import { showApiError } from "@/lib/errors"
 
-import { Loader2, Landmark, CreditCard, Lock } from "lucide-react"
+import { Loader2, Landmark, CreditCard, Lock, Printer } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { useReactToPrint } from "react-to-print"
+import { PrintableLayout } from "@/features/_shared/transaction-drawer"
+import type { DrawerMode } from "@/features/_shared/drawer/types"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { ActivitySidebar } from "@/features/audit/components"
 import { useTreasuryAccounts, treasuryApi } from "@/features/treasury"
@@ -32,14 +36,16 @@ interface TreasuryAccountDrawerProps {
     onOpenChange: (o: boolean) => void
     accountId?: number | null
     onSuccess?: () => void
+    mode?: DrawerMode
 }
 
 const SYSTEM_MANAGED_TYPES = new Set(['BRIDGE', 'MERCHANT'])
 
-export function TreasuryAccountDrawer({ open, onOpenChange, accountId, onSuccess }: TreasuryAccountDrawerProps) {
+export function TreasuryAccountDrawer({ open, onOpenChange, accountId, onSuccess, mode: modeProp }: TreasuryAccountDrawerProps) {
     const { createAccount, updateAccount, isCreating, isUpdating } = useTreasuryAccounts()
     const [loading, setLoading] = useState(false)
     const [banks, setBanks] = useState<any[]>([])
+    const [entityData, setEntityData] = useState<any>(null)
 
     const form = useForm<TreasuryAccountFormValues>({
         resolver: zodResolver(treasuryAccountSchema),
@@ -56,6 +62,10 @@ export function TreasuryAccountDrawer({ open, onOpenChange, accountId, onSuccess
     const type = form.watch("account_type")
     const isSubmitting = isCreating || isUpdating
     const isSystemManaged = SYSTEM_MANAGED_TYPES.has(type)
+    const mode: DrawerMode = modeProp ?? (accountId ? 'edit' : 'create')
+    const isView = mode === 'view'
+    const printRef = useRef<HTMLDivElement>(null)
+    const handlePrint = useReactToPrint({ contentRef: printRef })
 
     useEffect(() => {
         const fetchData = async () => {
@@ -68,6 +78,7 @@ export function TreasuryAccountDrawer({ open, onOpenChange, accountId, onSuccess
                 ])
 
                 setBanks(banksData)
+                setEntityData(accountData)
                 if (accountData) {
                     form.reset({
                         name: accountData.name,
@@ -130,65 +141,98 @@ export function TreasuryAccountDrawer({ open, onOpenChange, accountId, onSuccess
         }
     }
 
+    const drawerTitle = isView
+        ? `Ficha de Cuenta${accountId ? ` #${accountId}` : ""}`
+        : mode === 'create'
+            ? "Nueva Cuenta"
+            : "Editar Cuenta"
+
     return (
-        <Drawer
-            open={open}
-            onOpenChange={onOpenChange}
-            side="left"
-            defaultSize={formDrawerWidth("medium", !!accountId)}
-            contentClassName="p-0"
-            title={
-                <div className="flex items-center gap-3">
-                    <Landmark className="h-5 w-5 text-muted-foreground" />
-                    <span>{accountId ? "Ficha de Cuenta" : "Nueva Cuenta"}</span>
-                    {isSystemManaged && (
-                        <Chip icon={Lock}>Gestionada por sistema</Chip>
-                    )}
-                </div>
-            }
-            subtitle={
-                isSystemManaged
-                    ? "Esta cuenta es gestionada automáticamente por el proveedor de terminal. No puede modificarse directamente."
-                    : accountId
-                        ? "Modifique los detalles de la cuenta y revise su historial."
-                        : "Complete la información para registrar una nueva cuenta."
-            }
-            footer={
-                <FormFooter
-                    actions={
-                        <>
-                            <CancelButton onClick={() => onOpenChange(false)}>
-                                {isSystemManaged ? "Cerrar" : "Cancelar"}
-                            </CancelButton>
-                            {!isSystemManaged && (
-                                <ActionSlideButton
-                                    loading={isSubmitting || loading}
-                                    disabled={isSubmitting || loading}
-                                    onClick={form.handleSubmit(onSubmit)}
-                                >
-                                    {accountId ? "Guardar Cambios" : "Crear Cuenta"}
-                                </ActionSlideButton>
+        <>
+            {(mode === 'view' || mode === 'edit') && accountId && entityData && (
+                <PrintableLayout ref={printRef} title="Cuenta" displayId={`#${accountId}`}>
+                    <div className="text-[9px] space-y-1 mb-2">
+                        <div className="flex justify-between">
+                            <span>Nombre:</span>
+                            <span>{entityData?.name ?? '-'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span>Tipo:</span>
+                            <span>{entityData?.account_type ?? '-'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span>Moneda:</span>
+                            <span>{entityData?.currency ?? '-'}</span>
+                        </div>
+                    </div>
+                </PrintableLayout>
+            )}
+            <Drawer
+                open={open}
+                onOpenChange={onOpenChange}
+                side="left"
+                defaultSize={formDrawerWidth("medium", !!accountId)}
+                contentClassName="p-0"
+                title={
+                    <>
+                        <div className="flex items-center gap-3">
+                            <Landmark className="h-5 w-5 text-muted-foreground" />
+                            <span>{drawerTitle}</span>
+                            {isSystemManaged && (
+                                <Chip icon={Lock}>Gestionada por sistema</Chip>
                             )}
-                        </>
-                    }
-                />
-            }
-        >
-            <FormSplitLayout
-                showSidebar={!!accountId}
-                sidebar={
-                    accountId && (
-                        <ActivitySidebar
-                            entityType="treasuryaccount"
-                            entityId={accountId}
-                            title="Historial de Cambios"
-                        />
-                    )
+                        </div>
+                        {(mode === 'view' || mode === 'edit') && accountId && (
+                            <Button variant="ghost" size="icon" onClick={() => handlePrint()}>
+                                <Printer className="h-4 w-4" />
+                            </Button>
+                        )}
+                    </>
                 }
+                subtitle={
+                    isSystemManaged
+                        ? "Esta cuenta es gestionada automáticamente por el proveedor de terminal. No puede modificarse directamente."
+                        : accountId
+                            ? "Modifique los detalles de la cuenta y revise su historial."
+                            : "Complete la información para registrar una nueva cuenta."
+                }
+                footer={isView ? undefined : (
+                    <FormFooter
+                        actions={
+                            <>
+                                <CancelButton onClick={() => onOpenChange(false)}>
+                                    {isSystemManaged ? "Cerrar" : "Cancelar"}
+                                </CancelButton>
+                                {!isSystemManaged && (
+                                    <ActionSlideButton
+                                        loading={isSubmitting || loading}
+                                        disabled={isSubmitting || loading}
+                                        onClick={form.handleSubmit(onSubmit)}
+                                    >
+                                        {accountId ? "Guardar Cambios" : "Crear Cuenta"}
+                                    </ActionSlideButton>
+                                )}
+                            </>
+                        }
+                    />
+                )}
             >
-                <SkeletonShell isLoading={open && loading} ariaLabel="Cargando formulario de cuenta de tesorería">
-                    <Form {...form}>
-                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-4 pb-4 pt-2">
+                <FormSplitLayout
+                    showSidebar={!!accountId}
+                    sidebar={
+                        accountId && (
+                            <ActivitySidebar
+                                entityType="treasuryaccount"
+                                entityId={accountId}
+                                title="Historial de Cambios"
+                            />
+                        )
+                    }
+                >
+                    <SkeletonShell isLoading={open && loading} ariaLabel="Cargando formulario de cuenta de tesorería">
+                        <Form {...form}>
+                            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-4 pb-4 pt-2">
+                                <fieldset disabled={isView} className="contents">
                             {isSystemManaged && (
                                 <div className="flex items-start gap-3 p-3 rounded-lg border border-warning/20 bg-warning/5 text-xs text-warning">
                                     <Lock className="h-4 w-4 mt-0.5 shrink-0" />
@@ -312,10 +356,12 @@ export function TreasuryAccountDrawer({ open, onOpenChange, accountId, onSuccess
                                     )}
                                 />
                             </div>
+                        </fieldset>
                         </form>
                     </Form>
                 </SkeletonShell>
             </FormSplitLayout>
         </Drawer>
+        </>
     )
 }

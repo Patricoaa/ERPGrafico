@@ -24,7 +24,7 @@ import { DataCell } from '@/components/shared'
 import { formatEntityDisplay } from "@/lib/entity-registry"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { FormTabs, FormTabsContent } from "@/components/shared"
-import { TransactionDrawerRouter, type TransactionType } from "@/features/_shared/transaction-drawer"
+import { LazyDrawer, type TransactionType } from "@/features/_shared/transaction-drawer"
 import { WorkOrderWizard } from "@/features/production"
 import type { ColumnDef } from "@tanstack/react-table"
 import {
@@ -307,7 +307,7 @@ export function ProductInsightsModal({ productId, productName, open, onOpenChang
             </div>
 
             {selectedTransaction && (
-                <TransactionDrawerRouter
+                <LazyDrawer
                     type={selectedTransaction.type}
                     id={Number(selectedTransaction.id)}
                     open={!!selectedTransaction}
