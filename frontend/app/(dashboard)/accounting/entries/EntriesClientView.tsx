@@ -8,14 +8,16 @@ import {
 import { toast } from "sonner"
 import { JournalEntryDrawer } from "@/features/accounting/components/JournalEntryDrawer"
 import api from "@/lib/api"
-import { TransactionDrawerRouter } from "@/features/_shared/transaction-drawer"
-import { Trash2, CheckCircle, Eye, Pencil } from "lucide-react"
+
+import { CheckCircle, RotateCcw, FileText } from "lucide-react"
 import { DataTableView, DataTableColumnHeader } from '@/components/shared'
-import { DataCell, createActionsColumn } from '@/components/shared'
+import { DataCell, createActionsColumn, Chip } from '@/components/shared'
+import Link from "next/link"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { useJournalEntries, type JournalEntry } from "@/features/accounting/hooks/useJournalEntries"
 import { useAccountingAccounts } from "@/features/accounting/hooks/useAccounts"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
+import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
 import { SmartSearchBar, useSmartSearch } from "@/components/shared"
 import { journalEntrySearchDef } from "@/features/accounting/searchDef"
 
@@ -40,30 +42,29 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
     const pathname = usePathname()
     const searchParams = useSearchParams()
 
-    const { entity: selectedFromUrl, clearSelection: clearUrlSelected } = useSelectedEntity<JournalEntry>({
+    const { entity: selectedFromUrl } = useSelectedEntity<JournalEntry>({
         endpoint: '/accounting/entries'
     })
+    const { detailId, openSelected, openDetail, clearActions } = useEntityRouteActions()
 
-    // T-107: un solo efecto que ramifica por mode — evita flash visual cuando ambos
-    // efectos disparaban en el mismo render al recibir ?selected=42&mode=edit (ADR-0020)
+    // ?selected=<id> → abre el form de edición
     useEffect(() => {
         if (!selectedFromUrl) return
-        if (searchParams.get('mode') === 'edit') {
-            // Modo edición: abre el form directamente, cierra el viewer si estaba abierto
-            setEditingEntry(selectedFromUrl)
-            setIsFormOpen(true)
-            setViewingTransaction(null)
-        } else {
-            // Modo detalle: abre el viewer de transacción
-            setViewingTransaction({ type: 'journal_entry', id: selectedFromUrl.id })
-        }
-    }, [selectedFromUrl, searchParams])
+        setEditingEntry(selectedFromUrl)
+        setIsFormOpen(true)
+        setViewingTransaction(null)
+    }, [selectedFromUrl])
+
+    // ?detail=<id> → abre el visor de transacción (read-only)
+    useEffect(() => {
+        if (!detailId) return
+        setViewingTransaction({ type: 'journal_entry', id: Number(detailId) })
+        setIsFormOpen(false)
+        setEditingEntry(null)
+    }, [detailId])
+
     const clearSelection = () => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.delete('selected')
-        params.delete('mode')
-        const query = params.toString()
-        router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
+        clearActions()
     }
 
     const handleCloseModal = () => {
@@ -99,11 +100,6 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
         }
     }
 
-    const handleEditEntry = (entry: JournalEntry) => {
-        setEditingEntry(entry)
-        setIsFormOpen(true)
-    }
-
     const handlePost = async (id: number) => {
         try {
             await api.post(`/accounting/entries/${id}/post_entry/`)
@@ -124,6 +120,18 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
         } catch (error) {
             console.error("Error deleting entry:", error)
             toast.error("Error al eliminar el asiento")
+        }
+    }
+
+    const handleReverse = async (id: number) => {
+        if (!confirm("¿Está seguro de reversar este asiento? Se creará un asiento de reversión.")) return
+        try {
+            await api.post(`/accounting/entries/${id}/reverse_entry/`)
+            toast.success("Asiento de reversión creado exitosamente")
+            refetch()
+        } catch (error) {
+            console.error("Error reversing entry:", error)
+            toast.error("Error al reversar el asiento")
         }
     }
 
@@ -163,32 +171,28 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
                 <DataTableColumnHeader column={column} title="Estado" className="justify-center" />
             ),
             cell: ({ row }) =>
-                <DataCell.Status status={row.getValue("state")} />,
+                <DataCell.Status status={row.getValue("status")} />,
+        },
+        {
+            id: "origin",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Origen" className="justify-center" />
+            ),
+            cell: ({ row }) => {
+                const entry = row.original
+                if (entry.is_manual) return <Chip size="sm" intent="neutral">Manual</Chip>
+                if (entry.reversal_of) return <Chip size="sm" intent="warning">Reversión</Chip>
+                return <Chip size="sm" intent="info">Automático</Chip>
+            },
+            enableSorting: false,
         },
         createActionsColumn<JournalEntry>({
             renderActions: (entry) => (
                 <>
                     {entry.status === 'DRAFT' ? (
-                        <DataCell.Action
-                            icon={Pencil}
-                            title="Editar"
-                            onClick={() => {
-                                const params = new URLSearchParams(searchParams.toString())
-                                params.set('selected', String(entry.id))
-                                params.set('mode', 'edit')
-                                router.push(`${pathname}?${params.toString()}`, { scroll: false })
-                            }}
-                        />
+                        <DataCell.Action action="edit" onClick={() => openSelected(entry.id)} />
                     ) : (
-                        <DataCell.Action
-                            icon={Eye}
-                            title="Ver Detalle"
-                            onClick={() => {
-                                const params = new URLSearchParams(searchParams.toString())
-                                params.set('selected', String(entry.id))
-                                router.push(`${pathname}?${params.toString()}`, { scroll: false })
-                            }}
-                        />
+                        <DataCell.Action action="detail" onClick={() => openDetail(entry.id)} />
                     )}
                     {entry.status === 'DRAFT' && (
                         <DataCell.Action
@@ -197,15 +201,23 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
                             onClick={() => handlePost(entry.id)}
                         />
                     )}
-                    <DataCell.Action
-                        icon={Trash2}
-                        title="Eliminar"
-                        onClick={() => handleDelete(entry.id)}
-                    />
+                    {entry.status === 'DRAFT' && (
+                        <DataCell.Action
+                            action="delete"
+                            onClick={() => handleDelete(entry.id)}
+                        />
+                    )}
+                    {(entry.status === 'POSTED' || entry.status === 'CLOSED') && entry.is_manual && (
+                        <DataCell.Action
+                            icon={RotateCcw}
+                            title="Reversar"
+                            onClick={() => handleReverse(entry.id)}
+                        />
+                    )}
                 </>
             )
         }),
-    ], [accounts])
+    ], [openSelected, openDetail, handlePost, handleDelete, handleReverse])
 
 
     return (
@@ -234,9 +246,9 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
                 />
 
                 {viewingTransaction && (
-                    <TransactionDrawerRouter
-                        type={viewingTransaction.type}
-                        id={Number(viewingTransaction.id)}
+                    <JournalEntryDrawer
+                        journalEntryId={Number(viewingTransaction.id)}
+                        mode="view"
                         open={!!viewingTransaction}
                         onOpenChange={(open) => {
                             if (!open) {

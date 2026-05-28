@@ -950,7 +950,9 @@ class WorkOrderService:
                     'date': timezone.now().date(),
                     'description': f"Consumo Producción OT-{work_order.number}",
                     'reference': f"OT-{work_order.number}",
-                    'status': JournalEntry.State.DRAFT
+                    'status': JournalEntry.State.DRAFT,
+                    'source_content_type': ContentType.objects.get_for_model(WorkOrder),
+                    'source_object_id': work_order.id,
                 }
                 
                 items = []

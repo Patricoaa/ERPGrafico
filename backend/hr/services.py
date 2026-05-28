@@ -6,6 +6,8 @@ from django.utils.translation import gettext_lazy as _
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import Sum
+from django.contrib.contenttypes.models import ContentType
+from .models import Payroll
 import re
 
 
@@ -308,6 +310,8 @@ def post_payroll(payroll):
         entry = JournalEntry.objects.create(
             description=f"Centralización Remuneraciones {payroll.display_id} - {employee_name} ({period_str})",
             reference=payroll.display_id,
+            source_content_type=ContentType.objects.get_for_model(Payroll),
+            source_object_id=payroll.id,
         )
         
         items = payroll.items.select_related('concept', 'concept__account').all()

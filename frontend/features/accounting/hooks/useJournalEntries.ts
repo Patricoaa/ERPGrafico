@@ -16,13 +16,30 @@ export interface JournalEntry {
     display_id: string
     date: string
     description: string
-    reference: string
     status: string
+    is_manual: boolean
+    reversal_of?: {
+        id: number
+        display_id: string
+    } | null
+    items?: Array<{
+        id: number
+        account: number
+        account_code: string
+        account_name: string
+        partner: number | null
+        label: string
+        debit: number
+        credit: number
+    }>
     source_documents?: {
         type: string
-        id: number | string
+        id: number
         name: string
-        url: string
+        url?: string
+        content_type_id?: number
+        object_id?: number
+        display?: string
     }[]
 }
 

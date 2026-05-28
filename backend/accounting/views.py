@@ -21,7 +21,7 @@ from .serializers import (
 )
 from .services import JournalEntryService, AccountingService, BudgetService
 from .fiscal_year_service import FiscalYearClosingService
-from .selectors import list_accounts, list_budgetable_accounts, get_account_ledger
+from .selectors import list_accounts, list_budgetable_accounts, get_account_ledger, balance_affecting_statuses
 from django.core.exceptions import ValidationError
 from core.mixins import BulkImportMixin, AuditHistoryMixin as AuditHistory
 
@@ -80,8 +80,8 @@ class AccountViewSet(BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
     
     def destroy(self, request, *args, **kwargs):
         account = self.get_object()
-        # Check if account has journal items
-        if account.journal_items.filter(entry__status='POSTED').exists():
+        # Check if account has journal items that affect balances
+        if account.journal_items.filter(entry__status__in=balance_affecting_statuses()).exists():
             return Response(
                 {"error": "No se puede eliminar una cuenta con movimientos contables asociados."},
                 status=status.HTTP_400_BAD_REQUEST
@@ -122,7 +122,7 @@ class JournalEntryViewSet(viewsets.ModelViewSet, AuditHistory):
     serializer_class = JournalEntrySerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_class = JournalEntryFilterSet
-    search_fields = ['description', 'reference', 'display_id', 'items__partner__name', 'items__partner__tax_id']
+    search_fields = ['description', 'display_id', 'items__partner__name', 'items__partner__tax_id']
 
     @action(detail=True, methods=['post'])
     def post_entry(self, request, pk=None):
@@ -130,6 +130,22 @@ class JournalEntryViewSet(viewsets.ModelViewSet, AuditHistory):
         try:
             JournalEntryService.post_entry(entry)
             return Response({'status': 'posted'})
+        except ValidationError as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=['post'])
+    def reverse_entry(self, request, pk=None):
+        entry = self.get_object()
+        if not entry.is_manual:
+            return Response(
+                {'error': 'No se puede revertir un asiento generado automáticamente. Use el proceso de anulación del documento origen.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        try:
+            description = request.data.get('description')
+            reversal = JournalEntryService.reverse_entry(entry, description=description)
+            serializer = self.get_serializer(reversal)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
         except ValidationError as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
             
@@ -146,7 +162,7 @@ class JournalEntryViewSet(viewsets.ModelViewSet, AuditHistory):
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     def update(self, request, *args, **kwargs):
-        # Only DRAFT entries can be edited; POSTED/CANCELLED are immutable
+        # Only DRAFT entries can be edited; POSTED/CLOSED/REVERSAL/CANCELLED are immutable
         instance = self.get_object()
         if instance.status != 'DRAFT':
             return Response(
@@ -166,11 +182,11 @@ class JournalEntryViewSet(viewsets.ModelViewSet, AuditHistory):
             if items_data is not None:
                 # Replace items
                 instance.items.all().delete()
+                from .models import JournalItem
                 for item in items_data:
-                    # Ensure account ID is passed correctly, might need adjustment depending on frontend payload
-                    # Frontend usually sends 'account' as ID.
-                    from .models import JournalItem
-                    JournalItem.objects.create(entry=instance, **item)
+                    account_val = item.pop('account', None)
+                    if account_val:
+                        JournalItem.objects.create(entry=instance, account_id=account_val, **item)
             
             return Response(serializer.data)
         except Exception as e:

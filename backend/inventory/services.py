@@ -2,6 +2,7 @@ from django.db import models, transaction
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.db.models import Q, QuerySet
+from django.contrib.contenttypes.models import ContentType
 from .models import Product, Warehouse, StockMove, PricingRule, UoM, ProductAttributeValue, ProductUoMPrice
 import itertools
 from accounting.models import JournalEntry, JournalItem, Account, AccountType
@@ -165,7 +166,9 @@ class StockService:
             date=timezone.now().date(),
             description=f"Ajuste Stock {product.internal_code}: {description} ({adjustment_reason or 'Manual'})",
             reference=f"STK-{move.id}",
-            status=JournalEntry.State.DRAFT
+            status=JournalEntry.State.DRAFT,
+            source_content_type=ContentType.objects.get_for_model(StockMove),
+            source_object_id=move.id,
         )
 
         if quantity > 0:

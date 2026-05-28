@@ -1,6 +1,7 @@
 from django.db import transaction, models
 from django.core.exceptions import ValidationError
 from django.utils import timezone
+from django.contrib.contenttypes.models import ContentType
 from .models import Invoice
 from treasury.models import TreasuryMovement, TreasuryAccount
 from accounting.models import JournalEntry, JournalItem, AccountingSettings, AccountType
@@ -277,8 +278,10 @@ class BillingService:
             {
                 'date': invoice.date,
                 'description': description,
-                'reference': reference,
-                'status': JournalEntry.State.DRAFT
+                'status': JournalEntry.State.DRAFT,
+                'is_manual': False,
+                'source_content_type': ContentType.objects.get_for_model(invoice),
+                'source_object_id': invoice.id,
             },
             items
         )
@@ -297,8 +300,10 @@ class BillingService:
             recon_entry = JournalEntry.objects.create(
                 date=timezone.now().date(),
                 description=f"Conciliación Anticipos - Pedido {order.number} -> Factura {invoice.id}",
-                reference=f"RECO-{invoice.id}", 
-                status=JournalEntry.State.DRAFT
+                reference=f"RECO-{invoice.id}",
+                status=JournalEntry.State.DRAFT,
+                source_content_type=ContentType.objects.get_for_model(Invoice),
+                source_object_id=invoice.id,
             )
             
             receivable_account = order.customer.account_receivable or settings.default_receivable_account
@@ -401,8 +406,10 @@ class BillingService:
             {
                 'date': invoice.date,
                 'description': description,
-                'reference': reference,
-                'status': JournalEntry.State.DRAFT
+                'status': JournalEntry.State.DRAFT,
+                'is_manual': False,
+                'source_content_type': ContentType.objects.get_for_model(invoice),
+                'source_object_id': invoice.id,
             },
             items
         )
@@ -439,7 +446,9 @@ class BillingService:
                 date=timezone.now().date(),
                 description=f"Conciliación Anticipos - OC {order.number} -> Factura {supplier_invoice_number}",
                 reference=f"RECO-{invoice.id}", # Reconciliation
-                status=JournalEntry.State.DRAFT
+                status=JournalEntry.State.DRAFT,
+                source_content_type=ContentType.objects.get_for_model(Invoice),
+                source_object_id=invoice.id,
             )
             
             payable_account = order.supplier.account_payable or settings.default_payable_account
