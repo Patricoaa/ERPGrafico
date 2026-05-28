@@ -1,4 +1,6 @@
-export type TransactionDrawerMode = 'view' | 'edit'
+import type { DrawerMode } from "@/features/_shared/drawer/types"
+
+export type TransactionDrawerMode = DrawerMode
 
 export interface TransactionDrawerProps {
   id: number | null

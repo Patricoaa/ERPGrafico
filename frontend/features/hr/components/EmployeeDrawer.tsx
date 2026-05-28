@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useEmployeeFormDeps } from "../hooks/useEmployees"
 import { toast } from "sonner"
 import { showApiError } from "@/lib/errors"
@@ -10,7 +10,7 @@ import * as z from "zod"
 import { createEmployee, updateEmployee } from '@/features/hr/api/hrApi'
 import type { Employee, EmployeeConceptAmount } from "@/types/hr"
 import { ActionSlideButton, CancelButton } from "@/components/shared"
-import { UserCog, CalendarCheck2, Plus, ShieldCheck } from "lucide-react"
+import { UserCog, CalendarCheck2, Plus, ShieldCheck, Printer } from "lucide-react"
 import { ActivitySidebar } from "@/features/audit/components"
 import { FormSplitLayout } from "@/components/shared"
 
@@ -22,6 +22,10 @@ import { cn } from "@/lib/utils"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { Drawer, LabeledInput, LabeledSelect, FormTabs, FormTabsContent, FormSection, type FormTabItem, FormFooter, DatePicker, LabeledContainer, SkeletonShell } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
+import { Button } from "@/components/ui/button"
+import { useReactToPrint } from "react-to-print"
+import { PrintableLayout } from "@/features/_shared/transaction-drawer"
+import type { DrawerMode } from "@/features/_shared/drawer/types"
 
 export const employeeSchema = z.object({
     contact: z.string().min(1, "Contacto requerido"),
@@ -53,6 +57,7 @@ export interface EmployeeDrawerProps {
     employee: Employee | null
     onSaved: () => void
     trigger?: React.ReactNode
+    mode?: DrawerMode
 }
 
 const parseLocalDate = (dateStr?: string) => {
@@ -63,8 +68,13 @@ const parseLocalDate = (dateStr?: string) => {
     return new Date(year, month - 1, day)
 }
 
-export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, trigger }: EmployeeDrawerProps) {
+export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, trigger, mode: modeProp }: EmployeeDrawerProps) {
     const [saving, setSaving] = useState(false)
+    const printRef = useRef<HTMLDivElement>(null)
+
+    const mode: DrawerMode = modeProp ?? (employee ? 'edit' : 'create')
+    const isView = mode === 'view'
+    const handlePrint = useReactToPrint({ contentRef: printRef })
 
     const [activeTab, setActiveTab] = useState("contratacion")
 
@@ -236,7 +246,13 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, trigger 
 
     const watchSalud = form.watch("salud_type")
 
-    const footer = (
+    const drawerTitle = isView
+        ? `Ficha de Empleado${employee?.display_id ? ` • ${employee.display_id}` : ""}`
+        : mode === 'create'
+            ? "Nuevo Empleado"
+            : "Editar Empleado"
+
+    const footer = isView ? undefined : (
         <FormFooter
             actions={
                 <>
@@ -254,11 +270,26 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, trigger 
     )
 
     return (
+        <>
+            {isView && employee?.id && (
+                <PrintableLayout ref={printRef} title="Employee" displayId={`${employee.display_id}`}>
+                    <div className="text-[9px] space-y-1 mb-2">
+                        <div className="flex justify-between">
+                            <span>Nombre:</span>
+                            <span>{employee.contact_detail?.name ?? '-'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span>Cargo:</span>
+                            <span>{employee.position ?? '-'}</span>
+                        </div>
+                    </div>
+                </PrintableLayout>
+            )}
         <Drawer
             open={open}
             onOpenChange={onOpenChange}
             icon={UserCog}
-            title={employee ? "Editar Empleado" : "Nuevo Empleado"}
+            title={<><span>{drawerTitle}</span>{(mode === 'view' || mode === 'edit') && employee?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}</>}
             subtitle={employee ? `Ficha de Personal • ${employee.display_id} • ${employee.contact_detail?.name}` : "Ficha de Personal • Recursos Humanos"}
             defaultSize={formDrawerWidth("master", !!employee)}
             className="h-[90vh]"
@@ -269,6 +300,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, trigger 
             <SkeletonShell isLoading={isFetchingInitialData} ariaLabel="Cargando ficha de empleado" className="flex-1 flex flex-col h-full">
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit, onSubmitError)} className="flex-1 w-full h-full flex flex-col overflow-visible min-h-0">
+                        <fieldset disabled={isView} className="contents">
                         <FormSplitLayout
                             showSidebar={!!employee?.id}
                             sidebar={employee?.id ? (
@@ -574,9 +606,11 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, trigger 
                                 </fieldset>
                             </FormTabs>
                         </FormSplitLayout>
+                        </fieldset>
                     </form>
                 </Form>
             </SkeletonShell>
         </Drawer>
+        </>
     )
 }

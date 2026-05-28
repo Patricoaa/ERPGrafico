@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useRef } from "react"
 import { ProductCategory } from "@/types/entities"
 import { cn } from "@/lib/utils"
 import { useForm } from "react-hook-form"
@@ -16,12 +16,15 @@ import {
 import { useCategoryMutations } from "../hooks/useCategoryMutations"
 import { AccountSelector, CategorySelector } from "@/components/selectors"
 import * as LucideIcons from "lucide-react"
-import { Check } from "lucide-react"
+import { Check, Printer } from "lucide-react"
 import { formDrawerWidth } from "@/lib/form-widths"
 
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { ActivitySidebar } from "@/features/audit/components"
-import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
+import { ActionSlideButton } from "@/components/shared/ActionSlideButton"
+import { useReactToPrint } from "react-to-print"
+import { PrintableLayout } from "@/features/_shared/transaction-drawer"
+import type { DrawerMode } from "@/features/_shared/drawer/types"
 
 const ICON_OPTIONS = [
     // Imprenta y Diseño
@@ -165,6 +168,7 @@ interface CategoryDrawerProps {
     triggerText?: React.ReactNode
     inline?: boolean
     onLoadingChange?: (loading: boolean) => void
+    mode?: DrawerMode
 }
 
 export function CategoryDrawer({
@@ -175,14 +179,20 @@ export function CategoryDrawer({
     onOpenChange,
     triggerText = "Nueva Categoría",
     inline = false,
-    onLoadingChange
+    onLoadingChange,
+    mode: modeProp,
 }: CategoryDrawerProps) {
     const [openState, setOpenState] = useState(false)
     const open = openProp !== undefined ? openProp : openState
     const setOpen = onOpenChange || setOpenState
 
+    const isView = (modeProp ?? (initialData ? "view" : "create")) === "view"
+    const mode: DrawerMode = modeProp ?? (initialData ? "view" : "create")
+
     const { saveCategory } = useCategoryMutations()
     const [loading, setLoading] = useState(false)
+    const printRef = useRef<HTMLDivElement>(null)
+    const handlePrint = useReactToPrint({ contentRef: printRef })
 
     const form = useForm<CategoryFormValues>({
         resolver: zodResolver(categorySchema),
@@ -292,6 +302,7 @@ export function CategoryDrawer({
         >
             <Form {...form}>
                 <form id="category-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-4 pb-4 pt-2">
+                    <fieldset disabled={isView} className="contents">
 
                     <FormField
                         control={form.control}
@@ -414,6 +425,7 @@ export function CategoryDrawer({
                             />
                         </div>
                     )}
+                </fieldset>
                 </form>
             </Form>
         </FormSplitLayout>
@@ -423,9 +435,33 @@ export function CategoryDrawer({
         return <>{formContent}</>
     }
 
+    const drawerTitle = isView
+        ? `Ficha de Categoría${initialData?.id ? ` #${initialData.id}` : ""}`
+        : mode === 'create'
+            ? "Nueva Categoría"
+            : "Editar Categoría"
+
     return (
         <>
-            <Trigger />
+            {!isView && <Trigger />}
+            {(mode === 'view' || mode === 'edit') && initialData?.id && (
+                <PrintableLayout
+                    ref={printRef}
+                    title="ProductCategory"
+                    displayId={`#${initialData.id}`}
+                >
+                    <div className="text-[9px] space-y-1 mb-2">
+                        <div className="flex justify-between">
+                            <span>Nombre:</span>
+                            <span>{initialData?.name ?? '-'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span>Prefijo:</span>
+                            <span>{initialData?.prefix ?? '-'}</span>
+                        </div>
+                    </div>
+                </PrintableLayout>
+            )}
             <Drawer
                 open={open}
                 onOpenChange={setOpen}
@@ -433,25 +469,25 @@ export function CategoryDrawer({
                 defaultSize={width}
                 contentClassName="p-0"
                 icon={LucideIcons.Tag}
-                title={initialData ? "Ficha de Categoría" : "Crear Categoría"}
+                title={<><span>{drawerTitle}</span>{(mode === 'view' || mode === 'edit') && initialData?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}</>}
                 subtitle={
                     form.watch("name")
                         ? `${form.watch("prefix") ? `${form.watch("prefix")} | ` : ""}${form.watch("name")}`
                         : (initialData ? undefined : "Nueva Categoría")
                 }
 
-                footer={
+                footer={isView ? undefined : (
                     <FormFooter
                         actions={
                             <>
                                 <CancelButton onClick={() => setOpen(false)} />
                                 <ActionSlideButton type="submit" form="category-form" loading={loading}>
-                                    {initialData ? "Guardar Cambios" : "Crear Categoría"}
+                                    {mode === 'create' ? "Crear Categoría" : "Guardar Cambios"}
                                 </ActionSlideButton>
                             </>
                         }
                     />
-                }
+                )}
             >
                 {formContent}
             </Drawer>

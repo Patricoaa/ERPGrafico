@@ -1,14 +1,18 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { Building2, Settings } from "lucide-react"
+import { Building2, Settings, Printer } from "lucide-react"
 import { useTerminalProviders, type PaymentTerminalProvider } from "@/features/treasury"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { Form, FormField } from "@/components/ui/form"
+import { Button } from "@/components/ui/button"
+import { useReactToPrint } from "react-to-print"
+import { PrintableLayout } from "@/features/_shared/transaction-drawer"
+import type { DrawerMode } from "@/features/_shared/drawer/types"
 import { Drawer, CancelButton, ActionSlideButton, LabeledInput, FormSection, FormFooter } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { toast } from "sonner"
@@ -29,10 +33,15 @@ interface ProviderDrawerProps {
     onOpenChange: (open: boolean) => void
     provider?: PaymentTerminalProvider | null
     onSuccess?: () => void
+    mode?: DrawerMode
 }
 
-export function ProviderDrawer({ open, onOpenChange, provider, onSuccess }: ProviderDrawerProps) {
+export function ProviderDrawer({ open, onOpenChange, provider, onSuccess, mode: modeProp }: ProviderDrawerProps) {
     const { createProvider, updateProvider } = useTerminalProviders()
+    const mode: DrawerMode = modeProp ?? (provider ? 'edit' : 'create')
+    const isView = mode === 'view'
+    const printRef = useRef<HTMLDivElement>(null)
+    const handlePrint = useReactToPrint({ contentRef: printRef })
     const [loading, setLoading] = useState(false)
 
     const form = useForm<ProviderFormValues>({
@@ -105,30 +114,48 @@ export function ProviderDrawer({ open, onOpenChange, provider, onSuccess }: Prov
         }
     }
 
+    const drawerTitle = isView
+        ? `Ficha de Proveedor${provider?.id ? ` #${provider.id}` : ""}`
+        : mode === 'create'
+            ? "Nuevo Proveedor de Pago"
+            : "Editar Proveedor"
+
     return (
-        <Drawer
-            open={open}
-            onOpenChange={onOpenChange}
-            side="left"
-            defaultSize={formDrawerWidth("medium", !!provider)}
-            contentClassName="p-0"
-            title={provider ? "Editar Proveedor" : "Nuevo Proveedor de Pago"}
-            subtitle="Configure las cuentas contables para recaudación y comisiones."
-            footer={
-                <FormFooter
-                    actions={
-                        <>
-                            <CancelButton onClick={() => onOpenChange(false)} />
-                            <ActionSlideButton type="submit" loading={loading} onClick={form.handleSubmit(onSubmit)}>
-                                {provider ? "Guardar Cambios" : "Crear Proveedor"}
-                            </ActionSlideButton>
-                        </>
-                    }
-                />
-            }
-        >
+        <>
+            {(mode === 'view' || mode === 'edit') && provider?.id && (
+                <PrintableLayout ref={printRef} title="Proveedor" displayId={`#${provider.id}`}>
+                    <div className="text-[9px] space-y-1 mb-2">
+                        <div className="flex justify-between">
+                            <span>Nombre:</span>
+                            <span>{provider?.name ?? '-'}</span>
+                        </div>
+                    </div>
+                </PrintableLayout>
+            )}
+            <Drawer
+                open={open}
+                onOpenChange={onOpenChange}
+                side="left"
+                defaultSize={formDrawerWidth("medium", !!provider)}
+                contentClassName="p-0"
+                title={<><span>{drawerTitle}</span>{(mode === 'view' || mode === 'edit') && provider?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}</>}
+                subtitle="Configure las cuentas contables para recaudación y comisiones."
+                footer={isView ? undefined : (
+                    <FormFooter
+                        actions={
+                            <>
+                                <CancelButton onClick={() => onOpenChange(false)} />
+                                <ActionSlideButton type="submit" loading={loading} onClick={form.handleSubmit(onSubmit)}>
+                                    {mode === 'create' ? "Crear Proveedor" : "Guardar Cambios"}
+                                </ActionSlideButton>
+                            </>
+                        }
+                    />
+                )}
+            >
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-2">
+                    <fieldset disabled={isView} className="contents">
                     <FormSection title="Información General" icon={Building2} />
                     <div className="space-y-4">
                         <div className="space-y-2">
@@ -209,9 +236,11 @@ export function ProviderDrawer({ open, onOpenChange, provider, onSuccess }: Prov
                             )}
                         />
                     </div>
+                    </fieldset>
                 </form>
             </Form>
         </Drawer>
+        </>
     )
 }
 

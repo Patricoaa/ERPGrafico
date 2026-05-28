@@ -43,6 +43,7 @@ export const STATUS_MAP: Record<string, StatusStyle> = {
     CANCELLED:      { label: 'Cancelado',    intent: 'destructive' },
     VOIDED:         { label: 'Anulado',      intent: 'destructive' },
     POSTED:         { label: 'Publicado',    intent: 'success' },
+    REVERSAL:       { label: 'Reversión',    intent: 'primary' },
     PAYMENT_PENDING:{ label: 'Pago Pendiente', intent: 'warning' },
 
     // ── Progress / Logistics ─────────────────────────────────────────────

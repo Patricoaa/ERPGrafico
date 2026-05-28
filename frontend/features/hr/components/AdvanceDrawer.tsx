@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { toast } from "sonner"
 import { showApiError } from "@/lib/errors"
 import { useForm } from "react-hook-form"
@@ -15,7 +15,10 @@ import { Button } from "@/components/ui/button"
 import { CancelButton, ActionSlideButton } from "@/components/shared"
 import { Form, FormField } from "@/components/ui/form"
 import { Drawer, LabeledInput, LabeledSelect, PeriodValidationDateInput, FormFooter, FormSplitLayout } from "@/components/shared"
-import { WalletCards } from "lucide-react"
+import { WalletCards, Printer } from "lucide-react"
+import { useReactToPrint } from "react-to-print"
+import { PrintableLayout } from "@/features/_shared/transaction-drawer"
+import type { DrawerMode } from "@/features/_shared/drawer/types"
 import { formDrawerWidth } from "@/lib/form-widths"
 
 export const advanceSchema = z.object({
@@ -35,13 +38,18 @@ export interface AdvanceDrawerProps {
     employees?: Employee[]
     payrolls?: Payroll[]
     onSaved: (data?: Record<string, unknown>) => void
+    mode?: DrawerMode
 }
 
-export function AdvanceDrawer({ open, onOpenChange, advance, employees: employeesProp, payrolls: payrollsProp, onSaved }: AdvanceDrawerProps) {
+export function AdvanceDrawer({ open, onOpenChange, advance, employees: employeesProp, payrolls: payrollsProp, onSaved, mode: modeProp }: AdvanceDrawerProps) {
     const { employees: fetchedEmployees } = useEmployees()
     const { payrolls: fetchedPayrolls } = usePayrolls()
     const employees = employeesProp ?? fetchedEmployees
     const payrolls = payrollsProp ?? fetchedPayrolls
+    const mode: DrawerMode = modeProp ?? (advance ? 'edit' : 'create')
+    const isView = mode === 'view'
+    const printRef = useRef<HTMLDivElement>(null)
+    const handlePrint = useReactToPrint({ contentRef: printRef })
     const [saving, setSaving] = useState(false)
     
     const width = formDrawerWidth("medium", !!advance)
@@ -105,29 +113,46 @@ export function AdvanceDrawer({ open, onOpenChange, advance, employees: employee
     const selectedEmployee = form.watch("employee")
     const employeePayrolls = payrolls.filter(p => p.employee.toString() === selectedEmployee && p.status === 'DRAFT')
 
+    const drawerTitle = isView
+        ? `Ficha de Anticipo${advance?.id ? ` #${advance.id}` : ""}`
+        : mode === 'create'
+            ? "Nuevo Anticipo"
+            : "Editar Anticipo"
+
     return (
-        <Drawer
-            open={open}
-            onOpenChange={onOpenChange}
-            side="left"
-            defaultSize={width}
-            icon={WalletCards}
-            title={advance ? "Ficha de Anticipo" : "Nuevo Anticipo"}
-            subtitle={advance ? "Revise y modifique los datos del anticipo solicitado." : "Registre una entrega de dinero a cuenta de la próxima liquidación."}
-            contentClassName="p-0"
-            footer={
-                <FormFooter
-                    actions={
-                        <>
-                            <CancelButton onClick={() => onOpenChange(false)} />
-                            <ActionSlideButton type="submit" form="advance-form" loading={saving}>
-                                {advance ? "Actualizar" : "Registrar"}
-                            </ActionSlideButton>
-                        </>
-                    }
-                />
-            }
-        >
+        <>
+            {(mode === 'view' || mode === 'edit') && advance?.id && (
+                <PrintableLayout ref={printRef} title="Anticipo" displayId={`#${advance.id}`}>
+                    <div className="text-[9px] space-y-1 mb-2">
+                        <div className="flex justify-between">
+                            <span>Empleado:</span>
+                            <span>{advance?.employee_name ?? '-'}</span>
+                        </div>
+                    </div>
+                </PrintableLayout>
+            )}
+            <Drawer
+                open={open}
+                onOpenChange={onOpenChange}
+                side="left"
+                defaultSize={width}
+                icon={WalletCards}
+                title={<><span>{drawerTitle}</span>{(mode === 'view' || mode === 'edit') && advance?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}</>}
+                subtitle={advance ? "Revise y modifique los datos del anticipo solicitado." : "Registre una entrega de dinero a cuenta de la próxima liquidación."}
+                contentClassName="p-0"
+                footer={isView ? undefined : (
+                    <FormFooter
+                        actions={
+                            <>
+                                <CancelButton onClick={() => onOpenChange(false)} />
+                                <ActionSlideButton type="submit" form="advance-form" loading={saving}>
+                                    {mode === 'create' ? "Registrar" : "Actualizar"}
+                                </ActionSlideButton>
+                            </>
+                        }
+                    />
+                )}
+            >
             {advance ? (
                 <FormSplitLayout
                     showSidebar={true}
@@ -136,6 +161,7 @@ export function AdvanceDrawer({ open, onOpenChange, advance, employees: employee
                     <div className="flex-1 flex flex-col overflow-y-auto p-6 pt-2 scrollbar-thin">
                         <Form {...form}>
                             <form id="advance-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pr-1">
+                                <fieldset disabled={isView} className="contents">
                                 <FormField control={form.control} name="employee" render={({ field, fieldState }) => (
                                     <LabeledSelect
                                         label="Empleado"
@@ -199,6 +225,7 @@ export function AdvanceDrawer({ open, onOpenChange, advance, employees: employee
                                         {...field}
                                     />
                                 )} />
+                                </fieldset>
                             </form>
                         </Form>
                     </div>
@@ -208,6 +235,7 @@ export function AdvanceDrawer({ open, onOpenChange, advance, employees: employee
                     <div className="flex-1 flex flex-col overflow-y-auto p-6 pt-2 scrollbar-thin">
                         <Form {...form}>
                             <form id="advance-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pr-1">
+                                <fieldset disabled={isView} className="contents">
                                 <FormField control={form.control} name="employee" render={({ field, fieldState }) => (
                                     <LabeledSelect
                                         label="Empleado"
@@ -271,11 +299,13 @@ export function AdvanceDrawer({ open, onOpenChange, advance, employees: employee
                                         {...field}
                                     />
                                 )} />
+                                </fieldset>
                             </form>
                         </Form>
                     </div>
                 </FormSplitLayout>
             )}
         </Drawer>
+        </>
     )
 }

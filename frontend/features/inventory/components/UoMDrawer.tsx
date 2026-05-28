@@ -13,13 +13,16 @@ import {
 import { Button } from "@/components/ui/button"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip"
-import { Ruler, ChevronDown, Search, Check, Plus } from "lucide-react"
+import { Ruler, ChevronDown, Search, Check, Plus, Printer } from "lucide-react"
 import { ActionSlideButton } from "@/components/shared"
 import { ActivitySidebar } from "@/features/audit/components"
 import { useUoMs, type UoM } from "@/features/inventory/hooks/useUoMs"
 import { UoMCategoryDrawer, type UoMCategory } from "./UoMCategoryDrawer"
 import { cn } from "@/lib/utils"
 import { formDrawerWidth } from "@/lib/form-widths"
+import { useReactToPrint } from "react-to-print"
+import { PrintableLayout } from "@/features/_shared/transaction-drawer"
+import type { DrawerMode } from "@/features/_shared/drawer/types"
 
 const uomSchema = z.object({
     name: z.string().min(1, "El nombre es requerido"),
@@ -35,13 +38,19 @@ interface UoMDrawerProps {
     onOpenChange?: (open: boolean) => void
     initialData?: Partial<UoM>
     onSuccess?: () => void
+    mode?: DrawerMode
 }
 
-export function UoMDrawer({ open: openProp, onOpenChange, initialData, onSuccess }: UoMDrawerProps) {
+export function UoMDrawer({ open: openProp, onOpenChange, initialData, onSuccess, mode: modeProp }: UoMDrawerProps) {
     const [openState, setOpenState] = useState(false)
     const [isCreateCategoryOpen, setIsCreateCategoryOpen] = useState(false)
     const open = openProp !== undefined ? openProp : openState
     const setOpen = onOpenChange || setOpenState
+
+    const mode: DrawerMode = modeProp ?? (initialData ? 'edit' : 'create')
+    const isView = mode === 'view'
+    const printRef = useRef<HTMLDivElement>(null)
+    const handlePrint = useReactToPrint({ contentRef: printRef })
 
     const { categories, isLoading: isCategoriesLoading, saveUoM, isSaving, refetch } = useUoMs()
     const isFetchingInitialData = open && isCategoriesLoading
@@ -118,8 +127,36 @@ export function UoMDrawer({ open: openProp, onOpenChange, initialData, onSuccess
 
     const watchType = form.watch("uom_type")
 
+    const drawerTitle = isView
+        ? `Ficha de Unidad de Medida${initialData?.id ? ` #${initialData.id}` : ""}`
+        : mode === 'create'
+            ? "Nueva Unidad de Medida"
+            : "Editar Unidad de Medida"
+
     return (
         <>
+            {(mode === 'view' || mode === 'edit') && initialData?.id && (
+                <PrintableLayout
+                    ref={printRef}
+                    title="UoM"
+                    displayId={`#${initialData.id}`}
+                >
+                    <div className="text-[9px] space-y-1 mb-2">
+                        <div className="flex justify-between">
+                            <span>Nombre:</span>
+                            <span>{initialData?.name ?? '-'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span>Tipo:</span>
+                            <span>{initialData?.uom_type ?? '-'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span>Ratio:</span>
+                            <span>{initialData?.ratio ?? '-'}</span>
+                        </div>
+                    </div>
+                </PrintableLayout>
+            )}
             <Drawer
                 open={open}
                 onOpenChange={setOpen}
@@ -127,20 +164,20 @@ export function UoMDrawer({ open: openProp, onOpenChange, initialData, onSuccess
                 defaultSize={width}
                 contentClassName="p-0"
                 icon={Ruler}
-                title={initialData?.id ? "Editar Unidad de Medida" : "Nueva Unidad de Medida"}
+                title={<><span>{drawerTitle}</span>{(mode === 'view' || mode === 'edit') && initialData?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}</>}
                 subtitle={initialData?.id ? "Modifique los parámetros de conversión y consulte el historial." : "Configure el nombre, categoría y ratio de conversión."}
-                footer={
+                footer={isView ? undefined : (
                     <FormFooter
                         actions={
                             <>
                                 <CancelButton onClick={() => setOpen(false)} disabled={isSaving} />
                                 <ActionSlideButton type="submit" form="uom-form" loading={isSaving}>
-                                    Guardar Unidad
+                                    {mode === 'create' ? "Crear Unidad" : "Guardar Cambios"}
                                 </ActionSlideButton>
                             </>
                         }
                     />
-                }
+                )}
             >
                 <FormSplitLayout
                     sidebar={initialData?.id ? (
@@ -158,6 +195,7 @@ export function UoMDrawer({ open: openProp, onOpenChange, initialData, onSuccess
                                 onSubmit={form.handleSubmit(onSubmit)}
                                 className="space-y-6 px-4 pb-4 pt-2"
                             >
+                                <fieldset disabled={isView} className="contents">
                                 <div className="space-y-6">
                                     <FormField
                                         control={form.control}
@@ -345,6 +383,7 @@ export function UoMDrawer({ open: openProp, onOpenChange, initialData, onSuccess
                                         </div>
                                     )}
                                 </div>
+                                </fieldset>
                             </form>
                         </Form>
                     </SkeletonShell>

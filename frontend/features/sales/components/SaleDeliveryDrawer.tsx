@@ -3,7 +3,7 @@
 import React, { useRef } from 'react'
 import { Drawer, StatusBadge, SkeletonShell } from '@/components/shared'
 import { Button } from '@/components/ui/button'
-import { Printer, X, Truck } from 'lucide-react'
+import { Printer, Truck } from 'lucide-react'
 import { useReactToPrint } from 'react-to-print'
 import { formatCurrency } from '@/lib/money'
 import { formatPlainDate } from '@/lib/utils'
@@ -57,19 +57,10 @@ export function SaleDeliveryDrawer({ id, open, onOpenChange, saleOrderId, delive
                 side="left"
                 defaultSize="50%"
                 icon={Truck}
-                title={deliveryNumber}
+                title={<><span>{deliveryNumber}</span><Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button></>}
                 subtitle={partnerName}
                 description={`Despacho · ${formatPlainDate(delivery?.date)}`}
-                headerActions={
-                    <div className="flex items-center gap-2">
-                        <Button variant="ghost" size="icon" onClick={() => handlePrint()}>
-                            <Printer className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)}>
-                            <X className="h-4 w-4" />
-                        </Button>
-                    </div>
-                }
+
             >
                 <SkeletonShell isLoading={isLoading} ariaLabel="Cargando despacho">
                     <div className="p-4 space-y-4">

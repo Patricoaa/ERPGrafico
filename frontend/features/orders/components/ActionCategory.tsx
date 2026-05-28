@@ -22,7 +22,7 @@ const PaymentModal = dynamic(() => import("@/features/treasury/components/Paymen
 const PaymentReferenceModal = dynamic(() => import("@/features/treasury/components/PaymentReferenceModal").then(m => m.PaymentReferenceModal))
 const NoteCheckoutWizard = dynamic(() => import("@/features/billing/components/NoteCheckoutWizard").then(m => m.NoteCheckoutWizard))
 const DocumentListModal = dynamic(() => import("./DocumentListModal").then(m => m.DocumentListModal))
-import { TransactionDrawerRouter } from "@/features/_shared/transaction-drawer"
+import { LazyDrawer } from "@/features/_shared/transaction-drawer"
 const NoteLogisticsModal = dynamic(() => import("./NoteLogisticsModal").then(m => m.NoteLogisticsModal))
 const WorkOrderWizard = dynamic(() => import("@/features/production").then(m => m.WorkOrderWizard))
 import {
@@ -472,14 +472,13 @@ export const ActionCategory = forwardRef(({
             )}
 
             {activeModal === 'transaction-view' && viewConfig && (
-                <TransactionDrawerRouter
-                    type={viewConfig.type as any}
-                    id={viewConfig.id as any}
+                <LazyDrawer
+                    type={viewConfig.type}
+                    id={viewConfig.id}
                     open={true}
                     onOpenChange={(open) => !open && closeTransaction()}
                 />
             )}
-
             {activeModal === 'view-work-orders' && (
                 <DocumentListModal
                     open={true}
@@ -501,7 +500,6 @@ export const ActionCategory = forwardRef(({
                         defaultOtType: 'LINKED',
                         initialData: {
                             sale_order: order?.id?.toString(),
-                            // Find the first manufacturable line that doesn't have an active OT
                             sale_line: (order.lines || order.items || []).find((l: OrderLine) =>
                                 l.product_type === 'MANUFACTURABLE' &&
                                 l.requires_advanced_manufacturing &&
@@ -516,45 +514,11 @@ export const ActionCategory = forwardRef(({
                 />
              )}
              {activeModal === 'transaction-view' && viewConfig && (
-                 <TransactionDrawerRouter
-                     type={viewConfig.type as any}
-                     id={viewConfig.id as any}
+                 <LazyDrawer
+                     type={viewConfig.type}
+                     id={viewConfig.id}
                      open={true}
                      onOpenChange={(open) => !open && closeTransaction()}
-                 />
-             )}
-             {activeModal === 'view-work-orders' && (
-                 <DocumentListModal
-                     open={true}
-                     onOpenChange={closeModal}
-                     type="work_orders"
-                     data={(order?.work_orders || []) as any}
-                     onItemClick={(type, id) => {
-                         openTransaction(type, id)
-                     }}
-                 />
-             )}
-             {activeModal === 'create-work-order' && (
-                 <WorkOrderWizard
-                     open={true}
-                     onOpenChange={closeModal}
-                     mode={{
-                         kind: 'create',
-                         defaultOtType: 'LINKED',
-                         initialData: {
-                             sale_order: order?.id?.toString(),
-                             // Find the first manufacturable line that doesn't have an active OT
-                             sale_line: (order.lines || order.items || []).find((l: OrderLine) =>
-                                 l.product_type === 'MANUFACTURABLE' &&
-                                 l.requires_advanced_manufacturing &&
-                                 !((l as any).work_order_summary)
-                             )?.id?.toString()
-                         }
-                     }}
-                     onSuccess={() => {
-                         closeModal()
-                         onActionSuccess?.()
-                     }}
                  />
              )}
              <ActionConfirmModal

@@ -3,7 +3,7 @@
 import React, { useRef } from 'react'
 import { Drawer, SkeletonShell } from '@/components/shared'
 import { Button } from '@/components/ui/button'
-import { Printer, X, ArrowLeftRight } from 'lucide-react'
+import { Printer, ArrowLeftRight } from 'lucide-react'
 import { useReactToPrint } from 'react-to-print'
 import { formatCurrency } from '@/lib/money'
 import { formatPlainDate } from '@/lib/utils'
@@ -54,19 +54,10 @@ export function CashMovementDrawer({ id, open, onOpenChange, movementId }: CashM
         side="left"
         defaultSize="50%"
         icon={ArrowLeftRight}
-        title={displayId}
+        title={<><span>{displayId}</span><Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button></>}
         subtitle={movementType}
         description={formatPlainDate(movement?.date ?? movement?.created_at)}
-        headerActions={
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" onClick={() => handlePrint()}>
-              <Printer className="h-4 w-4" />
-            </Button>
-                        <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)}>
-                            <X className="h-4 w-4" />
-                        </Button>
-          </div>
-        }
+
       >
         <SkeletonShell isLoading={isLoading} ariaLabel="Cargando movimiento">
           {movement && (

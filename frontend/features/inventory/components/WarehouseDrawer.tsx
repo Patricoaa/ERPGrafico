@@ -13,10 +13,13 @@ import {
 } from "@/components/ui/form"
 import { Button } from "@/components/ui/button"
 import { useWarehouseMutations } from "../hooks/useWarehouseMutations"
-import { List } from "lucide-react"
+import { List, Printer } from "lucide-react"
 import { ActionSlideButton } from "@/components/shared"
 import { ActivitySidebar } from "@/features/audit/components"
 import { formDrawerWidth } from "@/lib/form-widths"
+import { useReactToPrint } from "react-to-print"
+import { PrintableLayout } from "@/features/_shared/transaction-drawer"
+import type { DrawerMode } from "@/features/_shared/drawer/types"
 
 const warehouseSchema = z.object({
     name: z.string().min(1, "El nombre es requerido"),
@@ -33,12 +36,18 @@ interface WarehouseDrawerProps {
     onOpenChange?: (open: boolean) => void
     inline?: boolean
     onLoadingChange?: (loading: boolean) => void
+    mode?: DrawerMode
 }
 
-export function WarehouseDrawer({ onSuccess, initialData, open: openProp, onOpenChange, inline = false, onLoadingChange }: WarehouseDrawerProps) {
+export function WarehouseDrawer({ onSuccess, initialData, open: openProp, onOpenChange, inline = false, onLoadingChange, mode: modeProp }: WarehouseDrawerProps) {
     const [openState, setOpenState] = useState(false)
     const open = openProp !== undefined ? openProp : openState
     const setOpen = onOpenChange || setOpenState
+
+    const mode: DrawerMode = modeProp ?? (initialData ? 'edit' : 'create')
+    const isView = mode === 'view'
+    const printRef = useRef<HTMLDivElement>(null)
+    const handlePrint = useReactToPrint({ contentRef: printRef })
 
     const { saveWarehouse } = useWarehouseMutations()
     const [loading, setLoading] = useState(false)
@@ -118,6 +127,7 @@ export function WarehouseDrawer({ onSuccess, initialData, open: openProp, onOpen
                     onSubmit={form.handleSubmit(onSubmit)}
                     className="space-y-6 px-4 pb-4 pt-2"
                 >
+                    <fieldset disabled={isView} className="contents">
 
                     <FormField
                         control={form.control}
@@ -157,6 +167,7 @@ export function WarehouseDrawer({ onSuccess, initialData, open: openProp, onOpen
                             />
                         )}
                     />
+                </fieldset>
                 </form>
             </Form>
         </FormSplitLayout>
@@ -166,10 +177,34 @@ export function WarehouseDrawer({ onSuccess, initialData, open: openProp, onOpen
         return <>{formContent}</>
     }
 
+    const drawerTitle = isView
+        ? `Ficha de Almacén${initialData?.id ? ` #${initialData.id}` : ""}`
+        : mode === 'create'
+            ? "Nuevo Almacén"
+            : "Editar Almacén"
+
     return (
         <>
-            {openProp === undefined && !initialData && (
+            {!isView && openProp === undefined && !initialData && (
                 <Button onClick={() => setOpen(true)}>Nuevo Almacén</Button>
+            )}
+            {(mode === 'view' || mode === 'edit') && initialData?.id && (
+                <PrintableLayout
+                    ref={printRef}
+                    title="Warehouse"
+                    displayId={`#${initialData.id}`}
+                >
+                    <div className="text-[9px] space-y-1 mb-2">
+                        <div className="flex justify-between">
+                            <span>Nombre:</span>
+                            <span>{initialData?.name ?? '-'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span>Código:</span>
+                            <span>{initialData?.code ?? '-'}</span>
+                        </div>
+                    </div>
+                </PrintableLayout>
             )}
             <Drawer
                 open={open}
@@ -178,24 +213,24 @@ export function WarehouseDrawer({ onSuccess, initialData, open: openProp, onOpen
                 defaultSize={width}
                 contentClassName="p-0"
                 icon={List}
-                title={initialData ? "Editar Almacén" : "Nuevo Almacén"}
+                title={<><span>{drawerTitle}</span>{(mode === 'view' || mode === 'edit') && initialData?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}</>}
                 subtitle={
                     form.watch("name")
                         ? `${form.watch("code") ? `${form.watch("code")} | ` : ""}${form.watch("name")}`
                         : (initialData ? undefined : "Nuevo Almacén")
                 }
-                footer={
+                footer={isView ? undefined : (
                     <FormFooter
                         actions={
                             <>
                                 <CancelButton onClick={() => setOpen(false)} />
                                 <ActionSlideButton type="submit" form="warehouse-form" loading={loading}>
-                                    {initialData ? "Guardar Cambios" : "Crear Almacén"}
+                                    {mode === 'create' ? "Crear Almacén" : "Guardar Cambios"}
                                 </ActionSlideButton>
                             </>
                         }
                     />
-                }
+                )}
             >
                 {formContent}
             </Drawer>

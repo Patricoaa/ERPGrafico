@@ -1,21 +1,22 @@
 'use client'
 
 import React, { useRef } from 'react'
-import { Drawer, StatusBadge, SkeletonShell } from '@/components/shared'
+import { Drawer, StatusBadge, SkeletonShell, FormSplitLayout } from '@/components/shared'
 import { Button } from '@/components/ui/button'
-import { Printer, X, ShoppingCart } from 'lucide-react'
+import { Printer, ShoppingCart } from 'lucide-react'
 import { useReactToPrint } from 'react-to-print'
 import { formatCurrency } from '@/lib/money'
 import { formatPlainDate } from '@/lib/utils'
 import { PrintableLayout } from '@/features/_shared/transaction-drawer'
 import { usePurchaseOrderDetail } from '@/features/purchasing/hooks/usePurchaseOrderDetail'
+import { ActivitySidebar } from '@/features/audit/components'
 import type { TransactionDrawerProps } from '@/features/_shared/transaction-drawer'
 
 interface PurchaseOrderDrawerProps extends TransactionDrawerProps {
   purchaseOrderId?: number
 }
 
-export function PurchaseOrderDrawer({ id, open, onOpenChange, purchaseOrderId }: PurchaseOrderDrawerProps) {
+export function PurchaseOrderDrawer({ id, open, onOpenChange, mode = 'view', purchaseOrderId }: PurchaseOrderDrawerProps) {
   const entityId = id ?? purchaseOrderId ?? null
   const { data: order, isLoading } = usePurchaseOrderDetail(entityId)
   const printRef = useRef<HTMLDivElement>(null)
@@ -53,21 +54,12 @@ export function PurchaseOrderDrawer({ id, open, onOpenChange, purchaseOrderId }:
         side="left"
         defaultSize="50%"
         icon={ShoppingCart}
-        title={displayId}
+        title={<><span>{displayId}</span><Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button></>}
         subtitle={contactName}
         description={`${order?.date ? formatPlainDate(order.date) : ''} · ${order?.status_display ?? order?.status ?? ''}`}
-        headerActions={
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" onClick={() => handlePrint()}>
-              <Printer className="h-4 w-4" />
-            </Button>
-                        <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)}>
-                            <X className="h-4 w-4" />
-                        </Button>
-          </div>
-        }
       >
-        <SkeletonShell isLoading={isLoading} ariaLabel="Cargando orden de compra">
+        <FormSplitLayout sidebar={entityId ? <ActivitySidebar entityType="purchase_order" entityId={entityId} /> : undefined} showSidebar={!!entityId}>
+          <SkeletonShell isLoading={isLoading} ariaLabel="Cargando orden de compra">
           {order && (
             <div className="p-4 space-y-4">
               <StatusBadge status={order.status} />
@@ -110,6 +102,7 @@ export function PurchaseOrderDrawer({ id, open, onOpenChange, purchaseOrderId }:
             </div>
           )}
         </SkeletonShell>
+        </FormSplitLayout>
       </Drawer>
     </>
   )

@@ -1,14 +1,15 @@
 'use client'
 
 import React, { useRef } from 'react'
-import { Drawer, StatusBadge, SkeletonShell } from '@/components/shared'
+import { Drawer, StatusBadge, SkeletonShell, FormSplitLayout } from '@/components/shared'
 import { Button } from '@/components/ui/button'
-import { Printer, X, Receipt } from 'lucide-react'
+import { Printer, Receipt } from 'lucide-react'
 import { useReactToPrint } from 'react-to-print'
 import { formatCurrency } from '@/lib/money'
 import { formatPlainDate } from '@/lib/utils'
 import { PrintableLayout } from '@/features/_shared/transaction-drawer'
 import { useInvoice } from '@/features/billing/hooks/useInvoices'
+import { ActivitySidebar } from '@/features/audit/components'
 import type { TransactionDrawerProps } from '@/features/_shared/transaction-drawer'
 
 interface InvoiceDrawerProps extends TransactionDrawerProps {
@@ -64,21 +65,12 @@ export function InvoiceDrawer({ id, open, onOpenChange, mode = 'view', invoiceId
                 side="left"
                 defaultSize="50%"
                 icon={Receipt}
-                title={displayId}
+                title={<><span>{displayId}</span><Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button></>}
                 subtitle={partnerName}
                 description={`${dteLabel} · ${formatPlainDate(invoice?.date)}`}
-                headerActions={
-                    <div className="flex items-center gap-2">
-                        <Button variant="ghost" size="icon" onClick={() => handlePrint()}>
-                            <Printer className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)}>
-                            <X className="h-4 w-4" />
-                        </Button>
-                    </div>
-                }
             >
-                <SkeletonShell isLoading={isLoading} ariaLabel="Cargando factura">
+                <FormSplitLayout sidebar={entityId ? <ActivitySidebar entityType="invoice" entityId={entityId} /> : undefined} showSidebar={!!entityId}>
+                    <SkeletonShell isLoading={isLoading} ariaLabel="Cargando factura">
                     {invoice && (
                         <div className="p-4 space-y-4">
                             <StatusBadge status={invoice.status} />
@@ -97,9 +89,31 @@ export function InvoiceDrawer({ id, open, onOpenChange, mode = 'view', invoiceId
                                     <p className="font-bold">{formatCurrency(Number(invoice.pending_amount ?? 0))}</p>
                                 </div>
                             </div>
+
+                            {invoice.lines && invoice.lines.length > 0 && (
+                                <div>
+                                    <h4 className="text-sm font-bold mb-2">Líneas</h4>
+                                    <div className="space-y-2">
+                                        {invoice.lines.map((line: any, idx: number) => (
+                                            <div key={line.id ?? idx} className="flex justify-between text-sm border-b pb-1">
+                                                <div>
+                                                    <span className="font-medium">{line.product_name || line.description || '-'}</span>
+                                                    <span className="text-xs text-muted-foreground ml-2">
+                                                        {(line as any).uom_name || ''}
+                                                    </span>
+                                                </div>
+                                                <span className="font-mono">
+                                                    {Math.round(Number((line as any).quantity ?? 0))} × {formatCurrency(Number((line as any).unit_price ?? 0))}
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
                 </SkeletonShell>
+                </FormSplitLayout>
             </Drawer>
         </>
     )

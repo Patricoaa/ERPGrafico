@@ -1,12 +1,16 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { Smartphone } from "lucide-react"
+import { Smartphone, Printer } from "lucide-react"
 import { useTerminalDevices, useTerminalProviders, type PaymentTerminalProvider } from "@/features/treasury"
 import { Form, FormField } from "@/components/ui/form"
+import { Button } from "@/components/ui/button"
+import { useReactToPrint } from "react-to-print"
+import { PrintableLayout } from "@/features/_shared/transaction-drawer"
+import type { DrawerMode } from "@/features/_shared/drawer/types"
 import { Drawer, CancelButton, ActionSlideButton, LabeledInput, LabeledSelect, FormSection, FormFooter, MultiSelectTagInput } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { toast } from "sonner"
@@ -27,12 +31,17 @@ interface DeviceDrawerProps {
     device?: any | null
     providers?: PaymentTerminalProvider[]
     onSuccess?: () => void
+    mode?: DrawerMode
 }
 
-export function DeviceDrawer({ open, onOpenChange, device, providers: providersProp, onSuccess }: DeviceDrawerProps) {
+export function DeviceDrawer({ open, onOpenChange, device, providers: providersProp, onSuccess, mode: modeProp }: DeviceDrawerProps) {
     const { createDevice, updateDevice } = useTerminalDevices()
     const { providers: fetchedProviders } = useTerminalProviders()
     const providers = providersProp ?? fetchedProviders
+    const mode: DrawerMode = modeProp ?? (device ? 'edit' : 'create')
+    const isView = mode === 'view'
+    const printRef = useRef<HTMLDivElement>(null)
+    const handlePrint = useReactToPrint({ contentRef: printRef })
     const [loading, setLoading] = useState(false)
 
     const form = useForm<DeviceFormValues>({
@@ -101,30 +110,48 @@ export function DeviceDrawer({ open, onOpenChange, device, providers: providersP
         }
     }
 
+    const drawerTitle = isView
+        ? `Ficha de Dispositivo${device?.id ? ` #${device.id}` : ""}`
+        : mode === 'create'
+            ? "Registrar Nuevo Hardware"
+            : "Editar Dispositivo"
+
     return (
-        <Drawer
-            open={open}
-            onOpenChange={onOpenChange}
-            side="left"
-            defaultSize={formDrawerWidth("medium", !!device)}
-            contentClassName="p-0"
-            title={device ? "Editar Dispositivo" : "Registrar Nuevo Hardware"}
-            subtitle="Vincule una terminal física con un proveedor de servicios."
-            footer={
-                <FormFooter
-                    actions={
-                        <>
-                            <CancelButton onClick={() => onOpenChange(false)} />
-                            <ActionSlideButton type="submit" loading={loading} onClick={form.handleSubmit(onSubmit)}>
-                                {device ? "Guardar Cambios" : "Registrar"}
-                            </ActionSlideButton>
-                        </>
-                    }
-                />
-            }
-        >
+        <>
+            {(mode === 'view' || mode === 'edit') && device?.id && (
+                <PrintableLayout ref={printRef} title="Dispositivo" displayId={`#${device.id}`}>
+                    <div className="text-[9px] space-y-1 mb-2">
+                        <div className="flex justify-between">
+                            <span>Nombre:</span>
+                            <span>{device?.name ?? '-'}</span>
+                        </div>
+                    </div>
+                </PrintableLayout>
+            )}
+            <Drawer
+                open={open}
+                onOpenChange={onOpenChange}
+                side="left"
+                defaultSize={formDrawerWidth("medium", !!device)}
+                contentClassName="p-0"
+                title={<><span>{drawerTitle}</span>{(mode === 'view' || mode === 'edit') && device?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}</>}
+                subtitle="Vincule una terminal física con un proveedor de servicios."
+                footer={isView ? undefined : (
+                    <FormFooter
+                        actions={
+                            <>
+                                <CancelButton onClick={() => onOpenChange(false)} />
+                                <ActionSlideButton type="submit" loading={loading} onClick={form.handleSubmit(onSubmit)}>
+                                    {mode === 'create' ? "Registrar" : "Guardar Cambios"}
+                                </ActionSlideButton>
+                            </>
+                        }
+                    />
+                )}
+            >
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-2">
+                    <fieldset disabled={isView} className="contents">
                     <FormSection title="Información General" icon={Smartphone} />
                     <FormField
                         control={form.control}
@@ -197,9 +224,11 @@ export function DeviceDrawer({ open, onOpenChange, device, providers: providersP
                             )}
                         />
                     </div>
+                    </fieldset>
                 </form>
             </Form>
         </Drawer>
+        </>
     )
 }
 

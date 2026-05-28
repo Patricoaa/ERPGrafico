@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { toast } from "sonner"
 import { showApiError } from "@/lib/errors"
 import { useForm } from "react-hook-form"
@@ -12,7 +12,10 @@ import type { Absence, Employee } from "@/types/hr"
 import { Button } from "@/components/ui/button"
 import { CancelButton, ActionSlideButton } from "@/components/shared"
 import { Form, FormField } from "@/components/ui/form"
-import { CalendarX2 } from "lucide-react"
+import { CalendarX2, Printer } from "lucide-react"
+import { useReactToPrint } from "react-to-print"
+import { PrintableLayout } from "@/features/_shared/transaction-drawer"
+import type { DrawerMode } from "@/features/_shared/drawer/types"
 import { Drawer, LabeledInput, LabeledSelect, PeriodValidationDateInput, FormFooter, FormSplitLayout } from "@/components/shared"
 import { ActivitySidebar } from "@/features/audit/components"
 import { formDrawerWidth } from "@/lib/form-widths"
@@ -35,11 +38,16 @@ export interface AbsenceDrawerProps {
     employees?: Employee[]
     onSaved: () => void
     trigger?: React.ReactNode
+    mode?: DrawerMode
 }
 
-export function AbsenceDrawer({ open, onOpenChange, absence, employees: employeesProp, onSaved, trigger }: AbsenceDrawerProps) {
+export function AbsenceDrawer({ open, onOpenChange, absence, employees: employeesProp, onSaved, trigger, mode: modeProp }: AbsenceDrawerProps) {
     const { employees: fetchedEmployees } = useEmployees()
     const employees = employeesProp ?? fetchedEmployees
+    const mode: DrawerMode = modeProp ?? (absence ? 'edit' : 'create')
+    const isView = mode === 'view'
+    const printRef = useRef<HTMLDivElement>(null)
+    const handlePrint = useReactToPrint({ contentRef: printRef })
     const [saving, setSaving] = useState(false)
     
     const width = formDrawerWidth("medium", !!absence)
@@ -100,13 +108,19 @@ export function AbsenceDrawer({ open, onOpenChange, absence, employees: employee
         }
     }
 
-    const footer = (
+    const drawerTitle = isView
+        ? `Ficha de Inasistencia${absence?.id ? ` #${absence.id}` : ""}`
+        : mode === 'create'
+            ? "Registrar Inasistencia"
+            : "Editar Inasistencia"
+
+    const footer = isView ? undefined : (
         <FormFooter
             actions={
                 <>
                     <CancelButton onClick={() => onOpenChange(false)} />
                     <ActionSlideButton type="submit" disabled={saving} onClick={form.handleSubmit(onSubmit)} loading={saving}>
-                        {absence ? "Actualizar" : "Registrar"}
+                        {mode === 'create' ? "Registrar" : "Actualizar"}
                     </ActionSlideButton>
                 </>
             }
@@ -114,17 +128,28 @@ export function AbsenceDrawer({ open, onOpenChange, absence, employees: employee
     )
 
     return (
-        <Drawer
-            open={open}
-            onOpenChange={onOpenChange}
-            side="left"
-            defaultSize={width}
-            icon={CalendarX2}
-            title={absence ? "Editar Inasistencia" : "Registrar Inasistencia"}
-            subtitle="Ingrese los detalles de la ausencia del empleado."
-            contentClassName="p-0"
-            footer={footer}
-        >
+        <>
+            {(mode === 'view' || mode === 'edit') && absence?.id && (
+                <PrintableLayout ref={printRef} title="Inasistencia" displayId={`#${absence.id}`}>
+                    <div className="text-[9px] space-y-1 mb-2">
+                        <div className="flex justify-between">
+                            <span>Empleado:</span>
+                            <span>{absence?.employee_name ?? '-'}</span>
+                        </div>
+                    </div>
+                </PrintableLayout>
+            )}
+            <Drawer
+                open={open}
+                onOpenChange={onOpenChange}
+                side="left"
+                defaultSize={width}
+                icon={CalendarX2}
+                title={<><span>{drawerTitle}</span>{(mode === 'view' || mode === 'edit') && absence?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}</>}
+                subtitle="Ingrese los detalles de la ausencia del empleado."
+                contentClassName="p-0"
+                footer={footer}
+            >
             {absence ? (
                 <FormSplitLayout
                     showSidebar={true}
@@ -133,6 +158,7 @@ export function AbsenceDrawer({ open, onOpenChange, absence, employees: employee
                     <div className="flex-1 flex flex-col overflow-y-auto p-6 pt-4 scrollbar-thin">
                         <Form {...form}>
                             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pr-1">
+                                <fieldset disabled={isView} className="contents">
                                 <FormField control={form.control} name="employee" render={({ field, fieldState }) => (
                                     <LabeledSelect
                                         label="Empleado"
@@ -210,6 +236,7 @@ export function AbsenceDrawer({ open, onOpenChange, absence, employees: employee
                                         {...field}
                                     />
                                 )} />
+                                </fieldset>
                             </form>
                         </Form>
                     </div>
@@ -219,6 +246,7 @@ export function AbsenceDrawer({ open, onOpenChange, absence, employees: employee
                     <div className="flex-1 flex flex-col overflow-y-auto p-6 pt-4 scrollbar-thin">
                         <Form {...form}>
                             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pr-1">
+                                <fieldset disabled={isView} className="contents">
                                 <FormField control={form.control} name="employee" render={({ field, fieldState }) => (
                                     <LabeledSelect
                                         label="Empleado"
@@ -296,11 +324,13 @@ export function AbsenceDrawer({ open, onOpenChange, absence, employees: employee
                                         {...field}
                                     />
                                 )} />
+                                </fieldset>
                             </form>
                         </Form>
                     </div>
                 </FormSplitLayout>
             )}
         </Drawer>
+        </>
     )
 }

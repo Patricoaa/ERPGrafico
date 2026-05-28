@@ -182,6 +182,7 @@ export function CategoryClientView({ externalOpen, onExternalOpenChange, createA
                     }
                 }}
                 initialData={editingCategory || undefined}
+                mode={editingCategory ? "edit" : "create"}
             />
 
             <ActionConfirmModal

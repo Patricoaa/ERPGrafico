@@ -16,15 +16,17 @@ import { financeApi } from "../api/financeApi"
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { cn } from "@/lib/utils"
-import { CreditCard, Landmark, Wallet, ClipboardList, Printer, X } from "lucide-react"
-import { Drawer, Skeleton, LabeledInput, LabeledSelect, FormFooter, CancelButton, ActionSlideButton, StatusBadge, SkeletonShell } from "@/components/shared"
+import { CreditCard, Landmark, Wallet, ClipboardList, Printer } from "lucide-react"
+import { Drawer, Skeleton, LabeledInput, LabeledSelect, FormFooter, CancelButton, ActionSlideButton, StatusBadge, SkeletonShell, FormSplitLayout } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { useBillingInvoices, usePaymentMethodsByFilter } from "@/features/finance/hooks"
 import { useReactToPrint } from "react-to-print"
 import { PrintableLayout } from "@/features/_shared/transaction-drawer"
 import { formatCurrency } from "@/lib/money"
 import { formatPlainDate } from "@/lib/utils"
+import { ActivitySidebar } from "@/features/audit/components"
 import { usePayment } from "@/features/finance/hooks/usePayment"
+import type { DrawerMode } from "@/features/_shared/drawer/types"
 
 // schema and types remain the same
 const paymentSchema = z.object({
@@ -47,7 +49,7 @@ interface PaymentDrawerProps {
     open?: boolean
     onOpenChange?: (open: boolean) => void
     triggerText?: string
-    mode?: 'view' | 'edit'
+    mode?: DrawerMode
     paymentId?: number
 }
 
@@ -73,13 +75,14 @@ export function PaymentDrawer({
     open: openProp,
     onOpenChange,
     triggerText = "Registrar Pago",
-    mode = 'edit',
+    mode: modeProp,
     paymentId,
 }: PaymentDrawerProps) {
     const [openState, setOpenState] = useState(false)
     const open = openProp !== undefined ? openProp : openState
     const setOpen = onOpenChange || setOpenState
 
+    const mode: DrawerMode = modeProp ?? (initialData ? 'edit' : 'create')
     const isViewMode = mode === 'view'
     const entityId = paymentId ?? initialData?.id ?? null
     const { data: paymentData, isLoading: isViewLoading } = usePayment(isViewMode ? entityId : null)
@@ -216,9 +219,9 @@ export function PaymentDrawer({
 
     const drawerTitle = isViewMode
         ? `Pago #${entityId}`
-        : initialData
-            ? "Editar Pago"
-            : "Registrar Pago"
+        : mode === 'create'
+            ? "Registrar Pago"
+            : "Editar Pago"
 
     const drawerSubtitle = isViewMode
         ? 'Vista de detalle'
@@ -262,18 +265,8 @@ export function PaymentDrawer({
                 defaultSize={isViewMode ? "50%" : formDrawerWidth("medium", !!initialData?.id)}
                 icon={Landmark}
                 contentClassName={isViewMode ? undefined : "p-0"}
-                title={drawerTitle}
+                title={<><span>{drawerTitle}</span><Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button></>}
                 subtitle={drawerSubtitle}
-                headerActions={isViewMode ? (
-                    <div className="flex items-center gap-2">
-                        <Button variant="ghost" size="icon" onClick={() => handlePrint()}>
-                            <Printer className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={() => setOpen(false)}>
-                            <X className="h-4 w-4" />
-                        </Button>
-                    </div>
-                ) : undefined}
                 footer={isViewMode ? undefined : (
                     <FormFooter
                         actions={
@@ -288,168 +281,172 @@ export function PaymentDrawer({
                 )}
             >
                 {isViewMode ? viewContent : (
-                    <Form {...form}>
-                        <form id="payment-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pt-4">
-                            <fieldset disabled={loading} className="space-y-6 group">
-                                <div className="space-y-4 group-disabled:opacity-60 transition-opacity">
-                                    {!initialData && (
-                                        <FormField
-                                            control={form.control as any}
-                                            name="payment_type"
-                                            render={({ field, fieldState }) => (
-                                                <LabeledSelect
-                                                    label="Flujo"
-                                                    value={field.value}
-                                                    onChange={field.onChange}
-                                                    error={fieldState.error?.message}
-                                                    options={[
-                                                        { value: "INBOUND", label: "Ingreso (Cobro)" },
-                                                        { value: "OUTBOUND", label: "Egreso (Pago)" }
-                                                    ]}
+                    <SkeletonShell isLoading={false} ariaLabel="Cargando formulario de pago" className="flex-1 flex flex-col">
+                        <FormSplitLayout sidebar={initialData?.id ? <ActivitySidebar entityType="payment" entityId={initialData.id} /> : undefined} showSidebar={!!initialData?.id}>
+                            <Form {...form}>
+                                <form id="payment-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pt-4">
+                                    <fieldset disabled={loading} className="space-y-6 group">
+                                        <div className="space-y-4 group-disabled:opacity-60 transition-opacity">
+                                            {!initialData && (
+                                                <FormField
+                                                    control={form.control as any}
+                                                    name="payment_type"
+                                                    render={({ field, fieldState }) => (
+                                                        <LabeledSelect
+                                                            label="Flujo"
+                                                            value={field.value}
+                                                            onChange={field.onChange}
+                                                            error={fieldState.error?.message}
+                                                            options={[
+                                                                { value: "INBOUND", label: "Ingreso (Cobro)" },
+                                                                { value: "OUTBOUND", label: "Egreso (Pago)" }
+                                                            ]}
+                                                        />
+                                                    )}
                                                 />
                                             )}
-                                        />
-                                    )}
-                                    <FormField
-                                        control={form.control as any}
-                                        name="amount"
-                                        render={({ field, fieldState }) => (
-                                            <LabeledInput
-                                                label="Monto"
-                                                icon={<span className="font-bold text-muted-foreground">$</span>}
-                                                type="number"
-                                                step="0.01"
-                                                className="font-bold text-lg"
-                                                error={fieldState.error?.message}
-                                                {...field}
-                                                onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                                            />
-                                        )}
-                                    />
-                                </div>
-
-                            <div className="space-y-4">
-                                <FormField
-                                    control={form.control as any}
-                                    name="treasury_account"
-                                    render={({ field, fieldState }) => (
-                                        <TreasuryAccountSelector
-                                            label="Cuenta de Tesorería"
-                                            value={field.value}
-                                            onChange={field.onChange}
-                                            placeholder="Seleccione cuenta..."
-                                            error={fieldState.error?.message}
-                                        />
-                                    )}
-                                />
-
-                                {availableMethods.length > 0 && (
-                                    <FormField
-                                        control={form.control as any}
-                                        name="payment_method_new"
-                                        render={({ field, fieldState }) => (
-                                            <div className="animate-in slide-in-from-top-2 duration-300">
-                                                {isFetchingMethods ? (
-                                                    <div className="h-[42px] flex items-center px-3 border border-border/50 rounded-md bg-muted/20">
-                                                        <Skeleton className="h-4 w-24" />
-                                                    </div>
-                                                ) : (
-                                                    <LabeledSelect
-                                                        label="Método Detallado"
-                                                        value={field.value || ""}
-                                                        onChange={field.onChange}
+                                            <FormField
+                                                control={form.control as any}
+                                                name="amount"
+                                                render={({ field, fieldState }) => (
+                                                    <LabeledInput
+                                                        label="Monto"
+                                                        icon={<span className="font-bold text-muted-foreground">$</span>}
+                                                        type="number"
+                                                        step="0.01"
+                                                        className="font-bold text-lg"
                                                         error={fieldState.error?.message}
-                                                        placeholder="Canal de pago..."
-                                                        options={availableMethods.map((m) => ({
-                                                            value: m.id.toString(),
-                                                            label: (
-                                                                <div className="flex items-center gap-2">
-                                                                    {m.method_type === 'CASH' ? <Wallet className="h-3 w-3" /> :
-                                                                        m.method_type === 'TRANSFER' || m.method_type === 'BANK' ? <Landmark className="h-3 w-3" /> :
-                                                                            m.method_type === 'CHECK' ? <ClipboardList className="h-3 w-3" /> :
-                                                                                <CreditCard className="h-3 w-3" />}
-                                                                    {m.name}
-                                                                </div>
-                                                            )
-                                                        }))}
+                                                        {...field}
+                                                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
                                                     />
                                                 )}
-                                            </div>
-                                        )}
-                                    />
-                                )}
+                                            />
+                                        </div>
 
-                                {paymentType === "INBOUND" ? (
-                                    <FormField
-                                        control={form.control as any}
-                                        name="customer_id"
-                                        render={({ field, fieldState }) => (
-                                            <AdvancedContactSelector
-                                                label="Cliente"
-                                                value={field.value === "__none__" ? "" : field.value}
-                                                onChange={(val) => field.onChange(val || "")}
-                                                contactType="CUSTOMER"
-                                                placeholder="Buscar contacto..."
-                                                error={fieldState.error?.message}
+                                        <div className="space-y-4">
+                                            <FormField
+                                                control={form.control as any}
+                                                name="treasury_account"
+                                                render={({ field, fieldState }) => (
+                                                    <TreasuryAccountSelector
+                                                        label="Cuenta de Tesorería"
+                                                        value={field.value}
+                                                        onChange={field.onChange}
+                                                        placeholder="Seleccione cuenta..."
+                                                        error={fieldState.error?.message}
+                                                    />
+                                                )}
                                             />
-                                        )}
-                                    />
-                                ) : (
-                                    <FormField
-                                        control={form.control as any}
-                                        name="supplier_id"
-                                        render={({ field, fieldState }) => (
-                                            <AdvancedContactSelector
-                                                label="Proveedor"
-                                                value={field.value === "__none__" ? "" : field.value}
-                                                onChange={(val) => field.onChange(val || "")}
-                                                contactType="SUPPLIER"
-                                                placeholder="Buscar contacto..."
-                                                error={fieldState.error?.message}
-                                            />
-                                        )}
-                                    />
-                                )}
-                                {!initialData && (
-                                    <FormField
-                                        control={form.control as any}
-                                        name="invoice_id"
-                                        render={({ field, fieldState }) => (
-                                            <LabeledSelect
-                                                label="Vincular Documento (Opcional)"
-                                                value={field.value || "__none__"}
-                                                onChange={field.onChange}
-                                                disabled={isFetchingInvoices}
-                                                error={fieldState.error?.message}
-                                                placeholder="Seleccione..."
-                                                options={[
-                                                    { value: "__none__", label: "Sin vínculo" },
-                                                    ...orders.map((o) => ({
-                                                        value: o.id.toString(),
-                                                        label: `${o.dte_type_display} #${o.number || 'P'} (${o.total})`
-                                                    }))
-                                                ]}
-                                            />
-                                        )}
-                                    />
-                                )}
 
-                                <FormField
-                                    control={form.control as any}
-                                    name="reference"
-                                    render={({ field, fieldState }) => (
-                                        <LabeledInput
-                                            label="Referencia / N° Operación"
-                                            placeholder="Ej: Transferencia Banco Estado"
-                                            error={fieldState.error?.message}
-                                            {...field}
-                                        />
-                                    )}
-                                />
-                            </div>
-                            </fieldset>
-                        </form>
-                    </Form>
+                                            {availableMethods.length > 0 && (
+                                                <FormField
+                                                    control={form.control as any}
+                                                    name="payment_method_new"
+                                                    render={({ field, fieldState }) => (
+                                                        <div className="animate-in slide-in-from-top-2 duration-300">
+                                                            {isFetchingMethods ? (
+                                                                <div className="h-[42px] flex items-center px-3 border border-border/50 rounded-md bg-muted/20">
+                                                                    <Skeleton className="h-4 w-24" />
+                                                                </div>
+                                                            ) : (
+                                                                <LabeledSelect
+                                                                    label="Método Detallado"
+                                                                    value={field.value || ""}
+                                                                    onChange={field.onChange}
+                                                                    error={fieldState.error?.message}
+                                                                    placeholder="Canal de pago..."
+                                                                    options={availableMethods.map((m) => ({
+                                                                        value: m.id.toString(),
+                                                                        label: (
+                                                                            <div className="flex items-center gap-2">
+                                                                                {m.method_type === 'CASH' ? <Wallet className="h-3 w-3" /> :
+                                                                                    m.method_type === 'TRANSFER' || m.method_type === 'BANK' ? <Landmark className="h-3 w-3" /> :
+                                                                                        m.method_type === 'CHECK' ? <ClipboardList className="h-3 w-3" /> :
+                                                                                            <CreditCard className="h-3 w-3" />}
+                                                                                {m.name}
+                                                                            </div>
+                                                                        )
+                                                                    }))}
+                                                                />
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                />
+                                            )}
+
+                                            {paymentType === "INBOUND" ? (
+                                                <FormField
+                                                    control={form.control as any}
+                                                    name="customer_id"
+                                                    render={({ field, fieldState }) => (
+                                                        <AdvancedContactSelector
+                                                            label="Cliente"
+                                                            value={field.value === "__none__" ? "" : field.value}
+                                                            onChange={(val) => field.onChange(val || "")}
+                                                            contactType="CUSTOMER"
+                                                            placeholder="Buscar contacto..."
+                                                            error={fieldState.error?.message}
+                                                        />
+                                                    )}
+                                                />
+                                            ) : (
+                                                <FormField
+                                                    control={form.control as any}
+                                                    name="supplier_id"
+                                                    render={({ field, fieldState }) => (
+                                                        <AdvancedContactSelector
+                                                            label="Proveedor"
+                                                            value={field.value === "__none__" ? "" : field.value}
+                                                            onChange={(val) => field.onChange(val || "")}
+                                                            contactType="SUPPLIER"
+                                                            placeholder="Buscar contacto..."
+                                                            error={fieldState.error?.message}
+                                                        />
+                                                    )}
+                                                />
+                                            )}
+                                            {!initialData && (
+                                                <FormField
+                                                    control={form.control as any}
+                                                    name="invoice_id"
+                                                    render={({ field, fieldState }) => (
+                                                        <LabeledSelect
+                                                            label="Vincular Documento (Opcional)"
+                                                            value={field.value || "__none__"}
+                                                            onChange={field.onChange}
+                                                            disabled={isFetchingInvoices}
+                                                            error={fieldState.error?.message}
+                                                            placeholder="Seleccione..."
+                                                            options={[
+                                                                { value: "__none__", label: "Sin vínculo" },
+                                                                ...orders.map((o) => ({
+                                                                    value: o.id.toString(),
+                                                                    label: `${o.dte_type_display} #${o.number || 'P'} (${o.total})`
+                                                                }))
+                                                            ]}
+                                                        />
+                                                    )}
+                                                />
+                                            )}
+
+                                            <FormField
+                                                control={form.control as any}
+                                                name="reference"
+                                                render={({ field, fieldState }) => (
+                                                    <LabeledInput
+                                                        label="Referencia / N° Operación"
+                                                        placeholder="Ej: Transferencia Banco Estado"
+                                                        error={fieldState.error?.message}
+                                                        {...field}
+                                                    />
+                                                )}
+                                            />
+                                        </div>
+                                    </fieldset>
+                                </form>
+                            </Form>
+                        </FormSplitLayout>
+                    </SkeletonShell>
                 )}
             </Drawer>
         </>
