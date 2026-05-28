@@ -52,6 +52,7 @@ class JournalEntrySerializer(serializers.ModelSerializer):
     class Meta:
         model = JournalEntry
         fields = ['id', 'number', 'display_id', 'date', 'description', 'reference', 'status', 'items', 'source_documents', 'created_at']
+        read_only_fields = ['id', 'number', 'status']
 
 # --- Budgeting Serializers ---
 

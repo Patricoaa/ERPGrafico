@@ -146,9 +146,14 @@ class JournalEntryViewSet(viewsets.ModelViewSet, AuditHistory):
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     def update(self, request, *args, **kwargs):
-        # For simplicity, we might re-create items on update or implement a specific update service
-        # This is a basic implementation that wipes items and re-creates them
+        # Only DRAFT entries can be edited; POSTED/CANCELLED are immutable
         instance = self.get_object()
+        if instance.status != 'DRAFT':
+            return Response(
+                {'error': 'Solo se pueden editar asientos en estado Borrador.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        # This is a basic implementation that wipes items and re-creates them
         data = request.data.copy()
         items_data = data.pop('items', None)
         

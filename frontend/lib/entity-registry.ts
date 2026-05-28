@@ -4,7 +4,7 @@ import {
   Hash, Users, User, UserCheck, Book, PiggyBank, ShoppingCart, Receipt,
   List, LayoutDashboard, LayoutGrid, Kanban, CalendarDays, ClipboardCheck,
   Building2, Smartphone, CreditCard, Calendar, CalendarX2, Repeat,
-  Tag, Percent, Ruler, PieChart, HandCoins, ClipboardList,
+  Tag, Percent, Ruler, PieChart, HandCoins, ClipboardList, PackageCheck,
   type LucideIcon 
 } from 'lucide-react';
 
@@ -252,6 +252,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: 'CAR-{id}',
     listUrl: '/treasury/reconciliation?tab=statements',
     detailUrlPattern: '/treasury/reconciliation/statements/{id}',
+    hasDrawer: true,
   },
   'treasury.terminal': {
     label: 'treasury.terminal',
@@ -457,6 +458,105 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     hasDrawer: true,
     viewPolicy: { availableViews: ['list'], defaultView: 'list', cardComponent: 'custom' },
   },
+
+  // ── Purchasing (missing entities) ──────────────────────────────────────
+  'purchasing.purchasereceipt': {
+    label: 'purchasing.purchasereceipt',
+    title: 'Recepción de Compra',
+    titlePlural: 'Recepciones de Compra',
+    icon: PackageCheck,
+    shortTemplate: 'REC-{number}',
+    listUrl: '/purchasing/orders',
+    detailUrlPattern: '/purchasing/receipts/{id}',
+    partnerField: 'supplier_name',
+    hasDrawer: true,
+  },
+  'purchasing.purchasereturn': {
+    label: 'purchasing.purchasereturn',
+    title: 'Devolución de Compra',
+    titlePlural: 'Devoluciones de Compra',
+    icon: Undo2,
+    shortTemplate: 'DEV-COM-{number}',
+    listUrl: '/purchasing/orders',
+    detailUrlPattern: '/purchasing/returns/{id}',
+    partnerField: 'supplier_name',
+    hasDrawer: true,
+  },
+
+  // ── Tax ────────────────────────────────────────────────────────────────
+  'tax.accountingperiod': {
+    label: 'tax.accountingperiod',
+    title: 'Período Contable',
+    titlePlural: 'Períodos Contables',
+    icon: Calendar,
+    shortTemplate: 'PER-{id}',
+    listUrl: '/tax/declarations',
+    detailUrlPattern: '/tax/periods/{id}',
+    hasDrawer: true,
+  },
+  'tax.f29declaration': {
+    label: 'tax.f29declaration',
+    title: 'Declaración F29',
+    titlePlural: 'Declaraciones F29',
+    icon: FileText,
+    shortTemplate: 'F29-{id}',
+    listUrl: '/tax/declarations',
+    detailUrlPattern: '/tax/declarations/{id}',
+    hasDrawer: true,
+  },
+
+  // ── Contacts (partner entities) ────────────────────────────────────────
+  'contacts.profitdistributionresolution': {
+    label: 'contacts.profitdistributionresolution',
+    title: 'Resolución de Distribución',
+    titlePlural: 'Resoluciones de Distribución',
+    icon: PieChart,
+    shortTemplate: 'RD-{id}',
+    listUrl: '/settings/partners',
+    detailUrlPattern: '/settings/partners?tab=distributions',
+  },
+
+  // ── Treasury (missing entities) ────────────────────────────────────────
+  'treasury.bank': {
+    label: 'treasury.bank',
+    title: 'Banco',
+    titlePlural: 'Bancos',
+    icon: Landmark,
+    shortTemplate: '{name}',
+    listUrl: '/treasury/terminals',
+    detailUrlPattern: '/treasury/terminals?tab=accounts',
+  },
+  'treasury.paymentmethod': {
+    label: 'treasury.paymentmethod',
+    title: 'Método de Pago',
+    titlePlural: 'Métodos de Pago',
+    icon: CreditCard,
+    shortTemplate: '{name}',
+    listUrl: '/treasury/terminals',
+    detailUrlPattern: '/treasury/terminals?tab=payment-methods',
+  },
+
+  // ── HR (missing entities) ──────────────────────────────────────────────
+  'hr.payrollconcept': {
+    label: 'hr.payrollconcept',
+    title: 'Concepto de Liquidación',
+    titlePlural: 'Conceptos de Liquidación',
+    icon: ClipboardList,
+    shortTemplate: 'CON-LIQ-{id}',
+    listUrl: '/hr/payrolls',
+    detailUrlPattern: '/hr/settings?tab=concepts',
+  },
+
+  // ── Inventory (missing entities) ───────────────────────────────────────
+  'inventory.customfieldtemplate': {
+    label: 'inventory.customfieldtemplate',
+    title: 'Campo Personalizado',
+    titlePlural: 'Campos Personalizados',
+    icon: Tag,
+    shortTemplate: 'CF-{id}',
+    listUrl: '/inventory/products',
+    detailUrlPattern: '/inventory/products?tab=custom-fields',
+  },
 };
 
 export const DTE_CONFIG: Record<string, { prefix: string, label: string }> = {
@@ -578,15 +678,19 @@ export const LEGACY_TYPE_LABEL_MAP: Record<string, string> = {
   // Logistics
   'sale_delivery':   'sales.saledelivery',
   'sale_return':     'sales.salereturn',
+  'purchase_receipt': 'purchasing.purchasereceipt',
+  'purchase_return': 'purchasing.purchasereturn',
   // Stock / inventory movements
   'stock_move':      'inventory.stockmove',
   'inventory':       'inventory.stockmove',   // alias used in transaction-modal
   // Treasury
   'cash_movement':   'treasury.treasurymovement',
   'terminal_batch':  'treasury.terminalbatch',
-  // Note: 'purchase_receipt' and 'purchase_return' are intentionally absent —
-  // their backend models (purchasing.PurchaseReceipt / PurchaseReturn) are not yet
-  // in the ENTITY_REGISTRY. Add them here once the registry entries exist.
+  'bank_statement':  'treasury.bankstatement',
+  'pos_session':     'pos.session',
+  // Tax
+  'f29_declaration': 'tax.f29declaration',
+  'accounting_period': 'tax.accountingperiod',
 };
 
 /** Resolves a legacy snake_case docType to a registry label. Returns undefined if unknown. */

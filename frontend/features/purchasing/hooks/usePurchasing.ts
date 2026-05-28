@@ -49,3 +49,23 @@ export function usePurchasingOrder(id: number) {
 
     return { order, isLoading }
 }
+
+export function usePurchaseReceipt(id: number | null, enabled = true) {
+    const { data: receipt, isLoading } = useQuery({
+        queryKey: [...PURCHASING_KEYS.all, 'receipt', id],
+        queryFn: () => purchasingApi.getReceipt(id!),
+        enabled: !!id && enabled,
+    })
+
+    return { receipt, isLoading }
+}
+
+export function usePurchaseReturn(id: number | null, enabled = true) {
+    const { data: returnData, isLoading } = useQuery({
+        queryKey: [...PURCHASING_KEYS.all, 'return', id],
+        queryFn: () => purchasingApi.getReturn(id!),
+        enabled: !!id && enabled,
+    })
+
+    return { returnData, isLoading }
+}

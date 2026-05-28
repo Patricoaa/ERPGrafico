@@ -32,7 +32,7 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { SkeletonShell, Skeleton } from "@/components/shared"
 
-const TransactionViewModal = lazy(() => import("@/components/shared/TransactionViewModal"))
+import { TransactionDrawerRouter } from "@/features/_shared/transaction-drawer"
 
 interface Props {
     contactId: number;
@@ -47,18 +47,8 @@ export function PartnerProfileTab({ contactId }: Props) {
     const pathname = usePathname()
     const searchParams = useSearchParams()
 
-    const transactionId = searchParams.get('transaction')
-    const transactionType = searchParams.get('transactionType')
-
     const [detailsOpen, setDetailsOpen] = useState(false)
     const [selectedMovementId, setSelectedMovementId] = useState<number | null>(null)
-
-    useEffect(() => {
-        if (transactionId && transactionType === 'payment' && !detailsOpen) {
-            setSelectedMovementId(Number(transactionId))
-            setDetailsOpen(true)
-        }
-    }, [transactionId, transactionType, detailsOpen])
 
     const fetchData = async () => {
         if (!contactId) return
@@ -79,15 +69,13 @@ export function PartnerProfileTab({ contactId }: Props) {
 
     const handleViewDetails = (movementId: number) => {
         const params = new URLSearchParams(searchParams.toString())
-        params.set('transaction', String(movementId))
-        params.set('transactionType', 'payment')
+        params.set('selected', String(movementId))
         router.push(`${pathname}?${params.toString()}`, { scroll: false })
     }
 
     const closeDetails = () => {
         const params = new URLSearchParams(searchParams.toString())
-        params.delete('transaction')
-        params.delete('transactionType')
+        params.delete('selected')
         router.replace(`${pathname}?${params.toString()}`, { scroll: false })
         setDetailsOpen(false)
         setSelectedMovementId(null)
@@ -282,17 +270,14 @@ export function PartnerProfileTab({ contactId }: Props) {
 
             </Accordion>
 
-            <Suspense fallback={<div className="p-8 flex justify-center"><Skeleton className="h-20 w-full max-w-md" /></div>}>
-                {selectedMovementId && (
-                    <TransactionViewModal
-                        open={detailsOpen}
-                        onOpenChange={(open) => !open && closeDetails()}
-                        type="payment"
-                        id={selectedMovementId}
-                        view="details"
-                    />
-                )}
-            </Suspense>
+            {selectedMovementId && (
+                <TransactionDrawerRouter
+                    type="payment"
+                    id={selectedMovementId}
+                    open={detailsOpen}
+                    onOpenChange={(open) => !open && closeDetails()}
+                />
+            )}
         </div>
     )
 }

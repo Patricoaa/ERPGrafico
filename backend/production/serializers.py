@@ -406,6 +406,7 @@ class WorkOrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = WorkOrder
         fields = '__all__'
+        read_only_fields = ['id', 'number', 'status', 'current_stage']
 
 class BillOfMaterialsLineSerializer(serializers.ModelSerializer):
     component_name = serializers.CharField(source='component.name', read_only=True)

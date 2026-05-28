@@ -65,10 +65,7 @@ import { ReconciliationIntelligence } from "./ReconciliationIntelligence"
 
 
 import { DataTable } from '@/components/shared'
-const TransactionViewModal = dynamic(() =>
-    import("@/components/shared/TransactionViewModal").then(module => ({ default: module.TransactionViewModal })),
-    { ssr: false, loading: () => <Loader2 className="h-6 w-6 animate-spin" /> }
-)
+import { TransactionDrawerRouter } from "@/features/_shared/transaction-drawer"
 import { ColumnDef, RowSelectionState, PaginationState, Updater } from "@tanstack/react-table"
 import { DataTableColumnHeader } from '@/components/shared'
 import { createActionsColumn, DataCell } from '@/components/shared'
@@ -188,31 +185,15 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
     const pathname = usePathname()
     const searchParams = useSearchParams()
 
-    const transactionId = searchParams.get('transaction')
-    const transactionType = searchParams.get('transactionType')
-
     const [selectedMovement, setSelectedMovement] = useState<{ id: number | string, type: any } | null>(null)
     const [detailsOpen, setDetailsOpen] = useState(false)
 
-    useEffect(() => {
-        if (transactionId && transactionType && !detailsOpen) {
-            setSelectedMovement({ id: transactionId, type: transactionType })
-            setDetailsOpen(true)
-        }
-    }, [transactionId, transactionType, detailsOpen])
-
     const openTransactionDetail = (id: number | string, type: any) => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.set('transaction', String(id))
-        params.set('transactionType', String(type))
-        router.push(`${pathname}?${params.toString()}`, { scroll: false })
+        setSelectedMovement({ id, type })
+        setDetailsOpen(true)
     }
 
     const clearTransactionDetail = () => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.delete('transaction')
-        params.delete('transactionType')
-        router.replace(`${pathname}?${params.toString()}`, { scroll: false })
         setSelectedMovement(null)
         setDetailsOpen(false)
     }
@@ -1457,16 +1438,15 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                 />
 
                 {selectedMovement && (
-                    <TransactionViewModal
+                    <TransactionDrawerRouter
+                        type={selectedMovement.type}
+                        id={Number(selectedMovement.id)}
                         open={detailsOpen}
                         onOpenChange={(open) => {
                             if (!open) {
                                 clearTransactionDetail()
                             }
                         }}
-                        type={selectedMovement.type}
-                        id={selectedMovement.id}
-                        view="all"
                     />
                 )}
 

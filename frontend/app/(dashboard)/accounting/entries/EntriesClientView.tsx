@@ -8,7 +8,7 @@ import {
 import { toast } from "sonner"
 import { JournalEntryDrawer } from "@/features/accounting/components/JournalEntryDrawer"
 import api from "@/lib/api"
-import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
+import { TransactionDrawerRouter } from "@/features/_shared/transaction-drawer"
 import { Trash2, CheckCircle, Eye, Pencil } from "lucide-react"
 import { DataTableView, DataTableColumnHeader } from '@/components/shared'
 import { DataCell, createActionsColumn } from '@/components/shared'
@@ -233,7 +233,9 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
                 />
 
                 {viewingTransaction && (
-                    <TransactionViewModal
+                    <TransactionDrawerRouter
+                        type={viewingTransaction.type}
+                        id={Number(viewingTransaction.id)}
                         open={!!viewingTransaction}
                         onOpenChange={(open) => {
                             if (!open) {
@@ -241,8 +243,6 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
                                 clearSelection()
                             }
                         }}
-                        type={viewingTransaction.type}
-                        id={viewingTransaction.id}
                     />
                 )}
             </div>

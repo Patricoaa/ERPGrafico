@@ -24,7 +24,7 @@ import { DataCell } from '@/components/shared'
 import { formatEntityDisplay } from "@/lib/entity-registry"
 import { StatusBadge } from "@/components/shared/StatusBadge"
 import { FormTabs, FormTabsContent } from "@/components/shared"
-import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
+import { TransactionDrawerRouter, type TransactionType } from "@/features/_shared/transaction-drawer"
 import { WorkOrderWizard } from "@/features/production"
 import type { ColumnDef } from "@tanstack/react-table"
 import {
@@ -98,51 +98,22 @@ export function ProductInsightsModal({ productId, productName, open, onOpenChang
     const { data, isLoading: loading, refetch: refetchInsights } = useProductInsights<ProductInsights>(open ? productId : null)
     const [activeTab, setActiveTab] = useState("overview")
 
-    const router = useRouter()
-    const pathname = usePathname()
-    const searchParams = useSearchParams()
-
-    const transactionId = searchParams.get('transaction')
-    const transactionType = searchParams.get('transactionType') as import("@/types/transactions").TransactionType | null
-    const workOrderId = searchParams.get('workOrder')
-
-    const [selectedTransaction, setSelectedTransaction] = useState<{ id: number | string, type: import("@/types/transactions").TransactionType } | null>(null)
+    const [selectedTransaction, setSelectedTransaction] = useState<{ id: number | string, type: TransactionType } | null>(null)
     const [activeWorkOrderId, setActiveWorkOrderId] = useState<number | null>(null)
 
-    useEffect(() => {
-        if (transactionId && transactionType && !selectedTransaction) {
-            setSelectedTransaction({ id: transactionId, type: transactionType })
-        }
-        if (workOrderId && !activeWorkOrderId) {
-            setActiveWorkOrderId(Number(workOrderId))
-        }
-    }, [transactionId, transactionType, workOrderId, selectedTransaction, activeWorkOrderId])
-
     const openTransaction = (id: number | string, type: string) => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.set('transaction', String(id))
-        params.set('transactionType', type)
-        router.push(`${pathname}?${params.toString()}`, { scroll: false })
+        setSelectedTransaction({ id, type: type as TransactionType })
     }
 
     const closeTransaction = () => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.delete('transaction')
-        params.delete('transactionType')
-        router.replace(`${pathname}?${params.toString()}`, { scroll: false })
         setSelectedTransaction(null)
     }
 
     const openWorkOrder = (id: number) => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.set('workOrder', String(id))
-        router.push(`${pathname}?${params.toString()}`, { scroll: false })
+        setActiveWorkOrderId(id)
     }
 
     const closeWorkOrder = () => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.delete('workOrder')
-        router.replace(`${pathname}?${params.toString()}`, { scroll: false })
         setActiveWorkOrderId(null)
     }
 
@@ -336,11 +307,11 @@ export function ProductInsightsModal({ productId, productName, open, onOpenChang
             </div>
 
             {selectedTransaction && (
-                <TransactionViewModal
+                <TransactionDrawerRouter
+                    type={selectedTransaction.type}
+                    id={Number(selectedTransaction.id)}
                     open={!!selectedTransaction}
                     onOpenChange={(open) => !open && closeTransaction()}
-                    type={selectedTransaction.type}
-                    id={selectedTransaction.id}
                 />
             )}
 

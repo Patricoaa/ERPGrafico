@@ -162,6 +162,8 @@ class SaleOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     def get_serializer_class(self):
         if self.action == 'create':
             return CreateSaleOrderSerializer
+        if self.action in ['update', 'partial_update']:
+            return CreateSaleOrderSerializer
         return SaleOrderSerializer
 
     def create(self, request, *args, **kwargs):
@@ -243,6 +245,24 @@ class SaleOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         SalesService.confirm_sale(order, line_files=line_files)
         
         return Response(SaleOrderSerializer(order).data, status=status.HTTP_201_CREATED)
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if instance.status != 'DRAFT':
+            return Response(
+                {'error': 'Solo se pueden editar notas de venta en estado Borrador.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        return super().update(request, *args, **kwargs)
+
+    def partial_update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if instance.status != 'DRAFT':
+            return Response(
+                {'error': 'Solo se pueden editar notas de venta en estado Borrador.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        return super().partial_update(request, *args, **kwargs)
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()

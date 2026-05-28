@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { JournalEntryInitialData } from "@/types/forms"
 import * as z from "zod"
-import { CalendarIcon, Plus, Pencil, BookOpen } from "lucide-react"
+import { CalendarIcon, Plus, Pencil, BookOpen, Printer, X } from "lucide-react"
 import { format } from "date-fns"
 import {
     Form,
@@ -19,7 +19,12 @@ import { toast } from "sonner"
 import { accountingApi } from "@/features/accounting/api/accountingApi"
 import { useAccounts } from "@/features/accounting/hooks/useAccounts"
 import { useServerDate } from "@/hooks/useServerDate"
-import { Drawer, LabeledInput, LabeledContainer, CancelButton, SubmitButton, IconButton, PeriodValidationDateInput, ActionSlideButton, FormFooter, FormSplitLayout, FormSection, AccountingLinesTable, SkeletonShell } from "@/components/shared";
+import { useReactToPrint } from "react-to-print"
+import { formatCurrency } from "@/lib/money"
+import { formatPlainDate } from "@/lib/utils"
+import { PrintableLayout } from "@/features/_shared/transaction-drawer"
+import { useJournalEntry } from "@/features/accounting/hooks/useJournalEntries"
+import { Drawer, LabeledInput, LabeledContainer, CancelButton, SubmitButton, IconButton, PeriodValidationDateInput, ActionSlideButton, FormFooter, FormSplitLayout, FormSection, AccountingLinesTable, SkeletonShell, StatusBadge } from "@/components/shared";
 import { formDrawerWidth } from "@/lib/form-widths";
 import { ActivitySidebar } from "@/features/audit/components";
 
@@ -60,6 +65,8 @@ interface JournalEntryDrawerProps {
     onOpenChange?: (open: boolean) => void
     inline?: boolean
     onLoadingChange?: (loading: boolean) => void
+    mode?: 'view' | 'edit'
+    journalEntryId?: number
 }
 
 
@@ -74,11 +81,19 @@ export function JournalEntryDrawer({
     onOpenChange,
     auditSidebar,
     inline = false,
-    onLoadingChange
+    onLoadingChange,
+    mode = 'edit',
+    journalEntryId,
 }: JournalEntryDrawerProps) {
     const [openState, setOpenState] = useState(false)
     const open = openProp !== undefined ? openProp : openState
     const setOpen = onOpenChange || setOpenState
+
+    const isViewMode = mode === 'view'
+    const entityId = journalEntryId ?? initialData?.id
+    const { data: viewEntry, isLoading: isViewLoading } = useJournalEntry(isViewMode ? entityId : undefined)
+    const printRef = useRef<HTMLDivElement>(null)
+    const handlePrint = useReactToPrint({ contentRef: printRef })
 
     const [loading, setLoading] = useState(false)
     const [isPeriodValid, setIsPeriodValid] = useState(true)
@@ -205,7 +220,86 @@ export function JournalEntryDrawer({
         }
     }
 
+    const renderViewContent = () => {
+        if (isViewLoading) return <SkeletonShell isLoading ariaLabel="Cargando asiento contable" />
+        if (!viewEntry) return null
+
+        const lines = viewEntry.items ?? []
+        const totalDebit = lines.reduce((sum: number, item: any) => sum + Number(item.debit ?? 0), 0)
+        const totalCredit = lines.reduce((sum: number, item: any) => sum + Number(item.credit ?? 0), 0)
+
+        return (
+            <div className="p-4 space-y-4">
+                <StatusBadge status={viewEntry.status} />
+                <div className="grid grid-cols-2 gap-4 text-sm border-b pb-4">
+                    <div>
+                        <span className="text-xs text-muted-foreground">Fecha</span>
+                        <p className="font-medium">{formatPlainDate(viewEntry.date)}</p>
+                    </div>
+                    <div>
+                        <span className="text-xs text-muted-foreground">Referencia</span>
+                        <p className="font-medium">{viewEntry.reference ?? '-'}</p>
+                    </div>
+                    <div className="col-span-2">
+                        <span className="text-xs text-muted-foreground">Descripción</span>
+                        <p className="font-medium">{viewEntry.description ?? viewEntry.label ?? '-'}</p>
+                    </div>
+                    <div>
+                        <span className="text-xs text-muted-foreground">Diario</span>
+                        <p className="font-medium">{viewEntry.journal_name ?? '-'}</p>
+                    </div>
+                    <div>
+                        <span className="text-xs text-muted-foreground">Período</span>
+                        <p className="font-medium">{viewEntry.period_name ?? '-'}</p>
+                    </div>
+                </div>
+                {lines.length > 0 && (
+                    <div>
+                        <h4 className="text-sm font-bold mb-2">Líneas del Asiento</h4>
+                        <div className="border rounded-lg overflow-hidden">
+                            <table className="w-full text-sm">
+                                <thead className="bg-muted">
+                                    <tr>
+                                        <th className="p-2 text-left">Cuenta</th>
+                                        <th className="p-2 text-left">Glosa</th>
+                                        <th className="p-2 text-right">Debe</th>
+                                        <th className="p-2 text-right">Haber</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {lines.map((item: any, idx: number) => (
+                                        <tr key={item.id ?? idx} className="border-t">
+                                            <td className="p-2">
+                                                <span className="font-medium">{item.account_name}</span>
+                                                <span className="text-xs text-muted-foreground ml-1 font-mono">{item.account_code}</span>
+                                            </td>
+                                            <td className="p-2 text-muted-foreground">{item.label ?? '-'}</td>
+                                            <td className="p-2 text-right font-mono">
+                                                {Number(item.debit) > 0 ? formatCurrency(Number(item.debit)) : '-'}
+                                            </td>
+                                            <td className="p-2 text-right font-mono">
+                                                {Number(item.credit) > 0 ? formatCurrency(Number(item.credit)) : '-'}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                                <tfoot className="bg-muted/50 font-bold">
+                                    <tr>
+                                        <td colSpan={2} className="p-2 text-right">Totales:</td>
+                                        <td className="p-2 text-right font-mono">{formatCurrency(totalDebit)}</td>
+                                        <td className="p-2 text-right font-mono">{formatCurrency(totalCredit)}</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                )}
+            </div>
+        )
+    }
+
     const Trigger = () => {
+        if (isViewMode) return null;
         if (openProp !== undefined) return null;
         if (initialData && triggerVariant !== "circular") return null;
 
@@ -305,19 +399,77 @@ export function JournalEntryDrawer({
         return <>{formContent}</>
     }
 
+    const drawerTitle = isViewMode
+        ? `Asiento #${entityId}`
+        : initialData
+            ? "Editar Asiento"
+            : "Nuevo Asiento Contable"
+
+    const drawerSubtitle = isViewMode
+        ? viewEntry?.description ?? 'Vista de detalle'
+        : initialData?.reference
+            ? `Ref: ${initialData.reference} • ${form.watch("description") || "Registro manual"}`
+            : (form.watch("description") || "Registro manual de movimiento")
+
     return (
         <>
+            {isViewMode && viewEntry && (
+                <PrintableLayout
+                    ref={printRef}
+                    title="Asiento Contable"
+                    displayId={viewEntry.display_id ?? `#${entityId}`}
+                >
+                    <div className="text-[9px] space-y-1 mb-2">
+                        <div className="flex justify-between">
+                            <span>Descripción:</span>
+                            <span>{viewEntry.description ?? '-'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span>Referencia:</span>
+                            <span>{viewEntry.reference ?? '-'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span>Fecha:</span>
+                            <span>{formatPlainDate(viewEntry.date)}</span>
+                        </div>
+                    </div>
+                    <div className="text-[9px]">
+                        <div className="grid grid-cols-[1fr,50px,50px] gap-1 font-bold border-b mb-1 pb-1">
+                            <span>Cuenta</span>
+                            <span className="text-right">Debe</span>
+                            <span className="text-right">Haber</span>
+                        </div>
+                        {(viewEntry.items ?? []).map((item: any, idx: number) => (
+                            <div key={item.id ?? idx} className="grid grid-cols-[1fr,50px,50px] gap-1 border-b border-dashed py-0.5">
+                                <span>{item.account_name ?? '-'}</span>
+                                <span className="text-right">{Number(item.debit) > 0 ? formatCurrency(Number(item.debit)) : '-'}</span>
+                                <span className="text-right">{Number(item.credit) > 0 ? formatCurrency(Number(item.credit)) : '-'}</span>
+                            </div>
+                        ))}
+                    </div>
+                </PrintableLayout>
+            )}
             <Trigger />
             <Drawer
                 open={open}
                 onOpenChange={setOpen}
                 side="left"
-                defaultSize={width}
-                contentClassName="p-0"
+                defaultSize={isViewMode ? "50%" : width}
+                contentClassName={isViewMode ? undefined : "p-0"}
                 icon={BookOpen}
-                title={initialData ? "Editar Asiento" : "Nuevo Asiento Contable"}
-                subtitle={initialData?.reference ? `Ref: ${initialData.reference} • ${form.watch("description") || "Registro manual"}` : (form.watch("description") || "Registro manual de movimiento")}
-                footer={
+                title={drawerTitle}
+                subtitle={drawerSubtitle}
+                headerActions={isViewMode ? (
+                    <div className="flex items-center gap-2">
+                        <Button variant="ghost" size="icon" onClick={() => handlePrint()}>
+                            <Printer className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => setOpen(false)}>
+                            <X className="h-4 w-4" />
+                        </Button>
+                    </div>
+                ) : undefined}
+                footer={isViewMode ? undefined : (
                     <FormFooter
                         actions={
                             <>
@@ -328,9 +480,9 @@ export function JournalEntryDrawer({
                             </>
                         }
                     />
-                }
+                )}
             >
-                {formContent}
+                {isViewMode ? renderViewContent() : formContent}
             </Drawer>
         </>
     )

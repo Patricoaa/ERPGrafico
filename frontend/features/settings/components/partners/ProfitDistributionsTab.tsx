@@ -18,7 +18,7 @@ import {
 import { toast } from "sonner"
 import { CreateDistributionFlow } from "./CreateDistributionFlow"
 import { MassPaymentModal } from "./MassPaymentWizard"
-import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
+import { TransactionDrawerRouter } from "@/features/_shared/transaction-drawer"
 
 interface ProfitDistributionsTabProps {
     /** Whether the new-distribution flow should open on mount (driven by URL ?modal=new-distribution) */
@@ -296,11 +296,11 @@ export function ProfitDistributionsTab({ initialFlowOpen = false, onModalClose, 
 
 
             {state.viewingDist && (
-                <TransactionViewModal
-                    open={!!state.viewingDist}
-                    onOpenChange={() => setState(prev => ({ ...prev, viewingDist: undefined }))}
+                <TransactionDrawerRouter
                     type="profit_distribution"
                     id={state.viewingDist.id}
+                    open={!!state.viewingDist}
+                    onOpenChange={() => setState(prev => ({ ...prev, viewingDist: undefined }))}
                 />
             )}
 

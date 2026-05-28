@@ -18,10 +18,8 @@ import { EntityCard } from "@/components/shared/EntityCard"
 import { createEntityCardView } from "@/lib/view-helpers"
 
 // Lazy load heavy components
+import { TransactionDrawerRouter } from "@/features/_shared/transaction-drawer"
 const CashMovementModal = lazy(() => import("./CashMovementModal"))
-const TransactionViewModal = lazy(() =>
-    import("@/components/shared/TransactionViewModal").then(module => ({ default: module.TransactionViewModal }))
-)
 
 interface TreasuryMovement {
     id: number
@@ -398,18 +396,17 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
             </div>
 
             <SkeletonShell isLoading={isLoading} ariaLabel="Cargando vista de detalle de movimiento">
-                <Suspense fallback={<div />}>
-                    <TransactionViewModal
+                {selectedMovementId && (
+                    <TransactionDrawerRouter
+                        type="payment"
+                        id={selectedMovementId}
                         open={detailsOpen}
                         onOpenChange={(open) => {
                             setDetailsOpen(open)
                             if (!open) clearSelection()
                         }}
-                        type="payment"
-                        id={selectedMovementId!}
-                        view="details"
                     />
-                </Suspense>
+                )}
             </SkeletonShell>
         </div>
     )

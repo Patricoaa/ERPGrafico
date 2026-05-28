@@ -138,8 +138,7 @@ class SaleLineSerializer(serializers.ModelSerializer):
         return data
 
 class SaleOrderSerializer(serializers.ModelSerializer):
-    lines = serializers.SerializerMethodField()
-    customer_name = serializers.CharField(source='customer.name', read_only=True)
+    customer_name = serializers.CharField(source='customer.name', read_only=True, allow_null=True)
     channel_display = serializers.CharField(source='get_channel_display', read_only=True)
     total_paid = serializers.SerializerMethodField()
     pending_amount = serializers.SerializerMethodField()
@@ -180,6 +179,7 @@ class SaleOrderSerializer(serializers.ModelSerializer):
             'credit_assignment_origin', 'credit_assignment_origin_display', 'credit_approval_task_details',
             'created_at', 'updated_at'
         ]
+        read_only_fields = ['id', 'number', 'status', 'total_net', 'total_tax', 'total', 'journal_entry']
 
     def get_related_documents(self, obj):
         from billing.models import Invoice
@@ -274,7 +274,7 @@ class CreateSaleOrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = SaleOrder
         fields = ['id', 'number', 'customer', 'notes', 'payment_method', 'payment_method_id', 'total_discount_amount', 'lines']
-        read_only_fields = ['id', 'number']
+        read_only_fields = ['id', 'number', 'status', 'journal_entry']
 
     def validate(self, attrs):
         settings = SalesSettings.get_solo()
@@ -330,6 +330,7 @@ class SaleDeliverySerializer(serializers.ModelSerializer):
     class Meta:
         model = SaleDelivery
         fields = '__all__'
+        read_only_fields = ['id', 'number', 'status']
 
 class SaleReturnLineSerializer(serializers.ModelSerializer):
     product_code = serializers.CharField(source='product.code', read_only=True)
@@ -349,3 +350,4 @@ class SaleReturnSerializer(serializers.ModelSerializer):
     class Meta:
         model = SaleReturn
         fields = '__all__'
+        read_only_fields = ['id', 'number', 'status']

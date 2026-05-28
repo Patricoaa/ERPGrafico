@@ -46,6 +46,7 @@ class InvoiceSerializer(serializers.ModelSerializer):
             'order_delivery_status', 'work_orders', 'is_tax_exempt', 'pos_session',
             'sale_order_detail', 'is_sale_document'
         ]
+        read_only_fields = ['id', 'number', 'status', 'total_net', 'total_tax', 'total', 'journal_entry', 'tax_period_closed']
 
     def get_serialized_payments(self, obj):
         from treasury.models import PaymentAllocation

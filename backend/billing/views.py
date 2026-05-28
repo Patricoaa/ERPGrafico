@@ -27,6 +27,24 @@ class InvoiceViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         'contact': ['exact'],
     }
 
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if instance.status != 'DRAFT':
+            return Response(
+                {'error': 'Solo se pueden editar facturas en estado Borrador.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        return super().update(request, *args, **kwargs)
+
+    def partial_update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if instance.status != 'DRAFT':
+            return Response(
+                {'error': 'Solo se pueden editar facturas en estado Borrador.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        return super().partial_update(request, *args, **kwargs)
+
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
         BillingService.delete_invoice(instance)

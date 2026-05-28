@@ -161,4 +161,30 @@ export const purchasingApi = {
         const res = await api.get<Record<string, unknown>[]>('/contacts/?is_default_vendor=true')
         return res.data
     },
+
+    // ========== Receipts ==========
+
+    getReceipts: async (orderId?: number): Promise<Record<string, unknown>[]> => {
+        const params = orderId ? { purchase_order: orderId } : {}
+        const res = await api.get('/purchasing/receipts/', { params })
+        return res.data.results ?? res.data
+    },
+
+    getReceipt: async (id: number): Promise<Record<string, unknown>> => {
+        const res = await api.get(`/purchasing/receipts/${id}/`)
+        return res.data
+    },
+
+    // ========== Returns ==========
+
+    getReturns: async (orderId?: number): Promise<Record<string, unknown>[]> => {
+        const params = orderId ? { purchase_order: orderId } : {}
+        const res = await api.get('/purchasing/returns/', { params })
+        return res.data.results ?? res.data
+    },
+
+    getReturn: async (id: number): Promise<Record<string, unknown>> => {
+        const res = await api.get(`/purchasing/returns/${id}/`)
+        return res.data
+    },
 }

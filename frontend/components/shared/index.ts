@@ -22,8 +22,7 @@ export * from './Drawer';
 export * from './PanelHeader';
 export * from './CollapsibleSheet';
 export * from './SheetCloseButton';
-export * from './TransactionViewModal';
-export * from './transaction-modal';
+
 export * from './GenericWizard';
 
 // Buttons & Actions

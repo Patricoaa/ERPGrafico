@@ -43,6 +43,7 @@ export const STATUS_MAP: Record<string, StatusStyle> = {
     CANCELLED:      { label: 'Cancelado',    intent: 'destructive' },
     VOIDED:         { label: 'Anulado',      intent: 'destructive' },
     POSTED:         { label: 'Publicado',    intent: 'success' },
+    PAYMENT_PENDING:{ label: 'Pago Pendiente', intent: 'warning' },
 
     // ── Progress / Logistics ─────────────────────────────────────────────
     PARTIAL:        { label: 'Parcial',      intent: 'warning' },
@@ -54,6 +55,15 @@ export const STATUS_MAP: Record<string, StatusStyle> = {
     IN_PROGRESS:    { label: 'En Proceso',   intent: 'warning' },
     FINISHED:       { label: 'Finalizado',   intent: 'success' },
     MANUFACTURING:  { label: 'Fabricando',   intent: 'primary' },
+    // WorkOrder stages
+    MATERIAL_ASSIGNMENT:    { label: 'Asig. Materiales',   intent: 'info' },
+    MATERIAL_APPROVAL:      { label: 'Aprob. Stock',       intent: 'warning' },
+    OUTSOURCING_ASSIGNMENT: { label: 'Asig. Tercerizados',  intent: 'info' },
+    PREPRESS:               { label: 'Pre-Impresión',      intent: 'primary' },
+    PRESS:                  { label: 'Impresión',          intent: 'primary' },
+    POSTPRESS:              { label: 'Post-Impresión',     intent: 'primary' },
+    OUTSOURCING_VERIFICATION:{ label: 'Verif. Tercerizados', intent: 'info' },
+    RECTIFICATION:          { label: 'Rectificación',      intent: 'warning' },
 
     // ── Financial / Treasury / Reconciliation ─────────────────────────────
     COMPLETED:      { label: 'Completado',   intent: 'success' },
@@ -69,6 +79,12 @@ export const STATUS_MAP: Record<string, StatusStyle> = {
     SETTLED:        { label: 'Liquidado',    intent: 'success' },
     INVOICED:       { label: 'Facturado',    intent: 'info' },
     PENDING:        { label: 'Pendiente',    intent: 'warning' },
+
+    // ── Subscription / Employee ──────────────────────────────────────────
+    ACTIVE:         { label: 'Activo',       intent: 'success' },
+    INACTIVE:       { label: 'Inactivo',     intent: 'neutral' },
+    PAUSED:         { label: 'Pausado',      intent: 'warning' },
+    EXPIRED:        { label: 'Vencido',      intent: 'neutral' },
 
     // ── Semantic universals ───────────────────────────────────────────────
     SUCCESS:        { label: 'Completado',   intent: 'success' },
