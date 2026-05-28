@@ -7,13 +7,15 @@ class AccountSerializer(serializers.ModelSerializer):
     debit_total = serializers.DecimalField(max_digits=20, decimal_places=2, read_only=True)
     credit_total = serializers.DecimalField(max_digits=20, decimal_places=2, read_only=True)
     balance = serializers.DecimalField(max_digits=20, decimal_places=2, read_only=True)
+    has_posted_items = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = Account
         fields = [
             'id', 'code', 'name', 'account_type', 'account_type_display', 
             'bs_category', 'bs_category_display',
-            'parent', 'is_reconcilable', 'is_selectable', 'debit_total', 'credit_total', 
+            'parent', 'is_reconcilable', 'is_selectable', 'has_posted_items',
+            'debit_total', 'credit_total', 
             'balance', 'is_category', 'cf_category'
         ]
         extra_kwargs = {

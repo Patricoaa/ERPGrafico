@@ -80,6 +80,12 @@ export function AccountDrawer({
     
     const width = formDrawerWidth("medium", !!initialData?.id)
 
+    const isEditMode = !!initialData?.id
+    const init = initialData as Record<string, unknown> | undefined
+    const hasParent = isEditMode && !!init?.parent
+    const hasPostedItems = isEditMode && !!init?.has_posted_items
+    const hasChildren = isEditMode && !init?.is_selectable
+
     const accountType = form.watch("account_type");
 
     // Reset form when opening or initialData changes
@@ -192,7 +198,7 @@ export function AccountDrawer({
                             value={field.value}
                             onChange={field.onChange}
                             error={fieldState.error?.message}
-                            disabled={readonly || (!!parentId && parentId !== "__none__" && parentId !== "none")}
+                            disabled={readonly || hasParent || hasPostedItems || hasChildren || (!!parentId && parentId !== "__none__" && parentId !== "none")}
                             options={[
                                 { value: "ASSET", label: "Activo" },
                                 { value: "LIABILITY", label: "Pasivo" },
@@ -214,7 +220,7 @@ export function AccountDrawer({
                             showAll={true}
                             placeholder="Sin padre (Raíz)"
                             error={fieldState.error?.message}
-                            disabled={readonly}
+                            disabled={readonly || hasPostedItems || hasChildren}
                         />
                     )}
                 />

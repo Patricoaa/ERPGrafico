@@ -129,11 +129,11 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
 
     const columns: ColumnDef<JournalEntry>[] = useMemo(() => [
         {
-            accessorKey: "number",
+            accessorKey: "display_id",
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Folio" className="justify-center" />
             ),
-            cell: ({ row }) => <DataCell.Code>{row.getValue("number")}</DataCell.Code>,
+            cell: ({ row }) => <DataCell.Code>{row.getValue("display_id")}</DataCell.Code>,
         },
         {
             accessorKey: "date",
@@ -158,7 +158,7 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
             )
         },
         {
-            accessorKey: "state",
+            accessorKey: "status",
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Estado" className="justify-center" />
             ),
@@ -168,33 +168,34 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
         createActionsColumn<JournalEntry>({
             renderActions: (entry) => (
                 <>
-                    <DataCell.Action
-                        icon={Eye}
-                        title="Ver Detalle"
-                        onClick={() => {
-                            const params = new URLSearchParams(searchParams.toString())
-                            params.set('selected', String(entry.id))
-                            router.push(`${pathname}?${params.toString()}`, { scroll: false })
-                        }}
-                    />
-                    {entry.state === 'DRAFT' && (
-                        <>
-                            <DataCell.Action
-                                icon={Pencil}
-                                title="Editar"
-                                onClick={() => {
-                                    const params = new URLSearchParams(searchParams.toString())
-                                    params.set('selected', String(entry.id))
-                                    params.set('mode', 'edit') // Add a mode param to distinguish
-                                    router.push(`${pathname}?${params.toString()}`, { scroll: false })
-                                }}
-                            />
-                            <DataCell.Action
-                                icon={CheckCircle}
-                                title="Publicar"
-                                onClick={() => handlePost(entry.id)}
-                            />
-                        </>
+                    {entry.status === 'DRAFT' ? (
+                        <DataCell.Action
+                            icon={Pencil}
+                            title="Editar"
+                            onClick={() => {
+                                const params = new URLSearchParams(searchParams.toString())
+                                params.set('selected', String(entry.id))
+                                params.set('mode', 'edit')
+                                router.push(`${pathname}?${params.toString()}`, { scroll: false })
+                            }}
+                        />
+                    ) : (
+                        <DataCell.Action
+                            icon={Eye}
+                            title="Ver Detalle"
+                            onClick={() => {
+                                const params = new URLSearchParams(searchParams.toString())
+                                params.set('selected', String(entry.id))
+                                router.push(`${pathname}?${params.toString()}`, { scroll: false })
+                            }}
+                        />
+                    )}
+                    {entry.status === 'DRAFT' && (
+                        <DataCell.Action
+                            icon={CheckCircle}
+                            title="Publicar"
+                            onClick={() => handlePost(entry.id)}
+                        />
                     )}
                     <DataCell.Action
                         icon={Trash2}

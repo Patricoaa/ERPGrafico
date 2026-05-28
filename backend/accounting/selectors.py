@@ -19,6 +19,11 @@ def list_accounts(*, params: dict) -> QuerySet:
             filter=Q(journal_items__entry__status='POSTED')
         ),
         annotated_children_count=Count('children'),
+        annotated_posted_items_count=Count(
+            'journal_items',
+            filter=Q(journal_items__entry__status='POSTED'),
+            distinct=True,
+        ),
     )
 
     if params.get("is_leaf", "").lower() == "true":
