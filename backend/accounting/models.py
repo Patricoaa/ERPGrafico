@@ -56,7 +56,14 @@ class Account(TimeStampedModel):
         if hasattr(self, 'annotated_children_count'):
             return self.annotated_children_count == 0
         return not self.children.exists()
-    
+
+    @property
+    def has_posted_items(self):
+        """Whether this account has any posted journal items."""
+        if hasattr(self, 'annotated_posted_items_count'):
+            return self.annotated_posted_items_count > 0
+        return self.journal_items.filter(entry__status='POSTED').exists()
+
     # Reporting Mapping
     is_category = models.CharField(_("Categoría Estado Resultados"), max_length=30, choices=ISCategory.choices, null=True, blank=True)
     cf_category = models.CharField(_("Categoría Flujo de Caja"), max_length=30, choices=CFCategory.choices, null=True, blank=True)

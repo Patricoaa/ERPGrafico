@@ -29,15 +29,15 @@ export function JournalEntryDetailClient({ entryId }: JournalEntryDetailClientPr
          )
      }
 
-    const isPosted = entry.state === 'POSTED'
+    const isPosted = entry.status === 'POSTED'
 
     return (
         <EntityDetailPage
             entityLabel="accounting.journalentry"
-            displayId={entry.reference || `AS-${entry.number}`}
+            displayId={entry.display_id}
             breadcrumb={[
                 { label: "Asientos", href: "/accounting/entries" },
-                { label: entry.reference || `AS-${entry.number}`, href: `/accounting/entries/${entryId}` }
+                { label: entry.display_id, href: `/accounting/entries/${entryId}` }
             ]}
             instanceId={entry.id}
             readonly={isPosted}
