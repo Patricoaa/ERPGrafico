@@ -129,6 +129,81 @@ export function AdvanceDrawer({ open, onOpenChange, advance, employees: employee
             }
         >
             {advance ? (
+                <FormSplitLayout
+                    showSidebar={true}
+                    sidebar={<ActivitySidebar entityId={advance.id} entityType="salaryadvance" title="Historial" />}
+                >
+                    <div className="flex-1 flex flex-col overflow-y-auto p-6 pt-2 scrollbar-thin">
+                        <Form {...form}>
+                            <form id="advance-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pr-1">
+                                <FormField control={form.control} name="employee" render={({ field, fieldState }) => (
+                                    <LabeledSelect
+                                        label="Empleado"
+                                        value={field.value}
+                                        onChange={field.onChange}
+                                        error={fieldState.error?.message}
+                                        placeholder="Seleccionar empleado..."
+                                        options={employees.map(e => ({
+                                            value: e.id.toString(),
+                                            label: e.contact_detail?.name || ""
+                                        }))}
+                                    />
+                                )} />
+
+                                <FormField control={form.control} name="amount" render={({ field, fieldState }) => (
+                                    <LabeledInput
+                                        label="Monto ($)"
+                                        required
+                                        type="number"
+                                        placeholder="0"
+                                        error={fieldState.error?.message}
+                                        {...field}
+                                    />
+                                )} />
+                                <FormField control={form.control} name="date" render={({ field, fieldState }) => (
+                                    <PeriodValidationDateInput
+                                        label="Fecha Propuesta"
+                                        required
+                                        date={field.value ? new Date(field.value + 'T12:00:00') : undefined}
+                                        onDateChange={(d) => {
+                                            if (!d) {
+                                                field.onChange("")
+                                                return
+                                            }
+                                            field.onChange(d.toISOString().split('T')[0])
+                                        }}
+                                        validationType="accounting"
+                                    />
+                                )} />
+
+                                <FormField control={form.control} name="payroll" render={({ field, fieldState }) => (
+                                    <LabeledSelect
+                                        label="Vincular a Liquidación (Obligatorio)"
+                                        value={field.value}
+                                        onChange={field.onChange}
+                                        error={fieldState.error?.message}
+                                        placeholder="Seleccionar liquidación..."
+                                        options={employeePayrolls.map(p => ({
+                                            value: p.id.toString(),
+                                            label: `${p.display_id} – ${p.period_label} (${p.status_display})`
+                                        }))}
+                                    />
+                                )} />
+
+                                <FormField control={form.control} name="notes" render={({ field }) => (
+                                    <LabeledInput
+                                        as="textarea"
+                                        label="Notas"
+                                        rows={2}
+                                        placeholder="Descripción opcional..."
+                                        {...field}
+                                    />
+                                )} />
+                            </form>
+                        </Form>
+                    </div>
+                </FormSplitLayout>
+            ) : (
                 <FormSplitLayout>
                     <div className="flex-1 flex flex-col overflow-y-auto p-6 pt-2 scrollbar-thin">
                         <Form {...form}>
@@ -199,81 +274,7 @@ export function AdvanceDrawer({ open, onOpenChange, advance, employees: employee
                             </form>
                         </Form>
                     </div>
-                    <ActivitySidebar entityId={advance.id} entityType="salaryadvance" title="Historial" className="h-full border-none" />
                 </FormSplitLayout>
-            ) : (
-                <div className="flex-1 flex overflow-hidden h-full">
-                    {/* Left: Form */}
-                    <div className="flex-1 flex flex-col overflow-y-auto p-6 pt-2 scrollbar-thin">
-                        <Form {...form}>
-                            <form id="advance-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pr-1">
-                                <FormField control={form.control} name="employee" render={({ field, fieldState }) => (
-                                    <LabeledSelect
-                                        label="Empleado"
-                                        value={field.value}
-                                        onChange={field.onChange}
-                                        error={fieldState.error?.message}
-                                        placeholder="Seleccionar empleado..."
-                                        options={employees.map(e => ({
-                                            value: e.id.toString(),
-                                            label: e.contact_detail?.name || ""
-                                        }))}
-                                    />
-                                )} />
-
-                                <FormField control={form.control} name="amount" render={({ field, fieldState }) => (
-                                    <LabeledInput
-                                        label="Monto ($)"
-                                        required
-                                        type="number"
-                                        placeholder="0"
-                                        error={fieldState.error?.message}
-                                        {...field}
-                                    />
-                                )} />
-                                <FormField control={form.control} name="date" render={({ field, fieldState }) => (
-                                    <PeriodValidationDateInput
-                                        label="Fecha Propuesta"
-                                        required
-                                        date={field.value ? new Date(field.value + 'T12:00:00') : undefined}
-                                        onDateChange={(d) => {
-                                            if (!d) {
-                                                field.onChange("")
-                                                return
-                                            }
-                                            field.onChange(d.toISOString().split('T')[0])
-                                        }}
-                                        validationType="accounting"
-                                    />
-                                )} />
-
-                                <FormField control={form.control} name="payroll" render={({ field, fieldState }) => (
-                                    <LabeledSelect
-                                        label="Vincular a Liquidación (Obligatorio)"
-                                        value={field.value}
-                                        onChange={field.onChange}
-                                        error={fieldState.error?.message}
-                                        placeholder="Seleccionar liquidación..."
-                                        options={employeePayrolls.map(p => ({
-                                            value: p.id.toString(),
-                                            label: `${p.display_id} – ${p.period_label} (${p.status_display})`
-                                        }))}
-                                    />
-                                )} />
-
-                                <FormField control={form.control} name="notes" render={({ field }) => (
-                                    <LabeledInput
-                                        as="textarea"
-                                        label="Notas"
-                                        rows={2}
-                                        placeholder="Descripción opcional..."
-                                        {...field}
-                                    />
-                                )} />
-                            </form>
-                        </Form>
-                    </div>
-                </div>
             )}
         </Drawer>
     )

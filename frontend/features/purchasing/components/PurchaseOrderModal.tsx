@@ -224,7 +224,10 @@ export function PurchaseOrderModal({ onSuccess, initialData, open: openProp, onO
             }
         >
             {initialData ? (
-                <FormSplitLayout>
+                <FormSplitLayout
+                    showSidebar={true}
+                    sidebar={<ActivitySidebar entityType="purchase_order" entityId={initialData.id ?? 0} />}
+                >
                     <SkeletonShell isLoading={isFetchingInitialData} ariaLabel="Cargando formulario de orden de compra" className="flex-1 flex flex-col">
                         <Form {...form}>
                             <form id="purchase-order-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pt-4">
@@ -379,10 +382,10 @@ export function PurchaseOrderModal({ onSuccess, initialData, open: openProp, onO
                             </form>
                         </Form>
                     </SkeletonShell>
-                    <ActivitySidebar entityType="purchase_order" entityId={initialData.id ?? 0} />
                 </FormSplitLayout>
             ) : (
-                <SkeletonShell isLoading={isFetchingInitialData} ariaLabel="Cargando formulario de orden de compra" className="flex-1 flex flex-col">
+                <FormSplitLayout>
+                    <SkeletonShell isLoading={isFetchingInitialData} ariaLabel="Cargando formulario de orden de compra" className="flex-1 flex flex-col">
                     <Form {...form}>
                         <form id="purchase-order-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pt-4">
                             <div className="space-y-4">
@@ -536,6 +539,7 @@ export function PurchaseOrderModal({ onSuccess, initialData, open: openProp, onO
                         </form>
                     </Form>
                 </SkeletonShell>
+                </FormSplitLayout>
             )}
         </BaseModal>
     )

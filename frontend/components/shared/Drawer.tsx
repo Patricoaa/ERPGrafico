@@ -264,7 +264,7 @@ export function Drawer({
                     </SheetHeader>
                 )}
 
-                <div className={cn("flex-1 overflow-y-auto px-8 pb-8 scrollbar-thin scrollbar-thumb-primary/10 scrollbar-track-transparent", contentClassName)}>
+                <div className={cn("flex-1 flex flex-col overflow-y-auto px-8 pb-8 scrollbar-thin scrollbar-thumb-primary/10 scrollbar-track-transparent", contentClassName)}>
                     {children}
                 </div>
 
