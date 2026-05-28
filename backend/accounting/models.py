@@ -264,17 +264,32 @@ class JournalEntry(AuditedModel):
     class Status(models.TextChoices):
         DRAFT = 'DRAFT', _('Borrador')
         POSTED = 'POSTED', _('Publicado')
+        CLOSED = 'CLOSED', _('Cerrado')
         CANCELLED = 'CANCELLED', _('Anulado')
+        REVERSAL = 'REVERSAL', _('Reversión')
 
     # Alias for backwards compatibility with existing code that references JournalEntry.State
     State = Status
 
+    @classmethod
+    def balance_affecting_statuses(cls):
+        """Statuses that affect financial balances (posted, closed, reversal)."""
+        return [cls.Status.POSTED, cls.Status.CLOSED, cls.Status.REVERSAL]
+
     number = models.CharField(_("Número"), max_length=20, unique=True, editable=False, null=True, blank=True)
     date = models.DateField(_("Fecha"), default=get_current_date)
     description = models.CharField(_("Descripción"), max_length=255)
+    # DEPRECATED: reference kept for data preservation. Use source_document instead.
     reference = models.CharField(_("Referencia"), max_length=100, blank=True)
     status = models.CharField(_("Estado"), max_length=20, choices=Status.choices, default=Status.DRAFT)
-    
+
+    # Origin discriminator: True = created from drawer, False = system-generated
+    is_manual = models.BooleanField(
+        _("Es Manual"),
+        default=False,
+        help_text=_("True si fue creado desde el formulario contable. False si fue generado automáticamente (facturación, despacho, etc.)")
+    )
+
     # Accounting Period Control
     accounting_period = models.ForeignKey(
         'tax.AccountingPeriod',
@@ -295,7 +310,16 @@ class JournalEntry(AuditedModel):
     )
     source_object_id = models.PositiveIntegerField(null=True, blank=True)
     source_document = GenericForeignKey('source_content_type', 'source_object_id')
-    
+
+    reversal_of = models.ForeignKey(
+        'self',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='reversals',
+        verbose_name=_("Asiento Original Revertido")
+    )
+
     class Meta:
         ordering = ['-id']
         verbose_name = _("Asiento Contable")
@@ -404,13 +428,19 @@ class JournalEntry(AuditedModel):
                 'type': self.source_content_type.model,
                 'id': self.source_object_id,
                 'name': str(self.source_document),
-                'url': '#'
+                'url': '#',
+                'content_type_id': self.source_content_type_id,
+                'object_id': self.source_object_id,
+                'display': str(self.source_document),
             }
         return {
             'type': entity.label,
             'id': self.source_document.pk,
             'name': str(self.source_document),
             'url': entity.detail_url_pattern.format(id=self.source_document.pk),
+            'content_type_id': self.source_content_type_id,
+            'object_id': self.source_object_id,
+            'display': str(self.source_document),
         }
 
 class JournalItem(TimeStampedModel):

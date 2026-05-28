@@ -9,9 +9,11 @@ Crea ajustes contables para comisiones, intereses y otros conceptos.
 from django.db import transaction
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+from django.contrib.contenttypes.models import ContentType
 from decimal import Decimal
 from typing import Dict, Optional
 from .models import BankStatementLine
+from .models import BankStatement
 from accounting.models import JournalEntry, JournalItem, Account, AccountingSettings
 
 
@@ -111,7 +113,9 @@ class DifferenceService:
             date=accounting_date or line.transaction_date,
             reference=f"Ajuste {line.statement.display_id} #{line.line_number}",
             description=f"{difference_label} - {notes}" if notes else difference_label,
-            status=initial_status
+            status=initial_status,
+            source_content_type=ContentType.objects.get_for_model(BankStatement),
+            source_object_id=line.statement_id,
         )
         
         abs_diff = abs(difference)

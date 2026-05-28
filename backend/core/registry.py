@@ -218,6 +218,7 @@ class UniversalRegistry:
                 "title_plural": entity.title_plural,
                 "icon": entity.icon,
                 "id": idx.object_id,
+                "content_type_id": idx.content_type_id,
                 "short_display": idx.title, # Title in index is already rendered
                 "display": idx.title,
                 "subtitle": idx.subtitle,
@@ -241,6 +242,7 @@ class UniversalRegistry:
                         "title_plural": entity.title_plural,
                         "icon": entity.icon,
                         "id": idx.object_id,
+                        "content_type_id": idx.content_type_id,
                         "short_display": idx.title,
                         "display": idx.title,
                         "subtitle": idx.subtitle,

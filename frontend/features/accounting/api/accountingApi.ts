@@ -36,7 +36,7 @@ export const accountingApi = {
     },
 
     updateEntry: async (id: number, payload: Record<string, unknown>): Promise<unknown> => {
-        const { data } = await api.put(`/accounting/entries/${id}/`, payload)
+        const { data } = await api.patch(`/accounting/entries/${id}/`, payload)
         return data
     },
 

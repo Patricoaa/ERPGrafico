@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils import timezone
+from django.contrib.contenttypes.models import ContentType
 from decimal import Decimal
 
 class SequenceService:
@@ -91,7 +92,9 @@ class BaseNoteService:
             date=doc_date,
             description=description,
             reference=f"NOTE-{invoice.id}",
-            status=JournalEntry.State.DRAFT
+            status=JournalEntry.State.DRAFT,
+            source_content_type=ContentType.objects.get_for_model(invoice._meta.model),
+            source_object_id=invoice.id,
         )
         
         return invoice, entry

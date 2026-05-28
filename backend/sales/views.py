@@ -3,6 +3,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 import django_filters
+from django.contrib.contenttypes.models import ContentType
 from .models import SaleOrder, SalesSettings, SaleDelivery, SaleReturn
 from .serializers import (
     SaleOrderSerializer, 
@@ -513,7 +514,9 @@ class SaleOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                 entry = JournalEntry.objects.create(
                     description=f"Castigo de documento {order.number}: {contact.name}",
                     reference=f"CASTIGO-{order.number}",
-                    status='POSTED'
+                    status='POSTED',
+                    source_content_type=ContentType.objects.get_for_model(SaleOrder),
+                    source_object_id=order.id,
                 )
                 JournalItem.objects.create(
                     entry=entry,
