@@ -21,7 +21,7 @@ interface MassPaymentWizardProps {
 }
 
 /** @deprecated Use MassPaymentWizard — renamed to match GenericWizard surface (naming-conventions.md §1.1) */
-export { MassPaymentWizard as MassPaymentModal } from './MassPaymentWizard'
+export { MassPaymentWizard as MassPaymentModal }
 
 export function MassPaymentWizard({ open, onOpenChange, resolution, onSuccess }: MassPaymentWizardProps) {
     const [loading, setLoading] = useState(false)

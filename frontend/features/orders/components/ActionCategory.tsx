@@ -22,7 +22,7 @@ const PaymentModal = dynamic(() => import("@/features/treasury/components/Paymen
 const PaymentReferenceModal = dynamic(() => import("@/features/treasury/components/PaymentReferenceModal").then(m => m.PaymentReferenceModal))
 const NoteCheckoutWizard = dynamic(() => import("@/features/billing/components/NoteCheckoutWizard").then(m => m.NoteCheckoutWizard))
 const DocumentListModal = dynamic(() => import("./DocumentListModal").then(m => m.DocumentListModal))
-const TransactionViewModal = dynamic(() => import("@/components/shared/TransactionViewModal").then(m => m.TransactionViewModal))
+import { TransactionDrawerRouter } from "@/features/_shared/transaction-drawer"
 const NoteLogisticsModal = dynamic(() => import("./NoteLogisticsModal").then(m => m.NoteLogisticsModal))
 const WorkOrderWizard = dynamic(() => import("@/features/production").then(m => m.WorkOrderWizard))
 import {
@@ -62,45 +62,15 @@ export const ActionCategory = forwardRef(({
     posSessionId = null,
     headless = false
 }: ActionCategoryProps, ref) => {
-    const router = useRouter()
-    const searchParams = import("next/navigation").then(m => {
-        try {
-            return m.useSearchParams()
-        } catch {
-            return null
-        }
-    })
-    
-    // We import statically on top or use the router
-    const { useSearchParams, usePathname } = require("next/navigation")
-    const pathname = usePathname()
-    const currentSearchParams = useSearchParams()
-
-    const transactionId = currentSearchParams.get('transaction')
-    const transactionType = currentSearchParams.get('transactionType')
-
     const [activeModal, setActiveModal] = useState<string | null>(null)
     const [viewConfig, setViewConfig] = useState<{ type: string, id: number | string } | null>(null)
 
-    useEffect(() => {
-        if (transactionId && transactionType && activeModal !== 'transaction-view') {
-            setViewConfig({ type: transactionType, id: transactionId })
-            setActiveModal('transaction-view')
-        }
-    }, [transactionId, transactionType])
-
     const openTransaction = (type: string, id: number | string) => {
-        const params = new URLSearchParams(currentSearchParams.toString())
-        params.set('transaction', String(id))
-        params.set('transactionType', type)
-        router.push(`${pathname}?${params.toString()}`, { scroll: false })
+        setViewConfig({ type, id })
+        setActiveModal('transaction-view')
     }
 
     const closeTransaction = () => {
-        const params = new URLSearchParams(currentSearchParams.toString())
-        params.delete('transaction')
-        params.delete('transactionType')
-        router.replace(`${pathname}?${params.toString()}`, { scroll: false })
         setActiveModal(null)
         setViewConfig(null)
     }
@@ -502,11 +472,11 @@ export const ActionCategory = forwardRef(({
             )}
 
             {activeModal === 'transaction-view' && viewConfig && (
-                <TransactionViewModal
-                    open={true}
-                    onOpenChange={(open) => !open && closeTransaction()}
+                <TransactionDrawerRouter
                     type={viewConfig.type as any}
                     id={viewConfig.id as any}
+                    open={true}
+                    onOpenChange={(open) => !open && closeTransaction()}
                 />
             )}
 
@@ -546,11 +516,11 @@ export const ActionCategory = forwardRef(({
                 />
              )}
              {activeModal === 'transaction-view' && viewConfig && (
-                 <TransactionViewModal
-                     open={true}
-                     onOpenChange={(open) => !open && closeTransaction()}
+                 <TransactionDrawerRouter
                      type={viewConfig.type as any}
                      id={viewConfig.id as any}
+                     open={true}
+                     onOpenChange={(open) => !open && closeTransaction()}
                  />
              )}
              {activeModal === 'view-work-orders' && (

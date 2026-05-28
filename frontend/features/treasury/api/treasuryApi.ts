@@ -243,4 +243,16 @@ export const treasuryApi = {
         const response = await api.get<ContactBrief[]>('/contacts/', { params })
         return response.data
     },
+
+    // ========== Bank Statements ==========
+
+    getStatements: async (filters?: Record<string, unknown>): Promise<Record<string, unknown>[]> => {
+        const response = await api.get('/treasury/statements/', { params: filters })
+        return response.data.results ?? response.data
+    },
+
+    getStatement: async (id: number): Promise<Record<string, unknown>> => {
+        const response = await api.get(`/treasury/statements/${id}/`)
+        return response.data
+    },
 }

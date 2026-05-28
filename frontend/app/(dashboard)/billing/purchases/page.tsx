@@ -12,7 +12,7 @@ import api from "@/lib/api"
 import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { toast } from "sonner"
-import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
+import { TransactionDrawerRouter } from "@/features/_shared/transaction-drawer"
 import { PaymentModal } from "@/features/treasury"
 import { ReceiptModal, PurchaseNoteModal } from "@/features/purchasing"
 import { DocumentCompletionModal } from "@/components/shared/DocumentCompletionModal"
@@ -86,29 +86,15 @@ export default function PurchaseInvoicesPage() {
     const selectedId = searchParams.get('selected')
     const [hubEverOpened, setHubEverOpened] = useState(false)
 
-    // TransactionViewModal — URL sync (ADR-0020)
-    const transactionId = searchParams.get('transaction')
-    const transactionType = searchParams.get('transactionType')
-    const transactionView = (searchParams.get('transactionView') ?? 'details') as 'details' | 'history' | 'all'
-    const viewingTransaction = transactionId && transactionType
-        ? { type: transactionType, id: transactionId, view: transactionView }
-        : null
+    // Transaction detail state (local only, ?selected= is reserved for Hub Panel)
+    const [viewingTransaction, setViewingTransaction] = useState<{ type: string; id: string } | null>(null)
 
-    const openTransaction = (id: number | string, type: string, view: 'details' | 'history' | 'all' = 'details') => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.set('transaction', String(id))
-        params.set('transactionType', type)
-        params.set('transactionView', view)
-        router.push(`${pathname}?${params.toString()}`, { scroll: false })
+    const openTransaction = (id: number | string, type: string) => {
+        setViewingTransaction({ type, id: String(id) })
     }
 
     const closeTransaction = () => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.delete('transaction')
-        params.delete('transactionType')
-        params.delete('transactionView')
-        const query = params.toString()
-        router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
+        setViewingTransaction(null)
     }
 
     // Open Hub if ?selected= is present (ADR-0020)
@@ -359,7 +345,7 @@ export default function PurchaseInvoicesPage() {
                                     ...(canCompleteFolio ? [{ icon: FileEdit, label: 'Completar Folio', onClick: () => setCompletingDoc(doc) }] : []),
                                     ...(canReceive ? [{ action: 'receive' as const, label: doc.dte_type === 'NOTA_CREDITO' ? 'Devolución Mercadería' : 'Recibir Mercadería', onClick: () => setReceivingDoc(doc) }] : []),
                                     ...(canCreateNote ? [{ icon: FileBadge, label: 'Registrar Nota Crédito/Débito', onClick: () => setNotingDoc(doc) }] : []),
-                                    ...(hasPayments ? [{ icon: History, label: 'Historial de Pagos', onClick: () => openTransaction(doc.id, 'invoice', 'history') }] : []),
+                                    ...(hasPayments ? [{ icon: History, label: 'Historial de Pagos', onClick: () => openTransaction(doc.id, 'invoice') }] : []),
                                     ...((canAnnul || canDelete) ? [{ separator: true } as const] : []),
                                     ...(canDelete ? [{ action: 'delete' as const, onClick: () => handleDelete(doc.id) }] : []),
                                     ...(canAnnul ? [{ action: 'annul' as const, onClick: () => handleAnnul(doc.id) }] : []),
@@ -367,7 +353,7 @@ export default function PurchaseInvoicesPage() {
 
                                 return (
                                     <>
-                                        <DataCell.Action action="detail" title="Ver Detalle" onClick={() => openTransaction(doc.id, 'invoice', 'details')} />
+                                        <DataCell.Action action="detail" title="Ver Detalle" onClick={() => openTransaction(doc.id, 'invoice')} />
                                         {canPay && (
                                             <DataCell.Action
                                                 action="pay"
@@ -431,12 +417,11 @@ export default function PurchaseInvoicesPage() {
 
             {
                 viewingTransaction && (
-                    <TransactionViewModal
+                    <TransactionDrawerRouter
+                        type={viewingTransaction.type as any}
+                        id={Number(viewingTransaction.id)}
                         open={!!viewingTransaction}
                         onOpenChange={(open: boolean) => !open && closeTransaction()}
-                        type={viewingTransaction.type as any}
-                        id={viewingTransaction.id}
-                        view={viewingTransaction.view}
                     />
                 )
             }

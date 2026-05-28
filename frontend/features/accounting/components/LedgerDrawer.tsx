@@ -9,7 +9,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { ColumnDef } from "@tanstack/react-table"
 import { Card, CardContent } from "@/components/ui/card"
 import { DateRangeFilter } from "@/components/shared/DateRangeFilter"
-import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
+import { TransactionDrawerRouter } from "@/features/_shared/transaction-drawer"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 import { format } from "date-fns"
@@ -146,24 +146,17 @@ function LedgerContent({
     const router = useRouter()
     const pathname = usePathname()
     const searchParams = useSearchParams()
-    const entryId = searchParams.get('entry')
     const [viewingEntry, setViewingEntry] = useState<{ id: number | string } | null>(null)
-
-    useEffect(() => {
-        if (entryId && !viewingEntry) {
-            setViewingEntry({ id: entryId })
-        }
-    }, [entryId, viewingEntry])
 
     const openEntry = (id: number | string) => {
         const params = new URLSearchParams(searchParams.toString())
-        params.set('entry', String(id))
+        params.set('selected', String(id))
         router.push(`${pathname}?${params.toString()}`, { scroll: false })
     }
 
     const closeEntry = () => {
         const params = new URLSearchParams(searchParams.toString())
-        params.delete('entry')
+        params.delete('selected')
         router.replace(`${pathname}?${params.toString()}`, { scroll: false })
         setViewingEntry(null)
     }
@@ -358,11 +351,11 @@ function LedgerContent({
             />
 
             {viewingEntry && (
-                <TransactionViewModal
+                <TransactionDrawerRouter
+                    type="journal_entry"
+                    id={Number(viewingEntry.id)}
                     open={!!viewingEntry}
                     onOpenChange={(open) => !open && closeEntry()}
-                    type="journal_entry"
-                    id={viewingEntry.id}
                 />
             )}
 

@@ -1,7 +1,6 @@
 "use client"
 
-import { useState, useMemo, useEffect } from "react"
-import { useRouter, usePathname, useSearchParams } from "next/navigation"
+import { useState, useMemo } from "react"
 import { TooltipProvider, Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
@@ -15,7 +14,7 @@ import {
     FileText,
     Receipt
 } from "lucide-react"
-import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
+import { TransactionDrawerRouter } from "@/features/_shared/transaction-drawer"
 import { useOrderHubData } from "@/hooks/useOrderHubData"
 import { OrderHubIntegrated } from "./OrderHubIntegrated"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -48,39 +47,19 @@ export function OrderHubPanel({
     const { activeDoc, activeInvoice, isNoteMode, fetchOrderDetails } = hubData
 
     const { setHubTemporarilyHidden } = useHubPanel()
-    const router = useRouter()
-    const pathname = usePathname()
-    const searchParams = useSearchParams()
-
-    const transactionId = searchParams.get('transaction')
-    const transactionType = searchParams.get('transactionType')
+    const { openEntity } = useGlobalModals()
 
     const [detailsModal, setDetailsModal] = useState<{ open: boolean, type: string, id: number | string }>({ open: false, type: 'sale_order', id: 0 })
-
-    useEffect(() => {
-        if (transactionId && transactionType && !detailsModal.open) {
-            setDetailsModal({ open: true, type: transactionType, id: transactionId })
-        }
-    }, [transactionId, transactionType, detailsModal.open])
-
-    const { openEntity } = useGlobalModals()
 
     const openDetails = (docType: string, docId: number | string) => {
         if (docType === 'work_order') {
             openEntity('production.workorder', Number(docId))
             return
         }
-        const params = new URLSearchParams(searchParams.toString())
-        params.set('transaction', String(docId))
-        params.set('transactionType', docType)
-        router.push(`${pathname}?${params.toString()}`, { scroll: false })
+        setDetailsModal({ open: true, type: docType, id: docId })
     }
 
     const closeDetails = () => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.delete('transaction')
-        params.delete('transactionType')
-        router.replace(`${pathname}?${params.toString()}`, { scroll: false })
         setDetailsModal(prev => ({ ...prev, open: false }))
     }
 
@@ -233,11 +212,11 @@ export function OrderHubPanel({
                 </ScrollArea>
 
                 {/* Shared Modal for viewing Details */}
-                <TransactionViewModal
-                    open={detailsModal.open}
-                    onOpenChange={(open) => !open && closeDetails()}
+                <TransactionDrawerRouter
                     type={detailsModal.type as any}
                     id={Number(detailsModal.id)}
+                    open={detailsModal.open}
+                    onOpenChange={(open) => !open && closeDetails()}
                 />
             </div>
         </TooltipProvider>

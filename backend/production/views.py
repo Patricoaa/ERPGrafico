@@ -129,7 +129,15 @@ class WorkOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         """
         Overridden update to handle file attachments.
         Identity fields (product, sale_order, sale_line) are immutable post-creation.
+        Terminal stages (FINISHED, CANCELLED) block all edits.
         """
+        instance = self.get_object()
+        terminal_stages = {WorkOrder.Stage.FINISHED, WorkOrder.Stage.CANCELLED}
+        if instance.current_stage in terminal_stages:
+            return Response(
+                {'error': 'No se puede editar una OT en etapa Finalizada o Cancelada.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         immutable = {'product', 'sale_order', 'sale_line', 'product_id', 'sale_order_id', 'sale_line_id'}
         if immutable.intersection(request.data.keys()):
             return Response(

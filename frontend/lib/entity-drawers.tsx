@@ -125,9 +125,74 @@ const PaymentDrawer = dynamic(
     { ssr: false, loading: () => skeleton("pago") }
 )
 
+const SaleOrderDrawer = dynamic(
+    () => import("@/features/sales/components/SaleOrderDrawer").then((m) => m.SaleOrderDrawer),
+    { ssr: false, loading: () => skeleton("nota de venta") }
+)
+
+const PurchaseOrderDrawer = dynamic(
+    () => import("@/features/purchasing/components/PurchaseOrderDrawer").then((m) => m.PurchaseOrderDrawer),
+    { ssr: false, loading: () => skeleton("orden de compra") }
+)
+
+const InvoiceDrawer = dynamic(
+    () => import("@/features/billing/components/InvoiceDrawer").then((m) => m.InvoiceDrawer),
+    { ssr: false, loading: () => skeleton("factura") }
+)
+
+const SaleDeliveryDrawer = dynamic(
+    () => import("@/features/sales/components/SaleDeliveryDrawer").then((m) => m.SaleDeliveryDrawer),
+    { ssr: false, loading: () => skeleton("despacho") }
+)
+
+const CashMovementDrawer = dynamic(
+    () => import("@/features/treasury/components/CashMovementDrawer").then((m) => m.CashMovementDrawer),
+    { ssr: false, loading: () => skeleton("movimiento de tesorería") }
+)
+
+const TerminalBatchDrawer = dynamic(
+    () => import("@/features/treasury/components/TerminalBatchDrawer").then((m) => m.TerminalBatchDrawer),
+    { ssr: false, loading: () => skeleton("lote de terminal") }
+)
+
+const ProfitDistributionDrawer = dynamic(
+    () => import("@/features/settings/components/ProfitDistributionDrawer").then((m) => m.ProfitDistributionDrawer),
+    { ssr: false, loading: () => skeleton("distribución de resultados") }
+)
+
+const StockMoveDrawer = dynamic(
+    () => import("@/features/inventory/components/StockMoveDrawer").then((m) => m.StockMoveDrawer),
+    { ssr: false, loading: () => skeleton("movimiento de stock") }
+)
+
 const GroupDrawer = dynamic(
     () => import("@/features/users").then((m) => m.GroupDrawer),
     { ssr: false, loading: () => skeleton("grupo") }
+)
+
+const PurchaseReceiptDrawer = dynamic(
+    () => import("@/features/purchasing/components/PurchaseReceiptDrawer").then((m) => m.PurchaseReceiptDrawer),
+    { ssr: false, loading: () => skeleton("recepción de compra") }
+)
+
+const PurchaseReturnDrawer = dynamic(
+    () => import("@/features/purchasing/components/PurchaseReturnDrawer").then((m) => m.PurchaseReturnDrawer),
+    { ssr: false, loading: () => skeleton("devolución de compra") }
+)
+
+const BankStatementDrawer = dynamic(
+    () => import("@/features/treasury/components/BankStatementDrawer").then((m) => m.BankStatementDrawer),
+    { ssr: false, loading: () => skeleton("cartola bancaria") }
+)
+
+const F29DeclarationDrawer = dynamic(
+    () => import("@/features/tax/components/F29DeclarationDrawer").then((m) => m.F29DeclarationDrawer),
+    { ssr: false, loading: () => skeleton("declaración F29") }
+)
+
+const AccountingPeriodDrawer = dynamic(
+    () => import("@/features/tax/components/AccountingPeriodDrawer").then((m) => m.AccountingPeriodDrawer),
+    { ssr: false, loading: () => skeleton("período contable") }
 )
 
 /**
@@ -352,6 +417,106 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
             onOpenChange={onOpenChange}
             initialData={data}
             onSuccess={() => onSuccess?.()}
+        />
+    ),
+
+    // ── Purchasing (read-only detail drawers) ────────────────────────────────
+    "purchasing.purchasereceipt": ({ id, open, onOpenChange }) => (
+        <PurchaseReceiptDrawer
+            receiptId={id}
+            open={open}
+            onOpenChange={onOpenChange}
+        />
+    ),
+    "purchasing.purchasereturn": ({ id, open, onOpenChange }) => (
+        <PurchaseReturnDrawer
+            returnId={id}
+            open={open}
+            onOpenChange={onOpenChange}
+        />
+    ),
+
+    // ── Treasury (read-only detail drawers) ──────────────────────────────────
+    "treasury.bankstatement": ({ id, open, onOpenChange }) => (
+        <BankStatementDrawer
+            statementId={id}
+            open={open}
+            onOpenChange={onOpenChange}
+        />
+    ),
+
+    // ── Tax (read-only detail drawers) ───────────────────────────────────────
+    "tax.f29declaration": ({ id, open, onOpenChange }) => (
+        <F29DeclarationDrawer
+            declarationId={id}
+            open={open}
+            onOpenChange={onOpenChange}
+        />
+    ),
+    "tax.accountingperiod": ({ id, open, onOpenChange }) => (
+        <AccountingPeriodDrawer
+            periodId={id}
+            open={open}
+            onOpenChange={onOpenChange}
+        />
+    ),
+
+    // ── Transaction Drawers (Phase 2 — dual-mode view/edit) ─────────────────
+    "sales.saleorder": ({ id, open, onOpenChange }) => (
+        <SaleOrderDrawer
+            orderId={id}
+            open={open}
+            onOpenChange={onOpenChange}
+        />
+    ),
+    "purchasing.purchaseorder": ({ id, open, onOpenChange }) => (
+        <PurchaseOrderDrawer
+            purchaseOrderId={id}
+            open={open}
+            onOpenChange={onOpenChange}
+        />
+    ),
+    "billing.invoice": ({ id, open, onOpenChange }) => (
+        <InvoiceDrawer
+            invoiceId={id}
+            open={open}
+            onOpenChange={onOpenChange}
+        />
+    ),
+    "sales.saledelivery": ({ id, open, onOpenChange, data }) => (
+        <SaleDeliveryDrawer
+            deliveryId={id}
+            saleOrderId={data?.sale_order}
+            open={open}
+            onOpenChange={onOpenChange}
+        />
+    ),
+    "treasury.treasurymovement": ({ id, open, onOpenChange }) => (
+        <CashMovementDrawer
+            movementId={id}
+            open={open}
+            onOpenChange={onOpenChange}
+        />
+    ),
+    "treasury.terminalbatch": ({ id, open, onOpenChange }) => (
+        <TerminalBatchDrawer
+            batchId={id}
+            open={open}
+            onOpenChange={onOpenChange}
+        />
+    ),
+    "contacts.profitdistributionresolution": ({ id, open, onOpenChange }) => (
+        <ProfitDistributionDrawer
+            distributionId={id}
+            open={open}
+            onOpenChange={onOpenChange}
+        />
+    ),
+    "inventory.stockmove": ({ id, open, onOpenChange }) => (
+        <StockMoveDrawer
+            stockMoveId={id}
+            open={open}
+            onOpenChange={onOpenChange}
         />
     ),
 }

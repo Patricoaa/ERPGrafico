@@ -81,6 +81,12 @@ export const PAYMENTS_KEYS = {
     detail: (id: number) => [...PAYMENTS_KEYS.all, 'detail', id] as const,
 }
 
+export const BANK_STATEMENTS_KEYS = {
+    all: ['bank-statements'] as const,
+    lists: () => [...BANK_STATEMENTS_KEYS.all, 'list'] as const,
+    detail: (id: number) => [...BANK_STATEMENTS_KEYS.all, 'detail', id] as const,
+}
+
 // ─── Legacy flat constants (deprecated — kept for backward compat) ────────────
 
 /** @deprecated Use MOVEMENTS_KEYS.* */
