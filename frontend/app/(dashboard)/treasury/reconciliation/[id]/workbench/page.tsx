@@ -4,7 +4,7 @@ import { use } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft, Loader2, CheckCircle2 } from "lucide-react"
-import { useStatementQuery } from "@/features/finance/bank-reconciliation/hooks/useReconciliationQueries"
+import { useStatementQuery } from "@/features/finance"
 import { ReconciliationPanel } from "@/features/treasury"
 import { DataCell } from '@/components/shared'
 import { useConfirmAction } from "@/hooks/useConfirmAction"

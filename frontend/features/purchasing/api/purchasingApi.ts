@@ -164,10 +164,10 @@ export const purchasingApi = {
 
     // ========== Receipts ==========
 
-    getReceipts: async (orderId?: number): Promise<Record<string, unknown>[]> => {
+    getReceipts: async (orderId?: number): Promise<Record<string, unknown>> => {
         const params = orderId ? { purchase_order: orderId } : {}
         const res = await api.get('/purchasing/receipts/', { params })
-        return res.data.results ?? res.data
+        return res.data
     },
 
     getReceipt: async (id: number): Promise<Record<string, unknown>> => {
@@ -177,10 +177,10 @@ export const purchasingApi = {
 
     // ========== Returns ==========
 
-    getReturns: async (orderId?: number): Promise<Record<string, unknown>[]> => {
+    getReturns: async (orderId?: number): Promise<Record<string, unknown>> => {
         const params = orderId ? { purchase_order: orderId } : {}
         const res = await api.get('/purchasing/returns/', { params })
-        return res.data.results ?? res.data
+        return res.data
     },
 
     getReturn: async (id: number): Promise<Record<string, unknown>> => {

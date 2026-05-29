@@ -5,7 +5,7 @@ import { PageHeader } from "@/components/shared/PageHeader"
 import { Skeleton, PageContainer } from "@/components/shared"
 import Link from "next/link"
 import { Calculator, ShoppingCart, Package, Printer, Banknote, ShoppingBag, PieChart, Receipt, UserCog, Users } from "lucide-react"
-import { ProductionMetricsCard } from "@/features/production/components/ProductionMetricsCard"
+import { ProductionMetricsCard } from "@/features/production"
 
 const modules = [
   { id: "accounting", icon: Calculator, label: "Contabilidad", url: "/accounting", status: "Online", statusColor: "text-success bg-success/10" },

@@ -4,7 +4,6 @@ import React, { useState, useEffect, useCallback } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
 import { AbsenceDrawer } from "@/features/hr"
-import { deleteAbsence, getEmployees } from '@/features/hr/api/hrApi'
 import type { Absence, Employee } from "@/types/hr"
 import { ColumnDef } from "@tanstack/react-table"
 import { DataTableView } from '@/components/shared'
@@ -13,7 +12,7 @@ import { createActionsColumn, DataCell } from '@/components/shared'
 import { EntityCard } from "@/components/shared"
 import { Pencil, Trash2 } from "lucide-react"
 import { ToolbarCreateButton, SmartSearchBar, useSmartSearch } from "@/components/shared"
-import { useAbsences } from "@/features/hr/hooks/useAbsences"
+import { useAbsences, deleteAbsence, getEmployees } from "@/features/hr"
 import { absenceSearchDef } from "@/features/hr/searchDef"
 
 // Absence schemas and types moved to features/hr/components/AbsenceFormDialog

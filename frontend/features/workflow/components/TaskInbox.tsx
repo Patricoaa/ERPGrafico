@@ -212,6 +212,8 @@ export function TaskInbox() {
         return "??"
     }
 
+    const updateTaskMutation = useUpdateTask()
+
     const handleCreditAction = async (e: React.MouseEvent, task: Task, action: 'APPROVE' | 'REJECT') => {
         e.stopPropagation() // Prevent card click
         try {
@@ -220,7 +222,6 @@ export function TaskInbox() {
             // Add a small note if approved/rejected
             const notes = action === 'APPROVE' ? 'Aprobado desde Inbox POS' : 'Rechazado desde Inbox POS'
 
-            const updateTaskMutation = useUpdateTask()
             await updateTaskMutation.mutateAsync({
                 id: task.id,
                 payload: {

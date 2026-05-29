@@ -1,4 +1,7 @@
 export * from './components'
 export * from './api/hrApi'
 export * from './hooks/usePayrolls'
+export { useAbsences } from './hooks/useAbsences'
+export { useSalaryAdvances } from './hooks/useSalaryAdvances'
+export { useEmployees } from './hooks/useEmployees'
 export * from './searchDef'

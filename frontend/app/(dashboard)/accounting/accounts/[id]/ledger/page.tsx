@@ -9,7 +9,7 @@ import { ArrowLeft } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { JournalEntryDrawer } from "@/features/accounting"
-import { useJournalEntry } from "@/features/accounting/hooks/useJournalEntries"
+import { useJournalEntry } from "@/features/accounting"
 import type { JournalEntryInitialData } from "@/types/forms"
 
 export default function AccountLedgerPage() {

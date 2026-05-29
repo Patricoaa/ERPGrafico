@@ -17,6 +17,8 @@ export function MaterialAssignmentTabs({
     outsourcedCount,
     showOutsourcedTab = true
 }: MaterialAssignmentTabsProps) {
+    const [activeTab, setActiveTab] = React.useState("stock")
+
     // If outsourced tab is hidden, just render stock content without tabs
     if (!showOutsourcedTab) {
         return (
@@ -40,8 +42,6 @@ export function MaterialAssignmentTabs({
             badge: outsourcedCount > 0 ? outsourcedCount : undefined
         }
     ]
-
-    const [activeTab, setActiveTab] = React.useState("stock")
 
     return (
         <div className="w-full">
