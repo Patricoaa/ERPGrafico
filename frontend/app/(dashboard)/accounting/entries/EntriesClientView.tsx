@@ -6,7 +6,7 @@ import {
 } from "@tanstack/react-table"
 
 import { toast } from "sonner"
-import { JournalEntryDrawer } from "@/features/accounting/components/JournalEntryDrawer"
+import { JournalEntryDrawer } from "@/features/accounting"
 import api from "@/lib/api"
 
 import { CheckCircle, RotateCcw, FileText } from "lucide-react"
@@ -14,8 +14,8 @@ import { DataTableView, DataTableColumnHeader } from '@/components/shared'
 import { DataCell, createActionsColumn, Chip } from '@/components/shared'
 import Link from "next/link"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
-import { useJournalEntries, type JournalEntry } from "@/features/accounting/hooks/useJournalEntries"
-import { useAccountingAccounts } from "@/features/accounting/hooks/useAccounts"
+import { useJournalEntries, type JournalEntry } from "@/features/accounting"
+import { useAccountingAccounts } from "@/features/accounting"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
 import { SmartSearchBar, useSmartSearch } from "@/components/shared"
@@ -96,7 +96,16 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
         if (!open) {
             setEditingEntry(null)
             onExternalOpenChange?.(false)
-            clearSelection()
+            // Clean all action params + modal so URL doesn't stay ?modal=new forever
+            const params = new URLSearchParams(searchParams.toString())
+            let changed = false
+            for (const p of ['selected', 'detail', 'hub', 'modal'] as const) {
+                if (params.has(p)) { params.delete(p); changed = true }
+            }
+            if (changed) {
+                const query = params.toString()
+                router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
+            }
         }
     }
 

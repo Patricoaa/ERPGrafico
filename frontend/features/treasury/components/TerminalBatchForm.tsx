@@ -323,7 +323,8 @@ function SaleSelectionModal({ open, onOpenChange, providerId, dateRange, onConfi
     onConfirm: (movements: any[], ids: Set<number>) => void,
     initialSelectedIds: Set<number>
 }) {
-    const { data: rawMovements = [], isLoading: loading } = useTerminalMovements(providerId, dateRange, open)
+    const { data: page, isLoading: loading } = useTerminalMovements(providerId, dateRange, open)
+    const rawMovements = page?.results ?? []
     const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
 
     // Sort: Prioritize selected dates, then by date descending

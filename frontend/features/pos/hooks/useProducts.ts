@@ -27,6 +27,7 @@ export function useProducts() {
         updateComponentCache,
         setLoading
     } = usePOS()
+    const { markLocalMutation } = useRealtime()
 
     const [searchTerm, setSearchTerm] = useState("")
     const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null)
@@ -136,7 +137,6 @@ export function useProducts() {
             queryClient.invalidateQueries({ queryKey: POS_KEYS.products.details() })
             
             // Realtime integration
-            const { markLocalMutation } = useRealtime()
             markLocalMutation()
         },
         onError: (error: Error) => {

@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from "react"
 import { toast } from "sonner"
 import { AdvanceDrawer } from "@/features/hr"
-import { createAdvance, updateAdvance, deleteAdvance, getEmployees, getPayrolls } from '@/features/hr/api/hrApi'
+import { createAdvance, updateAdvance, deleteAdvance, getEmployees, getPayrolls } from "@/features/hr"
 import { PaymentModal } from "@/features/treasury"
 import type { SalaryAdvance, Employee, Payroll } from "@/types/hr"
 import { Pencil, Trash2 } from "lucide-react"
@@ -13,7 +13,7 @@ import { ColumnDef } from "@tanstack/react-table"
 import { useSearchParams } from "next/navigation"
 
 import { ToolbarCreateButton, SmartSearchBar, useSmartSearch } from "@/components/shared"
-import { useSalaryAdvances } from "@/features/hr/hooks/useSalaryAdvances"
+import { useSalaryAdvances } from "@/features/hr"
 import { salaryAdvanceSearchDef } from "@/features/hr/searchDef"
 
 // Advance schemas and types moved to features/hr/components/AdvanceFormDialog

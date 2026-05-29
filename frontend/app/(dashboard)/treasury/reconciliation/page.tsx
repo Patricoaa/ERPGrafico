@@ -2,7 +2,7 @@ import React from "react"
 import { Metadata } from "next"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { ToolbarCreateButton, FadeIn } from "@/components/shared"
-import { StatementsList, ReconciliationDashboard, ReconciliationIntelligence } from "@/features/finance/bank-reconciliation/components"
+import { StatementsList, ReconciliationDashboard, ReconciliationIntelligence } from "@/features/finance"
 
 export const metadata: Metadata = {
     title: "Conciliación Bancaria | ERPGrafico",

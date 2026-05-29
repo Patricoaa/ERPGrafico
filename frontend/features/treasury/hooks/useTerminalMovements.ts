@@ -15,7 +15,7 @@ export function useTerminalMovements(providerId: string, dateRange: DateRange | 
             dateRange?.from ? format(dateRange.from, 'yyyy-MM-dd') : undefined,
             dateRange?.to ? format(dateRange.to, 'yyyy-MM-dd') : undefined,
         ],
-        queryFn: async (): Promise<any[]> => {
+        queryFn: () => {
             const params: Record<string, string> = {
                 terminal_provider: providerId,
                 movement_type: 'INBOUND',
@@ -27,8 +27,7 @@ export function useTerminalMovements(providerId: string, dateRange: DateRange | 
             if (dateRange?.to) {
                 params.date_to = format(dateRange.to, 'yyyy-MM-dd')
             }
-            const res = await treasuryApi.getMovements(params)
-            return res.results || res
+            return treasuryApi.getMovements(params)
         },
         enabled: open && !!providerId && !!dateRange?.from,
         staleTime: 30 * 1000,

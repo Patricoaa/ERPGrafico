@@ -157,19 +157,6 @@ export function PayrollDetailContent({
     const pendingSalary = Math.max(0, netSalary - totalAdvances - totalSalaryPaid)
 
     const workerLegalDiscounts = payroll?.items?.filter((i: PayrollItem) => i.concept_detail?.category === 'DESCUENTO_LEGAL_TRABAJADOR') || []
-    const employerContributions = payroll?.items?.filter((i: PayrollItem) => i.concept_detail?.category === 'DESCUENTO_LEGAL_EMPLEADOR') || []
-    const totalPreviredRequired = (workerLegalDiscounts.reduce((s: number, i: PayrollItem) => s + parseFloat(i.amount), 0)) + employerContributions.reduce((s: number, i: PayrollItem) => s + parseFloat(i.amount), 0)
-    const totalPreviredPaid = payments.filter((p: PayrollPayment) => p.payment_type === 'PREVIRED').reduce((s: number, p: PayrollPayment) => s + parseFloat(p.amount), 0)
-    const pendingPrevired = Math.max(0, totalPreviredRequired - totalPreviredPaid)
-
-    if (loading) return <SkeletonShell isLoading ariaLabel="Cargando..." />
-
-    if (!payroll) return (
-        <div className="flex flex-col items-center justify-center p-24 text-muted-foreground gap-4">
-            <FileText className="h-12 w-12 opacity-20" />
-            <p className="font-medium uppercase tracking-widest text-xs opacity-50">Liquidación no encontrada</p>
-        </div>
-    )
 
     useEffect(() => {
         if (isSheet && onHeaderDataChange && payroll) {
@@ -263,6 +250,15 @@ export function PayrollDetailContent({
             })
         }
     }, [isSheet, payroll, isPosted, generating, posting, salaroPaid, previredPaid, viewMode, onHeaderDataChange])
+
+    if (loading) return <SkeletonShell isLoading ariaLabel="Cargando..." />
+
+    if (!payroll) return (
+        <div className="flex flex-col items-center justify-center p-24 text-muted-foreground gap-4">
+            <FileText className="h-12 w-12 opacity-20" />
+            <p className="font-medium uppercase tracking-widest text-xs opacity-50">Liquidación no encontrada</p>
+        </div>
+    )
 
     return (
         <div className={cn("flex-1 flex flex-col min-h-0", isSheet ? "w-full" : "space-y-6")}>

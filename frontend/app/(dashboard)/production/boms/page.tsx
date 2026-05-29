@@ -8,14 +8,14 @@ import { DataTableView, DataTableColumnHeader, EntityCard, StatusBadge } from '@
 import { createActionsColumn, DataCell } from '@/components/shared'
 import { Pencil, Trash2, Layers } from "lucide-react"
 import api from "@/lib/api"
-import { BOMDrawer } from "@/features/production/components/BOMDrawer"
+import { BOMDrawer } from "@/features/production"
 import { toast } from "sonner"
 import { Chip } from "@/components/shared"
 
 import { ToolbarCreateButton, SmartSearchBar, useSmartSearch } from "@/components/shared"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
-import { useAllBOMs } from "@/features/production/hooks/useBOMs"
+import { useAllBOMs } from "@/features/production"
 import { bomSearchDef } from "@/features/production/searchDef"
 
 import type { BOM } from "@/features/production/types"

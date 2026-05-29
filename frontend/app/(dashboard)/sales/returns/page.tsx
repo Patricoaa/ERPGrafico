@@ -3,11 +3,10 @@
 import { lazy, Suspense } from "react"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { useRouter } from "next/navigation"
-import { SaleOrder } from "@/features/sales/types"
-import { SalesOrdersView } from "@/features/sales/components/SalesOrdersView"
+import { SaleOrder, SalesOrdersView } from "@/features/sales"
 
 const SaleNoteModal = lazy(() =>
-    import("@/features/sales/components/SaleNoteModal").then(m => ({ default: m.default }))
+    import("@/features/sales").then(m => ({ default: m.SaleNoteModal }))
 )
 
 export default function SalesReturnsPage() {

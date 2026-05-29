@@ -5,7 +5,7 @@ import { PageHeader } from "@/components/shared/PageHeader"
 import { PageContainer } from "@/components/shared"
 import { useSearchParams } from "next/navigation"
 import { useState, useEffect, useCallback } from "react"
-import { getMyProfile } from '@/features/profile/api/profileApi'
+import { getMyProfile } from '@/features/profile'
 import { toast } from "sonner"
 import type { MyProfile } from "@/types/profile"
 import { SkeletonShell } from "@/components/shared"
