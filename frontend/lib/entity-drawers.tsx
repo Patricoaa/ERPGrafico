@@ -478,28 +478,28 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
     // ── Transaction Drawers (Phase 2 — dual-mode view/edit) ─────────────────
     "sales.saleorder": ({ id, open, onOpenChange }) => (
         <SaleOrderDrawer
-            orderId={id}
+            id={id}
             open={open}
             onOpenChange={onOpenChange}
         />
     ),
     "purchasing.purchaseorder": ({ id, open, onOpenChange }) => (
         <PurchaseOrderDrawer
-            purchaseOrderId={id}
+            id={id}
             open={open}
             onOpenChange={onOpenChange}
         />
     ),
     "billing.invoice": ({ id, open, onOpenChange }) => (
         <InvoiceDrawer
-            invoiceId={id}
+            id={id}
             open={open}
             onOpenChange={onOpenChange}
         />
     ),
     "sales.saledelivery": ({ id, open, onOpenChange, data }) => (
         <SaleDeliveryDrawer
-            deliveryId={id}
+            id={id}
             saleOrderId={data?.sale_order}
             open={open}
             onOpenChange={onOpenChange}
@@ -507,28 +507,28 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
     ),
     "treasury.treasurymovement": ({ id, open, onOpenChange }) => (
         <CashMovementDrawer
-            movementId={id}
+            id={id}
             open={open}
             onOpenChange={onOpenChange}
         />
     ),
     "treasury.terminalbatch": ({ id, open, onOpenChange }) => (
         <TerminalBatchDrawer
-            batchId={id}
+            id={id}
             open={open}
             onOpenChange={onOpenChange}
         />
     ),
     "contacts.profitdistributionresolution": ({ id, open, onOpenChange }) => (
         <ProfitDistributionDrawer
-            distributionId={id}
+            id={id}
             open={open}
             onOpenChange={onOpenChange}
         />
     ),
     "inventory.stockmove": ({ id, open, onOpenChange }) => (
         <StockMoveDrawer
-            stockMoveId={id}
+            id={id}
             open={open}
             onOpenChange={onOpenChange}
         />

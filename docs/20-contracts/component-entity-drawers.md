@@ -85,10 +85,10 @@ const SaleOrderDrawer = dynamic(() => import("@/features/sales").then(m => m.Sal
 
 export const ENTITY_DRAWERS = {
   "sales.saleorder": ({ id, open, onOpenChange }) => (
-    <SaleOrderDrawer orderId={id} open={open} onOpenChange={onOpenChange} />
+    <SaleOrderDrawer id={id} open={open} onOpenChange={onOpenChange} />
   ),
   "contacts.contact": ({ id, data, open, onOpenChange, onSuccess }) => (
-    <ContactDrawer contact={data} open={open} onOpenChange={onOpenChange} onSuccess={onSuccess} />
+    <ContactDrawer contact={data ?? { id }} open={open} onOpenChange={onOpenChange} onSuccess={onSuccess} />
   ),
   // … 34 entidades registradas
 }
@@ -96,6 +96,11 @@ export const ENTITY_DRAWERS = {
 
 > El `label` es la clave Django `app.model` — la **misma** que usa `ENTITY_REGISTRY`
 > ([entity-identity.md](./entity-identity.md)). Mantenelas alineadas.
+
+> **Prop canónico `id`:** los transaction drawers extienden `TransactionDrawerProps` (`id: number | null`
+> requerido) y resuelven `id ?? <specificId>` internamente. En el adaptador pasá **`id={id}`** — no el
+> alias específico (`orderId`/`invoiceId`/…), que solo existe por compatibilidad y deja el `id`
+> requerido sin setear.
 
 ### 2.2 Opener — `GlobalModalProvider`
 
