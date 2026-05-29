@@ -3,7 +3,7 @@ layer: 20-contracts
 doc: component-drawer
 status: active
 owner: frontend-team
-last_review: 2026-05-26
+last_review: 2026-05-28
 stability: contract-changes-require-ADR
 supersedes:
   - component-modal.md §BaseDrawer
@@ -81,7 +81,7 @@ Usar el helper `formDrawerWidth(complexity, hasSidebar)` de `@/lib/form-widths`.
 | `"simple"`  | 2–3 (ej: WarehouseForm, UoMForm) | `30%` | `45%` |
 | `"medium"`  | 4–6 (ej: AccountForm, AbsenceForm) | `40%` | `55%` |
 | `"complex"` | 7+ / múltiples secciones / field arrays | `50%` | `65%` |
-| `"master"`  | Ficha maestra multi-tab (ej: ProductForm, EmployeeForm) | `65%` | `80%` |
+| `"master"`  | Ficha maestra multi-tab (ej: ProductForm, EmployeeForm) | `75%` | `90%` |
 
 > **Regla**: si dudás entre dos tiers, elegí el menor. No superar `90%` del viewport.
 
@@ -101,6 +101,25 @@ return (
     // ...
   >
 ```
+
+## Modal equivalente — `formModalSize()`
+
+Para formularios que van en `BaseModal` (no drawer), el helper hermano
+`formModalSize(complexity, hasSidebar)` de `@/lib/form-widths` mapea la **misma** `FormComplexity`
+a un `size` de `BaseModal`:
+
+| `FormComplexity` | `formModalSize` base | con sidebar (sube un tier) |
+|:---:|:---:|:---:|
+| `micro` | `xs` | `sm` |
+| `simple` | `sm` | `md` |
+| `medium` | `md` | `lg` |
+| `complex` | `lg` | `xl` |
+| `master` | `xl` | `2xl` |
+
+> El enum `FormComplexity` (`micro · simple · medium · complex · master`) es **la taxonomía
+> canónica**, definida en `@/lib/form-widths`. Las tablas de dimensionamiento de
+> [component-form-patterns.md §2](./component-form-patterns.md) son guías de decisión por nº de
+> campos; el valor exacto (ancho del drawer / size del modal) sale de estos helpers, no de nombres ad-hoc.
 
 ## Estructura interna del formulario
 

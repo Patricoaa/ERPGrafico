@@ -10,8 +10,8 @@ author: frontend-team
 
 ## Context
 
-ADR-0022 (implicit via `component-row-actions.md`) introduced the closed registry
-`ROW_ACTIONS` (`frontend/lib/row-actions.ts`) as the single source of truth for icon, label,
+The closed registry `ROW_ACTIONS` (`frontend/lib/row-actions.ts`), defined in
+`component-row-actions.md`, is the single source of truth for icon, label,
 intent and color of every CRUD-style action that appears in a `DataTable` row, an `EntityCard`
 footer or a Kanban card. The initial registry covered 13 generic verbs:
 `view, detail, hub, edit, duplicate, download, print, share, archive, restore, lock, unlock, delete`.

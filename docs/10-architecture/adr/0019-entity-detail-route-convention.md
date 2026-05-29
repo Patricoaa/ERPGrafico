@@ -1,7 +1,7 @@
 ---
 id: 0019
 title: Convención "Searchable Entity Detail Route"
-status: Accepted
+status: Superseded by 0020
 date: 2026-05-08
 author: architecture-team
 ---
@@ -9,6 +9,13 @@ author: architecture-team
 # 0019 — Convención "Searchable Entity Detail Route"
 
 **Related:** ADR-0016 (Post-Refactor F5), T-68 (F7 — Detail routes para Universal Search)
+
+> [!CAUTION]
+> **Superseded por [ADR-0020](0020-modal-on-list-edit-ux.md).** El mecanismo de detalle aquí descrito
+> (rutas `[id]` reales que montan un shell `EntityDetailPage`, §D-04/D-05) fue revertido: hoy las
+> rutas `[id]` redirigen a `<list_url>?selected={id}` y `EntityDetailPage` fue eliminado en T-95.
+> **Lo que sigue vigente:** las tablas de slugs canónicos §D-02 (app → módulo) y §D-03 (plural en
+> inglés), que las rutas y `searchableEntityRoutes.ts` siguen usando.
 
 ---
 

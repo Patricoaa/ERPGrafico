@@ -78,11 +78,11 @@ Proposed → (review) → Accepted → (later) → Superseded | Deprecated
 | [0012](0012-unified-system-versioning.md) | Unified system versioning | Accepted |
 | [0013](0013-action-dock-pattern.md) | ActionDock pattern for floating tasks | Accepted |
 | [0014](0014-decimal-places-transactional-totals.md) | `decimal_places=0` for transactional document totals | Accepted |
-| [0015](0015-document-service-and-metadata-schema.md) | DocumentService and Metadata Schema for UI Forms | Accepted |
+| [0015](0015-document-service-and-metadata-schema.md) | DocumentService and Metadata Schema for UI Forms | Superseded by 0020 / 0025 §2.2 |
 | [0016](0016-post-refactor-architecture-f5.md) | Post-refactor architecture — F5 GenericForeignKey + ProductTypeStrategy | Accepted |
 | [0017](0017-feature-flags-decision.md) | Omit feature flags in architectural refactor (big-bang) | Accepted |
 | [0018](0018-postgresql-tsvector-migration.md) | PostgreSQL `tsvector` migration for UniversalSearch | Accepted |
-| [0019](0019-entity-detail-route-convention.md) | Searchable Entity Detail Route convention | Accepted |
+| [0019](0019-entity-detail-route-convention.md) | Searchable Entity Detail Route convention | Superseded by 0020 (detail mechanism; D-02/D-03 slug tables still apply) |
 | [0020](0020-modal-on-list-edit-ux.md) | Modal-on-List Edit UX (URL-State Pattern) | Accepted (partially supersedes 0025 §2.2) |
 | [0021](0021-reconciliation-routing.md) | Bank Reconciliation Routing Strategy | Accepted |
 | [0022](0022-list-url-source-of-truth.md) | Source of Truth for `list_url` of searchable entities | Accepted |

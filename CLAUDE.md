@@ -69,15 +69,20 @@ Before writing any code, verify:
 
 ## Global invariants (violate = PR rejected)
 
+> Headline list. The **authoritative** rules live in [GOVERNANCE.md](docs/90-governance/GOVERNANCE.md); the same 12 appear in [docs/README.md](docs/README.md). Keep all three in sync.
+
 1. **Zero `any`** in TypeScript — use Zod-derived types or `unknown` + type guard. See [zero-any-policy.md](docs/90-governance/zero-any-policy.md).
 2. **No raw Tailwind colors** (`bg-red-500`, `text-blue-600`) — semantic tokens only (`bg-primary`, `text-muted-foreground`).
 3. **No cross-feature internal imports** — import from feature barrel `index.ts` only.
-4. **No `useQuery`/`useMutation` directly in components** — wrap in a feature hook under `features/*/hooks/`.
-5. **No direct `@/lib/api` in components or pages** — only importable from `features/*/api/`, `features/*/hooks/`, and `/hooks/`.
+4. **No direct `@/lib/api` in components or pages** — only importable from `features/*/api/`, `features/*/hooks/`, and `/hooks/`.
+5. **No `useQuery`/`useMutation` directly in components** — wrap in a feature hook under `features/*/hooks/`.
 6. **Shared components imported via barrel only** — `import { X } from '@/components/shared'`, never the file path directly.
 7. **`StatusBadge` is the only authorized status renderer.**
-8. **All forms** use `react-hook-form` + `zodResolver` with schema in `components/forms/schema.ts`.
-9. **Views ≤ 20 lines** per Django action — business logic goes in `services.py`.
+8. **All shared components handle `loading` / `empty` / `error`.**
+9. **All forms** use `react-hook-form` + `zodResolver` with schema in `schema.ts`.
+10. **Views ≤ 20 lines** per Django action — business logic goes in `services.py`.
+11. **Component suffix matches surface** — `Drawer`/`Modal`/`Sheet`/`Wizard`/`Form`…; `FormModal`/`FormDrawer` prohibited. See [naming-conventions.md](docs/90-governance/naming-conventions.md).
+12. **Changing a contract (layer 20), public API, or a global invariant requires an ADR.**
 
 ## Rule precedence
 

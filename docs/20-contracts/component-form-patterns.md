@@ -68,6 +68,12 @@ graph TD
 
 ## 2. Dimensionamiento de Formularios
 
+> **Taxonomía canónica:** los anchos exactos salen de los helpers `formDrawerWidth()` /
+> `formModalSize()` (`@/lib/form-widths`), cuyo enum `FormComplexity` es
+> `micro · simple · medium · complex · master` (ver [component-drawer.md](./component-drawer.md#tamaños-dinámicos)).
+> La tabla siguiente es la **guía de decisión por nº de campos**; para el valor de ancho/size usá
+> siempre los helpers, no literales.
+
 | Categoría | Campos | Modal `size` | Grid | Tabs | Ejemplo real |
 |:---|:---|:---|:---|:---|:---|
 | **Micro** | 1–3 | `sm` / `xs` o `Drawer 40%` | N/A (stack) | **Nunca** | `AddPartnerModal`, `InitialCapitalModal` |
