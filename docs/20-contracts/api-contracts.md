@@ -3,7 +3,7 @@ layer: 20-contracts
 doc: api-contracts
 status: active
 owner: backend-team
-last_review: 2026-04-23
+last_review: 2026-05-28
 stability: contract-changes-require-ADR
 ---
 
@@ -70,7 +70,7 @@ GET    /api/sales/orders/                list, paginated
 POST   /api/sales/orders/                create
 GET    /api/sales/orders/{id}/           detail
 PATCH  /api/sales/orders/{id}/           partial update
-DELETE /api/sales/orders/{id}/           soft-delete
+DELETE /api/sales/orders/{id}/           transactional doc — annul via status=CANCELLED, not hard-delete (deletion-policy.md)
 POST   /api/sales/orders/{id}/transition/  body: {to_state, comment?}
 ```
 
@@ -78,11 +78,11 @@ Request schema (create) — mirrored by frontend Zod `SaleOrderCreateSchema`:
 
 ```json
 {
-  "customer_id": "uuid",
+  "customer_id": "number (id)",
   "items": [
-    {"sku": "string", "qty": "int>0", "unit_price_cents": "int>=0"}
+    {"product_id": "number", "quantity": "decimal>0", "unit_price": "decimal>=0"}
   ],
-  "delivery_date": "ISO-8601",
+  "delivery_date": "YYYY-MM-DD",
   "notes": "string?"
 }
 ```
@@ -91,12 +91,14 @@ Response schema (detail):
 
 ```json
 {
-  "id": "uuid",
-  "folio": "string",
-  "status": "draft|confirmed|in_production|…",
-  "customer": { "id": "uuid", "name": "string" },
+  "id": "number",
+  "number": "int (business identifier — rendered as NV-{number} via ENTITY_REGISTRY)",
+  "status": "DRAFT|CONFIRMED|PAYMENT_PENDING|INVOICED|PAID|CANCELLED",
+  "customer": { "id": "number", "name": "string" },
   "items": [ /* line items with computed totals */ ],
-  "totals": { "subtotal_cents": "int", "tax_cents": "int", "total_cents": "int" },
+  "total_net": "decimal",
+  "total_tax": "decimal",
+  "total": "decimal",
   "created_at": "ISO-8601",
   "updated_at": "ISO-8601"
 }

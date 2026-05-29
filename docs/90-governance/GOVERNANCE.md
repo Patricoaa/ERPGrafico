@@ -3,7 +3,7 @@ layer: 90-governance
 doc: governance
 status: active
 owner: core-team
-last_review: 2026-04-23
+last_review: 2026-05-28
 ---
 
 # GOVERNANCE — Project constitution
@@ -76,10 +76,10 @@ Rules apply to every PR. Violations block merge unless an accepted ADR waives th
 ## 9. API contracts
 
 39. Every endpoint documented in `20-contracts/api-contracts.md`.
-40. Money fields: integer cents, suffix `_cents`.
-41. IDs: UUIDv4 in public API.
-42. Dates: ISO-8601 UTC with `Z`.
-43. Breaking API change: new URL version + parallel period + ADR.
+40. Money fields: `DecimalField`. Transactional document totals use `decimal_places=0` (CLP has no minor unit — see ADR-0014). Canonical names: `total_net`, `total_tax`, `total`. Render only via `MoneyDisplay`. **No `_cents` integer convention.**
+41. IDs: integer auto-increment PK (no UUID — see ADR-0016 anti-goals). The business identifier is exposed as `number` / `display_id` and formatted via `ENTITY_REGISTRY` (`entity-identity.md`).
+42. Dates: ISO-8601 UTC with `Z` for datetimes; `YYYY-MM-DD` for date-only fields.
+43. Breaking API change: ADR + parallel period. Versioning is unified SemVer across FE+BE (ADR-0012) — there is no per-URL `/api/vN/` versioning.
 
 ## 10. State
 
