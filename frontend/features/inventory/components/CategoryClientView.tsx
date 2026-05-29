@@ -28,7 +28,7 @@ export function CategoryClientView({ externalOpen, onExternalOpenChange, createA
     const { categories, isLoading, refetch, deleteCategory } = useCategories()
     const { filterFn } = useClientSearch<Category>(categorySearchDef)
     const [editingCategory, setEditingCategory] = useState<Category | null>(null)
-    const [isCreateOpen, setIsCreateOpen] = useState(false)  // EntityForm modal
+    const [isCreateOpen, setIsCreateOpen] = useState(false)  // create modal
     const [isFormOpen, setIsFormOpen] = useState(false)       // CategoryForm (edit)
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
     const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null)
@@ -142,7 +142,7 @@ export function CategoryClientView({ externalOpen, onExternalOpenChange, createA
         }),
     ], [handleDelete])
 
-    // Sync external trigger (toolbar button) → create modal (EntityForm)
+    // Sync external trigger (toolbar button) → create modal
     React.useEffect(() => {
         if (externalOpen) setIsCreateOpen(true)
     }, [externalOpen])

@@ -9,12 +9,6 @@
 // Search
 export * from './UniversalSearch';
 
-// Dynamic Entity Form (schema-driven)
-export { EntityForm } from './EntityForm';
-export type { EntityFormProps } from './EntityForm';
-export type { EntitySchema, FieldSchema, TabSchema } from './EntityForm/hooks/useSchema';
-export { useSchema } from './EntityForm/hooks/useSchema';
-
 // Modals & Sheets
 export * from './ActionConfirmModal';
 export * from './BaseModal';
@@ -62,7 +56,6 @@ export * from './PageContainer';
 export * from './FormTabs';
 export * from './FormFooter';
 export * from './FormSplitLayout';
-export * from './EntityDetailPage';
 export * from './EmptyState';
 
 
