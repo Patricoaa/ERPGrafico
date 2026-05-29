@@ -120,9 +120,9 @@ Deferred: left-side embedded is the only pattern with production usage (`LedgerM
 ## References
 
 - [ADR-0020: Modal-on-List Edit UX (URL-State Pattern)](0020-modal-on-list-edit-ux.md)
-- [component-modal.md: BaseDrawer section](../20-contracts/component-modal.md)
-- [component-decision-tree.md: §4 Layout de Página](../20-contracts/component-decision-tree.md)
-- [component-form-patterns.md: §1 Surface Decision Tree](../20-contracts/component-form-patterns.md)
+- [component-modal.md: BaseDrawer section](../../20-contracts/component-modal.md)
+- [component-decision-tree.md: §4 Layout de Página](../../20-contracts/component-decision-tree.md)
+- [component-form-patterns.md: §1 Surface Decision Tree](../../20-contracts/component-form-patterns.md)
 - [Drawer.tsx implementation](../../frontend/components/shared/Drawer.tsx)
 - [BaseModal.tsx implementation](../../frontend/components/shared/BaseModal.tsx)
 

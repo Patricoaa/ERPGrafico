@@ -2,8 +2,11 @@
 layer: 20-contracts
 doc: searchbar-decision
 status: active
+owner: frontend-team
 created: 2026-05-13
 updated: 2026-05-13
+last_review: 2026-05-28
+stability: stable
 scope: Decisión de búsqueda en vistas de tabla — SmartSearchBar + useSmartSearch vs useClientSearch vs sin searchbar
 ---
 

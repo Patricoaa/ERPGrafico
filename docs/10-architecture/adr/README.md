@@ -3,7 +3,7 @@ layer: 10-architecture
 doc: adr-index
 status: active
 owner: core-team
-last_review: 2026-05-21
+last_review: 2026-05-28
 ---
 
 # Architecture Decision Records
@@ -13,7 +13,7 @@ last_review: 2026-05-21
 - New core dependency (runtime, framework, major lib).
 - Mass refactor affecting ≥3 features / ≥3 apps.
 - Change to any contract in `/docs/20-contracts/`.
-- Change to a global invariant in root `README.md`.
+- Change to a global invariant (`CLAUDE.md` / `docs/README.md`, authoritative in `90-governance/GOVERNANCE.md`).
 - New cross-cutting pattern (auth, caching, error handling).
 
 No PR may merge if it contradicts an `Accepted` ADR without first superseding it.

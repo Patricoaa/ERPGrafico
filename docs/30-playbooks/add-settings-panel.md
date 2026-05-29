@@ -3,7 +3,7 @@ layer: 30-playbooks
 doc: add-settings-panel
 status: active
 owner: frontend-team
-last_review: 2026-05-07
+last_review: 2026-05-28
 preconditions:
   - autosave-contract.md
   - component-form-patterns.md §8
@@ -149,4 +149,4 @@ No llamar `form.reset(data)` en `onSave` — `useAutoSaveForm` ya hace el reset 
 | `form.reset(data)` dentro de `onSave` | `useAutoSaveForm` ya lo hace; hacerlo de nuevo puede crear bucles |
 | `toast.success("Guardado")` en `onSave` | El badge `synced` cubre este rol |
 | `setSaving(true/false)` manual + `onSavingChange?.(saving)` | El status del hook expone el estado; usar `status === 'saving'` si el padre lo necesita |
-| Botón "Guardar" en paneles singleton | Solo válido en catálogos CRUD — ver [add-catalog-crud.md](./add-catalog-crud.md) |
+| Botón "Guardar" en paneles singleton | Solo válido en catálogos CRUD (submit manual) — ver [component-form-patterns.md §8](../20-contracts/component-form-patterns.md) |

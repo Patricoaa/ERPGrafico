@@ -3,7 +3,7 @@ layer: 30-playbooks
 doc: add-collection-row-autosave
 status: active
 owner: frontend-team
-last_review: 2026-05-07
+last_review: 2026-05-28
 preconditions:
   - autosave-contract.md
   - add-settings-panel.md
@@ -14,7 +14,7 @@ preconditions:
 Guía para conectar `useAutoSaveForm` a colecciones donde **cada fila tiene su propio estado de guardado**, en lugar de un único form a nivel de página.
 
 > **Cuándo usarlo**: cuando cada ítem de la lista guarda de forma independiente vía PATCH/POST y el usuario puede editar varias filas simultáneamente (ej. reglas de workflow, configuración de filas de catálogo con edición inline).  
-> No usar para catálogos CRUD con alta/baja — ver [add-catalog-crud.md](./add-catalog-crud.md).
+> No usar para catálogos CRUD con alta/baja — esos usan submit manual (`BaseModal` + `SubmitButton`), ver [component-form-patterns.md §8 Save Strategy](../20-contracts/component-form-patterns.md).
 
 ---
 

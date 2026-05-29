@@ -29,74 +29,74 @@ Rules apply to every PR. Violations block merge unless an accepted ADR waives th
 
 ## 3. Visual system
 
-11. No raw Tailwind colors (`bg-red-500`, `text-blue-600`). Semantic tokens only.
-12. Primary color: Electric Violet `oklch(62% 0.244 301)` via `text-primary` / `bg-primary`.
-13. `font-sans` (Onest) for body; `font-heading` (Syne) for headings.
-14. Border radius default: `0.5rem`. No `rounded-xl` / `rounded-full` on form components without ADR.
-15. 8pt grid — padding/margin/gap multiples of 8px.
-16. Minimum interactive height: `h-10` (40px).
-17. Source of truth: `frontend/app/globals.css`. No theme changes elsewhere.
+12. No raw Tailwind colors (`bg-red-500`, `text-blue-600`). Semantic tokens only.
+13. Primary color: Electric Violet `oklch(62% 0.244 301)` via `text-primary` / `bg-primary`.
+14. `font-sans` (Onest) for body; `font-heading` (Syne) for headings.
+15. Border radius default: `0.5rem`. No `rounded-xl` / `rounded-full` on form components without ADR.
+16. 8pt grid — padding/margin/gap multiples of 8px.
+17. Minimum interactive height: `h-10` (40px).
+18. Source of truth: `frontend/app/globals.css`. No theme changes elsewhere.
 
 ## 4. Component rules
 
-18. `StatusBadge` is the ONLY authorized status renderer.
-19. All shared components handle `loading` (Skeleton), `empty` (EmptyState), `error` (toast).
-20. Shared components documented in `20-contracts/component-*.md` with full prop table.
-21. Do not modify `components/ui/` (Shadcn base). Extend in `components/shared/`.
-22. Promotion to `components/shared/` requires ≥3 consumers + contract entry.
+19. `StatusBadge` is the ONLY authorized status renderer.
+20. All shared components handle `loading` (Skeleton), `empty` (EmptyState), `error` (toast).
+21. Shared components documented in `20-contracts/component-*.md` with full prop table.
+22. Do not modify `components/ui/` (Shadcn base). Extend in `components/shared/`.
+23. Promotion to `components/shared/` requires ≥3 consumers + contract entry.
 
 ## 5. Hook rules
 
-23. Hook names: `use[Entity][Action]`. Return domain-named properties (`orders`, not `data`).
-24. Errors handled internally via `showApiError` toast; do not expose `error`.
-25. Loading flags: `isLoading` (initial), `isFetching` (refetch), `isCreating` / `isUpdating` / `isDeleting`.
-26. No `useQuery` / `useMutation` directly in components. Wrap in feature hook.
-27. `@/lib/api` importable only from `features/*/api/*`, `features/*/hooks/*`, and `/hooks/*`.
+24. Hook names: `use[Entity][Action]`. Return domain-named properties (`orders`, not `data`).
+25. Errors handled internally via `showApiError` toast; do not expose `error`.
+26. Loading flags: `isLoading` (initial), `isFetching` (refetch), `isCreating` / `isUpdating` / `isDeleting`.
+27. No `useQuery` / `useMutation` directly in components. Wrap in feature hook.
+28. `@/lib/api` importable only from `features/*/api/*`, `features/*/hooks/*`, and `/hooks/*`.
 
 ## 6. Forms
 
-28. All forms: `react-hook-form` + `zodResolver`.
-29. Zod schema in `components/forms/schema.ts`; TS type is `z.infer<typeof Schema>`.
-30. Backend serializer is authoritative; frontend Zod mirrors it.
+29. All forms: `react-hook-form` + `zodResolver`.
+30. Zod schema in `components/forms/schema.ts`; TS type is `z.infer<typeof Schema>`.
+31. Backend serializer is authoritative; frontend Zod mirrors it.
 
 ## 7. FSD boundaries
 
-31. A feature never imports internals from another feature. Use barrel `index.ts` or promote to `/shared`.
-32. `app/*` imports only feature barrels, not internals.
-33. Global hooks live in `/hooks/` only when consumed by ≥3 unrelated features.
+32. A feature never imports internals from another feature. Use barrel `index.ts` or promote to `/shared`.
+33. `app/*` imports only feature barrels, not internals.
+34. Global hooks live in `/hooks/` only when consumed by ≥3 unrelated features.
 
 ## 8. Backend layering
 
-34. Views ≤20 lines per action. Business logic in `services.py`.
-35. Complex reads in `services.py` or `ViewSet.get_queryset()`.
-36. Permission class declared on every viewset.
-37. Multi-table writes wrapped in `transaction.atomic()`.
-38. Async side effects via Celery — never synchronous in request path when >300ms.
+35. Views ≤20 lines per action. Business logic in `services.py`.
+36. Complex reads in `services.py` or `ViewSet.get_queryset()`.
+37. Permission class declared on every viewset.
+38. Multi-table writes wrapped in `transaction.atomic()`.
+39. Async side effects via Celery — never synchronous in request path when >300ms.
 
 ## 9. API contracts
 
-39. Every endpoint documented in `20-contracts/api-contracts.md`.
-40. Money fields: `DecimalField`. Transactional document totals use `decimal_places=0` (CLP has no minor unit — see ADR-0014). Canonical names: `total_net`, `total_tax`, `total`. Render only via `MoneyDisplay`. **No `_cents` integer convention.**
-41. IDs: integer auto-increment PK (no UUID — see ADR-0016 anti-goals). The business identifier is exposed as `number` / `display_id` and formatted via `ENTITY_REGISTRY` (`entity-identity.md`).
-42. Dates: ISO-8601 UTC with `Z` for datetimes; `YYYY-MM-DD` for date-only fields.
-43. Breaking API change: ADR + parallel period. Versioning is unified SemVer across FE+BE (ADR-0012) — there is no per-URL `/api/vN/` versioning.
+40. Every endpoint documented in `20-contracts/api-contracts.md`.
+41. Money fields: `DecimalField`. Transactional document totals use `decimal_places=0` (CLP has no minor unit — see ADR-0014). Canonical names: `total_net`, `total_tax`, `total`. Render only via `MoneyDisplay`. **No `_cents` integer convention.**
+42. IDs: integer auto-increment PK (no UUID — see ADR-0016 anti-goals). The business identifier is exposed as `number` / `display_id` and formatted via `ENTITY_REGISTRY` (`entity-identity.md`).
+43. Dates: ISO-8601 UTC with `Z` for datetimes; `YYYY-MM-DD` for date-only fields.
+44. Breaking API change: ADR + parallel period. Versioning is unified SemVer across FE+BE (ADR-0012) — there is no per-URL `/api/vN/` versioning.
 
 ## 10. State
 
-44. Entity states defined in `20-contracts/state-map.md`. Single source of truth.
-45. `BUSINESS_STATES.md` is deprecated. Do not reference.
-46. Invalid transitions return 409 Conflict.
+45. Entity states defined in `20-contracts/state-map.md`. Single source of truth.
+46. `BUSINESS_STATES.md` is deprecated. Do not reference.
+47. Invalid transitions return 409 Conflict.
 
 ## 11. Testing
 
-47. Coverage thresholds enforced (see `40-quality/testing.md`).
-48. Flaky test = bug. No permanent `@skip`.
-49. Tests co-located with source.
+48. Coverage thresholds enforced (see `40-quality/testing.md`).
+49. Flaky test = bug. No permanent `@skip`.
+50. Tests co-located with source.
 
 ## 12. Security
 
-50. Every PR touching auth / permissions / uploads reviewed by security team.
-51. Never log or transmit secrets / PII in plaintext (see `40-quality/security.md`).
+51. Every PR touching auth / permissions / uploads reviewed by security team.
+52. Never log or transmit secrets / PII in plaintext (see `40-quality/security.md`).
 
 ## Amendment
 

@@ -3,7 +3,7 @@ layer: 90-governance
 doc: pr-review-checklist
 status: active
 owner: core-team
-last_review: 2026-05-07
+last_review: 2026-05-28
 ---
 
 # PR Review Checklist
@@ -63,8 +63,8 @@ Reviewer pastes or ticks before approving. Author self-reviews first.
 ## Observability
 
 - [ ] INFO log on new business event.
-- [ ] Metric emitted for new KPI.
 - [ ] Error path reaches Sentry.
+- [ ] New KPI surfaced via the existing audit-log / DB aggregation — no Prometheus-style metrics stack on the PYME single-node deployment (see `40-quality/observability.md`).
 
 ## Performance
 
