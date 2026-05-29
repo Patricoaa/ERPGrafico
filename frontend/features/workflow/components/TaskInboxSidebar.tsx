@@ -3,7 +3,6 @@
 import { Inbox } from "lucide-react"
 import { CollapsibleSheet, PanelHeader } from "@/components/shared"
 import { TaskInbox } from "@/features/workflow/components/TaskInbox"
-import { cn } from "@/lib/utils"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 
 interface TaskInboxSidebarProps {

@@ -1,11 +1,11 @@
 "use client"
 import { formatPlainDate } from "@/lib/utils";
 
-import React, { useEffect, useState, lazy, Suspense } from "react"
+import React, {useEffect, useState} from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
 import { Card, CardContent } from "@/components/ui/card"
-import { Chip, FadeIn, StatCard } from "@/components/shared"
+import { Chip, FadeIn, MoneyDisplay, StatCard } from '@/components/shared'
 import { DataTable } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { createActionsColumn, DataCell } from '@/components/shared'
@@ -14,12 +14,8 @@ import {
     CalendarDays,
     Wallet,
     User,
-    Mail,
     FileText,
     Building2,
-    TrendingUp,
-    TrendingDown,
-    ChevronRight,
     Briefcase,
     Eye
 } from "lucide-react"
@@ -27,10 +23,9 @@ import { ColumnDef } from "@tanstack/react-table"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
 import { PartnerStatement, PartnerTransaction } from "@/features/contacts/types/partner"
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion"
-import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
+
 import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import { SkeletonShell, Skeleton } from "@/components/shared"
+import {SkeletonShell} from "@/components/shared"
 
 import { PaymentDrawer } from "@/features/finance/components/PaymentDrawer"
 
@@ -56,7 +51,7 @@ export function PartnerProfileTab({ contactId }: Props) {
         try {
             const data = await partnersApi.getStatement(contactId)
             setStatement(data)
-        } catch (error) {
+        } catch {
             toast.error("Error al cargar estado de cuenta societario")
         } finally {
             setLoading(false)

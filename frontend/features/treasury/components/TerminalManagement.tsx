@@ -3,20 +3,16 @@
 import { useState, useEffect } from "react"
 import { useTerminals, type Terminal } from "@/features/treasury"
 import { Button } from "@/components/ui/button"
-import { StatusBadge } from "@/components/shared/StatusBadge"
-import { IconButton } from "@/components/shared"
-import { EntityCard } from "@/components/shared/EntityCard"
-import { DataTableView } from '@/components/shared/DataTableView'
+
+import { ActionConfirmModal, DataTableView, EntityCard, IconButton, StatusBadge } from '@/components/shared'
+
 import { DataTableColumnHeader } from '@/components/shared'
-import { createActionsColumn, DataCell, Chip } from '@/components/shared'
+import {createActionsColumn, DataCell} from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
 import { Plus, Power, PowerOff, Trash2, Settings, MapPin, Smartphone, Banknote, CreditCard, Landmark } from "lucide-react"
-import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { TerminalDrawer } from "./TerminalDrawer"
-
-
-
 
 interface TerminalManagementProps {
     externalOpen?: boolean
@@ -49,7 +45,7 @@ export function TerminalManagement({ externalOpen, onExternalOpenChange, createA
     const handleToggleActive = async (terminal: Terminal) => {
         try {
             await toggleActive(terminal)
-        } catch (error) {
+        } catch {
             // Error already handled by hook
         }
     }
@@ -57,7 +53,7 @@ export function TerminalManagement({ externalOpen, onExternalOpenChange, createA
     const deleteConfirm = useConfirmAction<Terminal>(async (terminal: Terminal) => {
         try {
             await deleteTerminal(terminal)
-        } catch (error) {
+        } catch {
             // Error already handled by hook
         }
     })
@@ -65,8 +61,6 @@ export function TerminalManagement({ externalOpen, onExternalOpenChange, createA
     const handleDelete = (terminal: Terminal) => {
         deleteConfirm.requestConfirm(terminal)
     }
-
-
 
     const columns: ColumnDef<Terminal>[] = [
         {

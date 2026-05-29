@@ -25,8 +25,6 @@ export function SalesHeader() {
     const activeValue = isHardwareTab ? 'hardware' : (segmentToTab[currentSegment] || 'orders')
 
     const tabParam = searchParams.get('tab')
-    const viewParam = searchParams.get('view')
-
     // Determine subActiveValue
     const subActiveValue = (() => {
         if (activeValue === 'config') return tabParam || 'income'

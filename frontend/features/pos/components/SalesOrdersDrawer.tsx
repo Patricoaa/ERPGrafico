@@ -3,10 +3,8 @@
 import { ShoppingCart, FileText } from "lucide-react"
 import { SalesOrdersView } from "@/features/sales"
 import { FormTabs } from "@/components/shared"
-import { ScrollArea as ScrollAreaUI } from "@/components/ui/scroll-area"
+import {ScrollArea as ScrollAreaUI } from "@/components/ui/scroll-area"
 import { useState, useEffect, Suspense } from "react"
-import { useWindowWidth } from "@/hooks/useWindowWidth"
-import { cn } from "@/lib/utils"
 import { Drawer, SkeletonShell } from "@/components/shared"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 

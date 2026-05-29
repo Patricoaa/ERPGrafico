@@ -1,8 +1,5 @@
 "use client"
 
-import { useState } from "react"
-import { BaseModal } from "@/components/shared/BaseModal"
-import { ArrowLeftRight } from "lucide-react"
 import { MovementWizard, MovementData } from "@/features/treasury/components/MovementWizard"
 import { useTreasuryMovements } from "@/features/treasury/hooks/useTreasuryMovements"
 

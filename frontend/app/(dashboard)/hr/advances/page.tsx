@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from "react"
 import { toast } from "sonner"
 import { AdvanceDrawer } from "@/features/hr"
-import { createAdvance, updateAdvance, deleteAdvance, getEmployees, getPayrolls } from "@/features/hr"
+import { createAdvance, deleteAdvance, getEmployees, getPayrolls } from "@/features/hr"
 import { PaymentModal } from "@/features/treasury"
 import type { SalaryAdvance, Employee, Payroll } from "@/types/hr"
 import { Pencil, Trash2 } from "lucide-react"

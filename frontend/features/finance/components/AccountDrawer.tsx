@@ -53,7 +53,6 @@ export function AccountDrawer({
     triggerVariant = "default",
     open: openProp,
     onOpenChange,
-    auditSidebar,
     inline = false,
     onLoadingChange,
     mode: modeProp,
@@ -127,7 +126,6 @@ export function AccountDrawer({
             form.setValue("account_type", (parent as any).account_type);
         }
     }, [watchParentId, accounts, form])
-
 
     async function onSubmit(data: AccountFormValues) {
         try {

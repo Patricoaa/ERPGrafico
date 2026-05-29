@@ -1,12 +1,11 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
 import { LabeledInput } from "@/components/shared"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 
 import { Chip } from "@/components/shared"
-import { AlertCircle, Tag, Package, Hash } from "lucide-react"
+import {Tag, Package} from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface Step1_ItemsProps {
@@ -25,7 +24,6 @@ export function Step1_Items({
     const inv = originalInvoice as any
     const lines = inv?.lines || []
     const isExempt = inv?.dte_type === 'FACTURA_EXENTA' || inv?.dte_type === 'BOLETA_EXENTA';
-
 
     const toggleItem = (lineId: number) => {
         const line = lines.find((l: Record<string, unknown>) => l.id === lineId)
@@ -128,7 +126,6 @@ export function Step1_Items({
                             const showMaxBadge = (isCreditNote ||
                                 (line.product_type === 'STORABLE') ||
                                 (line.product_type === 'MANUFACTURABLE' && line.mfg_auto_finalize)) && !(isPurchase && !isCreditNote);
-
 
                             return (
                                 <TableRow key={line.id} className={cn(
@@ -245,5 +242,4 @@ export function Step1_Items({
         </div>
     )
 }
-
 

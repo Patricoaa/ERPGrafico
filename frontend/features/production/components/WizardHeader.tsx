@@ -1,6 +1,6 @@
 "use client"
 
-import { CalendarIcon, BookTemplate } from "lucide-react"
+import {CalendarIcon} from "lucide-react"
 import { formatPlainDate } from "@/lib/utils"
 import type { WorkOrder } from "../types"
 import { formatEntityDisplay } from "@/lib/entity-registry"
@@ -21,16 +21,6 @@ interface WizardHeaderProps {
 
 export function WizardHeader({
     order,
-    currentStageLabel,
-    onEdit,
-    onOpenCommandCenter,
-    onAnnul,
-    onDelete,
-    onDuplicate,
-    onSaveAsTemplate,
-    isAnnuling,
-    isDeleting,
-    isDuplicating
 }: WizardHeaderProps) {
     const customerName = order?.sale_customer_name || "Manual"
     const creationDate = order?.created_at ? formatPlainDate(order.created_at) : ''

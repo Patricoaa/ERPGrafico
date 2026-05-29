@@ -15,13 +15,11 @@ import {
 import { PaymentModal } from "@/features/treasury/components/PaymentModal"
 import type { PayrollItem, PayrollConcept, PayrollPayment, SalaryAdvance } from "@/types/hr"
 import { Button } from "@/components/ui/button"
-import { StatusBadge } from "@/components/shared/StatusBadge"
 
-import { BaseModal } from "@/components/shared/BaseModal"
 import {
     Form, FormField
 } from "@/components/ui/form"
-import { LabeledInput, LabeledSelect, FormFooter, CancelButton } from "@/components/shared"
+import { ActionConfirmModal, ActionSlideButton, BaseModal, CancelButton, FormFooter, LabeledInput, LabeledSelect, StatusBadge } from '@/components/shared'
 
 import {
     Loader2, BookOpen,
@@ -32,9 +30,9 @@ import { DataCell } from "@/components/shared"
 import { SkeletonShell } from "@/components/shared"
 import { PayrollCard } from "@/features/hr/components/PayrollCard"
 import { cn } from "@/lib/utils"
-import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+
 import { useConfirmAction } from "@/hooks/useConfirmAction"
-import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
+;
 
 const itemSchema = z.object({
     concept: z.string().min(1, "Concepto requerido"),

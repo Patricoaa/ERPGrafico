@@ -1,14 +1,14 @@
 "use client"
 
-import { showApiError } from "@/lib/errors"
+import {showApiError} from "@/lib/errors"
 
 import React, { useEffect, useState, useMemo } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
-import { DataTableView } from '@/components/shared'
+import { ActionConfirmModal, DataTableView, StatusBadge } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 
 import { ColumnDef } from "@tanstack/react-table"
-import { StatusBadge } from "@/components/shared/StatusBadge"
+
 import type { BulkAction } from "@/components/shared"
 import { ProductDrawer } from "./ProductDrawer"
 import { ChevronDown, Plus, AlertTriangle, Layers } from "lucide-react"
@@ -20,7 +20,7 @@ import { PricingUtils } from '@/features/inventory/utils/pricing'
 import { Checkbox } from "@/components/ui/checkbox"
 import { Archive as ArchiveIcon } from "lucide-react"
 import { ArchivingRestrictionsModal } from "./ArchivingRestrictionsModal"
-import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+
 import { DataCell, createActionsColumn, MoneyDisplay } from '@/components/shared'
 import { EntityCard } from "@/components/shared"
 import { useProducts } from "@/features/inventory/hooks/useProducts"
@@ -29,8 +29,6 @@ import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { Chip, SmartSearchBar, useSmartSearch } from "@/components/shared"
 import { productSearchDef } from "@/features/inventory/searchDef"
 import { createEntityCardView } from "@/lib/view-helpers"
-
-
 
 interface ProductClientViewProps {
     externalOpen?: boolean
@@ -411,7 +409,7 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                     await Promise.all(items.map(p => updateProduct({ id: p.id, payload: { active: true } })))
                     toast.success(`${items.length} productos restaurados correctamente.`)
                     refetch()
-                } catch (error) {
+                } catch {
                     toast.error("Error al restaurar los productos.")
                 }
             },
@@ -433,7 +431,6 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
             },
         },
     ], [updateProduct, refetch])
-
 
     return (
         <div className="space-y-4 h-full flex flex-col">

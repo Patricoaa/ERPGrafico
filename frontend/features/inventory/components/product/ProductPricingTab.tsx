@@ -1,14 +1,13 @@
 import { showApiError } from "@/lib/errors"
-import { Chip, DataCell, StatusBadge } from "@/components/shared"
+import { ActionConfirmModal, Chip, DataCell, EmptyState, StatusBadge } from '@/components/shared'
 import { FormLineItemsTable } from "@/components/shared"
 import { TableBody, TableCell, TableRow } from "@/components/ui/table"
-import { EmptyState } from "@/components/shared/EmptyState"
+
 import { Percent, Pencil, Info } from "lucide-react"
-import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 import { formatCurrency } from "@/lib/money"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
-import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+
 import { Product, PricingRule } from "@/types/entities"
 import { ProductInitialData } from "@/types/forms"
 import { usePricingRules } from "../../hooks/usePricingRules"

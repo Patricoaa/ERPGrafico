@@ -1,5 +1,5 @@
 import { AttributeManager } from "@/features/inventory"
-import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
+import { ToolbarCreateButton } from '@/components/shared'
 
 interface PageProps {
     searchParams: Promise<{ modal?: string }>

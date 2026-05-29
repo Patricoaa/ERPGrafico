@@ -4,7 +4,7 @@ import { showApiError, getErrorMessage } from "@/lib/errors"
 import React, { useState } from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { ColumnDef } from "@tanstack/react-table"
-import { SmartSearchBar, useSmartSearch, FadeIn } from "@/components/shared"
+import {ActionConfirmModal, DocumentCompletionModal, SmartSearchBar, useSmartSearch} from '@/components/shared'
 import { purchaseInvoiceSearchDef } from '../searchDef'
 import { FileBadge } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
@@ -14,19 +14,16 @@ import { toast } from "sonner"
 import { PaymentModal } from "@/features/treasury/components/PaymentModal"
 import { ReceiptModal } from "@/features/purchasing/components/ReceiptModal"
 import { PurchaseNoteModal } from "@/features/purchasing/components/PurchaseNoteModal"
-import { DocumentCompletionModal } from "@/components/shared/DocumentCompletionModal"
+
 import { DataTableView } from '@/components/shared'
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { DataCell } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { useConfirmAction } from "@/hooks/useConfirmAction"
-import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+
 import { usePurchaseInvoices } from "@/features/billing/hooks/usePurchaseInvoices"
 import { Invoice } from "@/features/billing/types"
 import { getDtePrefix } from "@/lib/entity-registry"
-
-
-
 
 export function PurchaseInvoicesClientView() {
     const { filters } = useSmartSearch(purchaseInvoiceSearchDef)

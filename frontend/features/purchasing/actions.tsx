@@ -10,7 +10,6 @@ import {
     Eye,
     FileEdit,
     Trash2,
-    Hash,
     RotateCcw,
     PackageMinus,
     DollarSign,

@@ -2,7 +2,7 @@
 import { formatEntityDisplay, getEntityIcon } from "@/lib/entity-registry"
 
 import { useState, useEffect } from "react"
-import { Check, ChevronDown, Search, Loader2, Eye, Calendar } from "lucide-react"
+import { Check, ChevronDown, Search, Loader2, Eye } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -10,16 +10,13 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover"
-import api from "@/lib/api"
 import { useDebounce } from "@/hooks/useDebounce"
 import { format } from "date-fns"
 import { SaleOrderDrawer } from "@/features/sales/components/SaleOrderDrawer"
-import { Badge } from "@/components/ui/badge"
+
 import { useSaleOrderSearch } from "@/features/orders/hooks/useSaleOrderSearch"
-import { EmptyState } from "@/components/shared/EmptyState"
+import { EmptyState } from '@/components/shared'
 import { SaleOrder } from "@/types/entities"
-
-
 
 interface AdvancedSaleOrderSelectorProps {
     value?: string | number | null

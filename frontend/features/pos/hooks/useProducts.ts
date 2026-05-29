@@ -76,8 +76,6 @@ export function useProducts() {
         }
     }, [loadingProducts, loadingCategories, loadingUoms, setLoading])
 
-
-
     // Filtered products based on search and category
     const filteredProducts = useMemo(() => {
         let filtered = [...products]
@@ -117,7 +115,7 @@ export function useProducts() {
             if (!silent) {
                 toast.success("Productos actualizados")
             }
-        } catch (error) {
+        } catch {
             if (!silent) {
                 toast.error("Error al actualizar productos")
             }

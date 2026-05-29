@@ -3,9 +3,8 @@ import { formatCurrency } from "@/lib/money"
 
 import { showApiError } from "@/lib/errors"
 import React, { useEffect, useState } from "react"
-import { BaseModal } from "@/components/shared/BaseModal"
-import { Button } from "@/components/ui/button"
-import { CancelButton, SubmitButton, LabeledInput, LabeledSelect, PeriodValidationDateInput, ActionConfirmModal } from "@/components/shared"
+
+import { ActionConfirmModal, BaseModal, CancelButton, LabeledInput, LabeledSelect, PeriodValidationDateInput, SubmitButton } from '@/components/shared'
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
 import { settingsApi } from "../../hooks"
@@ -14,8 +13,6 @@ import { TreasuryAccount } from "@/features/treasury/types"
 import { toast } from "sonner"
 
 import {
-    Info,
-    Loader2,
     ArrowRightLeft,
     TrendingUp,
     AlertTriangle,
@@ -695,7 +692,6 @@ export function ProvisionalWithdrawalModal({ open, onOpenChange, onSuccess }: Mo
         </BaseModal>
     )
 }
-
 
 export function DividendPaymentModal({ open, onOpenChange, onSuccess, initialPartnerId }: ModalProps) {
     const [loading, setLoading] = useState(false)

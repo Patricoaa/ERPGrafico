@@ -11,8 +11,7 @@ import {
     Calendar, Banknote, TrendingUp, TrendingDown,
     Undo2, Info, AlertCircle, ExternalLink, Activity
 } from "lucide-react"
-import { SkeletonShell } from "@/components/shared"
-import { PageHeader } from "@/components/shared/PageHeader"
+import { ActionConfirmModal, PageHeader, SkeletonShell } from '@/components/shared'
 
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
@@ -25,7 +24,7 @@ import { ColumnDef } from "@tanstack/react-table"
 import { createActionsColumn, DataCell } from '@/components/shared'
 import { Progress } from "@/components/ui/progress"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
-import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+
 import { toast } from "sonner"
 
 interface BankStatementLine {
@@ -72,9 +71,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
 
     const [statement, setStatement] = useState<BankStatement | null>(null)
     const [loading, setLoading] = useState(true)
-    const [confirming, setConfirming] = useState(false)
     const [unmatchDialog, setUnmatchDialog] = useState<{ open: boolean, lineId: number | null }>({ open: false, lineId: null })
-    const [paymentModal, setPaymentModal] = useState<{ open: boolean, id: number | null }>({ open: false, id: null })
 
     const fetchStatement = async () => {
         try {
@@ -119,8 +116,6 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
             setConfirming(false)
         }
     })
-
-    const handleConfirmStatement = () => confirmAction.requestConfirm()
 
     const columns: ColumnDef<BankStatementLine>[] = [
         {
@@ -268,7 +263,6 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
             </div>
         )
     }
-
 
     // --- RENDER SUMMARY VIEW ---
     const totalDebits = statement.lines.reduce((acc, line) => acc + parseFloat(line.debit), 0)

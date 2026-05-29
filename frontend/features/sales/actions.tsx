@@ -11,7 +11,6 @@ import {
     Package,
     Trash2,
     FileEdit,
-    Hash,
     RotateCcw,
     PackageMinus,
     DollarSign,

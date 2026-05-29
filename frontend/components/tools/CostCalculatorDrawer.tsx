@@ -5,16 +5,14 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Card, CardContent } from "@/components/ui/card"
-import { Trash2, Plus, Loader2, Calculator, Info, Package } from "lucide-react"
-import { DynamicIcon } from '@/components/shared'
+import { Card } from "@/components/ui/card"
+import { Trash2, Calculator, Info } from "lucide-react"
+import { Drawer, DynamicIcon } from '@/components/shared'
 import { ProductSelector } from "@/components/shared"
 import { toast } from "sonner"
 import { formatCurrency } from "@/lib/money"
 import { resolveMediaUrl } from "@/lib/api"
-import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
-import { useHubPanel } from "@/components/providers/HubPanelProvider"
-import { Drawer } from "@/components/shared/Drawer"
+
 import {
     POSSearchSkeleton,
     POSGridSkeleton,
@@ -63,18 +61,8 @@ export function CostCalculatorDrawer({ open, onOpenChange }: CostCalculatorDrawe
     const idCounterRef = React.useRef(0)
     const [searchTerm, setSearchTerm] = useState("")
     const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null)
-    const { isSheetCollapsed } = useGlobalModals()
-    const { closeHub } = useHubPanel()
 
     const windowWidth = useWindowWidth(150, open)
-
-    const handleOpenChangeProxy = (newOpen: boolean) => {
-        if (newOpen && isSheetCollapsed("COST_CALCULATOR")) {
-            closeHub()
-        }
-        if (!newOpen) handleClose()
-        else onOpenChange(newOpen)
-    }
 
     const fullWidth = Math.min(windowWidth * 0.85, 1600)
 

@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation"
-import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
+import { ToolbarCreateButton } from '@/components/shared'
 import { SalesTerminalsView } from "@/features/sales"
 
 interface PageProps {

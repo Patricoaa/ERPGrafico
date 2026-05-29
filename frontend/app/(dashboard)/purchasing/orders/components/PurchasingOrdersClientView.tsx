@@ -1,9 +1,9 @@
 "use client"
 
-import { showApiError, getErrorMessage } from "@/lib/errors"
-import React, { useEffect, useState, useRef } from "react"
+import {showApiError, getErrorMessage} from "@/lib/errors"
+import React, { useEffect, useState } from "react"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
-import { DataTableView } from '@/components/shared'
+import { ActionConfirmModal, DataTableView, DocumentCompletionModal } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
 import { DataCell } from '@/components/shared'
@@ -13,15 +13,13 @@ import api from "@/lib/api"
 import { PurchaseOrderModal } from "@/features/purchasing"
 import { toast } from "sonner"
 import { DocumentRegistrationModal, PurchaseCheckoutWizard } from "@/features/purchasing"
-import { DocumentCompletionModal } from "@/components/shared/DocumentCompletionModal"
+
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { DomainHubStatus } from "@/components/shared"
 import { getHubStatuses } from "@/lib/workflow-status"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
-import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+
 import { Tabs } from "@/components/ui/tabs"
-
-
 
 import type { Order } from "@/features/orders"
 
@@ -39,8 +37,6 @@ interface PurchaseOrder extends Order {
     } | null
 }
 
-
-
 interface PurchasingOrdersClientViewProps {
     viewMode: 'orders' | 'notes'
     externalOpenCheckout?: boolean
@@ -48,12 +44,12 @@ interface PurchasingOrdersClientViewProps {
 }
 
 import { usePurchasingOrders, usePurchasingNotes, purchaseOrderSearchDef } from "@/features/purchasing"
-import { SmartSearchBar, useSmartSearch, FadeIn } from "@/components/shared"
+import { SmartSearchBar, useSmartSearch } from "@/components/shared"
 
 export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, createAction }: PurchasingOrdersClientViewProps) {
     const { filters } = useSmartSearch(purchaseOrderSearchDef)
     const { orders, isLoading: isLoadingOrders, refetch: fetchOrders, deleteOrder } = usePurchasingOrders(filters)
-    const { notes, isLoading: isLoadingNotes, refetch: fetchNotes } = usePurchasingNotes()
+    const { notes, isLoading: isLoadingNotes } = usePurchasingNotes()
 
     const searchParams = useSearchParams()
     const router = useRouter()
@@ -64,10 +60,10 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
     const [completingInvoice, setCompletingInvoice] = useState<{ id: number, type: string } | null>(null)
     const [checkoutOpen, setCheckoutOpen] = useState(false)
     const [folioModalOpen, setFolioModalOpen] = useState(false)
-    const [selectedInvoice, setSelectedInvoice] = useState<{ id: number, type: string } | null>(null)
-    const [checkoutOrderId, setCheckoutOrderId] = useState<number | null>(null)
+    const [selectedInvoice] = useState<{ id: number, type: string } | null>(null)
 
-    const { openHub, closeHub, hubConfig, isHubOpen } = useHubPanel()
+    const { hubConfig, isHubOpen } = useHubPanel()
+    const [checkoutOrderId, setCheckoutOrderId] = useState<number | null>(null)
 
     const toggleSelection = (id: number) => {
         const isSelected = viewMode === "orders" ? hubConfig?.orderId === id : hubConfig?.invoiceId === id
@@ -101,8 +97,6 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
         }
     })
 
-    const handleDelete = (id: number) => deleteConfirm.requestConfirm(id)
-
     const forceAnnulConfirm = useConfirmAction<number>(async (id) => {
         try {
             await api.post(`/purchasing/orders/${id}/annul/`, { force: true })
@@ -131,46 +125,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
         }
     })
 
-    const handleAnnul = (id: number) => annulConfirm.requestConfirm(id)
-
-    const handleEdit = async (order: PurchaseOrder) => {
-        try {
-            const response = await api.get(`/purchasing/orders/${order.id}/`)
-            setEditingOrder(response.data)
-        } catch (error) {
-            console.error("Error fetching order details:", error)
-            toast.error("Error al cargar los detalles de la orden de compra.")
-        }
-    }
-
-    const handleConfirm = async (id: number) => {
-        try {
-            await api.post(`/purchasing/orders/${id}/confirm/`)
-            toast.success("Orden de Compra confirmada.")
-            fetchOrders()
-        } catch (error) {
-            toast.error("Error al confirmar.")
-        }
-    }
-
-    const handleInvoice = async (order: PurchaseOrder) => {
-        setInvoicingOrder(order)
-    }
-
-    const handleDeleteInvoice = async (invoiceId: number) => {
-        try {
-            await api.delete(`/billing/invoices/${invoiceId}/`)
-            toast.success("Documento eliminado correctamente")
-            fetchOrders()
-        } catch (error: unknown) {
-            console.error("Error deleting invoice:", error)
-            showApiError(error, "Error al eliminar el documento")
-        }
-    }
-
-    const filteredNotes = notes
-
-    const noteColumns: ColumnDef<Order>[] = [
+    const forceAnnulConfirm: ColumnDef<Order>[] = [
         {
             accessorKey: "dte_type_display",
             header: ({ column }) => (

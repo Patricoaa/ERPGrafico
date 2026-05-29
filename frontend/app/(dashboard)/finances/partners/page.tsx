@@ -2,8 +2,8 @@
 
 import { useState, useMemo, useEffect, useRef, useCallback } from "react"
 import { toast } from "sonner"
-import { PageHeader } from "@/components/shared/PageHeader"
-import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
+import { PageHeader, ToolbarCreateButton } from '@/components/shared'
+
 import { useSearchParams, useRouter } from "next/navigation"
 import { PartnerAccountingTab, PartnersSettingsView } from "@/features/settings"
 import Link from "next/link"
@@ -16,7 +16,6 @@ export default function PartnersPage() {
     const router = useRouter()
     const activeTab = searchParams.get("tab") || "composition"
     const isNewDistributionModal = searchParams.get("modal") === "new-distribution"
-    const isMobilizeModal = searchParams.get("modal") === "mobilize-earnings"
     const isAddPartnerModal = searchParams.get("modal") === "add-partner"
     const isStatsModal = searchParams.get("modal") === "stats"
     const [saving, setSaving] = useState(false)

@@ -11,7 +11,7 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover"
 import { useDebounce } from "@/hooks/useDebounce"
-import { EmptyState } from "@/components/shared/EmptyState"
+import { EmptyState } from '@/components/shared'
 import { useGroupSearch } from "@/features/users/hooks/useGroupSearch"
 import { AppGroup as Group } from "@/types/entities"
 

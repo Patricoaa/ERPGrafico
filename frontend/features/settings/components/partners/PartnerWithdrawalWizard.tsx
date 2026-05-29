@@ -19,7 +19,7 @@ import { Product } from "@/features/inventory/types"
 import { settingsApi } from "../../hooks"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 
-import { Alert, AlertDescription } from "@/components/ui/alert"
+import {Alert} from "@/components/ui/alert"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 import { showApiError } from "@/lib/errors"

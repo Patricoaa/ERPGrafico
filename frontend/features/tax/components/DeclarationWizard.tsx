@@ -3,26 +3,21 @@
 import { useState, useEffect, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 
-import { LabeledInput, FormSection, BaseModal, GenericWizard, WizardStep } from "@/components/shared"
+import { BaseModal, FormSection, GenericWizard, LabeledInput, MoneyDisplay, WizardStep } from '@/components/shared'
 import {
     Calculator,
-    FileText,
     CheckCircle2,
-    Info,
     ArrowUpRight,
     ArrowDownLeft,
     HandCoins,
     History,
-    ArrowRight,
-    Package,
     AlertCircle,
-    ExternalLink
 } from "lucide-react"
 import { toast } from "sonner"
 import { useTaxCalculation, useCreateDeclaration, useRegisterDeclaration, useClosePeriod } from "../hooks/useTaxMutations"
 import { cn } from "@/lib/utils"
 import { useServerDate } from "@/hooks/useServerDate"
-import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
+
 import { TaxPeriod, TaxCalculationData } from "../types"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"

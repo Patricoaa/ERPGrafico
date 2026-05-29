@@ -1,6 +1,6 @@
 import React from "react"
 import Link from "next/link"
-import { ChevronDown, LucideIcon } from "lucide-react"
+import { ChevronDown } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { DynamicIcon } from '@/components/shared'
 import {
@@ -31,7 +31,7 @@ interface PageTabsProps {
     subActiveValue?: string
     maxWidth?: string
     className?: string
-    variant?: "default" | "minimal" // Keeping for backwards compatibility
+    variant?: "default" | "minimal"
     /** Optional URL for a configuration page, rendered as a gear icon tab at the end */
     configHref?: string
 }
@@ -41,7 +41,7 @@ interface PageTabsProps {
  * Maps navigation links to a standardized tab-like experience.
  * Supports dropdown sub-tabs if a tab has `subTabs` configured.
  */
-export function PageTabs({ tabs, activeValue, subActiveValue, maxWidth, className, variant, configHref }: PageTabsProps) {
+export function PageTabs({ tabs, activeValue, subActiveValue, maxWidth, className, variant: _variant, configHref }: PageTabsProps) {
     return (
         <div className={cn("w-full border-b border-border/40 bg-muted/5", className)}>
             <div className={cn("px-4", maxWidth)}>

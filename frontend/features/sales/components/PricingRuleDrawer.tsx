@@ -13,11 +13,11 @@ import { cn } from "@/lib/utils"
 import { useUoMs } from "@/features/inventory/hooks/useUoMs"
 import { usePricingRuleMutations } from "@/features/inventory"
 import { toast } from "sonner"
-import { Tags, Layers, Zap, DollarSign, Calendar, Printer } from "lucide-react"
+import {Layers, Zap, DollarSign, Calendar, Printer} from "lucide-react"
 import { PricingUtils } from '@/features/inventory/utils/pricing'
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { UoMSelector } from "@/components/selectors/UoMSelector"
-import { Drawer, CancelButton, LabeledInput, LabeledSelect, LabeledSwitch, LabeledContainer, PeriodValidationDateInput, FormSection, FormFooter, FormSplitLayout, SkeletonShell, ActionSlideButton } from "@/components/shared"
+import {Drawer, CancelButton, LabeledInput, LabeledSelect, LabeledSwitch, PeriodValidationDateInput, FormSection, FormFooter, FormSplitLayout, SkeletonShell, ActionSlideButton} from "@/components/shared"
 import { Button } from "@/components/ui/button"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { useReactToPrint } from "react-to-print"
@@ -99,8 +99,6 @@ export function PricingRuleDrawer({ auditSidebar, initialData, onSuccess, open, 
 
     const lastResetId = useRef<number | undefined>(undefined)
     const wasOpen = useRef(false)
-
-
 
     useEffect(() => {
         if (!open) {
@@ -494,7 +492,6 @@ export function PricingRuleDrawer({ auditSidebar, initialData, onSuccess, open, 
                                 {renderGeneralTab()}
                                 {renderConditionsTab()}
                                 {renderActionsTab()}
-
 
                             </div>
                             </fieldset>

@@ -7,8 +7,8 @@
 // Requires a parent container with explicit height (e.g. `flex-1 min-h-0`) 
 // to work correctly with VirtuosoGrid.
 
-import { Card, CardContent } from '@/components/ui/card'
-import { DynamicIcon } from '@/components/shared/DynamicIcon'
+import { Card } from '@/components/ui/card'
+
 import { cn } from '@/lib/utils'
 import { formatCurrency } from "@/lib/money"
 import { PricingUtils } from '@/features/inventory/utils/pricing'
@@ -16,7 +16,7 @@ import { useDeviceContext } from '@/hooks/useDeviceContext'
 import type { BaseProduct, ProductCategory } from '@/features/inventory/types'
 import { Plus, Heart } from 'lucide-react'
 import { memo } from 'react'
-import { EmptyState } from '@/components/shared/EmptyState'
+import { DynamicIcon, EmptyState } from '@/components/shared'
 import { resolveMediaUrl } from '@/lib/api'
 import { VirtuosoGrid } from 'react-virtuoso'
 

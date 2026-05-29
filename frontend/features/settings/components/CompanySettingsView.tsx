@@ -8,7 +8,7 @@ import { useCompanySettings } from "@/features/settings"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Form, FormField } from "@/components/ui/form"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
-import { Loader2, Building2, RefreshCw, Palette, Mail, Phone, MapPin, Globe, Upload, Pencil, Trash2 } from "lucide-react"
+import {Loader2, Building2, RefreshCw, Palette, Mail, Phone, MapPin, Globe, Upload, Pencil} from "lucide-react"
 import ContactDrawer from "@/features/contacts/components/ContactDrawer"
 import { AutoSaveStatusBadge, DataCell, LabeledInput, LabeledSelect, FadeIn } from "@/components/shared"
 import { Button } from "@/components/ui/button"
@@ -21,8 +21,7 @@ import { resolveMediaUrl } from "@/features/settings/api/settingsApi"
 import { CompanySettings } from "@/features/settings/types"
 import { contactsApi } from "@/features/contacts/api/contactsApi"
 
-
-import { companySchema, type CompanyFormValues } from "./CompanySettingsView.schema"
+import {companySchema, type CompanyFormValues } from "./CompanySettingsView.schema"
 import { Contact } from "@/features/contacts/types"
 
 export function CompanySettingsView({ activeTab }: { activeTab: string }) {
@@ -127,7 +126,7 @@ export function CompanySettingsView({ activeTab }: { activeTab: string }) {
         try {
             await updateSettings(formData)
             toast.success("Logo subido correctamente")
-        } catch (error) {
+        } catch {
             toast.error("Error al subir el logo")
         } finally {
             setUploadingLogo(false)
@@ -138,7 +137,7 @@ export function CompanySettingsView({ activeTab }: { activeTab: string }) {
         try {
             await updateSettings({ logo: null, logo_url: "" })
             toast.success("Logo eliminado")
-        } catch (error) {
+        } catch {
             toast.error("Error al eliminar el logo")
         }
     }
@@ -440,7 +439,6 @@ export function CompanySettingsView({ activeTab }: { activeTab: string }) {
                                             </div>
                                         </div>
                                     </div>
-
 
                                 </CardContent>
                             </Card>

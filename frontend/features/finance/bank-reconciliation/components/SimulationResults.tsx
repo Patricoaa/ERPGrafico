@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from "react"
 import { financeApi } from "../../api/financeApi"
-import { DataTable, SkeletonShell, DataCell } from "@/components/shared"
-import { EmptyState } from "@/components/shared/EmptyState"
-import { formatPlainDate, cn } from "@/lib/utils"
+import { DataCell, DataTable, EmptyState, SkeletonShell } from '@/components/shared'
+
+import {formatPlainDate} from "@/lib/utils"
 import type { ColumnDef } from "@tanstack/react-table"
 
 interface SimulationResult {

@@ -1,17 +1,14 @@
 "use client"
 import { formatCurrency } from "@/lib/money"
 
-import { showApiError } from "@/lib/errors"
-
 import React, { useState, useMemo } from "react"
-import { DataTable } from '@/components/shared'
+import { BaseModal, DataTable } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
 import { ArrowRightLeft, History } from "lucide-react"
 
-
 import { AdjustmentForm } from "@/features/inventory/components/AdjustmentForm"
-import { BaseModal } from "@/components/shared/BaseModal"
+
 import { CancelButton, SubmitButton, FormFooter, SmartSearchBar, useSmartSearch } from "@/components/shared"
 import { stockReportSearchDef } from "@/features/inventory/searchDef"
 import { ProductInsightsModal } from "@/features/inventory/components/ProductInsightsModal"
@@ -162,7 +159,6 @@ export function StockReport() {
             ),
         }),
     ], [setAdjustingProduct, setInsightsProduct])
-
 
     return (
         <PageContainer className="space-y-6 h-full flex flex-col">

@@ -9,7 +9,6 @@ import * as CartUtils from '@/features/pos/utils/cart-utils'
 import * as Validation from '@/features/pos/utils/validation'
 import * as StockCalculator from '@/features/pos/utils/stock-calculator'
 import * as BOMResolver from '@/features/pos/utils/bom-resolver'
-import { PricingUtils } from '@/features/inventory/utils/pricing'
 import { posApi } from '../api/posApi'
 
 export function useCart() {

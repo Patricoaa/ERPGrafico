@@ -17,7 +17,7 @@
 
 import React from 'react'
 import Link from 'next/link'
-import { Badge } from '@/components/shared/Badge'
+import { Badge } from '@/components/shared'
 import { resolveEntity } from '@/lib/badge-resolvers'
 import { hasEntityDrawer } from '@/lib/entity-drawers'
 import { useGlobalModals } from '@/components/providers/GlobalModalProvider'

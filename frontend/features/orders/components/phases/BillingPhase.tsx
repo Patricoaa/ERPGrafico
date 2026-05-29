@@ -7,7 +7,7 @@ import { formatEntity } from '@/features/orders/utils/status'
 import { getDtePrefix, getDteLabel } from '@/lib/entity-registry'
 import { toast } from "sonner"
 import { useAnnulInvoice, useDeleteInvoice } from "../../hooks/useOrdersMutations"
-import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+import { ActionConfirmModal } from '@/components/shared'
 import { saleOrderActions } from '@/features/sales/actions'
 import { purchaseOrderActions } from '@/features/purchasing/actions'
 import { Order, PhaseDocument } from "../../types"

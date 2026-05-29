@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useEffect } from "react"
@@ -81,7 +80,7 @@ export function SplitAllocationDialog({ open, onOpenChange, payment, treasuryAcc
             })
             onSuccess?.()
             onOpenChange(false)
-        } catch (error) {
+        } catch {
             // Handled in mutation
         }
     }

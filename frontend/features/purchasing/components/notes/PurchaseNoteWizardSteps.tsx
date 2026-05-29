@@ -1,16 +1,10 @@
-
 import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
-import { CheckCircle2, FileText, Package, AlertCircle, UploadCloud, ShieldAlert } from "lucide-react"
-import { formatCurrency } from "@/lib/money"
+import {CheckCircle2, FileText, Package, AlertCircle} from "lucide-react"
 import { cn } from "@/lib/utils"
-import { BaseModal, ActionSlideButton, MoneyDisplay, LabeledInput, LabeledContainer, EmptyState, DataCell } from "@/components/shared"
+import {DataCell, DocumentAttachmentDropzone, EmptyState, FolioValidationInput, LabeledContainer, PeriodValidationDateInput} from '@/components/shared'
 import { PaymentMethodCardSelector, PaymentData } from "@/features/treasury/components/PaymentMethodCardSelector"
-import { DocumentAttachmentDropzone } from "@/components/shared/DocumentAttachmentDropzone"
-import { PeriodValidationDateInput } from "@/components/shared/PeriodValidationDateInput"
-import { FolioValidationInput } from "@/components/shared/FolioValidationInput"
 
 // --- STEP 1: General Information ---
 

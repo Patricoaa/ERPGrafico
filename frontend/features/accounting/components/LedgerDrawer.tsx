@@ -4,20 +4,18 @@ import React, { useState, useEffect } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { useServerDate } from "@/hooks/useServerDate"
 import { Book, ArrowUpRight, ArrowDownRight, Scale, Calculator, Eye, Trash2 } from "lucide-react"
-import { Drawer, DataTable, DataTableColumnHeader, DataCell, createActionsColumn, IconButton, SkeletonShell } from "@/components/shared"
+import { ActionConfirmModal, DataCell, DataTable, DataTableColumnHeader, DateRangeFilter, Drawer, IconButton, MoneyDisplay, SkeletonShell, createActionsColumn } from '@/components/shared'
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { ColumnDef } from "@tanstack/react-table"
 import { Card, CardContent } from "@/components/ui/card"
-import { DateRangeFilter } from "@/components/shared/DateRangeFilter"
+
 import { JournalEntryDrawer } from "@/features/accounting/components/JournalEntryDrawer"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
-import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+
 import { format } from "date-fns"
 import { useLedger } from "@/features/accounting/hooks/useLedger"
 import { useDeleteJournalEntry } from "@/features/accounting/hooks/useJournalEntries"
 import { es } from "date-fns/locale"
-import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
-
 
 import type { LedgerMovement } from "@/features/accounting/types"
 
@@ -123,9 +121,6 @@ export function LedgerDrawer({ accountId, accountName, accountCode, trigger }: L
 }
 
 function LedgerContent({
-    accountId,
-    startDate,
-    endDate,
     dateRange,
     setDateRange,
     data,

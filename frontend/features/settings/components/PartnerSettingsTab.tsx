@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { DataTable } from '@/components/shared'
 import { DataCell, createActionsColumn, StatCard } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
-import { Building2, Plus, ArrowUpRight, ArrowDownRight, Wallet, Users, Banknote, Edit2, Search, TrendingUp, TrendingDown, Loader2 } from "lucide-react"
+import {Building2, Plus, ArrowUpRight, ArrowDownRight, Wallet, Users, Banknote, Edit2, TrendingUp, TrendingDown, Loader2} from "lucide-react"
 import { ColumnDef } from "@tanstack/react-table"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
 import { PartnerSummary } from "@/features/contacts/types/partner"
@@ -42,7 +42,7 @@ export function PartnerSettingsTab() {
             setPartners(partnersData)
             setSummary(summaryData)
             setAccountingSettings(settingsData)
-        } catch (error) {
+        } catch {
             toast.error("Error al cargar la información")
         } finally {
             setLoading(false)
@@ -74,7 +74,7 @@ export function PartnerSettingsTab() {
             toast.success("Cuenta de Capital Social actualizada correctamente")
             const updated = await accountingApi.getSettings()
             setAccountingSettings(updated)
-        } catch (error) {
+        } catch {
             toast.error("Error al actualizar la configuración contable")
         } finally {
             setIsUpdatingSettings(false)

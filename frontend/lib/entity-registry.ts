@@ -1,7 +1,7 @@
 import { 
   ReceiptText, Truck, Undo2, FileText,
   Wrench, Package, ArrowLeftRight, Landmark, BookOpen, 
-  Hash, Users, User, UserCheck, Book, PiggyBank, ShoppingCart, Receipt,
+  Hash, Users, User, UserCheck, Book, ShoppingCart, Receipt,
   List, LayoutDashboard, LayoutGrid, Kanban, CalendarDays, ClipboardCheck,
   Building2, Smartphone, CreditCard, Calendar, CalendarX2, Repeat,
   Tag, Percent, Ruler, PieChart, HandCoins, ClipboardList, PackageCheck,

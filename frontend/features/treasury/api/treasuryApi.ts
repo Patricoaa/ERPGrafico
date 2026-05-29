@@ -22,7 +22,6 @@ import type {
     TransferPayload,
     MovementCreatePayload,
     TerminalBatchCreatePayload,
-    MonthlyInvoicePayload,
     PaymentUpdatePayload,
     ContactBrief,
     PartnerCapitalInfo,

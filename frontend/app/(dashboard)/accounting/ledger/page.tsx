@@ -1,4 +1,4 @@
-import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
+import { ToolbarCreateButton } from '@/components/shared'
 import { AccountsClientView } from "@/features/accounting"
 
 interface PageProps {

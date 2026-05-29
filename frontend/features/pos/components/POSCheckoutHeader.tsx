@@ -2,8 +2,7 @@
 
 import { usePOS } from "../contexts/POSContext"
 import { cn } from "@/lib/utils"
-import { Check, ChevronRight, ShoppingCart, User, Factory, FileText, Truck, Wallet as WalletIcon } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import {Check, ChevronRight, ShoppingCart, User, Factory, Truck, Wallet as WalletIcon} from "lucide-react"
 
 export function POSCheckoutHeader() {
     const { posMode, setPosMode, wizardState, items } = usePOS()

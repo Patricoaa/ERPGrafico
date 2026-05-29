@@ -1,13 +1,12 @@
 "use client"
 
 import { Separator } from "@/components/ui/separator"
-import { Chip } from "@/components/shared"
+import { Chip, EmptyState } from '@/components/shared'
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { ShoppingBag } from "lucide-react"
-import { EmptyState } from "@/components/shared/EmptyState"
+
 import { formatCurrency } from "@/lib/money"
 import { cn } from "@/lib/utils"
-
 
 interface NoteItemsSummaryProps {
     items: any[]
@@ -16,7 +15,6 @@ interface NoteItemsSummaryProps {
     total: number
     isExempt?: boolean
 }
-
 
 export function NoteItemsSummary({
     items,

@@ -1,11 +1,11 @@
 "use client"
 import { formatCurrency } from "@/lib/money"
 
-import { useState, useEffect, useCallback, useMemo } from "react"
+import {useState, useEffect, useMemo} from "react"
 import { useServerDate } from "@/hooks/useServerDate"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
-import { LabeledSelect } from "@/components/shared"
+import { EmptyState, LabeledSelect } from '@/components/shared'
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
@@ -17,7 +17,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { useTerminalProviders, usePaymentMethods, useTerminalMovements, useTerminalBatchMutations } from "@/features/treasury"
-import { EmptyState } from "@/components/shared/EmptyState"
+
 import { Drawer, ActionSlideButton, CancelButton, SubmitButton, LabeledContainer, LabeledInput, FormFooter, FormSection, SkeletonShell } from "@/components/shared"
 
 interface TerminalBatchFormProps {
@@ -268,7 +268,6 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
                                             className="text-right bg-muted"
                                         />
                                     </div>
-
 
                                     <LabeledInput
                                         label="Monto Neto a Depositar"

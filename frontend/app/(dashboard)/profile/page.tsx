@@ -1,8 +1,8 @@
 "use client"
 
 import { ProfileView, ProfileSidePanel } from "@/features/profile"
-import { PageHeader } from "@/components/shared/PageHeader"
-import { PageContainer } from "@/components/shared"
+
+import { PageContainer, PageHeader } from '@/components/shared'
 import { useSearchParams } from "next/navigation"
 import { useState, useEffect, useCallback } from "react"
 import { getMyProfile } from '@/features/profile'

@@ -125,7 +125,6 @@ export function StatCard({
         )
       : undefined
 
-  const Wrapper = variant === "minimal" ? React.Fragment : React.Fragment
   const Container = variant === "minimal" ? "div" : Card
 
   const containerProps =

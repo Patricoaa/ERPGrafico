@@ -14,8 +14,6 @@ export function InventoryHeader() {
 
     // Sub-tab params still live in ?tab= for within-route navigation
     const subTabParam = searchParams.get('tab')
-    const modalParam = searchParams.get('modal')
-
     // Determine subActiveValue based on route + query param
     const subActiveValue = (() => {
         if (activeValue === 'config') return subTabParam || 'accounts'

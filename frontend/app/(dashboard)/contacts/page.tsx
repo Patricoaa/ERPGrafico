@@ -1,6 +1,6 @@
 "use client"
 
-import { lazy, Suspense } from "react"
+
 import { ToolbarCreateButton } from "@/components/shared"
 import { useRouter, useSearchParams } from "next/navigation"
 import { ContactsClientView } from "@/features/contacts"

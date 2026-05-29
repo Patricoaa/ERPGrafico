@@ -10,7 +10,6 @@ import { getErrorMessage } from "@/lib/errors";
 import { Form, FormField } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,8 +24,8 @@ import { FileText, User, X } from "lucide-react";
 import type { WorkOrderFormValues, WorkOrderInitialData } from "@/types/forms";
 import type { Contact } from "@/features/contacts/types";
 import { useWizardStore } from "../WorkOrderWizardStore";
-import type { ManufacturingData } from "@/components/shared/manufacturing";
-import { ManufacturingSpecsEditor, emptyManufacturingData } from "@/components/shared/manufacturing";
+import type { ManufacturingData } from "@/components/shared";
+import { ManufacturingSpecsEditor, emptyManufacturingData } from '@/components/shared';
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector";
 import { UoMSelector } from "@/components/selectors/UoMSelector";
 import { LabeledInput, LabeledContainer, PeriodValidationDateInput, SkeletonShell } from "@/components/shared";

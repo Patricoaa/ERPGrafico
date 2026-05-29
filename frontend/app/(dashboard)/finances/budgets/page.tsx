@@ -2,8 +2,8 @@
 
 import React, { use } from "react"
 import { BudgetsListView, BudgetVarianceView } from "@/features/finance"
-import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
-import { FadeIn } from "@/components/shared"
+
+import { FadeIn, ToolbarCreateButton } from '@/components/shared'
 
 interface PageProps {
     searchParams: Promise<{ tab?: string; modal?: string }>

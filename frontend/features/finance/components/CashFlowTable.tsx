@@ -10,12 +10,12 @@ import {
     TableRow
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
-import { MoneyDisplay } from "@/components/shared/MoneyDisplay";
-import { AlertCircle, CheckCircle2, Info, ArrowUpRight, ShieldCheck, List, Landmark } from "lucide-react";
-import { BaseModal } from "@/components/shared/BaseModal";
-import { Chip } from "@/components/shared";
+;
+import {AlertCircle, CheckCircle2, Info} from "lucide-react";
+;
+import { BaseModal, Chip, MoneyDisplay, ReportNode, ReportTable } from '@/components/shared';
 import { Button } from "@/components/ui/button";
-import { ReportTable, ReportNode } from "@/components/shared/ReportTable";
+;
 
 interface CulpritAccount {
     code: string;
@@ -61,8 +61,6 @@ interface CashFlowTableProps {
     periodLabel?: string;
     compPeriodLabel?: string;
 }
-
-
 
 const SectionHeader = ({ title, showComparison, icon: Icon }: { title: string, showComparison?: boolean, icon?: React.ElementType }) => (
     <TableRow className="bg-muted/30 font-bold border-t-2 first:border-t-0">

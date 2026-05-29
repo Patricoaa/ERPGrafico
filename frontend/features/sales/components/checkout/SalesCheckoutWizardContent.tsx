@@ -1,7 +1,7 @@
 "use client"
 
 import { showApiError, getErrorMessage } from "@/lib/errors"
-import { useState, useEffect, useMemo, useRef, useCallback } from "react"
+import {useState, useEffect, useMemo, useRef} from "react"
 import { PricingUtils } from '@/features/inventory/utils/pricing'
 import { Button } from "@/components/ui/button"
 import { Step1_CustomerDTE } from "./Step1_CustomerDTE"
@@ -19,18 +19,17 @@ import { useAccountingSettings } from "@/features/accounting"
 import { useInvoices } from "@/features/billing"
 import { getTask } from "@/features/workflow"
 
-import { Check, ChevronRight, ChevronLeft, Loader2, ShoppingCart, AlertCircle, AlertTriangle, ShieldAlert, CheckCircle2, FileWarning, Printer, Truck } from "lucide-react"
-import { User, Info } from "lucide-react"
-import { LabeledContainer, FormSection } from "@/components/shared"
+import {Check, ChevronRight, ChevronLeft, Loader2, ShoppingCart, AlertCircle, ShieldAlert, CheckCircle2, FileWarning, Truck} from "lucide-react"
+import {User} from "lucide-react"
+import {BaseModal, FormSection, SubmitButton} from '@/components/shared'
 import { cn } from "@/lib/utils"
-import { SubmitButton } from "@/components/shared/ActionButtons"
-import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
+
 import { useAuth } from "@/contexts/AuthContext"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useServerDate } from "@/hooks/useServerDate"
-import { BaseModal } from "@/components/shared/BaseModal"
+
 import { PINPadModal } from "@/features/pos/components/PINPadModal"
-import { SaleOrder, SaleOrderLine, CheckoutDTEData, CheckoutPaymentData, CheckoutDeliveryData, PendingDebt, AccountingSettings, CheckoutResponse, CreditApprovalTask } from "../../types"
+import {SaleOrder, SaleOrderLine, CheckoutDTEData, CheckoutPaymentData, CheckoutDeliveryData, CheckoutResponse, CreditApprovalTask} from "../../types"
 import { Contact } from "@/features/contacts/types"
 import { ManualTerminalNotice, ManualTerminalReason } from "@/features/treasury"
 
@@ -130,7 +129,6 @@ export function SalesCheckoutWizardContent({
 
     const totalSteps = steps.length;
 
-
     const [selectedCustomerId, setSelectedCustomerId] = useState(initialCustomerId)
     const [selectedCustomerName, setSelectedCustomerName] = useState(initialCustomerName)
     const [selectedCustomer, setSelectedCustomer] = useState<Contact | null>(null)
@@ -220,7 +218,6 @@ export function SalesCheckoutWizardContent({
     const [manualTerminalFailureReason, setManualTerminalFailureReason] = useState<string | null>(null)
     const [showInvoiceReminder, setShowInvoiceReminder] = useState(false)
     const [checkoutResponse, setCheckoutResponse] = useState<CheckoutResponse | null>(null)
-
 
     // Solo fetcheamos credit ledger si el cliente tiene saldo a usar.
     const creditLedgerEnabled = !!selectedCustomer && Number(selectedCustomer.credit_balance_used || 0) > 0
@@ -409,7 +406,6 @@ export function SalesCheckoutWizardContent({
             return { isValid: false }
         }
     }
-
 
     const handleNext = async () => {
         const validation = await validateCurrentStep()
@@ -723,7 +719,6 @@ export function SalesCheckoutWizardContent({
         return () => { if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current) }
     }, [])
 
-
     return (
         <div className={`flex h-full min-h-0 ${isInline ? 'flex-col' : ''}`}>
             {!isInline && (
@@ -749,7 +744,6 @@ export function SalesCheckoutWizardContent({
                 <div className="flex-1 p-6 overflow-y-auto">
                     <>
                         {/* Pending Debts Banner - Removed from here, moved to Step1_CustomerDTE */}
-
 
                         {/* Credit Approval Alert */}
                         {creditApprovalRequired && (

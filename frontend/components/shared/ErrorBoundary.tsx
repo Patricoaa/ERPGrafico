@@ -3,9 +3,8 @@
 import React, { Component, ErrorInfo, ReactNode } from "react"
 import { AlertTriangle, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { IndustryMark } from "@/components/shared/IndustryMark"
+import { IndustryMark } from '@/components/shared'
 import { getErrorMessage } from "@/lib/errors"
-import { cn } from "@/lib/utils"
 
 interface Props {
     children?: ReactNode

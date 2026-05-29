@@ -4,7 +4,7 @@ import { showApiError } from "@/lib/errors"
 
 import React, { useState, useMemo } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
-import { DataTableView, DataTableColumnHeader, EntityCard, StatusBadge } from '@/components/shared'
+import { ActionConfirmModal, DataTableColumnHeader, DataTableView, EntityCard, StatusBadge } from '@/components/shared'
 import { DataCell, createActionsColumn } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
 // useDeletePricingRule consumido vía usePricingRules.
@@ -12,7 +12,6 @@ import { PricingRuleDrawer } from "@/features/sales/components/PricingRuleDrawer
 import { toast } from "sonner"
 
 import { useConfirmAction } from "@/hooks/useConfirmAction"
-import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 
 interface PricingRule {
     id: number
@@ -214,7 +213,6 @@ export function PricingRuleClientView({ externalOpen, onExternalOpenChange, crea
             ),
         }),
     ], [])
-
 
     return (
         <div className="space-y-4 h-full flex flex-col">

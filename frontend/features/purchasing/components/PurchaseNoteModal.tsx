@@ -3,23 +3,17 @@ import { toast } from "sonner"
 
 import { showApiError } from "@/lib/errors"
 import { useState, useEffect } from "react"
-import { BaseModal } from "@/components/shared/BaseModal"
-import { Separator } from "@/components/ui/separator"
+
 import {
     ChevronRight,
     ChevronLeft,
     Check,
-    Loader2,
     FileBadge,
-    X
 } from "lucide-react"
 import { purchasingApi } from "../api/purchasingApi"
-import { validateTaxPeriod } from '@/features/tax/actions'
 import { PurchaseOrderAPI, PurchaseNoteLine } from "../types"
 import { PricingUtils } from '@/features/inventory/utils/pricing'
-import { DocumentAttachmentDropzone, PeriodValidationDateInput, LoadingFallback, FormFooter, CancelButton, SubmitButton, ActionSlideButton } from "@/components/shared"
-
-import { ShieldAlert } from "lucide-react"
+import {ActionSlideButton, BaseModal, CancelButton, FormFooter, LoadingFallback, SubmitButton} from '@/components/shared'
 
 // Components
 import { PurchaseNoteSummarySidebar } from "./notes/PurchaseNoteSummarySidebar"

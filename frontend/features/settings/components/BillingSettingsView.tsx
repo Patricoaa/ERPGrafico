@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useCallback, useState } from "react"
+import React, {useEffect, useCallback} from "react"
 import { useForm, UseFormReturn, Path } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useBillingSettings } from "@/features/settings"
@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Form, FormField, FormItem } from "@/components/ui/form"
 import { Check } from "lucide-react"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
-import { AutoSaveStatusBadge, LabeledInput, FadeIn } from "@/components/shared"
+import {AutoSaveStatusBadge, FadeIn} from "@/components/shared"
 import { useAutoSaveForm } from "@/hooks/useAutoSaveForm"
 import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard"
 
@@ -126,7 +126,6 @@ export const BillingSettingsView: React.FC<{ activeTab?: string }> = ({ activeTa
         </div>
     )
 }
-
 
 export default BillingSettingsView
 

@@ -1,15 +1,14 @@
 "use client"
 
-
 import { showApiError } from "@/lib/errors"
 import { useState, useEffect, useRef } from "react"
-import { useForm, useFieldArray, Resolver, FieldValues } from "react-hook-form"
+import {useForm, useFieldArray, FieldValues} from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import {
     Form, FormField
 } from "@/components/ui/form"
-import { CancelButton } from "@/components/shared/ActionButtons"
+
 import { TableBody, TableCell, TableRow } from "@/components/ui/table"
 import { Trash2, Save, Workflow, Box, CheckCircle2, Truck, Package, Printer } from "lucide-react"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
@@ -20,7 +19,7 @@ import { toast } from "sonner"
 import { productionApi, useAllowedDteTypes } from "../hooks"
 import { useUoMs, useProductionVariants } from "../hooks"
 import type { BOM, BOMLine, ProductMinimal, UoM } from "../types"
-import { Drawer, LabeledInput, LabeledSelect, LabeledSwitch, FormSection, FormFooter, FormLineItemsTable, IconButton, SkeletonShell, ActionSlideButton, DataCell } from "@/components/shared"
+import {ActionSlideButton, CancelButton, DataCell, Drawer, FormFooter, FormLineItemsTable, IconButton, LabeledInput, LabeledSelect, LabeledSwitch, SkeletonShell} from '@/components/shared'
 import { useVatRate } from "@/hooks/useVatRate"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { Button } from "@/components/ui/button"
@@ -114,7 +113,6 @@ export function BOMDrawer({
             console.error("Error fetching line variants:", error)
         }
     }
-
 
     const getEffectiveCost = (baseCost: number, productUomId: string | number, targetUomId: string | number) => {
         const productUom = uoms.find((u: any) => u.id.toString() === productUomId.toString())
@@ -771,7 +769,6 @@ export function BOMDrawer({
                                 </div>
                             )}
 
-
                             {/* ═══════════════════════════════════════════════════════════════ */}
                             {/* SECTION 2: SERVICIOS TERCERIZADOS (Outsourced Services) */}
                             {/* ═══════════════════════════════════════════════════════════════ */}
@@ -990,7 +987,6 @@ export function BOMDrawer({
                                     ))}
                                 </TableBody>
                             </FormLineItemsTable>
-
 
                         </fieldset>
                         </form>

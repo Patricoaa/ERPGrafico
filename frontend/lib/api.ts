@@ -41,7 +41,7 @@ api.interceptors.request.use(
         if (typeof window !== 'undefined') {
             try {
                 token = localStorage.getItem('access_token');
-            } catch (e) {}
+            } catch {}
         }
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
@@ -65,7 +65,7 @@ api.interceptors.response.use(
         if (isBrowser) {
             try {
                 refreshToken = localStorage.getItem('refresh_token');
-            } catch (e) {}
+            } catch {}
         }
         
         if (refreshToken) {
@@ -78,18 +78,18 @@ api.interceptors.response.use(
                     if (isBrowser) {
                         try {
                             localStorage.setItem('access_token', response.data.access);
-                        } catch (e) {}
+                        } catch {}
                     }
                     api.defaults.headers.common['Authorization'] = 'Bearer ' + response.data.access;
                     return api(originalRequest);
                 }
-            } catch (refreshError) {
+            } catch {
                 // Handle refresh token failure (e.g., logout)
                 if (isBrowser) {
                     try {
                         localStorage.removeItem('access_token');
                         localStorage.removeItem('refresh_token');
-                    } catch (e) {}
+                    } catch {}
                     window.location.href = '/login';
                 }
             }

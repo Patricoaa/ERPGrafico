@@ -3,7 +3,7 @@
 import React from "react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Card } from "@/components/ui/card"
-import { EntityCard } from "@/components/shared/EntityCard"
+import { EntityCard } from '@/components/shared'
 
 export function ClosuresSkeleton() {
     return (

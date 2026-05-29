@@ -3,8 +3,7 @@ import { formatCurrency } from "@/lib/money"
 
 import { AlertTriangle, CreditCard, Banknote, FileWarning, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { ActionSlideButton } from "@/components/shared/ActionSlideButton"
-
+import { ActionSlideButton } from '@/components/shared'
 
 export type ManualTerminalReason = "FACTURA_CARD" | "BOLETA_MANUAL" | "TERMINAL_BYPASS"
 

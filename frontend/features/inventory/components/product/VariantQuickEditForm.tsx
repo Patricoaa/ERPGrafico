@@ -53,8 +53,6 @@ export function VariantQuickEditForm({
   templateData,
   availableVariants = [],
   onSaved,
-  onCancel,
-  onTabChange,
 }: VariantQuickEditFormProps) {
   const [mounted, setMounted] = useState(false)
   const { uoms, isUoMsLoading } = useUoMs()

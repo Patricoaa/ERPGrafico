@@ -1,11 +1,11 @@
 "use client"
 
 import { useMemo } from "react"
-import { Card, CardContent, CardHeader } from "@/components/ui/card"
+import {Card, CardContent} from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 import { Clock, User, ChevronRight, Calendar } from "lucide-react"
-import { StatusBadge } from "@/components/shared/StatusBadge"
-import { CardSkeleton, Chip } from "@/components/shared"
+
+import { CardSkeleton, Chip, StatusBadge } from '@/components/shared'
 import { WorkOrder } from "../types"
 import { formatEntityDisplay } from "@/lib/entity-registry"
 import { isWorkOrderOverdue } from "../utils"

@@ -7,14 +7,13 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { format } from "date-fns"
 
 import { Form, FormField } from "@/components/ui/form"
-import { Button } from "@/components/ui/button"
 
 import { toast } from "sonner"
 
 import { WorkOrderBasicInfo } from "./WorkOrderBasicInfo"
 import { OriginSelectionStep } from "../../steps/OriginSelectionStep"
-import { ManufacturingSpecsEditor, emptyManufacturingData, type ManufacturingData } from "@/components/shared/manufacturing"
-import { workOrderSchema, type WorkOrderFormValues, type WorkOrderInitialData } from "@/types/forms"
+import { ManufacturingSpecsEditor, emptyManufacturingData, type ManufacturingData } from '@/components/shared'
+import {workOrderSchema, type WorkOrderFormValues, type WorkOrderInitialData } from "@/types/forms"
 import { LabeledInput, SkeletonShell } from "@/components/shared"
 import type { Contact } from "@/features/contacts/types"
 import type { ProductMinimal } from "../../../types"
@@ -46,7 +45,6 @@ export function WorkOrderBasicStep({
     defaultOtType,
     defaultProductId,
     chosenOtType,
-    onTypeChange,
     onSuccess,
     formId = FORM_DEFAULT_ID,
     onLoadingChange,

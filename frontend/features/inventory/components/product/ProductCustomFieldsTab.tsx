@@ -1,9 +1,9 @@
 import { Button } from "@/components/ui/button"
 import { Plus, Settings2 } from "lucide-react"
-import { EmptyState } from "@/components/shared/EmptyState"
+
 import { UseFormReturn, useFieldArray } from "react-hook-form"
 import { ProductFormValues } from "./schema"
-import { DataCell, FormTabsContent } from "@/components/shared"
+import { DataCell, EmptyState, FormTabsContent } from '@/components/shared'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table"
 import { CustomFieldTemplate } from "@/types/entities"

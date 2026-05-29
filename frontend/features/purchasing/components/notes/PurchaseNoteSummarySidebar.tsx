@@ -1,6 +1,3 @@
-
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-
 import { Separator } from "@/components/ui/separator"
 import { Progress } from "@/components/ui/progress"
 import { formatCurrency } from "@/lib/money"
@@ -13,7 +10,6 @@ import {
     Calendar,
     Receipt,
     AlertCircle,
-    CheckCircle2,
     ArrowLeft
 } from "lucide-react"
 

@@ -5,11 +5,6 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { showApiError } from '@/lib/errors'
 
-interface LoginPayload {
-  username: string
-  password: string
-}
-
 export function useAuthLogin() {
   const { login: authLogin } = useAuth()
   const router = useRouter()

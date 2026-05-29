@@ -1,9 +1,8 @@
 "use client"
 
-import { useState } from "react"
-import { Package, Zap, Factory, Wrench, Repeat, ChevronDown } from "lucide-react"
+import { Package, Zap, Factory, Wrench, Repeat } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select"
 import { LabeledContainer } from "@/components/shared"
 
 interface ProductTypeSelectorProps {
@@ -33,8 +32,6 @@ export function ProductTypeSelector({
     error,
     lockedType
 }: ProductTypeSelectorProps) {
-    const [open, setOpen] = useState(false)
-    
     const selectedType = PRODUCT_TYPES.find(t => t.id === value)
     const isDisabled = disabled || !!lockedType
 

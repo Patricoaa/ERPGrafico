@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react"
 import { useTerminalProviders, useTerminalDevices, type PaymentTerminalProvider, type PaymentTerminalDevice } from "../hooks/useTerminalProviders"
 import { Button } from "@/components/ui/button"
-import { StatusBadge, IconButton, SmartSearchBar, useSmartSearch, useClientSearch } from "@/components/shared"
+import { ActionConfirmModal, EntityCard, IconButton, SmartSearchBar, StatusBadge, useClientSearch, useSmartSearch } from '@/components/shared'
 import { deviceSearchDef, providerSearchDef } from "@/features/treasury/searchDef"
 import {
     Settings,
@@ -15,13 +15,13 @@ import {
     Link as LinkIcon,
     User as UserIcon
 } from "lucide-react"
-import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { DataTableView } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { createActionsColumn, DataCell } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
-import { EntityCard } from "@/components/shared/EntityCard"
+
 import { ProviderDrawer } from "./ProviderDrawer"
 import { DeviceDrawer } from "./DeviceDrawer"
 
@@ -88,8 +88,6 @@ export function PaymentHardwareManagement({
         setEditingProvider(provider)
         setProviderDialogOpen(true)
     }
-
-
 
     const handleEditDevice = (device: PaymentTerminalDevice) => {
         setEditingDevice(device)
@@ -193,7 +191,6 @@ export function PaymentHardwareManagement({
             )
         })
     ]
-
 
     return (
         <div className="h-full flex flex-col">
@@ -377,9 +374,5 @@ export function PaymentHardwareManagement({
         </div>
     )
 }
-
-
-
-
 
 export default PaymentHardwareManagement

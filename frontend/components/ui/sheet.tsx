@@ -52,6 +52,7 @@ function SheetOverlay({
   )
 
   if (isPlain) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { forceMount, asChild, ...divProps } = props
     return (
       <div

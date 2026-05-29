@@ -5,7 +5,6 @@ import { Drawer, SkeletonShell, StatusBadge } from "@/components/shared"
 import { Button } from "@/components/ui/button"
 import { Printer, Undo2 } from "lucide-react"
 import { useReactToPrint } from "react-to-print"
-import { formatCurrency } from "@/lib/money"
 import { PrintableLayout } from "@/features/_shared/transaction-drawer"
 import { usePurchaseReturn } from "../hooks/usePurchasing"
 

@@ -1,7 +1,6 @@
 "use client"
 
-import { lazy, Suspense } from "react"
-import { PageHeader } from "@/components/shared/PageHeader"
+
 import { useSearchParams } from "next/navigation"
 import { UsersSettingsView } from "@/features/settings"
 

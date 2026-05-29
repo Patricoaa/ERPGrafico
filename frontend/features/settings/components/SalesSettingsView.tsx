@@ -16,7 +16,7 @@ import {
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { UserSelector } from "@/components/selectors/UserSelector"
 import { GroupSelector } from "@/components/selectors/GroupSelector"
-import { AutoSaveStatusBadge, LabeledInput, LabeledSwitch, LabeledContainer } from "@/components/shared"
+import {AutoSaveStatusBadge, LabeledInput, LabeledSwitch} from "@/components/shared"
 import { SalesSettingsUpdatePayload } from "@/features/settings/types"
 import { cn } from "@/lib/utils"
 import { useAutoSaveForm } from "@/hooks/useAutoSaveForm"
@@ -109,7 +109,6 @@ const DiscountPermissionControl = ({ form, userField, groupField }: { form: UseF
         </div>
     )
 }
-
 
 export function SalesSettingsView({ activeTab = "income" }: { activeTab?: string }) {
     const { settings, updateSettings } = useSalesSettings()
@@ -374,5 +373,4 @@ export function SalesSettingsView({ activeTab = "income" }: { activeTab?: string
         </div>
     )
 }
-
 

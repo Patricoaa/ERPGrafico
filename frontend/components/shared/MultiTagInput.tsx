@@ -1,10 +1,10 @@
 "use client"
 
 import React, { useState, useRef, KeyboardEvent } from "react"
-import { X, Plus } from "lucide-react"
+import { X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
-import { IconButton } from "@/components/shared/ActionButtons"
+import { IconButton } from '@/components/shared'
 
 interface MultiTagInputProps {
     label?: string

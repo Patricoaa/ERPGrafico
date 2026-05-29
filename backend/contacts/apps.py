@@ -50,7 +50,7 @@ class ContactsConfig(AppConfig):
             ))
             UniversalRegistry.register(SearchableEntity(
                 model=ProfitDistributionResolution,
-                label='contacts.profitdistribution',
+                label='contacts.profitdistributionresolution',
                 title_singular='Distribución de Utilidades',
                 title_plural='Distribuciones de Utilidades',
                 icon='pie-chart',

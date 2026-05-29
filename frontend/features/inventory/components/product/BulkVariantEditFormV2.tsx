@@ -55,7 +55,6 @@ export function BulkVariantEditFormV2({
   templateData,
   availableVariants = [],
   onSaved,
-  onCancel,
 }: BulkVariantEditFormV2Props) {
   const [mounted, setMounted] = useState(false)
   const { uoms, isLoading: isUoMsLoading } = useUoMs()

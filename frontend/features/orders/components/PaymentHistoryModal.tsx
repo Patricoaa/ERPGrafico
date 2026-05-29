@@ -1,6 +1,6 @@
 "use client"
-import { BaseModal } from "@/components/shared/BaseModal"
-import { DataTable, DataCell } from "@/components/shared"
+
+import { BaseModal, DataCell, DataTable } from '@/components/shared'
 import { formatCurrency } from "@/lib/money"
 import { Landmark, User, Hash, FileText } from "lucide-react"
 import { formatEntityDisplay } from "@/lib/entity-registry"

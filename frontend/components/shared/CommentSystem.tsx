@@ -1,8 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { MessageSquare, Send, History } from "lucide-react"
-import { EmptyState } from "@/components/shared/EmptyState"
+import { MessageSquare, Send } from "lucide-react"
+import { EmptyState } from '@/components/shared'
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"

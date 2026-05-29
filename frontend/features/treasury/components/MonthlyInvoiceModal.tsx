@@ -1,14 +1,12 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { SubmitButton, CancelButton, LabeledInput, LabeledSelect, BaseModal, PeriodValidationDateInput, FormFooter } from "@/components/shared"
+import { BaseModal, CancelButton, DocumentAttachmentDropzone, FormFooter, LabeledInput, LabeledSelect, PeriodValidationDateInput, SubmitButton } from '@/components/shared'
 import { FileSpreadsheet } from "lucide-react"
 import { toast } from "sonner"
 import { useServerDate } from "@/hooks/useServerDate"
 import { useMonthlyInvoice } from "@/features/treasury/hooks/useMonthlyInvoice"
 import { useSuppliers } from "@/features/treasury/hooks/useSuppliers"
-
-import { DocumentAttachmentDropzone } from "@/components/shared/DocumentAttachmentDropzone"
 
 interface MonthlyInvoiceModalProps {
     open: boolean
@@ -64,7 +62,7 @@ export function MonthlyInvoiceModal({ open, onOpenChange }: MonthlyInvoiceModalP
 
             await generateInvoice(formData)
             onOpenChange(false)
-        } catch (error: unknown) {
+        } catch {
             // Error handled by hook
         }
     }

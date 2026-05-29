@@ -2,10 +2,8 @@
 
 import { showApiError } from "@/lib/errors"
 import { useState, useEffect } from "react"
-import { BaseModal } from "@/components/shared/BaseModal"
-import { Button } from "@/components/ui/button"
 
-import { FileBadge, Loader2, CheckCircle2, AlertCircle, ShieldAlert } from "lucide-react"
+import {FileBadge, AlertCircle} from "lucide-react"
 import { useSaleOrder, useSalesOrders } from "../hooks/useSalesOrders"
 import { useInvoice, useInvoices } from "@/features/billing"
 import { toast } from "sonner"
@@ -14,8 +12,7 @@ import { PricingUtils } from '@/features/inventory/utils/pricing'
 import { Card } from "@/components/ui/card"
 import { formatEntityDisplay } from "@/lib/entity-registry"
 
-import { DocumentAttachmentDropzone } from "@/components/shared/DocumentAttachmentDropzone"
-import { EmptyState, PeriodValidationDateInput, SkeletonShell, LabeledContainer, LabeledInput, LabeledSelect, CancelButton, SubmitButton, FormFooter, FormSection } from "@/components/shared"
+import { BaseModal, CancelButton, DocumentAttachmentDropzone, EmptyState, FormFooter, FormSection, LabeledContainer, LabeledInput, LabeledSelect, PeriodValidationDateInput, SkeletonShell, SubmitButton } from '@/components/shared'
 
 import { SaleOrderLine, SaleNoteLine } from "../types"
 
@@ -77,13 +74,11 @@ export function SaleNoteModal({ open, onOpenChange, ...props }: SaleNoteModalPro
 
 export function SaleNoteForm({
     orderId,
-    orderNumber,
     invoiceId,
     onSuccess,
     initialType = "NOTA_CREDITO",
     id = "sale-note-form",
     onLoadingChange,
-    onCancel
 }: SaleNoteFormProps) {
     const [noteType, setNoteType] = useState(initialType)
     const [documentNumber, setDocumentNumber] = useState("")

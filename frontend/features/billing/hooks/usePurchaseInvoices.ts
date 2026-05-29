@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { billingApi } from '../api/billingApi'
 import { toast } from 'sonner'
-import type { Invoice, InvoiceFilters } from '../types'
+import type {InvoiceFilters} from '../types'
 import { PURCHASING_KEYS } from '@/features/purchasing'
 
 import { PURCHASE_INVOICES_QUERY_KEY } from './queryKeys'

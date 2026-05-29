@@ -1,11 +1,10 @@
 "use client"
 import { formatCurrency } from "@/lib/money";
 
-import { SkeletonShell } from "@/components/shared"
+import { BaseModal, SkeletonShell, StatusBadge } from '@/components/shared'
 
-import { useState, useEffect } from "react"
-import { useRouter, usePathname, useSearchParams } from "next/navigation"
-import { BaseModal } from "@/components/shared/BaseModal"
+import {useState} from "react"
+
 import { DataTable, StatCard } from "@/components/shared"
 import {
     History,
@@ -22,7 +21,7 @@ import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { DataCell } from '@/components/shared'
 import { formatEntityDisplay } from "@/lib/entity-registry"
-import { StatusBadge } from "@/components/shared/StatusBadge"
+
 import { FormTabs, FormTabsContent } from "@/components/shared"
 import { LazyDrawer, type TransactionType } from "@/features/_shared/transaction-drawer"
 import { WorkOrderWizard } from "@/features/production"
@@ -37,7 +36,6 @@ import {
     AreaChart,
     Area
 } from 'recharts'
-import { Button } from "@/components/ui/button"
 
 interface ProductInsightsModalProps {
     productId: number | null

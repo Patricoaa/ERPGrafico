@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import {useRouter} from "next/navigation";
 import api from "@/lib/api";
 import { useTheme } from "next-themes";
 
@@ -34,7 +34,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const router = useRouter();
-    const pathname = usePathname();
+
     const { setTheme } = useTheme();
 
     const fetchUser = async () => {
@@ -69,7 +69,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 try {
                     localStorage.removeItem("access_token");
                     localStorage.removeItem("refresh_token");
-                } catch (e) {}
+                } catch {}
             }
         } finally {
             setIsLoading(false);

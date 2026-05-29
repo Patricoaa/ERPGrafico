@@ -3,13 +3,13 @@
 import { showApiError, getErrorMessage } from "@/lib/errors"
 import { useState, useEffect, forwardRef, useImperativeHandle, Suspense } from "react"
 import { cn } from "@/lib/utils"
-import { Chip } from "@/components/shared"
+import { ActionConfirmModal, Chip } from '@/components/shared'
 import { ActionButton } from "./ActionButton"
-import { Action, ActionCategory as CategoryType } from "@/types/actions"
+import {ActionCategory as CategoryType} from "@/types/actions"
 import { getActionBadgeCount } from '@/lib/action-utils'
 import dynamic from "next/dynamic"
 import { toast } from "sonner"
-import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+
 import { SkeletonShell } from "@/components/shared"
 
 // Lazy Loaded Modals to satisfy PERF-01 (Prevent massive bundle on Hub Engine)
@@ -33,7 +33,6 @@ import {
     useRegisterPaymentMovement,
 } from "../hooks/useOrdersMutations"
 
-import { useRouter } from "next/navigation"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { Order, OrderLine } from "../types"
 
@@ -142,7 +141,6 @@ export const ActionCategory = forwardRef(({
             triggerAction(actionId);
             return;
         }
-
 
         switch (actionId) {
             case 'complete-folio':

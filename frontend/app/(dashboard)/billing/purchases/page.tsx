@@ -6,23 +6,23 @@ import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
-import { Chip } from "@/components/shared"
+import { ActionConfirmModal, Chip, DocumentCompletionModal, MoneyDisplay } from '@/components/shared'
 import { FileBadge, History, FileEdit, MoreVertical } from "lucide-react"
 import api from "@/lib/api"
-import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
+
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { toast } from "sonner"
 import { LazyDrawer } from "@/features/_shared"
 import { PaymentModal } from "@/features/treasury"
 import { ReceiptModal, PurchaseNoteModal } from "@/features/purchasing"
-import { DocumentCompletionModal } from "@/components/shared/DocumentCompletionModal"
+
 import { Progress } from "@/components/ui/progress"
 import { DataTableView, DataCell, DataTableColumnHeader } from '@/components/shared'
 import { formatPlainDate } from "@/lib/utils"
 import { useSmartSearch, SmartSearchBar, StatusBadge } from "@/components/shared"
 import { getDtePrefix } from "@/lib/entity-registry"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
-import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+
 import { usePurchaseInvoices, purchaseInvoiceSearchDef } from "@/features/billing"
 
 interface PurchaseDocument {
@@ -50,8 +50,6 @@ interface PurchaseDocument {
         payments: Record<string, unknown>[]
     }
 }
-
-
 
 interface PurchasePaymentData {
     amount: string | number
@@ -117,7 +115,6 @@ export default function PurchaseInvoicesPage() {
             router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
         }
     }, [isHubOpen, hubEverOpened, selectedId, pathname, searchParams, router])
-
 
     const deleteConfirm = useConfirmAction<number>(async (id) => {
         try {
@@ -458,7 +455,6 @@ export default function PurchaseInvoicesPage() {
                 )
             }
 
-
             {
                 notingDoc && (
                     <PurchaseNoteModal
@@ -518,5 +514,4 @@ export default function PurchaseInvoicesPage() {
         </div>
     )
 }
-
 

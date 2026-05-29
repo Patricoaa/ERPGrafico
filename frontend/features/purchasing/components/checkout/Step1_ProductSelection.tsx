@@ -11,16 +11,16 @@ import {
 } from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Plus, Trash2, ShoppingCart } from "lucide-react"
+import {Plus, ShoppingCart} from "lucide-react"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { UoMSelector } from "@/components/selectors/UoMSelector"
 import { purchasingApi } from "../../api/purchasingApi"
 import { toast } from "sonner"
-import { EmptyState } from "@/components/shared/EmptyState"
+
 import { CheckoutLine } from "../../types"
 import { ProductMinimal, UoM } from "@/types/entities"
 import { formatCurrency } from "@/lib/money"
-import { MoneyDisplay, DataCell } from "@/components/shared"
+import { DataCell, EmptyState, MoneyDisplay } from '@/components/shared'
 
 interface Step1_ProductSelectionProps {
     orderLines: CheckoutLine[]
@@ -130,7 +130,6 @@ export function Step1_ProductSelection({
             handleAddLine()
         }
     }, [])
-
 
     return (
         <div className="space-y-4">

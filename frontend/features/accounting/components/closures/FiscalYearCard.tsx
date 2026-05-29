@@ -1,7 +1,7 @@
 import React from 'react';
-import { EntityCard } from '@/components/shared/EntityCard';
-import { StatusBadge } from '@/components/shared/StatusBadge';
-import { SubmitButton, IconButton } from '@/components/shared';
+;
+;
+import { EmptyState, EntityCard, IconButton, StatusBadge, SubmitButton } from '@/components/shared';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -12,7 +12,7 @@ import {
 import { FiscalYear, AccountingPeriod } from '../../types';
 import { CalendarRange, Lock, MoreVertical, PlayCircle, Settings2, ShieldAlert } from 'lucide-react';
 import { PeriodGridItem } from './PeriodGridItem';
-import { EmptyState } from '@/components/shared/EmptyState';
+;
 import { formatPlainDate } from '@/lib/utils';
 
 interface FiscalYearCardProps {
@@ -44,8 +44,6 @@ export function FiscalYearCard({
     // Default to OPEN if fiscal year model doesn't exist yet for this year
     const status = fiscalYear?.status || 'OPEN';
     const isClosed = status === 'CLOSED';
-
-
 
     return (
         <EntityCard className="mb-6 cursor-default">

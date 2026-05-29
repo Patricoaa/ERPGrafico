@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { getEmployees, getEmployee, getAFPs, getPayrollConcepts } from '../api/hrApi'
-import type { Employee, AFP, PayrollConcept } from '@/types/hr'
+import type {Employee, PayrollConcept} from '@/types/hr'
 import type { FilterState } from '@/components/shared'
 
 export const EMPLOYEES_QUERY_KEY = ['hr', 'employees'] as const

@@ -17,7 +17,7 @@
 
 import React from 'react'
 import { resolveStatus } from '@/lib/badge-resolvers'
-import { Badge } from '@/components/shared/Badge'
+import { Badge } from '@/components/shared'
 import type { LucideIcon } from 'lucide-react'
 
 export interface StatusBadgeProps {

@@ -1,7 +1,7 @@
 "use client"
 
 import { TerminalBatchesManagement } from "@/features/treasury"
-import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
+import { ToolbarCreateButton } from '@/components/shared'
 import { useState } from "react"
 
 export default function TerminalBatchesPage() {

@@ -1,7 +1,6 @@
 "use client"
 
-import React, { createContext, useContext, useState, useCallback, useMemo, useEffect } from "react"
-import { usePathname } from "next/navigation"
+import React, { createContext, useContext, useState, useCallback, useMemo } from "react"
 
 import { LucideIcon } from "lucide-react"
  
@@ -52,7 +51,6 @@ const HeaderContext = createContext<HeaderContextType | undefined>(undefined)
 
 export function HeaderProvider({ children }: { children: React.ReactNode }) {
     const [config, setConfig] = useState<HeaderConfig | null>(null)
-    const pathname = usePathname()
 
     const setHeader = useCallback((newConfig: HeaderConfig | null) => {
         setConfig(newConfig)

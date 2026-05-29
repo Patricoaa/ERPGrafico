@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { LabeledInput, LabeledContainer, PeriodValidationDateInput } from "@/components/shared"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Truck, Package, Calendar, Info, AlertTriangle, ShoppingBag } from "lucide-react"
+import {Truck, Package, Calendar, AlertTriangle, ShoppingBag} from "lucide-react"
 import { billingApi } from "../../api/billingApi"
 import { cn } from "@/lib/utils"
 import { useServerDate } from "@/hooks/useServerDate"

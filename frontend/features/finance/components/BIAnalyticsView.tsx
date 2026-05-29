@@ -18,9 +18,9 @@ import {
     Cell
 } from 'recharts';
 import { financeApi } from "../api/financeApi";
-import { TrendingUp, TrendingDown, Package, DollarSign, ShoppingCart } from 'lucide-react';
-import { CardSkeleton, MoneyDisplay, StatCard } from "@/components/shared";
-import { EmptyState } from "@/components/shared/EmptyState";
+import {TrendingUp, Package, DollarSign, ShoppingCart} from 'lucide-react';
+import { CardSkeleton, EmptyState, MoneyDisplay, StatCard } from '@/components/shared';
+;
 import { formatCurrency } from "@/lib/money";
 import { DateRange } from "react-day-picker";
 import { format } from "date-fns";

@@ -42,7 +42,7 @@ export function useDrafts(options: UseDraftsOptions = {}) {
     const [isLoading, setIsLoading] = useState(false)
 
     // Fetch all drafts
-    const fetchDrafts = useCallback(async () => {
+    const fetchDrafts = async () => {
         if (!currentSession?.id) return
         setIsLoading(true)
         try {
@@ -62,7 +62,7 @@ export function useDrafts(options: UseDraftsOptions = {}) {
         } finally {
             setIsLoading(false)
         }
-    }, [currentSession?.id, currentDraftId, setCurrentDraftId, setWizardState])
+    }
 
     // Mutation hooks for draft operations
     const queryClient = useQueryClient()

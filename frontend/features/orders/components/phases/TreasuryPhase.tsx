@@ -8,7 +8,7 @@ import { formatEntity } from '@/features/orders/utils/status'
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 import { useDeletePayment, useAnnulPayment } from "../../hooks/useOrdersMutations"
-import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+import { ActionConfirmModal } from '@/components/shared'
 import { TransactionNumberDrawer } from "@/features/finance/components/TransactionNumberDrawer"
 import { saleOrderActions } from '@/features/sales/actions'
 import { purchaseOrderActions } from '@/features/purchasing/actions'

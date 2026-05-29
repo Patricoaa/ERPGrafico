@@ -23,7 +23,6 @@ import { useServerDate } from "@/hooks/useServerDate"
 import { useReactToPrint } from "react-to-print"
 import { formatCurrency } from "@/lib/money"
 
-
 import { PrintableLayout } from "@/features/_shared/transaction-drawer"
 import { useJournalEntry } from "@/features/accounting/hooks/useJournalEntries"
 import { Chip, Drawer, LabeledInput, CancelButton, IconButton, PeriodValidationDateInput, ActionSlideButton, FormFooter, FormSplitLayout, FormSection, AccountingLinesTable, SkeletonShell, StatusBadge, SourceDocumentLink } from "@/components/shared";
@@ -72,8 +71,6 @@ interface JournalEntryDrawerProps {
     journalEntryId?: number
 }
 
-
-
 export function JournalEntryDrawer({
     accounts: accountsProp,
     onSuccess,
@@ -82,7 +79,6 @@ export function JournalEntryDrawer({
     triggerVariant = "default",
     open: openProp,
     onOpenChange,
-    auditSidebar,
     inline = false,
     onLoadingChange,
     mode: modeProp,

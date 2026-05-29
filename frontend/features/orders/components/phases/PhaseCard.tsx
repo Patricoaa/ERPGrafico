@@ -42,7 +42,6 @@ export function PhaseCard({
     actions,
     order,
     userPermissions,
-    onActionSuccess,
     variant = 'neutral',
     documents = [],
     onViewDetail,
@@ -120,7 +119,6 @@ export function PhaseCard({
             isActive && "border-primary/30 bg-primary/5 shadow-primary/5",
             className
         )}>
-
 
             {/* HEADER — Clickable when collapsible */}
             <div

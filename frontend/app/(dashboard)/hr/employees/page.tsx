@@ -5,17 +5,17 @@ import { useRouter } from "next/navigation"
 import { EmployeeDrawer } from "@/features/hr"
 import type { Employee } from "@/types/hr"
 import { ColumnDef } from "@tanstack/react-table"
-import { DataTableView } from '@/components/shared'
+import { DataTableView, EntityCard, StatusBadge } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { createActionsColumn, DataCell } from '@/components/shared'
-import { StatusBadge } from "@/components/shared/StatusBadge"
+
 import { useSearchParams, usePathname } from "next/navigation"
 import { Pencil } from "lucide-react"
 import { ToolbarCreateButton, SmartSearchBar, useSmartSearch } from "@/components/shared"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { useEmployees } from "@/features/hr"
 import { employeeSearchDef } from "@/features/hr/searchDef"
-import { EntityCard } from "@/components/shared/EntityCard"
+
 import { createEntityCardView } from "@/lib/view-helpers"
 
 // Employee schemas and types moved to features/hr/components/EmployeeFormDialog

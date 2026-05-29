@@ -4,7 +4,7 @@ import { showApiError } from "@/lib/errors"
 
 import React, { useMemo } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
-import { DataTableView, DataTableColumnHeader, EntityCard, StatusBadge } from '@/components/shared'
+import { ActionConfirmModal, DataTableColumnHeader, DataTableView, EntityCard, StatusBadge } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Trash2 } from "lucide-react"
@@ -14,7 +14,7 @@ import type { BulkAction } from "@/components/shared"
 import { UoMDrawer } from "./UoMDrawer"
 import { toast } from "sonner"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
-import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
 import { useUoMs, type UoM } from "@/features/inventory/hooks/useUoMs"
@@ -152,7 +152,6 @@ export function UoMClientView({ externalOpen, onExternalOpenChange, createAction
             onClick: async (items) => bulkDeleteConfirm.requestConfirm(items),
         },
     ], [deleteUoM, bulkDeleteConfirm])
-
 
     return (
         <div className="space-y-4 h-full flex flex-col">

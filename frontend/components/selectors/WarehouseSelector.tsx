@@ -10,7 +10,7 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover"
 import { useWarehouses } from "@/features/inventory/hooks/useWarehouses"
-import { EmptyState } from "@/components/shared/EmptyState"
+import { EmptyState } from '@/components/shared'
 import { Warehouse } from "@/types/entities"
 
 interface WarehouseSelectorProps {

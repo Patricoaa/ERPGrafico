@@ -1,21 +1,17 @@
 "use client"
-import { formatCurrency } from "@/lib/money"
 
 import { showApiError } from "@/lib/errors"
 import React, { useState, useEffect } from "react"
-import { BaseModal } from "@/components/shared/BaseModal"
-import { Button } from "@/components/ui/button"
-import { CancelButton, SubmitButton, IconButton, DataCell } from "@/components/shared"
+
+import { BaseModal, CancelButton, DataCell, EmptyState, IconButton, LabeledContainer, SubmitButton } from '@/components/shared'
 import { Input } from "@/components/ui/input"
-import { LabeledContainer } from "@/components/shared/LabeledContainer"
+
 import { toast } from "sonner"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
-import { Trash2, Plus, Users, Calculator, Info } from "lucide-react"
+import {Trash2, Users, Info} from "lucide-react"
 
-import { EmptyState } from "@/components/shared/EmptyState"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import type { Partner } from "@/features/contacts/types/partner"
 
 interface InitialCapitalModalProps {
     open: boolean

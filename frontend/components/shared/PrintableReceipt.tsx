@@ -13,7 +13,7 @@ interface PrintableReceiptProps {
 }
 
 export const PrintableReceipt = forwardRef<HTMLDivElement, PrintableReceiptProps>(
-    function PrintableReceipt({ data, currentType, mainTitle, subTitle }, ref) {
+    function PrintableReceipt({ data, mainTitle, subTitle }, ref) {
         const { logo } = useBranding()
 
         const lines = (data?.lines ?? data?.items ?? []) as TransactionLine[]

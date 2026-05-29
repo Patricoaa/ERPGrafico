@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useMemo } from "react"
 import { Check, ChevronDown, Search, Loader2 } from "lucide-react"
 import { getEntityIcon } from "@/lib/entity-registry"
 import { cn } from "@/lib/utils"
@@ -10,8 +10,8 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover"
-import { BaseModal } from "@/components/shared/BaseModal"
-import { EmptyState } from "@/components/shared/EmptyState"
+
+import { BaseModal, EmptyState } from '@/components/shared'
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useAccountSearch, useSingleAccount } from "@/features/accounting/hooks/useAccountSearch"
