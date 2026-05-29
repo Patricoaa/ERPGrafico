@@ -43,13 +43,6 @@ export function OrderActionPanel({
         ? purchaseOrderActions
         : saleOrderActions
 
-    useEffect(() => {
-        if (open && orderId) {
-            fetchOrderDetails()
-            fetchUserPermissions()
-        }
-    }, [open, orderId])
-
     const fetchOrderDetails = async () => {
         setLoading(true)
         try {
@@ -77,6 +70,13 @@ export function OrderActionPanel({
             setUserPermissions({ permissions: [], isSuperuser: false })
         }
     }
+
+    useEffect(() => {
+        if (open && orderId) {
+            fetchOrderDetails()
+            fetchUserPermissions()
+        }
+    }, [open, orderId])
 
     const filteredActions = order && userPermissions
         ? filterAvailableActions(actionRegistry, order, userPermissions)

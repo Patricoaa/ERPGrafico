@@ -116,14 +116,17 @@ export function PartnerLedgerTab() {
     // Calculate Running Balance
     const txsWithBalance = React.useMemo(() => {
         const sorted = [...transactions].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-        let balance = 0
-        const withBal = sorted.map(tx => {
-            const amount = parseFloat(tx.amount) || 0
-            if (isInflow(tx.transaction_type)) balance += amount
-            else if (isOutflow(tx.transaction_type)) balance -= amount
-            return { ...tx, balance_after: balance }
-        })
-        return withBal.reverse() // Display newest first
+        const { result } = sorted.reduce<{ result: Array<PartnerTransaction & { balance_after: number }>, balance: number }>(
+            (acc, tx) => {
+                const amount = parseFloat(tx.amount) || 0
+                let newBalance = acc.balance
+                if (isInflow(tx.transaction_type)) newBalance += amount
+                else if (isOutflow(tx.transaction_type)) newBalance -= amount
+                return { result: [...acc.result, { ...tx, balance_after: newBalance }], balance: newBalance }
+            },
+            { result: [], balance: 0 }
+        )
+        return result.reverse() // Display newest first
     }, [transactions])
 
     const columns: ColumnDef<TransactionWithBalance>[] = [

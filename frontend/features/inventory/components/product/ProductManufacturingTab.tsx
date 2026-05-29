@@ -185,7 +185,7 @@ export function ProductManufacturingTab({ form, products, uoms, variantMode = fa
                             <Info className="h-3.5 w-3.5 text-info mt-0.5 shrink-0" />
                             <p className="text-[10px] text-info/80 font-medium leading-relaxed">
                                 Esta receta aplica al <strong>producto plantilla</strong>.
-                                Para gestionar las recetas de las variantes, use <strong>"Clonar BOM"</strong> en el Tab Variantes.
+                                Para gestionar las recetas de las variantes, use <strong>&quot;Clonar BOM&quot;</strong> en el Tab Variantes.
                             </p>
                         </div>
                     )}
@@ -273,7 +273,7 @@ export function ProductManufacturingTab({ form, products, uoms, variantMode = fa
                                 {!isBOMsLoading && boms.length === 0 && (
                                     <TableRow>
                                         <TableCell colSpan={4} className="text-center py-8 text-muted-foreground text-xs italic">
-                                            No hay recetas configuradas. Haga clic en "Nueva Lista de Materiales".
+                                            No hay recetas configuradas. Haga clic en &quot;Nueva Lista de Materiales&quot;.
                                         </TableCell>
                                     </TableRow>
                                 )}

@@ -33,18 +33,6 @@ export function BudgetVarianceView() {
     const [data, setData] = useState<BudgetVarianceNode[]>([]);
     const [loading, setLoading] = useState(false);
 
-    // Load available budgets
-    useEffect(() => {
-        loadBudgets();
-    }, []);
-
-    // Load variance data when selection changes
-    useEffect(() => {
-        if (selectedBudget) {
-            loadVariance();
-        }
-    }, [selectedBudget, selectedMonth, selectedYear]);
-
     const loadBudgets = async () => {
         try {
             const budgetsData = await financeApi.getBudgets();
@@ -74,6 +62,18 @@ export function BudgetVarianceView() {
             setLoading(false);
         }
     };
+
+    // Load available budgets
+    useEffect(() => {
+        loadBudgets();
+    }, []);
+
+    // Load variance data when selection changes
+    useEffect(() => {
+        if (selectedBudget) {
+            loadVariance();
+        }
+    }, [selectedBudget, selectedMonth, selectedYear]);
 
     // Calculate top-level summary sums from the tree
     const summary = useMemo(() => {

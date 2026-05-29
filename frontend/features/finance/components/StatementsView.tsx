@@ -25,6 +25,59 @@ import { es } from 'date-fns/locale'
 import { cn } from "@/lib/utils"
 import { useServerDate } from "@/hooks/useServerDate"
 
+function ReportHeader({ title, dateRange, compDateRange, showComparison, headerFormat, accent = 'primary' }: { title: string, dateRange?: DateRange, compDateRange?: DateRange, showComparison?: boolean, headerFormat: 'year' | 'month-year' | 'day-month-year', accent?: 'primary' | 'success' | 'info' }) {
+    const getPeriodLabel = (range: DateRange | undefined) => {
+        if (!range?.from || !range?.to) return ""
+        const fromDate = range.from
+        const toDate = range.to
+
+        if (headerFormat === 'year') {
+            const fromYear = fromDate.getFullYear()
+            const toYear = toDate.getFullYear()
+            if (fromYear === toYear) return `${fromYear}`
+            return `${fromYear}-${toYear}`
+        }
+
+        if (headerFormat === 'month-year') {
+            const fromStr = format(fromDate, 'MMM yyyy', { locale: es })
+            const toStr = format(toDate, 'MMM yyyy', { locale: es })
+            if (fromStr === toStr) return fromStr
+            if (fromDate.getFullYear() === toDate.getFullYear()) {
+                return `${format(fromDate, 'MMM', { locale: es })}-${format(toDate, 'MMM yyyy', { locale: es })}`
+            }
+            return `${format(fromDate, 'MMM yyyy', { locale: es })}-${format(toDate, 'MMM yyyy', { locale: es })}`
+        }
+
+        const fromStr = format(fromDate, 'dd/MM/yyyy')
+        const toStr = format(toDate, 'dd/MM/yyyy')
+        if (fromStr === toStr) return fromStr
+        return `${fromStr} - ${toStr}`
+    }
+
+    return (
+        <div className="flex flex-col items-start text-left space-y-1 mb-8 pb-6 border-b w-full relative">
+            <h2 className="text-2xl font-black uppercase tracking-tight text-foreground dark:text-foreground">{title}</h2>
+            {dateRange?.from && dateRange?.to && (
+                <p className="text-xs text-muted-foreground font-semibold flex items-center gap-1.5 flex-wrap">
+                    <span>Período:</span>
+                    <span className="font-bold text-foreground bg-foreground/5 px-2 py-0.5 rounded-sm border border-border/20">{getPeriodLabel(dateRange)}</span>
+                    {showComparison && compDateRange?.from && compDateRange?.to && (
+                        <>
+                            <span className="text-[10px] text-muted-foreground/60 font-black uppercase px-0.5">vs</span>
+                            <span className="font-bold text-foreground bg-foreground/5 px-2 py-0.5 rounded-sm border border-border/20">{getPeriodLabel(compDateRange)}</span>
+                        </>
+                    )}
+                </p>
+            )}
+            <div className={cn(
+                "absolute bottom-0 left-0 w-16 h-1 rounded-full",
+                accent === 'primary' ? 'bg-primary' :
+                    accent === 'success' ? 'bg-success' : 'bg-info'
+            )} />
+        </div>
+    )
+}
+
 interface StatementsViewProps {
     activeTab: string
 }
@@ -103,31 +156,8 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
         return `${fromStr} - ${toStr}`
     }
 
-    const periodLabel = getPeriodLabel(date)
-    const compPeriodLabel = getPeriodLabel(compDate)
-
-    const ReportHeader = ({ title, dateRange, compDateRange, showComparison, accent = 'primary' }: { title: string, dateRange?: DateRange, compDateRange?: DateRange, showComparison?: boolean, accent?: 'primary' | 'success' | 'info' }) => (
-        <div className="flex flex-col items-start text-left space-y-1 mb-8 pb-6 border-b w-full relative">
-            <h2 className="text-2xl font-black uppercase tracking-tight text-foreground dark:text-foreground">{title}</h2>
-            {dateRange?.from && dateRange?.to && (
-                <p className="text-xs text-muted-foreground font-semibold flex items-center gap-1.5 flex-wrap">
-                    <span>Período:</span>
-                    <span className="font-bold text-foreground bg-foreground/5 px-2 py-0.5 rounded-sm border border-border/20">{getPeriodLabel(dateRange)}</span>
-                    {showComparison && compDateRange?.from && compDateRange?.to && (
-                        <>
-                            <span className="text-[10px] text-muted-foreground/60 font-black uppercase px-0.5">vs</span>
-                            <span className="font-bold text-foreground bg-foreground/5 px-2 py-0.5 rounded-sm border border-border/20">{getPeriodLabel(compDateRange)}</span>
-                        </>
-                    )}
-                </p>
-            )}
-            <div className={cn(
-                "absolute bottom-0 left-0 w-16 h-1 rounded-full",
-                accent === 'primary' ? 'bg-primary' :
-                    accent === 'success' ? 'bg-success' : 'bg-info'
-            )} />
-        </div>
-    )
+    const periodLabel = getPeriodLabel(date, headerFormat)
+    const compPeriodLabel = getPeriodLabel(compDate, headerFormat)
 
     const renderBSDistribution = () => {
         if (!bsData) return null
@@ -173,90 +203,86 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
         )
     }
 
-    const RenderToolbar = () => (
-        <div className="flex flex-wrap items-center justify-between gap-4 mb-6 bg-card/60 backdrop-blur-md p-4 rounded-md border border-border/50 shadow-sm shadow-black/5 transition-all">
-            <div className="flex items-center gap-3">
-                {/* ButtonGroup for Mapeo and Vista */}
-                <div className="flex items-center -space-x-px shadow-xs rounded-sm">
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setMappingOpen(true)}
-                        className="text-[10px] font-black uppercase tracking-wider gap-1.5 hover:bg-primary/10 border border-border/50 px-3.5 py-2 rounded-l-md rounded-r-none transition-all duration-300 shadow-sm hover:scale-[1.01]"
-                    >
-                        <SlidersHorizontal className="h-3.5 w-3.5" />
-                        Mapeo
-                    </Button>
-
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                className="text-[10px] font-black uppercase tracking-wider rounded-r-md rounded-l-none border border-border/50 px-3.5 py-2 transition-all gap-1 bg-card text-muted-foreground hover:bg-muted/10 hover:text-foreground"
-                            >
-                                Vista: {headerFormat === 'year' ? 'Año' : headerFormat === 'month-year' ? 'Mes/Año' : 'Día/Mes/Año'}
-                                <ChevronDown className="h-3 w-3 opacity-60 ml-0.5" />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="start" className="w-40 bg-card/95 backdrop-blur-md border border-border/50 rounded-sm shadow-xl p-1 z-50">
-                            <DropdownMenuRadioGroup value={headerFormat} onValueChange={(val) => setHeaderFormat(val as HeaderFormat)}>
-                                <DropdownMenuRadioItem value="year" className="text-[9px] font-black uppercase tracking-wider cursor-pointer">
-                                    Año
-                                </DropdownMenuRadioItem>
-                                <DropdownMenuRadioItem value="month-year" className="text-[9px] font-black uppercase tracking-wider cursor-pointer">
-                                    Mes/Año
-                                </DropdownMenuRadioItem>
-                                <DropdownMenuRadioItem value="day-month-year" className="text-[9px] font-black uppercase tracking-wider cursor-pointer">
-                                    Día/Mes/Año
-                                </DropdownMenuRadioItem>
-                            </DropdownMenuRadioGroup>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                </div>
-
-                {/* Standalone Comparar Toggle Button on the right of the ButtonGroup */}
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowComparison(!showComparison)}
-                    className={cn(
-                        "text-[10px] font-black uppercase tracking-wider rounded-md border border-border/50 px-3.5 py-2 transition-all gap-1.5 shadow-xs hover:scale-[1.01]",
-                        showComparison
-                            ? "bg-primary/10 text-primary font-black border-primary/20"
-                            : "bg-card text-muted-foreground hover:bg-muted/10 hover:text-foreground"
-                    )}
-                >
-                    <GitCompare className="h-3.5 w-3.5" />
-                    Comparar
-                </Button>
-            </div>
-
-            <div className="flex items-center space-x-2">
-                <div className="flex flex-col items-end">
-                    <span className="text-[9px] uppercase font-bold text-muted-foreground mb-1 tracking-tighter">Período Actual</span>
-                    <DateRangeFilter date={date} onDateChange={setDate} label="Período Actual" />
-                </div>
-                {showComparison && (
-                    <div className="flex flex-col items-end border-l pl-4 border-muted-foreground/20">
-                        <span className="text-[9px] uppercase font-bold text-muted-foreground mb-1 tracking-tighter">Período Comparativo</span>
-                        <DateRangeFilter date={compDate} onDateChange={setCompDate} label="Período Comparativo" />
-                    </div>
-                )}
-            </div>
-        </div>
-    )
-
     return (
         <PageContainer scrollable>
             <div className="max-w-5xl mx-auto w-full pt-4">
-                <RenderToolbar />
+                <div className="flex flex-wrap items-center justify-between gap-4 mb-6 bg-card/60 backdrop-blur-md p-4 rounded-md border border-border/50 shadow-sm shadow-black/5 transition-all">
+                    <div className="flex items-center gap-3">
+                        {/* ButtonGroup for Mapeo and Vista */}
+                        <div className="flex items-center -space-x-px shadow-xs rounded-sm">
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setMappingOpen(true)}
+                                className="text-[10px] font-black uppercase tracking-wider gap-1.5 hover:bg-primary/10 border border-border/50 px-3.5 py-2 rounded-l-md rounded-r-none transition-all duration-300 shadow-sm hover:scale-[1.01]"
+                            >
+                                <SlidersHorizontal className="h-3.5 w-3.5" />
+                                Mapeo
+                            </Button>
+
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="text-[10px] font-black uppercase tracking-wider rounded-r-md rounded-l-none border border-border/50 px-3.5 py-2 transition-all gap-1 bg-card text-muted-foreground hover:bg-muted/10 hover:text-foreground"
+                                    >
+                                        Vista: {headerFormat === 'year' ? 'Año' : headerFormat === 'month-year' ? 'Mes/Año' : 'Día/Mes/Año'}
+                                        <ChevronDown className="h-3 w-3 opacity-60 ml-0.5" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="start" className="w-40 bg-card/95 backdrop-blur-md border border-border/50 rounded-sm shadow-xl p-1 z-50">
+                                    <DropdownMenuRadioGroup value={headerFormat} onValueChange={(val) => setHeaderFormat(val as HeaderFormat)}>
+                                        <DropdownMenuRadioItem value="year" className="text-[9px] font-black uppercase tracking-wider cursor-pointer">
+                                            Año
+                                        </DropdownMenuRadioItem>
+                                        <DropdownMenuRadioItem value="month-year" className="text-[9px] font-black uppercase tracking-wider cursor-pointer">
+                                            Mes/Año
+                                        </DropdownMenuRadioItem>
+                                        <DropdownMenuRadioItem value="day-month-year" className="text-[9px] font-black uppercase tracking-wider cursor-pointer">
+                                            Día/Mes/Año
+                                        </DropdownMenuRadioItem>
+                                    </DropdownMenuRadioGroup>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </div>
+
+                        {/* Standalone Comparar Toggle Button on the right of the ButtonGroup */}
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setShowComparison(!showComparison)}
+                            className={cn(
+                                "text-[10px] font-black uppercase tracking-wider rounded-md border border-border/50 px-3.5 py-2 transition-all gap-1.5 shadow-xs hover:scale-[1.01]",
+                                showComparison
+                                    ? "bg-primary/10 text-primary font-black border-primary/20"
+                                    : "bg-card text-muted-foreground hover:bg-muted/10 hover:text-foreground"
+                            )}
+                        >
+                            <GitCompare className="h-3.5 w-3.5" />
+                            Comparar
+                        </Button>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                        <div className="flex flex-col items-end">
+                            <span className="text-[9px] uppercase font-bold text-muted-foreground mb-1 tracking-tighter">Período Actual</span>
+                            <DateRangeFilter date={date} onDateChange={setDate} label="Período Actual" />
+                        </div>
+                        {showComparison && (
+                            <div className="flex flex-col items-end border-l pl-4 border-muted-foreground/20">
+                                <span className="text-[9px] uppercase font-bold text-muted-foreground mb-1 tracking-tighter">Período Comparativo</span>
+                                <DateRangeFilter date={compDate} onDateChange={setCompDate} label="Período Comparativo" />
+                            </div>
+                        )}
+                    </div>
+                </div>
                 <FadeIn key={activeTab}>
                     <TabsContent value="bs" className="mt-0 outline-none">
                         {activeTab === "bs" && (
                             <Card className="rounded-md border bg-card/60 backdrop-blur-md shadow-xl shadow-black/5 ring-1 ring-border/50 overflow-hidden transition-all duration-300">
                                 <CardContent className="p-6 md:p-10 pt-10">
-                                    <ReportHeader title="Situación Financiera" dateRange={date} compDateRange={compDate} showComparison={showComparison} accent="primary" />
+                                    <ReportHeader title="Situación Financiera" dateRange={date} compDateRange={compDate} showComparison={showComparison} headerFormat={headerFormat} accent="primary" />
                                     {bsData ? (
                                         <div className="space-y-8">
                                             <div className="space-y-8">
@@ -319,7 +345,7 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
                         {activeTab === "pl" && (
                             <Card className="rounded-md border bg-card/60 backdrop-blur-md shadow-xl shadow-black/5 ring-1 ring-border/50 overflow-hidden transition-all duration-300">
                                 <CardContent className="p-6 md:p-10 pt-10">
-                                    <ReportHeader title="Estado de Resultados" dateRange={date} compDateRange={compDate} showComparison={showComparison} accent="success" />
+                                    <ReportHeader title="Estado de Resultados" dateRange={date} compDateRange={compDate} showComparison={showComparison} headerFormat={headerFormat} accent="success" />
                                     {plData ? (
                                         <div className="space-y-8">
                                             {(() => {
@@ -380,7 +406,7 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
                         {activeTab === "cf" && (
                             <Card className="rounded-md border bg-card/60 backdrop-blur-md shadow-xl shadow-black/5 ring-1 ring-border/50 overflow-hidden transition-all duration-300">
                                 <CardContent className="p-6 md:p-10 pt-10">
-                                    <ReportHeader title="Estado de Flujo de Efectivo" dateRange={date} compDateRange={compDate} showComparison={showComparison} accent="info" />
+                                    <ReportHeader title="Estado de Flujo de Efectivo" dateRange={date} compDateRange={compDate} showComparison={showComparison} headerFormat={headerFormat} accent="info" />
                                     {cfData ? (
                                         <CashFlowTable
                                             data={cfData as any}

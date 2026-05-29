@@ -56,15 +56,6 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
     const [pendingTasksCount, setPendingTasksCount] = useState(0)
     const [isCalculatorOpen, setIsCalculatorOpen] = useState(false)
     const [displayLimit] = useState(5)
-    const { socketConnected } = useNotifications((newNotification: NotificationPayload) => {
-        setNotifications(prev => [newNotification as any, ...prev].slice(0, 20))
-        setUnreadCount(prev => prev + 1)
-
-        // If it's a task related notification, we might want to refresh tasks too
-        if (newNotification.notification_type?.startsWith('TASK')) {
-            fetchData()
-        }
-    })
 
     const fetchData = useCallback(async () => {
         try {
@@ -85,6 +76,16 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
             console.error("Error fetching data in UserActions:", error)
         }
     }, [])
+
+    const { socketConnected } = useNotifications((newNotification: NotificationPayload) => {
+        setNotifications(prev => [newNotification as any, ...prev].slice(0, 20))
+        setUnreadCount(prev => prev + 1)
+
+        // If it's a task related notification, we might want to refresh tasks too
+        if (newNotification.notification_type?.startsWith('TASK')) {
+            fetchData()
+        }
+    })
 
     useEffect(() => {
         if (user) {

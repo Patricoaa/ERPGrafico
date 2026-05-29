@@ -54,8 +54,8 @@ interface CostCalculatorDrawerProps {
     onOpenChange: (open: boolean) => void
 }
 
-import { useQuery } from "@tanstack/react-query"
-import { inventoryApi } from "@/features/inventory/api/inventoryApi"
+import { useProducts } from "@/features/inventory/hooks/useProducts"
+import { useCategories } from "@/features/inventory/hooks/useCategories"
 import { useWindowWidth } from "@/hooks/useWindowWidth"
 
 export function CostCalculatorDrawer({ open, onOpenChange }: CostCalculatorDrawerProps) {
@@ -78,29 +78,16 @@ export function CostCalculatorDrawer({ open, onOpenChange }: CostCalculatorDrawe
 
     const fullWidth = Math.min(windowWidth * 0.85, 1600)
 
-    const { data: products = [], isLoading: loadingProducts } = useQuery({
-        queryKey: ['products', { active: true, track_inventory: true }],
-        queryFn: async () => {
-            const data = await inventoryApi.getProducts({
-                active: true,
-                track_inventory: true,
-                fields: 'id,name,cost_price,image,uom_name,internal_code,barcode,product_type,available_uoms,category,uom'
-            })
-            return data as any as Product[]
-        },
-        enabled: open,
-        staleTime: 1000 * 60 * 5,
+    const { products: rawProducts = [], isLoading: loadingProducts } = useProducts({
+        filters: {
+            active: true,
+            track_inventory: true,
+            fields: 'id,name,cost_price,image,uom_name,internal_code,barcode,product_type,available_uoms,category,uom'
+        }
     })
+    const products = rawProducts as any as Product[]
 
-    const { data: categories = [], isLoading: loadingCategories } = useQuery({
-        queryKey: ['categories'],
-        queryFn: async () => {
-            const data = await inventoryApi.getCategories()
-            return data
-        },
-        enabled: open,
-        staleTime: 1000 * 60 * 60,
-    })
+    const { categories = [], isLoading: loadingCategories } = useCategories()
 
     const loading = loadingProducts || loadingCategories
 

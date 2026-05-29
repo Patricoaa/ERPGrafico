@@ -80,7 +80,10 @@ export function useNotifications(onNotification?: (notification: NotificationPay
     const mountedRef = useRef(true);
     // Store callback in ref to avoid reconnecting when callback changes
     const onNotificationRef = useRef(onNotification);
-    onNotificationRef.current = onNotification;
+
+    useEffect(() => {
+        onNotificationRef.current = onNotification;
+    }, [onNotification]);
 
     const handleIncomingNotification = useCallback((notification: NotificationPayload) => {
         if (onNotificationRef.current) {

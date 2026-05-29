@@ -82,12 +82,6 @@ export function ReceiptModal({
         }
     }, [dateString])
 
-    useEffect(() => {
-        if (open && orderId) {
-            fetchData()
-        }
-    }, [open, orderId])
-
     const fetchData = async () => {
         setLoading(true)
         try {
@@ -124,6 +118,12 @@ export function ReceiptModal({
             setLoading(false)
         }
     }
+
+    useEffect(() => {
+        if (open && orderId) {
+            fetchData()
+        }
+    }, [open, orderId])
 
     const handleQuantityChange = (lineId: number, value: string) => {
         const numValue = Math.ceil(parseFloat(value) || 0)

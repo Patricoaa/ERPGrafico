@@ -62,14 +62,6 @@ export function NoteLogisticsModal({ open, onOpenChange, invoice, onSuccess }: N
     const isCredit = invoice?.dte_type === 'NOTA_CREDITO'
     // const lines = invoice?.lines || [] // REMOVED: Use displayLines instead
 
-    useEffect(() => {
-        if (open && invoice) {
-            // Reset display lines to props initially while loading fresh data
-            setDisplayLines((invoice.lines as any) || [])
-            fetchData()
-        }
-    }, [open, invoice])
-
     const fetchData = async () => {
         setLoading(true)
         try {
@@ -103,6 +95,14 @@ export function NoteLogisticsModal({ open, onOpenChange, invoice, onSuccess }: N
             setLoading(false)
         }
     }
+
+    useEffect(() => {
+        if (open && invoice) {
+            // Reset display lines to props initially while loading fresh data
+            setDisplayLines((invoice.lines as any) || [])
+            fetchData()
+        }
+    }, [open, invoice])
 
     const handleQuantityChange = (pId: number, value: string, max: number) => {
         const num = parseFloat(value) || 0

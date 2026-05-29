@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { inventoryApi } from "@/features/inventory/api/inventoryApi";
+import { useProduct } from "@/features/inventory/hooks/useProducts";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { format } from "date-fns";
@@ -97,17 +96,28 @@ export function ManufacturingConfigStep({
   const [dueDate, setDueDate] = useState<Date | null>(dueDateFromStore);
   const [isCreateConfirmOpen, setIsCreateConfirmOpen] = useState(false);
   const pendingDataRef = useRef<WorkOrderFormValues | null>(null);
+  const [idempotencyKey] = useState(() => {
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+      return crypto.randomUUID();
+    }
+    let result = '';
+    for (let i = 0; i < 36; i++) {
+      if (i === 8 || i === 13 || i === 18 || i === 23) { result += '-'; continue; }
+      const r = Math.random() * 16 | 0;
+      result += (i === 19 ? '4' : i === 14 ? '8' : r.toString(16));
+    }
+    return result;
+  });
 
   const { user } = useAuth();
+  const formIdValue = formId;
   const { multiplier: vatMultiplier, isLoading: isVatLoading } = useVatRate();
   const { data: uoms = [] } = useUoMs();
 
   // Fetch product details (UoM, mfg flags) when product is selected
-  const { data: selectedProduct } = useQuery({
-    queryKey: ['inventory', 'product', selectedProductId],
-    queryFn: () => inventoryApi.getProduct(Number(selectedProductId)),
-    enabled: otType === "NONE" && !!selectedProductId,
-  });
+  const { data: selectedProduct } = useProduct(
+    otType === "NONE" && selectedProductId ? Number(selectedProductId) : null
+  );
 
   const productForUoM = useMemo(() => {
     if (!selectedProduct) return null;
@@ -333,7 +343,7 @@ export function ManufacturingConfigStep({
         workOrderId = Number(initialData.id);
       } else {
         const data = await productionApi.createWorkOrder(formData, {
-          'Idempotency-Key': typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2)
+          'Idempotency-Key': idempotencyKey
         });
         toast.success("Orden de Trabajo creada correctamente");
         workOrderId = (data as { id: number }).id;
@@ -393,10 +403,14 @@ export function ManufacturingConfigStep({
     )
   }
 
+  const handleFormSubmit = (e: React.FormEvent) => {
+    form.handleSubmit(onSubmit)(e)
+  }
+
   return (
     <SkeletonShell isLoading={isVatLoading} ariaLabel="Cargando configuración de fabricación">
       <Form {...form}>
-        <form id={formId ?? undefined} onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-4">
+        <form id={formIdValue} onSubmit={handleFormSubmit} className="space-y-6 py-4">
           <fieldset>
             <div className="space-y-6">
               {/* Product info (read-only) */}

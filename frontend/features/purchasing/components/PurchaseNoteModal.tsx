@@ -69,20 +69,6 @@ export function PurchaseNoteModal({
 
     const [isPeriodValid, setIsPeriodValid] = useState(true)
 
-    // -- Effects --
-    useEffect(() => {
-        if (open) {
-            // Reset state
-            setStep(1)
-            setDocumentNumber("")
-            setDocumentDate(new Date())
-            setAttachment(null)
-            setLines([])
-            setNoteType(initialType)
-            fetchDetails()
-        }
-    }, [open])
-
     const fetchDetails = async () => {
         setLoading(true)
         try {
@@ -129,6 +115,20 @@ export function PurchaseNoteModal({
             setLoading(false)
         }
     }
+
+    // -- Effects --
+    useEffect(() => {
+        if (open) {
+            // Reset state
+            setStep(1)
+            setDocumentNumber("")
+            setDocumentDate(new Date())
+            setAttachment(null)
+            setLines([])
+            setNoteType(initialType)
+            fetchDetails()
+        }
+    }, [open])
 
     // -- Calculations --
     const amountNet = lines.reduce((acc, line) => acc + (line.note_quantity * line.note_unit_cost), 0)

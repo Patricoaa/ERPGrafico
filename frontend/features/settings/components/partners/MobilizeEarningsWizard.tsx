@@ -84,7 +84,12 @@ export function MobilizeEarningsWizard({ open, onOpenChange, onSuccess, initialP
         const totalReinvest = Object.values(mobilizations).reduce((s, v) => s + v.reinvest, 0)
         const totalMobilized = totalDividend + totalReinvest
 
-        let hasErrors = false
+        const hasErrors = partners.some(partner => {
+            const available = parseFloat(partner.partner_earnings_balance || "0")
+            const divValue = mobilizations[partner.id]?.dividend || 0
+            const reinvValue = mobilizations[partner.id]?.reinvest || 0
+            return (divValue + reinvValue) > available
+        })
 
         return [
             {
@@ -122,7 +127,6 @@ export function MobilizeEarningsWizard({ open, onOpenChange, onSuccess, initialP
                                             const reinvValue = mobilizations[partner.id]?.reinvest || 0
                                             const totalAssigned = divValue + reinvValue
                                             const isError = totalAssigned > available
-                                            if (isError) hasErrors = true
 
                                             return (
                                                 <tr key={partner.id} className="hover:bg-muted/30 transition-colors">

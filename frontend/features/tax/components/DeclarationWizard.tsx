@@ -65,6 +65,28 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
     const registerDeclarationMutation = useRegisterDeclaration()
     const closePeriodMutation = useClosePeriod()
 
+    // Helper for direct calculation that uses params instead of state (since state might not have updated yet)
+    const calculateDataForPeriod = async (y: number, m: number) => {
+        setIsLoading(true)
+        try {
+            const data = await calcMutation.mutateAsync({ year: y, month: m })
+            setCalcData(data)
+            if (data.tax_period_id) setTaxPeriodId(data.tax_period_id)
+            if (data.tax_rate) {
+                setManualFields(prev => ({
+                    ...prev,
+                    tax_rate: data.tax_rate,
+                    vat_credit_carryforward: data.vat_credit_carryforward || 0
+                }))
+            }
+            return true
+        } catch {
+            return false
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
     // Reset and initialize state when modal opens
     useEffect(() => {
         const initializeWizard = async () => {
@@ -102,28 +124,6 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
 
         initializeWizard()
     }, [isOpen, periodId, existingPeriods, serverDate, currentYear, currentMonth])
-
-    // Helper for direct calculation that uses params instead of state (since state might not have updated yet)
-    const calculateDataForPeriod = async (y: number, m: number) => {
-        setIsLoading(true)
-        try {
-            const data = await calcMutation.mutateAsync({ year: y, month: m })
-            setCalcData(data)
-            if (data.tax_period_id) setTaxPeriodId(data.tax_period_id)
-            if (data.tax_rate) {
-                setManualFields(prev => ({
-                    ...prev,
-                    tax_rate: data.tax_rate,
-                    vat_credit_carryforward: data.vat_credit_carryforward || 0
-                }))
-            }
-            return true
-        } catch {
-            return false
-        } finally {
-            setIsLoading(false)
-        }
-    }
 
     const isPeriodDisabled = (y: number, m: number) => {
         const targetDate = new Date(y, m - 1)

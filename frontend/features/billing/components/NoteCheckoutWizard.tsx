@@ -83,15 +83,6 @@ export function NoteCheckoutWizard({
     const isExempt = originalInvoice?.dte_type === 'FACTURA_EXENTA' || originalInvoice?.dte_type === 'BOLETA_EXENTA'
 
 
-    // Reset state on open
-    useEffect(() => {
-        if (open) {
-            initWizard()
-        } else {
-            // Optional: reset state on close
-        }
-    }, [open])
-
     const initWizard = async () => {
         try {
             setInitializing(true)
@@ -126,6 +117,15 @@ export function NoteCheckoutWizard({
             setInitializing(false)
         }
     }
+
+    // Reset state on open
+    useEffect(() => {
+        if (open) {
+            initWizard()
+        } else {
+            // Optional: reset state on close
+        }
+    }, [open])
 
     // Sync date when server date arrives
     useEffect(() => {

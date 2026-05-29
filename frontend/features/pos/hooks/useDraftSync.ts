@@ -89,62 +89,6 @@ export function useDraftSync({
         callbacksRef.current = { onNewDraft, onDraftDeleted, onDraftUpdated, onLockChanged, onSessionStateChange }
     }, [onNewDraft, onDraftDeleted, onDraftUpdated, onLockChanged, onSessionStateChange])
 
-    // ── WebSocket Logic ──────────────────────────────────────────
-
-    useEffect(() => {
-        if (!enabled || !posSessionId) return
-
-        const baseUrl = process.env.NEXT_PUBLIC_API_URL || ''
-        const wsProtocol = baseUrl.startsWith('https') ? 'wss' : 'ws'
-        const wsHost = baseUrl.replace(/^https?:\/\//, '').replace(/\/api\/?$/, '')
-        const wsUrl = `${wsProtocol}://${wsHost}/ws/sales/pos/${posSessionId}/`
-
-        console.log('[DraftSync] Connecting to WebSocket:', wsUrl)
-        
-        const connect = () => {
-            const socket = new WebSocket(wsUrl)
-            socketRef.current = socket
-
-            socket.onopen = () => {
-                console.log('[DraftSync] WebSocket Connected')
-                setIsSocketConnected(true)
-                // Fetch initial state once connected
-                initialFetch()
-            }
-
-            socket.onmessage = (event) => {
-                try {
-                    const data = JSON.parse(event.data)
-                    handleSocketEvent(data)
-                } catch (e) {
-                    console.error('[DraftSync] Error parsing WS message', e)
-                }
-            }
-
-            socket.onclose = () => {
-                console.log('[DraftSync] WebSocket Disconnected')
-                setIsSocketConnected(false)
-                // Attempt to reconnect after 3 seconds
-                setTimeout(() => {
-                    if (enabled && posSessionId) connect()
-                }, 3000)
-            }
-
-            socket.onerror = (err) => {
-                console.error('[DraftSync] WebSocket Error', err)
-                socket.close()
-            }
-        }
-
-        connect()
-
-        return () => {
-            if (socketRef.current) {
-                socketRef.current.close()
-            }
-        }
-    }, [enabled, posSessionId])
-
     const handleSocketEvent = useCallback((data: any) => {
         const { event, draft, draft_id, error } = data
         const currentUserId = user?.id
@@ -249,6 +193,62 @@ export function useDraftSync({
             console.debug('[DraftSync] Initial fetch failed:', error)
         }
     }, [posSessionId, syncDraftsMutation])
+
+    // ── WebSocket Logic ──────────────────────────────────────────
+
+    useEffect(() => {
+        if (!enabled || !posSessionId) return
+
+        const baseUrl = process.env.NEXT_PUBLIC_API_URL || ''
+        const wsProtocol = baseUrl.startsWith('https') ? 'wss' : 'ws'
+        const wsHost = baseUrl.replace(/^https?:\/\//, '').replace(/\/api\/?$/, '')
+        const wsUrl = `${wsProtocol}://${wsHost}/ws/sales/pos/${posSessionId}/`
+
+        console.log('[DraftSync] Connecting to WebSocket:', wsUrl)
+        
+        const connect = () => {
+            const socket = new WebSocket(wsUrl)
+            socketRef.current = socket
+
+            socket.onopen = () => {
+                console.log('[DraftSync] WebSocket Connected')
+                setIsSocketConnected(true)
+                // Fetch initial state once connected
+                initialFetch()
+            }
+
+            socket.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data)
+                    handleSocketEvent(data)
+                } catch (e) {
+                    console.error('[DraftSync] Error parsing WS message', e)
+                }
+            }
+
+            socket.onclose = () => {
+                console.log('[DraftSync] WebSocket Disconnected')
+                setIsSocketConnected(false)
+                // Attempt to reconnect after 3 seconds
+                setTimeout(() => {
+                    if (enabled && posSessionId) connect()
+                }, 3000)
+            }
+
+            socket.onerror = (err) => {
+                console.error('[DraftSync] WebSocket Error', err)
+                socket.close()
+            }
+        }
+
+        connect()
+
+        return () => {
+            if (socketRef.current) {
+                socketRef.current.close()
+            }
+        }
+    }, [enabled, posSessionId])
 
     // Use a slow polling fallback ONLY if socket is disconnected for a long time
     useEffect(() => {

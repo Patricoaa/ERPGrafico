@@ -54,16 +54,15 @@ export function GlobalModalProvider({ children }: { children: ReactNode }) {
         return () => window.removeEventListener('resize', handleResize)
     }, [])
 
+    const closeEntity = useCallback(() => setOpenedEntity(null), [])
+
     const openEntity = useCallback((label: string, id: number, data?: unknown) => {
         if (!hasEntityDrawer(label)) {
-            // eslint-disable-next-line no-console
             console.warn(`[GlobalModalProvider] No drawer registered for entity "${label}". Register it in lib/entity-drawers.tsx.`)
             return
         }
         setOpenedEntity({ label, id, data })
     }, [])
-
-    const closeEntity = useCallback(() => setOpenedEntity(null), [])
 
     // Backward-compatible specific openers — delegate to the generic one.
     const openWorkOrder = useCallback((id: number) => openEntity('production.workorder', id), [openEntity])

@@ -82,21 +82,6 @@ export function Step2_Logistics({
     );
     const hasRestrictedItems = !isCreditNote && restrictedItems.length > 0;
 
-    // Initialize data if null or missing fields
-    useEffect(() => {
-        if (!data || !data.delivery_type) {
-            const initialType = hasRestrictedItems ? 'SCHEDULED' : 'IMMEDIATE';
-            setData({
-                warehouse_id: data?.warehouse_id || "",
-                date: data?.date || dateString || "",
-                delivery_type: initialType,
-                line_data: [],
-                notes: data?.notes || ""
-            })
-        }
-        fetchWarehouses()
-    }, [])
-
     const fetchWarehouses = async () => {
         try {
             setFetchingWarehouses(true)
@@ -116,6 +101,21 @@ export function Step2_Logistics({
             setFetchingWarehouses(false)
         }
     }
+
+    // Initialize data if null or missing fields
+    useEffect(() => {
+        if (!data || !data.delivery_type) {
+            const initialType = hasRestrictedItems ? 'SCHEDULED' : 'IMMEDIATE';
+            setData({
+                warehouse_id: data?.warehouse_id || "",
+                date: data?.date || dateString || "",
+                delivery_type: initialType,
+                line_data: [],
+                notes: data?.notes || ""
+            })
+        }
+        fetchWarehouses()
+    }, [])
 
     const formData = (data || {
         warehouse_id: "",

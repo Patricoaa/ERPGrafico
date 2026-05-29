@@ -76,10 +76,6 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
     const [unmatchDialog, setUnmatchDialog] = useState<{ open: boolean, lineId: number | null }>({ open: false, lineId: null })
     const [paymentModal, setPaymentModal] = useState<{ open: boolean, id: number | null }>({ open: false, id: null })
 
-    useEffect(() => {
-        fetchStatement()
-    }, [id])
-
     const fetchStatement = async () => {
         try {
             setLoading(true)
@@ -91,6 +87,10 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
             setLoading(false)
         }
     }
+
+    useEffect(() => {
+        fetchStatement()
+    }, [id])
 
     const handleUnmatch = async () => {
         if (!unmatchDialog.lineId) return

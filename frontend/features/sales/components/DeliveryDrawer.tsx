@@ -168,12 +168,6 @@ export function DeliveryForm({ orderId, order, warehouses, onSuccess, id = "deli
         }
     }, [dateString])
 
-    useEffect(() => {
-        if (selectedWarehouse && order) {
-            fetchStockLevels()
-        }
-    }, [selectedWarehouse, order])
-
     const fetchStockLevels = async () => {
         if (!selectedWarehouse || !order) return
 
@@ -198,6 +192,12 @@ export function DeliveryForm({ orderId, order, warehouses, onSuccess, id = "deli
             console.error("Error fetching stock levels:", error)
         }
     }
+
+    useEffect(() => {
+        if (selectedWarehouse && order) {
+            fetchStockLevels()
+        }
+    }, [selectedWarehouse, order])
 
     const handleQuantityChange = (lineId: number, value: string) => {
         const numValue = parseFloat(value) || 0
