@@ -3,7 +3,7 @@ layer: 20-contracts
 doc: component-modal
 status: active
 owner: frontend-team
-last_review: 2026-05-25
+last_review: 2026-05-28
 stability: contract-changes-require-ADR
 ---
 
@@ -106,7 +106,7 @@ Primitiva base de todos los modales del proyecto. Wrappea `Dialog` de Shadcn con
 | Valor | Efecto visual |
 |-------|---------------|
 | `default` | Header con borde inferior, footer con fondo transparente. Icono obligatorio y alineación horizontal. |
-| `transaction` | Header con `bg-primary text-primary-foreground` (sin borde). Usado en `TransactionViewModal` |
+| `transaction` | Header con `bg-primary text-primary-foreground` (sin borde). Para cabeceras de detalle de transacción |
 | `wizard` | Header con `border-b pb-2`. Usado internamente por `GenericWizard` |
 | `form-tabs` | Header transparente adaptado para pestañas dinámicas. Título + Descripción horizontalmente dinámicos. |
 | `raw` | Sin bordes ni cabecera; sin `ScrollArea`. Para layouts totalmente custom |

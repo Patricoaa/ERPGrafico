@@ -3,7 +3,7 @@ layer: 20-contracts
 doc: component-form-patterns
 status: active
 owner: frontend-team
-last_review: 2026-05-25
+last_review: 2026-05-28
 stability: contract-changes-require-ADR
 preconditions:
   - component-modal.md
@@ -36,7 +36,7 @@ graph TD
     Q2 -->|No| Q3{"¿Solo lectura<br/>(detalle/resumen)?"}
     Q3 -->|Sí| Q_READONLY{"¿Es una tabla/histórico<br/>secundario con contexto?"}
     Q_READONLY -->|Sí| DRAWER["Drawer (bottom)"]
-    Q_READONLY -->|No| TVM["TransactionViewModal<br/>o CollapsibleSheet"]
+    Q_READONLY -->|No| TVM["Entity drawer (openEntity)<br/>o CollapsibleSheet"]
     Q3 -->|No| Q4{"¿Cuántos campos<br/>tiene el formulario?"}
     Q4 -->|"1–6 campos"| Q_CONTEXT{"¿Necesita preservar<br/>contexto de la lista?"}
     Q_CONTEXT -->|Sí| SIMPLE_DRAWER["Drawer (left, 40%)"]
@@ -260,7 +260,7 @@ graph TD
 |:---|:---|:---|
 | ≥3 pasos secuenciales con dependencia entre ellos | `GenericWizard` | `SalesCheckoutWizard`, `FiscalYearClosingWizard`, `MovementWizard` |
 | Solo confirmar una acción (destructiva o no) | `ActionConfirmModal` | Eliminar entidad, Anular documento |
-| Mostrar detalle de un documento/entidad | `TransactionViewModal` | Ver factura, ver pago |
+| Mostrar detalle de un documento/entidad | `openEntity(label, id)` — entity drawer (ADR-0028) | Ver factura, ver pago |
 | Mostrar lista/histórico auxiliar con contexto | `Drawer` (bottom) | `PartnerLedgerModal`, `PayrollDetailSheet`, `SalesOrdersModal` |
 | Formulario CRUD preservando contexto de lista | `Drawer` (left, 40–75%) | `CategoryForm`, `ContactDrawer`, `ProductForm` (post-migración) |
 | Panel secundario de acciones junto a listado | `CollapsibleSheet` | `OrderActionPanel` |

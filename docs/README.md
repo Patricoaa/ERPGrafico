@@ -69,6 +69,7 @@
 | "stale cache", "queryKey mismatch", "FSD compliance", "invariante #4", "invariante #5", "raw api en componente", "useMutation en componente", "refactor data layer" | [50-audit/fsd-data-layer-audit.md](50-audit/fsd-data-layer-audit.md) + [refactor-plan](50-audit/fsd-data-layer-refactor-plan.md) | 50 |
 | "delete entity", "borrar", "anular", "archivar", "soft delete", "hard delete", "archive vs annul", "is_active", "status=cancelled" | [deletion-policy.md](20-contracts/deletion-policy.md) | 20 |
 | "realtime", "WebSocket", "SSE", "EventSource", "Django Channels", "live update", "push notification", "useDraftSync", "useNotifications" | [realtime-channels.md](20-contracts/realtime-channels.md) | 20 |
+| "entity drawer", "openEntity", "drawer registry", "abrir documento origen", "SourceDocumentLink", "drill-down", "drawer modes (view/edit/create)", "TransactionViewModal" | [component-entity-drawers.md](20-contracts/component-entity-drawers.md) | 20 |
 | "idempotency", "Idempotency-Key", "double-click", "duplicate request", "retry safe" | [idempotency.md](20-contracts/idempotency.md) | 20 |
 | "export PDF", "export Excel", "export CSV", "WeasyPrint", "openpyxl", "generar reporte descargable", "libro de ventas xlsx" | [export-formats.md](20-contracts/export-formats.md) | 20 |
 | "import CSV", "import Excel", "bulk upload", "importar contactos/productos", "column mapping", "preview import", "DataManagement" | [import-csv-xlsx.md](20-contracts/import-csv-xlsx.md) | 20 |

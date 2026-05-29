@@ -91,5 +91,6 @@ Proposed → (review) → Accepted → (later) → Superseded | Deprecated
 | [0025](0025-schema-driven-forms-revert-and-expand.md) | Schema-Driven Forms — Phase 4 revert + blacklist | Accepted (§2.2 superseded by 0020) |
 | [0026](0026-entity-bus-realtime-invalidation.md) | Entity-bus WebSocket for realtime query invalidation | Accepted |
 | [0027](0027-basedrawer-crud-forms.md) | BaseDrawer as Primary Surface for Embedded CRUD Forms | Accepted |
+| [0028](0028-entity-drawer-registry.md) | Global entity-drawer registry + dual-mode drawers (replaces TransactionViewModal) | Accepted |
 
 > **Lint:** este índice debe coincidir 1-a-1 con los archivos `NNNN-*.md` presentes en este directorio. Cualquier ADR nuevo o renombramiento exige actualizar también esta tabla.

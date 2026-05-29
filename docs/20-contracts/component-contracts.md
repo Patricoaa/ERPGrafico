@@ -3,7 +3,7 @@ layer: 20-contracts
 doc: component-contracts
 status: active
 owner: frontend-team
-last_review: 2026-05-06
+last_review: 2026-05-28
 stability: contract-changes-require-ADR
 ---
 
@@ -961,54 +961,15 @@ Estética de mando unificado con doble redondeo superior y base recta.
 
 ---
 
-## TransactionViewModal 🟢
+## TransactionViewModal — eliminado (ADR-0028) 🔴
 
-Large detail modal for any transaction type. Two-column layout: content (75%) + metadata sidebar (25%).
-
-```tsx
-<TransactionViewModal
-  open={open}
-  onOpenChange={setOpen}
-  type="sale-order"
-  id={orderId}
-  view="all"
-/>
-```
-
-| prop | type | required | default | notes |
-|------|------|----------|---------|-------|
-| `open` | `boolean` | ✅ | — | |
-| `onOpenChange` | `(open: boolean) => void` | ✅ | — | |
-| `type` | `TransactionType` | ✅ | — | See TransactionType union |
-| `id` | `number \| string` | ✅ | — | Entity ID |
-| `view` | `'details' \| 'history' \| 'all'` | ❌ | `'all'` | Which panels to render |
-
-```typescript
-// frontend/types/transactions.ts
-type TransactionType =
-  | 'product'
-  | 'contact'
-  | 'sale_order'
-  | 'purchase_order'
-  | 'invoice'
-  | 'payment'
-  | 'sale_delivery'
-  | 'purchase_receipt'
-  | 'user'
-  | 'company_settings'
-  | 'work_order'
-  | 'journal_entry'
-  | 'stock_move'
-  | 'cash_movement'
-  | 'sale_return'
-  | 'purchase_return'
-  | 'inventory'
-  | 'profit_distribution'
-```
-
-Uses `useTransactionData(type, id)` internally.
-
-Features: print (react-to-print), navigation history between related transactions (`useNavigationHistory`), inline payment editing, delete payment confirmation.
+> **Eliminado.** Reemplazado por el registro `ENTITY_DRAWERS` + el opener `openEntity` (drawer de
+> entidad en modo `view`). Ver [component-entity-drawers.md](./component-entity-drawers.md) y
+> [ADR-0028](../10-architecture/adr/0028-entity-drawer-registry.md).
+>
+> - **Mostrar el detalle de un documento:** `openEntity('<app>.<model>', id)`.
+> - **Drill-down a un documento origen:** `SourceDocumentLink`.
+> - **Editor deep-linkeable desde lista:** `?selected={id}` ([list-modal-edit-pattern.md](./list-modal-edit-pattern.md)).
 
 States handled: loading (dual spinner), error, populated.
 
