@@ -25,7 +25,8 @@ import {
 import { CheckoutDeliveryData, SaleOrderLine } from "../../types"
 
 function UoMSelector({ line, currentUom, onUomChange }: { line: SaleOrderLine, currentUom: string | number | null, onUomChange: (uomId: number) => void }) {
-    const { data: allowedUoms = [] } = useAllowedUoMs((line.product || line.id) ?? null, 'sale')
+    const prodId = line.product && typeof line.product === 'object' ? line.product.id : line.product
+    const { data: allowedUoms = [] } = useAllowedUoMs((prodId ?? line.id) ?? null, 'sale')
 
     if (allowedUoms.length <= 1) return <span>{line.uom_name || line.uom}</span>
 

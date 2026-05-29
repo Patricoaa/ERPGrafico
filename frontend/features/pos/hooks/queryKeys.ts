@@ -60,7 +60,7 @@ export const POS_KEYS = {
     lists: () => [...POS_KEYS.products.all, 'list'] as const,
     list: (filters?: { active?: boolean; can_be_sold?: boolean }) => [...POS_KEYS.products.lists(), { filters }] as const,
     details: () => [...POS_KEYS.products.all, 'detail'] as const,
-    detail: (id: number) => [...POS_KEYS.products.detail(), id] as const,
+    detail: (id: number) => [...POS_KEYS.products.details(), id] as const,
   },
 
   // Categories (from inventory)

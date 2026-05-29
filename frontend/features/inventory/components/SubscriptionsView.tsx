@@ -441,8 +441,8 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false, cr
                             renderCard={(sub: Subscription) => (
                                 <EntityCard key={sub.id}>
                                     <EntityCard.Header
-                                        title={sub.product_name || sub.name}
-                                        subtitle={`${sub.frequency || ''}${sub.amount ? ` - $${sub.amount}` : ''}`}
+                                        title={sub.product_name}
+                                        subtitle={`${sub.recurrence_display || ''}${sub.amount ? ` - $${sub.amount}` : ''}`}
                                         trailing={<StatusBadge status={sub.status} label={sub.status_display || sub.status} size="sm" />}
                                     />
                                     <EntityCard.Body>

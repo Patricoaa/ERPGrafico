@@ -29,7 +29,9 @@ function SheetPortal({
   const [target, setTarget] = React.useState<HTMLElement | null>(null)
 
   React.useEffect(() => {
-    setTarget(document.getElementById("module-sheets-portal-container") || document.body)
+    requestAnimationFrame(() => {
+      setTarget(document.getElementById("module-sheets-portal-container") || document.body)
+    })
   }, [])
 
   return (

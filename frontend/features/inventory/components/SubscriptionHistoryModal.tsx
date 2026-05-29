@@ -195,7 +195,7 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                                                         <YAxis fontSize={10} stroke="var(--muted-foreground)" tickFormatter={(val) => formatCurrency(val)} />
                                                         <RechartsTooltip
                                                             labelFormatter={(val) => format(new Date(val), 'PPP', { locale: es })}
-                                                            formatter={(val: number | undefined) => [val !== undefined ? formatCurrency(val) : '---', 'Costo Unitario']}
+                                                            formatter={(val: unknown) => [typeof val === 'number' ? formatCurrency(val) : '---', 'Costo Unitario']}
                                                             contentStyle={{ borderRadius: 'var(--radius)', border: '1px solid var(--border)', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', padding: '12px', backgroundColor: 'var(--popover)', color: 'var(--popover-foreground)' }}
                                                         />
                                                         <Bar

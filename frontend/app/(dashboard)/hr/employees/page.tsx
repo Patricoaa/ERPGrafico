@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React, { useState } from "react"
 import { useRouter } from "next/navigation"
 import { EmployeeDrawer } from "@/features/hr"
 import type { Employee } from "@/types/hr"
@@ -34,15 +34,8 @@ export default function EmployeesPage() {
     // Dialog state synchronized with URL or local edit
     const isNewModalOpen = searchParams.get("modal") === "new"
     const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null)
-    const dialogOpen = isNewModalOpen || !!editingEmployee || !!selectedFromUrl
-
-    useEffect(() => {
-        if (selectedFromUrl) {
-            setEditingEmployee(selectedFromUrl)
-        } else {
-            setEditingEmployee(null)
-        }
-    }, [selectedFromUrl])
+    const activeEmployee = selectedFromUrl || editingEmployee
+    const dialogOpen = isNewModalOpen || !!activeEmployee
 
     const setDialogOpen = (open: boolean) => {
         if (!open) {
@@ -193,7 +186,7 @@ export default function EmployeesPage() {
             <EmployeeDrawer
                 open={dialogOpen}
                 onOpenChange={setDialogOpen}
-                employee={editingEmployee}
+                employee={activeEmployee}
                 onSaved={() => {
                     setDialogOpen(false)
                     fetchEmployees()

@@ -65,13 +65,15 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
     // Depends ONLY on selectedFromUrl — see CategoryList for explanation
     // of why isFormOpen/editingAccount must NOT be in the dependency array.
     useEffect(() => {
-        if (selectedFromUrl) {
-            setEditingAccount(selectedFromUrl)
-            setIsFormOpen(true)
-        } else {
-            setIsFormOpen(false)
-            setEditingAccount(null)
-        }
+        requestAnimationFrame(() => {
+            if (selectedFromUrl) {
+                setEditingAccount(selectedFromUrl)
+                setIsFormOpen(true)
+            } else {
+                setIsFormOpen(false)
+                setEditingAccount(null)
+            }
+        })
     }, [selectedFromUrl])
 
     const handleCloseModal = () => {
@@ -97,7 +99,7 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
     // Synchronize external modal trigger
     useEffect(() => {
         if (externalOpen && isMounted.current) {
-            setIsFormOpen(true)
+            requestAnimationFrame(() => setIsFormOpen(true))
         }
     }, [externalOpen])
 

@@ -154,8 +154,8 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
         return `${fromStr} - ${toStr}`
     }
 
-    const periodLabel = getPeriodLabel(date, headerFormat)
-    const compPeriodLabel = getPeriodLabel(compDate, headerFormat)
+    const periodLabel = getPeriodLabel(date)
+    const compPeriodLabel = getPeriodLabel(compDate)
 
     const renderBSDistribution = () => {
         if (!bsData) return null

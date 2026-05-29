@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useCallback } from "react"
+import React, { useState, useEffect } from "react"
 import { toast } from "sonner"
 import { AdvanceDrawer } from "@/features/hr"
 import { createAdvance, deleteAdvance, getEmployees, getPayrolls } from "@/features/hr"
@@ -45,17 +45,21 @@ export default function AdvancesPage() {
         }
     }
 
-    const fetchDropdownData = useCallback(async () => {
-        try {
-            const [emps, pays] = await Promise.all([getEmployees(), getPayrolls()])
-            setEmployees(emps)
-            setPayrolls(pays)
-        } catch {
-            toast.error("Error al cargar datos")
-        }
+    useEffect(() => {
+        let cancelled = false
+        ;(async () => {
+            try {
+                const [emps, pays] = await Promise.all([getEmployees(), getPayrolls()])
+                if (!cancelled) {
+                    setEmployees(emps)
+                    setPayrolls(pays)
+                }
+            } catch {
+                if (!cancelled) toast.error("Error al cargar datos")
+            }
+        })()
+        return () => { cancelled = true }
     }, [])
-
-    useEffect(() => { fetchDropdownData() }, [fetchDropdownData])
 
     const handleDelete = async (id: number) => {
         try {

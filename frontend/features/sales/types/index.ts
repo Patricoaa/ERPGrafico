@@ -5,7 +5,13 @@ export type DeliveryStatus = 'PENDING' | 'PARTIAL' | 'DELIVERED'
 
 export interface SaleOrderLine {
     id?: number
-    product?: string | number
+    product?: string | number | {
+        id: number;
+        name: string;
+        code: string;
+        image_thumbnail?: string;
+        requires_advanced_manufacturing?: boolean;
+    }
     product_name?: string
     description: string
     quantity: number

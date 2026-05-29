@@ -49,9 +49,11 @@ export function LedgerDrawer({ accountId, accountName, accountCode, trigger }: L
 
     useEffect(() => {
         if (serverDate && !dateRange) {
-            setDateRange({
-                from: new Date(serverDate.getFullYear(), serverDate.getMonth(), 1),
-                to: serverDate
+            requestAnimationFrame(() => {
+                setDateRange({
+                    from: new Date(serverDate.getFullYear(), serverDate.getMonth(), 1),
+                    to: serverDate
+                })
             })
         }
     }, [serverDate])

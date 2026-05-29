@@ -50,17 +50,21 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
     // ?selected=<id> → abre el form de edición
     useEffect(() => {
         if (!selectedFromUrl) return
-        setEditingEntry(selectedFromUrl)
-        setIsFormOpen(true)
-        setViewingTransaction(null)
+        requestAnimationFrame(() => {
+            setEditingEntry(selectedFromUrl)
+            setIsFormOpen(true)
+            setViewingTransaction(null)
+        })
     }, [selectedFromUrl])
 
     // ?detail=<id> → abre el visor de transacción (read-only)
     useEffect(() => {
         if (!detailId) return
-        setViewingTransaction({ type: 'journal_entry', id: Number(detailId) })
-        setIsFormOpen(false)
-        setEditingEntry(null)
+        requestAnimationFrame(() => {
+            setViewingTransaction({ type: 'journal_entry', id: Number(detailId) })
+            setIsFormOpen(false)
+            setEditingEntry(null)
+        })
     }, [detailId])
 
     const clearSelection = () => {

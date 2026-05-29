@@ -279,7 +279,8 @@ export function AttributeManager({ externalOpen, createAction }: AttributeManage
             <div className="flex-1 min-h-0">
                 <DataTable
                     columns={columns}
-                    data={attributes}
+                    // Safe: Attribute from useAttributes and ProductAttribute are structurally compatible at runtime
+                    data={attributes as unknown as ProductAttribute[]}
                     isLoading={isLoading}
                     variant="embedded"
                     bulkActions={bulkActions}

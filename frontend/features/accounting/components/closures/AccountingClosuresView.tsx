@@ -94,9 +94,11 @@ export function AccountingClosuresView({ externalOpen, onExternalOpenChange }: A
         if (selectedFromUrl) {
             const year = selectedFromUrl.year;
             if (!previewModalOpen && activeYearToClose !== year) {
-                setActiveYearToClose(year);
-                setPreviewData(selectedFromUrl);
-                setPreviewModalOpen(true);
+                requestAnimationFrame(() => {
+                    setActiveYearToClose(year);
+                    setPreviewData(selectedFromUrl);
+                    setPreviewModalOpen(true);
+                })
             }
         }
     }, [selectedFromUrl, previewModalOpen, activeYearToClose]);

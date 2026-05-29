@@ -77,7 +77,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     useEffect(() => {
-        fetchUser();
+        let cancelled = false
+        ;(async () => {
+            const token = localStorage.getItem("access_token");
+            if (!token) {
+                if (!cancelled) setIsLoading(false);
+                return;
+            }
+            try {
+                const response = await api.get("/core/me/");
+                if (!cancelled) {
+                    setUser(response.data);
+                    setIsAuthenticated(true);
+                }
+            } catch {
+                try {
+                    localStorage.removeItem("access_token");
+                    localStorage.removeItem("refresh_token");
+                } catch {}
+            } finally {
+                if (!cancelled) setIsLoading(false);
+            }
+        })()
+        return () => { cancelled = true }
     }, []);
 
     const login = async (token: string) => {

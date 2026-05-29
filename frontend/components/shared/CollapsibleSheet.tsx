@@ -45,7 +45,7 @@ export function CollapsibleSheet({
     priority = 20
 }: CollapsibleSheetProps) {
     const { registerSheet, unregisterSheet, getSheetOffset, isSheetCollapsed, getSheetIndex } = useGlobalModals()
-    const [, setIsMounted] = useState(false)
+    const [isMounted, setIsMounted] = useState(false)
 
 
 

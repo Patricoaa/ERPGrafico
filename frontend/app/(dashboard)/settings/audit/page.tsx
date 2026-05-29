@@ -38,20 +38,19 @@ export default function AuditHubPage() {
     const [logs, setLogs] = useState<GlobalAuditLog[]>([]);
     const [loading, setLoading] = useState(true);
 
-    const fetchLogs = async () => {
-        setLoading(true);
-        try {
-            const response = await api.get("/core/audit/global/");
-            setLogs(response.data);
-        } catch (error) {
-            console.error("Error fetching audit logs:", error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
     useEffect(() => {
-        fetchLogs();
+        let cancelled = false;
+        ;(async () => {
+            try {
+                const response = await api.get("/core/audit/global/");
+                if (!cancelled) setLogs(response.data);
+            } catch (error) {
+                if (!cancelled) console.error("Error fetching audit logs:", error);
+            } finally {
+                if (!cancelled) setLoading(false);
+            }
+        })();
+        return () => { cancelled = true };
     }, []);
 
     const getActionIcon = (type: string, source: string) => {

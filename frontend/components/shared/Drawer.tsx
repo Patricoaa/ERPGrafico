@@ -86,7 +86,7 @@ export function Drawer({
     // Synchronize default size if it changes dynamically
     useEffect(() => {
         if (defaultSize !== undefined) {
-            setSize(defaultSize)
+            requestAnimationFrame(() => setSize(defaultSize))
         }
     }, [defaultSize])
 
@@ -95,15 +95,17 @@ export function Drawer({
     const contentId = `drawer-content-${uniqueId.replace(/:/g, '')}`
 
     useEffect(() => {
-        if (boundary === "screen") {
-            setContainerElement(document.body)
-        } else {
-            setContainerElement(
-                document.getElementById("main-content") ||
-                document.getElementById("module-sheets-portal-container") ||
-                document.body
-            )
-        }
+        requestAnimationFrame(() => {
+            if (boundary === "screen") {
+                setContainerElement(document.body)
+            } else {
+                setContainerElement(
+                    document.getElementById("main-content") ||
+                    document.getElementById("module-sheets-portal-container") ||
+                    document.body
+                )
+            }
+        })
     }, [boundary, open])
 
     // Resizing logic

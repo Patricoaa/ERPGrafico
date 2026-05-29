@@ -136,5 +136,9 @@ export interface ProductFilters {
 
 export interface ProductUpdatePayload {
     active?: boolean;
-    // other fields as necessary
+    sale_price?: string | number;
+    code?: string;
+    sale_uom?: number;
+    price_inheritance_mode?: string;
+    price_surcharge?: string | number | null;
 }

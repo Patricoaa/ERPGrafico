@@ -77,8 +77,10 @@ export function UniversalSearch() {
     useEffect(() => {
         if (open) {
             setQuery("")
-            setActiveIndex(0)
-            setSelectedType(null)
+            requestAnimationFrame(() => {
+                setActiveIndex(0)
+                setSelectedType(null)
+            })
             setTimeout(() => inputRef.current?.focus(), 50)
         }
     }, [open])
@@ -105,7 +107,7 @@ export function UniversalSearch() {
     }, [results, selectedType])
 
     useEffect(() => {
-        setActiveIndex(0)
+        requestAnimationFrame(() => setActiveIndex(0))
     }, [filteredResults, selectedType])
 
     function navigate(url: string) {

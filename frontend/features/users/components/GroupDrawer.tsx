@@ -89,6 +89,7 @@ export function GroupDrawer({
     
     const mode: DrawerMode = modeProp ?? (initialData ? 'edit' : 'create')
     const isView = mode === 'view'
+    const drawerTitle = mode === 'create' ? 'Nuevo Grupo' : mode === 'view' ? initialData?.name || 'Grupo' : `Editar: ${initialData?.name || ''}`
     const printRef = useRef<HTMLDivElement>(null)
     const handlePrint = useReactToPrint({ contentRef: printRef })
 

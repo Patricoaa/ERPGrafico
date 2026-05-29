@@ -72,6 +72,8 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
     const [statement, setStatement] = useState<BankStatement | null>(null)
     const [loading, setLoading] = useState(true)
     const [unmatchDialog, setUnmatchDialog] = useState<{ open: boolean, lineId: number | null }>({ open: false, lineId: null })
+    const [confirming, setConfirming] = useState(false)
+    const [paymentModal, setPaymentModal] = useState<{ open: boolean, id: number }>({ open: false, id: 0 })
 
     const fetchStatement = async () => {
         try {
@@ -86,7 +88,19 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
     }
 
     useEffect(() => {
-        fetchStatement()
+        let cancelled = false
+        ;(async () => {
+            setLoading(true)
+            try {
+                const response = await api.get(`/treasury/statements/${id}/`)
+                if (!cancelled) setStatement(response.data)
+            } catch (error) {
+                if (!cancelled) console.error('Error fetching statement:', error)
+            } finally {
+                if (!cancelled) setLoading(false)
+            }
+        })()
+        return () => { cancelled = true }
     }, [id])
 
     const handleUnmatch = async () => {

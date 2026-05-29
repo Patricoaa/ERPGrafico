@@ -4,7 +4,7 @@ import { ProfileView, ProfileSidePanel } from "@/features/profile"
 
 import { PageContainer, PageHeader } from '@/components/shared'
 import { useSearchParams } from "next/navigation"
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect } from "react"
 import { getMyProfile } from '@/features/profile'
 import { toast } from "sonner"
 import type { MyProfile } from "@/types/profile"
@@ -18,18 +18,21 @@ export default function ProfilePage() {
     const [loading, setLoading] = useState(true)
     const [panelOpen, setPanelOpen] = useState(true)
 
-    const fetchProfile = useCallback(async () => {
-        try {
-            const data = await getMyProfile()
-            setProfile(data)
-        } catch {
-            toast.error("Error al cargar perfil")
-        } finally {
-            setLoading(false)
-        }
+    useEffect(() => {
+        let cancelled = false
+        ;(async () => {
+            setLoading(true)
+            try {
+                const data = await getMyProfile()
+                if (!cancelled) setProfile(data)
+            } catch {
+                if (!cancelled) toast.error("Error al cargar perfil")
+            } finally {
+                if (!cancelled) setLoading(false)
+            }
+        })()
+        return () => { cancelled = true }
     }, [])
-
-    useEffect(() => { fetchProfile() }, [fetchProfile])
 
     if (loading) {
          return (

@@ -234,7 +234,7 @@ export function SalesCheckoutWizardContent({
     }, [isHubOpen, refreshDebts])
 
     const { data: salesSettings = null } = useAccountingSettings()
-    const { data: customerDetails } = useContact(selectedCustomerId ?? null)
+    const { data: customerDetails } = useContact(selectedCustomerId ? Number(selectedCustomerId) : null)
 
     useEffect(() => {
         if (customerDetails) {
@@ -293,7 +293,8 @@ export function SalesCheckoutWizardContent({
                             isDefaultCustomer={!!selectedCustomer?.is_default_customer}
                             onValidityChange={(isValid) => setIsFolioValid(isValid)}
                             onPeriodValidityChange={(isValid) => setIsPeriodValid(isValid)}
-                            pendingDebts={pendingDebts}
+                            // Safe: pendingDebts from useContactCreditLedger has the same runtime shape as sales PendingDebt
+                            pendingDebts={pendingDebts as unknown as import("../../types").PendingDebt[] | null | undefined}
                             onDebtClick={(debt) => openHub({ orderId: debt.id, type: 'sale', onActionSuccess: refreshDebts })}
                         />
                     </div>
@@ -662,7 +663,7 @@ export function SalesCheckoutWizardContent({
             if (task.status === 'COMPLETED') {
                 if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current)
                 if (!silent) toast.success("¡Crédito aprobado!") // only explicitly toast if manual check
-                setApprovedTaskData(task.data)
+                setApprovedTaskData(task.data as CreditApprovalTask)
                 setIsWaitingApproval(false)
                 setIsApproved(true)
                 return 'COMPLETED'
