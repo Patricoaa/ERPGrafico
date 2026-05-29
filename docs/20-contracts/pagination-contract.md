@@ -4,7 +4,7 @@ doc: pagination-contract
 status: active
 owner: frontend-team + backend-team
 created: 2026-05-23
-last_review: 2026-05-23
+last_review: 2026-05-28
 stability: contract-changes-require-ADR
 depends_on:
   - api-contracts.md
@@ -327,23 +327,24 @@ Snapshot inicial. Se actualiza con cada migración en el mismo PR.
 | [ordersApi](../../frontend/features/orders/api/ordersApi.ts), [productionApi](../../frontend/features/production/api/productionApi.ts), [useUsers](../../frontend/features/users/hooks/useUsers.ts), [useDrafts](../../frontend/features/pos/hooks/useDrafts.ts), [useProducts (pos)](../../frontend/features/pos/hooks/useProducts.ts), [accounting/useJournalEntries](../../frontend/features/accounting/hooks/useJournalEntries.ts), [inventoryApi](../../frontend/features/inventory/api/inventoryApi.ts) | varios | `data.results \|\| data` (descarta envoltorio) | 🔴 No | Mismo bloqueo que sales: migrar antes de activar `DEFAULT_PAGINATION_CLASS` global |
 | Todos los hooks de detalle (`use<Entity>(id)`) | `/<resource>/{id}/` | `T` | ✅ N/A | Detalle no se pagina |
 
-### Orden de migración recomendado
+### Orden de migración — estado 2026-05-28
 
-1. **Crear `frontend/lib/pagination.ts`** (`Page<T>`, `toPage`).
-2. **Añadir prop `rowCount`** a `DataTable` + `DataTablePagination` (§3.2). Solo, sin migrar hooks. Este cambio es backward-compatible.
-3. **Migrar primero los dos hooks que ya tocan endpoints paginados** (`useTreasuryMovements`, `useStockMoves`) — es donde hay bug visible hoy.
-4. **Migrar consumidores afectados** (`MovementList`, `ReconciliationPanel`) al patrón canónico §3.1.
-5. **Activar `DEFAULT_PAGINATION_CLASS` en settings.py** — pero antes:
-   - Migrar todos los hooks `data.results || data` a `Page<T>`.
-   - Validar manualmente que ninguna lista del proyecto pierde datos. Reverso de DB tools si hay duda.
-6. **Bajar `max_page_size`** de 1000 → 200 (§1.4).
-7. **Reconciliar [api-contracts.md:19](./api-contracts.md#L19)** — corregir "DRF cursor … max 100" → "DRF page-number … max 200, default 50" para reflejar la realidad.
+| # | Paso | Estado |
+|---|------|--------|
+| 1 | `frontend/lib/pagination.ts` (`Page<T>`, `toPage`) | ✅ hecho |
+| 2 | prop `rowCount` en `DataTable` + `DataTablePagination` lee `getRowCount()` (§3.2) | ✅ hecho |
+| 3 | `StandardResultsSetPagination` consolidada en `backend/core/api/pagination.py` (sin duplicados) | ✅ hecho |
+| 4 | `max_page_size` 1000 → 200 (§1.4) | ✅ hecho |
+| 5 | ESLint rules `pagination/*` (§6) | ✅ hechas |
+| 6 | `api-contracts.md` reconciliado (page-number, max 200, default 50) | ✅ hecho |
+| 7 | Migrar hooks `data.results \|\| data` → `Page<T>` (sales, orders, production, users, pos drafts, accounting, inventory) | 🔴 pendiente |
+| 8 | Activar `DEFAULT_PAGINATION_CLASS` global en `settings.py` — **después** del paso 7 (antes truncaría a 50) | 🔴 pendiente (bloqueado por 7) |
 
 ---
 
 ## 6. Enforcement mecánico
 
-Reglas existentes en [frontend/eslint-rules/](../../frontend/eslint-rules/) — agregar dos nuevas siguiendo el patrón de [fsd-no-api-in-component.mjs](../../frontend/eslint-rules/fsd-no-api-in-component.mjs):
+Las dos reglas de paginación **ya existen** en [frontend/eslint-rules/](../../frontend/eslint-rules/) y están activas como `error`:
 
 | Rule | Detecta | Severidad |
 |---|---|---|
@@ -367,12 +368,13 @@ Cualquier resultado distinto del baseline anterior = desviación, clasificar con
 
 ---
 
-## 7. Deuda conocida (no bloquea este contrato pero hay que cerrar)
+## 7. Deuda conocida (pendiente real)
 
-- **[api-contracts.md:19](./api-contracts.md#L19) miente:** dice "DRF cursor pagination … max 100". El código no usa cursor (usa page-number) y `max_page_size` actual es 1000. Reconciliar como paso 7 de §5.
-- **[StandardResultsSetPagination duplicada](../../backend/inventory/views.py#L24)** en `inventory/views.py` y `treasury/views.py`. Mover a `core/api/pagination.py` y borrar duplicados (paso 1 de §1.3).
-- **Hooks marcados `@deprecated` ([useStockMovesList](../../frontend/features/inventory/hooks/useStockMoves.ts#L82), [useTreasuryMovementsList](../../frontend/features/treasury/hooks/useTreasuryMovements.ts#L66))** siguen siendo consumidos por componentes ([MovementList.tsx:48](../../frontend/features/inventory/components/MovementList.tsx#L48)). Eliminar requiere migrar el consumidor primero.
-- **ESLint custom rules** de §6 todavía no existen; mientras tanto la auditoría es manual.
+- **Hooks `data.results || data`** (sales, orders, production, users, pos drafts, accounting, inventory) aún descartan el envoltorio → migrar a `Page<T>` **antes** de activar `DEFAULT_PAGINATION_CLASS` global, o se truncan silenciosamente a 50 (§5 paso 7).
+- **`DEFAULT_PAGINATION_CLASS` global** sigue inactivo en `settings.py` — intencional hasta cerrar el punto anterior (§5 paso 8).
+- **Hooks `@deprecated`** ([useStockMovesList](../../frontend/features/inventory/hooks/useStockMoves.ts#L82), [useTreasuryMovementsList](../../frontend/features/treasury/hooks/useTreasuryMovements.ts#L66)) aún consumidos por componentes; eliminar requiere migrar el consumidor primero.
+
+> **Cerrado desde la auditoría 2026-05-23:** `lib/pagination.ts`, prop `rowCount` + `getRowCount()`, consolidación de `StandardResultsSetPagination` en `core/api/pagination.py`, `max_page_size=200`, reconciliación de `api-contracts.md` y las ESLint rules `pagination/*` (§6).
 
 ---
 

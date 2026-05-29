@@ -82,15 +82,20 @@
 
 ## Global invariants (violate = PR rejected)
 
-1. **Zero `any`** in TypeScript. Use Zod-derived types or `unknown` + guards.
-2. **No raw Tailwind colors** (`bg-red-500`). Only semantic tokens.
-3. **No cross-feature internal imports.** Use barrel exports.
-4. **No direct `@/lib/api` in components.** Wrap in feature hook.
-5. **`StatusBadge`** is the only authorized status renderer.
-6. **All forms** use Zod + `react-hook-form` in `schema.ts`.
-7. **All shared components** handle `loading` / `empty` / `error` states.
-8. **Every public API change** requires ADR.
-9. **Component suffix must match surface** — `Drawer` = slide-over, `Modal` = dialog, `Form` = no surface. `FormModal`/`FormDrawer` are prohibited. See [naming-conventions.md](90-governance/naming-conventions.md).
+> Headline list. The **authoritative** rules live in [GOVERNANCE.md](90-governance/GOVERNANCE.md); the same 12 appear in the root [CLAUDE.md](../CLAUDE.md). Keep all three in sync.
+
+1. **Zero `any`** — Zod-derived types or `unknown` + type guard. See [zero-any-policy.md](90-governance/zero-any-policy.md).
+2. **No raw Tailwind colors** (`bg-red-500`) — semantic tokens only (`bg-primary`).
+3. **No cross-feature internal imports** — feature barrel `index.ts` only.
+4. **No direct `@/lib/api` in components or pages** — only `features/*/api/`, `features/*/hooks/`, `/hooks/`.
+5. **No `useQuery`/`useMutation` directly in components** — wrap in a feature hook.
+6. **Shared components imported via barrel only** — `@/components/shared`, never the file path.
+7. **`StatusBadge`** is the only authorized status renderer.
+8. **All shared components** handle `loading` / `empty` / `error` states.
+9. **All forms** use `react-hook-form` + `zodResolver` (schema in `schema.ts`).
+10. **Views ≤ 20 lines** per Django action — logic in `services.py`.
+11. **Component suffix must match surface** — `Drawer` = slide-over, `Modal` = dialog, `Sheet`/`Wizard`/`Form`…; `FormModal`/`FormDrawer` are prohibited. See [naming-conventions.md](90-governance/naming-conventions.md).
+12. **Changing a contract (layer 20), public API, or a global invariant requires an ADR.**
 
 ## Agentic model instructions
 
