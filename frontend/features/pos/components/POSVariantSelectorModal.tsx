@@ -6,7 +6,7 @@
  * TODO(sprint-planning): Refactor POSClientView to use the shared VariantSelectorModal directly.
  */
 import React, { useCallback, useMemo } from 'react'
-import { VariantSelectorModal } from '@/components/shared/ProductSelector/VariantSelectorModal'
+import { VariantSelectorModal } from '@/components/shared'
 import { isPOSProductDisabled } from '@/features/pos/utils/product-availability'
 import type { Product, Variant, CartItem } from '@/types/pos'
 import type { BaseProduct } from '@/features/inventory/types'

@@ -2,9 +2,8 @@
 
 import { Home, Calculator, ShoppingCart, Package, Printer, Banknote, ShoppingBag, PieChart, Receipt, UserCog, Users } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/AuthContext"
-import { useState } from "react"
+
 import { PermissionGuard } from "@/components/auth/PermissionGuard"
 import {
     Tooltip,
@@ -12,7 +11,7 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { motion, AnimatePresence } from "framer-motion"
+import { motion } from "framer-motion"
 import { useBranding } from "@/contexts/BrandingProvider"
 
 interface MiniSidebarProps {
@@ -35,8 +34,7 @@ const mainItems = [
 ]
 
 export function MiniSidebar({ activeCategory, onCategoryChange }: MiniSidebarProps) {
-    const router = useRouter()
-    const { logout, user } = useAuth()
+    const { user } = useAuth()
     const { logo } = useBranding()
 
     const handleCategoryClick = (id: string) => {
@@ -67,7 +65,7 @@ export function MiniSidebar({ activeCategory, onCategoryChange }: MiniSidebarPro
             {/* 2. Navigation Rail */}
             <div className="flex-1 w-full flex flex-col items-center gap-3 overflow-y-auto overflow-x-hidden scrollbar-hide">
                 <TooltipProvider delayDuration={0}>
-                    {mainItems.map((item, index) => (
+                    {mainItems.map((item) => (
                         <PermissionGuard permission={item.permission || undefined} key={item.id}>
                             <Tooltip>
                                 <TooltipTrigger asChild>

@@ -13,9 +13,9 @@ import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/comp
 import { useDebounce } from "@/hooks/useDebounce"
 import { formatRUT } from "@/lib/utils/format"
 import { useContactSearch, useSingleContact } from "@/features/contacts/hooks/useContactSearch"
-import { EmptyState } from "@/components/shared/EmptyState"
+
 import { Contact } from "@/types/entities"
-import { CardSkeleton, LabeledContainer } from "@/components/shared"
+import { CardSkeleton, EmptyState, LabeledContainer } from '@/components/shared'
 import React, { Suspense } from "react"
 
 const ContactDrawer = React.lazy(() => import("@/features/contacts/components/ContactDrawer"))

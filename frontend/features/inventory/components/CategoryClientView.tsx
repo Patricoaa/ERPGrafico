@@ -3,13 +3,13 @@
 import { showApiError } from "@/lib/errors"
 import { useState, useMemo, useCallback, useEffect } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
-import { DataTableView, DataTableColumnHeader, EntityCard } from '@/components/shared'
+import { ActionConfirmModal, DataTableColumnHeader, DataTableView, EntityCard } from '@/components/shared'
 import { DataCell, createActionsColumn } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
 import { CategoryDrawer } from "./CategoryDrawer"
 
 import { toast } from "sonner"
-import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+
 import React from "react"
 
 import { useCategories, type Category } from "@/features/inventory/hooks/useCategories"
@@ -146,7 +146,6 @@ export function CategoryClientView({ externalOpen, onExternalOpenChange, createA
     React.useEffect(() => {
         if (externalOpen) setIsCreateOpen(true)
     }, [externalOpen])
-
 
     return (
         <div className="space-y-4 h-full flex flex-col">

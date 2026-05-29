@@ -1,24 +1,21 @@
-
 "use client"
-
 
 import * as React from "react"
 import { formatCurrency } from "@/lib/money"
 import dynamic from "next/dynamic"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
-import { useState, useEffect, useMemo, useCallback, useRef } from "react"
+import {useState, useEffect, useMemo, useCallback} from "react"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
-import { BaseModal } from "@/components/shared/BaseModal"
-import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+
 import { ExclusionModal } from "./ExclusionModal"
 import { SplitAllocationDialog } from "./SplitAllocationDialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useReconciledLinesQuery } from "../hooks/useReconciliationQueries"
 
-import { LabeledSelect, LabeledInput, SkeletonShell, ActionDock, Chip, CollapsibleSheet, SmartSearchBar, useSmartSearch, FormFooter, CancelButton } from "@/components/shared"
+import { ActionConfirmModal, ActionDock, BaseModal, CancelButton, Chip, CollapsibleSheet, FormFooter, LabeledInput, LabeledSelect, PeriodValidationDateInput, SkeletonShell, SmartSearchBar, useSmartSearch } from '@/components/shared'
 import { reconciliationSearchDef } from "../searchDef"
-import { PeriodValidationDateInput } from "@/components/shared/PeriodValidationDateInput"
+
 import { isZeroTolerance, safeDifference, safeSum, safeParseFloat } from "@/lib/math"
 import {
     Ban, CheckCircle2, ChevronRight, ChevronLeft, FileText,
@@ -62,7 +59,6 @@ import {
 import { MovementWizard, type MovementData } from "@/features/treasury/components/MovementWizard"
 import { AutoMatchProgressModal } from "./AutoMatchProgressModal"
 import { ReconciliationIntelligence } from "./ReconciliationIntelligence"
-
 
 import { DataTable } from '@/components/shared'
 import { LazyDrawer } from "@/features/_shared/transaction-drawer"
@@ -286,8 +282,6 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
         }
     }, [selectedLines.length, selectedPayments.length])
 
-
-
     // ─── Selection Handlers ───────────────────────────────────────────────────
 
     const handleLineSelectionChange = useCallback((selection: RowSelectionState) => {
@@ -363,7 +357,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
             // Note: Optimistic update handles UI so we just complete if it was the last one
             if (unreconciledLines.length === 1) onComplete()
             setSelectedLines([])
-        } catch (error: unknown) {
+        } catch {
             // Handled in mutation
         }
     }
@@ -408,7 +402,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
             setSelectedLines([])
             setDiffDialog(prev => ({ ...prev, open: false }))
             setDiffNotes("")
-        } catch (error: unknown) {
+        } catch {
             // Handled in mutation
         }
     }
@@ -775,9 +769,6 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                     </div>
                 </div>
 
-
-
-
                 <TabsContent value="unreconciled" className="flex-1 min-h-0 flex flex-col mt-0 data-[state=inactive]:hidden">
                     <div className="flex-1 min-h-0 flex gap-6 relative items-start pb-24">
                         {/* Tables Container */}
@@ -1100,7 +1091,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                             if ((bankData?.count || 0) === affectedCount) {
                                 onComplete()
                             }
-                        } catch (error) {
+                        } catch {
                             // Handled in mutation
                         } finally {
                             setActionDialog({ open: false, type: null })

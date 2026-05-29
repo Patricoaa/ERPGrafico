@@ -3,7 +3,7 @@
 import { LabeledInput, PeriodValidationDateInput } from "@/components/shared"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
-import { Truck, Package, Calendar, Info, AlertTriangle, ShoppingBag } from "lucide-react"
+import {Truck, Package, Calendar, Info, AlertTriangle} from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useAllowedUoMs } from "@/features/inventory/hooks/useUoMs"
 import {

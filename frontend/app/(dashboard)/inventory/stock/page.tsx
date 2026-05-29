@@ -2,8 +2,8 @@ import { Metadata } from "next"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { redirect } from "next/navigation"
 import { WarehouseClientView, MovementClientView, StockReport } from "@/features/inventory"
-import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
-import { FadeIn } from "@/components/shared"
+
+import { FadeIn, ToolbarCreateButton } from '@/components/shared'
 
 export const metadata: Metadata = {
     title: "Stock e Inventario | ERPGrafico",

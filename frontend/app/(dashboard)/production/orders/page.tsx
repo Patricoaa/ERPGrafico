@@ -1,8 +1,8 @@
 "use client"
 
-import { useEffect, useState, useMemo, useCallback } from "react"
+import { useState, useMemo, useCallback } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
-import { DataTable } from '@/components/shared'
+import { ActionConfirmModal, DataTable } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { createActionsColumn, DataCell } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
@@ -15,15 +15,13 @@ import {
     useWorkOrderListActions,
 } from "@/features/production"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Switch } from "@/components/ui/switch"
-import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { BulkActionDock, Chip, FadeIn } from "@/components/shared"
 import { isWorkOrderOverdue } from "@/features/production/utils"
 import { ToolbarCreateButton, SmartSearchBar, useSmartSearch } from "@/components/shared"
 import { cn, translateProductionStage } from "@/lib/utils"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
-import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+
 import { usePathname } from "next/navigation"
 import { workOrderSearchDef } from "@/features/production/searchDef"
 
@@ -91,7 +89,6 @@ function WorkOrdersClient() {
         router.replace(`${pathname}?${params.toString()}`, { scroll: false })
     }, [router, pathname, searchParams])
 
-
     const deleteConfirm = useConfirmAction<number>(async (id) => {
         await deleteOrder({ id })
     })
@@ -109,8 +106,6 @@ function WorkOrdersClient() {
     })
 
     const handleDuplicate = (id: number) => duplicateConfirm.requestConfirm(id)
-
-
 
     const columns = useMemo<ColumnDef<WorkOrder>[]>(() => [
         {
@@ -295,7 +290,6 @@ function WorkOrdersClient() {
                     }}
                 />
             )}
-
 
             <div className="mt-2 flex-1 min-h-0">
                 <FadeIn key={viewMode} className="h-full">

@@ -10,7 +10,6 @@ import { ArrowRight, ArrowLeft } from "lucide-react"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { DomainHubStatus } from "@/components/shared"
 import { DataCell } from '@/components/shared'
-import { Tabs } from "@/components/ui/tabs"
 import { useSalesOrders, useSalesNotes, type SaleOrder, type SaleNote } from "@/features/sales"
 import { SmartSearchBar, useSmartSearch } from "@/components/shared"
 import { salesOrderSearchDef, salesNoteSearchDef } from "@/features/sales/searchDef"

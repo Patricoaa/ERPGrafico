@@ -7,20 +7,16 @@ import {
     Package,
     ArrowDownCircle,
     ArrowUpCircle,
-    Loader2,
     Users,
     Info,
     Warehouse as WarehouseIcon
 } from "lucide-react"
-import { BaseModal } from "@/components/shared/BaseModal"
+
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Button } from "@/components/ui/button"
-import { SubmitButton, CancelButton } from "@/components/shared/ActionButtons"
-import { Label } from "@/components/ui/label"
-import { LabeledInput, LabeledSelect, LabeledContainer, Chip } from "@/components/shared"
+
+import { BaseModal, CancelButton, Chip, LabeledContainer, LabeledInput, LabeledSelect, SubmitButton } from '@/components/shared'
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { toast } from "sonner"
-
 
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { settingsApi } from "../../hooks"
@@ -35,8 +31,6 @@ interface InventoryContributionModalProps {
     onSuccess?: () => void
     preSelectedPartnerId?: number
 }
-
-
 
 interface Warehouse {
     id: number

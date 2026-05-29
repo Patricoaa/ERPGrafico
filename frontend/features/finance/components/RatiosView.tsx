@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { PageContainer } from "@/components/shared"
+import { EmptyState, PageContainer } from '@/components/shared'
 import {
     PieChart,
     Pie,
@@ -22,7 +22,7 @@ import { financeApi } from "../api/financeApi";
 import { DateRange } from "react-day-picker";
 import { format } from "date-fns";
 import { CardSkeleton, StatCard } from "@/components/shared";
-import { EmptyState } from "@/components/shared/EmptyState";
+;
 
 const COLORS = ['var(--primary)', 'var(--accent)', 'var(--secondary)', 'var(--muted-foreground)', 'var(--warning)', 'var(--destructive)'];
 

@@ -2,7 +2,6 @@
 
 import React from "react"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
-import { Separator } from "@/components/ui/separator"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -11,15 +10,14 @@ import {
 import {
     Loader2, Sparkles, AlertCircle, DollarSign, Clock, CheckCircle2, Plus, History
 } from "lucide-react"
-import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 
 import { cn, formatPlainDate } from "@/lib/utils"
 import type { Payroll, PayrollItem } from "@/types/hr"
-import { DataCell, StatusBadge } from '@/components/shared'
+import { ActionConfirmModal, DataCell, MoneyDisplay, StatusBadge } from '@/components/shared'
 import { formatEntityDisplay } from "@/lib/entity-registry"
 
 import { useConfirmAction } from "@/hooks/useConfirmAction"
-import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+
 import { FormSection } from "@/components/shared"
 
 const LABEL_STYLE = "text-[10px] font-black uppercase text-muted-foreground tracking-widest"
@@ -232,7 +230,6 @@ export function PayrollCard({
                 </div>
             </CardHeader>
 
-
             <CardContent className="px-10 py-8">
                 {/* 2. CONSOLIDATED DETAIL TABLE */}
                 <FormSection title="Detalle de Conceptos" icon={Clock} className="pb-6" />
@@ -281,7 +278,6 @@ export function PayrollCard({
                         </TableBody>
                     </Table>
                 </div>
-
 
                 {!isReadOnly && onAddItem && (
                     <div className="mt-4 flex justify-end">

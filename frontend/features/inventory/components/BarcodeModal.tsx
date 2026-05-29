@@ -2,11 +2,11 @@
 
 import { useState, useEffect, useRef } from "react"
 import JsBarcode from "jsbarcode"
-import { BaseModal } from "@/components/shared/BaseModal"
+
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { LabeledContainer } from "@/components/shared/LabeledContainer"
-import { FormFooter } from "@/components/shared"
+
+import { BaseModal, FormFooter, LabeledContainer } from '@/components/shared'
 import { Barcode, Download, Printer, RefreshCw, Check } from "lucide-react"
 import { toast } from "sonner"
 

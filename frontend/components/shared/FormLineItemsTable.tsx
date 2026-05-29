@@ -9,7 +9,7 @@ import {
     TableRow,
 } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
-import { SkeletonShell } from "@/components/shared/SkeletonShell"
+import { SkeletonShell } from '@/components/shared'
 import { cn } from "@/lib/utils"
 
 // ─────────────────────────────────────────────────────────

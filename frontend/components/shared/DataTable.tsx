@@ -19,17 +19,14 @@ import {
 } from "@tanstack/react-table"
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table"
-import { SkeletonShell } from "@/components/shared/SkeletonShell"
+
 import { cn } from "@/lib/utils"
-import { EmptyState } from "@/components/shared/EmptyState"
+
 import { motion, AnimatePresence } from "framer-motion"
 import { Skeleton } from "@/components/ui/skeleton"
 import { SearchX, LucideIcon } from "lucide-react"
-import { EmptyStateContext } from "@/components/shared/EmptyState"
-import { BulkActionDock, BulkActionButtons, type BulkAction } from "@/components/shared"
 
-import { DataTablePagination } from "@/components/shared/DataTablePagination"
-import { DataTableToolbar } from "@/components/shared/DataTableToolbar"
+import { BulkActionButtons, BulkActionDock, DataTablePagination, DataTableToolbar, EmptyState, EmptyStateContext, SkeletonShell, type BulkAction } from '@/components/shared'
 
 export interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[]
@@ -535,7 +532,6 @@ export function DataTable<TData, TValue>({
                 </TableRow>
             )
         )
-
 
         return (
             <div ref={containerRef} className="relative flex flex-col h-full space-y-1 min-h-0">

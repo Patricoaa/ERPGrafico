@@ -9,13 +9,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Form, FormField } from "@/components/ui/form"
 import { Button } from "@/components/ui/button"
 import {
-    Loader2,
     Trash2,
     Settings2,
     AlertCircle
 } from "lucide-react"
-import { BaseModal } from "@/components/shared/BaseModal"
-import { AutoSaveStatusBadge, Chip, SkeletonShell, LabeledInput, LabeledSelect, ToolbarCreateButton, FadeIn } from "@/components/shared"
+
+import { ActionConfirmModal, ActionSlideButton, AutoSaveStatusBadge, BaseModal, Chip, FadeIn, LabeledInput, LabeledSelect, SkeletonShell, ToolbarCreateButton } from '@/components/shared'
 import { useAutoSaveForm } from "@/hooks/useAutoSaveForm"
 import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
@@ -38,11 +37,10 @@ import type {
 
 import { FormulaBuilder } from "@/features/hr/components/FormulaBuilder"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
-import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+
 import { DataTable } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
-import { cn } from "@/lib/utils"
-import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
+;
 import { DataCell, createActionsColumn } from '@/components/shared'
 
 import { globalSettingsSchema, conceptSchema, afpSchema, type GlobalHRFormValues, type ConceptFormValues, type AFPFormValues } from "./HRSettingsView.schema"
@@ -398,7 +396,6 @@ export function HRSettingsView({ activeTab = "global" }: { activeTab?: string })
         </div>
     )
 }
-
 
 // --- DIALOGS ---
 

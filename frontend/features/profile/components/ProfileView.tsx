@@ -9,17 +9,16 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { getMyProfile, changePassword, changePin, downloadPayrollPdf, downloadMultiplePayrollPdfs } from '@/features/profile/api/profileApi'
 import type { MyProfile } from "@/types/profile"
-import type { Payroll, SalaryAdvance, PayrollPayment } from "@/types/hr"
+import type {Payroll} from "@/types/hr"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
-import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion"
 import { Button } from "@/components/ui/button"
-import { StatusBadge, Chip, FadeIn } from "@/components/shared"
+import { ActionSlideButton, Chip, FadeIn, MoneyDisplay, StatusBadge } from '@/components/shared'
 import { Card, CardContent } from "@/components/ui/card"
 import { DataTable } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { Checkbox } from "@/components/ui/checkbox"
 import { ColumnDef } from "@tanstack/react-table"
-import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
+
 import { Form, FormField } from "@/components/ui/form"
 import { cn } from "@/lib/utils"
 import {
@@ -33,7 +32,7 @@ import { EmployeePayrollPreview } from "./EmployeePayrollPreview"
 import { PartnerProfileTab } from "./PartnerProfileTab"
 import { DataCell, createActionsColumn } from '@/components/shared'
 import { CardSkeleton } from "@/components/shared"
-import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
+;
 import { useTheme } from "next-themes"
 import { useThemeSync } from "../hooks/useThemeSync"
 
@@ -151,7 +150,6 @@ export function ProfileView({ activeTab, activeSubTab = "employee", initialProfi
         </Tabs>
     )
 }
-
 
 // ============================================
 // TAB 1: ACCOUNT
@@ -361,7 +359,6 @@ function PasswordChangeCard() {
         </Card>
     )
 }
-
 
 // ============================================
 // TAB 2: PERSONAL

@@ -29,7 +29,6 @@ export function OrderHeaderDashboard({
     activeInvoice,
     isNoteMode,
     type,
-    globalStatus,
     phasesStatus
 }: OrderHeaderDashboardProps) {
     const activeDoc = activeInvoice || order

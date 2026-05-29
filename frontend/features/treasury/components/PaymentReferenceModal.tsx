@@ -1,10 +1,9 @@
 "use client"
 
 import { useState } from "react"
-import { BaseModal } from "@/components/shared/BaseModal"
+
 import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
-import { LabeledInput } from "@/components/shared"
+import { BaseModal, LabeledInput } from '@/components/shared'
 import { Hash, Landmark, CreditCard } from "lucide-react"
 import { usePaymentReference } from "@/features/treasury/hooks/usePayments"
 

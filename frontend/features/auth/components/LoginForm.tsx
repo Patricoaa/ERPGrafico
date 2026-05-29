@@ -6,16 +6,16 @@ import { z } from "zod"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { motion } from "framer-motion"
-import { Loader2, ArrowRight } from "lucide-react"
+import {ArrowRight} from "lucide-react"
 
 import { useAuthLogin } from '../hooks/useAuthLogin'
-import { SubmitButton } from "@/components/shared/ActionButtons"
+
 import {
     Form,
     FormField,
 } from "@/components/ui/form"
 import { useAuth } from "@/contexts/AuthContext"
-import { LabeledInput } from "@/components/shared"
+import { LabeledInput, SubmitButton } from '@/components/shared'
 
 const formSchema = z.object({
     username: z.string().min(2, {

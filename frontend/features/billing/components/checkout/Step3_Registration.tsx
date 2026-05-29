@@ -1,13 +1,10 @@
 "use client"
 
-import { LabeledInput } from "@/components/shared"
+import { DocumentAttachmentDropzone, LabeledInput, PeriodValidationDateInput } from '@/components/shared'
 import { Checkbox } from "@/components/ui/checkbox"
 import { FileText, Calendar, Hash, ShieldAlert } from "lucide-react"
 import { useServerDate } from "@/hooks/useServerDate"
 import { useEffect } from "react"
-import { DocumentAttachmentDropzone } from "@/components/shared/DocumentAttachmentDropzone"
-
-import { PeriodValidationDateInput } from "@/components/shared/PeriodValidationDateInput"
 
 interface Step3_RegistrationProps {
     isCreditNote: boolean

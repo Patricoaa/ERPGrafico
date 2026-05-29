@@ -5,7 +5,6 @@ import { Drawer, StatCard } from "@/components/shared"
 import {
     TrendingUp,
     PieChart as PieChartIcon,
-    AlertCircle,
     Building2,
     BarChart3
 } from "lucide-react"

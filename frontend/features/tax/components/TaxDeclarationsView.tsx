@@ -19,17 +19,17 @@ import { DeclarationWizard } from "@/features/tax/components/DeclarationWizard"
 import { F29PaymentModal } from "@/features/tax/components/F29PaymentModal"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { useServerDate } from "@/hooks/useServerDate"
-import { DataTableView, DataTableColumnHeader } from '@/components/shared'
+import { DataTableColumnHeader, DataTableView, EntityCard, StatusBadge } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
 import { DataCell, createActionsColumn } from '@/components/shared'
 import { cn } from "@/lib/utils"
-import { StatusBadge } from "@/components/shared/StatusBadge"
+
 import { TaxPeriod, TaxDeclaration, TaxPaymentData } from "../types"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { type Row, type Table } from "@tanstack/react-table"
 import { CardSkeleton, SmartSearchBar, useClientSearch } from "@/components/shared"
 import { taxPeriodSearchDef } from "@/features/tax/searchDef"
-import { EntityCard } from "@/components/shared/EntityCard"
+
 import { useTaxPeriods, useLazyTaxDeclarations } from "../hooks/useTaxQueries"
 import { useCreateTaxPayment } from "../hooks/useTaxMutations"
 

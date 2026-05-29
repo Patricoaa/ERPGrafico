@@ -1,20 +1,19 @@
 "use client"
 
 import { UoM, Product } from "@/types/entities"
-import { LabeledContainer, FormSection, FormTabsContent, LabeledSwitch, LabeledSeparator, ActionConfirmModal } from "@/components/shared"
+import {ActionConfirmModal, FormLineItemsTable, FormSection, LabeledContainer, LabeledSeparator, LabeledSwitch} from '@/components/shared'
 import { FormField } from "@/components/ui/form"
-import { EmptyState } from "@/components/shared/EmptyState"
+
 import { Button } from "@/components/ui/button"
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table"
-import { Package, Layers, Clock, Settings2, Info, Monitor, Printer, Scissors, Box, Trash2 } from "lucide-react"
+import {TableRow, TableBody, TableCell} from "@/components/ui/table"
+import {Package, Layers, Clock, Settings2, Info, Monitor, Printer, Scissors, Trash2} from "lucide-react"
 import { UseFormReturn } from "react-hook-form"
 import { ProductFormValues } from "./schema"
 import { ProductInitialData } from "@/types/forms"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { cn } from "@/lib/utils"
-import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
-import { FormLineItemsTable } from "@/components/shared/FormLineItemsTable"
+
 import { useBOMs } from "@/features/production/hooks/useBOMs"
 import { BOMDrawer } from "@/features/production/components/BOMDrawer"
 import { BOM } from "@/features/production/types"
@@ -133,7 +132,6 @@ export function ProductManufacturingTab({ form, products, uoms, variantMode = fa
                                 />
                             )}
                         />
-
 
                     </div>
 

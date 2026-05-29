@@ -1,11 +1,6 @@
 import api from '@/lib/api'
 import type {
     PurchaseOrderAPI,
-    CheckoutLine,
-    PurchaseNoteLine,
-    DTEData,
-    PaymentData,
-    ReceiptData,
 } from '../types'
 import type { Invoice } from '@/features/billing/types'
 
@@ -14,42 +9,6 @@ interface OrderFilters {
     search?: string
     date_from?: string
     date_to?: string
-}
-
-interface CheckoutPayload {
-    order_data: Record<string, unknown>
-    dte_type: string
-    document_number?: string
-    document_date?: string
-    is_pending_registration?: string
-    payment_method?: string
-    amount?: string
-    payment_is_pending?: string
-    transaction_number?: string
-    treasury_account_id?: string
-    payment_type?: string
-    receipt_type?: string
-    receipt_data?: string
-}
-
-interface NotePayload {
-    note_type: string
-    document_number: string
-    document_date: string
-    amount_net: string
-    amount_tax: string
-    return_items: string
-    original_invoice_id?: string
-    payment_data?: string
-}
-
-interface CreateInvoicePayload {
-    order_id: string
-    order_type: string
-    dte_type: string
-    supplier_invoice_number: string
-    issue_date: string
-    status: string
 }
 
 interface PartialReceivePayload {

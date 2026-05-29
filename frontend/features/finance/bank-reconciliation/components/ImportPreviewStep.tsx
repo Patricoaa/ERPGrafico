@@ -1,11 +1,10 @@
-
 "use client"
 
 import React from "react"
 import { formatCurrency } from "@/lib/money"
 import { AlertCircle, CheckCircle2, AlertTriangle, Calendar, FileText, DollarSign, Wallet } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { DataTable, DataCell, Chip, FormSection } from "@/components/shared"
+import {DataTable, DataCell, FormSection} from "@/components/shared"
 import type { ColumnDef } from "@tanstack/react-table"
 
 export interface DryRunWarning {

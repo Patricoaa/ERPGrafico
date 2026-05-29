@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Check, ChevronDown, Search, Loader2 } from "lucide-react"
+import { Check, ChevronDown, Search } from "lucide-react"
 import { getEntityIcon } from "@/lib/entity-registry"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -10,10 +10,10 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover"
-import { EmptyState } from "@/components/shared/EmptyState"
+
 import { useDebounce } from "@/hooks/useDebounce"
 import { useUserSearch, useSingleUser } from "@/features/users/hooks/useUserSearch"
-import { CardSkeleton } from "@/components/shared"
+import { CardSkeleton, EmptyState } from '@/components/shared'
 import type { AppUser } from "@/types/entities"
 
 interface UserSelectorProps {

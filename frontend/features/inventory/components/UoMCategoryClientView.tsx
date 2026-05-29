@@ -2,10 +2,10 @@
 
 import { showApiError } from "@/lib/errors"
 
-import React, { useEffect, useState, useMemo } from "react"
+import React, {useState, useMemo} from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 // deleteUoMCategory consumido vía useUoMs.
-import { DataTableView, DataTableColumnHeader, EntityCard } from '@/components/shared'
+import { ActionConfirmModal, DataTableColumnHeader, DataTableView, EntityCard } from '@/components/shared'
 import { DataCell, createActionsColumn } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -15,7 +15,6 @@ import { UoMCategoryDrawer } from "./UoMCategoryDrawer"
 import { toast } from "sonner"
 
 import { useConfirmAction } from "@/hooks/useConfirmAction"
-import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 
 interface UoMCategory {
     id: number
@@ -140,7 +139,6 @@ export function UoMCategoryClientView({ externalOpen, onExternalOpenChange, crea
             onClick: async (items) => bulkDeleteConfirm.requestConfirm(items),
         },
     ], [deleteUoMCategory, bulkDeleteConfirm])
-
 
     return (
         <div className="space-y-4 h-full flex flex-col">

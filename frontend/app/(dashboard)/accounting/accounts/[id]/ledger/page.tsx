@@ -28,7 +28,7 @@ export default function AccountLedgerPage() {
             const res = await api.get(`/accounting/accounts/${accountId}/ledger/`)
             setAccount(res.data.account)
             setMovements(res.data.movements)
-        } catch (error) {
+        } catch {
             toast.error("Error al cargar el libro mayor")
         } finally {
             setLoading(false)

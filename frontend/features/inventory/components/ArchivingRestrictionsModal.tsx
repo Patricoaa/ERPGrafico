@@ -3,9 +3,9 @@
 import React from "react"
 import { BaseModal, Chip, CancelButton, SubmitButton, FormFooter } from "@/components/shared"
 import { Button } from "@/components/ui/button"
-import { AlertCircle, ExternalLink, Package } from "lucide-react"
+import {AlertCircle, ExternalLink} from "lucide-react"
 import Link from "next/link"
-import { Loader2, RefreshCcw } from "lucide-react"
+import {RefreshCcw} from "lucide-react"
 
 export interface Restriction {
     type: string

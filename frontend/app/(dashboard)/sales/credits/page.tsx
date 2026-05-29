@@ -1,9 +1,7 @@
 import { Metadata } from "next"
-import { Suspense, lazy } from "react"
-import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
 import { Tabs } from "@/components/ui/tabs"
 import { redirect } from "next/navigation"
-import { FadeIn } from "@/components/shared"
+import { FadeIn, ToolbarCreateButton } from '@/components/shared'
 import { CreditPortfolioView, BlacklistView } from "@/features/credits"
 
 export const metadata: Metadata = {

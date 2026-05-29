@@ -2,7 +2,7 @@
 
 import { formatCurrency } from "@/lib/money"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Check, ChevronDown, Loader2, Search, Banknote, CreditCard, Wallet, Landmark } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -12,9 +12,8 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover"
 import { useTreasuryAccounts, PaymentContext } from "@/hooks/useTreasuryAccounts"
-import { EmptyState } from "@/components/shared/EmptyState"
+import { EmptyState } from '@/components/shared'
 import { Input } from "@/components/ui/input"
-
 
 interface TreasuryAccountSelectorProps {
     value?: string | number | null

@@ -1,10 +1,10 @@
 "use client"
 import { formatCurrency } from "@/lib/money";
 
-import { SkeletonShell } from "@/components/shared"
+import { BaseModal, DateRangeFilter, EmptyState, SkeletonShell, StatusBadge } from '@/components/shared'
 
 import { useState, useMemo } from "react"
-import { BaseModal } from "@/components/shared/BaseModal"
+
 import { DataTable, StatCard } from "@/components/shared"
 import {
     History,
@@ -12,11 +12,11 @@ import {
     Receipt
 } from "lucide-react"
 import { useSubscriptionHistory } from "../hooks/useSubscriptions"
-import { EmptyState } from "@/components/shared/EmptyState"
+
 import { format, isWithinInterval, startOfDay, endOfDay } from "date-fns"
 import { es } from "date-fns/locale"
 import { DataCell } from '@/components/shared'
-import { StatusBadge } from "@/components/shared/StatusBadge"
+
 import { FormTabs, FormTabsContent } from "@/components/shared"
 import type { ColumnDef } from "@tanstack/react-table"
 import {
@@ -30,7 +30,7 @@ import {
     Cell
 } from 'recharts'
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
-import { DateRangeFilter } from "@/components/shared/DateRangeFilter"
+
 import { translateStatus } from "@/lib/utils"
 
 interface SubscriptionHistoryModalProps {

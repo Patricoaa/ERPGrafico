@@ -2,10 +2,10 @@
 
 import { showApiError } from "@/lib/errors"
 import { useState, useEffect } from "react"
-import { BaseModal } from "@/components/shared/BaseModal"
+
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { LabeledInput, LabeledSelect, PeriodValidationDateInput } from "@/components/shared"
+import { BaseModal, LabeledInput, LabeledSelect, PeriodValidationDateInput } from '@/components/shared'
 import {
     Table,
     TableBody,
@@ -17,7 +17,7 @@ import {
 import { Chip } from "@/components/shared"
 import { toast } from "sonner"
 import { ordersApi, useProcessLogistics } from "../hooks/useOrdersMutations"
-import { Loader2, Package, AlertTriangle, CheckCircle2, ArrowLeftRight } from "lucide-react"
+import {Loader2} from "lucide-react"
 import { useServerDate } from "@/hooks/useServerDate"
 
 import { Order } from "../types"

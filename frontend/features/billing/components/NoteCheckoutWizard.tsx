@@ -2,13 +2,13 @@
 
 import { showApiError } from "@/lib/errors"
 import { useState, useEffect } from "react"
-import { BaseModal } from "@/components/shared/BaseModal"
+
 import { useServerDate } from "@/hooks/useServerDate"
 import { ChevronRight, ChevronLeft, Loader2, FileText, CheckCircle2, ShieldAlert } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { billingApi } from "../api/billingApi"
 import { toast } from "sonner"
-import { ActionSlideButton } from "@/components/shared/ActionSlideButton"
+
 // Sub-components
 import { Step1_Items } from "@/features/billing/components/checkout/Step1_Items"
 import { Step2_Logistics } from "@/features/billing/components/checkout/Step2_Logistics"
@@ -17,8 +17,7 @@ import { Step4_Payment } from "@/features/billing/components/checkout/Step4_Paym
 import { Step2_ManufacturingDetails } from "@/features/sales/components/checkout/Step2_ManufacturingDetails"
 import { NoteProcessSidebar } from "@/features/billing/components/checkout/NoteProcessSidebar"
 import { NoteItemsSummary } from "@/features/billing/components/checkout/NoteItemsSummary"
-import { Chip, SkeletonShell } from "@/components/shared"
-
+import { ActionSlideButton, BaseModal, Chip, SkeletonShell } from '@/components/shared'
 
 interface NoteCheckoutWizardProps {
     open: boolean
@@ -32,7 +31,6 @@ interface NoteCheckoutWizardProps {
 export function NoteCheckoutWizard({
     open,
     onOpenChange,
-    orderId,
     invoiceId,
     initialType,
     onSuccess
@@ -81,7 +79,6 @@ export function NoteCheckoutWizard({
     const total = totalNet + totalTax
 
     const isExempt = originalInvoice?.dte_type === 'FACTURA_EXENTA' || originalInvoice?.dte_type === 'BOLETA_EXENTA'
-
 
     const initWizard = async () => {
         try {
@@ -138,7 +135,6 @@ export function NoteCheckoutWizard({
     useEffect(() => {
         setPaymentData((prev: Record<string, unknown>) => ({ ...prev, amount: total }))
     }, [total])
-
 
     const handleNext = async () => {
         // Validations per step

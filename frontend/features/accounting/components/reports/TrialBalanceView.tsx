@@ -2,11 +2,11 @@
  
 import React, { useState } from 'react';
 import { useTrialBalance } from '../../hooks/useTrialBalance';
-import { EmptyState } from '@/components/shared/EmptyState';
+;
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Calculator, Calendar, CheckCircle2, AlertCircle } from 'lucide-react';
-import { SkeletonShell, PeriodValidationDateInput, DataCell } from '@/components/shared';
+import { DataCell, EmptyState, PeriodValidationDateInput, SkeletonShell } from '@/components/shared';
 
 export function TrialBalanceView() {
     // Default dates: current year start to now

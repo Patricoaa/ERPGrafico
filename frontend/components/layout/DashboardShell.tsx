@@ -12,10 +12,9 @@ import { UserActions } from "@/components/layout/UserActions"
 import { useHeader } from "@/components/providers/HeaderProvider"
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion"
 import { Skeleton } from "@/components/ui/skeleton"
-import { PageHeaderSkeleton, UniversalSearch } from "@/components/shared"
+import { HeaderNavDropdowns, PageHeaderSkeleton, UniversalSearch } from '@/components/shared'
 import { Loader2 } from "lucide-react"
 import { DynamicIcon } from '@/components/shared'
-import { HeaderNavDropdowns } from "@/components/shared/HeaderNavDropdowns"
 
 // Lazy load: solo se compila al abrir el inbox, no en la carga inicial de cada página
 const TaskInboxSidebar = dynamic(
@@ -32,8 +31,8 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
     const [isInboxOpen, setIsInboxOpen] = useState(false)
 
     const { config } = useHeader()
-    const { isHubOpen, hubConfig, closeHub, isHubTemporarilyHidden, isDocked, isHubEffectivelyOpen } = useHubPanel()
-    const { isSubModalActive, totalSheetsWidth } = useGlobalModals()
+    const { isHubEffectivelyOpen } = useHubPanel()
+    const { totalSheetsWidth } = useGlobalModals()
 
     // Sync global data attributes for repelling fixed UI elements (like Sheets)
     useEffect(() => {
@@ -67,7 +66,6 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
         "finances": "/finances/statements?tab=bs",
         "hr": "/hr/employees",
     }
-
 
     return (
         <div className="relative h-screen bg-background overflow-hidden font-sans">

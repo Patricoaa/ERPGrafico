@@ -6,11 +6,10 @@ import Link from "next/link"
 
 import { Pencil, FileText, Calendar, Wallet } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { LabeledInput, FormFooter, CancelButton } from "@/components/shared"
+import { BaseModal, CancelButton, FormFooter, LabeledInput } from '@/components/shared'
 import { toast } from "sonner"
 import { DataTableView, DataTableColumnHeader } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
-import { BaseModal } from "@/components/shared/BaseModal"
 
 import { BudgetEditor } from "@/features/finance/components/BudgetEditor"
 import { createActionsColumn, DataCell } from '@/components/shared'
@@ -156,7 +155,6 @@ export function BudgetsListView({ externalOpen, onExternalOpenChange, createActi
     ]
 
     return (
-
 
         <div className="h-full flex flex-col">
             <div className="flex-1 min-h-0">

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react"
 import { useTreasuryAccounts, type TreasuryAccount } from "@/features/treasury"
-import { SmartSearchBar, useSmartSearch } from "@/components/shared"
+import { EntityCard, SmartSearchBar, useSmartSearch } from '@/components/shared'
 import { treasuryAccountSearchDef } from "../searchDef"
 import {
     ColumnDef
@@ -10,7 +10,7 @@ import {
 import { DataTableView } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 
-import { Landmark, Pencil, Trash2, Lock } from "lucide-react"
+import {Landmark, Lock} from "lucide-react"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { BankManagement, PaymentMethodManagement, TerminalManagement } from "@/features/treasury"
 
@@ -20,7 +20,7 @@ import { DataCell, createActionsColumn, FadeIn } from '@/components/shared'
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
-import { EntityCard } from "@/components/shared/EntityCard"
+
 import { createEntityCardView } from "@/lib/view-helpers"
 
 interface TreasuryAccountsViewProps {
@@ -103,7 +103,7 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
     const handleDelete = async (id: number) => {
         try {
             await deleteAccount(id)
-        } catch (error) {
+        } catch {
             // Error already handled by hook
         }
     }

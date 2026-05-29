@@ -10,8 +10,8 @@ import {
 } from "@/components/ui/popover"
 import { useDebounce } from "@/hooks/useDebounce"
 import { useUniversalSearch } from "@/features/search"
-import { EmptyState } from "@/components/shared/EmptyState"
-import { DynamicIcon } from "@/components/shared"
+
+import { DynamicIcon, EmptyState } from '@/components/shared'
 import { hasEntityDrawer } from "@/lib/entity-drawers"
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 import type { SearchResult } from "@/features/search/api/searchApi"

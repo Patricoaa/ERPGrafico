@@ -1,7 +1,7 @@
 // Stock Calculator Utilities
 // Business logic for stock validation and limit calculation
 
-import type { Product, CartItem, BOM, UoM, ComponentCache, BOMCache } from '@/types/pos'
+import type {Product, CartItem, BOM, UoM, BOMCache} from '@/types/pos'
 import api from '@/lib/api'
 
 /**
@@ -152,7 +152,7 @@ export async function validateStock(
                 try {
                     const res = await api.get(`/inventory/products/${componentId}/`)
                     name = res.data.name
-                } catch (e) {
+                } catch {
                     name = `Componente #${componentId}`
                 }
             }

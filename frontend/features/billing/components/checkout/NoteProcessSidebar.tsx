@@ -26,7 +26,6 @@ const methodLabels: Record<string, string> = {
 
 export function NoteProcessSidebar({
     currentStep,
-    totalSteps,
     noteType,
     requiresLogistics,
     hasManufacturing,

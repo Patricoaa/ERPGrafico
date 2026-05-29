@@ -3,8 +3,10 @@
 import { useEffect, useRef, useState, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import {
+    ArrowRight,
     BookOpen,
     CircleCheck,
+    CornerDownLeft,
     FileBadge,
     FileText,
     Landmark,
@@ -20,20 +22,17 @@ import {
     Users,
     Wallet,
     Wrench,
-    Command as CommandIcon,
-    ArrowRight,
-    CornerDownLeft,
     X,
 } from "lucide-react"
+import { DynamicIcon } from "@/components/shared"
 import { Dialog, DialogContent, DialogTitle, DialogPortal, DialogOverlay } from "@/components/ui/dialog"
 import { useDebounce } from "@/hooks/useDebounce"
 import { useUniversalSearch } from "@/features/search"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
 import { Skeleton } from "@/components/ui/skeleton"
-import { DynamicIcon } from '@/components/shared'
 
 const ICON_MAP: Record<string, any> = {
     "book-open": BookOpen,

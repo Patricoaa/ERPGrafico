@@ -6,7 +6,6 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 
-import { BaseModal } from "@/components/shared/BaseModal"
 import {
     Loader2, Unlock,
     Users, AlertTriangle, Search, ChevronDown, Check
@@ -17,10 +16,10 @@ import { toast } from "sonner"
 import { posApi } from "../api/posApi"
 import { POSReport, type POSReportData } from "@/features/pos/components/POSReport"
 import { SessionCloseModal } from "@/features/pos/components/SessionCloseModal"
-import { Numpad } from '@/components/shared'
+import { ActionConfirmModal, BaseModal, Numpad } from '@/components/shared'
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
 import { forwardRef, useImperativeHandle } from "react"
-import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { cn } from "@/lib/utils"
 import type { POSSession, POSTerminal, AccountingSettings, TreasuryAccount, POSSessionAudit } from "@/types/pos"
@@ -430,9 +429,6 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
         }
     }
 
-
-
-
     // ... (keep existing effects for fetching logic)
 
     const handleNextStep = () => {
@@ -794,8 +790,6 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
         }
     }
 
-
-
     if (!currentSession || currentSession.status !== 'OPEN') {
         return (
             <>
@@ -850,7 +844,6 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                     </>
                 )}
 
-
             </div>
 
             {/* Custom Overlay for POS Reports (X and Z) - Simplified as requested */}
@@ -868,7 +861,6 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                     </div>
                 </div>
             )}
-
 
             {/* Session Close Modal - Using shared component */}
             {currentSession && (

@@ -2,7 +2,7 @@
 
 import { showApiError } from "@/lib/errors"
 import { useState, useEffect } from "react"
-import { BaseModal } from "@/components/shared/BaseModal"
+
 import { Button } from "@/components/ui/button"
 import { Step2_PurchaseDTE } from "./checkout/Step2_PurchaseDTE"
 import { Step3_PurchasePayment } from "./checkout/Step3_PurchasePayment"
@@ -20,7 +20,7 @@ import { Step1_ProductSelection } from "./checkout/Step1_ProductSelection"
 import { Check, ChevronRight, ChevronLeft, Loader2, ShoppingCart } from "lucide-react"
 import { useTreasuryAccounts } from "@/hooks/useTreasuryAccounts"
 import { useServerDate } from "@/hooks/useServerDate"
-import { FormFooter, CancelButton } from "@/components/shared"
+import { BaseModal, CancelButton, FormFooter } from '@/components/shared'
 
 interface PurchaseCheckoutWizardProps {
     open: boolean
@@ -137,7 +137,6 @@ export function PurchaseCheckoutWizard({
         }, 0)
         setCurrentTotal(newTotal)
     }, [currentOrderLines, dteData.type])
-
 
     const [paymentData, setPaymentData] = useState<PaymentData>({
         method: null,

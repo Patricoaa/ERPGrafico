@@ -2,7 +2,7 @@
 
 import { formatCurrency } from "@/lib/money"
 import { showApiError } from "@/lib/errors"
-import React, { useEffect, useState, useMemo } from "react"
+import React, {useState, useMemo} from "react"
 import { UseFormReturn } from "react-hook-form"
 import { ProductFormValues } from "./schema"
 import { Button } from "@/components/ui/button"
@@ -13,13 +13,12 @@ import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@
 import { cn } from "@/lib/utils"
 import { Product, ProductAttributeValue } from "@/types/entities"
 import { ProductInitialData } from "@/types/forms"
-import { DataCell, Chip } from "@/components/shared"
-import { MultiSelectTagInput, MultiSelectOption } from "@/components/shared/MultiSelectTagInput"
+import { ActionConfirmModal, Chip, DataCell, MultiSelectOption, MultiSelectTagInput } from '@/components/shared'
 
 import { VariantQuickEditForm } from "./VariantQuickEditForm"
 import { BulkVariantEditFormV2 } from "./BulkVariantEditFormV2"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
-import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+
 import { useAttributes } from "../../hooks/useAttributes"
 import { useVariants } from "../../hooks/useVariants"
 import { useProducts } from "../../hooks/useProducts"

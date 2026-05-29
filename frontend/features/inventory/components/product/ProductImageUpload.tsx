@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button"
 import { Plus, X } from "lucide-react"
 import { UseFormReturn } from "react-hook-form"
 import { ProductFormValues } from "./schema"
-import { Label } from "@/components/ui/label"
 
 interface ProductImageUploadProps {
     form: UseFormReturn<ProductFormValues>

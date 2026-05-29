@@ -1,11 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { FileText, Search, X } from "lucide-react";
+import {FileText, X} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import type { BaseProduct } from "@/features/inventory/types";
-import { ProductSelector } from "@/components/shared/ProductSelector";
+import { ProductSelector } from '@/components/shared';
 import { useWorkOrderProducts } from "../../hooks/useWorkOrderProducts";
 
 interface ProductSelectionStepProps {

@@ -1,13 +1,11 @@
 "use client"
 
 import { FormField } from "@/components/ui/form"
-import { EmptyState, LabeledInput, LabeledContainer, FormSection, LabeledSwitch } from "@/components/shared"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import {LabeledInput, LabeledContainer, FormSection, LabeledSwitch} from "@/components/shared"
 import { Button } from "@/components/ui/button"
-import { ShoppingCart, Truck, Barcode, Fingerprint, Globe, Tag, Layers } from "lucide-react"
+import {ShoppingCart, Truck, Barcode, Fingerprint, Layers} from "lucide-react"
 import { UseFormReturn } from "react-hook-form"
 import { ProductFormValues } from "./schema"
-import { Switch } from "@/components/ui/switch"
 import { cn } from "@/lib/utils"
 import { BarcodeModal } from "@/features/inventory/components/BarcodeModal"
 
@@ -22,7 +20,6 @@ export interface ProductBasicInfoProps {
     lockedType?: string
 }
 
-import { Label } from "@/components/ui/label"
 import { ProductImageUpload } from "./ProductImageUpload"
 
 export function ProductBasicInfo({ form, isEditing, imagePreview, setImagePreview, lockedType }: ProductBasicInfoProps) {

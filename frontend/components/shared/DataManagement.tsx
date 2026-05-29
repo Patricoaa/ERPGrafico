@@ -13,7 +13,6 @@ interface DataManagementProps {
     templateData: Record<string, unknown>[]
     /** Called after a successful import */
     onImportSuccess: () => void
-    exportFilename?: string
 }
 
 export const DataManagement: React.FC<DataManagementProps> = ({
@@ -21,14 +20,13 @@ export const DataManagement: React.FC<DataManagementProps> = ({
     onImport,
     templateData,
     onImportSuccess,
-    exportFilename = 'data-export.csv'
 }) => {
     const fileInputRef = useRef<HTMLInputElement>(null)
 
     const handleExport = async () => {
         try {
             await onExport()
-        } catch (error) {
+        } catch {
             toast.error("Error al exportar datos")
         }
     }

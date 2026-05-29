@@ -1,10 +1,10 @@
 "use client"
 
 import { useEffect, useRef, useState, useCallback } from "react"
-import { BaseModal } from "@/components/shared/BaseModal"
+
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
-import { Chip, FormFooter, CancelButton, StatCard } from "@/components/shared"
+import { BaseModal, CancelButton, Chip, FormFooter, StatCard } from '@/components/shared'
 import { CheckCircle2, Loader2, XCircle, Zap } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { financeApi } from "../../api/financeApi"

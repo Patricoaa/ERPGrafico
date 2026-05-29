@@ -1,8 +1,8 @@
 "use client"
 
 import React, { useState } from "react"
-import { BaseModal } from "@/components/shared/BaseModal"
-import { Numpad } from '@/components/shared'
+
+import { BaseModal, Numpad } from '@/components/shared'
 import { ShieldCheck } from "lucide-react"
 
 interface PINPadModalProps {

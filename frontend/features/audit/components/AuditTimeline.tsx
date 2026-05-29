@@ -7,7 +7,6 @@ import { Chip } from "@/components/shared";
 import { cn } from "@/lib/utils";
 import {
     History,
-    User,
     Clock,
     PlusCircle,
     Edit,

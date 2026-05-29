@@ -4,13 +4,13 @@
 // Extracted from @/features/pos/components/POSVariantSelectorModal (PR-3)
 
 import React, { useEffect, useState } from "react"
-import { BaseModal } from "@/components/shared/BaseModal"
+
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Package, ImageIcon } from "lucide-react"
 import { formatCurrency } from "@/lib/money"
 import { PricingUtils } from '@/features/inventory/utils/pricing'
 import { cn } from "@/lib/utils"
-import { Chip } from "@/components/shared/Chip"
+import { BaseModal, Chip } from '@/components/shared'
 import type { BaseProduct } from '@/features/inventory/types'
 import { useVariants } from '@/features/inventory/hooks/useVariants'
 

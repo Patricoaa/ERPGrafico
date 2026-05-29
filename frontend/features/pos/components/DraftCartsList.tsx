@@ -3,10 +3,9 @@ import { formatCurrency } from "@/lib/money"
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { BaseModal } from "@/components/shared/BaseModal"
+
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { StatusBadge } from "@/components/shared/StatusBadge"
-import { Separator } from "@/components/ui/separator"
+
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip"
 
 import { cn } from "@/lib/utils"
@@ -24,7 +23,7 @@ import {
     Lock,
     Wallet,
 } from "lucide-react"
-import { CardSkeleton, ActionConfirmModal } from "@/components/shared"
+import {ActionConfirmModal, BaseModal, CardSkeleton} from '@/components/shared'
 import type { SyncDraft } from '@/features/pos/hooks/useDraftSync'
 
 export interface DraftCart {
@@ -156,7 +155,7 @@ export function DraftCartsList({
         try {
             await onLoadDraft(draft)
             setOpen(false)
-        } catch (error) {
+        } catch {
             // Already handled in useDrafts
         }
     }

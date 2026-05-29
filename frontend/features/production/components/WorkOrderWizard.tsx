@@ -7,9 +7,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { AlertTriangle, Package, FileText, Plus, CheckCircle2, Keyboard, Printer } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { BaseModal } from '@/components/shared/BaseModal'
-import { ActionConfirmModal } from '@/components/shared/ActionConfirmModal'
-import { LabeledSelect, FormFooter, CancelButton } from '@/components/shared'
+
+import { ActionConfirmModal, BaseModal, CancelButton, FormFooter, LabeledSelect } from '@/components/shared'
 import { cn } from '@/lib/utils'
 import { showApiError } from '@/lib/errors'
 import { useConfirmAction } from '@/hooks/useConfirmAction'
@@ -24,7 +23,6 @@ import { WizardModeBanner } from './WizardModeBanner'
 import { WizardProcessSidebar } from './WizardProcessSidebar'
 import { WizardStickyFooter } from './WizardStickyFooter'
 import { WizardRightSidebar } from './WizardRightSidebar'
-import { WorkOrderBasicStep } from './forms/WorkOrderBasicStep'
 import {
   MaterialAssignmentStep,
   MaterialApprovalStep,

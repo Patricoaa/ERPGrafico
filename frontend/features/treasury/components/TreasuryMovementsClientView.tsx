@@ -1,20 +1,20 @@
 "use client"
 
 import React, { useState, useEffect, lazy, Suspense } from "react"
-import { DataTableView } from '@/components/shared'
+import { DataTableView, EntityCard, StatusBadge } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
-import { ArrowDown, Eye } from "lucide-react"
+import {ArrowDown} from "lucide-react"
 
 import { DataCell, createActionsColumn } from '@/components/shared'
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
-import { StatusBadge } from "@/components/shared/StatusBadge"
+
 import { SkeletonShell, SmartSearchBar, useSmartSearch } from "@/components/shared"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { useTreasuryMovements, type TreasuryMovementFilters } from "@/features/treasury/hooks/useTreasuryMovements"
 import { treasuryMovementsSearchDef } from "@/features/treasury/searchDef"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
-import { EntityCard } from "@/components/shared/EntityCard"
+
 import { createEntityCardView } from "@/lib/view-helpers"
 
 // Lazy load heavy components

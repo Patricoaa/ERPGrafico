@@ -1,6 +1,6 @@
 import { Metadata } from "next"
 import { TreasuryMovementsClientView } from "@/features/treasury"
-import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
+import { ToolbarCreateButton } from '@/components/shared'
 
 export const metadata: Metadata = {
     title: "Movimientos de Tesorería | ERPGrafico",

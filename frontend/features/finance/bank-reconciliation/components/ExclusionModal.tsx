@@ -1,12 +1,12 @@
 "use client"
 
 import { useEffect } from "react"
-import { BaseModal } from "@/components/shared/BaseModal"
-import { AlertCircle, Loader2 } from "lucide-react"
+
+import {AlertCircle} from "lucide-react"
 import { z } from "zod"
 import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { LabeledSelect, LabeledInput, FormFooter, CancelButton, DangerButton } from "@/components/shared"
+import { BaseModal, CancelButton, DangerButton, FormFooter, LabeledInput, LabeledSelect } from '@/components/shared'
 
 const exclusionSchema = z.object({
     reason: z.string().min(1, "Debes seleccionar un motivo"),
@@ -49,7 +49,7 @@ export function ExclusionModal({
         try {
             await onConfirm(data.reason, data.notes || "")
             onOpenChange(false)
-        } catch (error) {
+        } catch {
             // Handled in mutation
         }
     }

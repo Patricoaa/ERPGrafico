@@ -7,11 +7,9 @@ import { User, Paintbrush, X } from "lucide-react"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { toast } from "sonner"
 import { motion } from "framer-motion"
-import {
-    ManufacturingSpecsEditor,
+import { ManufacturingSpecsEditor,
     emptyManufacturingData,
-    type ManufacturingData,
-} from "@/components/shared/manufacturing"
+    type ManufacturingData, } from '@/components/shared'
 
 interface AdvancedManufacturingDrawerProps {
     open: boolean

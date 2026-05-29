@@ -1,15 +1,14 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { toast } from "sonner"
 import { useGroups } from "../hooks"
-import { DataTable } from '@/components/shared'
+import { ActionConfirmModal, DataTable } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
 import { DataCell, createActionsColumn } from '@/components/shared'
 import { Users } from "lucide-react"
 import { GroupDrawer } from "@/features/users/components/GroupDrawer"
-import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+
 import { SmartSearchBar, useClientSearch } from "@/components/shared"
 import { groupSearchDef } from "@/features/settings/searchDef"
 

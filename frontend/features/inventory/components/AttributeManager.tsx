@@ -6,8 +6,8 @@ import React, { useState, useMemo, useCallback } from "react"
 import { Plus, Trash2, Tag, Eye, X } from "lucide-react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
-import { BaseModal } from "@/components/shared/BaseModal"
-import { DataTable } from '@/components/shared'
+
+import { BaseModal, DataTable } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { DataCell, createActionsColumn } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
@@ -57,7 +57,6 @@ export function AttributeManager({ externalOpen, createAction }: AttributeManage
     const [newAttrValues, setNewAttrValues] = useState<string[]>([])
     const [newValueName, setNewValueName] = useState("")
     const [isSaving, setIsSaving] = useState(false)
-
 
     const router = useRouter()
     const pathname = usePathname()
@@ -274,7 +273,6 @@ export function AttributeManager({ externalOpen, createAction }: AttributeManage
             onClick: async (items) => bulkDeleteConfirm.requestConfirm(items),
         },
     ], [deleteAttribute, bulkDeleteConfirm])
-
 
     return (
         <div className="space-y-4 h-full flex flex-col">

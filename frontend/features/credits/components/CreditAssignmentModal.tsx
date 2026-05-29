@@ -14,8 +14,8 @@ import {
     FormField,
     FormItem,
 } from "@/components/ui/form"
-import { LabeledInput, FormFooter, CancelButton, ActionSlideButton } from "@/components/shared"
-import { BaseModal } from "@/components/shared/BaseModal"
+import { ActionSlideButton, BaseModal, CancelButton, FormFooter, LabeledInput } from '@/components/shared'
+
 import { useContactMutations } from "@/features/contacts/hooks/useContacts"
 import { CreditContact } from '@/features/credits/api/creditsApi'
 import { AdvancedContactSelector } from "@/components/selectors"

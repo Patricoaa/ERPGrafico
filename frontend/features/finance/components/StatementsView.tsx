@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react"
 import { TabsContent } from "@/components/ui/tabs"
 import { Card, CardContent } from "@/components/ui/card"
-import { SkeletonShell, MoneyDisplay, FadeIn } from "@/components/shared"
+import { FadeIn, MoneyDisplay, ReportTable, SkeletonShell } from '@/components/shared'
 import { PageContainer } from "@/components/shared"
 import { Button } from "@/components/ui/button"
 import { SlidersHorizontal, ChevronDown, GitCompare } from "lucide-react"
@@ -15,7 +15,6 @@ import {
     DropdownMenuRadioItem
 } from "@/components/ui/dropdown-menu"
 
-import { ReportTable } from "@/components/shared/ReportTable"
 import { CashFlowTable } from "@/features/finance/components/CashFlowTable"
 import { MappingConfigDrawer } from "@/features/finance/components/MappingConfigDrawer"
 import { DateRangeFilter } from "@/components/shared"
@@ -125,7 +124,6 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
     }
 
     const { balanceSheet: bsData, incomeStatement: plData, cashFlow: cfData, refetch, isLoading } = useStatements(statementParams)
-
 
     const getPeriodLabel = (range: DateRange | undefined) => {
         if (!range?.from || !range?.to) return ""

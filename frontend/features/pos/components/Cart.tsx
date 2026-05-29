@@ -7,9 +7,8 @@ import { formatPlainDate } from "@/lib/utils";
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { StatusBadge } from '@/components/shared/StatusBadge'
-import { Table, TableBody, TableHead, TableHeader, TableRow, TableCell } from '@/components/ui/table'
-import { ShoppingCart, Zap, Clock, User, FileText, Truck, Calendar, Edit } from 'lucide-react'
+import {Table, TableBody, TableHead, TableHeader, TableRow} from '@/components/ui/table'
+import {ShoppingCart, Zap, Clock, User, FileText, Truck, Calendar} from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { CartItem } from './CartItem'
 import { formatCurrency } from "@/lib/money"
@@ -87,8 +86,6 @@ export function Cart({
     const dteType = wizardState?.dteData?.type
     const deliveryType = wizardState?.deliveryData?.type
     const deliveryDate = wizardState?.deliveryData?.date
-
-
 
     const getDeliveryLabel = (type: string) => {
         switch (type) {

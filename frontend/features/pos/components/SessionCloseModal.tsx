@@ -11,19 +11,17 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Loader2, Calculator, Banknote, Vault, AlertTriangle, ArrowRightLeft } from "lucide-react"
+import {Loader2, AlertTriangle} from "lucide-react"
 import { toast } from "sonner"
 import { posApi } from "../api/posApi"
-import { Numpad } from '@/components/shared'
+import { BaseModal, Numpad } from '@/components/shared'
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
-import { BaseModal } from "@/components/shared/BaseModal"
+
 import { LabeledContainer } from "@/components/shared"
 import { cn } from "@/lib/utils"
 import { POSReport, type POSReportData } from "./POSReport"
 
 import type { POSSession, POSSessionAudit, AccountingSettings, TreasuryAccount } from "@/types/pos"
-
 
 interface SessionCloseModalProps {
     open: boolean

@@ -2,14 +2,13 @@
 
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Checkbox } from "@/components/ui/checkbox"
-import { FileText, Receipt, AlertCircle, ShieldAlert } from "lucide-react"
+import {FileText, Receipt, AlertCircle} from "lucide-react"
 import { useBillingSettingsQuery } from "@/features/settings"
 import { useMemo, useEffect } from "react"
 import { cn } from "@/lib/utils"
-import { DocumentAttachmentDropzone } from "@/components/shared/DocumentAttachmentDropzone"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { FolioValidationInput } from "@/components/shared/FolioValidationInput"
-import { PeriodValidationDateInput } from "@/components/shared/PeriodValidationDateInput"
+
+import { DocumentAttachmentDropzone, FolioValidationInput, PeriodValidationDateInput } from '@/components/shared'
+
 import { DTEData } from "../../types"
 
 interface Step2_PurchaseDTEProps {

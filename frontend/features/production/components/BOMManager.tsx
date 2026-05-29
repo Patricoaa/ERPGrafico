@@ -5,12 +5,10 @@ import { Button } from "@/components/ui/button"
 import {
     Plus, Edit, Trash2, Workflow, Box, Layers, Copy, History
 } from "lucide-react"
-import { StatusBadge } from "@/components/shared/StatusBadge"
+
 import { BOMDrawer } from "./BOMDrawer"
 
-import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
-import { DropdownMenuItem } from "@/components/ui/dropdown-menu"
-import { LabeledSelect, Chip } from "@/components/shared"
+import { ActionConfirmModal, Chip, LabeledSelect, StatusBadge } from '@/components/shared'
 import { cn } from "@/lib/utils"
 import { DataTable } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"

@@ -4,13 +4,13 @@ import { cn } from "@/lib/utils"
 
 import { showApiError } from "@/lib/errors"
 import React, { useEffect, useState, useMemo } from "react"
-import { CancelButton, SubmitButton } from "@/components/shared"
-import { BaseModal } from "@/components/shared/BaseModal"
+import { BaseModal, CancelButton, SubmitButton } from '@/components/shared'
+
 import { DataTable, LabeledInput, LabeledContainer, PeriodValidationDateInput, DataCell } from "@/components/shared"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
 import { Partner } from "@/features/contacts/types/partner"
 import { toast } from "sonner"
-import { Loader2, UserPlus, Info, TrendingDown } from "lucide-react"
+import {UserPlus, Info, TrendingDown} from "lucide-react"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 
 import { Alert, AlertDescription } from "@/components/ui/alert"

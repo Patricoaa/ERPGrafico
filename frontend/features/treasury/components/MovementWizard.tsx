@@ -1,5 +1,4 @@
 "use client"
-import { formatCurrency } from "@/lib/money"
 
 import React, { useState, useEffect, useMemo } from 'react'
 import { Button } from "@/components/ui/button"
@@ -70,7 +69,6 @@ export function MovementWizard({
     initialContactName,
     onComplete,
     onCancel,
-    initialAccountName,
     fixedMoveType,
     variant = 'standard'
 }: MovementWizardProps) {

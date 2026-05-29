@@ -26,7 +26,6 @@ import { cn } from "@/lib/utils"
 import { Check, Printer } from 'lucide-react'
 import { isPOSProductDisabled } from '@/features/pos/utils/product-availability'
 
-
 import { usePOS } from '@/features/pos/contexts/POSContext'
 import { useAuth } from '@/contexts/AuthContext'
 import {
@@ -101,7 +100,6 @@ export function POSClientView() {
     } = usePOS()
 
     const { isTouchMode, toggleTouchMode } = useTouchMode()
-
 
     const { user } = useAuth()
 

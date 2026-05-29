@@ -18,8 +18,8 @@ import {
     History
 } from "lucide-react"
 import { toast } from "sonner"
-import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
-import { StatusBadge, Chip, EntityCard } from "@/components/shared"
+
+import { ActionConfirmModal, Chip, EntityCard, StatusBadge } from '@/components/shared'
 import { ProductDrawer } from "@/features/inventory/components/ProductDrawer"
 import { SubscriptionHistoryModal } from "@/features/inventory/components/SubscriptionHistoryModal"
 import { ArchivingRestrictionsModal } from "@/features/inventory/components/ArchivingRestrictionsModal"
@@ -137,8 +137,6 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false, cr
             showApiError(error, "Error al cargar detalles del producto")
         }
     }, [fetchProductById])
-
-
 
     const handleResume = useCallback(async (id: number) => {
         try {
@@ -393,9 +391,7 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false, cr
                 </PageHeader>
             )}
 
-
             <div className="flex-1 h-full flex flex-col">
-
 
                 <div className="flex-1 min-h-0 flex flex-col space-y-6">
                     {/* Industrial Stats Panel */}

@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Calendar, Check, ListFilter, Search, X } from "lucide-react"
+import { Check, ListFilter, Search, X } from "lucide-react"
 import { Table } from "@tanstack/react-table"
 import { Input } from "@/components/ui/input"
 
@@ -29,7 +29,6 @@ interface DataTableFiltersProps<TData> {
     filterColumn?: string
     globalFilterFields?: string[]
     searchPlaceholder?: string
-    toolbarAction?: React.ReactNode
     customFilters?: React.ReactNode
     customFilterCount?: number
     onReset?: () => void
@@ -42,7 +41,6 @@ export function DataTableFilters<TData>({
     filterColumn,
     globalFilterFields,
     searchPlaceholder = "Buscar...",
-    toolbarAction,
     customFilters,
     customFilterCount = 0,
     onReset,

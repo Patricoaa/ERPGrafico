@@ -2,14 +2,13 @@
 import { formatCurrency } from "@/lib/money"
 
 import { useState } from "react"
-import { BaseModal } from "@/components/shared/BaseModal"
+
 import { Button } from "@/components/ui/button"
-import { Chip } from "@/components/shared"
+import { BaseModal, Chip } from '@/components/shared'
 import {
     DollarSign,
     Calendar,
     History,
-    ArrowRight,
     CheckCircle2,
     CreditCard,
     AlertCircle

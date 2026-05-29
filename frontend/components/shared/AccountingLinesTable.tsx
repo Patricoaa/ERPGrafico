@@ -10,8 +10,8 @@ import {
     FormMessage,
 } from "@/components/ui/form"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
-import { LabeledInput, IconButton } from "@/components/shared"
-import { FormLineItemsTable } from "@/components/shared/FormLineItemsTable"
+import { FormLineItemsTable, IconButton, LabeledInput } from '@/components/shared'
+
 import { cn } from "@/lib/utils"
 
 const tableInputClass = "h-8 w-full bg-background border border-border/80 rounded-md px-2 text-xs focus:border-primary/40 focus:outline-none transition-all disabled:opacity-50"

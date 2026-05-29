@@ -3,7 +3,6 @@
 // CartItem Component
 // Individual cart item row with inline editing
 
-import { useState } from 'react'
 import { memo } from 'react'
 import { TableRow, TableCell } from '@/components/ui/table'
 import { Input } from '@/components/ui/input'
@@ -12,8 +11,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { UoMSelector } from '@/components/selectors'
 import { cn } from '@/lib/utils'
 import { formatCurrency } from "@/lib/money"
-import { PricingUtils } from '@/features/inventory/utils/pricing'
-import { useDeviceContext, MIN_TOUCH_TARGET } from '@/hooks/useDeviceContext'
+import {useDeviceContext} from '@/hooks/useDeviceContext'
 import { useTouchMode } from '@/hooks/useTouchMode'
 import type { CartItem as CartItemType, Product, UoM } from '@/types/pos'
 import type { UoM as EntityUoM } from '@/types/entities'

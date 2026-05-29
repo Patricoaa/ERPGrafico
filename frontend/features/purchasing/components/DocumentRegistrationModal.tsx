@@ -2,18 +2,15 @@
 
 import { showApiError } from "@/lib/errors"
 import { useState, useEffect } from "react"
-import { BaseModal } from "@/components/shared/BaseModal"
+
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
-import { FileText, Loader2, Upload, ShieldAlert, Plus } from "lucide-react"
-import { FormFooter, LabeledInput, LabeledSelect, FormSection, CancelButton } from "@/components/shared"
+import {FileText, Loader2, Upload} from "lucide-react"
+import {BaseModal, CancelButton, DocumentAttachmentDropzone, FolioValidationInput, FormFooter, FormSection, LabeledSelect, PeriodValidationDateInput} from '@/components/shared'
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { purchasingApi } from "../api/purchasingApi"
 import { useServerDate } from "@/hooks/useServerDate"
-import { DocumentAttachmentDropzone } from "@/components/shared/DocumentAttachmentDropzone"
-import { PeriodValidationDateInput } from "@/components/shared/PeriodValidationDateInput"
-import { FolioValidationInput } from "@/components/shared/FolioValidationInput"
 
 interface DocumentRegistrationModalProps {
     open: boolean

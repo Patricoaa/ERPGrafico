@@ -1,6 +1,6 @@
 "use client"
 
-import { UoM, Warehouse, Product } from "@/types/entities"
+import {UoM, Product} from "@/types/entities"
 
 import { useState, useEffect, useMemo, useRef } from "react"
 import { useForm, FieldErrors, UseFormReturn } from "react-hook-form"
@@ -11,11 +11,11 @@ import { useProducts } from "../hooks/useProducts"
 import { useUoMs } from "../hooks/useUoMs"
 import { useWarehouses } from "../hooks/useWarehouses"
 import { useProductPricingRules } from "../hooks/usePricingRules"
-import { ShoppingCart, Package, Truck, Layers, Factory, Loader2, History, DollarSign, Fingerprint, Printer } from "lucide-react"
+import {ShoppingCart, Package, Truck, Layers, Factory, DollarSign, Printer} from "lucide-react"
 import { showApiError } from "@/lib/errors"
 import { Form } from "@/components/ui/form"
 
-import { Drawer, FormSection, FormFooter, FormSplitLayout, FormTabs, FormTabsContent, type FormTabItem, SkeletonShell } from "@/components/shared"
+import {ActionConfirmModal, Drawer, FormFooter, FormSplitLayout, FormTabs, FormTabsContent, SkeletonShell, type FormTabItem} from '@/components/shared'
 import { ActivitySidebar } from "@/features/audit/components"
 // Removed Badge import for governance compliance
 
@@ -23,7 +23,7 @@ import { ActivitySidebar } from "@/features/audit/components"
 import { Button } from "@/components/ui/button"
 import { PricingRuleDrawer } from "@/features/sales/components/PricingRuleDrawer"
 import { CancelButton, ActionSlideButton } from "@/components/shared"
-import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+
 import { formDrawerWidth } from "@/lib/form-widths"
 import { useReactToPrint } from "react-to-print"
 import { PrintableLayout } from "@/features/_shared/transaction-drawer"
@@ -262,7 +262,6 @@ export function ProductDrawer({ sidebar, open, onOpenChange, initialData, onSucc
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [stockUomId, uoms])
-
 
     // uoms / warehouses / products / pricingRules vienen de hooks reactivos
     // (useUoMs / useWarehouses / useProducts / useProductPricingRules) declarados
@@ -551,10 +550,6 @@ export function ProductDrawer({ sidebar, open, onOpenChange, initialData, onSucc
                 formData.append('is_indefinite', data.is_indefinite ? 'true' : 'false')
                 if (data.contract_end_date) formData.append('contract_end_date', data.contract_end_date)
             }
-
-
-
-
 
             if (data.image instanceof File) {
                 formData.append('image', data.image)

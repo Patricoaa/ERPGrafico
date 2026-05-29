@@ -1,4 +1,4 @@
-import { showApiError } from "@/lib/errors"
+import {showApiError} from "@/lib/errors"
 import { useQueryClient, useMutation, useQuery } from '@tanstack/react-query'
 import { salesApi } from '../api/salesApi'
 import { toast } from 'sonner'

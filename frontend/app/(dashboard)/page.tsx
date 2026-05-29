@@ -1,8 +1,8 @@
 "use client"
 
 import { useAuth } from "@/contexts/AuthContext"
-import { PageHeader } from "@/components/shared/PageHeader"
-import { Skeleton, PageContainer } from "@/components/shared"
+
+import { PageContainer, PageHeader, Skeleton } from '@/components/shared'
 import Link from "next/link"
 import { Calculator, ShoppingCart, Package, Printer, Banknote, ShoppingBag, PieChart, Receipt, UserCog, Users } from "lucide-react"
 import { ProductionMetricsCard } from "@/features/production"

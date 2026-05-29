@@ -9,7 +9,7 @@ import {
     TableHeader,
     TableRow
 } from "@/components/ui/table";
-import { ChevronRight, ChevronDown, ShieldCheck, List, Landmark } from "lucide-react";
+import {ChevronRight, ChevronDown} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { MoneyDisplay, IconButton } from "@/components/shared";
 
@@ -34,8 +34,6 @@ interface FinancialStatementTableProps {
     periodLabel?: string;
     compPeriodLabel?: string;
 }
-
-
 
 const AccountRow = ({ node, level = 0, showComparison }: { node: AccountNode, level?: number, showComparison?: boolean }) => {
     const [expanded, setExpanded] = useState(true);

@@ -1,7 +1,7 @@
 "use client"
 
 import { User, Settings, LogOut, Bell, Store, Calculator, Inbox } from "lucide-react"
-import { EmptyState } from "@/components/shared/EmptyState"
+import { EmptyState } from '@/components/shared'
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/AuthContext"
 import { toast } from "sonner"
@@ -77,7 +77,7 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
         }
     }, [])
 
-    const { socketConnected } = useNotifications((newNotification: NotificationPayload) => {
+    useNotifications((newNotification: NotificationPayload) => {
         setNotifications(prev => [newNotification as any, ...prev].slice(0, 20))
         setUnreadCount(prev => prev + 1)
 

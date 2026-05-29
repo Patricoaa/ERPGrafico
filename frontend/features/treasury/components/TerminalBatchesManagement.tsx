@@ -1,12 +1,12 @@
 "use client"
 
 import React, { useState, useEffect, lazy, Suspense, useMemo } from "react"
-import { DataTableView, EntityCard, StatusBadge } from '@/components/shared'
+import { BaseModal, DataTableView, EntityCard, StatusBadge } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import type { ColumnDef } from "@tanstack/react-table"
 import { Plus, Building2 } from "lucide-react"
 import { format } from "date-fns"
-import { BaseModal } from "@/components/shared/BaseModal"
+
 import { useTerminalBatches } from "@/features/treasury"
 import type { TerminalBatch } from "@/features/treasury/types"
 import { DataCell, createActionsColumn } from '@/components/shared'
@@ -212,6 +212,4 @@ function TerminalBatchModal({ open, onOpenChange, onSuccess }: { open: boolean, 
 }
 
 export default TerminalBatchesManagement
-
-
 

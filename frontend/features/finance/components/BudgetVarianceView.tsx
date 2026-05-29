@@ -16,10 +16,10 @@ import {
     SelectValue 
 } from "@/components/ui/select";
 import { BudgetVarianceTable, BudgetVarianceNode } from "./BudgetVarianceTable";
-import { EmptyState, StatCard } from "@/components/shared";
+import { EmptyState, MoneyDisplay, PageHeader, StatCard } from '@/components/shared';
 import { toast } from "sonner";
-import { PageHeader } from "@/components/shared/PageHeader";
-import { MoneyDisplay } from "@/components/shared/MoneyDisplay";
+;
+;
 const MONTH_NAMES = [
     "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
     "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"

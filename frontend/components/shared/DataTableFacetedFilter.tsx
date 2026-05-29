@@ -8,7 +8,7 @@
  */
 import * as React from "react"
 import { Column } from "@tanstack/react-table"
-import { FacetedFilter } from "@/components/shared/FacetedFilter"
+import { FacetedFilter } from '@/components/shared'
 
 interface DataTableFacetedFilterProps<TData, TValue> {
     column?: Column<TData, TValue>

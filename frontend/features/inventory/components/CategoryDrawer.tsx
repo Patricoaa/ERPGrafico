@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { Drawer, CancelButton, LabeledInput, LabeledContainer, FormSection, FormFooter, FormSplitLayout, LabeledSwitch } from "@/components/shared"
+import { ActionSlideButton, CancelButton, Drawer, FormFooter, FormSection, FormSplitLayout, LabeledContainer, LabeledInput, LabeledSwitch } from '@/components/shared'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -21,7 +21,7 @@ import { formDrawerWidth } from "@/lib/form-widths"
 
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { ActivitySidebar } from "@/features/audit/components"
-import { ActionSlideButton } from "@/components/shared/ActionSlideButton"
+
 import { useReactToPrint } from "react-to-print"
 import { PrintableLayout } from "@/features/_shared/transaction-drawer"
 import type { DrawerMode } from "@/features/_shared/drawer/types"

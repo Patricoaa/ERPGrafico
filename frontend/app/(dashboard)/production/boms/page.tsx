@@ -4,7 +4,7 @@ import { formatCurrency } from "@/lib/money"
 import React, { useEffect, useState } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { ColumnDef } from "@tanstack/react-table"
-import { DataTableView, DataTableColumnHeader, EntityCard, StatusBadge } from '@/components/shared'
+import { ActionConfirmModal, DataTableColumnHeader, DataTableView, EntityCard, StatusBadge } from '@/components/shared'
 import { createActionsColumn, DataCell } from '@/components/shared'
 import { Pencil, Trash2, Layers } from "lucide-react"
 import api from "@/lib/api"
@@ -14,7 +14,7 @@ import { Chip } from "@/components/shared"
 
 import { ToolbarCreateButton, SmartSearchBar, useSmartSearch } from "@/components/shared"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
-import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+
 import { useAllBOMs } from "@/features/production"
 import { bomSearchDef } from "@/features/production/searchDef"
 
@@ -62,7 +62,7 @@ export default function BOMsPage() {
             await api.delete(`/production/boms/${id}/`)
             toast.success("Lista de Materiales eliminada correctamente")
             refetchBoms()
-        } catch (error) {
+        } catch {
             toast.error("Error al eliminar Lista de Materiales")
         }
     })
@@ -74,13 +74,10 @@ export default function BOMsPage() {
             const response = await api.get(`/production/boms/${id}/`)
             setEditingBom(response.data)
             setIsFormOpen(true)
-        } catch (error) {
+        } catch {
             toast.error("Error al cargar detalles de la Lista de Materiales")
         }
     }
-
-
-
 
     const columns: ColumnDef<BOMListItem>[] = [
         {

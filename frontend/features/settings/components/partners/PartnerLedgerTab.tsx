@@ -7,25 +7,18 @@ import {
     ArrowUpRight,
     Wallet,
     Calendar,
-    Package,
     LogOut,
     History
 } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import { TableRow, TableCell } from "@/components/ui/table"
 
 import { DataCell } from "@/components/shared"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
 import { Partner, PartnerTransaction } from "@/features/contacts/types/partner"
 import { toast } from "sonner"
-import { formatPlainDate as formatDate, cn } from "@/lib/utils"
+import {formatPlainDate as formatDate} from "@/lib/utils"
 import {
-    DropdownMenu,
-    DropdownMenuContent,
     DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { PartnerContributionWizard } from "@/features/settings/components/partners/PartnerContributionWizard"
 import { PartnerWithdrawalWizard } from "@/features/settings/components/partners/PartnerWithdrawalWizard"

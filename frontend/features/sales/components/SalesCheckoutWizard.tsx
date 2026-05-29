@@ -1,6 +1,6 @@
 "use client"
 
-import { BaseModal } from "@/components/shared/BaseModal"
+import { BaseModal } from '@/components/shared'
 import { ShoppingCart } from "lucide-react"
 import { SalesCheckoutWizardContent, SalesCheckoutWizardContentProps } from "./checkout/SalesCheckoutWizardContent"
 

@@ -1,9 +1,8 @@
 "use client"
 
-import { FileText, Building2, Tag, CreditCard, Package, Warehouse, CheckCircle2, ShoppingCart } from "lucide-react"
+import {FileText, Building2, CreditCard, Package, Warehouse, CheckCircle2, ShoppingCart} from "lucide-react"
 
 import { cn } from "@/lib/utils"
-import { PaymentMethod, ReceptionType } from "@/types/checkout"
 import { MoneyDisplay } from "@/components/shared"
 
 export interface PurchaseProcessSummarySidebarProps {

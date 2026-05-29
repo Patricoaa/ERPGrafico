@@ -5,7 +5,7 @@ import { getTasks, Task } from '@/features/workflow/api/workflowApi'
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { CheckCircle2, ListTodo, ChevronDown, ChevronRight, User, ExternalLink, Package, FileText, Wallet, MapPin, TrendingUp } from "lucide-react"
+import {CheckCircle2, ListTodo, ChevronDown, ChevronRight, User, ExternalLink, Package, FileText, Wallet, TrendingUp} from "lucide-react"
 import { toast } from "sonner"
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
@@ -15,7 +15,7 @@ import { useRef } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { SkeletonShell, MoneyDisplay, EntityBadge, Chip } from "@/components/shared"
 import { useAuth } from "@/contexts/AuthContext"
-import { formatEntityDisplay, getEntityMetadata, detectEntityLabel } from "@/lib/entity-registry"
+import {formatEntityDisplay, detectEntityLabel} from "@/lib/entity-registry"
 import { useUpdateTask } from "../hooks/useWorkflowMutations"
 
 const HUB_STAGE_LABELS: Record<string, string> = {
@@ -112,7 +112,7 @@ export function TaskInbox() {
             lastApprovalsCount.current = currentPendingApprovals
             lastTasksCount.current = currentPendingTasks
 
-        } catch (error) {
+        } catch {
             if (!silent) toast.error("Error al cargar tareas")
         } finally {
             if (!silent) setLoading(false)
@@ -438,8 +438,6 @@ export function TaskInbox() {
 
     const approvalsPending = approvalTasks.filter(t => t.status === 'PENDING')
     const approvalsCompleted = approvalTasks.filter(t => t.status === 'COMPLETED')
-
-
 
     return (
         <div className="space-y-4 p-4 h-full overflow-auto">

@@ -2,12 +2,12 @@
 import { formatCurrency } from "@/lib/money"
 
 import React, { useEffect, useState, useMemo, useRef } from "react"
-import { DataTable } from "@/components/shared/DataTable"
+
 import { ColumnDef } from "@tanstack/react-table"
-import { DataCell, createActionsColumn, Chip, DataTableColumnHeader, ActionConfirmModal } from "@/components/shared"
-import { StatusBadge } from "@/components/shared/StatusBadge"
+import {ActionConfirmModal, Chip, DataCell, DataTable, StatusBadge, createActionsColumn} from '@/components/shared'
+
 import { partnersApi } from "@/features/contacts/api/partnersApi"
-import { ProfitDistribution, ProfitDistributionLine } from "@/features/contacts/types/partner"
+import {ProfitDistribution} from "@/features/contacts/types/partner"
 import { formatPlainDate, cn } from "@/lib/utils"
 import {
     Calendar,
@@ -293,7 +293,6 @@ export function ProfitDistributionsTab({ initialFlowOpen = false, onModalClose, 
                     onSuccess={fetchDistributions}
                 />
             )}
-
 
             {state.viewingDist && (
                 <ProfitDistributionDrawer

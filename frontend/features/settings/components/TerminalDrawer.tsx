@@ -4,24 +4,21 @@ import { useState, useEffect, useRef } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { Drawer } from "@/components/shared"
+import { ActionSlideButton, Drawer, EmptyState } from '@/components/shared'
 import {
     Form,
-    FormControl,
     FormField,
-    FormItem,
     FormMessage,
 } from "@/components/ui/form"
 import { Checkbox } from "@/components/ui/checkbox"
 import { settingsApi } from "../hooks"
 import { toast } from "sonner"
-import { MonitorSmartphone, Wifi, Library } from "lucide-react"
+import {MonitorSmartphone} from "lucide-react"
 import * as LucideIcons from "lucide-react"
 import { cn } from "@/lib/utils"
 import { CancelButton, LabeledInput, LabeledSelect, FormSection, FormFooter, FormSplitLayout, SkeletonShell } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
-import { ActionSlideButton } from "@/components/shared/ActionSlideButton"
-import { EmptyState } from "@/components/shared/EmptyState"
+
 import { ActivitySidebar } from "@/features/audit/components"
 import { Printer } from "lucide-react"
 import { Button } from "@/components/ui/button"

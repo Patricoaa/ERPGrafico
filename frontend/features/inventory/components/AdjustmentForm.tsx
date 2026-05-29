@@ -20,7 +20,7 @@ import {
 import { toast } from "sonner"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Product, UoM, Warehouse } from "@/types/entities"
+import {Product, UoM} from "@/types/entities"
 import { cn } from "@/lib/utils"
 import { validateAccountingPeriod } from '@/features/accounting/actions'
 import { useWarehouses } from "../hooks/useWarehouses"
@@ -28,9 +28,7 @@ import { useUoMs } from "../hooks/useUoMs"
 import { useProduct } from "../hooks/useProducts"
 import { useStockAdjustment } from "../hooks/useStockMoves"
 import { usePartners } from "@/features/contacts"
-import { LabeledInput, LabeledSelect, FormTabs, type FormTabItem, FormFooter, SubmitButton, SkeletonShell } from "@/components/shared"
-import { FormSection } from "@/components/shared/FormSection"
-
+import {FormSection, FormTabs, LabeledInput, LabeledSelect, SkeletonShell, type FormTabItem} from '@/components/shared'
 
 const adjustmentSchema = z.object({
     product_id: z.string().min(1, "Seleccione un producto"),
@@ -76,7 +74,6 @@ export function AdjustmentForm({
     preSelectedProduct,
     preSelectedWarehouse,
     onSuccess,
-    onCancel,
     onLoadingChange
 }: AdjustmentFormProps) {
     // Reads reactivos vía hooks.
@@ -167,7 +164,6 @@ export function AdjustmentForm({
             form.setValue("uom_id", base.id.toString())
         }
     }, [productDetails, productUoMs, form])
-
 
     const onSubmit = async (values: z.infer<typeof adjustmentSchema>) => {
         setIsLoading(true)

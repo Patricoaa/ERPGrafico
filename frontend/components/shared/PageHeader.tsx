@@ -1,14 +1,13 @@
 "use client"
 
 import React from "react"
-import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
-import { DynamicIcon } from '@/components/shared'
-import { LucideIcon, Loader2, Check, CloudUpload, AlertCircle } from "lucide-react"
+import { ActionFoldButton, DynamicIcon } from '@/components/shared'
+import { LucideIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { Skeleton } from "@/components/ui/skeleton"
+
 import Link from "next/link"
-import { ActionFoldButton } from "@/components/shared/ActionFoldButton"
+
 import type { NavigationConfig } from "@/components/providers/HeaderProvider"
 
 export type PageHeaderStatusType = 'synced' | 'saving' | 'error' | 'warning' | 'info'
@@ -64,7 +63,6 @@ export function PageHeader({
     titleActions, 
     isLoading,
     status,
-    variant = 'default',
     children, 
     className,
     navigation 

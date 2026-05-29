@@ -21,8 +21,6 @@ import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
 const ContactDrawer = lazy(() => import("./ContactDrawer"))
 const ActionConfirmModal = lazy(() => import("@/components/shared/ActionConfirmModal").then(m => ({ default: m.ActionConfirmModal })))
 
-
-
 interface ContactsClientViewProps {
     isNewModalOpen?: boolean
     createAction?: React.ReactNode
@@ -87,7 +85,7 @@ export function ContactsClientView({ isNewModalOpen = false, createAction }: Con
         try {
             await deleteContact(contact.id)
             setIsDeleteModalOpen(false)
-        } catch (error) {
+        } catch {
             // Error handling is done in the hook
         }
     }

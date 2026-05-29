@@ -5,7 +5,6 @@ import { Drawer, StatusBadge, SkeletonShell, FormSplitLayout } from '@/component
 import { Button } from '@/components/ui/button'
 import { Printer, Package } from 'lucide-react'
 import { useReactToPrint } from 'react-to-print'
-import { formatCurrency } from '@/lib/money'
 import { formatPlainDate } from '@/lib/utils'
 import { PrintableLayout } from '@/features/_shared/transaction-drawer'
 import { useStockMove } from '@/features/inventory/hooks/useStockMoves'

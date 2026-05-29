@@ -5,7 +5,6 @@ import { format } from "date-fns"
 import { toast } from "sonner"
 import { Lock, Pencil, Calendar, User, Package, Settings, X, RotateCcw, Copy } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
 import {
     Tooltip,
@@ -24,8 +23,8 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { LabeledInput, LabeledContainer, PeriodValidationDateInput } from "@/components/shared"
-import { ManufacturingSpecsEditor, emptyManufacturingData } from "@/components/shared/manufacturing"
-import type { ManufacturingData } from "@/components/shared/manufacturing"
+import { ManufacturingSpecsEditor, emptyManufacturingData } from '@/components/shared'
+import type { ManufacturingData } from "@/components/shared"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { UoMSelector } from "@/components/selectors/UoMSelector"
 import type { Contact } from "@/features/contacts/types"

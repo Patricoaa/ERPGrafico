@@ -1,4 +1,4 @@
-import { Contact, Warehouse, ProductMinimal } from "@/types/entities"
+import {Contact, Warehouse} from "@/types/entities"
 
 export interface PurchaseOrderLineAPI {
     id: number

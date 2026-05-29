@@ -4,9 +4,9 @@ import React, { useState, useEffect, useRef } from "react"
 import {
     ColumnDef
 } from "@tanstack/react-table"
-import { DataTable } from '@/components/shared'
+import { ActionConfirmModal, DataTable, StatusBadge } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
-import { Book, Trash2, Pencil, Plus } from "lucide-react"
+import {Book, Trash2, Pencil} from "lucide-react"
 import { IconButton } from "@/components/shared"
 
 import { AccountDrawer } from "@/features/finance/components/AccountDrawer"
@@ -14,11 +14,11 @@ import { LedgerDrawer } from "@/features/accounting/components/LedgerDrawer"
 import { useAccounts } from "@/features/accounting/hooks/useAccounts"
 import { Account } from "@/features/accounting/types"
 import { DataCell, createActionsColumn } from '@/components/shared'
-import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { ChevronRight, ChevronDown } from "lucide-react"
 import { buildAccountTree } from "../utils/accountTree"
-import { StatusBadge } from "@/components/shared/StatusBadge"
+
 import { ActivitySidebar } from "@/features/audit/components"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import { SmartSearchBar, useSmartSearch } from "@/components/shared"
@@ -74,7 +74,6 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
         }
     }, [selectedFromUrl])
 
-
     const handleCloseModal = () => {
         setIsFormOpen(false)
         setEditingAccount(null)
@@ -116,7 +115,6 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
             setDeleteTarget(null)
         }
     }
-
 
     const columns: ColumnDef<Account>[] = React.useMemo(() => [
         {

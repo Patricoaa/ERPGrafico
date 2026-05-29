@@ -1,15 +1,8 @@
 import { Skeleton, StatCard } from "@/components/shared"
-import { useProductionMetrics } from "../hooks/useProductionQueries"
+import {useProductionMetrics} from "../hooks/useProductionQueries"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { AlertCircle, CheckCircle2, Clock, Activity, Printer } from "lucide-react"
 import Link from "next/link"
-
-interface ProductionMetrics {
-    avg_time_by_stage: Record<string, number>
-    ots_by_stage: Record<string, number>
-    overdue_ots: number
-    throughput_last_30d: number
-}
 
 export function ProductionMetricsCard() {
     const { data, isLoading, error } = useProductionMetrics()

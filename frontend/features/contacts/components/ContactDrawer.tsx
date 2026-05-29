@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo, useRef } from "react"
 import { useFormWithToast } from "@/hooks/useFormWithToast"
 import * as z from "zod"
-import { Drawer } from "@/components/shared"
+import { ActionConfirmModal, DomainHubStatus, Drawer, StatCard, StatusBadge } from '@/components/shared'
 import { formDrawerWidth } from "@/lib/form-widths"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
@@ -20,14 +20,13 @@ import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { useContact, useContactCreditLedger } from "../hooks/useContacts"
 import { Contact, InsightsData } from "../types"
-import { Order } from "../../orders/types"
 import { formatRUT, validateRUT } from "@/lib/utils/format"
 import { useContactMutations, useContactInsights } from "@/features/contacts"
 import { useDefaultCustomer, useDefaultVendor } from "../hooks/useContactDefaults"
-import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+
 import { ActivitySidebar } from "@/features/audit/components"
-import { StatusBadge } from "@/components/shared/StatusBadge"
-import { ShoppingCart, Package, Wand2, User, Banknote, Scale, Truck, Receipt, ClipboardList, LayoutDashboard, Calendar, ArrowRight, Mail, MapPin, Printer } from "lucide-react"
+
+import {ShoppingCart, Package, Wand2, User, Banknote, Scale, Truck, Receipt, ClipboardList, Mail, MapPin, Printer} from "lucide-react"
 import { useReactToPrint } from "react-to-print"
 import { PrintableLayout } from "@/features/_shared/transaction-drawer"
 import type { DrawerMode } from "@/features/_shared/drawer/types"
@@ -35,9 +34,9 @@ import { createDomainCardView } from "@/lib/view-helpers"
 import { DataCell, createActionsColumn, EmptyState, Chip } from '@/components/shared'
 import { Separator } from "@/components/ui/separator"
 import { DataTable } from '@/components/shared'
-import { DomainHubStatus } from "@/components/shared/HubStatus"
+
 import { ColumnDef } from "@tanstack/react-table"
-import { StatCard } from "@/components/shared/StatCard"
+
 import { getHubStatuses } from '@/features/orders/utils/status'
 import { LabeledInput, FormTabs, FormTabsContent, type FormTabItem, FormFooter, FormSection, FormSplitLayout, SkeletonShell } from "@/components/shared"
 import { formatCurrency } from "@/lib/money"
@@ -185,7 +184,7 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
             }
             onSuccess(savedContact as Contact)
             onOpenChange(false)
-        } catch (error) {
+        } catch {
             // Error handled by hook
         }
     }

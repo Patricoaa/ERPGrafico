@@ -7,7 +7,6 @@ import type {
     InventorySettings,
     InventorySettingsUpdatePayload,
     AccountingSettings,
-    AccountingSettingsUpdatePayload,
     CompanySettings,
     CompanySettingsUpdatePayload,
     PartnerSettings,

@@ -1,6 +1,5 @@
 "use client"
 
-import { useState } from "react"
 import {
     Accordion,
     AccordionContent,
@@ -12,12 +11,9 @@ import {
     CalendarIcon,
     User,
     FileText,
-    MessageSquare,
-    Send,
-    History
 } from "lucide-react"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { CommentSystem } from "@/components/shared/CommentSystem"
+import { CommentSystem } from '@/components/shared'
 import { formatPlainDate, cn } from "@/lib/utils"
 import type { WorkOrder } from "../types"
 
@@ -32,7 +28,6 @@ interface WizardRightSidebarProps {
 
 export function WizardRightSidebar({
     order,
-    viewingStepIndex,
     productName,
     stageData,
 }: WizardRightSidebarProps) {

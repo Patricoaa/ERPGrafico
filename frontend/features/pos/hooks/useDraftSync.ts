@@ -319,7 +319,7 @@ export function useDraftSync({
         if (!targetId || !posSessionId) return
         try {
             await unlockDraftMutation.mutateAsync(targetId)
-        } catch (error) {}
+        } catch {}
         if (targetId === activeLockDraftId) setActiveLockDraftId(null)
     }, [activeLockDraftId, posSessionId, browserSessionKey, unlockDraftMutation])
 

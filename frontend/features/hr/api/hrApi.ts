@@ -6,7 +6,6 @@ import type {
   GlobalHRSettings, 
   AFP, 
   PayrollConcept,
-  EmployeeConceptAmount,
   Absence,
   SalaryAdvance,
   PayrollPayment,

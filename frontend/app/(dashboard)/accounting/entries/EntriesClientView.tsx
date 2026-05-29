@@ -9,10 +9,10 @@ import { toast } from "sonner"
 import { JournalEntryDrawer } from "@/features/accounting"
 import api from "@/lib/api"
 
-import { CheckCircle, RotateCcw, FileText } from "lucide-react"
+import { CheckCircle, RotateCcw } from "lucide-react"
 import { DataTableView, DataTableColumnHeader } from '@/components/shared'
 import { DataCell, createActionsColumn, Chip } from '@/components/shared'
-import Link from "next/link"
+
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { useJournalEntries, type JournalEntry } from "@/features/accounting"
 import { useAccountingAccounts } from "@/features/accounting"
@@ -65,12 +65,6 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
 
     const clearSelection = () => {
         clearActions()
-    }
-
-    const handleCloseModal = () => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.delete("modal")
-        router.push(`${pathname}?${params.toString()}`)
     }
 
     // Initialize/Cleanup mount guard

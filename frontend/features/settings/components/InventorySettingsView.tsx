@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useCallback, useState } from "react"
+import React, {useEffect, useCallback} from "react"
 import { useForm, UseFormReturn, Path } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 
@@ -167,7 +167,6 @@ export const InventorySettingsView: React.FC<InventorySettingsViewProps> = ({ ac
         </div>
     )
 }
-
 
 export default InventorySettingsView
 

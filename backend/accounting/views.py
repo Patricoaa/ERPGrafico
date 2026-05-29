@@ -186,6 +186,10 @@ class JournalEntryViewSet(viewsets.ModelViewSet, AuditHistory):
                 for item in items_data:
                     account_val = item.pop('account', None)
                     if account_val:
+                        # Coerce empty string FK values to None
+                        for fk_field in ('partner',):
+                            if fk_field in item and not item[fk_field]:
+                                item[fk_field] = None
                         JournalItem.objects.create(entry=instance, account_id=account_val, **item)
             
             return Response(serializer.data)

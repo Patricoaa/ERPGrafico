@@ -2,7 +2,7 @@
 
 import React from "react"
 import { cn } from "@/lib/utils"
-import { SheetCloseButton } from "@/components/shared/SheetCloseButton"
+import { SheetCloseButton } from '@/components/shared'
 
 // ──────────────────────────────────────────
 // Shared props for both BaseModal and Drawer

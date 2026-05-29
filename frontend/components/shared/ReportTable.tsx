@@ -9,12 +9,12 @@ import {
     TableHeader,
     TableRow
 } from "@/components/ui/table";
-import { ChevronRight, ChevronDown, Receipt, Info } from "lucide-react";
+import { ChevronRight, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { MoneyDisplay } from "@/components/shared/MoneyDisplay";
+import { EmptyState, MoneyDisplay, SkeletonShell } from '@/components/shared';
 import { Skeleton } from "@/components/ui/skeleton";
-import { EmptyState } from "@/components/shared/EmptyState";
-import { SkeletonShell } from "@/components/shared/SkeletonShell";
+;
+;
 
 export interface ReportNode {
     id: number | string;
@@ -41,7 +41,7 @@ interface ReportTableProps {
     accentColor?: 'primary' | 'success' | 'info' | 'destructive';
 }
 
-const RowIcon = ({ isExpanded, hasChildren, level }: { isExpanded: boolean, hasChildren: boolean, level: number }) => {
+const RowIcon = ({ isExpanded, hasChildren }: { isExpanded: boolean, hasChildren: boolean, level: number }) => {
     if (hasChildren) {
         return isExpanded ? <ChevronDown className="h-4 w-4 text-primary" /> : <ChevronRight className="h-4 w-4 text-primary" />;
     }

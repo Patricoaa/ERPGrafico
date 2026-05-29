@@ -1,7 +1,7 @@
 "use client"
 
 import { useRef } from 'react'
-import { CheckCircle2, LayoutDashboard, AlertTriangle, Camera, Loader2, Copy } from 'lucide-react'
+import {CheckCircle2, AlertTriangle, Loader2, Copy} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useHubPanel } from '@/components/providers/HubPanelProvider'
 import type { WorkOrder } from '../../types'

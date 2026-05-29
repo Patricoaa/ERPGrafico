@@ -1,13 +1,13 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { BaseModal, LabeledInput, LabeledSelect, DocumentAttachmentDropzone, PeriodValidationDateInput, LoadingFallback } from "@/components/shared"
-import { CancelButton } from "@/components/shared/ActionButtons"
+import { BaseModal, CancelButton, DocumentAttachmentDropzone, LabeledInput, LabeledSelect, LoadingFallback, PeriodValidationDateInput } from '@/components/shared'
+
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Card } from "@/components/ui/card"
-import { CreditCard, Banknote, Receipt, Hash, Calendar, FileUp } from "lucide-react"
+import {Banknote, Receipt, Hash, Calendar, FileUp} from "lucide-react"
 import { cn } from "@/lib/utils"
 import { PaymentMethodCardSelector, PaymentData } from "@/features/treasury/components/PaymentMethodCardSelector"
 import { useServerDate } from "@/hooks/useServerDate"
@@ -49,7 +49,6 @@ interface PaymentModalProps {
 export function PaymentModal({
     open,
     onOpenChange,
-    total,
     pendingAmount,
     onConfirm,
     showDteSelector = false,

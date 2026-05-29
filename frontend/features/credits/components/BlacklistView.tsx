@@ -9,7 +9,7 @@ import {
     recoverDebt
 } from '@/features/credits/api/creditsApi'
 import { CreditContact, CreditLedgerEntry } from '@/features/credits/api/creditsApi'
-import { SmartSearchBar, useClientSearch } from "@/components/shared"
+import {SmartSearchBar, useClientSearch} from '@/components/shared'
 import { creditContactSearchDef } from "../searchDef"
 import { useBlacklistedPortfolio } from "../hooks/useCredits"
 
@@ -23,7 +23,7 @@ import { UserCheck, DollarSign, AlertCircle, ChevronDown, ChevronRight } from "l
 import { toast } from "sonner"
 import { SkeletonShell, ActionConfirmModal } from "@/components/shared"
 import { Input } from "@/components/ui/input"
-import { EmptyState } from "@/components/shared/EmptyState"
+
 import { DataCell } from '@/components/shared'
 import { formatEntityDisplay } from "@/lib/entity-registry"
 
@@ -35,7 +35,6 @@ function BlacklistContactPanel({ contact, onRefresh }: { contact: CreditContact,
     const [unblocking, setUnblocking] = useState(false)
     const [recoveryAmount, setRecoveryAmount] = useState("")
     const [showRecoveryDialog, setShowRecoveryDialog] = useState(false)
-
 
     const handleUnblock = async () => {
         setUnblocking(true)

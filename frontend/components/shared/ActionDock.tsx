@@ -3,7 +3,6 @@
 import * as React from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { cn } from "@/lib/utils"
-import { useHubPanel } from "@/components/providers/HubPanelProvider"
 
 interface ActionDockProps {
     isVisible: boolean
@@ -17,7 +16,6 @@ interface ActionDockProps {
  * and contextual tools. Automatically adjusts its position when side panels are open.
  */
 export function ActionDock({ isVisible, children, className }: ActionDockProps) {
-    const { isHubEffectivelyOpen } = useHubPanel()
     const [globalPanelStates, setGlobalPanelStates] = React.useState({ hub: false, inbox: false })
 
     // Track global panel states via body attributes (standard repo pattern)

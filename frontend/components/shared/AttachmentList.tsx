@@ -1,10 +1,10 @@
 "use client"
 
 import React from "react"
-import { Paperclip, FileText, Download, ExternalLink, Trash2, Loader2 } from "lucide-react"
-import { EmptyState } from "@/components/shared/EmptyState"
+import { Paperclip, FileText, ExternalLink, Trash2, Loader2 } from "lucide-react"
+import { EmptyState } from '@/components/shared'
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { cn, formatPlainDate } from "@/lib/utils"
 

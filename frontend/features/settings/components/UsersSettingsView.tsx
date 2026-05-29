@@ -1,19 +1,18 @@
 "use client"
 
-import { useState, useEffect, useMemo, useCallback } from "react"
+import {useState, useEffect, useMemo} from "react"
 
-
-import { DataTable } from '@/components/shared'
+import { DataTable, SmartSearchBar, ToolbarCreateButton } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { DataCell, createActionsColumn } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
 import { FadeIn, Chip } from "@/components/shared"
-import { SmartSearchBar } from '@/components/shared/SmartSearchBar'
+
 import { Edit, Users } from "lucide-react"
 import { UserDrawer } from "@/features/users/components/UserDrawer"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { GroupManagement } from "@/features/settings/components/GroupManagement"
-import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
+
 import { type AppUser } from "@/types/entities"
 import { userSearchDef } from "@/features/users/searchDef"
 
@@ -154,8 +153,6 @@ export function UsersSettingsView({ activeTab }: UsersSettingsViewProps) {
             trigger={<ToolbarCreateButton label="Nuevo Usuario" />}
         />
     ), [refetch])
-
-
 
     const groupsCreateAction = useMemo(() => (
         <ToolbarCreateButton
