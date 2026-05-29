@@ -19,7 +19,7 @@ graph TD
     A -->|Confirmar acción (Ej. Eliminar)| B(ActionConfirmModal)
     A -->|Proceso paso a paso| C(GenericWizard)
     A -->|Completar/Adjuntar Factura| D(DocumentCompletionModal)
-    A -->|Ver detalle de transacción| E(TransactionViewModal)
+    A -->|Ver detalle de transacción| E["Drawer de entidad<br/>(openEntity — ADR-0028)"]
     A -->|Otro tipo (Custom)| F(BaseModal)
 ```
 
@@ -46,7 +46,7 @@ graph TD
 
 - **Forma preferida:** `<DataCell.Action action="edit" onClick={…} />` — icono, tooltip y color salen del registry.
 - **Acciones específicas del módulo (no CRUD):** mismo componente, pasando `icon` + `title` propios — se conservan tamaño (h-7 w-7), tooltip (delay 400ms, paleta sidebar) y `CropFrame`.
-- **Apertura de modales / sheets vía URL:** usa el hook **`useEntityRouteActions`** (`?selected` edit · `?detail` TransactionViewModal · `?hub` CollapsibleSheet). Nunca uses `?id`, `?edit`, `?modal`, y reserva `?view` exclusivamente para el switch de viewMode.
+- **Apertura de modales / sheets vía URL:** usa el hook **`useEntityRouteActions`** (`?selected` edit · `?hub` CollapsibleSheet). Para ver el detalle de una entidad, `openEntity(label, id)` con `mode='view'` ([component-entity-drawers.md](./component-entity-drawers.md), ADR-0028; `?detail` quedó deprecado). Nunca uses `?id`, `?edit`, `?modal`, y reserva `?view` exclusivamente para el switch de viewMode.
 - **Orden canónico (siempre):** `view → detail → hub → edit → duplicate → pay → deliver → receive → download → print → share → archive → restore → lock/unlock → annul → delete`. `annul` y `delete` siempre al final, en ese orden.
 - **`annul` vs `delete`:** `annul` para documentos transaccionales (factura, OV, pago — preserva el registro para auditoría); `delete` para masters/config (categoría, almacén — borra el registro). Ambas son destructivas.
 - **Confirmación destructiva obligatoria:** `annul` y `delete` SIEMPRE abren `ActionConfirmModal` con `variant="destructive"`. Nunca destruyen directo.

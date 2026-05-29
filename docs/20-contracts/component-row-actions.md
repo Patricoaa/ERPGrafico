@@ -3,7 +3,7 @@ layer: 20-contracts
 doc: component-row-actions
 status: active
 owner: frontend-team
-last_review: 2026-05-16
+last_review: 2026-05-28
 stability: contract-changes-require-ADR
 preconditions:
   - component-contracts.md
@@ -48,7 +48,7 @@ the icon, label, variant and destructiveness of each CRUD-style action.
 | key | icon (lucide) | label (es-CL) | intent | typical handler |
 |------|----------------|----------------|--------|-----------------|
 | `view` | `Eye` | "Ver" | read | open inline preview / drawer |
-| `detail` | `FileText` | "Ver detalle" | read | open `TransactionViewModal` |
+| `detail` | `FileText` | "Ver detalle" | read | `openEntity(label, id)` — entity drawer en modo `view` (ADR-0028) |
 | `hub` | `LayoutDashboard` | "Abrir HUB" | read | open `CollapsibleSheet` (HUB) |
 | `edit` | `Pencil` | "Editar" | write | navigate to `?selected={id}` (ADR-0020) |
 | `duplicate` | `Copy` | "Duplicar" | write | POST `{ ...item, id: undefined }` |
@@ -208,7 +208,7 @@ The hook **`frontend/hooks/useEntityRouteActions.ts`** centralises the query-par
 | Param | Reader | Writer |
 |--------|--------|--------|
 | `?selected={id}` | `useSelectedEntity` (existing — ADR-0020) | `openSelected(id)` |
-| `?detail={id}` | callers wire to `TransactionViewModal` | `openDetail(id)` |
+| `?detail={id}` | **deprecado** (ADR-0028) — preferir `openEntity(label, id)` con `mode='view'` | `openDetail(id)` |
 | `?hub={id}` | callers wire to `CollapsibleSheet` | `openHub(id)` |
 
 Mutually exclusive: opening any of the three closes the others. `clearActions()` removes all
@@ -229,7 +229,7 @@ three while preserving every other param (filters, pagination, viewMode, etc).
 | Card with a single hidden `Pencil` reachable only on hover | Explicit `CardActions` row with at minimum `edit` + `delete` visible |
 | `delete` placed before `edit` | Canonical order: `delete` always last |
 | `?id=42` / `?edit=42` / `?modal=42` to open the edit modal | `?selected=42` (ADR-0020) |
-| `?view=42` to open `TransactionViewModal` | `?detail=42` — `?view=` is the viewMode switch |
+| `?view=42` to open a detail view | `openEntity(label, 42)` (ADR-0028) — `?view=` is the viewMode switch |
 | Raw Tailwind colors on a module-specific action icon | Semantic tokens only |
 | Skipping the tooltip "because the icon is obvious" | Tooltip is mandatory (a11y + consistency) |
 

@@ -6,7 +6,7 @@
  * Centralises the query-param convention for entity row/card actions.
  *
  *   ?selected={id}  → edit modal       (ADR-0020, list-modal-edit-pattern.md)
- *   ?detail={id}    → TransactionViewModal (read-only)
+ *   ?detail={id}    → DEPRECATED (ADR-0028) — prefer openEntity(label, id) with mode='view'
  *   ?hub={id}       → HUB sheet (CollapsibleSheet)
  *
  * The three params are mutually exclusive — opening one closes the others.
