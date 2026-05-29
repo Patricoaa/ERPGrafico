@@ -61,6 +61,6 @@ We will implement a **Metadata-Driven UI Architecture** using `DocumentService` 
 - **Frontend-only generic schema library (like `react-jsonschema-form`)**: Rejected because it requires duplicating the model schema in the frontend codebase. The backend should remain the source of truth for validation and structure.
 
 ## References
-- [20-task-list.md (T-26 to T-40)](../../docs/50-audit/Arquitectura%20Django/20-task-list.md)
+- [20-task-list.md (T-26 to T-40)](../../50-audit/Arquitectura%20Django/20-task-list.md)
 - `backend/core/serializers/metadata.py`
 - `frontend/components/shared/EntityForm/`

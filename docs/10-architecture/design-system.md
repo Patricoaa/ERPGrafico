@@ -3,7 +3,7 @@ layer: 10-architecture
 doc: design-system
 status: active
 owner: frontend-team
-last_review: 2026-04-23
+last_review: 2026-05-28
 ---
 
 # Design System
@@ -19,6 +19,7 @@ ERPGrafico utilizes a unified design system. The goal is to provide a highly fun
     -   **Overlays (16px):** Modals, standard Sheets, and floating popovers. Use `rounded-lg`.
     -   **Main Stage / Shell (20px):** The primary floating container of the application, as well as **Global Side Panels (Hub, Inbox)** that push the main content, and Bottom Drawers. Use `rounded-xl` to ensure parallel framing when they sit side-by-side.
     -   Rounding (`rounded-full`) is reserved for icon-only buttons, status pills, and specific kinetic elements.
+    -   > **Note:** the Tailwind radius scale is **remapped** in `globals.css` to serve this hierarchy: `--radius = 0.5rem` (8px), `--radius-md = +4px` (12px), `--radius-lg = +8px` (16px), `--radius-xl = +12px` (20px). So `rounded-md` resolves to 12px here, **not** Tailwind's default 6px. Always verify the tokens in `app/globals.css`.
 3.  **Semantic Styling:** Never use hardcoded colors or spacing if a semantic token exists.
 
 ## Color Palette
