@@ -103,12 +103,6 @@ export function BudgetEditor({ open, onOpenChange, budget, onSave }: BudgetEdito
     const [filter, setFilter] = useState('');
 
 
-    useEffect(() => {
-        if (open && budget) {
-            loadData();
-        }
-    }, [open, budget]);
-
     const loadData = async () => {
         if (!budget) return;
         setLoading(true);
@@ -136,6 +130,12 @@ export function BudgetEditor({ open, onOpenChange, budget, onSave }: BudgetEdito
             setLoading(false);
         }
     };
+
+    useEffect(() => {
+        if (open && budget) {
+            loadData();
+        }
+    }, [open, budget]);
 
     const handleCopyPreviousYear = async () => {
         if (!budget) return;

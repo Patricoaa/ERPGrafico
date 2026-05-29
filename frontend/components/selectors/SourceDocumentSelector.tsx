@@ -12,6 +12,8 @@ import { useDebounce } from "@/hooks/useDebounce"
 import { useUniversalSearch } from "@/features/search"
 import { EmptyState } from "@/components/shared/EmptyState"
 import { DynamicIcon } from "@/components/shared"
+import { hasEntityDrawer } from "@/lib/entity-drawers"
+import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 import type { SearchResult } from "@/features/search/api/searchApi"
 
 export interface SourceDocument {
@@ -58,6 +60,7 @@ export function SourceDocumentSelector({
     const debouncedSearch = useDebounce(searchTerm, 300)
     const { results, isLoading } = useUniversalSearch(debouncedSearch)
     const filteredResults = allowedLabels ? results.filter((r) => allowedLabels.includes(r.label)) : results
+    const { openEntity } = useGlobalModalActions()
 
     const handleSelect = (result: SearchResult) => {
         onChange({
@@ -100,7 +103,19 @@ export function SourceDocumentSelector({
                                         {value.icon && ICON_MAP[value.icon] && (
                                             <DynamicIcon name={ICON_MAP[value.icon]} className="h-3.5 w-3.5 shrink-0 text-primary" />
                                         )}
-                                        <span className="text-sm text-foreground truncate">{value.display || `Documento #${value.object_id}`}</span>
+                                        {hasEntityDrawer(value.label) ? (
+                                            <span
+                                                role="button"
+                                                tabIndex={0}
+                                                onClick={(e) => { e.stopPropagation(); openEntity(value.label, value.object_id, value) }}
+                                                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); openEntity(value.label, value.object_id, value) } }}
+                                                className="text-sm text-primary underline truncate hover:text-primary/80 cursor-pointer"
+                                            >
+                                                {value.display || `Documento #${value.object_id}`}
+                                            </span>
+                                        ) : (
+                                            <span className="text-sm text-foreground truncate">{value.display || `Documento #${value.object_id}`}</span>
+                                        )}
                                     </div>
                                 ) : (
                                     <span className="text-muted-foreground truncate">Buscar documento origen...</span>

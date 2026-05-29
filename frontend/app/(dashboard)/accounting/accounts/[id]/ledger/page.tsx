@@ -23,12 +23,6 @@ export default function AccountLedgerPage() {
     const [selectedEntryId, setSelectedEntryId] = useState<number | null>(null)
     const { data: selectedEntryData } = useJournalEntry(selectedEntryId ?? undefined)
 
-    useEffect(() => {
-        if (accountId) {
-            fetchLedger()
-        }
-    }, [accountId])
-
     const fetchLedger = async () => {
         try {
             const res = await api.get(`/accounting/accounts/${accountId}/ledger/`)
@@ -40,6 +34,12 @@ export default function AccountLedgerPage() {
             setLoading(false)
         }
     }
+
+    useEffect(() => {
+        if (accountId) {
+            fetchLedger()
+        }
+    }, [accountId])
 
     const columns: ColumnDef<Record<string, unknown>>[] = [
         {

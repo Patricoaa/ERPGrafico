@@ -86,39 +86,9 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange, create
         }
     }, [externalOpen])
 
-    // State watchers for URL params without re-fetching
-    useEffect(() => {
-        if (selectedFromUrl) {
-            const action = searchParams.get('action')
-            if (action === 'pay') {
-                if (!isPaymentOpen && selectedDeclaration?.tax_period_year !== selectedFromUrl.year) {
-                    openPaymentModal(selectedFromUrl)
-                }
-            } else {
-                if (!isWizardOpen && selectedPeriodId !== selectedFromUrl.id) {
-                    openWizardModal(selectedFromUrl)
-                }
-            }
-        }
-    }, [selectedFromUrl, searchParams])
-
-    const handleOpenWizard = (period: TaxPeriod) => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.set('selected', String(period.id))
-        params.delete('action')
-        router.push(`${pathname}?${params.toString()}`, { scroll: false })
-    }
-
     const openWizardModal = (period: TaxPeriod) => {
         setSelectedPeriodId(period.id)
         setIsWizardOpen(true)
-    }
-
-    const handleOpenPayment = (period: TaxPeriod) => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.set('selected', String(period.id))
-        params.set('action', 'pay')
-        router.push(`${pathname}?${params.toString()}`, { scroll: false })
     }
 
     const openPaymentModal = async (period: TaxPeriod) => {
@@ -160,6 +130,36 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange, create
                 toast.error("Error al buscar la declaración")
             }
         }
+    }
+
+    // State watchers for URL params without re-fetching
+    useEffect(() => {
+        if (selectedFromUrl) {
+            const action = searchParams.get('action')
+            if (action === 'pay') {
+                if (!isPaymentOpen && selectedDeclaration?.tax_period_year !== selectedFromUrl.year) {
+                    openPaymentModal(selectedFromUrl)
+                }
+            } else {
+                if (!isWizardOpen && selectedPeriodId !== selectedFromUrl.id) {
+                    openWizardModal(selectedFromUrl)
+                }
+            }
+        }
+    }, [selectedFromUrl, searchParams])
+
+    const handleOpenWizard = (period: TaxPeriod) => {
+        const params = new URLSearchParams(searchParams.toString())
+        params.set('selected', String(period.id))
+        params.delete('action')
+        router.push(`${pathname}?${params.toString()}`, { scroll: false })
+    }
+
+    const handleOpenPayment = (period: TaxPeriod) => {
+        const params = new URLSearchParams(searchParams.toString())
+        params.set('selected', String(period.id))
+        params.set('action', 'pay')
+        router.push(`${pathname}?${params.toString()}`, { scroll: false })
     }
 
     const { serverDate, dateString } = useServerDate()

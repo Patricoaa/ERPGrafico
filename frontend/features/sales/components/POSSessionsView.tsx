@@ -61,16 +61,6 @@ export const POSSessionsView = ({ hideHeader = false }: POSSessionsViewProps) =>
     const [reportType, setReportType] = useState<"X" | "Z">("X")
     const [closeDialogOpen, setCloseDialogOpen] = useState(false)
 
-    useEffect(() => {
-        if (selectedFromUrl) {
-            setSelectedSession(selectedFromUrl)
-            // Decide what to open. If it's closed, maybe show report Z.
-            // If it's open, maybe show report X.
-            // For now, let's just open report X by default if selected.
-            handleShowReport(selectedFromUrl, selectedFromUrl.status === 'CLOSED' ? 'Z' : 'X')
-        }
-    }, [selectedFromUrl])
-
     const handleShowReport = async (session: POSSession, type: "X" | "Z") => {
         try {
             const data = await fetchPOSSessionSummary<Record<string, unknown>>(session.id)
@@ -82,6 +72,16 @@ export const POSSessionsView = ({ hideHeader = false }: POSSessionsViewProps) =>
             toast.error("Error al generar el reporte")
         }
     }
+
+    useEffect(() => {
+        if (selectedFromUrl) {
+            setSelectedSession(selectedFromUrl)
+            // Decide what to open. If it's closed, maybe show report Z.
+            // If it's open, maybe show report X.
+            // For now, let's just open report X by default if selected.
+            handleShowReport(selectedFromUrl, selectedFromUrl.status === 'CLOSED' ? 'Z' : 'X')
+        }
+    }, [selectedFromUrl])
 
     const handleCloseSuccess = async () => {
         if (!selectedSession) return

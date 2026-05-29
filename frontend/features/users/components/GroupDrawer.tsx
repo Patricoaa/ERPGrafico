@@ -37,6 +37,28 @@ interface GroupDrawerProps {
     mode?: DrawerMode
 }
 
+function RenderTrigger({ trigger, isControlled, setOpen }: { trigger?: React.ReactNode, isControlled: boolean, setOpen: (val: boolean) => void }) {
+    if (isControlled) return null;
+    if (!trigger) return null;
+
+    if (React.isValidElement(trigger)) {
+        return React.cloneElement(trigger as React.ReactElement, {
+            // @ts-expect-error injected onClick on a ReactElement with untyped props
+            onClick: (e: React.MouseEvent) => {
+                // @ts-expect-error trigger.props is unknown for a generic ReactElement
+                if (trigger.props.onClick) trigger.props.onClick(e);
+                setOpen(true);
+            }
+        });
+    }
+
+    return (
+        <div onClick={() => setOpen?.(true)}>
+            {trigger}
+        </div>
+    )
+}
+
 export function GroupDrawer({
     initialData,
     trigger,
@@ -114,37 +136,9 @@ export function GroupDrawer({
         }
     }
 
-    const RenderTrigger = () => {
-        if (isControlled) return null;
-        if (!trigger) return null;
-
-        if (React.isValidElement(trigger)) {
-            return React.cloneElement(trigger as React.ReactElement, {
-                // @ts-ignore
-                onClick: (e: React.MouseEvent) => {
-                    // @ts-ignore
-                    if (trigger.props.onClick) trigger.props.onClick(e);
-                    setOpen(true);
-                }
-            });
-        }
-
-        return (
-            <div onClick={() => setOpen?.(true)}>
-                {trigger}
-            </div>
-        )
-    }
-
-    const drawerTitle = isView
-        ? `Ficha de Grupo${initialData?.id ? ` #${initialData.id}` : ""}`
-        : mode === 'create'
-            ? "Nuevo Grupo"
-            : "Editar Grupo"
-
     return (
         <>
-            <RenderTrigger />
+            <RenderTrigger trigger={trigger} isControlled={isControlled} setOpen={setOpen} />
             {(mode === 'view' || mode === 'edit') && initialData?.id && (
                 <PrintableLayout ref={printRef} title="Ficha de Grupo" displayId={`#${initialData.id}`}>
                     <div className="text-[9px] space-y-1 mb-2">

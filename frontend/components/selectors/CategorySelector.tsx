@@ -10,11 +10,9 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover"
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip"
-import { useQuery } from "@tanstack/react-query"
-import api from "@/lib/api"
 import { EmptyState, LabeledContainer } from "@/components/shared"
 import { ProductCategory } from "@/types/entities"
-import { CATEGORIES_QUERY_KEY } from "@/features/inventory/hooks/useCategories"
+import { useCategories } from "@/features/inventory/hooks/useCategories"
 import { CategoryDrawer } from "@/features/inventory/components/CategoryDrawer"
 
 interface CategorySelectorProps {
@@ -53,13 +51,7 @@ export function CategorySelector({
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
     const [searchTerm, setSearchTerm] = useState("")
 
-    const { data: categories = [], isLoading } = useQuery({
-        queryKey: CATEGORIES_QUERY_KEY,
-        queryFn: async (): Promise<ProductCategory[]> => {
-            const response = await api.get('/inventory/categories/')
-            return response.data.results || response.data
-        },
-    })
+    const { categories = [], isLoading } = useCategories()
 
     const selectedCategory = useMemo(() => {
         if (!value || value === "none" || value === "__none__") return null

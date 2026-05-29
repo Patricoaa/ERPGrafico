@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { JournalEntryInitialData } from "@/types/forms"
 import * as z from "zod"
-import { Plus, Pencil, BookOpen, Printer, ExternalLink, FileText } from "lucide-react"
+import { Plus, Pencil, BookOpen, Printer, ExternalLink } from "lucide-react"
 import Link from "next/link"
 import { format } from "date-fns"
 import {
@@ -26,7 +26,7 @@ import { formatCurrency } from "@/lib/money"
 
 import { PrintableLayout } from "@/features/_shared/transaction-drawer"
 import { useJournalEntry } from "@/features/accounting/hooks/useJournalEntries"
-import { Chip, Drawer, LabeledInput, CancelButton, IconButton, PeriodValidationDateInput, ActionSlideButton, FormFooter, FormSplitLayout, FormSection, AccountingLinesTable, SkeletonShell, StatusBadge } from "@/components/shared";
+import { Chip, Drawer, LabeledInput, CancelButton, IconButton, PeriodValidationDateInput, ActionSlideButton, FormFooter, FormSplitLayout, FormSection, AccountingLinesTable, SkeletonShell, StatusBadge, SourceDocumentLink } from "@/components/shared";
 import { SourceDocumentSelector, type SourceDocument } from "@/components/selectors/SourceDocumentSelector";
 import { formDrawerWidth } from "@/lib/form-widths";
 import { ActivitySidebar } from "@/features/audit/components";
@@ -196,20 +196,26 @@ export function JournalEntryDrawer({
                     credit: Number(item.credit ?? 0),
                 })),
             })
-            const sourceDoc = initialData.source_document ?? (initialData as any).source_documents?.[0]
-            if (sourceDoc) {
-                setSourceDocument({
-                    content_type_id: sourceDoc.content_type_id,
-                    object_id: sourceDoc.object_id ?? sourceDoc.id,
-                    display: sourceDoc.display ?? sourceDoc.name ?? `Documento #${sourceDoc.object_id ?? sourceDoc.id}`,
-                    label: '',
-                    icon: '',
-                })
-            } else {
-                setSourceDocument(null)
-            }
         }
     }, [open, initialData, serverDate])
+
+    // Sync sourceDocument from initialData (outside lastResetKey guard)
+    useEffect(() => {
+        if (!initialData || !open) {
+            setSourceDocument(null)
+            return
+        }
+        const sourceDoc = (initialData as any).source_documents?.[0]
+        if (sourceDoc) {
+            setSourceDocument({
+                content_type_id: sourceDoc.content_type_id,
+                object_id: sourceDoc.object_id ?? sourceDoc.id,
+                display: sourceDoc.display ?? sourceDoc.name ?? `Documento #${sourceDoc.object_id ?? sourceDoc.id}`,
+                label: sourceDoc.type ?? '',
+                icon: '',
+            })
+        }
+    }, [initialData, open])
 
     // Sync view entry data into form for unified body rendering
     const viewEntryAccountId = (item: any): string => {
@@ -247,6 +253,10 @@ export function JournalEntryDrawer({
 
             const payload: Record<string, unknown> = {
                 ...data,
+                items: data.items.map(i => ({
+                    ...i,
+                    partner: i.partner || null,
+                })),
                 date: format(data.date, "yyyy-MM-dd"),
                 is_manual: true,
             }
@@ -365,19 +375,11 @@ export function JournalEntryDrawer({
                         </div>
                         <div className="col-span-6">
                             {isViewMode && viewEntry?.source_documents && viewEntry.source_documents.length > 0 ? (
-                                <fieldset className="notched-field pointer-events-none h-full" aria-disabled="true">
+                                <fieldset className="notched-field h-full" aria-disabled="true">
                                     <legend>Documento Origen</legend>
                                     <div className="flex items-center gap-2">
-                                        {viewEntry.source_documents.map((doc: { id: number; display?: string; name?: string; url?: string }) => (
-                                            <Link
-                                                key={doc.id}
-                                                href={doc.url ?? "#"}
-                                                className="inline-flex items-center gap-1 text-primary underline font-medium hover:text-primary/80 text-sm"
-                                            >
-                                                <FileText className="h-3.5 w-3.5" />
-                                                {doc.display ?? doc.name ?? `#${doc.id}`}
-                                                <ExternalLink className="h-3 w-3" />
-                                            </Link>
+                                        {viewEntry.source_documents.map((doc: { type: string; id: number; display?: string; name?: string; url?: string }) => (
+                                            <SourceDocumentLink key={doc.id} doc={doc as any} />
                                         ))}
                                     </div>
                                 </fieldset>
@@ -404,7 +406,7 @@ export function JournalEntryDrawer({
                                         "hr.payroll",
                                         "contacts.contact",
                                         "contacts.partnertransaction",
-                                        "contacts.profitdistribution",
+                                        "contacts.profitdistributionresolution",
                                     ]}
                                 />
                             )}

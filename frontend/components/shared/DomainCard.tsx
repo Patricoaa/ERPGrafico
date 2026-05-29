@@ -1,6 +1,6 @@
 "use client"
 
-import React from "react"
+import React, { useMemo } from "react"
 import { Calendar, ArrowRight, ArrowLeft, Monitor, GitBranch } from "lucide-react"
 import { cn, formatPlainDate } from "@/lib/utils"
 import { MoneyDisplay } from "./MoneyDisplay"
@@ -39,7 +39,7 @@ export function DomainCard({
     isDetailView = false
 }: DomainCardProps) {
     const { openHub } = useHubPanel()
-    const Icon = getEntityIcon(label)
+    const Icon = useMemo(() => getEntityIcon(label), [label])
     
     // ─── Identity ─────────────────────────────────────────────────────────────
     const partnerName = getPartnerName(label, data)
@@ -87,7 +87,7 @@ export function DomainCard({
                             "w-10 h-10 rounded flex flex-col items-center justify-center border transition-all duration-300 group-hover:scale-105 shrink-0",
                             iconBg, iconColor, iconBorder
                         )}>
-                            <Icon className="h-4 w-4" />
+                            {React.createElement(Icon, { className: "h-4 w-4" })}
                         </div>
                         {visibleColumns?.partner_name !== false && (
                             <span className="font-heading font-extrabold text-base text-foreground line-clamp-1 max-w-[240px] tracking-tight">

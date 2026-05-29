@@ -41,8 +41,10 @@ function makeWrapper() {
     const queryClient = new QueryClient({
         defaultOptions: { queries: { retry: false, gcTime: 0 } },
     })
-    return ({ children }: { children: React.ReactNode }) =>
+    const Wrapper = ({ children }: { children: React.ReactNode }) =>
         React.createElement(QueryClientProvider, { client: queryClient }, children)
+    Wrapper.displayName = "TestQueryWrapper"
+    return Wrapper
 }
 
 // Lazily import the mocked api instance after vi.mock has replaced it

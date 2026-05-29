@@ -126,23 +126,6 @@ export function TaskInbox() {
         return () => clearInterval(interval)
     }, [])
 
-    // Handle deep-linked task (ADR-0020)
-    useEffect(() => {
-        if (selectedId && !loading) {
-            const task = [...approvalTasks, ...operationalTasks].find(t => t.id === parseInt(selectedId))
-            if (task) {
-                navigateToTask(task)
-                // Clear selection after navigation to avoid infinite loops if it redirects back
-                const params = new URLSearchParams(searchParams.toString())
-                params.delete('selected')
-                router.replace(`?${params.toString()}`, { scroll: false })
-            } else if (!loading) {
-                // If not found in current list, try to fetch it specifically or handle error
-                // For now, we assume it will be in the list after fetchTasks
-            }
-        }
-    }, [selectedId, loading, approvalTasks, operationalTasks])
-
     const navigateToTask = (task: Task) => {
         // Smart navigation based on task type
         if (!task.object_id) {
@@ -196,6 +179,23 @@ export function TaskInbox() {
             toast.info("Navegación específica no configurada para este tipo de tarea")
         }
     }
+
+    // Handle deep-linked task (ADR-0020)
+    useEffect(() => {
+        if (selectedId && !loading) {
+            const task = [...approvalTasks, ...operationalTasks].find(t => t.id === parseInt(selectedId))
+            if (task) {
+                navigateToTask(task)
+                // Clear selection after navigation to avoid infinite loops if it redirects back
+                const params = new URLSearchParams(searchParams.toString())
+                params.delete('selected')
+                router.replace(`?${params.toString()}`, { scroll: false })
+            } else if (!loading) {
+                // If not found in current list, try to fetch it specifically or handle error
+                // For now, we assume it will be in the list after fetchTasks
+            }
+        }
+    }, [selectedId, loading, approvalTasks, operationalTasks])
 
     const getUserInitials = (task: Task): string => {
         const user = task.assigned_to_data

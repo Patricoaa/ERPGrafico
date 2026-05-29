@@ -194,9 +194,16 @@ export function DraftCartsList({
         }
     }
 
+    const [now, setNow] = useState(() => Date.now())
+
+    useEffect(() => {
+        const interval = setInterval(() => setNow(Date.now()), 60000)
+        return () => clearInterval(interval)
+    }, [])
+
     const formatRelative = (dateString: string) => {
         try {
-            const diff = Date.now() - new Date(dateString).getTime()
+            const diff = now - new Date(dateString).getTime()
             const mins = Math.floor(diff / 60000)
             if (mins < 1) return "Ahora"
             if (mins < 60) return `Hace ${mins}m`

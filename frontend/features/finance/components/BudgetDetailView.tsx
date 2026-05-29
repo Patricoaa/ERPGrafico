@@ -78,10 +78,6 @@ export function BudgetDetailView({ budgetId }: BudgetDetailViewProps) {
     const [budget, setBudget] = useState<Budget | null>(null)
     const [loading, setLoading] = useState(true)
 
-    useEffect(() => {
-        loadData()
-    }, [budgetId])
-
     const loadData = async () => {
         setLoading(true)
         try {
@@ -98,6 +94,10 @@ export function BudgetDetailView({ budgetId }: BudgetDetailViewProps) {
             setLoading(false)
         }
     }
+
+    useEffect(() => {
+        loadData()
+    }, [budgetId])
 
     const handleExport = async () => {
         if (!budget) return
