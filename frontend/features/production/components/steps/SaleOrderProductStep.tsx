@@ -10,6 +10,13 @@ import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/money";
 import type { SaleOrderLine } from "@/features/sales/types";
 
+type ExpandedProduct = { id: number; name: string; code: string; image_thumbnail?: string; requires_advanced_manufacturing?: boolean };
+
+// Safe: the API always returns expanded product objects for manufacturable lines
+function productOf(line: SaleOrderLine): ExpandedProduct | undefined {
+  return line.product as unknown as ExpandedProduct | undefined;
+}
+
 interface SaleOrderProductStepProps {
   onChooseProduct: (
     otType: "LINKED" | "NONE",
@@ -52,7 +59,7 @@ export function SaleOrderProductStep({
   // Group lines by product for display (we want to show unique products)
   const productsById = new Map<string, SaleOrderLine & { quantity: number; uom_name: string }>();
   availableLines.forEach(line => {
-    const productKey = line.product?.id?.toString() ?? "";
+    const productKey = productOf(line)?.id?.toString() ?? "";
     if (!productKey) return;
 
     const existing = productsById.get(productKey);
@@ -81,7 +88,7 @@ export function SaleOrderProductStep({
 
   const handleProductSelect = (productId: string) => {
     const line = availableLines.find(l =>
-      l.product?.id?.toString() === productId
+      productOf(l)?.id?.toString() === productId
     );
 
     if (!line) return;
@@ -241,6 +248,7 @@ export function SaleOrderProductStep({
                   <div className="grid gap-3">
                     {availableProducts.map((line) => {
                       const isSelected = selectedLineId === line.id?.toString();
+                      const prod = productOf(line) as ExpandedProduct | undefined;
 
                       return (
                         <Button
@@ -252,15 +260,15 @@ export function SaleOrderProductStep({
                             isSelected && "border-primary bg-primary/[0.10]",
                             "hover:border-primary/50 hover:bg-primary/[0.03] transition-all duration-300"
                           )}
-                          onClick={() => handleProductSelect(line.product?.id?.toString() ?? "")}
+                          onClick={() => handleProductSelect(prod?.id?.toString() ?? "")}
                         >
                           <div className="absolute inset-0 bg-primary/0 group-hover:bg-primary/5 transition-opacity pointer-events-none" />
                           <div className="flex h-full w-full p-4 space-x-3">
                             <div className="flex-shrink-0">
-                              {line.product?.image_thumbnail ? (
+                              {prod?.image_thumbnail ? (
                                 <img
-                                  src={line.product.image_thumbnail}
-                                  alt={line.product?.name || ""}
+                                  src={prod.image_thumbnail}
+                                  alt={prod?.name || ""}
                                   className="h-10 w-10 rounded object-cover"
                                 />
                               ) : (
@@ -275,7 +283,7 @@ export function SaleOrderProductStep({
                                   {line.product_name || line.description || "Producto sin nombre"}
                                 </h3>
                                 <span className="text-xs text-muted-foreground">
-                                  #{line.product?.code}
+                                  #{prod?.code}
                                 </span>
                               </div>
 
@@ -286,7 +294,7 @@ export function SaleOrderProductStep({
                                 </span>
                               </div>
 
-                              {line.product?.requires_advanced_manufacturing && (
+                              {prod?.requires_advanced_manufacturing && (
                                 <span className="px-2 py-0.5 text-xs rounded bg-primary/[0.10] text-primary/80">
                                   Fabricación avanzada
                                 </span>

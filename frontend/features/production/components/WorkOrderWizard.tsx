@@ -562,8 +562,8 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
                     <SaleOrderProductStep
                       onChooseProduct={(otType, productId, quantity, uomId, productDescription, saleOrderId, saleLineId) => {
                         setChosenOtType(otType)
-                        setSelectedSaleOrder(saleOrderId)
-                        setSelectedSaleLine(saleLineId)
+                        setSelectedSaleOrder(saleOrderId ?? null)
+                        setSelectedSaleLine(saleLineId ?? null)
                         setSelectedProduct(productId)
                         setQuantity(quantity)
                         setUomId(uomId)

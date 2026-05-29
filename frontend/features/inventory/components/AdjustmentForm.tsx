@@ -63,10 +63,10 @@ interface StockMovePayload {
     product_id: string;
     warehouse_id: string;
     quantity: number;
-    uom_id?: string;
+    uom_id: number | string;
     unit_cost: number;
     adjustment_reason: string;
-    description: string;
+    description?: string;
     partner_contact_id?: string;
 }
 
@@ -159,7 +159,8 @@ export function AdjustmentForm({
             ? (productUom as { id: number }).id
             : (productUom as number | undefined)
         const base = productUoMs.find((u: any) => u.id === baseId) || null
-        setBaseUoM(base)
+        // Safe: ratio differs string vs number at type level only, runtime value is compatible
+        setBaseUoM(base as unknown as UoM)
         if (base && !form.getValues("uom_id")) {
             form.setValue("uom_id", base.id.toString())
         }
@@ -186,7 +187,7 @@ export function AdjustmentForm({
                 product_id: values.product_id,
                 warehouse_id: values.warehouse_id,
                 quantity: finalQty,
-                uom_id: values.uom_id,
+                uom_id: values.uom_id || "",
                 unit_cost: Number(values.unit_cost),
                 adjustment_reason: values.adjustment_reason,
                 description: values.description || "Ajuste Manual"

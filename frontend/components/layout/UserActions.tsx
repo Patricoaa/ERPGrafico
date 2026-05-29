@@ -88,13 +88,16 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
     })
 
     useEffect(() => {
-        if (user) {
-            fetchData()
-            // Poll every 2 minutes as a fallback
-            const interval = setInterval(fetchData, 120000)
-            return () => clearInterval(interval)
-        }
-    }, [user, fetchData])
+        if (!user) return
+        let cancelled = false
+        ;(async () => {
+            await fetchData()
+        })()
+        const interval = setInterval(() => {
+            if (!cancelled) fetchData()
+        }, 120000)
+        return () => { cancelled = true; clearInterval(interval) }
+    }, [user])
 
     const handleNotificationClick = async (notification: Notification) => {
         if (!notification.read) {

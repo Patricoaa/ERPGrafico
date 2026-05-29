@@ -104,17 +104,30 @@ export function Step2_Logistics({
 
     // Initialize data if null or missing fields
     useEffect(() => {
-        if (!data || !data.delivery_type) {
-            const initialType = hasRestrictedItems ? 'SCHEDULED' : 'IMMEDIATE';
-            setData({
-                warehouse_id: data?.warehouse_id || "",
-                date: data?.date || dateString || "",
-                delivery_type: initialType,
-                line_data: [],
-                notes: data?.notes || ""
-            })
-        }
-        fetchWarehouses()
+        let cancelled = false
+        ;(async () => {
+            if (!data || !data.delivery_type) {
+                const initialType = hasRestrictedItems ? 'SCHEDULED' : 'IMMEDIATE';
+                if (!cancelled) {
+                    setData({
+                        warehouse_id: data?.warehouse_id || "",
+                        date: data?.date || dateString || "",
+                        delivery_type: initialType,
+                        line_data: [],
+                        notes: data?.notes || ""
+                    })
+                }
+            }
+            try {
+                const warehouses = await billingApi.getWarehouses()
+                if (!cancelled) setWarehouses(warehouses)
+            } catch (err) {
+                if (!cancelled) console.error("Error fetching warehouses", err)
+            } finally {
+                if (!cancelled) setFetchingWarehouses(false)
+            }
+        })()
+        return () => { cancelled = true }
     }, [])
 
     const formData = (data || {
@@ -128,7 +141,7 @@ export function Step2_Logistics({
     // Sync date when server date arrives if not already set
     useEffect(() => {
         if (dateString && !formData.date) {
-            setData({ ...formData, date: dateString })
+            requestAnimationFrame(() => setData({ ...formData, date: dateString }))
         }
     }, [dateString])
 

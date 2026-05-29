@@ -1,7 +1,8 @@
 "use client"
 
 import { create } from 'zustand'
-import type { WorkOrder, WorkOrderMaterial, WorkOrderTask, WizardStepMode, ManufacturingData } from '../types'
+import type { WorkOrder, WorkOrderMaterial, WorkOrderTask, WizardStepMode } from '../types'
+import type { ManufacturingData } from '@/components/shared'
 import type { Contact } from '@/features/contacts/types'
 
 interface WizardState {
@@ -86,7 +87,19 @@ interface WizardState {
   reset: () => void
 }
 
-const INITIAL: WizardState = {
+type WizardStateData = Omit<WizardState,
+  | 'setOrder' | 'setLoading' | 'setViewingStepIndex' | 'setStepMode' | 'navigateToStep'
+  | 'setTaskNote' | 'setTaskFile'
+  | 'setIsAnnulModalOpen' | 'setIsDeleteModalOpen' | 'setIsBackwardModalOpen'
+  | 'setPendingPrevStage' | 'setShowPOPreview' | 'setOutsourcedPending'
+  | 'setRectificationAdjustments' | 'setRectificationOutsourcedAdjustments' | 'setRectificationProducedQty'
+  | 'setChosenOtType' | 'setSelectedSaleOrder' | 'setSelectedSaleLine' | 'setSelectedProduct'
+  | 'setProductDescription' | 'setMfgConfig' | 'setSelectedContact' | 'setQuantity' | 'setUomId'
+  | 'setStartDate' | 'setDueDate' | 'setInternalNotes'
+  | 'reset'
+>
+
+const INITIAL: WizardStateData = {
   order: null,
   loading: true,
   viewingStepIndex: 0,

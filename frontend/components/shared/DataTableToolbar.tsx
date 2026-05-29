@@ -78,6 +78,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
         leftAction,
         createAction,
         rightButtonGroupAction,
+        toolbarAction,
     } = props
 
     // Get all columns that are sortable

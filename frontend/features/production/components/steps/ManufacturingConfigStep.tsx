@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useProduct } from "@/features/inventory/hooks/useProducts";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm, type SubmitHandler } from "react-hook-form";
+import { useForm, type SubmitHandler, type Resolver, type Control } from "react-hook-form";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { getErrorMessage } from "@/lib/errors";
@@ -149,7 +149,8 @@ export function ManufacturingConfigStep({
 
   // Initialize form with current values
   const form = useForm<WorkOrderFormValues>({
-    resolver: zodResolver(workOrderSchema) as unknown as SubmitHandler<WorkOrderFormValues>,
+    // Safe: discriminated union requires casting through unknown to align resolver/control types
+    resolver: zodResolver(workOrderSchema) as unknown as Resolver<WorkOrderFormValues>,
     defaultValues: {
       otType,
       description: otType === "LINKED" ? (productDescriptionFromStore ?? "") : "",
@@ -260,13 +261,13 @@ export function ManufacturingConfigStep({
   };
 
   // Handle date changes
-  const handleStartDateChange = (date: Date | null) => {
-    setStartDate(date);
+  const handleStartDateChange = (date: Date | undefined) => {
+    setStartDate(date ?? null);
     form.setValue('start_date', date ?? undefined);
   };
 
-  const handleDueDateChange = (date: Date | null) => {
-    setDueDate(date);
+  const handleDueDateChange = (date: Date | undefined) => {
+    setDueDate(date ?? null);
     form.setValue('due_date', date ?? undefined);
   };
 
@@ -403,7 +404,8 @@ export function ManufacturingConfigStep({
   }
 
   const handleFormSubmit = (e: React.FormEvent) => {
-    form.handleSubmit(onSubmit)(e)
+    // Safe: discriminated union needs explicit type parameter for handleSubmit
+    (form.handleSubmit as (fn: SubmitHandler<WorkOrderFormValues>) => (e: React.FormEvent) => void)(onSubmit)(e)
   }
 
   return (
@@ -472,7 +474,8 @@ export function ManufacturingConfigStep({
               {/* Fechas */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
-                  control={form.control}
+                  // Safe: discriminated union forces cast through unknown
+                  control={form.control as unknown as Control<WorkOrderFormValues>}
                   name="start_date"
                   render={({ field }) => (
                     <PeriodValidationDateInput
@@ -485,7 +488,8 @@ export function ManufacturingConfigStep({
                   )}
                 />
                 <FormField
-                  control={form.control}
+                  // Safe: discriminated union forces cast through unknown
+                  control={form.control as unknown as Control<WorkOrderFormValues>}
                   name="due_date"
                   render={({ field }) => (
                     <PeriodValidationDateInput
@@ -527,7 +531,8 @@ export function ManufacturingConfigStep({
                   </div>
                 ) : (
                   <AdvancedContactSelector
-                    onSelectContact={handleContactSelect}
+                    // Safe: handleContactSelect only uses fields common to both Contact types (id, name, tax_id)
+                    onSelectContact={handleContactSelect as unknown as (contact: import("@/types/entities").Contact) => void}
                     onChange={() => { }}
                     placeholder="Buscar contacto..."
                     variant="inline"

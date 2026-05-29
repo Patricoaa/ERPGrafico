@@ -5,16 +5,15 @@ export function useSuggestions(url: string | undefined, query: string) {
   const [suggestions, setSuggestions] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(false)
 
+  const shouldFetch = !!(url && query.length >= 2)
+
   useEffect(() => {
-    if (!url || query.length < 2) {
-      setSuggestions([])
-      return
-    }
+    if (!shouldFetch) return
     let cancelled = false
     const timeout = setTimeout(async () => {
       setIsLoading(true)
       try {
-        const { data } = await api.get<string[]>(url, { params: { q: query } })
+        const { data } = await api.get<string[]>(url!, { params: { q: query } })
         if (!cancelled) setSuggestions(Array.isArray(data) ? data : [])
       } catch {
         if (!cancelled) setSuggestions([])
@@ -26,7 +25,8 @@ export function useSuggestions(url: string | undefined, query: string) {
       cancelled = true
       clearTimeout(timeout)
     }
-  }, [url, query])
+  }, [shouldFetch, url, query])
 
-  return { suggestions, isLoading }
+  const displaySuggestions = shouldFetch ? suggestions : []
+  return { suggestions: displaySuggestions, isLoading }
 }

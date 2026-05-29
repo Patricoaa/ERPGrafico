@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, use } from "react"
+import { useEffect, useState, useRef, use } from "react"
 import { ToolbarCreateButton } from '@/components/shared'
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
@@ -20,7 +20,7 @@ export default function PurchaseOrdersPage({ searchParams }: PageProps) {
     
     const selectedId = nextSearchParams.get('selected')
     const { openHub, isHubOpen } = useHubPanel()
-    const [hubEverOpened, setHubEverOpened] = useState(false)
+    const hubEverOpenedRef = useRef(false)
 
     // 1. Open Hub panel if ?selected= is present
     useEffect(() => {
@@ -31,21 +31,19 @@ export default function PurchaseOrdersPage({ searchParams }: PageProps) {
 
     // 2. Track when the hub successfully opens
     useEffect(() => {
-        if (isHubOpen && selectedId) {
-            setHubEverOpened(true)
-        }
+        if (isHubOpen && selectedId) hubEverOpenedRef.current = true
     }, [isHubOpen, selectedId])
 
     // 3. Clean up URL when hub closes (only if it was actually opened first)
     useEffect(() => {
-        if (hubEverOpened && !isHubOpen && selectedId) {
+        if (hubEverOpenedRef.current && !isHubOpen && selectedId) {
             const urlParams = new URLSearchParams(nextSearchParams.toString())
             urlParams.delete('selected')
             const query = urlParams.toString()
-            setHubEverOpened(false) // reset
+            hubEverOpenedRef.current = false
             router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
         }
-    }, [isHubOpen, hubEverOpened, selectedId, pathname, nextSearchParams, router])
+    }, [isHubOpen, selectedId, pathname, nextSearchParams, router])
 
     const createAction = (
         <ToolbarCreateButton

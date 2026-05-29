@@ -386,7 +386,7 @@ function SaleSelectionModal({ open, onOpenChange, providerId, dateRange, onConfi
 
     const totalSelected = movements
         .filter(m => selectedIds.has(m.id))
-        .reduce((sum, m) => sum + parseFloat(m.amount), 0)
+        .reduce((sum, m) => sum + m.amount, 0)
 
     return (
         <Drawer
@@ -466,7 +466,7 @@ function SaleSelectionModal({ open, onOpenChange, providerId, dateRange, onConfi
                                             </div>
                                             <div className="text-right">
                                                 <p className="text-sm font-black">
-                                                    {formatCurrency(parseFloat(m.amount))}
+                                                    {formatCurrency(m.amount)}
                                                 </p>
                                             </div>
                                         </div>

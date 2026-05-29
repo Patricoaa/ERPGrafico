@@ -22,6 +22,7 @@ import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { Tabs } from "@/components/ui/tabs"
 
 import type { Order } from "@/features/orders"
+import type { Invoice } from "@/features/billing"
 
 interface PurchaseOrder extends Order {
     supplier_name: string
@@ -87,6 +88,63 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
     }, [externalOpenCheckout])
 
     const filteredOrders = orders
+    const filteredNotes = notes
+
+    const noteColumns: ColumnDef<Invoice>[] = [
+        {
+            accessorKey: "dte_type_display",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Documento" />
+            ),
+            cell: ({ row }) => (
+                <DataCell.Text>{row.original.dte_type_display || '-'}</DataCell.Text>
+            ),
+        },
+        {
+            accessorKey: "number",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Folio" />
+            ),
+            cell: ({ row }) => <DataCell.Code>{row.original.display_id ?? row.original.number}</DataCell.Code>,
+            meta: { title: "Folio" },
+        },
+        {
+            accessorKey: "date",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Fecha" />
+            ),
+            cell: ({ row }) => <DataCell.Date value={row.getValue("date")} />,
+            meta: { title: "Fecha" },
+        },
+        {
+            accessorKey: "partner_name",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Proveedor" />
+            ),
+            cell: ({ row }) => <DataCell.Text>{row.original.supplier_name || row.original.partner_name}</DataCell.Text>,
+            meta: { title: "Proveedor" },
+        },
+        {
+            accessorKey: "total",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Total" />
+            ),
+            cell: ({ row }) => <DataCell.Currency value={row.getValue("total")} />,
+            meta: { title: "Total" },
+        },
+        {
+            accessorKey: "status",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Estados" />
+            ),
+            cell: ({ row }) => (
+                <div className="flex justify-center">
+                    <DomainHubStatus label="billing.invoice" data={row.original} />
+                </div>
+            ),
+            meta: { title: "Estado" },
+        },
+    ]
 
     const deleteConfirm = useConfirmAction<number>(async (id) => {
         try {
@@ -125,18 +183,15 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
         }
     })
 
-    const forceAnnulConfirm: ColumnDef<Order>[] = [
+    const forceAnnulColumns: ColumnDef<Order>[] = [
         {
             accessorKey: "dte_type_display",
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Documento" />
             ),
             cell: ({ row }) => (
-                <div className="flex flex-col items-center text-center">
-                    <span className="font-bold">{row.original.dte_type_display}</span>
-                </div>
+                <DataCell.Text>{row.original.dte_type_display || '-'}</DataCell.Text>
             ),
-            meta: { title: "Documento" },
         },
         {
             accessorKey: "number",

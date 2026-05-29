@@ -30,7 +30,7 @@ interface BOMListItem extends BOM {
 
 export default function BOMsPage() {
     const [isFormOpen, setIsFormOpen] = useState(false)
-    const [editingBom, setEditingBom] = useState<BOMListItem | null>(null)
+    const [editingBom, setEditingBom] = useState<BOM | null>(null)
     const searchParams = useSearchParams()
     const router = useRouter()
     const isNewModalOpen = searchParams.get("modal") === "new"
@@ -40,8 +40,10 @@ export default function BOMsPage() {
 
     useEffect(() => {
         if (isNewModalOpen) {
-            setIsFormOpen(true)
-            setEditingBom(null)
+            requestAnimationFrame(() => {
+                setIsFormOpen(true)
+                setEditingBom(null)
+            })
         }
     }, [isNewModalOpen])
 
@@ -215,8 +217,8 @@ export default function BOMsPage() {
                 bomToEdit={editingBom || undefined}
                 product={editingBom ? {
                     id: editingBom.product,
-                    name: editingBom.product_name,
-                    code: editingBom.product_code
+                    name: (editingBom as BOMListItem).product_name,
+                    code: (editingBom as BOMListItem).product_code
                 } as unknown as import('@/features/production/types').ProductMinimal : undefined}
             />
 

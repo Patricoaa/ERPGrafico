@@ -61,7 +61,7 @@ export function GenericWizard({
 
     // Sync internal state with prop to allow external navigation jumps
     React.useEffect(() => {
-        setCurrentStep(initialStep)
+        requestAnimationFrame(() => setCurrentStep(initialStep))
     }, [initialStep])
 
     const totalSteps = steps.length
