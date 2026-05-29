@@ -3,7 +3,7 @@ layer: 20-contracts
 doc: entity-identity
 status: active
 owner: frontend-team
-last_review: 2026-05-10
+last_review: 2026-05-28
 stability: contract-changes-require-ADR
 ---
 
@@ -22,7 +22,7 @@ Sistema centralizado de identidad de entidades ERP. Define el **único lugar** d
 3. [DynamicIcon](#3-dynamicicon)
 4. [EntityBadge](#4-entitybadge)
 5. [EntityHeader](#5-entityheader)
-6. [EntityDetailPage](#6-entitydetailpage) ~~(Decommissionado — T-95)~~
+6. [EntityDetailPage](#6-entitydetailpage) — eliminado (T-95)
 7. [DataCell.Entity](#7-datacellEntity)
 8. [PageHeader — integración con iconos](#8-pageheader--integración-con-iconos)
 9. [Tabla maestra de prefijos](#9-tabla-maestra-de-prefijos)
@@ -217,45 +217,11 @@ Header estandarizado para páginas de detalle `[id]/page.tsx`. Renderiza el íco
 
 ---
 
-## 6. EntityDetailPage
+## 6. EntityDetailPage — eliminado (T-95)
 
-> ⚠️ **Deprecado — en proceso de decommission (T-95).** Las rutas `[id]` redirigen server-side a `<list_url>?selected={id}` per ADR-0020. No usar en código nuevo. Ver [list-modal-edit-pattern.md](./list-modal-edit-pattern.md) y [component-decision-tree.md §4](./component-decision-tree.md).
+> ⚠️ **Componente eliminado en T-95 (ADR-0020).** `frontend/components/shared/EntityDetailPage.tsx` y las 16 páginas `*DetailClient.tsx` ya no existen. No usar en código nuevo.
 
-**Archivo**: `frontend/components/shared/EntityDetailPage.tsx`  
-**Import**: `import { EntityDetailPage } from '@/components/shared'`
-
-~~Shell completo para rutas `[id]/page.tsx`. Orquesta `EntityHeader` + `FormSplitLayout` + `ActivitySidebar` + footer pegajoso. **Usar este componente para toda página de detalle de entidad.**~~
-
-```tsx
-<EntityDetailPage
-  entityLabel="purchasing.purchaseorder"
-  instanceId={id}
-  breadcrumb={[
-    { label: 'Compras', href: '/purchasing' },
-    { label: 'Órdenes de Compra', href: '/purchasing/orders' },
-  ]}
-  footer={<SubmitButton />}
->
-  <PurchaseOrderForm initialData={data} />
-</EntityDetailPage>
-```
-
-| prop | type | required | default | notes |
-|------|------|----------|---------|-------|
-| `entityLabel` | `string` | ❌ | — | Preferido sobre `entityType`. Clave del registry. |
-| `entityType` | `ActivityEntityType` | ❌ | — | Legacy. Usar `entityLabel` cuando sea posible. |
-| `title` | `string` | ❌ | — | Sobreescribe el título del registry |
-| `displayId` | `string` | ❌ | — | Identificador visible (e.g. `'OCS-7'`). Si se omite, se formatea desde `instanceId`. |
-| `icon` | `string` | ❌ | — | Legacy icon name. Ignorado si `entityLabel` tiene entrada en el registry. |
-| `breadcrumb` | `BreadcrumbItem[]` | ✅ | — | Siempre requerido |
-| `instanceId` | `number \| string` | ❌ | — | ID del registro. Si se omite, no se muestra sidebar (modo crear). |
-| `sidebar` | `ReactNode \| null` | ❌ | — | Override del sidebar. `null` deshabilita explícitamente. |
-| `footer` | `ReactNode` | ❌ | — | Acciones del footer pegajoso |
-| `readonly` | `boolean` | ❌ | `false` | Modo solo lectura: oculta footer, pasa `readonly` al header |
-| `children` | `ReactNode` | ✅ | — | Contenido principal (formulario, vista detalle) |
-| `className` | `string` | ❌ | — | |
-
-**Derivación automática de `entityType`**: Si sólo se provee `entityLabel`, el componente deriva el `entityType` para `ActivitySidebar` tomando el sufijo del label (e.g. `'purchasing.purchaseorder'` → `'purchaseorder'`).
+Esta sección se conserva solo como puntero histórico. El shell orquestaba `EntityHeader` + `FormSplitLayout` + `ActivitySidebar` para las rutas `[id]` introducidas por [ADR-0019](../10-architecture/adr/0019-entity-detail-route-convention.md). [ADR-0020](../10-architecture/adr/0020-modal-on-list-edit-ux.md) revirtió esa decisión: hoy las rutas `[id]` redirigen server-side a `<list_url>?selected={id}` y abren el modal/drawer de edición sobre la lista. Patrón canónico: [list-modal-edit-pattern.md](./list-modal-edit-pattern.md).
 
 ---
 

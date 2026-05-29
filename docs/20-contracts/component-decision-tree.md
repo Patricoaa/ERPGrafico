@@ -3,7 +3,7 @@ layer: 20-contracts
 doc: component-decision-tree
 status: active
 owner: frontend-team
-last_review: 2026-05-06
+last_review: 2026-05-28
 stability: stable
 ---
 
@@ -108,7 +108,7 @@ graph TD
 - **`PageTabs`**: Para navegación secundaria dentro de una página.
 - **`CollapsibleSheet`**: Cuando necesites un panel lateral con contenido secundario (ej. Ver el detalle de una orden al lado de un listado).
 - **`Drawer`**: Superficie modal que se despliega desde los bordes de la página. Compatible con **formularios CRUD** (create/edit) y subvistas de datos (tablas, históricos, libros mayores). Preserva el contexto visual de la página subyacente. Para formularios, usar `side="left"` y dimensionar según la tabla en [component-drawer.md](./component-drawer.md).
-- **`EntityDetailPage`**: ~~Shell de página completa para rutas `[id]`.~~ **Deprecado — en proceso de decommission (T-95).** Las rutas `[id]` redirigen server-side a `<list_url>?selected={id}` per ADR-0020. Ver [list-modal-edit-pattern.md](./list-modal-edit-pattern.md).
+- **`EntityDetailPage`**: ~~Shell de página completa para rutas `[id]`.~~ **Eliminado (T-95).** Las rutas `[id]` redirigen server-side a `<list_url>?selected={id}` per ADR-0020. Ver [list-modal-edit-pattern.md](./list-modal-edit-pattern.md).
 - **Skeletons (`SkeletonShell`, `CardSkeleton`, `TableSkeleton`)**: Úsalos durante el renderizado inicial y las transiciones asíncronas para evitar el salto de layout (CLS).
 
 
