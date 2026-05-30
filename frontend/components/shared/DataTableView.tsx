@@ -43,6 +43,8 @@ export function DataTableView<TData, TValue>({
           onRowClick: dataTableProps.onRowClick ?? (() => {}),
           isSelected: isSelected ?? (() => false),
           isHubOpen: isHubOpen ?? false,
+          emptyState: dataTableProps.emptyState,
+          isFiltered: dataTableProps.isFiltered,
         })
       case "entity":
       case "entity-compact":
@@ -50,11 +52,13 @@ export function DataTableView<TData, TValue>({
         return createEntityCardView(entityLabel, {
           renderCard: renderCard as (data: any, row: any) => React.ReactNode,
           gridLayout: policy.gridLayout,
+          emptyState: dataTableProps.emptyState,
+          isFiltered: dataTableProps.isFiltered,
         })
       default:
         return undefined
     }
-  }, [externalRenderCustomView, isCustomView, policy, entityLabel, renderCard, isSelected, isHubOpen, dataTableProps.onRowClick])
+  }, [externalRenderCustomView, isCustomView, policy, entityLabel, renderCard, isSelected, isHubOpen, dataTableProps.onRowClick, dataTableProps.emptyState, dataTableProps.isFiltered])
 
   const internalLoadingView = useMemo(() => {
     if (externalLoadingView) return externalLoadingView

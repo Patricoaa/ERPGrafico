@@ -113,14 +113,16 @@ export function PurchaseNoteModal({
     // -- Effects --
     useEffect(() => {
         if (open) {
-            // Reset state
-            setStep(1)
-            setDocumentNumber("")
-            setDocumentDate(new Date())
-            setAttachment(null)
-            setLines([])
-            setNoteType(initialType)
-            fetchDetails()
+            requestAnimationFrame(() => {
+                // Reset state
+                setStep(1)
+                setDocumentNumber("")
+                setDocumentDate(new Date())
+                setAttachment(null)
+                setLines([])
+                setNoteType(initialType)
+                fetchDetails()
+            })
         }
     }, [open])
 
@@ -131,7 +133,9 @@ export function PurchaseNoteModal({
     const total = amountNet + amountTax
 
     useEffect(() => {
-        setPaymentData(prev => ({ ...prev, amount: total }))
+        requestAnimationFrame(() => {
+            setPaymentData(prev => ({ ...prev, amount: total }))
+        })
     }, [total])
 
     // -- Handlers --

@@ -34,30 +34,33 @@ export function AdvancedManufacturingDrawer({
         const mfgData = prod?.manufacturing_data as any
 
         if (mfgData) {
-            setContact(mfgData.contact || null)
-            setData({
-                phases: {
-                    prepress: mfgData.phases?.prepress ?? !!prod.mfg_enable_prepress,
-                    press: mfgData.phases?.press ?? !!prod.mfg_enable_press,
-                    postpress: mfgData.phases?.postpress ?? !!prod.mfg_enable_postpress,
-                },
-                specifications: {
-                    prepress: mfgData.specifications?.prepress || '',
-                    press: mfgData.specifications?.press || '',
-                    postpress: mfgData.specifications?.postpress || '',
-                },
-                design_needed: mfgData.design_needed || false,
-                design_files: mfgData.design_files || [],
-                existing_design_files: [],
-                folio_enabled: mfgData.folio_enabled || false,
-                folio_start: mfgData.folio_start || '',
-                print_type: mfgData.print_type || null,
-                internal_notes: mfgData.description || '',
-                product_description: mfgData.product_description || '',
+            requestAnimationFrame(() => {
+                setContact(mfgData.contact || null)
+                setData({
+                    phases: {
+                        prepress: mfgData.phases?.prepress ?? !!prod.mfg_enable_prepress,
+                        press: mfgData.phases?.press ?? !!prod.mfg_enable_press,
+                        postpress: mfgData.phases?.postpress ?? !!prod.mfg_enable_postpress,
+                    },
+                    specifications: {
+                        prepress: mfgData.specifications?.prepress || '',
+                        press: mfgData.specifications?.press || '',
+                        postpress: mfgData.specifications?.postpress || '',
+                    },
+                    design_needed: mfgData.design_needed || false,
+                    design_files: mfgData.design_files || [],
+                    existing_design_files: [],
+                    folio_enabled: mfgData.folio_enabled || false,
+                    folio_start: mfgData.folio_start || '',
+                    print_type: mfgData.print_type || null,
+                    internal_notes: mfgData.description || '',
+                    product_description: mfgData.product_description || '',
+                })
             })
         } else {
-            setContact(null)
-            setData(emptyManufacturingData({
+            requestAnimationFrame(() => {
+                setContact(null)
+                setData(emptyManufacturingData({
                 mfg_enable_prepress: prod?.mfg_enable_prepress,
                 mfg_enable_press: prod?.mfg_enable_press,
                 mfg_enable_postpress: prod?.mfg_enable_postpress,
@@ -67,6 +70,7 @@ export function AdvancedManufacturingDrawer({
                 mfg_press_digital: prod?.mfg_press_digital,
                 mfg_press_special: prod?.mfg_press_special,
             }))
+            })
         }
     }, [open, product])
 

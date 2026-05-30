@@ -4,5 +4,5 @@
 // Mantener este re-export para no romper imports existentes dentro del feature POS.
 // Los consumidores fuera del POS deben importar desde '@/components/shared'.
 
-export { ProductGrid } from '@/components/shared/ProductSelector'
-export type { ProductGridProps } from '@/components/shared/ProductSelector'
+export { ProductGrid } from '@/components/shared'
+export type { ProductGridProps } from '@/components/shared'

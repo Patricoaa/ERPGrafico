@@ -1,7 +1,7 @@
 "use client"
 import { formatCurrency } from "@/lib/money";
 
-import { BaseModal, DateRangeFilter, EmptyState, SkeletonShell, StatusBadge } from '@/components/shared'
+import { BaseModal, Chip, DateRangeFilter, EmptyState, SkeletonShell, StatusBadge } from '@/components/shared'
 
 import { useState, useMemo } from "react"
 
@@ -334,9 +334,9 @@ function NoteTable({ notes, onOpenHub }: { notes: NoteHistoryEntry[]; onOpenHub:
         {
             header: "OCS Relacionada",
             cell: ({ row }) => (
-                <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded-[0.25rem] border border-border bg-muted/50 text-muted-foreground whitespace-nowrap font-mono">
+                <Chip size="xs" className="whitespace-nowrap">
                     OCS-{row.original.purchase_order_number}
-                </span>
+                </Chip>
             ),
         },
         {

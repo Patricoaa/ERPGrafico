@@ -86,7 +86,9 @@ export function ProfileView({ activeTab, activeSubTab = "employee", initialProfi
 
     useEffect(() => {
         if (!initialProfile) {
-            fetchProfile()
+            requestAnimationFrame(() => {
+                fetchProfile()
+            })
         }
     }, [fetchProfile, initialProfile])
 
@@ -218,7 +220,7 @@ function ThemeSelectionCard() {
                                 : "border-border hover:border-muted-foreground/30 bg-muted/5"
                         )}
                     >
-                        <Sun className={cn("h-8 w-8 transition-transform duration-normal ease-premium", theme === 'light' ? "text-amber-500 scale-110" : "text-muted-foreground")} />
+                        <Sun className={cn("h-8 w-8 transition-transform duration-normal ease-premium", theme === 'light' ? "text-warning scale-110" : "text-muted-foreground")} />
                         <div className="text-center space-y-1">
                             <span className="font-black text-xs uppercase tracking-wider block">Modo Claro</span>
                             <span className="text-[9px] text-muted-foreground block font-bold leading-snug">Colores limpios y legibilidad óptima para luz diurna</span>

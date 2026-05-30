@@ -69,7 +69,7 @@ const VarianceCell = ({ value, percentage, type }: { value: number, percentage: 
                     value={value}
                     className={cn(
                         "justify-end font-mono text-xs font-bold w-auto p-0 inline-flex",
-                        value === 0 ? "text-muted-foreground" : (isGood ? "text-emerald-600 dark:text-emerald-400" : "text-destructive")
+                        value === 0 ? "text-muted-foreground" : (isGood ? "text-success" : "text-destructive")
                     )}
                 />
                 <span className={cn(

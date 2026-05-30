@@ -2,6 +2,9 @@
 
 import { showApiError } from "@/lib/errors"
 import { useState, useEffect } from "react"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import * as z from "zod"
 
 import {FileBadge, AlertCircle} from "lucide-react"
 import { useSaleOrder, useSalesOrders } from "../hooks/useSalesOrders"
@@ -15,6 +18,14 @@ import { formatEntityDisplay } from "@/lib/entity-registry"
 import { BaseModal, CancelButton, DocumentAttachmentDropzone, EmptyState, FormFooter, FormSection, LabeledContainer, LabeledInput, LabeledSelect, PeriodValidationDateInput, SkeletonShell, SubmitButton } from '@/components/shared'
 
 import { SaleOrderLine, SaleNoteLine } from "../types"
+
+const saleNoteSchema = z.object({
+    noteType: z.enum(["NOTA_CREDITO", "NOTA_DEBITO"]),
+    documentNumber: z.string().min(1, "El número de documento es obligatorio"),
+    documentDate: z.date({ message: "La fecha del documento es obligatoria" }),
+})
+
+type SaleNoteFormValues = z.infer<typeof saleNoteSchema>
 
 export interface SaleNoteFormProps {
     orderId?: number
@@ -80,13 +91,22 @@ export function SaleNoteForm({
     id = "sale-note-form",
     onLoadingChange,
 }: SaleNoteFormProps) {
-    const [noteType, setNoteType] = useState(initialType)
-    const [documentNumber, setDocumentNumber] = useState("")
-    const [documentDate, setDocumentDate] = useState<Date | undefined>(new Date())
     const [lines, setLines] = useState<SaleNoteLine[]>([])
     const [attachment, setAttachment] = useState<File | null>(null)
     const [submitting, setSubmitting] = useState(false)
     const [isPeriodValid, setIsPeriodValid] = useState(true)
+
+    const form = useForm<SaleNoteFormValues>({
+        resolver: zodResolver(saleNoteSchema),
+        defaultValues: {
+            noteType: initialType,
+            documentNumber: "",
+            documentDate: new Date(),
+        }
+    })
+
+    const noteType = form.watch("noteType")
+    const documentNumber = form.watch("documentNumber")
 
     // Reads reactivos: solo uno de orderId/invoiceId está seteado a la vez.
     // El hook que recibe null queda disabled → no fetch.
@@ -98,22 +118,24 @@ export function SaleNoteForm({
     const { registerNoteOnInvoice } = useInvoices()
 
     useEffect(() => {
-        setDocumentNumber("")
-        setDocumentDate(new Date())
-        setAttachment(null)
-        // Cuando llega order o invoice de los hooks, recomponemos las líneas
-        // con quantity=0 y precio unitario original.
-        const fetchedLines: SaleOrderLine[] =
-            (order as { lines?: SaleOrderLine[] } | null | undefined)?.lines
-            ?? (invoice as { lines?: SaleOrderLine[] } | null | undefined)?.lines
-            ?? []
-        const initialLines: SaleNoteLine[] = fetchedLines.map((line: SaleOrderLine) => ({
-            ...line,
-            note_quantity: 0,
-            note_unit_price: Number(line.unit_price)
-        }))
-        setLines(initialLines)
-    }, [order, invoice])
+        requestAnimationFrame(() => {
+            form.setValue("documentNumber", "")
+            form.setValue("documentDate", new Date())
+            setAttachment(null)
+            // Cuando llega order o invoice de los hooks, recomponemos las líneas
+            // con quantity=0 y precio unitario original.
+            const fetchedLines: SaleOrderLine[] =
+                (order as { lines?: SaleOrderLine[] } | null | undefined)?.lines
+                ?? (invoice as { lines?: SaleOrderLine[] } | null | undefined)?.lines
+                ?? []
+            const initialLines: SaleNoteLine[] = fetchedLines.map((line: SaleOrderLine) => ({
+                ...line,
+                note_quantity: 0,
+                note_unit_price: Number(line.unit_price)
+            }))
+            setLines(initialLines)
+        })
+    }, [order, invoice, form])
 
     const handleLineChange = (index: number, field: 'note_quantity' | 'note_unit_price', value: string) => {
         const newLines = [...lines]
@@ -128,22 +150,11 @@ export function SaleNoteForm({
     const amountTax = PricingUtils.calculateTax(amountNet)
     const total = amountNet + amountTax
 
-    const handleSubmit = async () => {
-        if (!documentNumber) {
-            toast.error("El número de documento es obligatorio")
-            return
-        }
-        if (!documentDate) {
-            toast.error("La fecha del documento es obligatoria")
-            return
-        }
-
-        // Live validation already handles this, but as a secondary check/guard
+    const onSubmit = async (values: SaleNoteFormValues) => {
         if (!isPeriodValid) {
             toast.error("El periodo seleccionado está cerrado. No puede continuar.")
             return
         }
-
         if (!attachment) {
             toast.error("El archivo adjunto es obligatorio para este tipo de nota")
             return
@@ -157,10 +168,10 @@ export function SaleNoteForm({
         if (onLoadingChange) onLoadingChange(true)
         try {
             const formData = new FormData()
-            formData.append('note_type', noteType)
-            formData.append('document_number', documentNumber)
-            if (documentDate) {
-                formData.append('document_date', documentDate.toISOString().split('T')[0])
+            formData.append('note_type', values.noteType)
+            formData.append('document_number', values.documentNumber)
+            if (values.documentDate) {
+                formData.append('document_date', values.documentDate.toISOString().split('T')[0])
             }
             formData.append('amount_net', amountNet.toString())
             formData.append('amount_tax', amountTax.toString())
@@ -210,14 +221,17 @@ export function SaleNoteForm({
 
     return (
         <div id={id} className="space-y-6 py-2" data-can-submit={canSubmit ? "true" : "false"}>
-            <form id={`${id}-form`} onSubmit={(e) => { e.preventDefault(); if(canSubmit) handleSubmit(); }} className="hidden" />
+            <form id={`${id}-form`} onSubmit={form.handleSubmit(onSubmit)} className="hidden">
+                <input type="hidden" {...form.register("noteType")} />
+                <input type="hidden" {...form.register("documentNumber")} />
+            </form>
             <div className="space-y-6">
                 <FormSection title="Datos del Documento" icon={FileBadge} />
                 <div className="grid grid-cols-2 gap-4">
                     <LabeledSelect
                         label="Tipo de Nota"
                         value={noteType}
-                        onChange={(val) => setNoteType(val as "NOTA_CREDITO" | "NOTA_DEBITO")}
+                        onChange={(val) => form.setValue("noteType", val as "NOTA_CREDITO" | "NOTA_DEBITO")}
                         options={[
                             { value: "NOTA_CREDITO", label: "Nota de Crédito (Devolución/Resciliación)" },
                             { value: "NOTA_DEBITO", label: "Nota de Débito (Cargo Adicional)" },
@@ -228,13 +242,13 @@ export function SaleNoteForm({
                         label="Número Documento"
                         placeholder="Ej: NC-12345"
                         value={documentNumber}
-                        onChange={(e) => setDocumentNumber(e.target.value)}
+                        onChange={(e) => form.setValue("documentNumber", e.target.value)}
                     />
 
                     <LabeledContainer label="Fecha Emisión">
                         <PeriodValidationDateInput
-                            date={documentDate}
-                            onDateChange={setDocumentDate}
+                            date={form.watch("documentDate")}
+                            onDateChange={(d) => form.setValue("documentDate", d as Date)}
                             validationType="both"
                             onValidityChange={setIsPeriodValid}
                         />

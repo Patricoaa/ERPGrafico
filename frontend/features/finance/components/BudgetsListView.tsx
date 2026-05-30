@@ -54,7 +54,9 @@ export function BudgetsListView({ externalOpen, onExternalOpenChange, createActi
     // Synchronize external modal trigger
     useEffect(() => {
         if (externalOpen) {
-            setIsCreateOpen(true)
+            requestAnimationFrame(() => {
+                setIsCreateOpen(true)
+            })
         }
     }, [externalOpen])
 
@@ -73,13 +75,15 @@ export function BudgetsListView({ externalOpen, onExternalOpenChange, createActi
     // Open edit form if ?selected= is present (ADR-0020)
     // Depends ONLY on selectedFromUrl to prevent async url clearing race condition.
     useEffect(() => {
-        if (selectedFromUrl) {
-            setBudgetToEdit(selectedFromUrl)
-            setIsEditorOpen(true)
-        } else {
-            setIsEditorOpen(false)
-            setBudgetToEdit(null)
-        }
+        requestAnimationFrame(() => {
+            if (selectedFromUrl) {
+                setBudgetToEdit(selectedFromUrl)
+                setIsEditorOpen(true)
+            } else {
+                setBudgetToEdit(null)
+                setIsEditorOpen(false)
+            }
+        })
     }, [selectedFromUrl])
 
     const handleCreate = async () => {

@@ -96,7 +96,9 @@ export function BudgetDetailView({ budgetId }: BudgetDetailViewProps) {
     }
 
     useEffect(() => {
-        loadData()
+        requestAnimationFrame(() => {
+            loadData()
+        })
     }, [budgetId])
 
     const handleExport = async () => {

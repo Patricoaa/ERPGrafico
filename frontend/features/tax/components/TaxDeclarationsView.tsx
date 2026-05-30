@@ -82,7 +82,9 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange, create
 
     useEffect(() => {
         if (externalOpen) {
-            setIsWizardOpen(true)
+            requestAnimationFrame(() => {
+                setIsWizardOpen(true)
+            })
         }
     }, [externalOpen])
 
@@ -136,15 +138,17 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange, create
     useEffect(() => {
         if (selectedFromUrl) {
             const action = searchParams.get('action')
-            if (action === 'pay') {
-                if (!isPaymentOpen && selectedDeclaration?.tax_period_year !== selectedFromUrl.year) {
-                    openPaymentModal(selectedFromUrl)
+            requestAnimationFrame(() => {
+                if (action === 'pay') {
+                    if (!isPaymentOpen && selectedDeclaration?.tax_period_year !== selectedFromUrl.year) {
+                        openPaymentModal(selectedFromUrl)
+                    }
+                } else {
+                    if (!isWizardOpen && selectedPeriodId !== selectedFromUrl.id) {
+                        openWizardModal(selectedFromUrl)
+                    }
                 }
-            } else {
-                if (!isWizardOpen && selectedPeriodId !== selectedFromUrl.id) {
-                    openWizardModal(selectedFromUrl)
-                }
-            }
+            })
         }
     }, [selectedFromUrl, searchParams])
 

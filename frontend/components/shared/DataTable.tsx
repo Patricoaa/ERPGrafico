@@ -24,9 +24,10 @@ import { cn } from "@/lib/utils"
 
 import { motion, AnimatePresence } from "framer-motion"
 import { Skeleton } from "@/components/ui/skeleton"
-import { SearchX, LucideIcon } from "lucide-react"
+import { LucideIcon } from "lucide-react"
 
-import { BulkActionButtons, BulkActionDock, DataTablePagination, DataTableToolbar, EmptyState, EmptyStateContext, SkeletonShell, type BulkAction } from '@/components/shared'
+import { BulkActionButtons, BulkActionDock, DataTablePagination, DataTableToolbar, EmptyState, SkeletonShell, type BulkAction } from '@/components/shared'
+import { resolveEmptyState, type DataTableEmptyState } from './emptyStateResolver'
 
 export interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[]
@@ -91,13 +92,22 @@ export interface DataTableProps<TData, TValue> {
     createAction?: React.ReactNode
     /** Custom actions/buttons rendered inside the main toolbar button group */
     rightButtonGroupAction?: React.ReactNode
-    emptyState?: {
-        title?: string
-        description?: string
-        icon?: LucideIcon
-        action?: React.ReactNode
-        context?: EmptyStateContext
-    }
+    /**
+     * Empty-state copy. Flat fields describe the "no records at all" case
+     * (entity truly empty). The optional `filtered` sub-object overrides the
+     * "active search/filter returned nothing" case; sensible defaults are
+     * applied when omitted. Which one renders is driven by `isFiltered`.
+     */
+    emptyState?: DataTableEmptyState
+    /**
+     * Signals that the current empty result is the product of an active
+     * toolbar search/filter. Drives the empty-state copy:
+     *  - `true`      → "No se encontraron resultados" (filtered)
+     *  - `false`     → entity-specific "sin registros" (no records at all)
+     *  - `undefined` → legacy single empty-state (back-compat, no distinction)
+     * Wire it from `useSmartSearch().isFiltered`.
+     */
+    isFiltered?: boolean
     renderRow?: (row: Row<TData>, children: React.ReactNode) => React.ReactNode
     manualPagination?: boolean
     pageCount?: number
@@ -172,6 +182,7 @@ export function DataTable<TData, TValue>({
     createAction,
     rightButtonGroupAction,
     emptyState: customEmptyState,
+    isFiltered,
     initialColumnFilters = EMPTY_ARRAY,
     renderRow,
     manualPagination,
@@ -185,6 +196,7 @@ export function DataTable<TData, TValue>({
     const isEmbedded = variant === 'embedded'
     const isMinimal = variant === 'minimal'
     const effectiveSkeletonRows = skeletonRows ?? defaultPageSize
+    const emptyProps = resolveEmptyState(customEmptyState, isFiltered)
 
     const containerRef = React.useRef<HTMLDivElement>(null)
     const [isInModal, setIsInModal] = React.useState(false)
@@ -428,14 +440,14 @@ export function DataTable<TData, TValue>({
                                 </TableRow>
                             ))
                         ) : (
-                            <TableRow>
+                            <TableRow className="hover:bg-transparent">
                                 <TableCell colSpan={columns.length} className="h-24 p-0">
                                     <EmptyState
-                                        context={customEmptyState?.context || "search"}
-                                        icon={customEmptyState?.icon || SearchX}
-                                        title={customEmptyState?.title || "No se encontraron resultados"}
-                                        description={customEmptyState?.description || "Intenta ajustar los filtros de búsqueda para encontrar lo que buscas."}
-                                        action={customEmptyState?.action}
+                                        context={emptyProps.context}
+                                        icon={emptyProps.icon}
+                                        title={emptyProps.title}
+                                        description={emptyProps.description}
+                                        action={emptyProps.action}
                                     />
                                 </TableCell>
                             </TableRow>
@@ -516,22 +528,28 @@ export function DataTable<TData, TValue>({
                     </React.Fragment>
                 ))
             ) : (
-                <TableRow>
+                <TableRow className="hover:bg-transparent">
                     <TableCell
                         colSpan={columns.length}
-                        className="h-24 p-0"
+                        className="h-full p-0 align-middle"
                     >
                         <EmptyState
-                            context={customEmptyState?.context || "search"}
-                            title={customEmptyState?.title}
-                            description={customEmptyState?.description || "Intenta ajustar los filtros de búsqueda para encontrar lo que buscas."}
-                            icon={customEmptyState?.icon}
-                            action={customEmptyState?.action}
+                            context={emptyProps.context}
+                            icon={emptyProps.icon}
+                            title={emptyProps.title}
+                            description={emptyProps.description}
+                            action={emptyProps.action}
+                            className="h-full w-full"
                         />
                     </TableCell>
                 </TableRow>
             )
         )
+
+        // When empty, stretch the table to fill the scroll container so the
+        // single empty-state row expands to the full available height/width
+        // of the canvas instead of collapsing to its content.
+        const isTableEmpty = !renderCustomView && table.getRowModel().rows.length === 0
 
         return (
             <div ref={containerRef} className="relative flex flex-col h-full space-y-1 min-h-0">
@@ -573,9 +591,12 @@ export function DataTable<TData, TValue>({
                             {renderCustomView(table)}
                         </div>
                     ) : (
-                        <Table containerClassName={cn(
-                            !isInModal && "flex-1 overflow-y-scroll custom-scrollbar"
-                        )}>
+                        <Table
+                            className={cn(isTableEmpty && "h-full")}
+                            containerClassName={cn(
+                                !isInModal && "flex-1 overflow-y-scroll custom-scrollbar"
+                            )}
+                        >
                             <TableHeader className={cn(!isInModal ? "sticky top-0 bg-card z-10 border-b-2" : "sticky top-0 bg-card z-10 border-b-2")}>
                                 {table.getHeaderGroups().map((headerGroup) => (
                                     <TableRow
@@ -747,11 +768,11 @@ export function DataTable<TData, TValue>({
                                         className="h-24 p-0"
                                     >
                                         <EmptyState
-                                            context={customEmptyState?.context || "search"}
-                                            icon={customEmptyState?.icon || SearchX}
-                                            title={customEmptyState?.title || "No se encontraron resultados"}
-                                            description={customEmptyState?.description || "Intenta ajustar los filtros de búsqueda para encontrar lo que buscas."}
-                                            action={customEmptyState?.action}
+                                            context={emptyProps.context}
+                                            icon={emptyProps.icon}
+                                            title={emptyProps.title}
+                                            description={emptyProps.description}
+                                            action={emptyProps.action}
                                         />
                                     </TableCell>
                                 </TableRow>

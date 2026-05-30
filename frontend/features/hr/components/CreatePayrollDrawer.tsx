@@ -46,11 +46,13 @@ export function CreatePayrollDrawer({ open, onOpenChange, onSaved, trigger }: Cr
 
     useEffect(() => {
         if (open) {
-            setIsFetchingEmployees(true)
-            getEmployees({ status: 'ACTIVE' })
-                .then(setEmployees)
-                .catch((e) => showApiError(e, "Error al cargar empleados"))
-                .finally(() => setIsFetchingEmployees(false))
+            requestAnimationFrame(() => {
+                setIsFetchingEmployees(true)
+                getEmployees({ status: 'ACTIVE' })
+                    .then(setEmployees)
+                    .catch((e) => showApiError(e, "Error al cargar empleados"))
+                    .finally(() => setIsFetchingEmployees(false))
+            })
         }
     }, [open])
 

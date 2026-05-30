@@ -100,30 +100,31 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
     // Hydrate state if initialResolution is provided
     useEffect(() => {
         if (open && initialResolution) {
-            setDraftResolution(initialResolution)
-            setFormData({
-                fiscal_year_id: initialResolution.fiscal_year_obj?.toString() || "",
-                net_result: initialResolution.net_result.toString(),
-                resolution_date: initialResolution.resolution_date,
-                acta_number: initialResolution.acta_number || "",
-                notes: initialResolution.notes || ""
-            })
-            setLines(initialResolution.lines || [])
+            setTimeout(() => {
+                setDraftResolution(initialResolution)
+                setFormData({
+                    fiscal_year_id: initialResolution.fiscal_year_obj?.toString() || "",
+                    net_result: initialResolution.net_result.toString(),
+                    resolution_date: initialResolution.resolution_date,
+                    acta_number: initialResolution.acta_number || "",
+                    notes: initialResolution.notes || ""
+                })
+                setLines(initialResolution.lines || [])
 
-            const dests: Record<number, DestinationAllocation[]> = {}
-            initialResolution.lines?.forEach((l) => {
-                dests[l.id] = (l.destinations || []).map(d => ({
-                    ...d,
-                    amount: parseFloat(d.amount as unknown as string)
-                }))
-                // if it's loss, auto assign
-                if (initialResolution.is_loss && dests[l.id].length === 0) {
-                    dests[l.id] = [{ destination: 'LOSS', amount: Math.abs(parseFloat(l.net_amount)) }]
-                }
-            })
-            setLineDestinations(dests)
+                const dests: Record<number, DestinationAllocation[]> = {}
+                initialResolution.lines?.forEach((l) => {
+                    dests[l.id] = (l.destinations || []).map(d => ({
+                        ...d,
+                        amount: parseFloat(d.amount as unknown as string)
+                    }))
+                    if (initialResolution.is_loss && dests[l.id].length === 0) {
+                        dests[l.id] = [{ destination: 'LOSS', amount: Math.abs(parseFloat(l.net_amount)) }]
+                    }
+                })
+                setLineDestinations(dests)
+            }, 0)
         } else if (!open) {
-            resetFlow()
+            setTimeout(resetFlow, 0)
         }
     }, [open, initialResolution])
 

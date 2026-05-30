@@ -98,9 +98,15 @@ export function useSmartSearch(def: SearchDefinition) {
     await setParamValues(nulled)
   }, [paramValues, setCursor, setParamValues])
 
+  // Single source of truth for "the toolbar search/filter is active".
+  // Consumers pass this to DataTable to distinguish "no records at all"
+  // from "no results for the current search/filter".
+  const isFiltered = chips.length > 0
+
   return {
     filters,
     chips,
+    isFiltered,
     inputValue,
     setInputValue,
     applyFilter,

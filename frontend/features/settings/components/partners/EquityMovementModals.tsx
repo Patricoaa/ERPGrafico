@@ -51,18 +51,19 @@ export function SubscriptionMovementModal({ open, onOpenChange, onSuccess, initi
 
     useEffect(() => {
         if (open) {
-            partnersApi.getPartners().then(setPartners)
-
-            if (initialPartnerId || initialAmount) {
-                setFormData(prev => ({
-                    ...prev,
-                    contact_id: initialPartnerId || "",
-                    amount: initialAmount || "",
-                    description: initialAmount ? `Formalización de exceso de capital: ${formatCurrency(parseFloat(initialAmount))}` : ""
-                }))
-            } else {
-                resetForm()
-            }
+            partnersApi.getPartners().then(partners => {
+                setPartners(partners)
+                if (initialPartnerId || initialAmount) {
+                    setFormData(prev => ({
+                        ...prev,
+                        contact_id: initialPartnerId || "",
+                        amount: initialAmount || "",
+                        description: initialAmount ? `Formalización de exceso de capital: ${formatCurrency(parseFloat(initialAmount))}` : ""
+                    }))
+                } else {
+                    resetForm()
+                }
+            })
         }
     }, [open, initialPartnerId, initialAmount])
 
@@ -246,8 +247,10 @@ export function EquityTransferModal({ open, onOpenChange, onSuccess }: ModalProp
 
     useEffect(() => {
         if (open) {
-            partnersApi.getPartners().then(setPartners)
-            resetForm()
+            partnersApi.getPartners().then(partners => {
+                setPartners(partners)
+                resetForm()
+            })
         }
     }, [open])
 
@@ -456,8 +459,10 @@ export function CapitalContributionModal({ open, onOpenChange, onSuccess }: Moda
 
     useEffect(() => {
         if (open) {
-            partnersApi.getPartners().then(setPartners)
-            resetForm()
+            partnersApi.getPartners().then(partners => {
+                setPartners(partners)
+                resetForm()
+            })
         }
     }, [open])
 
@@ -587,8 +592,10 @@ export function ProvisionalWithdrawalModal({ open, onOpenChange, onSuccess }: Mo
 
     useEffect(() => {
         if (open) {
-            partnersApi.getPartners().then(setPartners)
-            resetForm()
+            partnersApi.getPartners().then(partners => {
+                setPartners(partners)
+                resetForm()
+            })
         }
     }, [open])
 
@@ -718,12 +725,14 @@ export function DividendPaymentModal({ open, onOpenChange, onSuccess, initialPar
 
     useEffect(() => {
         if (open) {
-            partnersApi.getPartners().then(setPartners)
-            if (initialPartnerId) {
-                setFormData(prev => ({ ...prev, contact_id: initialPartnerId }))
-            } else {
-                resetForm()
-            }
+            partnersApi.getPartners().then(partners => {
+                setPartners(partners)
+                if (initialPartnerId) {
+                    setFormData(prev => ({ ...prev, contact_id: initialPartnerId }))
+                } else {
+                    resetForm()
+                }
+            })
         }
     }, [open, initialPartnerId])
 

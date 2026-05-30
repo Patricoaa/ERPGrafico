@@ -78,7 +78,9 @@ export function ReceiptModal({
     // Sync with server date
     useEffect(() => {
         if (dateString && !receiptDate) {
-            setReceiptDate(dateString)
+            requestAnimationFrame(() => {
+                setReceiptDate(dateString)
+            })
         }
     }, [dateString])
 
@@ -121,7 +123,9 @@ export function ReceiptModal({
 
     useEffect(() => {
         if (open && orderId) {
-            fetchData()
+            requestAnimationFrame(() => {
+                fetchData()
+            })
         }
     }, [open, orderId])
 

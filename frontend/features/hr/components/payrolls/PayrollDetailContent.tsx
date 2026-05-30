@@ -453,7 +453,11 @@ function PayrollItemDialog({ payrollId, item, concepts, onSaved, onEditCleared, 
     const [open, setOpen] = useState(false)
     const [saving, setSaving] = useState(false)
 
-    useEffect(() => { if (item) setOpen(true) }, [item])
+    useEffect(() => {
+        if (item) {
+            requestAnimationFrame(() => setOpen(true))
+        }
+    }, [item])
 
     const form = useForm<ItemFormValues>({
         resolver: zodResolver(itemSchema),

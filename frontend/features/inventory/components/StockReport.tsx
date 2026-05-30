@@ -20,7 +20,7 @@ import { useStockReport } from "@/features/inventory/hooks/useStockReport"
 
 export function StockReport() {
     const { report, isLoading, refetch } = useStockReport()
-    const { filters: smartFilters } = useSmartSearch(stockReportSearchDef)
+    const { filters: smartFilters, isFiltered } = useSmartSearch(stockReportSearchDef)
     const [adjustingProduct, setAdjustingProduct] = useState<any | null>(null)
     const [insightsProduct, setInsightsProduct] = useState<any | null>(null)
     const [isFormLoading, setIsFormLoading] = useState(false)
@@ -171,6 +171,12 @@ export function StockReport() {
                     leftAction={<SmartSearchBar searchDef={stockReportSearchDef} placeholder="Buscar por producto, SKU o categoría..." className="w-full" />}
                     useAdvancedFilter={true}
                     defaultPageSize={50}
+                    isFiltered={isFiltered}
+                    emptyState={{
+                        context: "inventory",
+                        title: "Sin productos para reportar",
+                        description: "Cuando registres productos almacenables, su stock aparecerá aquí.",
+                    }}
                 />
             </div>
 

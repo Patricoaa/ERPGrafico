@@ -43,7 +43,7 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
         router.push(query ? `${pathname}?${query}` : pathname, { scroll: false })
     }
 
-    const { filters: smartFilters } = useSmartSearch(salesOrderSearchDef)
+    const { filters: smartFilters, isFiltered } = useSmartSearch(salesOrderSearchDef)
     const { orders, isLoading: isLoadingOrders, refetch: refetchOrders } = useSalesOrders({
         filters: {
             ...(smartFilters as SaleOrderFilters),
@@ -213,6 +213,14 @@ export function SalesOrdersView({ viewMode, posSessionId, onActionSuccess, hideS
                     defaultPageSize={20}
                     isSelected={(data: any) => !!getSelectionId(data)}
                     isHubOpen={isHubOpen}
+                    isFiltered={isFiltered}
+                    emptyState={{
+                        context: viewMode === 'orders' ? "sale" : "finance",
+                        title: viewMode === 'orders' ? "Aún no hay órdenes de venta" : "Aún no hay notas",
+                        description: viewMode === 'orders'
+                            ? "Crea una orden de venta o regístrala desde el punto de venta."
+                            : "Las notas de crédito y débito asociadas a tus ventas aparecerán aquí.",
+                    }}
                 />
             </div>
         </div>
