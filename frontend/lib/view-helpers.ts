@@ -59,7 +59,7 @@ export function createDomainCardView(
     }
     return React.createElement(
       "div",
-      { className: "grid gap-3 pt-1" },
+      { className: "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 pt-1 auto-rows-auto" },
       rows.map((row) =>
         React.createElement(DomainCard, {
           key: row.original.id,
@@ -100,7 +100,7 @@ export function createEntityCardView(
   const layout = options.gridLayout ?? policy?.gridLayout ?? 'single-column'
 
   const gridClass = layout === 'multi-column'
-    ? "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 pt-2"
+    ? "grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-3 pt-2"
     : "grid gap-3 pt-2"
 
   const EntityCardView = (table: ReactTable<any>) => {
@@ -144,7 +144,7 @@ export function createCardLoadingView(
   count: number = 8
 ) {
   const gridClass = layout === 'multi-column'
-    ? "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 pt-2"
+    ? "grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-3 pt-2"
     : "grid gap-3 pt-1"
 
   const CardLoadingView = () =>

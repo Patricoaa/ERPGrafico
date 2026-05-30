@@ -17,6 +17,7 @@ import { useBranding } from "@/contexts/BrandingProvider"
 interface MiniSidebarProps {
     activeCategory: string | null
     onCategoryChange: (category: string) => void
+    collapsed?: boolean
 }
 
 const mainItems = [
@@ -33,7 +34,7 @@ const mainItems = [
     { id: "hr", icon: UserCog, label: "RRHH", permission: "hr.view_dashboard_hr" },
 ]
 
-export function MiniSidebar({ activeCategory, onCategoryChange }: MiniSidebarProps) {
+export function MiniSidebar({ activeCategory, onCategoryChange, collapsed = false }: MiniSidebarProps) {
     const { user } = useAuth()
     const { logo } = useBranding()
 
@@ -52,7 +53,7 @@ export function MiniSidebar({ activeCategory, onCategoryChange }: MiniSidebarPro
     }
 
     return (
-        <aside className="fixed top-0 left-0 bottom-0 w-14 flex flex-col items-center py-4 gap-6 z-50">
+        <aside className={cn("fixed top-0 left-0 bottom-0 w-14 flex flex-col items-center py-4 gap-6 z-50 transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]", collapsed && "-translate-x-full")}>
             {/* 1. Logo */}
             <div className="w-10 h-10 mx-auto rounded-lg flex items-center justify-center text-primary font-black text-sm overflow-hidden shrink-0">
                 {logo ? (
