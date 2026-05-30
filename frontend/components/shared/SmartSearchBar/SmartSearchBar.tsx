@@ -263,7 +263,7 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
       <div
         className={cn(
           'flex items-center gap-1.5 h-9 px-3 rounded-md overflow-x-auto scrollbar-hide',
-          'bg-muted/20 border border-border/50 shadow-sm transition-all',
+          'bg-muted/30 border border-border/50 shadow-sm transition-all',
           'focus-within:bg-background focus-within:border-border',
           isOpen && 'bg-background border-border rounded-b-none',
         )}

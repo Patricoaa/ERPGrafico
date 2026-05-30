@@ -31,7 +31,7 @@ interface TreasuryAccountsViewProps {
 
 export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ activeTab, externalOpen, createAction }) => {
     const { openEntity, closeEntity } = useGlobalModalActions()
-    const { filters } = useSmartSearch(treasuryAccountSearchDef)
+    const { filters, isFiltered } = useSmartSearch(treasuryAccountSearchDef)
     const { accounts, isLoading, deleteAccount } = useTreasuryAccounts({ filters })
     const [isBankModalOpen, setIsBankModalOpen] = useState(false)
     const [isMethodModalOpen, setIsMethodModalOpen] = useState(false)
@@ -237,7 +237,20 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
                             variant="embedded"
                             createAction={activeTab === "accounts" ? createAction : undefined}
                             leftAction={<SmartSearchBar searchDef={treasuryAccountSearchDef} placeholder="Buscar cuenta..." className="w-full" />}
+                            isFiltered={isFiltered}
+                            emptyState={{
+                                context: "treasury",
+                                title: "Aún no hay cuentas de tesorería",
+                                description: "Crea cuentas de caja o banco para registrar y controlar tus fondos.",
+                            }}
                             renderCustomView={createEntityCardView('treasury.treasuryaccount', {
+                                isFiltered,
+                                emptyState: {
+                                    context: "treasury",
+                                    title: "Aún no hay cuentas de tesorería",
+                                    description: "Crea cuentas de caja o banco para registrar y controlar tus fondos.",
+                                    action: activeTab === "accounts" ? createAction : undefined,
+                                },
                                 renderCard: (acc: TreasuryAccount) => {
                                     const name = acc.account_name
                                     return (

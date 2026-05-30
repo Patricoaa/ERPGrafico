@@ -33,7 +33,7 @@ import { uomCategorySearchDef } from "@/features/inventory/searchDef"
 
 export function UoMCategoryClientView({ externalOpen, onExternalOpenChange, createAction }: UoMCategoryClientViewProps) {
     const { categories, isLoading, refetch, deleteUoMCategory } = useUoMs()
-    const { filterFn } = useClientSearch<UoMCategory>(uomCategorySearchDef)
+    const { filterFn, isFiltered } = useClientSearch<UoMCategory>(uomCategorySearchDef)
 
     // Modal State
     const [isModalOpen, setIsModalOpen] = useState(false)
@@ -153,6 +153,12 @@ export function UoMCategoryClientView({ externalOpen, onExternalOpenChange, crea
                     pageSizeOptions={[10, 20]}
                     bulkActions={bulkActions}
                     createAction={createAction}
+                    isFiltered={isFiltered}
+                    emptyState={{
+                        context: "inventory",
+                        title: "Aún no hay categorías de medida",
+                        description: "Agrupa unidades de medida relacionadas (peso, longitud, volumen…).",
+                    }}
                     renderCard={(cat: UoMCategory) => (
                         <EntityCard onClick={() => { setCurrentCategory(cat); setIsModalOpen(true) }}>
                             <EntityCard.Header title={cat.name} />

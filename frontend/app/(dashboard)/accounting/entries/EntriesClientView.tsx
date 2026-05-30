@@ -28,7 +28,7 @@ interface EntriesPageProps {
 }
 
 export default function EntriesPage({ externalOpen, onExternalOpenChange, createAction }: EntriesPageProps) {
-    const { filters } = useSmartSearch(journalEntrySearchDef)
+    const { filters, isFiltered } = useSmartSearch(journalEntrySearchDef)
     const { entries, isLoading, refetch } = useJournalEntries(filters)
     const { accounts } = useAccountingAccounts({ filters: { is_leaf: true } })
     const [viewingTransaction, setViewingTransaction] = useState<{ type: 'journal_entry', id: number | string } | null>(null)
@@ -239,6 +239,12 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
                     leftAction={<SmartSearchBar searchDef={journalEntrySearchDef} placeholder="Buscar asientos..." className="w-full" />}
                     defaultPageSize={20}
                     createAction={createAction}
+                    isFiltered={isFiltered}
+                    emptyState={{
+                        context: "finance",
+                        title: "Aún no hay asientos contables",
+                        description: "Los asientos se registran al confirmar operaciones o puedes crear uno manualmente.",
+                    }}
                 />
 
                 <JournalEntryDrawer

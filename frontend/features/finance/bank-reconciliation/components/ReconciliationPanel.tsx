@@ -159,22 +159,25 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
 
     // Synchronize smart search filters to query parameters
     useEffect(() => {
-        setBankParams(prev => ({
-            ...prev,
-            page: 1,
-            search: filters.search || "",
-            type: filters.type || "",
-            date_from: filters.date_from || "",
-            date_to: filters.date_to || "",
-        }))
-        setSystemParams(prev => ({
-            ...prev,
-            page: 1,
-            search: filters.search || "",
-            type: filters.type || "",
-            date_from: filters.date_from || "",
-            date_to: filters.date_to || "",
-        }))
+        const f = filters
+        requestAnimationFrame(() => {
+            setBankParams(prev => ({
+                ...prev,
+                page: 1,
+                search: f.search || "",
+                type: f.type || "",
+                date_from: f.date_from || "",
+                date_to: f.date_to || "",
+            }))
+            setSystemParams(prev => ({
+                ...prev,
+                page: 1,
+                search: f.search || "",
+                type: f.type || "",
+                date_from: f.date_from || "",
+                date_to: f.date_to || "",
+            }))
+        })
     }, [filters])
 
     const router = useRouter()
@@ -275,11 +278,15 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
     );
 
     useEffect(() => {
-        if (selectedLines.length === 1 || selectedPayments.length === 1) {
-            setSidebarOpen(true)
-        } else {
-            setSidebarOpen(false)
-        }
+        const len1 = selectedLines.length
+        const len2 = selectedPayments.length
+        requestAnimationFrame(() => {
+            if (len1 === 1 || len2 === 1) {
+                setSidebarOpen(true)
+            } else {
+                setSidebarOpen(false)
+            }
+        })
     }, [selectedLines.length, selectedPayments.length])
 
     // ─── Selection Handlers ───────────────────────────────────────────────────
@@ -1470,7 +1477,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                 <X className="h-4 w-4" />
                             </Button>
                         </div>
-                        <div className="flex-1 overflow-y-auto p-4 custom-scrollbar canvas-prepress">
+                        <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
                             <ReconciliationIntelligence />
                         </div>
                     </div>

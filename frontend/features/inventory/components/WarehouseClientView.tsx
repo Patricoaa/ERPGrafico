@@ -27,7 +27,7 @@ interface WarehouseClientViewProps {
 
 export function WarehouseClientView({ externalOpen, onExternalOpenChange, createAction }: WarehouseClientViewProps) {
     const { warehouses, isLoading, refetch, deleteWarehouse } = useWarehouses()
-    const { filterFn } = useClientSearch<Warehouse>(warehouseSearchDef)
+    const { filterFn, isFiltered } = useClientSearch<Warehouse>(warehouseSearchDef)
 
     const [editingWarehouse, setEditingWarehouse] = useState<Warehouse | null>(null)
     const [isFormOpen, setIsFormOpen] = useState(false)
@@ -58,11 +58,15 @@ export function WarehouseClientView({ externalOpen, onExternalOpenChange, create
     // of why isFormOpen/editingWarehouse must NOT be in the dependency array.
     useEffect(() => {
         if (selectedFromUrl) {
-            setEditingWarehouse(selectedFromUrl)
-            setIsFormOpen(true)
+            requestAnimationFrame(() => {
+                setEditingWarehouse(selectedFromUrl)
+                setIsFormOpen(true)
+            })
         } else {
-            setIsFormOpen(false)
-            setEditingWarehouse(null)
+            requestAnimationFrame(() => {
+                setIsFormOpen(false)
+                setEditingWarehouse(null)
+            })
         }
     }, [selectedFromUrl])
 
@@ -180,6 +184,12 @@ export function WarehouseClientView({ externalOpen, onExternalOpenChange, create
                     leftAction={<SmartSearchBar searchDef={warehouseSearchDef} placeholder="Buscar almacén..." className="w-full" />}
                     bulkActions={bulkActions}
                     createAction={createAction}
+                    isFiltered={isFiltered}
+                    emptyState={{
+                        context: "inventory",
+                        title: "Aún no hay almacenes",
+                        description: "Crea un almacén para gestionar ubicaciones y existencias de inventario.",
+                    }}
                     renderCard={(warehouse: Warehouse) => (
                         <EntityCard onClick={() => openSelected(warehouse.id)}>
                             <EntityCard.Header

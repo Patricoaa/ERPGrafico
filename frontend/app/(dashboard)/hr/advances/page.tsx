@@ -21,7 +21,7 @@ import { salaryAdvanceSearchDef } from "@/features/hr/searchDef"
 export default function AdvancesPage() {
     const createAction = <ToolbarCreateButton label="Nuevo Anticipo" href="/hr/advances?modal=new" />
     const searchParams = useSearchParams()
-    const { filters } = useSmartSearch(salaryAdvanceSearchDef)
+    const { filters, isFiltered } = useSmartSearch(salaryAdvanceSearchDef)
     const { advances, isLoading: loading, refetch: refetchAdvances } = useSalaryAdvances(filters)
     const [employees, setEmployees] = useState<Employee[]>([])
     const [payrolls, setPayrolls] = useState<Payroll[]>([])
@@ -158,6 +158,12 @@ export default function AdvancesPage() {
                     leftAction={<SmartSearchBar searchDef={salaryAdvanceSearchDef} placeholder="Buscar anticipos..." className="w-full" />}
                     defaultPageSize={20}
                     createAction={createAction}
+                    isFiltered={isFiltered}
+                    emptyState={{
+                        context: "finance",
+                        title: "Aún no hay anticipos",
+                        description: "Registra anticipos de sueldo para descontarlos en la nómina.",
+                    }}
                 />
             </div>
 

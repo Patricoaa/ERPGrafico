@@ -35,7 +35,7 @@ export default function BOMsPage() {
     const router = useRouter()
     const isNewModalOpen = searchParams.get("modal") === "new"
 
-    const { filters } = useSmartSearch(bomSearchDef)
+    const { filters, isFiltered } = useSmartSearch(bomSearchDef)
     const { boms, isLoading: loading, refetch: refetchBoms } = useAllBOMs(filters)
 
     useEffect(() => {
@@ -192,6 +192,12 @@ export default function BOMsPage() {
                     defaultPageSize={20}
                     leftAction={<SmartSearchBar searchDef={bomSearchDef} placeholder="Buscar por producto..." className="w-full" />}
                     createAction={<ToolbarCreateButton label="Nueva Lista" href="/production/boms?modal=new" />}
+                    isFiltered={isFiltered}
+                    emptyState={{
+                        context: "bom",
+                        title: "Aún no hay listas de materiales",
+                        description: "Crea una lista de materiales (BOM) para definir cómo se fabrica un producto.",
+                    }}
                     renderCard={(bom: BOMListItem) => (
                         <EntityCard onClick={() => handleEdit(bom.id!)}>
                             <EntityCard.Header

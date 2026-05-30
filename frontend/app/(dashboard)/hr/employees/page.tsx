@@ -25,7 +25,7 @@ export default function EmployeesPage() {
     const router = useRouter()
     const pathname = usePathname()
     const searchParams = useSearchParams()
-    const { filters } = useSmartSearch(employeeSearchDef)
+    const { filters, isFiltered } = useSmartSearch(employeeSearchDef)
     const { employees, isLoading: loading, refetch: fetchEmployees } = useEmployees(filters)
     const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<Employee>({
         endpoint: '/hr/employees'
@@ -154,7 +154,20 @@ export default function EmployeesPage() {
                     leftAction={<SmartSearchBar searchDef={employeeSearchDef} placeholder="Buscar por nombre o RUT..." className="w-full" />}
                     defaultPageSize={20}
                     createAction={createAction}
+                    isFiltered={isFiltered}
+                    emptyState={{
+                        context: "users",
+                        title: "Aún no hay empleados",
+                        description: "Registra a tu personal para gestionar nóminas, anticipos e inasistencias.",
+                    }}
                     renderCustomView={createEntityCardView('hr.employee', {
+                        isFiltered,
+                        emptyState: {
+                            context: "users",
+                            title: "Aún no hay empleados",
+                            description: "Registra a tu personal para gestionar nóminas, anticipos e inasistencias.",
+                            action: createAction,
+                        },
                         renderCard: (emp: Employee) => (
                             <EntityCard key={emp.id} onClick={() => {
                                 const params = new URLSearchParams(searchParams.toString())
