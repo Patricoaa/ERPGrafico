@@ -1,7 +1,7 @@
 "use client"
 import { formatCurrency } from "@/lib/money";
 
-import { BaseModal, SkeletonShell, StatusBadge } from '@/components/shared'
+import { BaseModal, Chip, SkeletonShell, StatusBadge } from '@/components/shared'
 
 import {useState} from "react"
 
@@ -336,9 +336,9 @@ function PriceHistoryTable({ entries }: { entries: PriceHistoryEntry[] }) {
         {
             header: "Usuario",
             cell: ({ row }) => (
-                <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded-[0.25rem] border border-border bg-muted/50 text-muted-foreground whitespace-nowrap">
+                <Chip size="xs" className="whitespace-nowrap">
                     {row.original.user}
-                </span>
+                </Chip>
             ),
         },
         {
@@ -478,9 +478,9 @@ function ProductionUsageTable({ entries, onOpenWorkOrder }: {
         {
             header: "N° OT",
             cell: ({ row }) => (
-                <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded-[0.25rem] border border-border bg-muted/50 text-muted-foreground whitespace-nowrap">
+                <Chip size="xs" className="whitespace-nowrap">
                     {formatEntityDisplay('production.workorder', { number: row.original.ot_number })}
-                </span>
+                </Chip>
             ),
         },
         {

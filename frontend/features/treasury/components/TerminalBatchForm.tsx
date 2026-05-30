@@ -2,6 +2,9 @@
 import { formatCurrency } from "@/lib/money"
 
 import {useState, useEffect, useMemo} from "react"
+import { useForm, Controller } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import * as z from "zod"
 import { useServerDate } from "@/hooks/useServerDate"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
@@ -20,6 +23,21 @@ import { useTerminalProviders, usePaymentMethods, useTerminalMovements, useTermi
 
 import { Drawer, ActionSlideButton, CancelButton, SubmitButton, LabeledContainer, LabeledInput, FormFooter, FormSection, SkeletonShell } from "@/components/shared"
 
+const terminalBatchSchema = z.object({
+    providerId: z.string().min(1, "Seleccione un proveedor"),
+    depositMethodId: z.string().min(1, "Seleccione un método de depósito"),
+    dateRange: z.object({
+        from: z.date(),
+        to: z.date().optional(),
+    }).optional(),
+    grossAmount: z.string(),
+    commissionNet: z.string(),
+    commissionTax: z.string(),
+    reference: z.string().optional(),
+})
+
+type TerminalBatchFormValues = z.infer<typeof terminalBatchSchema>
+
 interface TerminalBatchFormProps {
     onSuccess: () => void
     onCancel: () => void
@@ -29,25 +47,40 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
     const { providers, isLoading: isProvidersLoading } = useTerminalProviders()
     const { methods, isLoading: isMethodsLoading } = usePaymentMethods()
     const { createBatch, isCreating } = useTerminalBatchMutations()
-
-    // Form State
-    const [providerId, setProviderId] = useState<string>("")
-    const [depositMethodId, setDepositMethodId] = useState<string>("")
     const { serverDate, isLoading: isServerDateLoading } = useServerDate()
-    const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined)
+    const isFetchingInitialData = isProvidersLoading || isMethodsLoading || isServerDateLoading
 
-    useEffect(() => {
-        if (serverDate && !dateRange) {
-            requestAnimationFrame(() => setDateRange({ from: serverDate, to: serverDate }))
+    const form = useForm<TerminalBatchFormValues>({
+        resolver: zodResolver(terminalBatchSchema),
+        defaultValues: {
+            providerId: "",
+            depositMethodId: "",
+            dateRange: undefined,
+            grossAmount: "0",
+            commissionNet: "0",
+            commissionTax: "0",
+            reference: "",
         }
-    }, [serverDate])
-    const [grossAmount, setGrossAmount] = useState<string>("0")
-    const [commissionNet, setCommissionNet] = useState<string>("0")
-    const [commissionTax, setCommissionTax] = useState<string>("0")
-    const [reference, setReference] = useState("")
+    })
+
+    const providerId = form.watch("providerId")
+    const depositMethodId = form.watch("depositMethodId")
+    const dateRange = form.watch("dateRange")
+    const grossAmount = form.watch("grossAmount")
+    const commissionNet = form.watch("commissionNet")
+    const commissionTax = form.watch("commissionTax")
+
     const [selectedMovements, setSelectedMovements] = useState<any[]>([])
     const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
     const [openSelection, setOpenSelection] = useState(false)
+
+    useEffect(() => {
+        if (serverDate && !form.getValues("dateRange")) {
+            requestAnimationFrame(() => {
+                form.setValue("dateRange", { from: serverDate, to: serverDate })
+            })
+        }
+    }, [serverDate, form])
 
     const gross = parseFloat(grossAmount) || 0
     const cNet = parseFloat(commissionNet) || 0
@@ -55,7 +88,6 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
 
     const calculatedNet = Math.round(gross - (cNet + cTax))
     const netDeposit = calculatedNet.toString()
-    const isFetchingInitialData = isProvidersLoading || isMethodsLoading || isServerDateLoading
     const isValid = gross > 0 && calculatedNet >= 0
 
     const handleAutoCalculate = () => {
@@ -66,8 +98,7 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
         setOpenSelection(true)
     }
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault()
+    const onSubmit = async (values: TerminalBatchFormValues) => {
         if (!isValid) {
             toast.error("Los montos no cuadran")
             return
@@ -75,15 +106,15 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
 
         try {
             await createBatch({
-                provider: providerId,
-                payment_method: depositMethodId,
-                sales_date: dateRange?.from ? format(dateRange.from, "yyyy-MM-dd") : null,
-                sales_date_end: dateRange?.to ? format(dateRange.to, "yyyy-MM-dd") : null,
-                gross_amount: parseFloat(grossAmount),
-                commission_base: parseFloat(commissionNet),
-                commission_tax: parseFloat(commissionTax),
+                provider: values.providerId,
+                payment_method: values.depositMethodId,
+                sales_date: values.dateRange?.from ? format(values.dateRange.from, "yyyy-MM-dd") : null,
+                sales_date_end: values.dateRange?.to ? format(values.dateRange.to, "yyyy-MM-dd") : null,
+                gross_amount: parseFloat(values.grossAmount),
+                commission_base: parseFloat(values.commissionNet),
+                commission_tax: parseFloat(values.commissionTax),
                 net_amount: parseFloat(netDeposit),
-                terminal_reference: reference,
+                terminal_reference: values.reference || "",
                 movement_ids: selectedMovements.map(m => m.id)
             })
             onSuccess()
@@ -94,7 +125,7 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
 
     return (
         <SkeletonShell isLoading={isFetchingInitialData} ariaLabel="Cargando formulario de liquidación de lote">
-            <form onSubmit={handleSubmit} className="space-y-6 py-4">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-4">
                 <div className="grid grid-cols-2 gap-8">
                     <div className="space-y-6">
                         <FormSection title="Configuración de Lote" icon={Landmark} className="pt-0" />
@@ -143,7 +174,7 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
                                                             providerId === p.id.toString() && "bg-accent"
                                                         )}
                                                         onClick={() => {
-                                                            setProviderId(p.id.toString())
+                                                            form.setValue("providerId", p.id.toString())
                                                             document.body.click()
                                                         }}
                                                     >
@@ -163,17 +194,23 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
                             </LabeledContainer>
 
                             <LabeledContainer label="Fechas de Venta">
-                                <DateRangeFilter
-                                    date={dateRange}
-                                    onDateChange={setDateRange}
-                                    variant="ghost"
+                                <Controller
+                                    name="dateRange"
+                                    control={form.control}
+                                    render={({ field }) => (
+                                        <DateRangeFilter
+                                            date={field.value}
+                                            onDateChange={(d) => field.onChange(d)}
+                                            variant="ghost"
+                                        />
+                                    )}
                                 />
                             </LabeledContainer>
 
                             <LabeledSelect
                                 label="Método de Depósito (Hacia Banco)"
                                 value={depositMethodId}
-                                onChange={setDepositMethodId}
+                                onChange={(val) => form.setValue("depositMethodId", val)}
                                 placeholder="Seleccione método de abono..."
                                 options={methods
                                     .filter(m => m.allow_for_sales && m.method_type !== 'CARD_TERMINAL')
@@ -182,8 +219,8 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
 
                             <LabeledInput
                                 label="N° Lote / Referencia (Opcional)"
-                                value={reference}
-                                onChange={e => setReference(e.target.value)}
+                                value={form.watch("reference")}
+                                onChange={e => form.setValue("reference", e.target.value)}
                                 placeholder="Ej: LOTE-123456"
                             />
                         </div>
@@ -225,7 +262,6 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
                                         type="number"
                                         step="1"
                                         value={grossAmount}
-                                        onChange={e => setGrossAmount(e.target.value)}
                                         disabled={true}
                                         className="font-bold bg-muted"
                                         hint={
@@ -252,10 +288,9 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
                                             value={commissionNet}
                                             onChange={e => {
                                                 const val = e.target.value
-                                                setCommissionNet(val)
-                                                // Auto-calc tax (19% as a helper, user can override)
+                                                form.setValue("commissionNet", val)
                                                 const net = parseFloat(val) || 0
-                                                setCommissionTax(Math.round(net * 0.19).toString())
+                                                form.setValue("commissionTax", Math.round(net * 0.19).toString())
                                             }}
                                             className="text-right"
                                         />
@@ -305,7 +340,7 @@ export function TerminalBatchForm({ onSuccess, onCancel }: TerminalBatchFormProp
                         setSelectedMovements(movements)
                         setSelectedIds(ids)
                         const total = movements.reduce((sum, m) => sum + parseFloat(m.amount), 0)
-                        setGrossAmount(total.toString())
+                        form.setValue("grossAmount", total.toString())
                         setOpenSelection(false)
                     }}
                 />
@@ -366,7 +401,7 @@ function SaleSelectionModal({ open, onOpenChange, providerId, dateRange, onConfi
                 if (movements.some((m: any) => m.id === id)) next.add(id)
             })
         }
-        setSelectedIds(next)
+        requestAnimationFrame(() => setSelectedIds(next))
     }, [open, movements, initialSelectedIds, dateRange])
 
     const toggleAll = () => {

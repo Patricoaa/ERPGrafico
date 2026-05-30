@@ -135,9 +135,11 @@ export function POSProvider({ children }: { children: ReactNode }) {
     const [handledSessionId, setHandledSessionId] = useState<number | null>(null);
     useEffect(() => {
         if (currentSession?.id && currentSession.id !== handledSessionId) {
-            setHandledSessionId(currentSession.id);
-            setCurrentDraftId(null);
-            setWizardState(null);
+            requestAnimationFrame(() => {
+                setHandledSessionId(currentSession.id);
+                setCurrentDraftId(null);
+                setWizardState(null);
+            })
         }
     }, [currentSession?.id, handledSessionId]);
 

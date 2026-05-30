@@ -105,7 +105,7 @@ export function OrderHubIntegrated({
 
     // Reset when document changes
     useEffect(() => {
-        setOpenPhases(initialOpenPhases)
+        requestAnimationFrame(() => setOpenPhases(initialOpenPhases))
     }, [initialOpenPhases])
 
     const togglePhase = useCallback((phaseId: string) => (isOpen: boolean) => {

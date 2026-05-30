@@ -69,13 +69,15 @@ function BlacklistContactPanel({ contact, onRefresh }: { contact: CreditContact,
     // Lazy load ledger on first expansion
     useEffect(() => {
         if (ledger === null && !loadingLedger) {
-            setLoadingLedger(true)
-            getContactCreditLedger(contact.id, true)
-                .then(setLedger)
-                .catch((err) => {
-                    console.error("Error fetching credit ledger:", err)
-                })
-                .finally(() => setLoadingLedger(false))
+            requestAnimationFrame(() => {
+                setLoadingLedger(true)
+                getContactCreditLedger(contact.id, true)
+                    .then(setLedger)
+                    .catch((err) => {
+                        console.error("Error fetching credit ledger:", err)
+                    })
+                    .finally(() => setLoadingLedger(false))
+            })
         }
     }, [ledger, loadingLedger, contact.id])
 

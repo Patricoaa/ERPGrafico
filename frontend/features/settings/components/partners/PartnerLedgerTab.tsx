@@ -68,7 +68,9 @@ export function PartnerLedgerTab() {
     }
 
     useEffect(() => {
-        fetchData()
+        requestAnimationFrame(() => {
+            fetchData()
+        })
     }, [])
 
     // Identify Inflow vs Outflow types for UI and Balance

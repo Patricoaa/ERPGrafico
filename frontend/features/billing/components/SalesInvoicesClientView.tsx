@@ -22,7 +22,7 @@ import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { getDtePrefix } from "@/lib/entity-registry"
 
 export function SalesInvoicesClientView() {
-    const { filters } = useSmartSearch(invoiceSearchDef)
+    const { filters, isFiltered } = useSmartSearch(invoiceSearchDef)
     const { invoices, isLoading, refetch, annulInvoice } = useInvoices({ filters: { ...filters, mode: 'sale' } })
     const { openHub, closeHub, hubConfig, isHubOpen } = useHubPanel()
     const [notingInvoice, setNotingInvoice] = useState<Invoice | null>(null)
@@ -167,6 +167,12 @@ export function SalesInvoicesClientView() {
                     defaultPageSize={20}
                     isSelected={(data: Invoice) => hubConfig?.invoiceId === data.id}
                     isHubOpen={isHubOpen}
+                    isFiltered={isFiltered}
+                    emptyState={{
+                        context: "finance",
+                        title: "Aún no hay documentos de venta",
+                        description: "Las boletas y facturas que emitas aparecerán aquí.",
+                    }}
                 />
             </div>
 

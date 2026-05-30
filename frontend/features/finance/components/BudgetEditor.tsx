@@ -133,7 +133,9 @@ export function BudgetEditor({ open, onOpenChange, budget, onSave }: BudgetEdito
 
     useEffect(() => {
         if (open && budget) {
-            loadData();
+            requestAnimationFrame(() => {
+                loadData();
+            })
         }
     }, [open, budget]);
 

@@ -102,6 +102,7 @@ export * from './ExpandableTableRow'
 
 // ─── Migrated from components/ui — GOVERNANCE rule 21 compliance ─────────────
 // Table system
+export * from './emptyStateResolver';
 export * from './DataTable';
 export * from './DataTableView';
 export * from './DataTableToolbar';

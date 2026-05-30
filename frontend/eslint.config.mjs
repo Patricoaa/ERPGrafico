@@ -8,6 +8,10 @@ import boundaries from "eslint-plugin-boundaries";
 import fsdNoApiInComponent from "./eslint-rules/fsd-no-api-in-component.mjs";
 import paginationNoEnvelopeDiscard from "./eslint-rules/pagination-no-envelope-discard.mjs";
 import paginationDatatableNeedsRowcount from "./eslint-rules/pagination-datatable-needs-rowcount.mjs";
+import noRawTailwindColors from "./eslint-rules/no-raw-tailwind-colors.mjs";
+import formsMustUseHook from "./eslint-rules/forms-must-use-hook.mjs";
+import componentNamingSuffix from "./eslint-rules/component-naming-suffix.mjs";
+import statusMustUseStatusbadge from "./eslint-rules/status-must-use-statusbadge.mjs";
 
 const eslintConfig = defineConfig([...nextVitals, ...nextTs, globalIgnores([
   ".next/**",
@@ -54,11 +58,36 @@ const eslintConfig = defineConfig([...nextVitals, ...nextTs, globalIgnores([
       ],
     }],
   },
-}, // Type safety
+}, // Type safety — includes both syntax-only and type-aware rules
+// The `languageOptions.parserOptions.projectService` enables type-aware
+// linting for the no-unsafe-* rules. See https://typescript-eslint.io/getting-started/typed-linting
 {
   files: ["**/*.ts", "**/*.tsx"],
+  languageOptions: {
+    parserOptions: {
+      projectService: true,
+    },
+  },
   rules: {
     "@typescript-eslint/no-explicit-any": "warn",
+    "@typescript-eslint/no-unsafe-assignment": "warn",
+    "@typescript-eslint/no-unsafe-call": "warn",
+    "@typescript-eslint/no-unsafe-member-access": "warn",
+    "@typescript-eslint/no-unsafe-return": "warn",
+    "@typescript-eslint/no-non-null-assertion": "warn",
+    "@typescript-eslint/consistent-type-imports": ["warn", {
+      "prefer": "type-imports",
+      "fixStyle": "inline-type-imports",
+      "disallowTypeAnnotations": true,
+    }],
+  },
+}, // Test exceptions — override rules that would be too strict in test files
+{
+  files: ["**/*.test.ts", "**/*.test.tsx", "**/*.spec.ts", "**/*.spec.tsx"],
+  rules: {
+    "@typescript-eslint/no-non-null-assertion": "off",
+    "@typescript-eslint/consistent-type-imports": "off",
+    "@typescript-eslint/no-explicit-any": "off",
   },
 }, // Belt-and-suspenders: block lib/api in components/ (catches cross-feature leaks too)
 {
@@ -79,7 +108,7 @@ const eslintConfig = defineConfig([...nextVitals, ...nextTs, globalIgnores([
 {
   files: ["**/*.ts", "**/*.tsx"],
   rules: {
-    "@typescript-eslint/no-restricted-imports": ["warn", {
+    "@typescript-eslint/no-restricted-imports": ["error", {
       patterns: [
         {
           group: ["@/components/shared/*", "!@/components/shared"],
@@ -213,6 +242,42 @@ const eslintConfig = defineConfig([...nextVitals, ...nextTs, globalIgnores([
       }
     ]
   }
+}, // Raw Tailwind color detection — GOVERNANCE.md §3 rule 12
+{
+  files: ["**/*.tsx", "**/*.ts"],
+  plugins: {
+    tw: { rules: { "no-raw-color": noRawTailwindColors } },
+  },
+  rules: {
+    "tw/no-raw-color": "warn",
+  },
+}, // Forms must use react-hook-form + zodResolver — GOVERNANCE.md §6 rule 29
+{
+  files: ["features/**/*.tsx", "features/**/*.ts", "components/**/*.tsx", "components/**/*.ts", "app/**/*.tsx"],
+  plugins: {
+    forms: { rules: { "must-use-hook": formsMustUseHook } },
+  },
+  rules: {
+    "forms/must-use-hook": "warn",
+  },
+}, // Component naming suffix — naming-conventions.md §1.1
+{
+  files: ["features/*/components/**/*.tsx"],
+  plugins: {
+    naming: { rules: { "component-suffix": componentNamingSuffix } },
+  },
+  rules: {
+    "naming/component-suffix": "warn",
+  },
+}, // Status must use StatusBadge — GOVERNANCE.md §4 rule 19
+{
+  files: ["features/**/*.tsx", "components/**/*.tsx", "app/**/*.tsx"],
+  plugins: {
+    status: { rules: { "must-use-statusbadge": statusMustUseStatusbadge } },
+  },
+  rules: {
+    "status/must-use-statusbadge": "warn",
+  },
 }, ...storybook.configs["flat/recommended"]]);
 
 export default eslintConfig;

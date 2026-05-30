@@ -60,7 +60,11 @@ export function PurchaseCheckoutWizard({
 
     // Sync internal order if prop changes
     useEffect(() => {
-        if (order) setInternalOrder(order)
+        if (order) {
+            requestAnimationFrame(() => {
+                setInternalOrder(order)
+            })
+        }
     }, [order])
 
     // Fetch order if orderId is provided and no order prop
@@ -101,9 +105,11 @@ export function PurchaseCheckoutWizard({
 
     useEffect(() => {
         if (open) {
-            setCurrentOrderLines(orderLines)
-            setCurrentTotal(total)
-            setStep(1)
+            requestAnimationFrame(() => {
+                setCurrentOrderLines(orderLines)
+                setCurrentTotal(total)
+                setStep(1)
+            })
         }
         // We ideally only want this to run once when the wizard opens.
         // If orderLines or total change from the parent while open, 
@@ -124,7 +130,9 @@ export function PurchaseCheckoutWizard({
     // Sync DTE date with server date
     useEffect(() => {
         if (dateString) {
-            setDteData(prev => ({ ...prev, date: dateString }))
+            requestAnimationFrame(() => {
+                setDteData(prev => ({ ...prev, date: dateString }))
+            })
         }
     }, [dateString])
 
@@ -135,7 +143,9 @@ export function PurchaseCheckoutWizard({
             const tax = isExempt ? 0 : PricingUtils.calculateTax(net)
             return sum + net + tax
         }, 0)
-        setCurrentTotal(newTotal)
+        requestAnimationFrame(() => {
+            setCurrentTotal(newTotal)
+        })
     }, [currentOrderLines, dteData.type])
 
     const [paymentData, setPaymentData] = useState<PaymentData>({
@@ -160,7 +170,9 @@ export function PurchaseCheckoutWizard({
 
     // Update payment amount when total changes
     useEffect(() => {
-        setPaymentData(prev => ({ ...prev, amount: currentTotal }))
+        requestAnimationFrame(() => {
+            setPaymentData(prev => ({ ...prev, amount: currentTotal }))
+        })
     }, [currentTotal])
 
     // Fetch warehouse name when ID changes

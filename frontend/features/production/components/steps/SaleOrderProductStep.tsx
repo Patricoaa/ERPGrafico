@@ -77,7 +77,7 @@ export function SaleOrderProductStep({
 
   useEffect(() => {
     if (!selectedOrderId) {
-      setSelectedLineId(null);
+      requestAnimationFrame(() => setSelectedLineId(null))
     }
   }, [selectedOrderId]);
 

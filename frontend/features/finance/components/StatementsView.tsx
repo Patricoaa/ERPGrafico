@@ -104,13 +104,16 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
     // Sync with server date
     useEffect(() => {
         if (serverDate) {
-            setDate({
-                from: startOfYear(serverDate),
-                to: serverDate,
-            })
-            setCompDate({
-                from: startOfYear(subYears(serverDate, 1)),
-                to: subYears(serverDate, 1),
+            const d = serverDate
+            requestAnimationFrame(() => {
+                setDate({
+                    from: startOfYear(d),
+                    to: d,
+                })
+                setCompDate({
+                    from: startOfYear(subYears(d, 1)),
+                    to: subYears(d, 1),
+                })
             })
         }
     }, [serverDate])

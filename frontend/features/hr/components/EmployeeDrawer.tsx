@@ -593,7 +593,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, trigger,
                                                     ))}
                                                 </div>
                                             ) : (
-                                                <div className="py-20 border-4 border-dashed rounded-3xl flex flex-col items-center justify-center text-center px-10 bg-muted/5">
+                                                <div className="py-20 border-4 border-dashed rounded-lg flex flex-col items-center justify-center text-center px-10 bg-muted/5">
                                                     <Plus className="h-10 w-10 text-muted-foreground/20 mb-4" />
                                                     <h4 className="font-black uppercase tracking-widest text-muted-foreground/80 text-xs">Sin Conceptos Definidos</h4>
                                                     <p className="text-[10px] text-muted-foreground/50 max-w-xs mt-2 font-medium leading-relaxed italic">

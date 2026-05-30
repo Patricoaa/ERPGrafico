@@ -45,7 +45,7 @@ export function ProductSelectionStep({
     if (initialProductId && otType === "NONE" && !selectedProduct) {
       const found = products.find(p => p.id?.toString() === initialProductId);
       if (found) {
-        setSelectedProduct(found);
+        requestAnimationFrame(() => setSelectedProduct(found))
       }
     }
   }, [initialProductId, otType, selectedProduct, products]);

@@ -1,6 +1,9 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import * as z from "zod"
 import { format } from "date-fns"
 import { toast } from "sonner"
 import { Lock, Pencil, Calendar, User, Package, Settings, X, RotateCcw, Copy } from "lucide-react"
@@ -97,6 +100,17 @@ function SectionHeader({ icon, title, section, order, editingSection, onEdit }: 
     )
 }
 
+const mfgConfigSchema = z.object({
+    quantity: z.string().optional(),
+    uomId: z.string().optional(),
+    contact: z.any().nullable().optional(),
+    startDate: z.date().nullable().optional(),
+    dueDate: z.date().nullable().optional(),
+    notes: z.string().optional(),
+})
+
+type MfgConfigFormValues = z.infer<typeof mfgConfigSchema>
+
 // ── Main component ────────────────────────────────────────────────────────────
 
 export function ManufacturingConfigSummary({ order, onSaved, onRestartComplete, onCorrectionComplete }: ManufacturingConfigSummaryProps) {
@@ -108,19 +122,24 @@ export function ManufacturingConfigSummary({ order, onSaved, onRestartComplete, 
     const [isCorrectionDialogOpen, setIsCorrectionDialogOpen] = useState(false)
     const { restart, createCorrection, isRestarting, isCreatingCorrection } = useWorkOrderIdentityActions(order.id)
 
-    // Local edit state per section
-    const [editQuantity, setEditQuantity] = useState("")
-    const [editUomId, setEditUomId] = useState("")
-    const [editContact, setEditContact] = useState<Contact | null>(null)
-    const [editStartDate, setEditStartDate] = useState<Date | null>(null)
-    const [editDueDate, setEditDueDate] = useState<Date | null>(null)
-    const [editNotes, setEditNotes] = useState("")
+    const form = useForm<MfgConfigFormValues>({
+        resolver: zodResolver(mfgConfigSchema),
+        defaultValues: {
+            quantity: "",
+            uomId: "",
+            contact: null,
+            startDate: null,
+            dueDate: null,
+            notes: "",
+        }
+    })
+
     const [editMfgData, setEditMfgData] = useState<ManufacturingData>(emptyManufacturingData())
 
     // When wizard footer "Cancelar" resets stepMode → exit edit
     useEffect(() => {
         if (stepMode === 'view') {
-            setEditingSection(null)
+            requestAnimationFrame(() => setEditingSection(null))
         }
     }, [stepMode])
 
@@ -152,19 +171,21 @@ export function ManufacturingConfigSummary({ order, onSaved, onRestartComplete, 
         setEditingSection(section)
         setStepMode('edit-in-place')
 
-        // Pre-fill edit state from current order
         if (section === 'volume') {
-            setEditQuantity(String(order.quantity ?? order.stage_data?.quantity ?? ""))
-            setEditUomId(String(order.uom_id ?? order.stage_data?.uom_id ?? ""))
+            form.reset({
+                quantity: String(order.quantity ?? order.stage_data?.quantity ?? ""),
+                uomId: String(order.uom_id ?? order.stage_data?.uom_id ?? ""),
+            })
         }
         if (section === 'planning') {
-            setEditContact(order.stage_data?.contact_id
-                ? { id: Number(order.stage_data.contact_id), name: order.stage_data.contact_name ?? "", tax_id: order.stage_data.contact_tax_id ?? "" } as Contact
-                : null
-            )
-            setEditStartDate(order.start_date ? new Date(order.start_date) : null)
-            setEditDueDate(order.due_date ? new Date(order.due_date) : null)
-            setEditNotes(order.stage_data?.internal_notes ?? "")
+            form.reset({
+                contact: order.stage_data?.contact_id
+                    ? { id: Number(order.stage_data.contact_id), name: order.stage_data.contact_name ?? "", tax_id: order.stage_data.contact_tax_id ?? "" } as Contact
+                    : null,
+                startDate: order.start_date ? new Date(order.start_date) : null,
+                dueDate: order.due_date ? new Date(order.due_date) : null,
+                notes: order.stage_data?.internal_notes ?? "",
+            })
         }
         if (section === 'prepress' || section === 'press' || section === 'postpress') {
             setEditMfgData({
@@ -195,26 +216,27 @@ export function ManufacturingConfigSummary({ order, onSaved, onRestartComplete, 
         if (!editingSection || saving) return
         setSaving(true)
         try {
+            const values = form.getValues()
             const fd = new FormData()
 
             if (editingSection === 'volume') {
                 fd.append('stage_data', JSON.stringify({
                     ...order.stage_data,
-                    quantity: editQuantity,
-                    uom_id: editUomId,
+                    quantity: values.quantity,
+                    uom_id: values.uomId,
                 }))
             }
 
             if (editingSection === 'planning') {
-                if (editStartDate) fd.append('start_date', format(editStartDate, 'yyyy-MM-dd'))
-                if (editDueDate) fd.append('estimated_completion_date', format(editDueDate, 'yyyy-MM-dd'))
-                if (editContact) fd.append('related_contact', String(editContact.id))
+                if (values.startDate) fd.append('start_date', format(values.startDate, 'yyyy-MM-dd'))
+                if (values.dueDate) fd.append('estimated_completion_date', format(values.dueDate, 'yyyy-MM-dd'))
+                if (values.contact) fd.append('related_contact', String((values.contact as Contact).id))
                 fd.append('stage_data', JSON.stringify({
                     ...order.stage_data,
-                    internal_notes: editNotes,
-                    contact_id: editContact?.id,
-                    contact_name: editContact?.name,
-                    contact_tax_id: editContact?.tax_id,
+                    internal_notes: values.notes,
+                    contact_id: (values.contact as Contact)?.id,
+                    contact_name: (values.contact as Contact)?.name,
+                    contact_tax_id: (values.contact as Contact)?.tax_id,
                 }))
             }
 
@@ -349,12 +371,11 @@ export function ManufacturingConfigSummary({ order, onSaved, onRestartComplete, 
                             type="number"
                             step="0.01"
                             min="0"
-                            value={editQuantity}
-                            onChange={(e) => setEditQuantity(e.target.value)}
+                            {...form.register("quantity")}
                         />
                         <UoMSelector
-                            value={editUomId}
-                            onChange={setEditUomId}
+                            value={form.watch("uomId") ?? ""}
+                            onChange={(val) => form.setValue("uomId", val)}
                             uoms={uoms as Parameters<typeof UoMSelector>[0]['uoms']}
                             context="sale"
                             variant="standalone"
@@ -427,32 +448,32 @@ export function ManufacturingConfigSummary({ order, onSaved, onRestartComplete, 
                     <div className="space-y-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <PeriodValidationDateInput
-                                date={editStartDate ?? undefined}
-                                onDateChange={(d) => setEditStartDate(d ?? null)}
+                                date={form.watch("startDate") ?? undefined}
+                                onDateChange={(d) => form.setValue("startDate", d ?? null)}
                                 label="Fecha Inicio"
                                 validationType="tax"
                             />
                             <PeriodValidationDateInput
-                                date={editDueDate ?? undefined}
-                                onDateChange={(d) => setEditDueDate(d ?? null)}
+                                date={form.watch("dueDate") ?? undefined}
+                                onDateChange={(d) => form.setValue("dueDate", d ?? null)}
                                 label="Fecha Entrega"
                                 validationType="tax"
                             />
                         </div>
                         <LabeledContainer label="Contacto Relacionado">
-                            {editContact ? (
+                            {form.watch("contact") ? (
                                 <div className="flex items-center justify-between w-full">
                                     <div className="flex items-center gap-1.5 min-w-0 flex-1">
                                         <User className="h-3.5 w-3.5 text-primary shrink-0" />
-                                        <span className="font-semibold text-sm truncate">{editContact.name}</span>
+                                        <span className="font-semibold text-sm truncate">{(form.watch("contact") as Contact).name}</span>
                                     </div>
-                                    <button type="button" onClick={() => setEditContact(null)} className="text-muted-foreground hover:text-destructive">
+                                    <button type="button" onClick={() => form.setValue("contact", null)} className="text-muted-foreground hover:text-destructive">
                                         <X className="h-3.5 w-3.5" />
                                     </button>
                                 </div>
                             ) : (
                                 <AdvancedContactSelector
-                                    onSelectContact={(c) => setEditContact(c as Contact)}
+                                    onSelectContact={(c) => form.setValue("contact", c as Contact)}
                                     onChange={() => { }}
                                     placeholder="Buscar contacto..."
                                     variant="inline"
@@ -462,8 +483,7 @@ export function ManufacturingConfigSummary({ order, onSaved, onRestartComplete, 
                         </LabeledContainer>
                         <LabeledInput
                             label="Notas Internas"
-                            value={editNotes}
-                            onChange={(e) => setEditNotes(e.target.value)}
+                            {...form.register("notes")}
                         />
                     </div>
                 ) : (

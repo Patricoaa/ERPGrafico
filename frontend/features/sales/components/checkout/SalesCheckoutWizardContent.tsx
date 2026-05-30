@@ -163,22 +163,26 @@ export function SalesCheckoutWizardContent({
     useEffect(() => {
         if (!didHydrateRef.current) {
             didHydrateRef.current = true
-            setCurrentOrderLines(initialOrderLines)
+            requestAnimationFrame(() => {
+                setCurrentOrderLines(initialOrderLines)
 
-            if (quickSale && currentOrderLines.length > 0) {
-                if (initialCustomerId) setSelectedCustomerId(initialCustomerId)
-                setStep(totalSteps)
-            } else if (initialStep && initialStep > 1 && !quickSale) {
-                setStep(initialStep)
-            } else {
-                setStep(initialStep ?? 1)
-            }
+                if (quickSale && currentOrderLines.length > 0) {
+                    if (initialCustomerId) setSelectedCustomerId(initialCustomerId)
+                    setStep(totalSteps)
+                } else if (initialStep && initialStep > 1 && !quickSale) {
+                    setStep(initialStep)
+                } else {
+                    setStep(initialStep ?? 1)
+                }
+            })
         }
     }, [initialStep, quickSale, totalSteps, currentOrderLines.length])
 
     useEffect(() => {
         if (dateString && !initialDteData) {
-            setDteData((prev: CheckoutDTEData) => ({ ...prev, date: dateString }))
+            requestAnimationFrame(() => {
+                setDteData((prev: CheckoutDTEData) => ({ ...prev, date: dateString }))
+            })
         }
     }, [dateString, initialDteData])
 
@@ -238,10 +242,14 @@ export function SalesCheckoutWizardContent({
 
     useEffect(() => {
         if (customerDetails) {
-            setSelectedCustomer(customerDetails)
-            setSelectedCustomerName(customerDetails.name)
+            requestAnimationFrame(() => {
+                setSelectedCustomer(customerDetails)
+                setSelectedCustomerName(customerDetails.name)
+            })
         } else if (!selectedCustomerId) {
-            setSelectedCustomer(null)
+            requestAnimationFrame(() => {
+                setSelectedCustomer(null)
+            })
         }
     }, [customerDetails, selectedCustomerId])
 

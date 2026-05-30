@@ -120,10 +120,15 @@ export function TaskInbox() {
     }
 
     useEffect(() => {
-        fetchTasks()
+        const handle = requestAnimationFrame(() => {
+            fetchTasks()
+        })
         // Silent refresh every 30s
         const interval = setInterval(() => fetchTasks(true), 30000)
-        return () => clearInterval(interval)
+        return () => {
+            cancelAnimationFrame(handle)
+            clearInterval(interval)
+        }
     }, [])
 
     const navigateToTask = (task: Task) => {

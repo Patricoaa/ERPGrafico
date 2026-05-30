@@ -48,7 +48,7 @@ export const POSSessionsView = ({ hideHeader = false }: POSSessionsViewProps) =>
     const router = useRouter()
     const pathname = usePathname()
     const searchParams = useSearchParams()
-    const { filters } = useSmartSearch(posSessionSearchDef)
+    const { filters, isFiltered } = useSmartSearch(posSessionSearchDef)
     const { sessions, isLoading, refetch } = usePOSSessions(filters)
 
     const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<POSSession>({
@@ -75,11 +75,13 @@ export const POSSessionsView = ({ hideHeader = false }: POSSessionsViewProps) =>
 
     useEffect(() => {
         if (selectedFromUrl) {
-            setSelectedSession(selectedFromUrl)
-            // Decide what to open. If it's closed, maybe show report Z.
-            // If it's open, maybe show report X.
-            // For now, let's just open report X by default if selected.
-            handleShowReport(selectedFromUrl, selectedFromUrl.status === 'CLOSED' ? 'Z' : 'X')
+            requestAnimationFrame(() => {
+                setSelectedSession(selectedFromUrl)
+                // Decide what to open. If it's closed, maybe show report Z.
+                // If it's open, maybe show report X.
+                // For now, let's just open report X by default if selected.
+                handleShowReport(selectedFromUrl, selectedFromUrl.status === 'CLOSED' ? 'Z' : 'X')
+            })
         }
     }, [selectedFromUrl])
 
@@ -186,6 +188,12 @@ export const POSSessionsView = ({ hideHeader = false }: POSSessionsViewProps) =>
                     entityLabel="pos.session"
                     leftAction={<SmartSearchBar searchDef={posSessionSearchDef} placeholder="Buscar sesiones..." className="w-full" />}
                     defaultPageSize={10}
+                    isFiltered={isFiltered}
+                    emptyState={{
+                        context: "pos",
+                        title: "Aún no hay sesiones de caja",
+                        description: "Las sesiones del punto de venta aparecerán aquí al abrir caja.",
+                    }}
                     renderCard={(session: POSSession) => (
                         <EntityCard onClick={() => {
                             const params = new URLSearchParams(searchParams.toString())

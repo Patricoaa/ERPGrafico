@@ -86,16 +86,18 @@ export function InventoryContributionModal({
     // Pre-select partner
     useEffect(() => {
         if (preSelectedPartnerId) {
-            setPartnerId(preSelectedPartnerId.toString())
+            setTimeout(() => setPartnerId(preSelectedPartnerId.toString()), 0)
         }
     }, [preSelectedPartnerId])
 
     // Fetch product details when product changes
     useEffect(() => {
         if (!productId) {
-            setProductDetails(null)
-            setProductUoMs([])
-            setUomId("")
+            setTimeout(() => {
+                setProductDetails(null)
+                setProductUoMs([])
+                setUomId("")
+            }, 0)
             return
         }
         settingsApi.getProduct(productId)
@@ -119,16 +121,18 @@ export function InventoryContributionModal({
     // Reset form when modal closes
     useEffect(() => {
         if (!open) {
-            setMoveType("IN")
-            setProductId("")
-            setWarehouseId("")
-            setQuantity("")
-            setUomId("")
-            setUnitCost("0")
-            setDescription("")
-            setProductDetails(null)
-            setProductUoMs([])
-            if (!preSelectedPartnerId) setPartnerId("")
+            setTimeout(() => {
+                setMoveType("IN")
+                setProductId("")
+                setWarehouseId("")
+                setQuantity("")
+                setUomId("")
+                setUnitCost("0")
+                setDescription("")
+                setProductDetails(null)
+                setProductUoMs([])
+                if (!preSelectedPartnerId) setPartnerId("")
+            }, 0)
         }
     }, [open, preSelectedPartnerId])
 
