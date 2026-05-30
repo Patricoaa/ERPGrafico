@@ -73,8 +73,10 @@ export function OrderActionPanel({
 
     useEffect(() => {
         if (open && orderId) {
-            fetchOrderDetails()
-            fetchUserPermissions()
+            requestAnimationFrame(() => {
+                fetchOrderDetails()
+                fetchUserPermissions()
+            })
         }
     }, [open, orderId])
 
@@ -146,7 +148,7 @@ export function OrderActionPanel({
                     />
                 </div>
 
-                <ScrollArea className="flex-1 px-6 canvas-prepress">
+                <ScrollArea className="flex-1 px-6 ">
                     {loading ? (
                         <div className="py-6">
                             <CardSkeleton count={3} variant="list" />

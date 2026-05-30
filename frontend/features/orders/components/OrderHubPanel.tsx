@@ -173,31 +173,33 @@ export function OrderHubPanel({
             <div className="flex flex-col h-full overflow-hidden">
                 {/* ── Panel Header (only in panel context) ──────────────────── */}
                 {showHeader && (
-                    <PanelHeader
-                        title={activeDoc.display_id || activeDoc.folio || `#${activeDoc.id}`}
-                        description={
-                            <>
-                                {(activeDoc.customer_name || activeDoc.supplier_name) && (
-                                    <span className="text-xs text-muted-foreground font-medium leading-none truncate max-w-[240px]">
-                                        {activeDoc.customer_name || activeDoc.supplier_name}
-                                    </span>
-                                )}
-                                <StatusBadge
-                                    status={globalStatus.status === 'success' ? 'SUCCESS' : globalStatus.status === 'active' ? 'IN_PROGRESS' : globalStatus.status === 'cancelled' ? 'CANCELLED' : 'NEUTRAL'}
-                                    label={globalStatus.label}
-                                    icon={StatusIcon}
-                                    size="xs"
-                                    className="rounded-md shrink-0"
-                                />
-                            </>
-                        }
-                        icon={TopLeftIcon}
-                        onClose={onClose}
-                        closeTooltip="Cerrar Hub"
-                    />
+                    <div className="border-b shrink-0 px-6 pt-6 pb-4">
+                        <PanelHeader
+                            title={activeDoc.display_id || activeDoc.folio || `#${activeDoc.id}`}
+                            description={
+                                <>
+                                    {(activeDoc.customer_name || activeDoc.supplier_name) && (
+                                        <span className="text-xs text-muted-foreground font-medium leading-none truncate max-w-[240px]">
+                                            {activeDoc.customer_name || activeDoc.supplier_name}
+                                        </span>
+                                    )}
+                                    <StatusBadge
+                                        status={globalStatus.status === 'success' ? 'SUCCESS' : globalStatus.status === 'active' ? 'IN_PROGRESS' : globalStatus.status === 'cancelled' ? 'CANCELLED' : 'NEUTRAL'}
+                                        label={globalStatus.label}
+                                        icon={StatusIcon}
+                                        size="xs"
+                                        className="rounded-md shrink-0"
+                                    />
+                                </>
+                            }
+                            icon={TopLeftIcon}
+                            onClose={onClose}
+                            closeTooltip="Cerrar Hub"
+                        />
+                    </div>
                 )}
                 {/* ── Scrollable Phase Content ──────────────────────── */}
-                <ScrollArea className="flex-1 w-full canvas-prepress">
+                <ScrollArea className="flex-1 w-full ">
                     <div className="px-4 pt-5 pb-4">
                         <OrderHubIntegrated
                             data={hubData as any}

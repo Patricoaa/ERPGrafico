@@ -49,7 +49,7 @@ import { Chip, SmartSearchBar, useSmartSearch } from "@/components/shared"
 import { pricingRuleSearchDef } from "@/features/inventory/searchDef"
 
 export function PricingRuleClientView({ externalOpen, onExternalOpenChange, createAction }: PricingRuleClientViewProps) {
-    const { filters } = useSmartSearch(pricingRuleSearchDef)
+    const { filters, isFiltered } = useSmartSearch(pricingRuleSearchDef)
     const { rules, isLoading, refetch, deletePricingRule } = usePricingRules(filters)
     const [editingRule, setEditingRule] = useState<PricingRule | null>(null)
     const [isFormOpen, setIsFormOpen] = useState(false)
@@ -238,6 +238,12 @@ export function PricingRuleClientView({ externalOpen, onExternalOpenChange, crea
                     variant="embedded"
                     leftAction={<SmartSearchBar searchDef={pricingRuleSearchDef} placeholder="Buscar reglas de precio..." className="w-full" />}
                     createAction={createAction}
+                    isFiltered={isFiltered}
+                    emptyState={{
+                        context: "inventory",
+                        title: "Aún no hay reglas de precio",
+                        description: "Crea reglas para automatizar descuentos y precios por producto o categoría.",
+                    }}
                     renderCard={(rule: PricingRule) => (
                         <EntityCard onClick={() => { setEditingRule(rule); setIsFormOpen(true) }}>
                             <EntityCard.Header

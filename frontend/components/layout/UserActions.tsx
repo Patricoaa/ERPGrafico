@@ -139,7 +139,7 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                             <Link
                                 href="/pos"
                                 target="_blank"
-                                className="h-8 w-8 flex items-center justify-center rounded-md text-foreground/50 hover:bg-accent hover:text-accent-foreground transition-all duration-200"
+                                className="h-10 w-10 flex items-center justify-center rounded-md text-foreground/50 hover:bg-accent hover:text-accent-foreground transition-all duration-200"
                             >
                                 <Store className="h-5 w-5" />
                             </Link>
@@ -156,7 +156,7 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                         <motion.button
                             whileTap={{ scale: 0.95 }}
                             onClick={() => setIsCalculatorOpen(true)}
-                            className="h-8 w-8 flex items-center justify-center rounded-md text-foreground/50 hover:bg-accent hover:text-accent-foreground transition-all duration-200 bg-transparent border-none shadow-none"
+                            className="h-10 w-10 flex items-center justify-center rounded-md text-foreground/50 hover:bg-accent hover:text-accent-foreground transition-all duration-200 bg-transparent border-none shadow-none"
                         >
                             <Calculator className="h-5 w-5" />
                         </motion.button>
@@ -173,7 +173,7 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                             whileTap={{ scale: 0.95 }}
                             onClick={onInboxToggle}
                             className={cn(
-                                "relative h-8 w-8 flex items-center justify-center rounded-md transition-all duration-200",
+                                "relative h-10 w-10 flex items-center justify-center rounded-md transition-all duration-200",
                                 isInboxOpen
                                     // Active: filled primary to signal open panel
                                     ? "bg-primary text-primary-foreground"
@@ -203,7 +203,7 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                             <DropdownMenuTrigger asChild>
                                 <motion.button
                                     whileTap={{ scale: 0.95 }}
-                                    className="relative h-8 w-8 flex items-center justify-center rounded-md text-foreground/50 hover:bg-accent hover:text-accent-foreground transition-all duration-200 bg-transparent border-none shadow-none"
+                                    className="relative h-10 w-10 flex items-center justify-center rounded-md text-foreground/50 hover:bg-accent hover:text-accent-foreground transition-all duration-200 bg-transparent border-none shadow-none"
                                 >
                                     <Bell className="h-5 w-5" />
                                     {unreadCount > 0 && (
@@ -254,7 +254,7 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                             <DropdownMenuTrigger asChild>
                                 <motion.button
                                     whileTap={{ scale: 0.95 }}
-                                    className="relative h-8 w-8 flex items-center justify-center rounded-md text-foreground/50 hover:bg-accent hover:text-accent-foreground transition-all duration-200 bg-transparent border-none shadow-none"
+                                    className="relative h-10 w-10 flex items-center justify-center rounded-md text-foreground/50 hover:bg-accent hover:text-accent-foreground transition-all duration-200 bg-transparent border-none shadow-none"
                                 >
                                     <Avatar className="h-full w-full rounded-md bg-transparent">
                                         <AvatarFallback className="bg-transparent text-current font-heading font-black text-[10px] rounded-md">

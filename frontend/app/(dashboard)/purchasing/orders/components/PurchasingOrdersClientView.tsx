@@ -48,7 +48,7 @@ import { usePurchasingOrders, usePurchasingNotes, purchaseOrderSearchDef } from 
 import { SmartSearchBar, useSmartSearch } from "@/components/shared"
 
 export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, createAction }: PurchasingOrdersClientViewProps) {
-    const { filters } = useSmartSearch(purchaseOrderSearchDef)
+    const { filters, isFiltered } = useSmartSearch(purchaseOrderSearchDef)
     const { orders, isLoading: isLoadingOrders, refetch: fetchOrders, deleteOrder } = usePurchasingOrders(filters)
     const { notes, isLoading: isLoadingNotes } = usePurchasingNotes()
 
@@ -415,6 +415,14 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                             : hubConfig?.invoiceId === data.id
                         }
                         isHubOpen={isHubOpen}
+                        isFiltered={isFiltered}
+                        emptyState={{
+                            context: "purchase",
+                            title: viewMode === 'orders' ? "Aún no hay órdenes de compra" : "Aún no hay notas de compra",
+                            description: viewMode === 'orders'
+                                ? "Crea una orden de compra para registrar tus adquisiciones a proveedores."
+                                : "Las notas asociadas a tus documentos de compra aparecerán aquí.",
+                        }}
                     />
                 </div>
             </Tabs>

@@ -114,7 +114,7 @@ export function ProfileSidePanel({ profile, open = true, onOpenChange }: Profile
             tabIcon={User}
             fullWidth={320}
         >
-            <div className="flex-1 overflow-y-auto overflow-x-hidden text-foreground canvas-prepress">
+            <div className="flex-1 overflow-y-auto overflow-x-hidden text-foreground ">
                 {/* Header / Avatar Area */}
                 <div className="flex flex-col items-center justify-center py-10 px-6 gap-5 border-border/10 relative overflow-hidden">
                     <Avatar className="h-24 w-24 border-2 border-primary/20 shadow-xl ring-4 ring-background relative z-10">

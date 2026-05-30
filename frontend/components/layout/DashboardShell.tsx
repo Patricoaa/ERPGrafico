@@ -80,7 +80,7 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
             />
 
             {/* ── TOP BAR ────────────────────────────────────────────── */}
-            <div className="absolute top-0 left-14 right-0 h-16 flex items-center bg-background z-30 px-6">
+            <div className="absolute top-0 left-[var(--sidebar-width)] right-0 h-16 flex items-center bg-background z-30 px-6">
 
                 {/* Left: page title & meta — shrinks to content */}
                 <div className="flex-none flex items-center gap-4 min-w-0 pointer-events-none">
@@ -171,7 +171,7 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
             </div>
 
             <div
-                className="h-full flex flex-col min-w-0 relative transition-[margin-right] duration-500 ease-[var(--ease-premium)] pt-20 pl-[4.5rem] pr-4 pb-4"
+                className="h-full flex flex-col min-w-0 relative transition-[margin-right] duration-500 ease-[var(--ease-premium)] pt-[var(--page-padding-top)] pl-[var(--page-padding-left)] pr-[var(--page-gap-right)] pb-[var(--page-gap-bottom)]"
                 style={{
                     marginRight: `${totalSheetsWidth}px`
                 }}

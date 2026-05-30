@@ -34,7 +34,7 @@ interface UoMClientViewProps {
 }
 
 export function UoMClientView({ externalOpen, onExternalOpenChange, createAction }: UoMClientViewProps) {
-    const { filters } = useSmartSearch(uomSearchDef)
+    const { filters, isFiltered } = useSmartSearch(uomSearchDef)
     const { uoms, isLoading, refetch, deleteUoM } = useUoMs(filters)
     const router = useRouter()
     const pathname = usePathname()
@@ -165,6 +165,12 @@ export function UoMClientView({ externalOpen, onExternalOpenChange, createAction
                     leftAction={<SmartSearchBar searchDef={uomSearchDef} placeholder="Buscar unidad..." className="w-full" />}
                     bulkActions={bulkActions}
                     createAction={createAction}
+                    isFiltered={isFiltered}
+                    emptyState={{
+                        context: "inventory",
+                        title: "Aún no hay unidades de medida",
+                        description: "Define unidades para medir, comprar y vender tus productos.",
+                    }}
                     renderCard={(uom: UoM) => (
                         <EntityCard onClick={() => openSelected(uom.id)}>
                             <EntityCard.Header

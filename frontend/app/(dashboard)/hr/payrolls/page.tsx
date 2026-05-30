@@ -51,7 +51,7 @@ export default function PayrollsPage() {
     const router = useRouter()
     const pathname = usePathname()
     const searchParams = useSearchParams()
-    const { filters } = useSmartSearch(payrollSearchDef)
+    const { filters, isFiltered } = useSmartSearch(payrollSearchDef)
     const { payrolls, isLoading: loading, refetch: fetchPayrolls } = usePayrolls(filters)
 
     const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<Payroll>({
@@ -338,6 +338,12 @@ export default function PayrollsPage() {
                 defaultPageSize={20}
                 onRowClick={(row: Payroll) => openDetail(row.id)}
                 createAction={createAction}
+                isFiltered={isFiltered}
+                emptyState={{
+                    context: "finance",
+                    title: "Aún no hay nóminas",
+                    description: "Genera una nómina para liquidar los sueldos del período.",
+                }}
             />
             </div>
 

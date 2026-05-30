@@ -64,7 +64,7 @@ interface TreasuryMovementsClientViewProps {
 
 export function TreasuryMovementsClientView({ externalOpen, createAction }: TreasuryMovementsClientViewProps) {
     const { openEntity } = useGlobalModalActions()
-    const { filters } = useSmartSearch(treasuryMovementsSearchDef)
+    const { filters, isFiltered } = useSmartSearch(treasuryMovementsSearchDef)
     const [pageState, setPageState] = useState({ pageIndex: 0, pageSize: 50 })
     const { page, movements, totalCount, isLoading, refetch } = useTreasuryMovements({
         ...(filters as TreasuryMovementFilters),
@@ -85,8 +85,10 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
 
     useEffect(() => {
         if (selectedFromUrl) {
-            setSelectedMovementId(selectedFromUrl.id)
-            setDetailsOpen(true)
+            requestAnimationFrame(() => {
+                setSelectedMovementId(selectedFromUrl.id)
+                setDetailsOpen(true)
+            })
         }
     }, [selectedFromUrl])
 
@@ -325,13 +327,20 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                     onPaginationChange={setPageState}
                     leftAction={<SmartSearchBar searchDef={treasuryMovementsSearchDef} placeholder="Buscar movimientos..." className="w-full" />}
                     createAction={createAction}
+                    isFiltered={isFiltered}
                     emptyState={{
-                        context: "finance",
-                        title: "No hay movimientos",
-                        description: "Aún no se han registrado ingresos o egresos de fondos en el sistema para el periodo actual.",
-
+                        context: "treasury",
+                        title: "Aún no hay movimientos de caja",
+                        description: "Los ingresos y egresos de fondos que registres aparecerán aquí.",
                     }}
                     renderCustomView={createEntityCardView('treasury.treasurymovement', {
+                        isFiltered,
+                        emptyState: {
+                            context: "treasury",
+                            title: "Aún no hay movimientos de caja",
+                            description: "Los ingresos y egresos de fondos que registres aparecerán aquí.",
+                            action: createAction,
+                        },
                         renderCard: (m) => {
                             const type = m.movement_type
                             const isWriteOff = m.payment_method === 'WRITE_OFF'
