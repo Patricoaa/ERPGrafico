@@ -101,7 +101,7 @@ export function PageLayoutSkeleton({
                                 <SkeletonShell isLoading ariaLabel="Cargando tabla" />
                             )}
                             {contentType === 'card' && (
-                                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                                <div className="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-4">
                                     {Array.from({ length: 6 }).map((_, i) => (
                                         <Card key={i} className="h-48">
                                             <div className="p-6 space-y-4">
@@ -195,7 +195,7 @@ export function AppShellSkeleton() {
                         <Skeleton className="h-8 w-48" />
                         <Skeleton className="h-9 w-28" />
                     </div>
-                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                    <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-4">
                         {Array.from({ length: 4 }).map((_, i) => (
                             <Skeleton key={i} className="h-28" />
                         ))}
