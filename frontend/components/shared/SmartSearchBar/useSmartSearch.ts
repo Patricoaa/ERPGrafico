@@ -3,7 +3,7 @@
 import { useCallback, useMemo, useState } from 'react'
 import { useQueryState, useQueryStates, parseAsString } from 'nuqs'
 import type { SearchDefinition, ActiveChip, FieldDef } from '@/types/search'
-import type { FilterState } from './parseTokens'
+import type { FilterState } from './types'
 
 // Params that must never be cleared by SmartSearchBar — owned by other hooks
 const PRESERVED_PARAMS = new Set(['selected'])
@@ -67,6 +67,7 @@ export function useSmartSearch(def: SearchDefinition) {
           key: param,
           label: getFieldLabelForParam(def, param),
           valueLabel: getValueLabel(def, param, value!),
+          isGlobalSearch: param === 'search',
         })),
     [paramValues, def],
   )
