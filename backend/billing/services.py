@@ -1,6 +1,7 @@
 from django.db import transaction, models
 from django.core.exceptions import ValidationError
 from django.utils import timezone
+from django.contrib.contenttypes.models import ContentType
 from .models import Invoice
 from treasury.models import TreasuryMovement, TreasuryAccount
 from accounting.models import JournalEntry, JournalItem, AccountingSettings, AccountType
@@ -277,8 +278,10 @@ class BillingService:
             {
                 'date': invoice.date,
                 'description': description,
-                'reference': reference,
-                'status': JournalEntry.State.DRAFT
+                'status': JournalEntry.State.DRAFT,
+                'is_manual': False,
+                'source_content_type': ContentType.objects.get_for_model(invoice),
+                'source_object_id': invoice.id,
             },
             items
         )
@@ -297,8 +300,10 @@ class BillingService:
             recon_entry = JournalEntry.objects.create(
                 date=timezone.now().date(),
                 description=f"Conciliación Anticipos - Pedido {order.number} -> Factura {invoice.id}",
-                reference=f"RECO-{invoice.id}", 
-                status=JournalEntry.State.DRAFT
+                reference=f"RECO-{invoice.id}",
+                status=JournalEntry.State.DRAFT,
+                source_content_type=ContentType.objects.get_for_model(Invoice),
+                source_object_id=invoice.id,
             )
             
             receivable_account = order.customer.account_receivable or settings.default_receivable_account
@@ -401,8 +406,10 @@ class BillingService:
             {
                 'date': invoice.date,
                 'description': description,
-                'reference': reference,
-                'status': JournalEntry.State.DRAFT
+                'status': JournalEntry.State.DRAFT,
+                'is_manual': False,
+                'source_content_type': ContentType.objects.get_for_model(invoice),
+                'source_object_id': invoice.id,
             },
             items
         )
@@ -439,7 +446,9 @@ class BillingService:
                 date=timezone.now().date(),
                 description=f"Conciliación Anticipos - OC {order.number} -> Factura {supplier_invoice_number}",
                 reference=f"RECO-{invoice.id}", # Reconciliation
-                status=JournalEntry.State.DRAFT
+                status=JournalEntry.State.DRAFT,
+                source_content_type=ContentType.objects.get_for_model(Invoice),
+                source_object_id=invoice.id,
             )
             
             payable_account = order.supplier.account_payable or settings.default_payable_account
@@ -507,7 +516,7 @@ class BillingService:
     def _pos_checkout_internal(order_data, dte_type, payment_method, transaction_number=None,
                      is_pending_registration=False, payment_is_pending=False, amount=None, treasury_account_id=None,
                      document_number=None, document_date=None, document_attachment=None,
-                     delivery_type='IMMEDIATE', delivery_date=None, delivery_notes='', immediate_lines=None, payment_type='INBOUND',
+                     delivery_type='IMMEDIATE', delivery_date=None, immediate_lines=None, payment_type='INBOUND',
                      line_files=None, pos_session_id=None, user=None, payment_method_id=None, credit_approval_task_id=None, draft_id=None, direct_credit_approval=False):
         """
         Complete POS checkout: Create Order -> Confirm -> Invoice -> Payment -> (Optional) Delivery.
@@ -696,7 +705,14 @@ class BillingService:
         # 2. Confirm Order
         from sales.services import SalesService
         SalesService.confirm_sale(order, line_files=line_files)
-        
+
+        # 2.5 Propagar fecha de entrega como estimated_completion_date en las OT
+        if delivery_date:
+            from production.models import WorkOrder as WO
+            WO.objects.filter(sale_order=order).update(
+                estimated_completion_date=delivery_date,
+            )
+
         # 3. Handle Delivery Scheduling / Action
         if delivery_type == 'IMMEDIATE':
             # Dispatch everything right now from the first available warehouse
@@ -770,18 +786,27 @@ class BillingService:
                 if delivery_date:
                     order.delivery_date = delivery_date
                 
-                notes_prefix = "Despacho Parcial: " if delivery_type == 'PARTIAL' else ""
-                if delivery_notes:
-                    order.notes = f"{order.notes}\n{notes_prefix}Notas Despacho: {delivery_notes}".strip()
                 order.save()
 
         elif delivery_type == 'SCHEDULED':
-            order.delivery_status = SaleOrder.DeliveryStatus.PENDING
-            if delivery_date:
-                order.delivery_date = delivery_date
-            if delivery_notes:
-                order.notes = f"{order.notes}\nNotas Despacho: {delivery_notes}".strip()
-            order.save()
+            service_lines = order.lines.filter(
+                product__product_type='SERVICE',
+                quantity_pending__gt=0
+            )
+            non_service_pending = order.lines.exclude(
+                product__product_type='SERVICE'
+            ).filter(quantity_pending__gt=0)
+
+            if service_lines.exists() and not non_service_pending.exists():
+                warehouse = Warehouse.objects.first()
+                if not warehouse:
+                    raise ValidationError("Debe existir al menos una bodega para registrar cumplimiento.")
+                SalesService.dispatch_order(order, warehouse, delivery_date=delivery_date)
+            else:
+                order.delivery_status = SaleOrder.DeliveryStatus.PENDING
+                if delivery_date:
+                    order.delivery_date = delivery_date
+                order.save()
         elif delivery_type == 'PICKUP':
             # Could be handled similarly to IMMEDIATE or just marked as PENDING for now
             order.delivery_status = SaleOrder.DeliveryStatus.PENDING
@@ -922,7 +947,7 @@ class BillingService:
         Works for Sale Orders, Purchase Orders and Service Obligations.
         """
         from django.utils.dateparse import parse_date
-        from .services import TaxPeriodService, AccountingPeriodService
+        from tax.services import TaxPeriodService, AccountingPeriodService
         
         target_date = date
         if isinstance(target_date, str):
@@ -936,7 +961,7 @@ class BillingService:
             raise ValidationError(f"No se puede registrar este documento. El periodo de {target_date} está Tributariamente CERRADO.")
 
         # 2. Accounting Period Validation
-        if AccountingPeriodService.is_period_closed(target_date, 'accounting'):
+        if AccountingPeriodService.is_period_closed(target_date):
             raise ValidationError(f"No se puede registrar este documento. El periodo de {target_date} está CONTABLE CERRADO.")
         # Allow PAID status because a draft can be fully paid before folio is registered
         if invoice.status not in [Invoice.Status.DRAFT, Invoice.Status.PAID]:

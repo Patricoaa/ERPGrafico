@@ -1,14 +1,14 @@
 "use client"
 
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Banknote, CreditCard, Building2, ClipboardList, AlertCircle, Wallet } from "lucide-react"
+import {Banknote, CreditCard, Building2, ClipboardList, Wallet} from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useAllowedPaymentMethods, PaymentMethod } from "@/hooks/useAllowedPaymentMethods"
 import { useState, useMemo, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Numpad } from "@/components/ui/numpad"
-import { BaseModal } from "@/components/shared/BaseModal"
+import { BaseModal, Numpad } from '@/components/shared'
+
 import { LabeledInput, LabeledSelect, MoneyDisplay } from "@/components/shared"
 import { formatMoney } from "@/lib/money"
 
@@ -263,8 +263,6 @@ export function PaymentMethodCardSelector({
                     </div>
                 )}
             </div>
-
-
 
             {/* Account Details Form */}
             <div className="space-y-4">

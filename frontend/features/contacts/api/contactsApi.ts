@@ -16,8 +16,8 @@ export const contactsApi = {
         if (filters?.is_default_customer !== undefined) params.append('is_default_customer', String(filters.is_default_customer))
         if (filters?.is_default_vendor !== undefined) params.append('is_default_vendor', String(filters.is_default_vendor))
 
-        const { data } = await api.get<{ results: Contact[] }>('/contacts/', { params })
-        return data.results || data
+        const { data } = await api.get<Contact[]>('/contacts/', { params })
+        return data
     },
 
     /**
@@ -49,6 +49,16 @@ export const contactsApi = {
      */
     deleteContact: async (id: number): Promise<void> => {
         await api.delete(`/contacts/${id}/`)
+    },
+
+    /**
+     * Credit ledger del contacto — lista de deudas pendientes (saldo > 0
+     * tras filtro client-side opcional). Consumido por el wizard de checkout
+     * para mostrar saldo a aplicar al pagar.
+     */
+    getCreditLedger: async (contactId: number): Promise<Array<{ id: number, balance: string | number, [k: string]: unknown }>> => {
+        const { data } = await api.get<Array<{ id: number, balance: string | number, [k: string]: unknown }>>(`/contacts/${contactId}/credit_ledger/`)
+        return data
     },
 
     /**

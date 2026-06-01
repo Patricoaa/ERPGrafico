@@ -2,17 +2,16 @@
 
 import { useState, useEffect } from "react"
 import { useServerDate } from "@/hooks/useServerDate"
-import { BaseModal } from "@/components/shared/BaseModal"
+import { BaseModal } from '@/components/shared'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { FileEdit, Loader2, Upload, CheckCircle2 } from "lucide-react"
+import {FileEdit, Loader2, CheckCircle2} from "lucide-react"
 import { toast } from "sonner"
 import { validateTaxPeriod } from '@/features/tax/actions'
 import { validateAccountingPeriod } from '@/features/accounting/actions'
 import { FolioValidationInput } from "./FolioValidationInput"
-import { ShieldAlert } from "lucide-react"
-import { cn } from "@/lib/utils"
+
 import { PeriodValidationDateInput } from "./PeriodValidationDateInput"
 
 interface DocumentCompletionModalProps {

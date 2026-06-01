@@ -1,10 +1,14 @@
-# ADR-0022: Source of Truth para `list_url` de Entidades Searchables
+---
+id: 0022
+title: Source of Truth para `list_url` de Entidades Searchables
+status: Accepted
+date: 2026-05-09
+author: core-team
+---
 
-**Fecha:** 2026-05-09
-**Estado:** Aceptado
-**Fase:** F9 (T-103)
-**Depende de:** ADR-0020 (URL-state pattern), T-88 (`searchableEntityRoutes.ts`)
-**Firmas Stakeholder:** @pato
+# 0022 — Source of Truth para `list_url` de Entidades Searchables
+
+> **Depende de:** ADR-0020 (URL-state pattern), T-88 (`searchableEntityRoutes.ts`). Firmas Stakeholder: @pato.
 
 ---
 

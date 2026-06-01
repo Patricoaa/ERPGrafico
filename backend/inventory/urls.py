@@ -1,10 +1,10 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import (
-    ProductViewSet, CategoryViewSet, WarehouseViewSet, StockMoveViewSet, 
+    ProductViewSet, CategoryViewSet, WarehouseViewSet, StockMoveViewSet,
     UoMViewSet, UoMCategoryViewSet, PricingRuleViewSet,
     ProductAttributeViewSet, ProductAttributeValueViewSet,
-    CustomFieldTemplateViewSet, ProductCustomFieldViewSet
+    CustomFieldTemplateViewSet, ProductCustomFieldViewSet, ProductUoMPriceViewSet
 )
 from .subscription_views import SubscriptionViewSet
 
@@ -22,6 +22,7 @@ router.register(r'product-custom-fields', ProductCustomFieldViewSet)
 router.register(r'subscriptions', SubscriptionViewSet)
 router.register(r'attributes', ProductAttributeViewSet)
 router.register(r'attribute-values', ProductAttributeValueViewSet)
+router.register(r'uom-prices', ProductUoMPriceViewSet, basename='uom-prices')
 
 urlpatterns = [
     path('', include(router.urls)),

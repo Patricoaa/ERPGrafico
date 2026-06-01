@@ -1,13 +1,16 @@
-import React from "react"
+"use client"
+
+import React, { use } from "react"
 import { BudgetsListView, BudgetVarianceView } from "@/features/finance"
-import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
+
+import { FadeIn, ToolbarCreateButton } from '@/components/shared'
 
 interface PageProps {
     searchParams: Promise<{ tab?: string; modal?: string }>
 }
 
-export default async function BudgetsPage({ searchParams }: PageProps) {
-    const { tab, modal } = await searchParams
+export default function BudgetsPage({ searchParams }: PageProps) {
+    const { tab, modal } = use(searchParams)
     const activeTab = tab || "list"
 
     const createAction = activeTab === 'list' ? (
@@ -18,15 +21,17 @@ export default async function BudgetsPage({ searchParams }: PageProps) {
     ) : null
 
     return (
-        <div className="pt-2">
-            {activeTab === 'versus' ? (
-                <BudgetVarianceView />
-            ) : (
-                <BudgetsListView 
-                    externalOpen={modal === 'new'} 
-                    createAction={createAction} 
-                />
-            )}
+        <div className="pt-2 flex-1 min-h-0 flex flex-col">
+            <FadeIn key={activeTab}>
+                {activeTab === 'versus' ? (
+                    <BudgetVarianceView />
+                ) : (
+                    <BudgetsListView 
+                        externalOpen={modal === 'new'} 
+                        createAction={createAction} 
+                    />
+                )}
+            </FadeIn>
         </div>
     )
 }

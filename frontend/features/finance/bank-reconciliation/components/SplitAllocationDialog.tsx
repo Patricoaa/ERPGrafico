@@ -1,20 +1,20 @@
 "use client"
 
 import { useEffect } from "react"
-import { BaseModal } from "@/components/shared/BaseModal"
+import { formatCurrency } from "@/lib/money"
+import { BaseModal, FormFooter, CancelButton, SubmitButton, IconButton } from "@/components/shared"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Plus, Trash2, CheckCircle2, Loader2 } from "lucide-react"
+import { Plus, Trash2, CheckCircle2 } from "lucide-react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { formatCurrency } from "@/lib/utils"
+
 import { useAllocateMutation } from "../hooks/useReconciliationMutations"
+import { usePendingInvoices } from "../../hooks"
 import type { ReconciliationSystemItem } from "../types"
-import api from "@/lib/api"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { z } from "zod"
 import { useForm, useFieldArray } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useQuery } from "@tanstack/react-query"
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form"
 import { isZeroTolerance, safeDifference, safeSum, safeParseFloat } from "@/lib/math"
 
@@ -51,21 +51,14 @@ export function SplitAllocationDialog({ open, onOpenChange, payment, treasuryAcc
         name: "allocations"
     })
 
-    const { data: invoices = [], isLoading: loadingInvoices } = useQuery({
-        queryKey: ['billing', 'pending-invoices'],
-        queryFn: async () => {
-            const res = await api.get('/billing/invoices/?status=DRAFT,ISSUED,AUTHORIZED')
-            return res.data.results || res.data
-        },
-        enabled: open && !!payment
-    })
+    const { data: invoices = [], isLoading: loadingInvoices } = usePendingInvoices(open && !!payment)
 
     useEffect(() => {
         if (open && payment && fields.length === 0) {
             form.reset({
-                allocations: [{ 
-                    amount: Math.abs(safeParseFloat(payment.amount)), 
-                    notes: '' 
+                allocations: [{
+                    amount: Math.abs(safeParseFloat(payment.amount)),
+                    notes: ''
                 }]
             })
         }
@@ -81,13 +74,13 @@ export function SplitAllocationDialog({ open, onOpenChange, payment, treasuryAcc
     const handleSave = async (validateSum: boolean) => {
         const values = form.getValues()
         try {
-            await allocateMutation.mutateAsync({ 
-                allocations: values.allocations, 
-                validateSum 
+            await allocateMutation.mutateAsync({
+                allocations: values.allocations,
+                validateSum
             })
             onSuccess?.()
             onOpenChange(false)
-        } catch (error) {
+        } catch {
             // Handled in mutation
         }
     }
@@ -96,6 +89,7 @@ export function SplitAllocationDialog({ open, onOpenChange, payment, treasuryAcc
         <BaseModal
             open={open}
             onOpenChange={onOpenChange}
+            icon={Plus}
             title="Distribuir Movimiento"
             description={`Distribuir monto del pago ${payment.display_id || payment.code || 'PEND'} entre múltiples documentos.`}
         >
@@ -198,15 +192,13 @@ export function SplitAllocationDialog({ open, onOpenChange, payment, treasuryAcc
                                             />
                                         </TableCell>
                                         <TableCell className="text-right">
-                                            <Button 
-                                                variant="ghost" 
-                                                size="icon" 
-                                                className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10" 
+                                            <IconButton
+                                                className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
                                                 onClick={() => remove(idx)}
                                                 type="button"
                                             >
                                                 <Trash2 className="h-4 w-4" />
-                                            </Button>
+                                            </IconButton>
                                         </TableCell>
                                     </TableRow>
                                 ))}
@@ -214,36 +206,44 @@ export function SplitAllocationDialog({ open, onOpenChange, payment, treasuryAcc
                         </Table>
                     </div>
 
-                    <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={() => append({ amount: remaining > 0 ? remaining : 0, notes: '' })} 
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => append({ amount: remaining > 0 ? remaining : 0, notes: '' })}
                         className="w-full border-dashed"
                         type="button"
                     >
                         <Plus className="mr-2 h-4 w-4" /> Agregar Distribución
                     </Button>
 
-                    <div className="flex justify-end gap-3 pt-4 border-t">
-                        <Button variant="ghost" onClick={() => onOpenChange(false)} type="button">Cancelar</Button>
-                        <Button 
-                            variant="secondary" 
-                            onClick={() => handleSave(false)}
-                            disabled={allocateMutation.isPending || fields.length === 0}
-                            type="button"
-                        >
-                            Guardar Borrador
-                        </Button>
-                        <Button 
-                            onClick={() => handleSave(true)}
-                            disabled={allocateMutation.isPending || !isZeroTolerance(remaining) || fields.length === 0}
-                            className="bg-primary hover:bg-primary/90"
-                            type="button"
-                        >
-                            {allocateMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
-                            Finalizar Distribución
-                        </Button>
-                    </div>
+                    <FormFooter
+                        className="pt-4 border-t"
+                        leftActions={
+                            <CancelButton onClick={() => onOpenChange(false)} type="button">Cancelar</CancelButton>
+                        }
+                        actions={
+                            <>
+                                <Button
+                                    variant="secondary"
+                                    onClick={() => handleSave(false)}
+                                    disabled={allocateMutation.isPending || fields.length === 0}
+                                    type="button"
+                                    className="h-9 px-5 text-[10px] font-black tracking-widest uppercase rounded-sm shadow-sm"
+                                >
+                                    Guardar Borrador
+                                </Button>
+                                <SubmitButton
+                                    onClick={() => handleSave(true)}
+                                    disabled={allocateMutation.isPending || !isZeroTolerance(remaining) || fields.length === 0}
+                                    loading={allocateMutation.isPending}
+                                    icon={<CheckCircle2 className="h-3.5 w-3.5" />}
+                                    type="button"
+                                >
+                                    Finalizar Distribución
+                                </SubmitButton>
+                            </>
+                        }
+                    />
                 </div>
             </Form>
         </BaseModal>

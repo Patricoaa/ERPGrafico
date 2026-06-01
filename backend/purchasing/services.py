@@ -1,7 +1,8 @@
 from django.db import transaction, models
 from django.core.exceptions import ValidationError
 from django.utils import timezone
-from .models import PurchaseOrder, PurchaseReceipt, PurchaseReceiptLine
+from django.contrib.contenttypes.models import ContentType
+from .models import PurchaseOrder, PurchaseReceipt, PurchaseReceiptLine, PurchaseReturn
 from treasury.models import TreasuryMovement, TreasuryAccount
 from accounting.models import JournalEntry, JournalItem, Account, AccountType, AccountingSettings
 from accounting.services import JournalEntryService, AccountingMapper
@@ -273,7 +274,9 @@ class PurchasingService:
             date=receipt.receipt_date,
             description=f"Devolución OCS-{receipt.purchase_order.number} (Ret-{receipt.number})",
             reference=f"Ret-{receipt.number}",
-            status=JournalEntry.State.DRAFT
+            status=JournalEntry.State.DRAFT,
+            source_content_type=ContentType.objects.get_for_model(PurchaseReceipt),
+            source_object_id=receipt.id,
         )
         
         total_amount = Decimal('0.00')
@@ -498,8 +501,10 @@ class PurchasingService:
             {
                 'date': receipt.receipt_date,
                 'description': description,
-                'reference': reference,
-                'status': JournalEntry.State.DRAFT
+                'status': JournalEntry.State.DRAFT,
+                'is_manual': False,
+                'source_content_type': ContentType.objects.get_for_model(receipt),
+                'source_object_id': receipt.id,
             },
             items
         )

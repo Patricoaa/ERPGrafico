@@ -1,6 +1,8 @@
-from rest_framework import viewsets, status, pagination
+from rest_framework import viewsets, status, filters as drf_filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from django_filters.rest_framework import DjangoFilterBackend, FilterSet
+import django_filters
 from django.db import transaction
 from django.utils import timezone
 from django.core.exceptions import ValidationError
@@ -29,12 +31,8 @@ from contacts.models import Contact
 from decimal import Decimal
 from accounting.models import Account
 from core.mixins import AuditHistoryMixin
+from core.api.pagination import StandardResultsSetPagination
 
-
-class StandardResultsSetPagination(pagination.PageNumberPagination):
-    page_size = 50
-    page_size_query_param = 'page_size'
-    max_page_size = 1000
 
 class BankViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = Bank.objects.all().order_by('name')
@@ -94,9 +92,21 @@ class PaymentMethodViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         serializer.save()
 
 
+class TreasuryAccountFilterSet(FilterSet):
+    name = django_filters.CharFilter(field_name='name', lookup_expr='icontains')
+    account_type = django_filters.CharFilter(field_name='account_type', lookup_expr='exact')
+
+    class Meta:
+        model = TreasuryAccount
+        fields = ['name', 'account_type']
+
+
 class TreasuryAccountViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = TreasuryAccount.objects.all().order_by('account_type', 'name')
     serializer_class = TreasuryAccountSerializer
+    filter_backends = [DjangoFilterBackend, drf_filters.SearchFilter]
+    filterset_class = TreasuryAccountFilterSet
+    search_fields = ['name']
 
     def get_queryset(self):
         qs = super().get_queryset()
@@ -228,6 +238,8 @@ class TreasuryMovementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = TreasuryMovement.objects.all().order_by('-date', '-created_at')
     serializer_class = TreasuryMovementSerializer
     pagination_class = StandardResultsSetPagination
+    filter_backends = [DjangoFilterBackend, drf_filters.SearchFilter]
+    search_fields = ['contact__name', 'contact__tax_id', 'reference', 'description']
 
     def get_queryset(self):
         qs = self.queryset

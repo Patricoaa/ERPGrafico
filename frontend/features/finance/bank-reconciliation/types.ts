@@ -145,6 +145,7 @@ export interface PaginatedResponse<T> {
 }
 
 export interface QueryPaginationParams {
+    [key: string]: unknown
     page?: number
     pageSize?: number
     search?: string

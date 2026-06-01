@@ -1,20 +1,20 @@
 "use client"
 
-import { useState, useEffect, useMemo, useCallback } from "react"
+import {useState, useEffect, useMemo} from "react"
 
-
-import { DataTable } from "@/components/ui/data-table"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
-import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
+import { DataTable, SmartSearchBar, ToolbarCreateButton } from '@/components/shared'
+import { DataTableColumnHeader } from '@/components/shared'
+import { DataCell, createActionsColumn } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
-import { StatusBadge } from "@/components/shared/StatusBadge"
-import { Edit } from "lucide-react"
-import { UserForm } from "@/features/users/components/UserForm"
+import { FadeIn, Chip } from "@/components/shared"
+
+import { Edit, Users } from "lucide-react"
+import { UserDrawer } from "@/features/users/components/UserDrawer"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { GroupManagement } from "@/features/settings/components/GroupManagement"
-import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
+
 import { type AppUser } from "@/types/entities"
-import { cn } from "@/lib/utils"
+import { userSearchDef } from "@/features/users/searchDef"
 
 interface UsersSettingsViewProps {
     activeTab: string
@@ -40,11 +40,7 @@ export function UsersSettingsView({ activeTab }: UsersSettingsViewProps) {
 
     useEffect(() => {
         if (selectedFromUrl) {
-            const transformedUser = {
-                ...selectedFromUrl,
-                groups: selectedFromUrl.groups?.map(g => typeof g === 'string' ? g : g.name)
-            }
-            setUserToEdit(transformedUser)
+            setUserToEdit(selectedFromUrl)
             setIsUserModalOpen(true)
         }
     }, [selectedFromUrl])
@@ -55,7 +51,7 @@ export function UsersSettingsView({ activeTab }: UsersSettingsViewProps) {
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Usuario" />
             ),
-            cell: ({ row }) => <div className="font-medium">{row.getValue("username")}</div>,
+            cell: ({ row }) => <DataCell.Text>{row.getValue("username")}</DataCell.Text>,
         },
         {
             accessorKey: "email",
@@ -64,11 +60,17 @@ export function UsersSettingsView({ activeTab }: UsersSettingsViewProps) {
             ),
         },
         {
-            id: "fullName",
-            header: "Nombre Completo",
-            cell: ({ row }) => (
-                <div>{`${row.original.first_name || ''} ${row.original.last_name || ''}`}</div>
-            ),
+            id: "contact",
+            header: "Contacto",
+            cell: ({ row }) => {
+                const contactId = row.original.contact
+                const fullName = `${row.original.first_name || ''} ${row.original.last_name || ''}`.trim()
+                const displayName = fullName || row.original.username
+
+                if (!contactId) return <div className="text-muted-foreground text-[13px] font-bold text-center">{displayName}</div>
+
+                return <DataCell.ContactLink contactId={contactId}>{displayName}</DataCell.ContactLink>
+            },
         },
         {
             accessorKey: "groups",
@@ -81,14 +83,20 @@ export function UsersSettingsView({ activeTab }: UsersSettingsViewProps) {
                 const roles = ['ADMIN', 'MANAGER', 'OPERATOR', 'READ_ONLY']
                 const systemRole = groups.find(g => roles.includes(g))
 
-                return systemRole ? (
-                    <span className={cn(
-                        "text-[10px] font-bold uppercase px-1.5 py-0.5 rounded border leading-none",
-                        systemRole === 'ADMIN' ? "border-primary/30 text-primary bg-primary/5" : "border-muted-foreground/20 text-muted-foreground bg-muted/30"
-                    )}>
+                if (!systemRole) return null
+
+                const roleIntent: Record<string, 'primary' | 'warning' | 'info' | 'neutral'> = {
+                    ADMIN: 'primary',
+                    MANAGER: 'warning',
+                    OPERATOR: 'info',
+                    READ_ONLY: 'neutral',
+                }
+
+                return (
+                    <DataCell.Chip intent={roleIntent[systemRole] || 'neutral'}>
                         {systemRole}
-                    </span>
-                ) : null
+                    </DataCell.Chip>
+                )
             },
         },
         {
@@ -102,12 +110,14 @@ export function UsersSettingsView({ activeTab }: UsersSettingsViewProps) {
                 const roles = ['ADMIN', 'MANAGER', 'OPERATOR', 'READ_ONLY']
                 const functionalGroups = groups.filter(g => !roles.includes(g))
 
+                if (functionalGroups.length === 0) return null
+
                 return (
                     <div className="flex flex-wrap gap-1">
                         {functionalGroups.map(g => (
-                            <span key={g} className="text-[9px] font-bold uppercase text-muted-foreground/60 px-1 py-0.5 rounded border border-muted-foreground/10 bg-muted/10 leading-none">
+                            <Chip key={g} size="xs" intent="neutral" icon={Users}>
                                 {g}
-                            </span>
+                            </Chip>
                         ))}
                     </div>
                 )
@@ -117,17 +127,15 @@ export function UsersSettingsView({ activeTab }: UsersSettingsViewProps) {
             accessorKey: "is_active",
             header: "Estado",
             cell: ({ row }) => (
-                <StatusBadge
-                    status={row.original.is_active ? "active" : "inactive"}
-                />
+                <DataCell.Status status={row.original.is_active ? "active" : "inactive"} />
             ),
         },
         createActionsColumn<AppUser>({
             renderActions: (user) => {
                 return (
-                    <DataCell.Action 
-                        icon={Edit} 
-                        title="Editar" 
+                    <DataCell.Action
+                        icon={Edit}
+                        title="Editar"
                         onClick={() => {
                             const params = new URLSearchParams(searchParams.toString())
                             params.set('selected', String(user.id))
@@ -140,13 +148,11 @@ export function UsersSettingsView({ activeTab }: UsersSettingsViewProps) {
     ], [refetch])
 
     const usersCreateAction = useMemo(() => (
-        <UserForm
+        <UserDrawer
             onSuccess={refetch}
             trigger={<ToolbarCreateButton label="Nuevo Usuario" />}
         />
     ), [refetch])
-
-
 
     const groupsCreateAction = useMemo(() => (
         <ToolbarCreateButton
@@ -155,62 +161,50 @@ export function UsersSettingsView({ activeTab }: UsersSettingsViewProps) {
         />
     ), [])
 
-    const roleFilters = useMemo(() => [
-        {
-            column: "role",
-            title: "Rol",
-            options: [
-                { label: "Admin", value: "ADMIN" },
-                { label: "Gerente", value: "MANAGER" },
-                { label: "Operador", value: "OPERATOR" },
-                { label: "Lectura", value: "READ_ONLY" },
-            ],
-        },
-    ], [])
-
     return (
-        <div className="pt-4">
-            <Tabs value={activeTab} className="space-y-4">
-                <TabsContent value="users" className="mt-0 outline-none space-y-4">
-                    <DataTable
-                        columns={columns}
-                        data={users}
-                        variant="embedded"
-                        isLoading={isLoading}
-                        globalFilterFields={["username", "email", "first_name", "last_name"]}
-                        searchPlaceholder="Buscar usuario por nombre, email o username..."
-                        useAdvancedFilter={true}
-                        facetedFilters={roleFilters}
-                        createAction={usersCreateAction}
-                    />
-                    {isUserModalOpen && (
-                        <UserForm
-                            open={isUserModalOpen}
-                            onOpenChange={(open) => {
-                                setIsUserModalOpen(open)
-                                if (!open) {
+        <div className="pt-4 h-full flex flex-col">
+            <Tabs value={activeTab} className="space-y-4 h-full flex flex-col">
+                <FadeIn key={activeTab} className="flex-1 min-h-0">
+                    <TabsContent value="users" className="mt-0 outline-none space-y-4 h-full flex flex-col">
+                        <div className="flex-1 min-h-0">
+                            <DataTable
+                                columns={columns}
+                                data={users}
+                                variant="embedded"
+                                isLoading={isLoading}
+                                leftAction={<SmartSearchBar searchDef={userSearchDef} placeholder="Buscar usuario por nombre, email o username..." className="w-full" />}
+                                createAction={usersCreateAction}
+                            />
+                        </div>
+                        {isUserModalOpen && (
+                            <UserDrawer
+                                open={isUserModalOpen}
+                                onOpenChange={(open) => {
+                                    setIsUserModalOpen(open)
+                                    if (!open) {
+                                        setUserToEdit(null)
+                                        clearSelection()
+                                    }
+                                }}
+                                initialData={userToEdit || undefined}
+                                onSuccess={() => {
+                                    refetch()
+                                    setIsUserModalOpen(false)
                                     setUserToEdit(null)
                                     clearSelection()
-                                }
-                            }}
-                            initialData={userToEdit || undefined}
-                            onSuccess={() => {
-                                refetch()
-                                setIsUserModalOpen(false)
-                                setUserToEdit(null)
-                                clearSelection()
-                            }}
-                        />
-                    )}
-                </TabsContent>
+                                }}
+                            />
+                        )}
+                    </TabsContent>
 
-                <TabsContent value="groups" className="mt-0 outline-none">
-                    <GroupManagement
-                        externalOpen={isGroupModalOpen}
-                        onExternalOpenChange={setIsGroupModalOpen}
-                        createAction={groupsCreateAction}
-                    />
-                </TabsContent>
+                    <TabsContent value="groups" className="mt-0 outline-none flex-1 min-h-0">
+                        <GroupManagement
+                            externalOpen={isGroupModalOpen}
+                            onExternalOpenChange={setIsGroupModalOpen}
+                            createAction={groupsCreateAction}
+                        />
+                    </TabsContent>
+                </FadeIn>
             </Tabs>
         </div>
     )

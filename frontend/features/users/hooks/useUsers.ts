@@ -1,17 +1,15 @@
 import { useQuery } from '@tanstack/react-query'
-import api from '@/lib/api'
+import { usersApi } from "../api/usersApi"
 import { type AppUser } from "@/types/entities"
-
-export const USERS_QUERY_KEY = ['users']
+import { USER_KEYS } from './queryKeys'
 
 export function useUsers() {
     const { data: users, isLoading, refetch } = useQuery({
-        queryKey: USERS_QUERY_KEY,
+        queryKey: USER_KEYS.lists(),
         queryFn: async (): Promise<AppUser[]> => {
-            const response = await api.get('/core/users/')
-            return response.data.results || response.data
+            return await usersApi.getUsers()
         },
-        staleTime: 10 * 60 * 1000, // 10 min
+        staleTime: 10 * 60 * 1000,
     })
 
     return {

@@ -1,25 +1,19 @@
 "use client"
 
 import React, { useState, useEffect } from 'react';
-import { BaseModal, LoadingFallback } from "@/components/shared";
+import { BaseModal, DataCell, LoadingFallback, MoneyDisplay, FormFooter, CancelButton } from "@/components/shared";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
     Tooltip,
     TooltipContent,
     TooltipProvider,
     TooltipTrigger
 } from "@/components/ui/tooltip";
-import { Info, History, Share2, BarChart2 } from "lucide-react";
-import api from '@/lib/api';
+import { Info, History, Split, BarChart2 } from "lucide-react";
+import { financeApi } from "../api/financeApi";
 import { cn } from "@/lib/utils";
 
 interface BudgetEditorProps {
@@ -62,24 +56,24 @@ const BudgetAccountRow = React.memo(({
         <div key={account.id} className="flex items-center border-b hover:bg-muted transition-colors">
             <div className="w-[300px] p-2 border-r flex items-center justify-between group">
                 <div>
-                    <div className="font-semibold text-sm truncate" title={`${account.code} - ${account.name}`}>
-                        {account.code} - {account.name}
-                    </div>
+                    <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <span className="font-semibold text-sm truncate">
+                                        {account.code} - {account.name}
+                                    </span>
+                                </TooltipTrigger>
+                                <TooltipContent side="top">{account.code} - {account.name}</TooltipContent>
+                            </Tooltip>
                     <div className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">{account.account_type_display}</div>
                 </div>
 
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Share2 className="h-3 w-3" />
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => onAutoDistribute?.(account.id)}>
-                            Distribuir Total Equitativamente
-                        </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
+                <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                    <DataCell.Action
+                        icon={Split}
+                        title="Distribuir Total Equitativamente"
+                        onClick={() => onAutoDistribute?.(account.id)}
+                    />
+                </div>
             </div>
             {months.map(m => (
                 <div key={m} className="flex-1 border-r p-1 bg-card/10">
@@ -93,7 +87,7 @@ const BudgetAccountRow = React.memo(({
                 </div>
             ))}
             <div className="w-[100px] p-2 text-right font-mono text-xs font-bold text-primary">
-                {accountTotal.toLocaleString('es-CL')}
+                <MoneyDisplay amount={accountTotal} digits={0} />
             </div>
         </div>
     );
@@ -109,38 +103,21 @@ export function BudgetEditor({ open, onOpenChange, budget, onSave }: BudgetEdito
     const [filter, setFilter] = useState('');
 
 
-    useEffect(() => {
-        if (open && budget) {
-            loadData();
-        }
-    }, [open, budget]);
-
     const loadData = async () => {
         if (!budget) return;
         setLoading(true);
         try {
-            // Load only budgetable accounts
-            const accRes = await api.get('/accounting/accounts/budgetable/');
-            // Load current budget items (we can get them from budget detail or execution endpoint, 
-            // or just rely on parent passing them? Parent has "summary" maybe not full list depending on serializer)
-            // Let's re-fetch budget to be safe or use execution endpoint which returns "budgeted"
-            const execRes = await api.get(`/accounting/budgets/${budget.id}/execution/`);
+            const accData = await financeApi.getBudgetableAccounts();
+            await financeApi.getBudgetExecution(budget.id);
 
-            const fetchedAccounts = accRes.data.results || accRes.data;
+            const fetchedAccounts = (accData as any).results || accData;
             setAccounts(fetchedAccounts);
 
-            // Map existing items
             const currItems: Record<number, Record<number, number>> = {};
-            // The execution endpoint returns 'items' array. 
-            // However, we need the raw budget items with month.
-            // Let's fetch the budget detail which should have the items.
-            const budgetRes = await api.get(`/accounting/budgets/${budget.id}/`);
+            const budgetData = await financeApi.getBudgetDetail(budget.id);
 
-            // If the budget detail doesn't include items, we might need a specific endpoint 
-            // or use the BudgetViewSet if it serializes items.
-            // Let's assume BudgetSerializer includes items (BudgetItemSerializer).
-            if (budgetRes.data.items) {
-                budgetRes.data.items.forEach((item: BudgetItem) => {
+            if ((budgetData as any).items) {
+                (budgetData as any).items.forEach((item: BudgetItem) => {
                     if (!currItems[item.account]) currItems[item.account] = {};
                     currItems[item.account][item.month] = parseFloat(String(item.amount));
                 });
@@ -154,12 +131,17 @@ export function BudgetEditor({ open, onOpenChange, budget, onSave }: BudgetEdito
         }
     };
 
+    useEffect(() => {
+        if (open && budget) {
+            loadData();
+        }
+    }, [open, budget]);
+
     const handleCopyPreviousYear = async () => {
         if (!budget) return;
         setLoading(true);
         try {
-            const res = await api.get(`/accounting/budgets/${budget.id}/previous_year_actuals/`);
-            const fetchedItems = res.data;
+            const fetchedItems = await financeApi.getBudgetPreviousYearActuals(budget.id);
             const newItems: Record<number, Record<number, number>> = {};
 
             fetchedItems.forEach((item: BudgetItem) => {
@@ -227,7 +209,7 @@ export function BudgetEditor({ open, onOpenChange, budget, onSave }: BudgetEdito
             });
 
             if (budget) {
-                await api.post(`/accounting/budgets/${budget.id}/set_items/`, { items: payload });
+                await financeApi.setBudgetItems(budget.id, payload);
             }
             onOpenChange(false);
             onSave();
@@ -247,18 +229,21 @@ export function BudgetEditor({ open, onOpenChange, budget, onSave }: BudgetEdito
             open={open}
             onOpenChange={onOpenChange}
             size="full"
+            icon={BarChart2}
+            title={`Editar Presupuesto: ${budget?.name || ""}`}
+            description="Planificación Financiera • Control de Gestión"
             hideScrollArea
-            title={
-                <div className="flex items-center gap-2">
-                    <BarChart2 className="h-5 w-5 text-primary" />
-                    Editar Presupuesto: {budget?.name}
-                </div>
-            }
             footer={
-                <>
-                    <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-                    <Button onClick={handleSave} className="px-8 font-bold">Guardar Presupuesto</Button>
-                </>
+                <FormFooter
+                    actions={
+                        <>
+                            <CancelButton onClick={() => onOpenChange(false)} />
+                            <Button onClick={handleSave} className="px-8 font-bold ">
+                                Guardar Presupuesto
+                            </Button>
+                        </>
+                    }
+                />
             }
         >
             <div className="flex flex-col h-full bg-background overflow-hidden">

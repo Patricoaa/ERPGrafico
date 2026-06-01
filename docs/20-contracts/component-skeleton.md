@@ -25,10 +25,14 @@ Controla los **estados de carga** de la aplicación. Existen tres estrategias bi
 │       ├─ Página con formulario                      → PageLayoutSkeleton contentType="form"
 │       ├─ Tabla de datos                             → TableSkeleton
 │       ├─ Tarjetas en grilla                         → CardSkeleton variant="grid"|"product"
-│       └─ Formulario                                 → FormSkeleton
+│       └─ Formulario                                 → PageLayoutSkeleton contentType="form"
 │
 ├─ Datos ya visibles, el usuario filtra / pagina / mutates (refetch)
 │   └─ SkeletonShell isLoading={isFetching} + datos placeholder tipados
+│
+├─ Formulario/modal se abre y necesita datos iniciales asíncronos
+│   └─ SkeletonShell isLoading={isFetchingInitialData}
+│       (layout-as-skeleton, sin CLS — ver Estrategia 4)
 │
 └─ Componente con Suspense propio (ej. lazy import de modal)
     └─ Component.Skeleton  (propiedad estática co-localizada)
@@ -126,6 +130,103 @@ export const BudgetVarianceTable = BudgetVarianceTableBase
 
 ---
 
+## Estrategia 4: Form/Modal First Load (layout-as-skeleton)
+
+Para formularios en modales, drawers o wizard steps que necesitan datos asíncronos antes de renderizar su UI completa. Envuelve el formulario real con `<SkeletonShell>` — el DOM existe siempre (sin CLS) y el shimmer overlay oculta el contenido hasta que las dependencias cargan.
+
+### Árbol de decisión anexo
+
+```
+¿El formulario necesita datos de la API para renderizar su UI inicial?
+│
+├─ No → Sin SkeletonShell (render directo)
+│
+└─ Sí → ¿Todas las dependencias vienen de hooks useQuery?
+    │
+    ├─ Sí → isFetchingInitialData = dep1Loading || dep2Loading || ...
+    │
+    └─ No (fetch imperativo en useEffect) → isFetchingDeps state
+        + try/finally { setIsFetchingDeps(false) }
+        + isFetchingInitialData = open && isFetchingDeps
+```
+
+### Patrón completo — hooks useQuery
+
+```tsx
+// Todas las dependencias vía hooks useQuery con isLoading
+const { uoms, isLoading: isUoMsLoading } = useUoMs()
+const { accounts, isLoading: isAccountsLoading } = useAccounts()
+
+const isFetchingInitialData = open && (isUoMsLoading || isAccountsLoading)
+
+return (
+    <SkeletonShell isLoading={isFetchingInitialData} ariaLabel="Cargando formulario">
+        <Form {...form}>
+            ...
+        </Form>
+    </SkeletonShell>
+)
+```
+
+### Patrón completo — fetch imperativo en useEffect
+
+```tsx
+const [employees, setEmployees] = useState<Employee[]>([])
+const [isFetchingEmployees, setIsFetchingEmployees] = useState(false)
+
+useEffect(() => {
+    if (open) {
+        setIsFetchingEmployees(true)
+        api.get('/employees/')
+            .then(r => setEmployees(r.data))
+            .finally(() => setIsFetchingEmployees(false))
+    }
+}, [open])
+
+const isFetchingInitialData = open && isFetchingEmployees
+
+return (
+    <SkeletonShell isLoading={isFetchingInitialData} ariaLabel="Cargando empleados">
+        <Form {...form}>
+            ...
+        </Form>
+    </SkeletonShell>
+)
+```
+
+### Composite de loading
+
+`isFetchingInitialData` debe cubrir **todas** las async deps del formulario, no solo un subconjunto. Si el formulario usa 3 hooks con `isLoading`, los 3 deben estar en el composite:
+
+```tsx
+// ✅ Correcto — cubre todas las dependencias
+const isFetchingInitialData = open && (
+    isUoMsLoading || isAccountsLoading || isServerDateLoading
+)
+
+// ❌ Incorrecto — falta isServerDateLoading, el formulario se muestra incompleto
+const isFetchingInitialData = open && (isUoMsLoading || isAccountsLoading)
+```
+
+### Antipatrón a evitar — Loader2 condicional
+
+```tsx
+// ❌ MAL — desmonta el formulario real y muestra un spinner → CLS
+if (loading) return <Loader2 className="animate-spin" />
+return <Form>...</Form>
+
+// ✅ BIEN — SkeletonShell overlay sobre el formulario real
+<SkeletonShell isLoading={loading}>
+    <Form>...</Form>
+</SkeletonShell>
+```
+
+### Refuerzo de accesibilidad
+
+Cuando `isLoading=true`, `SkeletonShell` aplica `aria-busy="true"` + `aria-live="polite"` para que lectores de pantalla anuncien que el contenido se está cargando. No requiere manejo adicional.
+
+---
+
 ## Catálogo completo de componentes
 
 Todos los componentes del catálogo se importan **exclusivamente** desde el barrel:
@@ -159,18 +260,7 @@ Nunca importar directamente desde `@/components/ui/skeleton`.
 
 ---
 
-### `FormSkeleton`
 
-| prop | type | default | notas |
-|------|------|---------|-------|
-| `fields` | `number` | `4` | Campos por bloque |
-| `cards` | `number` | `1` | Bloques lado a lado (1–4) |
-| `hasTabs` | `boolean` | `false` | Tab-bar encima del formulario |
-| `tabs` | `number` | `3` | Cantidad de tabs |
-| `className` | `string` | — | Clase del contenedor |
-| `ariaLabel` | `string` | `'Cargando formulario'` | Label para lectores de pantalla |
-
----
 
 ### `SkeletonShell`
 
@@ -240,7 +330,7 @@ Esta regla está aplicada por ESLint (`no-restricted-imports` en `eslint.config.
 
 ## Accesibilidad
 
-- Todos los wrappers compuestos (`TableSkeleton`, `CardSkeleton`, `FormSkeleton`, `PageLayoutSkeleton`, `HubSkeleton`, `AppShellSkeleton`) llevan `role="status"` + `aria-label`.
+- Todos los wrappers compuestos (`TableSkeleton`, `CardSkeleton`, `PageLayoutSkeleton`, `HubSkeleton`, `AppShellSkeleton`) llevan `role="status"` + `aria-label`.
 - Los sub-componentes (`PageTabsSkeleton`, `ToolbarSkeleton`, `PageHeaderSkeleton`) **no** llevan `role="status"` para evitar regiones live anidadas.
 - `SkeletonShell` usa `aria-busy="true"` + `aria-live="polite"` cuando activo.
 - `prefers-reduced-motion: reduce` desactiva todas las animaciones shimmer (`animation: none; opacity: 0.5`). Definido en `globals.css`.

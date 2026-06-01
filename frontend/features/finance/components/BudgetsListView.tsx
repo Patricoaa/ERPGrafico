@@ -6,15 +6,13 @@ import Link from "next/link"
 
 import { Pencil, FileText, Calendar, Wallet } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { LabeledInput } from "@/components/shared"
+import { BaseModal, CancelButton, FormFooter, LabeledInput } from '@/components/shared'
 import { toast } from "sonner"
-import { DataTable } from "@/components/ui/data-table"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { DataTableView, DataTableColumnHeader } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
-import { BaseModal } from "@/components/shared/BaseModal"
 
 import { BudgetEditor } from "@/features/finance/components/BudgetEditor"
-import { createActionsColumn, DataCell } from "@/components/ui/data-table-cells"
+import { createActionsColumn, DataCell } from '@/components/shared'
 
 import { useSearchParams, usePathname } from "next/navigation"
 
@@ -73,12 +71,16 @@ export function BudgetsListView({ externalOpen, onExternalOpenChange, createActi
     const [budgetToEdit, setBudgetToEdit] = useState<Budget | null>(null)
 
     // Open edit form if ?selected= is present (ADR-0020)
+    // Depends ONLY on selectedFromUrl to prevent async url clearing race condition.
     useEffect(() => {
-        if (selectedFromUrl && (!isEditorOpen || budgetToEdit?.id !== selectedFromUrl.id)) {
+        if (selectedFromUrl) {
             setBudgetToEdit(selectedFromUrl)
             setIsEditorOpen(true)
+        } else {
+            setIsEditorOpen(false)
+            setBudgetToEdit(null)
         }
-    }, [selectedFromUrl, isEditorOpen, budgetToEdit])
+    }, [selectedFromUrl])
 
     const handleCreate = async () => {
         try {
@@ -153,26 +155,41 @@ export function BudgetsListView({ externalOpen, onExternalOpenChange, createActi
     ]
 
     return (
-        <div className="space-y-6">
-            <DataTable
-                columns={columns}
-                data={budgets}
-                variant="embedded"
-                isLoading={isLoading}
-                globalFilterFields={["name"]}
-                searchPlaceholder="Buscar presupuestos..."
-                useAdvancedFilter={true}
-                createAction={createAction}
-            />
+
+        <div className="h-full flex flex-col">
+            <div className="flex-1 min-h-0">
+                <DataTableView
+                    columns={columns}
+                    data={budgets}
+                    variant="embedded"
+                    isLoading={isLoading}
+                    entityLabel="accounting.budget"
+                    globalFilterFields={["name"]}
+                    searchPlaceholder="Buscar presupuestos..."
+                    useAdvancedFilter={true}
+                    createAction={createAction}
+                />
+            </div>
 
             {/* Create Modal */}
             <BaseModal
                 open={isCreateOpen}
                 onOpenChange={handleCreateOpenChange}
                 size="md"
+                icon={Wallet}
                 title="Crear Nuevo Presupuesto"
+                description="Planificación Financiera • Control de Gestión"
                 footer={
-                    <Button onClick={handleCreate} className="w-full">Crear Presupuesto Anual</Button>
+                    <FormFooter
+                        actions={
+                            <>
+                                <CancelButton onClick={() => handleCreateOpenChange(false)} />
+                                <Button onClick={handleCreate} className="px-6 font-bold ">
+                                    Crear Presupuesto Anual
+                                </Button>
+                            </>
+                        }
+                    />
                 }
             >
                 <div className="space-y-4">

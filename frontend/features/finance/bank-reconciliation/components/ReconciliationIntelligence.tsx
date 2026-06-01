@@ -5,7 +5,7 @@ import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { Card } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+import { Chip } from "@/components/shared"
 import { Switch } from "@/components/ui/switch"
 import { Info, Brain, Settings2, Calendar, Hash, User, CircleDollarSign, Loader2, Wand2 } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip"
@@ -162,15 +162,13 @@ export function ReconciliationIntelligence({ externalOpen }: { externalOpen?: bo
                                     </h3>
                                     <p className="text-[10px] text-muted-foreground">Importancia de cada dato para el score.</p>
                                 </div>
-                                <Badge
-                                    variant={totalWeight === 100 ? "success" : "warning"}
-                                    className={cn(
-                                        "font-mono text-[10px] px-2 py-0.5",
-                                        totalWeight !== 100 && "animate-pulse"
-                                    )}
+                                <Chip
+                                    intent={totalWeight === 100 ? "success" : "warning"}
+                                    size="sm"
+                                    className={cn("font-mono", totalWeight !== 100 && "animate-pulse")}
                                 >
                                     {totalWeight}% / 100%
-                                </Badge>
+                                </Chip>
                             </div>
 
                             <div className="grid grid-cols-1 gap-y-6">

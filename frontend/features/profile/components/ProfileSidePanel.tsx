@@ -1,54 +1,87 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
-import { motion } from "framer-motion"
-import { HubSkeleton } from "@/components/shared/LayoutSkeletons"
+import React from "react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
-import { Card } from "@/components/ui/card"
+import { CollapsibleSheet, Chip, SkeletonShell } from "@/components/shared"
 import type { MyProfile } from "@/types/profile"
-import { Mail, Briefcase, Building2, Phone, User } from "lucide-react"
-import { useHubPanel } from "@/components/providers/HubPanelProvider"
+import { User } from "lucide-react"
 
 export interface ProfileSidePanelProps {
     profile: MyProfile | null
+    open?: boolean
+    onOpenChange?: (open: boolean) => void
 }
 
-export function ProfileSidePanel({ profile }: ProfileSidePanelProps) {
-    const [isInboxOpen, setIsInboxOpen] = useState(false)
-    const { isHubEffectivelyOpen } = useHubPanel()
+export function ProfileSidePanel({ profile, open = true, onOpenChange }: ProfileSidePanelProps) {
+    const handleOpenChange = (newOpen: boolean) => {
+        onOpenChange?.(newOpen)
+    }
 
-    useEffect(() => {
-        // Set feature panel width so the main canvas is pushed
-        document.body.setAttribute('data-side-panel-width', '360')
-        
-        // Observe Inbox changes
-        const checkInbox = () => {
-            setIsInboxOpen(document.body.hasAttribute('data-inbox-open'))
-        }
-        checkInbox()
-        
-        const observer = new MutationObserver(checkInbox)
-        observer.observe(document.body, { attributes: true, attributeFilter: ['data-inbox-open'] })
-        
-        return () => {
-            document.body.removeAttribute('data-side-panel-width')
-            observer.disconnect()
-        }
-    }, [])
-
-    if (!profile) {
+             if (!profile) {
         return (
-            <aside
-                className="fixed top-20 h-[calc(100vh-6rem)] w-[360px] bg-sidebar dark border border-white/5 flex flex-col will-change-transform overflow-hidden z-40 shadow-2xl rounded-lg transition-all duration-500 ease-[var(--ease-premium)] hidden xl:flex"
-                style={{ 
-                    right: `calc(1rem + ${isInboxOpen ? 320 + 16 : 0}px + ${isHubEffectivelyOpen ? 360 + 16 : 0}px)` 
-                }}
+            <CollapsibleSheet
+                sheetId="profile-side-panel"
+                open={open}
+                onOpenChange={handleOpenChange}
+                tabLabel="Perfil"
+                tabIcon={User}
+                fullWidth={320}
             >
                 <div className="flex-1 overflow-y-auto overflow-x-hidden p-6">
-                    <HubSkeleton />
+                    <SkeletonShell isLoading={true} ariaLabel="Cargando perfil">
+                        <div className="flex-1 h-full">
+                            <div className="flex flex-col items-center justify-center py-12 gap-4 border-b border-white/5">
+                                <div className="h-20 w-20 rounded-full border-2 border-primary/10" />
+                                <div className="flex flex-col items-center gap-2">
+                                    <div className="h-4 w-32" />
+                                    <div className="h-2 w-24 opacity-40" />
+                                </div>
+                            </div>
+                            <div className="space-y-4">
+                                <div className="p-4 rounded-lg border border-border/50 bg-card/50 space-y-4">
+                                    <div className="flex justify-between items-center">
+                                        <div className="h-5 w-40" />
+                                        <div className="h-5 w-5 rounded-full" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <div className="h-3 w-full opacity-60" />
+                                        <div className="h-3 w-2/3 opacity-40" />
+                                    </div>
+                                    <div className="pt-2 border-t border-border/20 flex justify-end">
+                                        <div className="h-8 w-24 rounded" />
+                                    </div>
+                                </div>
+                                <div className="p-4 rounded-lg border border-border/50 bg-card/50 space-y-4">
+                                    <div className="flex justify-between items-center">
+                                        <div className="h-5 w-40" />
+                                        <div className="h-5 w-5 rounded-full" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <div className="h-3 w-full opacity-60" />
+                                        <div className="h-3 w-2/3 opacity-40" />
+                                    </div>
+                                    <div className="pt-2 border-t border-border/20 flex justify-end">
+                                        <div className="h-8 w-24 rounded" />
+                                    </div>
+                                </div>
+                                <div className="p-4 rounded-lg border border-border/50 bg-card/50 space-y-4">
+                                    <div className="flex justify-between items-center">
+                                        <div className="h-5 w-40" />
+                                        <div className="h-5 w-5 rounded-full" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <div className="h-3 w-full opacity-60" />
+                                        <div className="h-3 w-2/3 opacity-40" />
+                                    </div>
+                                    <div className="pt-2 border-t border-border/20 flex justify-end">
+                                        <div className="h-8 w-24 rounded" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </SkeletonShell>
                 </div>
-            </aside>
+            </CollapsibleSheet>
         )
     }
 
@@ -66,35 +99,33 @@ export function ProfileSidePanel({ profile }: ProfileSidePanelProps) {
     // Contact info priority: contact_detail -> user
     const email = contact_detail?.email || user.email
     const phone = contact_detail?.phone || "—"
-    
+
     // Position/Department priority: employee -> direct info (if it existed)
     const position = employee?.position || "—"
-    const department = employee?.department || "—"
 
     const functionalGroups = user.groups?.filter(g => !systemRoles.includes(g)) || []
 
     return (
-        <aside
-            className={
-                "fixed top-20 h-[calc(100vh-6rem)] w-[360px] bg-sidebar dark border border-white/5 flex flex-col will-change-transform overflow-hidden z-40 shadow-2xl rounded-lg " +
-                "transition-all duration-500 ease-[var(--ease-premium)] hidden xl:flex text-foreground"
-            }
-            style={{ 
-                right: `calc(1rem + ${isInboxOpen ? 320 + 16 : 0}px + ${isHubEffectivelyOpen ? 360 + 16 : 0}px)` 
-            }}
+        <CollapsibleSheet
+            sheetId="profile-side-panel"
+            open={open}
+            onOpenChange={handleOpenChange}
+            tabLabel="Perfil"
+            tabIcon={User}
+            fullWidth={320}
         >
-            <div className="flex-1 overflow-y-auto overflow-x-hidden">
+            <div className="flex-1 overflow-y-auto overflow-x-hidden text-foreground canvas-prepress">
                 {/* Header / Avatar Area */}
-                <div className="flex flex-col items-center justify-center py-10 px-6 gap-5 border-b border-white/5 relative overflow-hidden">
+                <div className="flex flex-col items-center justify-center py-10 px-6 gap-5 border-border/10 relative overflow-hidden">
                     <Avatar className="h-24 w-24 border-2 border-primary/20 shadow-xl ring-4 ring-background relative z-10">
                         <AvatarImage src="" alt={user.username} />
-                        <AvatarFallback className="text-2xl font-black text-white bg-muted">
+                        <AvatarFallback className="text-2xl font-black text-foreground bg-muted">
                             {initials}
                         </AvatarFallback>
                     </Avatar>
 
                     <div className="flex flex-col items-center gap-1 text-center relative z-10">
-                        <h2 className="text-lg font-black tracking-tight leading-none text-white">
+                        <h2 className="text-lg font-black tracking-tight leading-none text-foreground">
                             {`${firstName} ${lastName}`.trim() || user.username}
                         </h2>
                         <p className="text-xs text-muted-foreground uppercase tracking-widest font-bold mt-1">
@@ -103,37 +134,37 @@ export function ProfileSidePanel({ profile }: ProfileSidePanelProps) {
                     </div>
 
                     <div className="flex items-center gap-2 relative z-10 mt-1">
-                        <Badge variant="outline" className={`text-[10px] uppercase font-bold ${user.is_active ? "text-success border-success/30 bg-success/10" : "text-destructive border-destructive/30 bg-destructive/10"}`}>
-                            {user.is_active ? "Activo" : "Inactivo"}
-                        </Badge>
+                        <Chip intent={user.is_active ? "success" : "destructive"}>{user.is_active ? "Activo" : "Inactivo"}</Chip>
                     </div>
                 </div>
 
                 <div className="p-6 space-y-8">
                     {/* Sección Datos de Usuario */}
-                    <div className="space-y-4">
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">
-                            Datos de Usuario
-                        </span>
-                        <div className="space-y-3">
-                            <div className="flex items-center gap-3 text-sm">
-                                <div className="h-8 w-8 rounded-full bg-white/5 flex items-center justify-center shrink-0">
-                                    <User className="h-4 w-4 text-muted-foreground" />
-                                </div>
-                                <div className="flex flex-col min-w-0">
+                    <div className="space-y-6 flex flex-col items-center w-full">
+                        <div className="flex items-center gap-2 w-full pt-2">
+                            <div className="flex-1 h-px bg-border/50" />
+                            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 whitespace-nowrap">
+                                Datos de Usuario
+                            </span>
+                            <div className="flex-1 h-px bg-border/50" />
+                        </div>
+
+                        <div className="space-y-6 flex flex-col items-center w-full">
+                            {/* Rol Principal */}
+                            <div className="flex flex-col items-center text-center space-y-1.5">
+                                <div className="flex flex-col items-center">
                                     <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider leading-none mb-1">Rol Principal</span>
-                                    <span className="truncate font-medium leading-none">{primaryRole}</span>
+                                    <span className="font-semibold text-sm leading-none">{primaryRole}</span>
                                 </div>
                             </div>
-                            <div className="flex items-start gap-3 text-sm">
-                                <div className="h-8 w-8 rounded-full bg-white/5 flex items-center justify-center shrink-0 mt-0.5">
-                                    <Building2 className="h-4 w-4 text-muted-foreground" />
-                                </div>
-                                <div className="flex flex-col min-w-0 flex-1">
+
+                            {/* Equipos Funcionales */}
+                            <div className="flex flex-col items-center text-center space-y-1.5">
+                                <div className="flex flex-col items-center min-w-0">
                                     <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider leading-none mb-1.5">Equipos Funcionales</span>
-                                    <div className="flex flex-wrap gap-1.5">
+                                    <div className="flex flex-wrap justify-center gap-1.5">
                                         {functionalGroups.length > 0 ? functionalGroups.map(g => (
-                                            <Badge key={g} variant="outline" className="text-[9px] border-white/10 bg-white/5">{g}</Badge>
+                                            <Chip key={g} size="xs" intent="neutral" className="border-border/10 bg-muted">{g}</Chip>
                                         )) : (
                                             <span className="text-xs text-muted-foreground italic leading-none">Sin equipos asignados</span>
                                         )}
@@ -143,30 +174,36 @@ export function ProfileSidePanel({ profile }: ProfileSidePanelProps) {
                         </div>
                     </div>
 
-                    <div className="h-px bg-white/5 w-full" />
-
                     {/* Sección Información de Contacto */}
-                    <div className="space-y-4">
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">
-                            Información de Contacto
-                        </span>
-                        <div className="space-y-3">
-                            <div className="flex items-center gap-3 text-sm">
-                                <div className="h-8 w-8 rounded-full bg-white/5 flex items-center justify-center shrink-0">
-                                    <Mail className="h-4 w-4 text-muted-foreground" />
+                    <div className="space-y-6 flex flex-col items-center w-full">
+                        <div className="flex items-center gap-2 w-full pt-2">
+                            <div className="flex-1 h-px bg-border/50" />
+                            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 whitespace-nowrap">
+                                Información de Contacto
+                            </span>
+                            <div className="flex-1 h-px bg-border/50" />
+                        </div>
+
+                        <div className="space-y-6 flex flex-col items-center w-full">
+                            {/* Email */}
+                            <div className="flex flex-col items-center text-center space-y-1.5">
+                                <div className="flex flex-col items-center min-w-0">
+                                    <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider leading-none mb-1">Email</span>
+                                    <span className="font-semibold text-sm truncate max-w-[280px]">{email || "Sin email"}</span>
                                 </div>
-                                <span className="truncate font-medium">{email || "Sin email"}</span>
                             </div>
-                            <div className="flex items-center gap-3 text-sm">
-                                <div className="h-8 w-8 rounded-full bg-white/5 flex items-center justify-center shrink-0">
-                                    <Phone className="h-4 w-4 text-muted-foreground" />
+
+                            {/* Teléfono */}
+                            <div className="flex flex-col items-center text-center space-y-1.5">
+                                <div className="flex flex-col items-center min-w-0">
+                                    <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider leading-none mb-1">Teléfono</span>
+                                    <span className="font-semibold text-sm truncate">{phone}</span>
                                 </div>
-                                <span className="truncate font-medium">{phone}</span>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </aside>
+        </CollapsibleSheet>
     )
 }

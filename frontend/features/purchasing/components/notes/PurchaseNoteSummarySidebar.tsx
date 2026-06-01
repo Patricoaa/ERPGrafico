@@ -1,11 +1,8 @@
-
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Progress } from "@/components/ui/progress"
-import { formatCurrency } from "@/lib/currency"
+import { formatCurrency } from "@/lib/money"
 import { formatPlainDate } from "@/lib/utils"
-import { Skeleton } from "@/components/shared"
+import { SkeletonShell } from "@/components/shared"
 import {
     FileText,
     Box,
@@ -13,7 +10,6 @@ import {
     Calendar,
     Receipt,
     AlertCircle,
-    CheckCircle2,
     ArrowLeft
 } from "lucide-react"
 
@@ -172,10 +168,14 @@ export function PurchaseNoteSummarySidebar({
                 </div>
 
                 {isProcessing && (
-                    <div className="mt-4 flex flex-col gap-2">
-                        <Skeleton className="h-4 w-full" />
-                        <Skeleton className="h-3 w-2/3 mx-auto" />
-                    </div>
+                    <SkeletonShell isLoading={true} ariaLabel="Cargando resumen">
+                        <div className="flex-1 p-4">
+                            <div className="space-y-2">
+                                <div className="h-4 w-full" />
+                                <div className="h-3 w-2/3 mx-auto" />
+                            </div>
+                        </div>
+                    </SkeletonShell>
                 )}
             </div>
         </div>

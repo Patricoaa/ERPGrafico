@@ -1,30 +1,18 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useTerminals, type Terminal, type PaymentMethod } from "@/features/treasury"
-import api from "@/lib/api"
-import { cn } from "@/lib/utils"
+import { useTerminals, type Terminal } from "@/features/treasury"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { BaseModal } from "@/components/shared/BaseModal"
-import { Checkbox } from "@/components/ui/checkbox"
-import { toast } from "sonner"
-import { EmptyState } from "@/components/shared/EmptyState"
-import { StatusBadge } from "@/components/shared/StatusBadge"
-import { CancelButton, IconButton, LabeledInput, LabeledSelect, FormSection, FormFooter, FormSplitLayout } from "@/components/shared"
-import { EntityCard } from "@/components/shared/EntityCard"
-import { DataTable } from "@/components/ui/data-table"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
-import { createActionsColumn, DataCell } from "@/components/ui/data-table-cells"
+
+import { ActionConfirmModal, DataTableView, EntityCard, IconButton, StatusBadge } from '@/components/shared'
+
+import { DataTableColumnHeader } from '@/components/shared'
+import {createActionsColumn, DataCell} from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
-import { List, LayoutGrid, Plus, Power, PowerOff, Settings, MapPin, Trash2, CreditCard, Banknote, Landmark, MonitorSmartphone, Smartphone } from "lucide-react"
-import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
+import { Plus, Power, PowerOff, Trash2, Settings, MapPin, Smartphone, Banknote, CreditCard, Landmark } from "lucide-react"
+
 import { useConfirmAction } from "@/hooks/useConfirmAction"
-import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
-import { ActionSlideButton } from "@/components/shared"
-import { useSearchParams, useRouter, usePathname } from "next/navigation"
-
-
+import { TerminalDrawer } from "./TerminalDrawer"
 
 interface TerminalManagementProps {
     externalOpen?: boolean
@@ -57,33 +45,21 @@ export function TerminalManagement({ externalOpen, onExternalOpenChange, createA
     const handleToggleActive = async (terminal: Terminal) => {
         try {
             await toggleActive(terminal)
-        } catch (error) {
+        } catch {
             // Error already handled by hook
         }
     }
 
-    const deleteConfirm = useConfirmAction<Terminal>(async (terminal) => {
+    const deleteConfirm = useConfirmAction<Terminal>(async (terminal: Terminal) => {
         try {
             await deleteTerminal(terminal)
-        } catch (error) {
+        } catch {
             // Error already handled by hook
         }
     })
 
     const handleDelete = (terminal: Terminal) => {
         deleteConfirm.requestConfirm(terminal)
-    }
-
-    const searchParams = useSearchParams()
-    const router = useRouter()
-    const pathname = usePathname()
-    const [viewMode, setViewMode] = useState<string>(searchParams.get("view") ?? "card")
-
-    const handleViewChange = (v: string) => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.set('view', v)
-        router.push(`${pathname}?${params.toString()}`, { scroll: false })
-        setViewMode(v)
     }
 
     const columns: ColumnDef<Terminal>[] = [
@@ -95,21 +71,19 @@ export function TerminalManagement({ externalOpen, onExternalOpenChange, createA
         {
             accessorKey: "name",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Nombre" className="justify-center" />,
-            cell: ({ row }) => <div className="flex justify-center font-semibold text-sm">{row.getValue("name")}</div>,
+            cell: ({ row }) => <DataCell.Text>{row.getValue("name")}</DataCell.Text>,
         },
         {
             accessorKey: "location",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Ubicación" className="justify-center" />,
-            cell: ({ row }) => <div className="flex justify-center text-muted-foreground">{row.getValue("location")}</div>,
+            cell: ({ row }) => <DataCell.Secondary>{row.getValue("location")}</DataCell.Secondary>,
         },
         {
             accessorKey: "is_active",
             id: "status",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" className="justify-center" />,
             cell: ({ row }) => (
-                <div className="flex justify-center">
-                    <StatusBadge status={row.original.is_active ? "active" : "inactive"} size="sm" className="uppercase font-bold tracking-tight" />
-                </div>
+                <DataCell.Status status={row.original.is_active ? "active" : "inactive"} />
             ),
             filterFn: (row, id, value) => value.includes(row.getValue(id) ? "ACTIVE" : "INACTIVE")
         },
@@ -139,115 +113,105 @@ export function TerminalManagement({ externalOpen, onExternalOpenChange, createA
     ]
 
     return (
-        <div className="space-y-4">
-            <DataTable
-                columns={columns}
-                data={terminals}
-                isLoading={isLoading}
-                variant="embedded"
-                filterColumn="name"
-                searchPlaceholder="Buscar caja por nombre..."
-                defaultPageSize={20}
-                currentView={viewMode}
-                onViewChange={handleViewChange}
-                viewOptions={[
-                    { label: "Lista", value: "list", icon: List },
-                    { label: "Tarjeta", value: "card", icon: LayoutGrid }
-                ]}
-                facetedFilters={[
-                    {
-                        column: "status",
-                        title: "Estado",
-                        options: [
-                            { label: "Activas", value: "ACTIVE" },
-                            { label: "Inactivas", value: "INACTIVE" }
-                        ]
-                    }
-                ]}
-                createAction={createAction || (
-                    <Button onClick={handleCreate} className="h-9">
-                        <Plus className="mr-2 h-4 w-4" /> Crear Caja
-                    </Button>
-                )}
-                renderLoadingView={viewMode === 'card' ? () => (
-                    <div className="flex flex-col gap-4 pt-2">
-                        {Array.from({ length: 3 }).map((_, i) => (
-                            <EntityCard.Skeleton key={i} />
-                        ))}
-                    </div>
-                ) : undefined}
-                renderCustomView={viewMode === 'card' ? (table) => (
-                    <div className="flex flex-col gap-4 pt-2">
-                        {table.getRowModel().rows.map(row => {
-                            const terminal = row.original
-                            const methodsByType = terminal.allowed_payment_methods.reduce((acc, method) => {
-                                const type = method.method_type
-                                if (!acc[type]) acc[type] = 0
-                                acc[type]++
-                                return acc
-                            }, {} as Record<string, number>)
+        <div className="space-y-4 h-full flex flex-col">
+            <div className="flex-1 min-h-0">
+                <DataTableView
+                    entityLabel="treasury.terminal"
+                    columns={columns}
+                    data={terminals}
+                    isLoading={isLoading}
+                    variant="embedded"
+                    filterColumn="name"
+                    searchPlaceholder="Buscar caja por nombre..."
+                    defaultPageSize={20}
+                    facetedFilters={[
+                        {
+                            column: "status",
+                            title: "Estado",
+                            options: [
+                                { label: "Activas", value: "ACTIVE" },
+                                { label: "Inactivas", value: "INACTIVE" }
+                            ]
+                        }
+                    ]}
+                    createAction={createAction || (
+                        <Button onClick={handleCreate} className="h-9">
+                            <Plus className="mr-2 h-4 w-4" /> Crear Caja
+                        </Button>
+                    )}
+                    renderCustomView={(table) => (
+                        <div className="flex flex-col gap-4 pt-2">
+                            {table.getRowModel().rows.map(row => {
+                                const terminal = row.original
+                                const methodsByType = terminal.allowed_payment_methods.reduce((acc, method) => {
+                                    const type = method.method_type
+                                    if (!acc[type]) acc[type] = 0
+                                    acc[type]++
+                                    return acc
+                                }, {} as Record<string, number>)
 
-                            return (
-                                <EntityCard key={terminal.id} className={!terminal.is_active ? "opacity-70 bg-muted/20" : ""}>
-                                    <EntityCard.Header
-                                        title={terminal.name}
-                                        subtitle={terminal.code}
-                                        trailing={
-                                            <div className="flex flex-col items-end gap-2">
-                                                <StatusBadge status={terminal.is_active ? "active" : "inactive"} size="sm" className="uppercase font-bold tracking-tight" />
-                                                <div className="flex items-center gap-1">
-                                                    <IconButton onClick={() => handleEdit(terminal)} className="h-7 w-7"><Settings className="h-3 w-3" /></IconButton>
-                                                </div>
-                                            </div>
-                                        }
-                                    />
-                                    <EntityCard.Body>
-                                        <EntityCard.Field 
-                                            label="Ubicación" 
-                                            value={
-                                                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                                                    <MapPin className="h-3.5 w-3.5" />
-                                                    {terminal.location || "No especificada"}
+                                return (
+                                    <EntityCard key={terminal.id} className={!terminal.is_active ? "opacity-70 bg-muted/20" : ""}>
+                                        <EntityCard.Header
+                                            title={terminal.name}
+                                            subtitle={terminal.code}
+                                            trailing={
+                                                <div className="flex flex-col items-end gap-2">
+                                                    <StatusBadge status={terminal.is_active ? "active" : "inactive"} size="sm" className="uppercase font-bold tracking-tight" />
+                                                    <div className="flex items-center gap-1">
+                                                        <IconButton onClick={() => handleEdit(terminal)} className="h-7 w-7"><Settings className="h-3 w-3" /></IconButton>
+                                                    </div>
                                                 </div>
                                             }
                                         />
-                                        {terminal.payment_terminal_device && (
-                                            <EntityCard.Field 
-                                                label="Dispositivo"
+                                        <EntityCard.Body>
+                                            <EntityCard.Field
+                                                label="Ubicación"
                                                 value={
-                                                    <div className="flex items-center gap-1.5 text-[10px] font-bold text-primary px-1.5 py-0.5 bg-primary/5 border border-primary/10 rounded uppercase">
-                                                        <Smartphone className="h-3 w-3" />
-                                                        {terminal.payment_terminal_device_name || "Vinculado"}
+                                                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                                        <MapPin className="h-3.5 w-3.5" />
+                                                        {terminal.location || "No especificada"}
                                                     </div>
                                                 }
                                             />
-                                        )}
-                                    </EntityCard.Body>
-                                    <EntityCard.Footer className="justify-between items-center bg-muted/10 px-4 py-2 border-t">
-                                        <div className="flex flex-wrap gap-1">
-                                            {Object.entries(methodsByType).map(([type, count]) => (
-                                                <div key={type} className="flex items-center gap-1 px-1.5 py-0.5 rounded-sm border bg-muted/30 text-[9px] uppercase font-bold text-foreground/70">
-                                                    {type === 'CASH' && <Banknote className="h-3 w-3 text-success" />}
-                                                    {type === 'CARD' && <CreditCard className="h-3 w-3 text-info" />}
-                                                    {type === 'TRANSFER' && <Landmark className="h-3 w-3 text-primary" />}
-                                                    {type} <span className="ml-0.5 opacity-60">({count})</span>
-                                                </div>
-                                            ))}
-                                            {terminal.allowed_payment_methods.length === 0 && (
-                                                <span className="text-[10px] text-muted-foreground italic">Sin métodos configurados</span>
+                                            {terminal.payment_terminal_device && (
+                                                <EntityCard.Field
+                                                    label="Dispositivo"
+                                                    value={
+                                                        <div className="flex items-center gap-1.5 text-[10px] font-bold text-primary px-1.5 py-0.5 bg-primary/5 border border-primary/10 rounded uppercase">
+                                                            <Smartphone className="h-3 w-3" />
+                                                            {terminal.payment_terminal_device_name || "Vinculado"}
+                                                        </div>
+                                                    }
+                                                />
                                             )}
-                                        </div>
-                                    </EntityCard.Footer>
-                                </EntityCard>
-                            )
-                        })}
-                    </div>
-                ) : undefined}
-            />
+                                        </EntityCard.Body>
+                                        <EntityCard.Footer className="justify-between items-center bg-muted/10 px-4 py-2 border-t">
+                                            <div className="flex flex-wrap gap-1">
+                                                {Object.entries(methodsByType).map(([type, count]) => (
+                                                    <div key={type} className="flex items-center gap-1 px-1.5 py-0.5 rounded-sm border bg-muted/30 text-[9px] uppercase font-bold text-foreground/70">
+                                                        {type === 'CASH' && <Banknote className="h-3 w-3 text-success" />}
+                                                        {type === 'CARD' && <CreditCard className="h-3 w-3 text-info" />}
+                                                        {type === 'TRANSFER' && <Landmark className="h-3 w-3 text-primary" />}
+                                                        {type} <span className="ml-0.5 opacity-60">({count})</span>
+                                                    </div>
+                                                ))}
+                                                {terminal.allowed_payment_methods.length === 0 && (
+                                                    <span className="text-[10px] text-muted-foreground italic">Sin métodos configurados</span>
+                                                )}
+                                            </div>
+                                        </EntityCard.Footer>
+                                    </EntityCard>
+                                )
+                            })}
+                        </div>
+                    )}
+                />
+            </div>
 
-            <TerminalModal
+            <TerminalDrawer
                 open={dialogOpen}
-                onOpenChange={(open) => {
+                onOpenChange={(open: boolean) => {
                     setDialogOpen(open)
                     if (!open) onExternalOpenChange?.(false)
                 }}
@@ -257,338 +221,13 @@ export function TerminalManagement({ externalOpen, onExternalOpenChange, createA
 
             <ActionConfirmModal
                 open={deleteConfirm.isOpen}
-                onOpenChange={(open) => { if (!open) deleteConfirm.cancel() }}
+                onOpenChange={(open: boolean) => { if (!open) deleteConfirm.cancel() }}
                 onConfirm={deleteConfirm.confirm}
                 title="Eliminar Caja POS"
                 description={`¿Está seguro de eliminar la caja POS "${deleteConfirm.payload?.name || ''}"? Esta acción no se puede deshacer.`}
                 variant="destructive"
             />
         </div>
-    )
-}
-
-
-function TerminalModal({ open, onOpenChange, terminal, onSuccess }: {
-    open: boolean
-    onOpenChange: (open: boolean) => void
-    terminal: Terminal | null
-    onSuccess: () => void
-}) {
-    const [loading, setLoading] = useState(false)
-    const [name, setName] = useState("")
-    const [code, setCode] = useState("")
-    const [location, setLocation] = useState("")
-    const [serialNumber, setSerialNumber] = useState("")
-    const [ipAddress, setIpAddress] = useState("")
-    const [deviceId, setDeviceId] = useState<string>("")
-    const [allDevices, setAllDevices] = useState<any[]>([])
-
-    // Payment Methods State
-    const [allMethods, setAllMethods] = useState<PaymentMethod[]>([])
-    const [selectedMethodIds, setSelectedMethodIds] = useState<number[]>([])
-
-    useEffect(() => {
-        if (open) {
-            requestAnimationFrame(() => {
-                fetchMethods()
-                if (terminal) {
-                    setName(terminal.name)
-                    setCode(terminal.code)
-                    setLocation(terminal.location || "")
-                    setSerialNumber(terminal.serial_number || "")
-                    setIpAddress(terminal.ip_address || "")
-                    const dId = terminal.payment_terminal_device as any;
-                    const deviceIdValue = dId?.id ? dId.id.toString() : dId?.toString() || "";
-                    setDeviceId(deviceIdValue);
-                    setSelectedMethodIds(terminal.allowed_payment_methods.map(m => m.id))
-                } else {
-                    setName("")
-                    setCode("")
-                    setLocation("")
-                    setSerialNumber("")
-                    setIpAddress("")
-                    setDeviceId("")
-                    setSelectedMethodIds([])
-                }
-                fetchDevices()
-            })
-        }
-    }, [open, terminal])
-
-    const fetchMethods = async () => {
-        try {
-            const res = await api.get('/treasury/payment-methods/')
-            const methods = (res.data.results || res.data).filter((m: any) => m.is_active)
-
-            // Allow if it's for sales
-            const collectionMethods = methods.filter((m: any) => m.allow_for_sales === true)
-            requestAnimationFrame(() => setAllMethods(collectionMethods))
-        } catch (error) {
-            console.error("Error fetching methods", error)
-        }
-    }
-
-    const fetchDevices = async () => {
-        try {
-            const res = await api.get('/treasury/terminal-devices/')
-            requestAnimationFrame(() => setAllDevices(res.data.results || res.data))
-        } catch (error) {
-            console.error("Error fetching devices", error)
-        }
-    }
-
-    const toggleMethod = (methodId: number) => {
-        setSelectedMethodIds(prev => {
-            const isSelected = prev.includes(methodId)
-            if (isSelected) {
-                return prev.filter(id => id !== methodId)
-            } else {
-                // Validation: Max 1 CASH method
-                const methodToAdd = allMethods.find(m => m.id === methodId)
-                if (methodToAdd?.method_type === 'CASH') {
-                    const existingCash = allMethods.find(m =>
-                        prev.includes(m.id) && m.method_type === 'CASH'
-                    )
-                    if (existingCash) {
-                        toast.warning("Solo se puede seleccionar 1 método de EFECTIVO (Caja) por terminal.")
-                        return prev
-                    }
-                }
-
-                return [...prev, methodId]
-            }
-        })
-    }
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault()
-        setLoading(true)
-
-        // Derive default treasury account from selected CASH method
-        const selectedCashMethod = allMethods.find(m =>
-            selectedMethodIds.includes(m.id) && m.method_type === 'CASH'
-        )
-        const defaultAccount = selectedCashMethod ? selectedCashMethod.treasury_account : null
-
-        const payload = {
-            name,
-            code,
-            location,
-            serial_number: serialNumber || "",
-            ip_address: ipAddress || null,
-            payment_terminal_device: (deviceId === "none" || !deviceId) ? null : Number(deviceId),
-            allowed_payment_method_ids: selectedMethodIds,
-            default_treasury_account: defaultAccount
-        }
-
-        try {
-            if (terminal) {
-                await api.patch(`/treasury/pos-terminals/${terminal.id}/`, payload)
-                toast.success("Caja POS actualizada")
-            } else {
-                await api.post('/treasury/pos-terminals/', payload)
-                toast.success("Caja POS creada")
-            }
-            onSuccess()
-            onOpenChange(false)
-        } catch (error: unknown) {
-            const err = error as any
-            console.error("Error saving terminal:", err.response?.data || err)
-            toast.error("Error al guardar la caja POS")
-        } finally {
-            setLoading(false)
-        }
-    }
-
-    const typeOrder = ['CASH', 'CARD', 'TRANSFER', 'CHECK', 'OTHER']
-
-    const getTypeLabel = (type: string) => {
-        const labels: Record<string, string> = {
-            'CASH': 'Efectivo (Cajas)',
-            'CARD': 'Tarjetas (Débito / Crédito)',
-            'TRANSFER': 'Transferencias',
-            'CHECK': 'Cheques',
-            'OTHER': 'Otros'
-        }
-        return labels[type] || type
-    }
-
-    // Group methods by simplified type (CARD includes DEBIT_CARD and CREDIT_CARD)
-    const methodsGrouped = allMethods.reduce((acc, method) => {
-        let type = method.method_type
-        // Group DEBIT_CARD and CREDIT_CARD under 'CARD'
-        if (type === 'DEBIT_CARD' || type === 'CREDIT_CARD') {
-            type = 'CARD'
-        }
-        if (!acc[type]) acc[type] = []
-        acc[type].push(method)
-        return acc
-    }, {} as Record<string, any[]>)
-
-    return (
-        <BaseModal
-            open={open}
-            onOpenChange={onOpenChange}
-            size={terminal ? "xl" : "lg"}
-            hideScrollArea={true}
-            contentClassName="p-0"
-            title={
-                <div className="flex items-center gap-3">
-                    <MonitorSmartphone className="h-5 w-5 text-muted-foreground" />
-                    <span>{terminal ? "Ficha de Caja POS" : "Nueva Caja POS"}</span>
-                </div>
-            }
-            description={
-                <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                    {terminal?.code && (
-                        <>
-                            <span>{terminal.code}</span>
-                            <span className="opacity-30">|</span>
-                        </>
-                    )}
-                    <span>{terminal ? "Modifique la configuración de la caja POS y revise su historial." : "Configuración de la caja POS y asignación de métodos de pago."}</span>
-                </div>
-            }
-            footer={
-                <FormFooter
-                    actions={
-                        <>
-                            <CancelButton onClick={() => onOpenChange(false)} />
-                            <ActionSlideButton type="submit" form="terminal-form" loading={loading} disabled={loading}>
-                                {terminal ? "Guardar Cambios" : "Crear Caja POS"}
-                            </ActionSlideButton>
-                        </>
-                    }
-                />
-            }
-        >
-            <FormSplitLayout
-                showSidebar={!!terminal?.id}
-                sidebar={
-                    <ActivitySidebar
-                        entityType="terminal"
-                        entityId={terminal?.id || 0}
-                        className="h-full border-none"
-                        title="Historial"
-                    />
-                }
-            >
-                <form id="terminal-form" onSubmit={handleSubmit} className="space-y-6 px-4 pb-4 pt-2">
-                    <div className="grid grid-cols-2 gap-4">
-                        <LabeledInput
-                            label="Nombre"
-                            required
-                            value={name}
-                            onChange={e => setName(e.target.value)}
-                            placeholder="Ej: Caja 1"
-                        />
-                        <LabeledInput
-                            label="Código"
-                            required
-                            value={code}
-                            onChange={e => setCode(e.target.value)}
-                            placeholder="TERM-01"
-                            className="uppercase"
-                        />
-                        <LabeledInput
-                            label="Ubicación"
-                            value={location}
-                            onChange={e => setLocation(e.target.value)}
-                            placeholder="Ej: Entrada"
-                        />
-                        <LabeledInput
-                            label="IP (Opcional)"
-                            value={ipAddress}
-                            onChange={e => setIpAddress(e.target.value)}
-                            placeholder="192.168.1.100"
-                        />
-                    </div>
-
-                    <div className="space-y-2">
-                        <LabeledSelect
-                            label="Dispositivo de Terminal"
-                            placeholder="Sin dispositivo integrado"
-                            value={deviceId}
-                            onChange={setDeviceId}
-                            options={[
-                                { value: "none", label: "Ninguno (Manual)" },
-                                ...allDevices.map(dev => ({
-                                    value: dev.id.toString(),
-                                    label: `${dev.name} (${dev.provider_name})`
-                                }))
-                            ]}
-
-                        />
-                    </div>
-
-
-                    <div className="mt-2">
-                        <FormSection title="Métodos de Pago Permitidos" icon={CreditCard} />
-
-                        <div className="mt-6 px-2 lg:px-6">
-
-
-                            <div className="max-h-[500px] overflow-y-auto pr-4 scrollbar-thin space-y-8 py-2">
-                                {typeOrder.map(type => {
-                                    const groupMethods = methodsGrouped[type] || []
-                                    if (groupMethods.length === 0) return null
-
-                                    return (
-                                        <div key={type} className="space-y-4">
-                                            <div className="flex items-center gap-3 text-muted-foreground/70 pl-1">
-                                                {type === 'CASH' && <Banknote className="h-4 w-4" />}
-                                                {type === 'TERMINAL' && <Smartphone className="h-4 w-4" />}
-                                                {type === 'CARD' && <CreditCard className="h-4 w-4" />}
-                                                {type === 'TRANSFER' && <Landmark className="h-4 w-4" />}
-                                                <h4 className="text-[11px] font-black uppercase tracking-[0.2em]">
-                                                    {getTypeLabel(type)}
-                                                </h4>
-                                            </div>
-
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                                {groupMethods.map(method => {
-                                                    const isSelected = selectedMethodIds.includes(method.id)
-                                                    return (
-                                                        <div
-                                                            key={method.id}
-                                                            onClick={() => toggleMethod(method.id)}
-                                                            className={cn(
-                                                                "flex items-center space-x-3 p-3 rounded-md border transition-all cursor-pointer group",
-                                                                isSelected
-                                                                    ? "bg-primary/5 border-primary/40 shadow-sm ring-1 ring-primary/20"
-                                                                    : "bg-background hover:bg-muted/30 border-border/60 hover:border-border"
-                                                            )}
-                                                        >
-                                                            <Checkbox
-                                                                checked={isSelected}
-                                                                onCheckedChange={() => toggleMethod(method.id)}
-                                                                className={isSelected ? "text-primary border-primary" : "border-muted-foreground/40 group-hover:border-primary/50"}
-                                                            />
-                                                            <div className="flex flex-col">
-                                                                <span className={cn(
-                                                                    "text-sm font-semibold transition-colors",
-                                                                    isSelected ? "text-foreground" : "text-muted-foreground"
-                                                                )}>
-                                                                    {method.name}
-                                                                </span>
-                                                                <span className="text-[10px] text-muted-foreground/70 font-medium">
-                                                                    Cta: {method.treasury_account_name}
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                    )
-                                                })}
-                                            </div>
-                                        </div>
-                                    )
-                                })}
-                            </div>
-                        </div>
-                    </div>
-
-                </form>
-            </FormSplitLayout>
-        </BaseModal>
     )
 }
 

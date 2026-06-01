@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<style>
+  body { font-family: Arial, sans-serif; font-size: 10px; margin: 0; padding: 0; }
+  .page-break { page-break-after: always; }
+  .ot { padding: 20px; }
+  .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 14px; }
+  .ot-number { font-size: 20px; font-weight: bold; }
+  .ot-desc { font-size: 12px; color: #555; margin-top: 2px; }
+  .qr img { width: 70px; height: 70px; }
+  table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+  th { background: #f0f0f0; text-align: left; padding: 4px 6px; font-size: 9px; text-transform: uppercase; }
+  td { padding: 4px 6px; border-bottom: 1px solid #eee; font-size: 9px; }
+  .label { font-weight: bold; color: #333; font-size: 9px; text-transform: uppercase; }
+  .section { margin-bottom: 12px; }
+  .section-title { font-weight: bold; font-size: 10px; text-transform: uppercase; color: #333; border-bottom: 1px solid #ddd; padding-bottom: 3px; margin-bottom: 5px; }
+</style>
+</head>
+<body>
+{% for ctx in orders %}
+<div class="ot {% if not forloop.last %}page-break{% endif %}">
+  <div class="header">
+    <div>
+      <div class="ot-number">OT-{{ ctx.work_order.number|stringformat:"06d" }}</div>
+      <div class="ot-desc">{{ ctx.work_order.description }}</div>
+      <div style="margin-top:6px; font-size:9px; color:#777;">
+        Estado: <strong>{{ ctx.work_order.status }}</strong> &nbsp;·&nbsp;
+        Etapa: <strong>{{ ctx.work_order.current_stage }}</strong>
+        {% if ctx.work_order.estimated_completion_date %}
+        &nbsp;·&nbsp; Vence: <strong>{{ ctx.work_order.estimated_completion_date }}</strong>
+        {% endif %}
+      </div>
+    </div>
+    <div class="qr">
+      {% if ctx.qr_image %}<img src="data:image/png;base64,{{ ctx.qr_image }}" />{% endif %}
+    </div>
+  </div>
+
+  {% if ctx.materials %}
+  <div class="section">
+    <div class="section-title">Materiales</div>
+    <table>
+      <thead><tr><th>Componente</th><th>Cant.</th><th>UoM</th><th>Tipo</th></tr></thead>
+      <tbody>
+      {% for m in ctx.materials %}
+      <tr>
+        <td>{{ m.component_name }}</td>
+        <td>{{ m.quantity_planned }}</td>
+        <td>{{ m.uom_name }}</td>
+        <td>{% if m.is_outsourced %}Tercerizado{% else %}Stock{% endif %}</td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+</div>
+{% endfor %}
+</body>
+</html>

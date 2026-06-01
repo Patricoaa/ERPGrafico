@@ -1,32 +1,27 @@
 "use client"
 
+import { formatCurrency } from "@/lib/money"
 import { showApiError } from "@/lib/errors"
-import React, { useEffect, useState, useMemo } from "react"
+import React, {useState, useMemo} from "react"
 import { UseFormReturn } from "react-hook-form"
 import { ProductFormValues } from "./schema"
 import { Button } from "@/components/ui/button"
-import { Trash2, RefreshCw, Layers, Pencil, Wand2 } from "lucide-react"
-import { StatusBadge } from "@/components/shared/StatusBadge"
+import { Layers, Wand2, X, Archive } from "lucide-react"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Label } from "@/components/ui/label"
-import api from "@/lib/api"
 import { toast } from "sonner"
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table"
 import { cn } from "@/lib/utils"
-import { SheetHeader, SheetTitle } from "@/components/ui/sheet"
-import { SheetCloseButton } from "@/components/shared/SheetCloseButton"
-import { BaseModal } from "@/components/shared/BaseModal"
-import { getErrorMessage } from "@/lib/errors"
 import { Product, ProductAttributeValue } from "@/types/entities"
-import { Badge } from "@/components/ui/badge"
 import { ProductInitialData } from "@/types/forms"
-import { FormTabsContent, FormSection } from "@/components/shared"
+import { ActionConfirmModal, Chip, DataCell, MultiSelectOption, MultiSelectTagInput } from '@/components/shared'
 
 import { VariantQuickEditForm } from "./VariantQuickEditForm"
-import { BulkVariantEditForm } from "./BulkVariantEditForm"
+import { BulkVariantEditFormV2 } from "./BulkVariantEditFormV2"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
-import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 
+import { useAttributes } from "../../hooks/useAttributes"
+import { useVariants } from "../../hooks/useVariants"
+import { useProducts } from "../../hooks/useProducts"
 interface ProductVariantsTabProps {
     form: UseFormReturn<ProductFormValues>
     initialData?: ProductInitialData | Partial<Product>
@@ -46,76 +41,65 @@ interface AttributeValue {
 }
 
 export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChange }: ProductVariantsTabProps) {
-    const [availableAttributes, setAvailableAttributes] = useState<Attribute[]>([])
+    // Attributes y attribute-values vienen unidos por useAttributes.
+    // Cast: el hook tipa AttributeValue con name/code pero el serializer
+    // del backend usa { value } — el componente trabaja con la forma runtime.
+    const { attributes: hookAttributes } = useAttributes()
+    const availableAttributes = hookAttributes as unknown as Attribute[]
+
+    // Variants del template (incluye archivadas — la vista admin las muestra grises).
+    const { data: variantsData, refetch: refetchVariants } = useVariants({
+        productId: initialData?.id,
+        activeOnly: false,
+    })
+    const variants = (variantsData ?? []) as Product[]
+
+    const { updateProduct, generateVariants, isGeneratingVariants: isGenerating } = useProducts()
+    const { createAttributeValue } = useAttributes()
+
     const [selectedValues, setSelectedValues] = useState<Record<number, number[]>>({})
-    const [isGenerating, setIsGenerating] = useState(false)
-    const [variants, setVariants] = useState<Product[]>([])
-    const [isSheetOpen, setIsSheetOpen] = useState(false)
     const [isPendingGeneration, setIsPendingGeneration] = useState(false)
 
     // Master-Detail State
     const [selectedVariantIds, setSelectedVariantIds] = useState<number[]>([])
-    const [activeEditVariantId, setActiveEditVariantId] = useState<number | null>(null)
     const [variantToDelete, setVariantToDelete] = useState<Product | null>(null)
 
-    useEffect(() => {
-        fetchAttributes()
-        if (initialData?.id) {
-            fetchVariants()
-        }
-    }, [initialData])
-
-    const fetchAttributes = async () => {
-        try {
-            const [attrRes, valRes] = await Promise.all([
-                api.get("/inventory/attributes/"),
-                api.get("/inventory/attribute-values/")
-            ])
-            const attrs = attrRes.data.results || attrRes.data
-            const vals = valRes.data.results || valRes.data
-
-            const enriched = attrs.map((a: Attribute) => ({
-                ...a,
-                values: vals.filter((v: AttributeValue & { attribute: number }) => v.attribute === a.id)
-            }))
-            setAvailableAttributes(enriched)
-        } catch (error) {
-            console.error("Failed to fetch attributes", error)
-        }
+    const handleMultiSelectChange = (attrId: number, selectedValueStrs: string[]) => {
+        setSelectedValues(prev => ({
+            ...prev,
+            [attrId]: selectedValueStrs.map(v => Number(v))
+        }))
     }
 
-    const fetchVariants = async () => {
+    const handleCreateAttributeValue = async (attrId: number, value: string) => {
         try {
-            const res = await api.get(`/inventory/products/?parent_template=${initialData?.id}&show_technical_variants=true`)
-            setVariants(res.data.results || res.data)
+            const newVal = await createAttributeValue({ attribute: attrId, value })
+            toast.success(`Valor "${value}" creado`)
+            // useAttributes invalida ATTRIBUTES_QUERY_KEY → el listado de
+            // attributes+values se recompone solo. Auto-seleccionamos el nuevo.
+            setSelectedValues(prev => {
+                const current = prev[attrId] || []
+                return { ...prev, [attrId]: [...current, (newVal as { id: number }).id] }
+            })
         } catch (error) {
-            console.error("Failed to fetch variants", error)
+            showApiError(error, "Error al crear valor de atributo")
         }
-    }
-
-    const toggleValue = (attrId: number, valueId: number) => {
-        setSelectedValues(prev => {
-            const current = prev[attrId] || []
-            if (current.includes(valueId)) {
-                return { ...prev, [attrId]: current.filter(v => v !== valueId) }
-            } else {
-                return { ...prev, [attrId]: [...current, valueId] }
-            }
-        })
     }
 
     const deleteConfirm = useConfirmAction(async () => {
         if (!variantToDelete) return
         const variant = variantToDelete
         try {
-            await api.delete(`/inventory/products/${variant.id}/`)
-            toast.success("Variante eliminada exitosamente")
-            if (activeEditVariantId === variant.id) setActiveEditVariantId(null)
+            await updateProduct({ id: variant.id, payload: { active: false } as never })
+            toast.success("Variante archivada exitosamente")
             setSelectedVariantIds(prev => prev.filter(id => id !== variant.id))
-            fetchVariants()
+            // updateProduct invalida PRODUCTS_KEYS.all → variants list incluida.
+            // Forzamos refetch explícito para reflejar el cambio en la tabla local
+            // sin esperar al stale time.
+            refetchVariants()
         } catch (error) {
-            console.error("Failed to delete variant", error)
-            showApiError(error, "Error al eliminar variante")
+            console.error("Failed to archive variant", error)
+            showApiError(error, "Error al archivar variante")
         } finally {
             setVariantToDelete(null)
         }
@@ -126,6 +110,8 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
         setVariantToDelete(variant)
         deleteConfirm.requestConfirm()
     }
+
+    // (Removed old sync/clone/surcharge handlers)
 
     const handleGenerateVariants = async () => {
         const selection = Object.entries(selectedValues).map(([id, vals]) => ({
@@ -144,25 +130,18 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
             setIsPendingGeneration(true)
             toast.success("Configuración de variantes guardada. Se generarán automáticamente al guardar el producto.")
             setSelectedValues({})
-            setIsSheetOpen(false)
             return
         }
 
-        // Case: Existing Product Workflow
-        setIsGenerating(true)
+        // Case: Existing Product Workflow.
+        // generateVariants invalida PRODUCTS_KEYS.all + ['inventory','variants']
+        // → la tabla se refresca automáticamente. isGenerating viene del hook.
         try {
-            await api.post(`/inventory/products/${initialData.id}/generate_variants/`, {
-                selection
-            })
-
+            await generateVariants({ templateId: initialData.id, selection })
             toast.success("Variantes generadas con éxito")
-            fetchVariants()
             setSelectedValues({})
-            setIsSheetOpen(false)
         } catch (error: unknown) {
             showApiError(error, "Error al generar variantes")
-        } finally {
-            setIsGenerating(false)
         }
     }
 
@@ -172,7 +151,6 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
             setSelectedVariantIds([])
         } else {
             setSelectedVariantIds(variants.map(v => v.id))
-            setActiveEditVariantId(null) // Clear individual edit when bulk selecting
         }
     }
 
@@ -181,28 +159,17 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
             if (prev.includes(id)) {
                 return prev.filter(vid => vid !== id)
             } else {
-                setActiveEditVariantId(null) // Focus changes to bulk if selecting multiples
                 return [...prev, id]
             }
         })
     }
 
-    const handleRowClick = (id: number) => {
-        // If we are in bulk mode and clicking another row, behavior could be to add to selection
-        // But traditional master-detail means row click = view details.
-        // Let's clear bulk selection and show detail for this row.
-        setSelectedVariantIds([])
-        if (activeEditVariantId === id) {
-            // Toggle off
-            setActiveEditVariantId(null)
-        } else {
-            setActiveEditVariantId(id)
-        }
-    }
-
     const activeEditVariant = useMemo(() => {
-        return variants.find(v => v.id === activeEditVariantId)
-    }, [activeEditVariantId, variants])
+        if (selectedVariantIds.length === 1) {
+            return variants.find(v => v.id === selectedVariantIds[0]) || null;
+        }
+        return null;
+    }, [selectedVariantIds, variants])
 
     const selectedVariantsList = useMemo(() => {
         return variants.filter(v => selectedVariantIds.includes(v.id))
@@ -219,7 +186,7 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                         Las variantes se gestionan desde el producto plantilla.
                     </p>
                     {initialData?.parent_template && (
-                        <Button variant="link" className="mt-2">Ver Plantilla Origen</Button>
+                        <Button type="button" variant="link" className="mt-2">Ver Plantilla Origen</Button>
                     )}
                 </div>
             </div>
@@ -227,163 +194,122 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
     }
 
     return (
-        <div className="mt-0 space-y-8 flex flex-col h-[650px] animate-in fade-in duration-500">
+        <div className="mt-0 space-y-2 flex flex-col h-[650px] animate-in fade-in duration-500">
             {/* Header / Actions */}
-            <div className="flex items-center justify-between bg-muted/10 p-4 rounded-2xl border border-dashed border-primary/20">
+            <div className="flex items-center justify-between bg-card p-4 rounded-md border border-primary/20">
                 <div className="flex items-center gap-4">
                     <div className="p-2.5 bg-primary/10 rounded-xl border border-primary/20">
                         <Layers className="h-5 w-5 text-primary" />
                     </div>
                     <div>
                         <h3 className="text-sm font-black uppercase tracking-widest text-primary">
-                            Matriz de Variantes ({variants.length})
+                            {selectedVariantIds.length > 1
+                                ? `Edición Masiva (${selectedVariantIds.length} variantes)`
+                                : selectedVariantIds.length === 1
+                                    ? `Editar Variante`
+                                    : `Generador de Variantes`
+                            }
                         </h3>
-                        {selectedVariantIds.length > 0 ? (
-                            <span className="text-[10px] font-black bg-primary text-primary-foreground px-2 py-0.5 rounded-full animate-pulse">
-                                {selectedVariantIds.length} SELECCIONADAS
-                            </span>
+                        {selectedVariantIds.length > 0 || activeEditVariant ? (
+                            <p className="text-[10px] text-muted-foreground font-bold italic">Modifique los campos y guarde los cambios.</p>
                         ) : (
-                            <p className="text-[10px] text-muted-foreground font-bold italic">Gestione combinaciones de atributos y stock individual.</p>
+                            <p className="text-[10px] text-muted-foreground font-bold italic">Seleccione los atributos para combinar.</p>
                         )}
                     </div>
                 </div>
- 
-                <div className="flex items-center gap-2">
-                    <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={fetchVariants}
-                        className="h-9 px-4 text-[10px] font-black uppercase tracking-tighter hover:bg-primary/5 text-muted-foreground"
-                    >
-                        <RefreshCw className="h-3.5 w-3.5 mr-2 opacity-60" /> Sincronizar
-                    </Button>
-                    
-                    <Button 
-                        size="sm" 
-                        className="h-9 px-5 text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary/20 transition-all hover:scale-[1.02]"
-                        disabled={availableAttributes.length === 0}
-                        onClick={() => setIsSheetOpen(true)}
-                    >
-                        <Wand2 className="h-3.5 w-3.5 mr-2" />
-                        {isPendingGeneration ? "Editar Gen." : "Generador"}
-                    </Button>
- 
-                    <BaseModal 
-                        open={isSheetOpen} 
-                        onOpenChange={setIsSheetOpen}
-                        size="md"
-                        title={
-                            <div className="flex items-center gap-4 text-2xl font-black uppercase tracking-tighter">
-                                <div className="p-3 bg-primary/10 rounded-2xl border-2 border-primary/20">
-                                    <Wand2 className="h-8 w-8 text-primary" />
-                                </div>
-                                Generar Combinaciones
-                            </div>
-                        }
-                    >
-                        <div className="flex flex-col h-full p-2">
-                            <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-                                <div className="flex-1 overflow-y-auto pr-4 space-y-10 scrollbar-thin">
-                                    {availableAttributes.map(attr => (
-                                        <div key={attr.id} className="space-y-6">
-                                            <FormSection title={attr.name} icon={Layers} />
-                                            <div className="grid grid-cols-2 gap-3">
-                                                {attr.values.map(val => {
-                                                    const isSelected = selectedValues[attr.id]?.includes(val.id) || false;
-                                                    return (
-                                                        <div 
-                                                            key={val.id} 
-                                                            className={cn(
-                                                                "flex items-center space-x-3 p-3.5 rounded-xl border transition-all cursor-pointer group",
-                                                                isSelected 
-                                                                    ? "bg-primary/5 border-primary/40 shadow-sm" 
-                                                                    : "bg-background hover:border-primary/30 grayscale hover:grayscale-0 opacity-60 hover:opacity-100"
-                                                            )}
-                                                            onClick={() => toggleValue(attr.id, val.id)}
-                                                        >
-                                                            <Checkbox
-                                                                id={`val-${val.id}`}
-                                                                checked={isSelected}
-                                                                onCheckedChange={() => toggleValue(attr.id, val.id)}
-                                                                className="h-5 w-5 rounded-lg border-primary/20"
-                                                            />
-                                                            <label htmlFor={`val-${val.id}`} className="text-[11px] font-black uppercase tracking-tight cursor-pointer truncate">
-                                                                {val.value}
-                                                            </label>
-                                                        </div>
-                                                    )
-                                                })}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
- 
-                                <div className="shrink-0 mt-10 pt-8 border-t border-dashed">
-                                    <Button
-                                        className="w-full h-16 rounded-2xl font-black uppercase tracking-widest text-sm shadow-xl shadow-primary/20 bg-primary hover:bg-primary/90 text-primary-foreground transition-all hover:scale-[1.01] active:scale-[0.98]"
-                                        onClick={handleGenerateVariants}
-                                        disabled={isGenerating || availableAttributes.length === 0}
-                                    >
-                                        {isGenerating ? "Procesando..." : !initialData?.id ? "Fijar Configuración" : "Generar Matriz"}
-                                    </Button>
- 
-                                    {!initialData?.id && (
-                                        <div className="mt-4 p-3 bg-amber-500/5 border border-amber-500/20 rounded-xl">
-                                            <p className="text-[9px] text-amber-600 text-center font-black uppercase tracking-tighter italic">
-                                                * Las variantes se crearán automáticamente al confirmar la ficha principal.
-                                            </p>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
+
+                <div className="flex items-center gap-3">
+                    {selectedVariantIds.length > 1 ? (
+                        <>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="h-9 px-4 text-[10px] font-black uppercase tracking-widest"
+                                onClick={() => setSelectedVariantIds([])}
+                            >
+                                <X className="h-3.5 w-3.5 mr-2" />
+                                Cancelar
+                            </Button>
+                            <Button
+                                type="submit"
+                                form="bulk-edit-form"
+                                size="sm"
+                                className="h-9 px-5 text-[10px] font-black uppercase tracking-widest bg-primary text-primary-foreground hover:scale-[1.02]"
+                            >
+                                Guardar Variantes
+                            </Button>
+                        </>
+                    ) : selectedVariantIds.length === 1 ? (
+                        <>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="h-9 px-4 text-[10px] font-black uppercase tracking-widest"
+                                onClick={() => setSelectedVariantIds([])}
+                            >
+                                <X className="h-3.5 w-3.5 mr-2" />
+                                Cancelar
+                            </Button>
+                            <Button
+                                type="submit"
+                                form="quick-edit-form"
+                                size="sm"
+                                className="h-9 px-5 text-[10px] font-black uppercase tracking-widest bg-primary text-primary-foreground hover:scale-[1.02]"
+                            >
+                                Guardar Variante
+                            </Button>
+                        </>
+                    ) : (
+                        <div className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                            {variants.length} variantes
                         </div>
-                    </BaseModal>
+                    )}
                 </div>
             </div>
 
-            {/* Split View Layout */}
-            <div className="flex-1 flex gap-4 overflow-hidden relative">
-                
+            <div className="flex-1 flex gap-4 overflow-hidden relative animate-in fade-in slide-in-from-left-8 duration-300">
                 {/* Left: Master Table */}
                 <div className={cn(
-                    "flex-1 rounded-md border bg-card/50 overflow-hidden flex flex-col transition-all duration-300",
-                    (activeEditVariant || selectedVariantIds.length > 0) ? "md:w-3/5 lg:w-2/3" : "w-full"
+                    "flex-1 rounded-md border bg-card overflow-hidden flex flex-col transition-all duration-300",
+                    "md:w-1/2 lg:w-7/12"
                 )}>
                     <div className="overflow-y-auto scrollbar-thin flex-1">
                         <Table>
                             <TableHeader className="bg-muted/50 sticky top-0 z-10 shadow-sm">
                                 <TableRow>
                                     <TableHead className="w-12 pl-4">
-                                        <Checkbox 
+                                        <Checkbox
                                             checked={variants.length > 0 && selectedVariantIds.length === variants.length}
                                             onCheckedChange={toggleSelectAll}
                                         />
                                     </TableHead>
-                                    <TableHead className="font-bold">Código</TableHead>
+                                    <TableHead className="font-bold">ID</TableHead>
                                     <TableHead className="font-bold">Atributos</TableHead>
-                                    <TableHead className="font-bold text-right">Precio</TableHead>
+                                    <TableHead className="font-bold text-center">Modo de precio</TableHead>
+                                    <TableHead className="font-bold text-center">Precio</TableHead>
+                                    <TableHead className="font-bold text-center">LDM</TableHead>
                                     <TableHead className="font-bold text-center">Disp.</TableHead>
-                                    <TableHead className="font-bold text-center">BOM</TableHead>
                                     <TableHead className="w-[80px]"></TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {variants.map(v => {
                                     const isSelected = selectedVariantIds.includes(v.id);
-                                    const isActive = activeEditVariantId === v.id;
-                                    
+
                                     return (
-                                        <TableRow 
-                                            key={v.id} 
+                                        <TableRow
+                                            key={v.id}
                                             className={cn(
                                                 "cursor-pointer group transition-colors",
-                                                isActive ? "bg-primary/5 hover:bg-primary/10" : "hover:bg-muted/50",
+                                                "hover:bg-muted/50",
                                                 isSelected && "bg-primary/10/50 hover:bg-primary/10/80"
                                             )}
-                                            onClick={() => handleRowClick(v.id)}
+                                            onClick={() => toggleVariantSelect(v.id)}
                                         >
                                             <TableCell className="pl-4" onClick={(e) => e.stopPropagation()}>
-                                                <Checkbox 
+                                                <Checkbox
                                                     checked={isSelected}
                                                     onCheckedChange={() => toggleVariantSelect(v.id)}
                                                     onClick={(e) => e.stopPropagation()}
@@ -395,75 +321,61 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                                                 </span>
                                             </TableCell>
                                             <TableCell>
-                                                <div className="flex flex-col">
-                                                    <span className="font-bold text-xs truncate max-w-[150px]" title={v.variant_display_name || v.name}>{v.variant_display_name || v.name}</span>
-                                                    <div className="flex gap-1 flex-wrap mt-1">
-                                                        {v.attribute_values_data?.slice(0, 2).map((av: ProductAttributeValue, valIndex: number) => (
-                                                            <span key={valIndex} className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border bg-muted/50 border-border/50 text-muted-foreground">
-                                                                {av.value}
-                                                            </span>
-                                                        ))}
-                                                        {(v.attribute_values_data?.length ?? 0) > 2 && (
-                                                            <span className="text-[10px] text-muted-foreground ml-1">+{(v.attribute_values_data?.length ?? 0) - 2}</span>
-                                                        )}
-                                                    </div>
+                                                <div className="flex gap-1 flex-wrap">
+                                                    {v.attribute_values_data?.map((av: ProductAttributeValue, valIndex: number) => (
+                                                        <Chip key={valIndex} size="xs">{av.value}</Chip>
+                                                    ))}
+                                                    {(!v.attribute_values_data || v.attribute_values_data.length === 0) && (
+                                                        <span className="text-xs text-muted-foreground/50">-</span>
+                                                    )}
                                                 </div>
                                             </TableCell>
-                                            <TableCell className="text-right font-medium text-xs">
-                                                ${Number(v.sale_price).toLocaleString()}
+                                            <TableCell className="text-center">
+                                                {(() => {
+                                                    const mode = v.price_inheritance_mode ?? 'INHERIT'
+                                                    if (mode === 'SURCHARGE') return <Chip size="xs" intent="warning">+Sobrecargo</Chip>
+                                                    if (mode === 'OVERRIDE') return <Chip size="xs" intent="primary">Propio</Chip>
+                                                    return <Chip size="xs" intent="neutral">Hereda</Chip>
+                                                })()}
+                                            </TableCell>
+                                            <TableCell className="text-center font-medium text-xs tabular-nums">
+                                                {formatCurrency(Number(v.effective_price_net ?? v.sale_price))}
                                             </TableCell>
                                             <TableCell className="text-center">
                                                 {v.has_active_bom ? (
-                                                    <span className={cn(
-                                                        "text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border",
-                                                        (v.current_stock ?? 0) > 0 ? "bg-success/10 text-success border-success/20" : "bg-destructive/10 text-destructive border-destructive/20"
-                                                    )}>
-                                                        STOCK: {v.current_stock || 0}
-                                                    </span>
+                                                    <Chip intent="success">CON LDM</Chip>
                                                 ) : (
-                                                    (v.product_type === 'MANUFACTURABLE' || v.requires_advanced_manufacturing) ? (
-                                                        <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border bg-primary/10 text-primary border-primary/20">
-                                                            Disp
-                                                        </span>
+                                                    v.mfg_auto_finalize ? (
+                                                        <Chip intent="destructive">SIN LDM</Chip>
                                                     ) : (
-                                                        <Badge className={cn("font-bold px-1.5 py-0 text-[10px] border", (v.current_stock ?? 0) > 0 ? "bg-success/10 text-success border-success/20" : "bg-destructive/10 text-destructive border-destructive/20")}>
-                                                            {v.current_stock}
-                                                        </Badge>
+                                                        <span className="text-[9px] text-muted-foreground/40 font-bold">-</span>
                                                     )
                                                 )}
                                             </TableCell>
                                             <TableCell className="text-center">
-                                                 {v.has_active_bom ? (
-                                                      <span className="text-[9px] text-emerald-600 font-black bg-emerald-500/10 px-2 py-1 rounded-full border border-emerald-500/20 uppercase tracking-tighter">BOM ACTIVA</span>
-                                                 ) : (
-                                                      v.mfg_auto_finalize ? (
-                                                          <span className="text-[9px] text-destructive font-black bg-destructive/10 px-2 py-1 rounded-full border border-destructive/20 uppercase tracking-tighter animate-pulse">SIN RECETA</span>
-                                                      ) : (
-                                                          <span className="text-[9px] text-muted-foreground/40 font-bold">-</span>
-                                                      )
-                                                 )}
+                                                {v.has_active_bom ? (
+                                                    <Chip size="xs" intent={(v.current_stock ?? 0) > 0 ? "success" : "destructive"}>
+                                                        STOCK: {v.current_stock || 0}
+                                                    </Chip>
+                                                ) : (
+                                                    (v.product_type === 'MANUFACTURABLE' || v.requires_advanced_manufacturing) ? (
+                                                        <Chip size="xs" intent="primary">Disp</Chip>
+                                                    ) : (
+                                                        <Chip size="xs" intent={(v.current_stock ?? 0) > 0 ? "success" : "destructive"}>
+                                                            {v.current_stock}
+                                                        </Chip>
+                                                    )
+                                                )}
                                             </TableCell>
                                             <TableCell onClick={(e) => e.stopPropagation()}>
-                                                <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                    <Button
-                                                        type="button"
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="h-7 w-7 text-primary hover:bg-primary/10 hidden lg:flex"
-                                                        onClick={(e) => { e.stopPropagation(); onEditVariant?.(v); }}
-                                                        title="Edición Avanzada (Modal Completo)"
-                                                    >
-                                                        <Pencil className="h-3 w-3" />
-                                                    </Button>
-                                                    <Button
-                                                        type="button"
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="h-7 w-7 text-destructive hover:bg-destructive/10"
-                                                        onClick={(e) => handleDeleteVariant(v, e)}
-                                                    >
-                                                        <Trash2 className="h-3 w-3" />
-                                                    </Button>
+                                                <div>
+                                                    <DataCell.ActionGroup>
+                                                        <DataCell.Action
+                                                            icon={Archive}
+                                                            title="Archivar variante"
+                                                            onClick={(e) => handleDeleteVariant(v, e)}
+                                                        />
+                                                    </DataCell.ActionGroup>
                                                 </div>
                                             </TableCell>
                                         </TableRow>
@@ -481,7 +393,7 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                                                 <>
                                                     No se han generado variantes para este producto.
                                                     <br />
-                                                    <span className="text-xs mt-1 block">Utilice el botón &quot;Generador&quot; arriba a la derecha.</span>
+                                                    <span className="text-xs mt-1 block">Utilice el generador a la derecha.</span>
                                                 </>
                                             )}
                                         </TableCell>
@@ -492,63 +404,100 @@ export function ProductVariantsTab({ form, initialData, onEditVariant, onTabChan
                     </div>
                 </div>
 
-                {/* Right: Detail View (Quick Edit or Bulk Edit) */}
-                {(activeEditVariant || selectedVariantIds.length > 0) && (
-                    <div className="w-full md:w-2/5 lg:w-1/3 flex-shrink-0 h-full">
-                        {selectedVariantIds.length > 0 ? (
-                            <BulkVariantEditForm 
-                                selectedVariants={selectedVariantsList}
-                                availableVariants={variants}
-                                onSaved={(updatedVariants: Product[]) => {
-                                    // Update local variants UI
-                                    setVariants(prev => prev.map(v => {
-                                        const matching = updatedVariants.find((upd: Product) => upd.id === v.id);
-                                        return matching || v;
-                                    }));
-                                    
-                                    // Add to form payload for main submit
-                                    const currentUpdates = form.getValues("variant_updates") || [];
-                                    let newUpdates = [...currentUpdates];
-                                    updatedVariants.forEach((uv: Product) => {
-                                        newUpdates = [...newUpdates.filter((u: Product) => u.id !== uv.id), uv];
-                                    });
-                                    form.setValue("variant_updates", newUpdates, { shouldDirty: true });
-                                    
-                                    setSelectedVariantIds([]);
-                                }}
-                                onCancel={() => setSelectedVariantIds([])}
-                            />
-                        ) : activeEditVariant ? (
-                            <VariantQuickEditForm 
-                                variant={activeEditVariant} 
-                                onSaved={(updatedVariant: Product) => {
-                                    // Update local variants UI
-                                    setVariants(prev => prev.map(v => v.id === updatedVariant.id ? updatedVariant : v));
-                                    
-                                    // Add to form payload for main submit
-                                    const currentUpdates = form.getValues("variant_updates") || [];
-                                    const newUpdates = [...currentUpdates.filter((u: Product) => u.id !== updatedVariant.id), updatedVariant];
-                                    form.setValue("variant_updates", newUpdates, { shouldDirty: true });
-                                }}
-                                onCancel={() => setActiveEditVariantId(null)}
-                                onTabChange={(tab: string) => onTabChange?.(tab)}
-                            />
-                        ) : null}
-                    </div>
-                )}
+                {/* Right: Detail View / Generator */}
+                <div className="w-full md:w-1/2 lg:w-5/12 flex-shrink-0 h-full">
+                    {selectedVariantIds.length > 1 ? (
+                        <BulkVariantEditFormV2
+                            selectedVariants={selectedVariantsList}
+                            availableVariants={variants}
+                            templateData={initialData as Product | undefined}
+                            onSaved={(_updatedVariants: Product[]) => {
+                                refetchVariants();
+                                setSelectedVariantIds([]);
+                            }}
+                            onCancel={() => setSelectedVariantIds([])}
+                        />
+                    ) : selectedVariantIds.length === 1 && activeEditVariant ? (
+                        <VariantQuickEditForm
+                            variant={activeEditVariant}
+                            templateData={initialData as Product | undefined}
+                            availableVariants={variants}
+                            onSaved={(_updatedVariant: Product) => {
+                                refetchVariants();
+                            }}
+                            onCancel={() => setSelectedVariantIds([])}
+                            onTabChange={(tab: string) => onTabChange?.(tab)}
+                        />
+                    ) : (
+                        <div className="w-full h-full flex-1 flex flex-col min-h-0 bg-card rounded-md border p-5 animate-in fade-in slide-in-from-right-4 duration-300">
+                            <div className="flex-1 overflow-y-auto pr-2 scrollbar-thin pb-4">
+                                <div className="flex flex-col gap-y-6">
+                                    {availableAttributes.map(attr => {
+                                        const options: MultiSelectOption[] = attr.values.map(v => ({
+                                            label: v.value,
+                                            value: String(v.id)
+                                        }))
+                                        const selectedStrs = (selectedValues[attr.id] || []).map(String)
+
+                                        return (
+                                            <div key={attr.id} className="flex flex-col">
+                                                <div className="flex items-center gap-2 mb-2">
+                                                    <Layers className="h-4 w-4 text-primary" />
+                                                    <h4 className="font-bold text-sm uppercase tracking-wider text-foreground/80">{attr.name}</h4>
+                                                </div>
+                                                <MultiSelectTagInput
+                                                    placeholder="Buscar o crear..."
+                                                    options={options}
+                                                    value={selectedStrs}
+                                                    onChange={(val) => handleMultiSelectChange(attr.id, val)}
+                                                    onCreateOption={(val) => handleCreateAttributeValue(attr.id, val)}
+                                                />
+                                            </div>
+                                        )
+                                    })}
+                                    {availableAttributes.length === 0 && (
+                                        <div className="text-center text-sm text-muted-foreground italic py-8">
+                                            No hay atributos configurados en el sistema.
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="shrink-0 pt-4 mt-4">
+                                <Button
+                                    type="button"
+                                    className="w-full rounded-md font-black uppercase tracking-widest text-[11px] shadow-md bg-primary hover:bg-primary/90 text-primary-foreground transition-all hover:scale-[1.01] active:scale-[0.98]"
+                                    onClick={handleGenerateVariants}
+                                    disabled={isGenerating || availableAttributes.length === 0}
+                                >
+                                    <Wand2 className="h-3.5 w-3.5 mr-2" />
+                                    {isGenerating ? "Procesando..." : !initialData?.id ? "Fijar Configuración" : "Generar variantes"}
+                                </Button>
+
+                                {!initialData?.id && (
+                                    <div className="mt-4 p-3 bg-warning/10 border border-warning/20 rounded-xl">
+                                        <p className="text-[10px] text-warning text-center font-black uppercase tracking-tighter italic">
+                                            * Las variantes se crearán automáticamente al guardar la ficha principal del producto.
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+                </div>
             </div>
-            
+
             <ActionConfirmModal
                 open={deleteConfirm.isOpen}
-                onOpenChange={(open) => { 
+                onOpenChange={(open) => {
                     if (!open) {
                         deleteConfirm.cancel()
                         setVariantToDelete(null)
                     }
                 }}
                 onConfirm={deleteConfirm.confirm}
-                title="Eliminar Variante"
-                description={`¿Está seguro de eliminar la variante ${variantToDelete?.variant_display_name || variantToDelete?.name || ''}?`}
+                title="Archivar Variante"
+                description={`¿Archivar la variante "${variantToDelete?.variant_display_name || variantToDelete?.name || ''}"? Dejará de aparecer en listas pero no se eliminará del sistema.`}
                 variant="destructive"
             />
         </div>

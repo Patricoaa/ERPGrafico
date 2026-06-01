@@ -1,17 +1,20 @@
+
 "use client"
 
 import React, { useMemo } from "react"
+import { formatCurrency } from "@/lib/money"
 import { ColumnDef } from "@tanstack/react-table"
 import { ArrowRight } from "lucide-react"
 import Link from "next/link"
-import { cn, formatPlainDate, formatCurrency } from "@/lib/utils"
+import { cn, formatPlainDate } from "@/lib/utils"
 import type { DashboardPendingItem } from "../types"
 import { Button } from "@/components/ui/button"
-import { DataTable } from "@/components/ui/data-table"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
-import { Badge } from "@/components/ui/badge"
+import { DataTable } from '@/components/shared'
+import { DataTableColumnHeader } from '@/components/shared'
+import { Chip } from "@/components/shared"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { useRouter } from "next/navigation"
-import { createActionsColumn, DataCell } from "@/components/ui/data-table-cells"
+import { createActionsColumn, DataCell } from '@/components/shared'
 
 interface DashboardPendingTableProps {
     data: DashboardPendingItem[]
@@ -39,18 +42,23 @@ export function DashboardPendingTable({ data, loading }: DashboardPendingTablePr
             accessorKey: "account",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Cuenta" />,
             cell: ({ row }) => (
-                <Badge variant="outline" className="rounded-sm text-[10px] border-border/40 font-bold uppercase tracking-wider bg-muted/20"> {/* intentional: badge density */}
+                <Chip size="xs" intent="neutral" className="rounded-sm bg-muted/20">
                     {row.getValue("account")}
-                </Badge>
+                </Chip>
             ),
         },
         {
             accessorKey: "description",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Descripción" />,
             cell: ({ row }) => (
-                <p className="text-xs font-medium text-foreground/70 truncate max-w-[200px]" title={row.getValue("description")}>
-                    {row.getValue("description")}
-                </p>
+<Tooltip>
+                                <TooltipTrigger asChild>
+                                    <p className="text-xs font-medium text-foreground/70 truncate max-w-[200px]">
+                                        {row.getValue("description")}
+                                    </p>
+                                </TooltipTrigger>
+                                <TooltipContent side="top">{row.getValue("description")}</TooltipContent>
+                            </Tooltip>
             ),
         },
         {
@@ -73,9 +81,9 @@ export function DashboardPendingTable({ data, loading }: DashboardPendingTablePr
             accessorKey: "is_overdue",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" />,
             cell: ({ row }) => row.original.is_overdue && (
-                <Badge variant="destructive" className="text-[10px] uppercase font-black px-1.5 h-4 tracking-tighter shadow-sm shadow-destructive/20"> {/* intentional: badge density */}
+                <Chip size="xs" intent="destructive" className="shadow-sm shadow-destructive/20">
                     Crítico
-                </Badge>
+                </Chip>
             ),
         },
         createActionsColumn<DashboardPendingItem>({
@@ -91,22 +99,24 @@ export function DashboardPendingTable({ data, loading }: DashboardPendingTablePr
     ], [router])
 
     return (
-        <div className="col-span-4 lg:col-span-3">
-            <DataTable
-                columns={columns}
-                data={data}
-                isLoading={loading}
-                variant="embedded"
-                searchPlaceholder="Filtrar sin conciliar..."
-                globalFilterFields={["description", "account"]}
-                rightAction={
-                    <Button variant="ghost" size="sm" className="h-8 text-xs font-black uppercase tracking-widest border border-border/40" asChild>
-                        <Link href="/treasury/reconciliation?tab=statements&filter=in_progress">
-                            Ver Todo
-                        </Link>
-                    </Button>
-                }
-            />
+        <div className="col-span-4 lg:col-span-3 h-full flex flex-col">
+            <div className="flex-1 min-h-0">
+                <DataTable
+                    columns={columns}
+                    data={data}
+                    isLoading={loading}
+                    variant="embedded"
+                    searchPlaceholder="Buscar sin conciliar..."
+                    globalFilterFields={["description", "account"]}
+                    rightAction={
+                        <Button variant="ghost" size="sm" className="h-8 text-xs font-black uppercase tracking-widest border border-border/40" asChild>
+                            <Link href="/treasury/reconciliation?tab=statements&filter=in_progress">
+                                Ver Todo
+                            </Link>
+                        </Button>
+                    }
+                />
+            </div>
         </div>
     )
 }

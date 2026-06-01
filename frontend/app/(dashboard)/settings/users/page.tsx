@@ -1,26 +1,16 @@
 "use client"
 
-import { type ReactNode, lazy, Suspense, useState } from "react"
-import { TableSkeleton } from "@/components/shared"
-import { PageHeader } from "@/components/shared/PageHeader"
-import { useSearchParams } from "next/navigation"
 
-// Lazy load the UsersSettingsView component
-const UsersSettingsView = lazy(() =>
-    import("@/features/settings").then(module => ({
-        default: module.UsersSettingsView
-    }))
-)
+import { useSearchParams } from "next/navigation"
+import { UsersSettingsView } from "@/features/settings"
 
 export default function UsersSettingsPage() {
     const searchParams = useSearchParams()
     const activeTab = searchParams.get("tab") || "users"
 
     return (
-        <Suspense fallback={<TableSkeleton rows={10} columns={5} />}>
-            <UsersSettingsView 
-                activeTab={activeTab} 
-            />
-        </Suspense>
+        <UsersSettingsView 
+            activeTab={activeTab} 
+        />
     )
 }

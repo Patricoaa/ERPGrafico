@@ -10,8 +10,8 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover"
-import { useDebounce } from "@/hooks/use-debounce"
-import { EmptyState } from "@/components/shared/EmptyState"
+import { useDebounce } from "@/hooks/useDebounce"
+import { EmptyState } from '@/components/shared'
 import { useGroupSearch } from "@/features/users/hooks/useGroupSearch"
 import { AppGroup as Group } from "@/types/entities"
 
@@ -29,12 +29,12 @@ export function GroupSelector({ value, onChange, placeholder = "Seleccionar grup
     const [searchTerm, setSearchTerm] = useState("")
     const debouncedSearch = useDebounce(searchTerm, 500)
 
+    // In this case, value is the NAME of the group, not ID, as per our plan to store name in assigned_group
+    const [selectedGroup, setSelectedGroup] = useState<Group | null>(null)
+
     // We fetch groups if dropdown is open, OR if we have a value but it's not selected yet (to resolve name)
     const shouldFetch = open || (!!value && !selectedGroup)
     const { groups, loading: searchLoading } = useGroupSearch(debouncedSearch, shouldFetch)
-
-    // In this case, value is the NAME of the group, not ID, as per our plan to store name in assigned_group
-    const [selectedGroup, setSelectedGroup] = useState<Group | null>(null)
 
     useEffect(() => {
         if (!value) {

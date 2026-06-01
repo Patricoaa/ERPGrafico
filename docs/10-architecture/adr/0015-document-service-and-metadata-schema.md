@@ -1,12 +1,19 @@
 ---
 id: 0015
 title: DocumentService and Metadata Schema for UI Forms
-status: Accepted
+status: Superseded by 0020 / 0025 §2.2
 date: 2026-05-07
 author: Core Team
 ---
 
 # 0015 — DocumentService and Metadata Schema for UI Forms
+
+> [!CAUTION]
+> **Superseded.** El enfoque metadata-driven (`EntityForm`, schema desde backend) fue revertido por
+> [ADR-0025 §2.2](0025-schema-driven-forms-revert-and-expand.md) y supersedido por
+> [ADR-0020](0020-modal-on-list-edit-ux.md). Los formularios ricos existentes son el estándar
+> canónico. `EntityForm` fue eliminado del código en T-95. No implementar lo descrito aquí; se
+> conserva como registro histórico.
 
 ## Context
 As the ERP grows, we have a proliferation of forms to create and edit domain entities. Manually creating React components (`Form` + `Zod Schema` + `TanStack Query Mutations`) for every single model leads to:
@@ -54,6 +61,6 @@ We will implement a **Metadata-Driven UI Architecture** using `DocumentService` 
 - **Frontend-only generic schema library (like `react-jsonschema-form`)**: Rejected because it requires duplicating the model schema in the frontend codebase. The backend should remain the source of truth for validation and structure.
 
 ## References
-- [20-task-list.md (T-26 to T-40)](../../docs/50-audit/Arquitectura%20Django/20-task-list.md)
+- [20-task-list.md (T-26 to T-40)](../../50-audit/Arquitectura%20Django/20-task-list.md)
 - `backend/core/serializers/metadata.py`
 - `frontend/components/shared/EntityForm/`

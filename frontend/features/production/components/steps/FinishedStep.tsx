@@ -1,17 +1,24 @@
 "use client"
 
-import { CheckCircle2, LayoutDashboard, AlertTriangle } from 'lucide-react'
+import { useRef } from 'react'
+import {CheckCircle2, AlertTriangle, Loader2, Copy} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useHubPanel } from '@/components/providers/HubPanelProvider'
 import type { WorkOrder } from '../../types'
 
 interface FinishedStepProps {
   order: WorkOrder
+  onUploadPhoto?: (file: File) => Promise<void>
+  isUploadingPhoto?: boolean
+  onPrintCopy?: () => Promise<void>
+  isDuplicating?: boolean
 }
 
-export function FinishedStep({ order }: FinishedStepProps) {
+export function FinishedStep({ order, onUploadPhoto, isUploadingPhoto, onPrintCopy, isDuplicating }: FinishedStepProps) {
   const { openHub } = useHubPanel()
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const discrepancy = order.production_discrepancy
+  const hasPhoto = !!(order.stage_data as Record<string, unknown>)?.final_photo
 
   return (
     <div className="flex flex-col items-center justify-center py-12 text-center space-y-6 animate-in zoom-in-95 duration-500">
@@ -47,14 +54,15 @@ export function FinishedStep({ order }: FinishedStepProps) {
         </div>
       )}
 
-      <div className="flex gap-3">
-        <Button
-          onClick={() => order.sale_order?.id && openHub({ orderId: order.sale_order.id, type: 'sale' })}
-          className="gap-2 font-semibold"
-        >
-          <LayoutDashboard className="h-4 w-4" />
-          Ir al HUB de Venta
-        </Button>
+      <div className="flex gap-3 flex-wrap justify-center">
+
+        {onPrintCopy && (
+          <Button variant="outline" className="gap-2" disabled={isDuplicating} onClick={onPrintCopy}>
+            {isDuplicating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Copy className="h-4 w-4" />}
+            Imprimir copia
+          </Button>
+        )}
+
       </div>
     </div>
   )

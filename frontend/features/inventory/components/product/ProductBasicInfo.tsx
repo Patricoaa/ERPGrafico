@@ -1,13 +1,11 @@
 "use client"
 
 import { FormField } from "@/components/ui/form"
-import { EmptyState, LabeledInput, LabeledContainer, FormSection, LabeledSwitch } from "@/components/shared"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import {LabeledInput, LabeledContainer, FormSection, LabeledSwitch} from "@/components/shared"
 import { Button } from "@/components/ui/button"
-import { ShoppingCart, Truck, Barcode, Fingerprint, Globe, Tag } from "lucide-react"
+import {ShoppingCart, Truck, Barcode, Fingerprint, Layers} from "lucide-react"
 import { UseFormReturn } from "react-hook-form"
 import { ProductFormValues } from "./schema"
-import { Switch } from "@/components/ui/switch"
 import { cn } from "@/lib/utils"
 import { BarcodeModal } from "@/features/inventory/components/BarcodeModal"
 
@@ -22,7 +20,6 @@ export interface ProductBasicInfoProps {
     lockedType?: string
 }
 
-import { Label } from "@/components/ui/label"
 import { ProductImageUpload } from "./ProductImageUpload"
 
 export function ProductBasicInfo({ form, isEditing, imagePreview, setImagePreview, lockedType }: ProductBasicInfoProps) {
@@ -92,12 +89,12 @@ export function ProductBasicInfo({ form, isEditing, imagePreview, setImagePrevie
                                             form.setValue("can_be_sold", val, { shouldDirty: true, shouldValidate: false })
                                         })
                                     }}
-                                    disabled={['CONSUMABLE', 'SUBSCRIPTION'].includes(productType)}
-                                    icon={<ShoppingCart className={cn("h-3.5 w-3.5 transition-colors", field.value ? "text-emerald-600" : "text-muted-foreground/60")} />}
+                                    disabled={false}
+                                    icon={<ShoppingCart className={cn("h-3.5 w-3.5 transition-colors", field.value ? "text-success" : "text-muted-foreground/60")} />}
                                     className={cn(
-                                        "h-full transition-all duration-300", 
-                                        field.value 
-                                            ? "bg-emerald-500/10 border-emerald-500/30 shadow-sm ring-1 ring-emerald-500/10" 
+                                        "h-full transition-all duration-300",
+                                        field.value
+                                            ? "bg-success/10 border-success/30 shadow-sm ring-1 ring-success/10"
                                             : "bg-background border-border hover:border-muted-foreground/30 hover:bg-muted/10 shadow-[inset_0_1px_2px_rgba(0,0,0,0.1)] dark:shadow-[inset_0_1px_2px_rgba(255,255,255,0.02)]"
                                     )}
                                 />
@@ -118,12 +115,12 @@ export function ProductBasicInfo({ form, isEditing, imagePreview, setImagePrevie
                                             form.setValue("can_be_purchased", val, { shouldDirty: true, shouldValidate: false })
                                         })
                                     }}
-                                    disabled={productType === 'MANUFACTURABLE'}
-                                    icon={<Truck className={cn("h-3.5 w-3.5 transition-colors", field.value ? "text-amber-600" : "text-muted-foreground/40")} />}
+                                    disabled={['STORABLE', 'MANUFACTURABLE'].includes(productType)}
+                                    icon={<Truck className={cn("h-3.5 w-3.5 transition-colors", field.value ? "text-warning" : "text-muted-foreground/40")} />}
                                     className={cn(
-                                        "h-full transition-all duration-300", 
-                                        field.value 
-                                            ? "bg-amber-500/10 border-amber-500/30 shadow-sm ring-1 ring-amber-500/10" 
+                                        "h-full transition-all duration-300",
+                                        field.value
+                                            ? "bg-warning/10 border-warning/30 shadow-sm ring-1 ring-warning/10"
                                             : "bg-background border-border hover:border-muted-foreground/30 hover:bg-muted/10 shadow-[inset_0_1px_2px_rgba(0,0,0,0.1)] dark:shadow-[inset_0_1px_2px_rgba(255,255,255,0.02)]"
                                     )}
                                 />
@@ -131,7 +128,7 @@ export function ProductBasicInfo({ form, isEditing, imagePreview, setImagePrevie
                         />
                     </div>
 
-                    {/* Fila 3: Tipo (1) / Categoría (2) / Empty (1) */}
+                    {/* Fila 3: Tipo (1) / Categoría (2) / Variantes (1) */}
                     <div className="col-span-1">
                         <FormField<ProductFormValues>
                             control={form.control}
@@ -156,15 +153,15 @@ export function ProductBasicInfo({ form, isEditing, imagePreview, setImagePrevie
                                             }
                                         });
                                     }}
-                                    disabled={isEditing} 
-                                    lockedType={lockedType} 
+                                    disabled={isEditing}
+                                    lockedType={lockedType}
                                     error={fieldState.error?.message}
-                                    required 
+                                    required
                                 />
                             )}
                         />
                     </div>
-                    <div className="col-span-2">
+                    <div className="col-span-1">
                         <FormField<ProductFormValues>
                             control={form.control}
                             name="category"
@@ -180,7 +177,31 @@ export function ProductBasicInfo({ form, isEditing, imagePreview, setImagePrevie
                             )}
                         />
                     </div>
-                    <div className="col-span-1" />
+                    <div className="col-span-1">
+                        <FormField<ProductFormValues>
+                            control={form.control}
+                            name="has_variants"
+                            render={({ field }) => (
+                                <LabeledSwitch
+                                    label="Variantes"
+                                    checked={field.value}
+                                    onCheckedChange={(val) => {
+                                        requestAnimationFrame(() => {
+                                            form.setValue("has_variants", val, { shouldDirty: true, shouldValidate: false })
+                                        })
+                                    }}
+                                    disabled={isEditing}
+                                    icon={<Layers className={cn("h-3.5 w-3.5 transition-colors", field.value ? "text-primary" : "text-muted-foreground/40")} />}
+                                    className={cn(
+                                        "h-full transition-all duration-300",
+                                        field.value
+                                            ? "bg-primary/10 border-primary/30 shadow-sm ring-1 ring-primary/10"
+                                            : "bg-background border-border hover:border-muted-foreground/30 hover:bg-muted/10 shadow-[inset_0_1px_2px_rgba(0,0,0,0.1)] dark:shadow-[inset_0_1px_2px_rgba(255,255,255,0.02)]"
+                                    )}
+                                />
+                            )}
+                        />
+                    </div>
 
                     {/* Fila 4: SKU (Propietary Row) */}
                     <div className="col-span-4">
@@ -188,7 +209,7 @@ export function ProductBasicInfo({ form, isEditing, imagePreview, setImagePrevie
                             control={form.control}
                             name="code"
                             render={({ field, fieldState }) => (
-                                <div className="flex gap-2 items-start">
+                                <div className="flex items-start">
                                     <LabeledInput
                                         label="Código SKU / EAN / Barras"
                                         placeholder="Código"

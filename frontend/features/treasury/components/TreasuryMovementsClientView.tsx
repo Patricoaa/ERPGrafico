@@ -1,25 +1,25 @@
 "use client"
 
 import React, { useState, useEffect, lazy, Suspense } from "react"
-import { DataTable } from "@/components/ui/data-table"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { DataTableView, EntityCard, StatusBadge } from '@/components/shared'
+import { DataTableColumnHeader } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
-import { ArrowDown, Eye } from "lucide-react"
+import {ArrowDown} from "lucide-react"
 
-import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
+import { DataCell, createActionsColumn } from '@/components/shared'
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
-import { StatusBadge } from "@/components/shared/StatusBadge"
-import { FormSkeleton, SmartSearchBar, useSmartSearch } from "@/components/shared"
+
+import { SkeletonShell, SmartSearchBar, useSmartSearch } from "@/components/shared"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
-import { useTreasuryMovementsList, type TreasuryMovementFilters } from "@/features/treasury/hooks/useTreasuryMovements"
+import { useTreasuryMovements, type TreasuryMovementFilters } from "@/features/treasury/hooks/useTreasuryMovements"
 import { treasuryMovementsSearchDef } from "@/features/treasury/searchDef"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 
+import { createEntityCardView } from "@/lib/view-helpers"
+
 // Lazy load heavy components
+import { PaymentDrawer } from "@/features/finance/components/PaymentDrawer"
 const CashMovementModal = lazy(() => import("./CashMovementModal"))
-const TransactionViewModal = lazy(() =>
-    import("@/components/shared/TransactionViewModal").then(module => ({ default: module.TransactionViewModal }))
-)
 
 interface TreasuryMovement {
     id: number
@@ -31,6 +31,7 @@ interface TreasuryMovement {
     amount: number
     created_at: string
     date: string
+    created_by: number | null
     created_by_name: string
     notes: string
     pos_session: number | null
@@ -62,9 +63,14 @@ interface TreasuryMovementsClientViewProps {
 }
 
 export function TreasuryMovementsClientView({ externalOpen, createAction }: TreasuryMovementsClientViewProps) {
-    const { openContact, openTreasuryAccount } = useGlobalModalActions()
+    const { openEntity } = useGlobalModalActions()
     const { filters } = useSmartSearch(treasuryMovementsSearchDef)
-    const { movements, isLoading, refetch } = useTreasuryMovementsList(filters as TreasuryMovementFilters)
+    const [pageState, setPageState] = useState({ pageIndex: 0, pageSize: 50 })
+    const { page, movements, totalCount, isLoading, refetch } = useTreasuryMovements({
+        ...(filters as TreasuryMovementFilters),
+        page: pageState.pageIndex + 1,
+        page_size: pageState.pageSize,
+    })
     const searchParams = useSearchParams()
     const router = useRouter()
     const pathname = usePathname()
@@ -102,22 +108,8 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
         {
             accessorKey: "display_id",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Folio" className="justify-center" />,
-            cell: ({ row }) => {
-                const m = row.original
-                return (
-                    <div className="flex justify-center w-full">
-                        <DataCell.DocumentId label="treasury.treasurymovement" data={m} />
-                    </div>
-                )
-            },
-        },
-        {
-            accessorKey: "date",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Fecha" className="justify-center" />,
             cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <DataCell.Date value={row.getValue("date")} />
-                </div>
+                <DataCell.Code>{row.getValue("display_id")}</DataCell.Code>
             ),
         },
         {
@@ -156,6 +148,15 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                     </div>
                 )
             },
+        },
+        {
+            accessorKey: "date",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Fecha" className="justify-center" />,
+            cell: ({ row }) => (
+                <div className="flex justify-center w-full">
+                    <DataCell.Date value={row.getValue("date")} />
+                </div>
+            ),
         },
         {
             id: "flow",
@@ -204,7 +205,6 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                         return (
                             <DataCell.ContactLink
                                 contactId={data.id}
-                                className="text-[11px] font-bold"
                             >
                                 {data.label}
                             </DataCell.ContactLink>
@@ -214,14 +214,13 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                         const accountId = m.movement_type === 'INBOUND' && data === destData ? m.to_account : (m.movement_type === 'OUTBOUND' && data === sourceData ? m.from_account : (m.movement_type === 'TRANSFER' || m.movement_type === 'ADJUSTMENT' ? (data === sourceData ? m.from_account : m.to_account) : null));
                         return (
                             <DataCell.Link
-                                onClick={() => openTreasuryAccount(accountId)}
-                                className="text-[11px] font-bold"
+                                onClick={() => { if (accountId) openEntity('treasury.treasuryaccount', accountId) }}
                             >
                                 {data.label}
                             </DataCell.Link>
                         );
                     }
-                    return <DataCell.Secondary className="text-[11px] font-bold opacity-70"> {/* intentional: badge density */} {data.label}</DataCell.Secondary>;
+                    return <DataCell.Text>{data.label}</DataCell.Text>;
                 };
 
                 return (
@@ -238,9 +237,9 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
             header: ({ column }) => <DataTableColumnHeader column={column} title="Método" className="justify-center" />,
             cell: ({ row }) => (
                 <div className="flex justify-center w-full">
-                    <DataCell.Secondary className="uppercase font-bold tracking-tighter">
+                    <DataCell.Text>
                         {row.original.payment_method_display}
-                    </DataCell.Secondary>
+                    </DataCell.Text>
                 </div>
             )
         },
@@ -253,7 +252,7 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                 const signedAmount = type === 'OUTBOUND' ? -amount : amount
                 return (
                     <div className="flex justify-center w-full">
-                        <DataCell.Currency value={signedAmount} className="font-bold" />
+                        <DataCell.Currency value={signedAmount} />
                     </div>
                 )
             },
@@ -266,13 +265,13 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
                 return (
                     <div className="flex justify-center w-full">
                         {session ? (
-                            <div className="text-[10px] text-info font-medium">
+                            <DataCell.Text >
                                 POS #{session}
-                            </div>
+                            </DataCell.Text>
                         ) : (
-                            <div className="text-[10px] text-muted-foreground font-medium">
+                            <DataCell.Text>
                                 SISTEMA
-                            </div>
+                            </DataCell.Text>
                         )}
                     </div>
                 )
@@ -281,58 +280,134 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
         {
             accessorKey: "created_by_name",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Usuario" className="justify-center" />,
-            cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <span className="text-xs text-muted-foreground truncate max-w-[100px]">
-                        {row.getValue("created_by_name")}
-                    </span>
-                </div>
-            ),
+            cell: ({ row }) => {
+                const m = row.original
+                if (!m.created_by) return <DataCell.Secondary>-</DataCell.Secondary>
+                return (
+                    <DataCell.Entity
+                        entityLabel="core.user"
+                        data={{ id: m.created_by, username: m.created_by_name }}
+                        size="sm"
+                    />
+                )
+            },
         },
         createActionsColumn<TreasuryMovement>({
             renderActions: (item) => (
-                <DataCell.Action icon={Eye} title="Ver Detalle" onClick={() => handleViewDetails(item.id)} />
+                <DataCell.Action action="view" onClick={() => handleViewDetails(item.id)} />
             ),
         })
-    ], [openTreasuryAccount, handleViewDetails])
+    ], [openEntity, handleViewDetails])
 
     return (
-        <div className="space-y-6">
-            <Suspense fallback={<FormSkeleton />}>
-                <CashMovementModal
-                    open={openModal}
-                    onOpenChange={(open: boolean) => setOpenModal(open)}
-                    onSuccess={refetch}
-                />
-            </Suspense>
+        <div className="space-y-6 h-full flex flex-col">
+            <SkeletonShell isLoading={isLoading} ariaLabel="Cargando modal de movimiento de tesorería">
+                <Suspense fallback={<div />}>
+                    <CashMovementModal
+                        open={openModal}
+                        onOpenChange={(open: boolean) => setOpenModal(open)}
+                        onSuccess={refetch}
+                    />
+                </Suspense>
+            </SkeletonShell>
 
-            <DataTable
-                columns={columns}
-                data={movements}
-                isLoading={isLoading}
-                variant="embedded"
-                leftAction={<SmartSearchBar searchDef={treasuryMovementsSearchDef} placeholder="Filtrar movimientos..." />}
-                createAction={createAction}
-                emptyState={{
-                    context: "finance",
-                    title: "No hay movimientos",
-                    description: "Aún no se han registrado ingresos o egresos de fondos en el sistema para el periodo actual.",
+            <div className="flex-1 min-h-0">
+                <DataTableView
+                    entityLabel="treasury.treasurymovement"
+                    columns={columns}
+                    data={movements}
+                    isLoading={isLoading}
+                    variant="embedded"
+                    manualPagination
+                    pageCount={page ? Math.ceil(page.count / page.pageSize) : 0}
+                    rowCount={totalCount}
+                    pagination={pageState}
+                    onPaginationChange={setPageState}
+                    leftAction={<SmartSearchBar searchDef={treasuryMovementsSearchDef} placeholder="Buscar movimientos..." className="w-full" />}
+                    createAction={createAction}
+                    emptyState={{
+                        context: "finance",
+                        title: "No hay movimientos",
+                        description: "Aún no se han registrado ingresos o egresos de fondos en el sistema para el periodo actual.",
 
-                }}
-            />
-
-            <Suspense fallback={<FormSkeleton />}>
-                <TransactionViewModal
-                    open={detailsOpen}
-                    onOpenChange={(open) => {
-                        setDetailsOpen(open)
-                        if (!open) clearSelection()
                     }}
-                    type="payment"
-                    id={selectedMovementId}
-                    view="details"
+                    renderCustomView={createEntityCardView('treasury.treasurymovement', {
+                        renderCard: (m) => {
+                            const type = m.movement_type
+                            const isWriteOff = m.payment_method === 'WRITE_OFF'
+
+                            let status = "info" as any
+                            let label = m.movement_type_display
+
+                            if (isWriteOff) {
+                                status = "voided"
+                                label = "Castigo"
+                            } else if (type === 'INBOUND') {
+                                status = "received"
+                                label = "Depósito"
+                            } else if (type === 'OUTBOUND') {
+                                status = "sent"
+                                label = "Retiro"
+                            } else if (type === 'TRANSFER' || type === 'ADJUSTMENT') {
+                                status = "in_progress"
+                                label = type === 'TRANSFER' ? "Traspaso" : "Ajuste"
+                            }
+
+                            let sourceLabel = m.partner_name || m.from_account_name || 'Origen'
+                            let destLabel = m.to_account_name || m.partner_name || 'Destino'
+
+                            if (type === 'INBOUND') {
+                                sourceLabel = m.partner_name || 'Particular'
+                                destLabel = m.to_account_name || 'Caja'
+                            } else if (type === 'OUTBOUND') {
+                                sourceLabel = m.from_account_name || 'Caja'
+                                destLabel = m.partner_name || 'Particular'
+                            } else if (type === 'TRANSFER' || type === 'ADJUSTMENT') {
+                                sourceLabel = m.from_account_name || 'Origen'
+                                destLabel = m.to_account_name || 'Destino'
+                            }
+
+                            const amount = typeof m.amount === 'string' ? parseFloat(m.amount) : m.amount
+                            const signedAmount = type === 'OUTBOUND' ? -amount : amount
+
+                            return (
+                                <EntityCard key={m.id} onClick={() => handleViewDetails(m.id)}>
+                                    <EntityCard.Header
+                                        title={`Movimiento ${m.display_id}`}
+                                        subtitle={m.date}
+                                        trailing={
+                                            <div className="flex flex-col items-end gap-2">
+                                                <StatusBadge status={status} label={label} size="sm" className="uppercase font-bold tracking-tight" />
+                                                <DataCell.Currency value={signedAmount} />
+                                            </div>
+                                        }
+                                    />
+                                    <EntityCard.Body>
+                                        <EntityCard.Field label="Origen" value={sourceLabel} />
+                                        <EntityCard.Field label="Destino" value={destLabel} />
+                                        <EntityCard.Field label="Método" value={m.payment_method_display} />
+                                        <EntityCard.Field label="Usuario" value={m.created_by_name} />
+                                    </EntityCard.Body>
+                                </EntityCard>
+                            )
+                        }
+                    })}
                 />
-            </Suspense>
+            </div>
+
+            <SkeletonShell isLoading={isLoading} ariaLabel="Cargando vista de detalle de movimiento">
+                {selectedMovementId && (
+                    <PaymentDrawer
+                        paymentId={selectedMovementId}
+                        mode="view"
+                        open={detailsOpen}
+                        onOpenChange={(open) => {
+                            setDetailsOpen(open)
+                            if (!open) clearSelection()
+                        }}
+                    />
+                )}
+            </SkeletonShell>
         </div>
     )
 }

@@ -1,22 +1,22 @@
 "use client"
+import { formatCurrency } from "@/lib/money"
 
 import { useState } from "react"
-import { BaseModal } from "@/components/shared/BaseModal"
+
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+import { BaseModal, Chip } from '@/components/shared'
 import {
     DollarSign,
     Calendar,
     History,
-    ArrowRight,
     CheckCircle2,
     CreditCard,
     AlertCircle
 } from "lucide-react"
-import { formatCurrency, cn } from "@/lib/utils"
+import { cn } from "@/lib/utils"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
-import { PaymentModal } from "@/features/treasury/components/PaymentModal"
+import { PaymentModal } from "@/features/treasury"
 import { TaxDeclaration, TaxPaymentData } from "../types"
 
 interface F29PaymentModalProps {
@@ -123,9 +123,9 @@ export function F29PaymentModal({
                                                     </div>
                                                 </div>
                                             </div>
-                                            <Badge variant="outline" className="text-[10px] font-bold uppercase">
+                                            <Chip size="xs" intent="neutral">
                                                 {payment.payment_method_display}
-                                            </Badge>
+                                            </Chip>
                                         </div>
                                     ))}
                                 </div>

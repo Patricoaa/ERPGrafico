@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db import models, transaction
 from django.utils import timezone
+from django.contrib.contenttypes.models import ContentType
 from decimal import Decimal
 from core.mixins import AuditHistoryMixin
 from .models import Contact
@@ -332,7 +333,9 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                 entry = JournalEntry.objects.create(
                     description=f"Castigo de deuda incobrable: {contact.name}",
                     reference=f"CASTIGO-{contact.code}",
-                    status='POSTED'
+                    status='POSTED',
+                    source_content_type=ContentType.objects.get_for_model(Contact),
+                    source_object_id=contact.id,
                 )
                 
                 # Debit: Expense (Loss)
@@ -464,7 +467,9 @@ class ContactViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                 entry = JournalEntry.objects.create(
                     description=f"Recuperación de deuda castigada: {contact.name}",
                     reference=f"RECUP-{contact.code}",
-                    status='POSTED'
+                    status='POSTED',
+                    source_content_type=ContentType.objects.get_for_model(Contact),
+                    source_object_id=contact.id,
                 )
                 
                 # Debit: Cash/Bank

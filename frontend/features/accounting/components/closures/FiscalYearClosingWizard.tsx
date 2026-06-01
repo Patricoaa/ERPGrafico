@@ -1,5 +1,6 @@
+import { formatCurrency } from "@/lib/money"
 import React, { useState, useEffect, Suspense, lazy, useMemo } from 'react';
-import { GenericWizard, WizardStep } from '@/components/shared/GenericWizard';
+import {SkeletonShell, LabeledContainer, CancelButton, SubmitButton, BaseModal, GenericWizard, WizardStep} from '@/components/shared';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -15,10 +16,7 @@ import {
     Wallet
 } from 'lucide-react';
 import { FiscalYearPreviewResult } from '../../types';
-import { formatCurrency } from '@/lib/utils';
 import { cn } from '@/lib/utils';
-import { TableSkeleton, LabeledContainer, CancelButton, SubmitButton, IconButton } from '@/components/shared';
-import { BaseModal } from '@/components/shared/BaseModal';
 
 // Lazy load TrialBalanceView
 const TrialBalanceView = lazy(() => import('../reports/TrialBalanceView').then(m => ({ default: m.TrialBalanceView })));
@@ -273,12 +271,8 @@ export function FiscalYearClosingWizard({
             open={isOpen}
             onOpenChange={onClose}
             onClose={onClose}
-            title={
-                <div className="flex items-center gap-2">
-                    <Settings2 className="h-5 w-5 text-primary" />
-                    <span>Cierre del Ejercicio {year}</span>
-                </div>
-            }
+            icon={Settings2}
+            title={`Cierre del Ejercicio ${year}`}
             steps={steps}
             onComplete={handleConfirm}
             isCompleting={isLoading}
@@ -292,13 +286,15 @@ export function FiscalYearClosingWizard({
         <BaseModal
             open={showTrialBalance}
             onOpenChange={setShowTrialBalance}
+            icon={Scale}
             title={`Balance de Comprobación - Ejercicio ${year}`}
+            description="Resumen de sumas y saldos del ejercicio contable."
             size="xl"
             hideScrollArea={true}
             contentClassName="p-0"
         >
             <div className="h-full flex flex-col p-4">
-                <Suspense fallback={<TableSkeleton rows={10} columns={5} />}>
+                <Suspense fallback={<SkeletonShell isLoading ariaLabel="Cargando..." />}>
                     <TrialBalanceView />
                 </Suspense>
             </div>

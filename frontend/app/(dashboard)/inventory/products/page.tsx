@@ -1,8 +1,8 @@
 import { Metadata } from "next"
-import { Suspense } from "react"
+import { redirect } from "next/navigation"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
-import { ProductList, CategoryList, PricingRuleList, SubscriptionsView } from "@/features/inventory"
-import { TableSkeleton, ToolbarCreateButton } from "@/components/shared"
+import { ProductClientView, CategoryClientView, PricingRuleClientView, SubscriptionsView } from "@/features/inventory"
+import { ToolbarCreateButton, FadeIn } from "@/components/shared"
 
 export const metadata: Metadata = {
     title: "Productos | ERPGrafico",
@@ -22,6 +22,10 @@ export default async function UnifiedProductsPage({ searchParams }: PageProps) {
         activeTab = "products"
     }
 
+    if (!resolvedParams.tab) {
+        redirect('/inventory/products?tab=products')
+    }
+
     const getCreateAction = (tab: string) => {
         const actionMap: Record<string, { label: string; href: string }> = {
             products: { label: "Nuevo Producto", href: "/inventory/products?tab=products&modal=new" },
@@ -36,40 +40,40 @@ export default async function UnifiedProductsPage({ searchParams }: PageProps) {
     const createAction = getCreateAction(activeTab)
 
     return (
-        <Tabs value={activeTab} className="space-y-4 pt-2">
-            <div className="min-h-[400px]">
-                <TabsContent value="products" className="mt-0 outline-none">
-                    <Suspense fallback={<TableSkeleton rows={10} columns={6} />}>
-                        <ProductList
+        <Tabs value={activeTab} className="space-y-4 pt-2 flex flex-col flex-1 min-h-0">
+            <div className="flex-1 min-h-0">
+                <TabsContent value="products" className="h-full mt-0 outline-none">
+                    <FadeIn className="h-full">
+                        <ProductClientView
                             externalOpen={activeTab === 'products' && resolvedParams.modal === 'new'}
                             createAction={activeTab === 'products' ? createAction : null}
                         />
-                    </Suspense>
+                    </FadeIn>
                 </TabsContent>
-                <TabsContent value="categories" className="mt-0 outline-none">
-                    <Suspense fallback={<TableSkeleton rows={10} columns={6} />}>
-                        <CategoryList
+                <TabsContent value="categories" className="h-full mt-0 outline-none">
+                    <FadeIn className="h-full">
+                        <CategoryClientView
                             externalOpen={activeTab === 'categories' && resolvedParams.modal === 'new'}
                             createAction={activeTab === 'categories' ? createAction : null}
                         />
-                    </Suspense>
+                    </FadeIn>
                 </TabsContent>
-                <TabsContent value="pricing-rules" className="mt-0 outline-none">
-                    <Suspense fallback={<TableSkeleton rows={10} columns={6} />}>
-                        <PricingRuleList
+                <TabsContent value="pricing-rules" className="h-full mt-0 outline-none">
+                    <FadeIn className="h-full">
+                        <PricingRuleClientView
                             externalOpen={activeTab === 'pricing-rules' && resolvedParams.modal === 'new'}
                             createAction={activeTab === 'pricing-rules' ? createAction : null}
                         />
-                    </Suspense>
+                    </FadeIn>
                 </TabsContent>
-                <TabsContent value="subscriptions" className="mt-0 outline-none">
-                    <Suspense fallback={<TableSkeleton rows={10} columns={6} />}>
+                <TabsContent value="subscriptions" className="h-full mt-0 outline-none">
+                    <FadeIn className="h-full">
                         <SubscriptionsView
                             hideHeader
                             externalOpen={activeTab === 'subscriptions' && resolvedParams.modal === 'new'}
                             createAction={activeTab === 'subscriptions' ? createAction : null}
                         />
-                    </Suspense>
+                    </FadeIn>
                 </TabsContent>
             </div>
         </Tabs>

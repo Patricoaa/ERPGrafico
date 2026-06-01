@@ -1,59 +1,40 @@
 "use client"
 
-import React, { useState, useEffect, useCallback } from "react"
+import { formatCurrency } from "@/lib/money"
+
+import React, { useState, useMemo, useEffect } from "react"
 import {
-    getBlacklistedPortfolio,
     getContactCreditLedger,
     unblockContact,
     recoverDebt
 } from '@/features/credits/api/creditsApi'
 import { CreditContact, CreditLedgerEntry } from '@/features/credits/api/creditsApi'
-import { formatCurrency } from "@/lib/utils"
-import { DataTable } from "@/components/ui/data-table"
-import { type Table as ReactTable, type Row, type HeaderGroup, type Header, type Cell, ColumnDef, flexRender } from "@tanstack/react-table"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import {SmartSearchBar, useClientSearch} from '@/components/shared'
+import { creditContactSearchDef } from "../searchDef"
+import { useBlacklistedPortfolio } from "../hooks/useCredits"
+
+import { DataTable } from '@/components/shared'
+import { ColumnDef } from "@tanstack/react-table"
+import { DataTableColumnHeader } from '@/components/shared'
 
 import { Button } from "@/components/ui/button"
-import { UserCheck, DollarSign, AlertCircle } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { UserCheck, DollarSign, AlertCircle, ChevronDown, ChevronRight } from "lucide-react"
 
 import { toast } from "sonner"
-import { ExpandableTableRow, TableSkeleton } from "@/components/shared"
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+import { SkeletonShell, ActionConfirmModal } from "@/components/shared"
 import { Input } from "@/components/ui/input"
-import { EmptyState } from "@/components/shared/EmptyState"
-import { DataCell } from "@/components/ui/data-table-cells"
-import { StatusBadge } from "@/components/shared/StatusBadge"
+
+import { DataCell } from '@/components/shared'
 import { formatEntityDisplay } from "@/lib/entity-registry"
 
 // ─── Sub-components ──────────────────────────────────────────────────────────
 
-const agingBg: Record<string, string> = {
-    'written_off': 'bg-destructive/10 text-destructive border-destructive/20',
-    'current': 'bg-success/10 text-success border-success/20',
-    'overdue_30': 'bg-warning/10 text-warning border-warning/20',
-    'overdue_60': 'bg-warning/10 text-warning border-warning/20',
-    'overdue_90': 'bg-destructive/10 text-destructive border-destructive/20',
-    'overdue_90plus': 'bg-destructive/20 text-destructive border-destructive/30',
-}
-
-function ExpandableBlacklistRow({ row, onRefresh }: { row: Row<CreditContact>, onRefresh: () => void }) {
-    const contact = row.original as CreditContact
+function BlacklistContactPanel({ contact, onRefresh }: { contact: CreditContact, onRefresh: () => void }) {
     const [ledger, setLedger] = useState<CreditLedgerEntry[] | null>(null)
     const [loadingLedger, setLoadingLedger] = useState(false)
     const [unblocking, setUnblocking] = useState(false)
     const [recoveryAmount, setRecoveryAmount] = useState("")
     const [showRecoveryDialog, setShowRecoveryDialog] = useState(false)
-
 
     const handleUnblock = async () => {
         setUnblocking(true)
@@ -85,24 +66,21 @@ function ExpandableBlacklistRow({ row, onRefresh }: { row: Row<CreditContact>, o
         }
     }
 
+    // Lazy load ledger on first expansion
+    useEffect(() => {
+        if (ledger === null && !loadingLedger) {
+            setLoadingLedger(true)
+            getContactCreditLedger(contact.id, true)
+                .then(setLedger)
+                .catch((err) => {
+                    console.error("Error fetching credit ledger:", err)
+                })
+                .finally(() => setLoadingLedger(false))
+        }
+    }, [ledger, loadingLedger, contact.id])
+
     return (
-        <ExpandableTableRow
-            row={row}
-            cellClassName="py-3 px-4"
-            onExpand={async (isExpanding) => {
-                if (isExpanding && !ledger) {
-                    setLoadingLedger(true)
-                    try {
-                        const data = await getContactCreditLedger(contact.id, true)
-                        setLedger(data)
-                    } catch (error) {
-                        console.error("Error fetching credit ledger:", error)
-                    } finally {
-                        setLoadingLedger(false)
-                    }
-                }
-            }}
-        >
+        <>
             <div className="mb-6 flex items-center justify-between gap-4">
                 <div className="flex items-center gap-2">
                     <AlertCircle className="h-4 w-4 text-destructive" />
@@ -138,7 +116,7 @@ function ExpandableBlacklistRow({ row, onRefresh }: { row: Row<CreditContact>, o
             </div>
 
             {loadingLedger ? (
-                <TableSkeleton rows={2} />
+                <SkeletonShell isLoading ariaLabel="Cargando..." />
             ) : ledger && ledger.length > 0 ? (
                 <div className="overflow-x-auto">
                     <table className="w-full text-left">
@@ -171,9 +149,7 @@ function ExpandableBlacklistRow({ row, onRefresh }: { row: Row<CreditContact>, o
                                         <DataCell.Currency value={entry.balance} className="font-bold" />
                                     </td>
                                     <td className="py-2 text-center">
-                                        <div className="flex justify-center">
-                                            <StatusBadge status={String(entry.aging_bucket).toUpperCase()} />
-                                        </div>
+                                        <DataCell.Status status={String(entry.aging_bucket).toUpperCase()} />
                                     </td>
                                 </tr>
                             ))}
@@ -184,60 +160,60 @@ function ExpandableBlacklistRow({ row, onRefresh }: { row: Row<CreditContact>, o
                 <p className="text-[12px] text-muted-foreground italic text-center py-4">Sin registros de deudas castigadas.</p>
             )}
 
-            <AlertDialog open={showRecoveryDialog} onOpenChange={setShowRecoveryDialog}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle className="font-black">Recuperación de Deuda</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            Ingrese el monto recaudado para este cliente incobrable.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <div className="py-4">
-                        <Input
-                            type="number"
-                            placeholder="Ingrese monto..."
-                            value={recoveryAmount}
-                            onChange={(e) => setRecoveryAmount(e.target.value)}
-                            className="font-mono text-lg"
-                        />
+            <ActionConfirmModal
+                open={showRecoveryDialog}
+                onOpenChange={setShowRecoveryDialog}
+                onConfirm={handleRecover}
+                title="Recuperación de Deuda"
+                description={
+                    <div className="space-y-4">
+                        <p>Ingrese el monto recaudado para este cliente incobrable.</p>
+                        <div className="py-2">
+                            <Input
+                                type="number"
+                                placeholder="Ingrese monto..."
+                                value={recoveryAmount}
+                                onChange={(e) => setRecoveryAmount(e.target.value)}
+                                className="font-mono text-lg text-foreground bg-background"
+                            />
+                        </div>
                     </div>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel className="font-bold">Cancelar</AlertDialogCancel>
-                        <AlertDialogAction
-                            className="bg-primary font-bold"
-                            onClick={handleRecover}
-                            disabled={!recoveryAmount}
-                        >
-                            Registrar Pago
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
-        </ExpandableTableRow>
+                }
+                variant="default"
+                confirmText="Registrar Pago"
+            />
+        </>
     )
 }
 
 export function BlacklistView() {
-    const [data, setData] = useState<{ contacts?: CreditContact[] } | null>(null)
-    const [loading, setLoading] = useState(true)
+    const { contacts: rawContacts, isLoading: loading, refetch: fetchData } = useBlacklistedPortfolio()
+    const { filterFn } = useClientSearch<CreditContact>(creditContactSearchDef)
+    const contacts = useMemo(() => filterFn(rawContacts), [rawContacts, filterFn])
 
-    const fetchData = useCallback(async () => {
-        setLoading(true)
-        try {
-            const res = await getBlacklistedPortfolio()
-            setData(res)
-        } catch (error) {
-            console.error("Error fetching blacklist:", error)
-        } finally {
-            setLoading(false)
-        }
-    }, [])
-
-    useEffect(() => {
-        fetchData()
-    }, [fetchData])
-
-    const columns: ColumnDef<CreditContact>[] = [
+    const columns = useMemo<ColumnDef<CreditContact>[]>(() => [
+        {
+            id: "expander",
+            header: () => null,
+            cell: ({ row }) => (
+                <button
+                    onClick={(e) => {
+                        e.stopPropagation()
+                        row.toggleExpanded()
+                    }}
+                    className="p-1 text-muted-foreground hover:text-foreground transition-colors"
+                >
+                    {row.getIsExpanded() ? (
+                        <ChevronDown className="h-4 w-4" />
+                    ) : (
+                        <ChevronRight className="h-4 w-4" />
+                    )}
+                </button>
+            ),
+            size: 40,
+            enableSorting: false,
+            enableHiding: false,
+        },
         {
             accessorKey: "name",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Cliente" className="justify-center" />,
@@ -261,60 +237,31 @@ export function BlacklistView() {
             header: ({ column }) => <DataTableColumnHeader column={column} title="Bloqueado desde" className="justify-center text-muted-foreground" />,
             cell: ({ row }) => (
                 <div className="flex justify-center w-full">
-                    <div className="text-center text-[11px] text-muted-foreground font-medium">{row.original.credit_last_evaluated ? new Date(row.original.credit_last_evaluated).toLocaleDateString() : "—"}</div>
+                    <DataCell.Date value={row.original.credit_last_evaluated} />
                 </div>
             ),
         }
-    ]
-
-    const contacts = data?.contacts || []
+    ], [])
 
     return (
-        <div className="space-y-6">
-            <DataTable
-                columns={columns}
-                data={contacts}
-                useAdvancedFilter
-                searchPlaceholder="Buscar por cliente o RUT..."
-                globalFilterFields={["name", "tax_id"]}
-                variant="embedded"
-                isLoading={loading}
-                renderCustomView={(table: ReactTable<CreditContact>) => {
-                    const rows = table.getRowModel().rows
-                    if (rows.length === 0 && !loading) {
-                        return (
-                            <EmptyState
-                                context="search"
-                                title="Lista Negra Vacía"
-                                description="No hay clientes bloqueados o en historial de castigos actualmente."
-                            />
-                        )
-                    }
-                    return (
-                        <div className="overflow-x-auto pb-4">
-                            <table className="w-full text-left">
-                                <thead className="border-b border-border/50">
-                                    {table.getHeaderGroups().map((headerGroup: HeaderGroup<CreditContact>) => (
-                                        <tr key={headerGroup.id}>
-                                            {headerGroup.headers.map((header: Header<CreditContact, unknown>) => (
-                                                <th key={header.id} className="px-4 py-3 text-muted-foreground font-black text-[10px] uppercase tracking-widest whitespace-nowrap">
-                                                    {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
-                                                </th>
-                                            ))}
-                                            <th className="px-3 py-3 w-12" />
-                                        </tr>
-                                    ))}
-                                </thead>
-                                <tbody className="divide-y divide-border/50">
-                                    {rows.map((row: Row<CreditContact>) => (
-                                        <ExpandableBlacklistRow key={row.id} row={row} onRefresh={fetchData} />
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    )
-                }}
-            />
+        <div className="space-y-6 h-full flex flex-col">
+            <div className="flex-1 min-h-0">
+                <DataTable
+                    columns={columns}
+                    data={contacts}
+                    variant="embedded"
+                    isLoading={loading}
+                    leftAction={<SmartSearchBar searchDef={creditContactSearchDef} placeholder="Cliente o RUT..." className="w-full" />}
+                    renderSubComponent={(row) => (
+                        <BlacklistContactPanel contact={row.original} onRefresh={fetchData} />
+                    )}
+                    emptyState={{
+                        context: "search",
+                        title: "Lista Negra Vacía",
+                        description: "No hay clientes bloqueados o en historial de castigos actualmente.",
+                    }}
+                />
+            </div>
         </div>
     )
 }

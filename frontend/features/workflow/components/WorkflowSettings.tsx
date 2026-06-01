@@ -5,7 +5,6 @@ import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { useQueryClient } from "@tanstack/react-query"
-import api from "@/lib/api"
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { UserSelector } from "@/components/selectors/UserSelector"
@@ -14,7 +13,7 @@ import {
     Settings, AlertCircle, CheckCircle2, User, Users, Loader2,
     CalendarClock, BellRing, UserCheck,
 } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
+import { Chip, FadeIn } from "@/components/shared"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
@@ -30,6 +29,13 @@ import {
     workflowKeys,
     type WorkflowRecurrentSettings,
 } from "../hooks/useWorkflowQueries"
+import {
+    useUpdateAssignmentRule,
+    useCreateAssignmentRule,
+    useUpdateWorkflowSettings,
+    useUpdateNotificationRule,
+    useCreateNotificationRule,
+} from "../hooks/useWorkflowMutations"
 
 // ─── Static data ──────────────────────────────────────────────────────────────
 
@@ -216,9 +222,9 @@ function RowShell({
                     <div className="space-y-0.5">
                         <div className="flex items-center gap-2">
                             <h3 className="text-sm font-semibold leading-none">{name}</h3>
-                            <Badge variant="outline" className="h-4 px-1 text-[9px] font-mono text-muted-foreground uppercase opacity-50">
+                            <Chip size="xs" intent="neutral" className="opacity-50">
                                 {isRecurrent ? "RECURRENTE" : badgeLabel}
-                            </Badge>
+                            </Chip>
                         </div>
                         <p className="text-[10px] text-muted-foreground line-clamp-1">{description}</p>
                     </div>
@@ -252,6 +258,9 @@ const AssignmentRuleRow = React.memo(function AssignmentRuleRow({ taskType, rule
         }
     }, [rule, form])
 
+    const updateMutation = useUpdateAssignmentRule()
+    const createMutation = useCreateAssignmentRule()
+    
     const onSave = useCallback(async (data: AssignmentValues) => {
         const current = ruleRef.current
         const payload = {
@@ -260,12 +269,11 @@ const AssignmentRuleRow = React.memo(function AssignmentRuleRow({ taskType, rule
             assigned_group: data.mode === "group" ? (data.assigned_group ?? "") : "",
         }
         if (current?.id) {
-            await api.patch(`/workflow/assignment-rules/${current.id}/`, payload)
+            await updateMutation.mutateAsync({ id: current.id, data: payload })
         } else {
-            await api.post("/workflow/assignment-rules/", payload)
+            await createMutation.mutateAsync(payload)
         }
-        queryClient.invalidateQueries({ queryKey: workflowKeys.rules() })
-    }, [taskType.id, queryClient])
+    }, [taskType.id])
 
     const { status } = useAutoSaveForm({ form, onSave, debounceMs: 400 })
     const mode = form.watch("mode")
@@ -325,6 +333,9 @@ const RecurrentRuleRow = React.memo(function RecurrentRuleRow({ taskType, rule, 
         }
     }, [rule, assignmentForm])
 
+    const updateMutation = useUpdateAssignmentRule()
+    const createMutation = useCreateAssignmentRule()
+    
     const onSaveAssignment = useCallback(async (data: AssignmentValues) => {
         const current = ruleRef.current
         const payload = {
@@ -333,12 +344,11 @@ const RecurrentRuleRow = React.memo(function RecurrentRuleRow({ taskType, rule, 
             assigned_group: data.mode === "group" ? (data.assigned_group ?? "") : "",
         }
         if (current?.id) {
-            await api.patch(`/workflow/assignment-rules/${current.id}/`, payload)
+            await updateMutation.mutateAsync({ id: current.id, data: payload })
         } else {
-            await api.post("/workflow/assignment-rules/", payload)
+            await createMutation.mutateAsync(payload)
         }
-        queryClient.invalidateQueries({ queryKey: workflowKeys.rules() })
-    }, [taskType.id, queryClient])
+    }, [taskType.id])
 
     const { status: assignmentStatus } = useAutoSaveForm({ form: assignmentForm, onSave: onSaveAssignment, debounceMs: 400 })
 
@@ -354,10 +364,12 @@ const RecurrentRuleRow = React.memo(function RecurrentRuleRow({ taskType, rule, 
         }
     }, [dayValue, dayForm])
 
+    const updateWorkflowSettingsMutation = useUpdateWorkflowSettings()
+    
     const onSaveDay = useCallback(async (data: DayValues) => {
-        await api.patch("/workflow/settings/current/", { [taskType.dayField]: data.value })
+        await updateWorkflowSettingsMutation.mutateAsync({ [taskType.dayField]: data.value })
         queryClient.invalidateQueries({ queryKey: workflowKeys.recurrentSettings() })
-    }, [taskType.dayField, queryClient])
+    }, [taskType.dayField])
 
     const { status: dayStatus } = useAutoSaveForm({
         form: dayForm,
@@ -434,8 +446,10 @@ const MarginThresholdInput = React.memo(function MarginThresholdInput({ initialV
         }
     }, [initialValue, form])
 
+    const updateWorkflowSettingsMutation = useUpdateWorkflowSettings()
+    
     const onSave = useCallback(async (data: ThresholdValues) => {
-        await api.patch("/workflow/settings/current/", { low_margin_threshold_percent: data.value })
+        await updateWorkflowSettingsMutation.mutateAsync({ low_margin_threshold_percent: data.value })
     }, [])
 
     const { status } = useAutoSaveForm({ form, onSave, debounceMs: 400 })
@@ -494,6 +508,9 @@ const NotificationRuleRow = React.memo(function NotificationRuleRow({ type, rule
         }
     }, [rule, form])
 
+    const updateNotificationRuleMutation = useUpdateNotificationRule()
+    const createNotificationRuleMutation = useCreateNotificationRule()
+    
     const onSave = useCallback(async (data: NotificationValues) => {
         const current = ruleRef.current
         const payload = {
@@ -503,12 +520,11 @@ const NotificationRuleRow = React.memo(function NotificationRuleRow({ type, rule
             notify_creator: data.notify_creator,
         }
         if (current?.id) {
-            await api.patch(`/workflow/notification-rules/${current.id}/`, payload)
+            await updateNotificationRuleMutation.mutateAsync({ id: current.id, data: payload })
         } else {
-            await api.post("/workflow/notification-rules/", payload)
+            await createNotificationRuleMutation.mutateAsync(payload)
         }
-        queryClient.invalidateQueries({ queryKey: workflowKeys.notificationRules() })
-    }, [type.id, queryClient])
+    }, [type.id])
 
     const { status } = useAutoSaveForm({ form, onSave, debounceMs: 400 })
     const mode = form.watch("mode")
@@ -611,95 +627,96 @@ export function WorkflowSettings({ activeTab }: WorkflowSettingsProps) {
     return (
         <div className="space-y-4">
             <Tabs value={activeTab} className="space-y-4">
-
-                <TabsContent value="approvals">
-                    <div className="grid gap-2">
-                        {TASK_TYPES.map((type) => (
-                            <AssignmentRuleRow key={type.id} taskType={type} rule={ruleByType[type.id]} />
-                        ))}
-                    </div>
-                    <Card className="border-dashed border-2 bg-muted/5 mt-4">
-                        <CardHeader>
-                            <CardTitle className="text-sm">Nota sobre Asignaciones</CardTitle>
-                            <CardDescription className="text-xs">
-                                Si se selecciona un <strong>Usuario</strong>, la tarea se asignará directamente a él.
-                                <br />
-                                Si se selecciona un <strong>Grupo</strong>, la tarea quedará en un &quot;Pool&quot; visible para todos los miembros de ese grupo, y cualquiera podrá tomarla.
-                            </CardDescription>
-                        </CardHeader>
-                    </Card>
-                </TabsContent>
-
-                <TabsContent value="tasks" className="space-y-6">
-                    <div>
-                        <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2 px-1">Tareas por Etapa (HUB)</h4>
+                <FadeIn key={activeTab}>
+                    <TabsContent value="approvals">
                         <div className="grid gap-2">
-                            {HUB_TASK_TYPES.map((type) => (
+                            {TASK_TYPES.map((type) => (
                                 <AssignmentRuleRow key={type.id} taskType={type} rule={ruleByType[type.id]} />
                             ))}
                         </div>
-                    </div>
+                        <Card className="border-dashed border-2 bg-muted/5 mt-4">
+                            <CardHeader>
+                                <CardTitle className="text-sm">Nota sobre Asignaciones</CardTitle>
+                                <CardDescription className="text-xs">
+                                    Si se selecciona un <strong>Usuario</strong>, la tarea se asignará directamente a él.
+                                    <br />
+                                    Si se selecciona un <strong>Grupo</strong>, la tarea quedará en un &quot;Pool&quot; visible para todos los miembros de ese grupo, y cualquiera podrá tomarla.
+                                </CardDescription>
+                            </CardHeader>
+                        </Card>
+                    </TabsContent>
 
-                    <div className="pt-4 border-t border-border/50">
-                        <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2 px-1">Tareas Recurrentes mensuales</h4>
-                        <div className="grid gap-2">
-                            {RECURRENT_TASK_TYPES.map((type) => (
-                                <RecurrentRuleRow
+                    <TabsContent value="tasks" className="space-y-6">
+                        <div>
+                            <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2 px-1">Tareas por Etapa (HUB)</h4>
+                            <div className="grid gap-2">
+                                {HUB_TASK_TYPES.map((type) => (
+                                    <AssignmentRuleRow key={type.id} taskType={type} rule={ruleByType[type.id]} />
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="pt-4 border-t border-border/50">
+                            <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2 px-1">Tareas Recurrentes mensuales</h4>
+                            <div className="grid gap-2">
+                                {RECURRENT_TASK_TYPES.map((type) => (
+                                    <RecurrentRuleRow
+                                        key={type.id}
+                                        taskType={type}
+                                        rule={ruleByType[type.id]}
+                                        dayValue={recurrentSettings?.[type.dayField]}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+
+                        <Card className="border-dashed border-2 bg-muted/5 mt-4">
+                            <CardHeader className="py-4">
+                                <CardTitle className="text-xs">Automatización de Tareas</CardTitle>
+                                <CardDescription className="text-[10px]">
+                                    Las tareas se generan y completan automáticamente según el flujo del sistema.
+                                    <br />
+                                    Para tareas recurrentes, el <strong>Día Gen</strong> indica cuándo se creará la tarea para el periodo anterior.
+                                </CardDescription>
+                            </CardHeader>
+                        </Card>
+                    </TabsContent>
+
+                    <TabsContent value="notif" className="space-y-6">
+                        <div className="space-y-1 px-1">
+                            <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Reglas de Notificación</h4>
+                            <p className="text-xs text-muted-foreground">Configure quién recibe las alertas de campana para eventos clave del sistema.</p>
+                        </div>
+
+                        <div className="grid gap-4">
+                            {NOTIFICATION_TYPES.map((type) => (
+                                <NotificationRuleRow
                                     key={type.id}
-                                    taskType={type}
-                                    rule={ruleByType[type.id]}
-                                    dayValue={recurrentSettings?.[type.dayField]}
+                                    type={type}
+                                    rule={notifByType[type.id]}
+                                    recurrentSettings={recurrentSettings}
                                 />
                             ))}
                         </div>
-                    </div>
 
-                    <Card className="border-dashed border-2 bg-muted/5 mt-4">
-                        <CardHeader className="py-4">
-                            <CardTitle className="text-xs">Automatización de Tareas</CardTitle>
-                            <CardDescription className="text-[10px]">
-                                Las tareas se generan y completan automáticamente según el flujo del sistema.
-                                <br />
-                                Para tareas recurrentes, el <strong>Día Gen</strong> indica cuándo se creará la tarea para el periodo anterior.
-                            </CardDescription>
-                        </CardHeader>
-                    </Card>
-                </TabsContent>
-
-                <TabsContent value="notif" className="space-y-6">
-                    <div className="space-y-1 px-1">
-                        <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Reglas de Notificación</h4>
-                        <p className="text-xs text-muted-foreground">Configure quién recibe las alertas de campana para eventos clave del sistema.</p>
-                    </div>
-
-                    <div className="grid gap-4">
-                        {NOTIFICATION_TYPES.map((type) => (
-                            <NotificationRuleRow
-                                key={type.id}
-                                type={type}
-                                rule={notifByType[type.id]}
-                                recurrentSettings={recurrentSettings}
-                            />
-                        ))}
-                    </div>
-
-                    <Card className="border-dashed border-2 bg-muted/5 mt-4">
-                        <CardHeader className="py-4">
-                            <CardTitle className="text-xs flex items-center gap-2">
-                                <UserCheck className="h-4 w-4 text-primary" />
-                                Lógica de Notificaciones
-                            </CardTitle>
-                            <CardDescription className="text-[10px] space-y-2">
-                                <p>
-                                    Si activa <strong>Notificar Creador</strong>, el usuario que inició el proceso recibirá la respuesta (ej: el cajero que solicitó crédito).
-                                </p>
-                                <p>
-                                    Los <strong>Notificadores Extra</strong> permiten que supervisores o equipos completos (vía Grupos) estén al tanto de lo que sucede, ideal para monitoreo o auditoría.
-                                </p>
-                            </CardDescription>
-                        </CardHeader>
-                    </Card>
-                </TabsContent>
+                        <Card className="border-dashed border-2 bg-muted/5 mt-4">
+                            <CardHeader className="py-4">
+                                <CardTitle className="text-xs flex items-center gap-2">
+                                    <UserCheck className="h-4 w-4 text-primary" />
+                                    Lógica de Notificaciones
+                                </CardTitle>
+                                <CardDescription className="text-[10px] space-y-2">
+                                    <p>
+                                        Si activa <strong>Notificar Creador</strong>, el usuario que inició el proceso recibirá la respuesta (ej: el cajero que solicitó crédito).
+                                    </p>
+                                    <p>
+                                        Los <strong>Notificadores Extra</strong> permiten que supervisores o equipos completos (vía Grupos) estén al tanto de lo que sucede, ideal para monitoreo o auditoría.
+                                    </p>
+                                </CardDescription>
+                            </CardHeader>
+                        </Card>
+                    </TabsContent>
+                </FadeIn>
             </Tabs>
         </div>
     )

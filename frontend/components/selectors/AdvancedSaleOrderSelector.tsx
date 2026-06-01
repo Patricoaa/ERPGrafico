@@ -2,7 +2,7 @@
 import { formatEntityDisplay, getEntityIcon } from "@/lib/entity-registry"
 
 import { useState, useEffect } from "react"
-import { Check, ChevronDown, Search, Loader2, Eye, Calendar } from "lucide-react"
+import { Check, ChevronDown, Search, Loader2, Eye } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -10,16 +10,13 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover"
-import api from "@/lib/api"
-import { useDebounce } from "@/hooks/use-debounce"
+import { useDebounce } from "@/hooks/useDebounce"
 import { format } from "date-fns"
-import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
-import { Badge } from "@/components/ui/badge"
+import { SaleOrderDrawer } from "@/features/sales/components/SaleOrderDrawer"
+
 import { useSaleOrderSearch } from "@/features/orders/hooks/useSaleOrderSearch"
-import { EmptyState } from "@/components/shared/EmptyState"
+import { EmptyState } from '@/components/shared'
 import { SaleOrder } from "@/types/entities"
-
-
 
 interface AdvancedSaleOrderSelectorProps {
     value?: string | number | null
@@ -30,6 +27,7 @@ interface AdvancedSaleOrderSelectorProps {
     label?: string
     error?: string
     className?: string
+    icon?: React.ReactNode
 }
 
 export function AdvancedSaleOrderSelector({
@@ -40,7 +38,8 @@ export function AdvancedSaleOrderSelector({
     customFilter,
     label,
     error,
-    className
+    className,
+    icon
 }: AdvancedSaleOrderSelectorProps) {
     const { orders: rawOrders, singleOrder, loading: searchLoading, fetchOrders, fetchSingleOrder } = useSaleOrderSearch()
     const [open, setOpen] = useState(false)
@@ -109,22 +108,34 @@ export function AdvancedSaleOrderSelector({
                 )}
             >
                 {label && (
-                    <legend className={cn("notched-legend", error && "text-destructive", disabled && "text-muted-foreground/50")}>
+                    <legend className={cn(
+                        "px-1.5 text-[10px] font-black uppercase tracking-[0.15em] transition-colors duration-200 notched-legend",
+                        error ? "text-destructive" : "text-muted-foreground group-focus-within:text-primary",
+                        disabled && "text-muted-foreground/50"
+                    )}>
                         {label}
                     </legend>
                 )}
-            <Popover open={open} onOpenChange={setOpen}>
-                <PopoverTrigger asChild>
-                    <Button
-                        variant="ghost"
-                        role="combobox"
-                        aria-expanded={open}
-                        disabled={disabled}
-                        className={cn(
-                            "w-full justify-between overflow-hidden h-[1.5rem] py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent",
-                            disabled && "opacity-50 cursor-not-allowed"
-                        )}
-                    >
+                
+                <div className="flex items-center w-full">
+                    {icon && (
+                        <div className="pl-2.5 flex items-center justify-center text-muted-foreground/60 group-focus-within:text-primary transition-colors shrink-0 leading-none">
+                            {icon}
+                        </div>
+                    )}
+                    <Popover open={open} onOpenChange={setOpen}>
+                        <PopoverTrigger asChild>
+                            <Button
+                                variant="ghost"
+                                role="combobox"
+                                aria-expanded={open}
+                                disabled={disabled}
+                                className={cn(
+                                    "w-full justify-between overflow-hidden h-[1.5rem] py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent",
+                                    disabled && "opacity-50 cursor-not-allowed",
+                                    icon && "pl-1.5"
+                                )}
+                            >
                         {selectedOrder ? (() => {
                             const OrderIcon = getEntityIcon('sales.saleorder');
                             return (
@@ -212,6 +223,7 @@ export function AdvancedSaleOrderSelector({
                     </div>
                 </PopoverContent>
             </Popover>
+            </div>
             </fieldset>
             {error && (
                 <p className="mt-1.5 text-[11px] font-medium text-destructive animate-in fade-in slide-in-from-top-1 w-full text-left px-1">
@@ -220,11 +232,10 @@ export function AdvancedSaleOrderSelector({
             )}
 
             {previewId && (
-                <TransactionViewModal
+                <SaleOrderDrawer
+                    id={previewId}
                     open={previewOpen}
                     onOpenChange={setPreviewOpen}
-                    type="sale_order"
-                    id={previewId}
                 />
             )}
         </div>

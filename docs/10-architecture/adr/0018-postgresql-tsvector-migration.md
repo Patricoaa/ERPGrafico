@@ -1,7 +1,14 @@
-# ADR 0018: Migración a PostgreSQL tsvector para UniversalSearch
+---
+id: 0018
+title: Migración a PostgreSQL tsvector para UniversalSearch
+status: Accepted
+date: 2026-05-10
+author: architecture-team
+---
 
-## Estado
-Implementado — 2026-05-10
+# 0018 — Migración a PostgreSQL tsvector para UniversalSearch
+
+> **Implementación:** completa al 2026-05-10.
 
 ## Contexto
 El `UniversalRegistry` introducido en el refactor de auditoría (T-03) unificó el catálogo de entidades mediante duck-typing y configuración dinámica, eliminando dependencias circulares. Sin embargo, su mecanismo de búsqueda dependía de consultas iterativas utilizando `field__icontains`, lo cual se traduce en SQL como `ILIKE '%query%'`.

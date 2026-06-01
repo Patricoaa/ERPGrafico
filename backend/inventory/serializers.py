@@ -7,12 +7,20 @@ logger = logging.getLogger(__name__)
 from .models import (
     Product, ProductCategory, Warehouse, StockMove, UoM, UoMCategory, PricingRule,
     CustomFieldTemplate, ProductCustomField,
-    Subscription, ProductAttribute, ProductAttributeValue
+    Subscription, ProductAttribute, ProductAttributeValue, ProductUoMPrice
 )
 from production.models import BillOfMaterials, BillOfMaterialsLine
 # BillOfMaterialsSerializer will be imported locally to avoid circular dependencies
 from core.serializers import AttachmentSerializer
 from .services import ProductService
+
+class ProductUoMPriceSerializer(serializers.ModelSerializer):
+    uom_name = serializers.CharField(source='uom.name', read_only=True)
+
+    class Meta:
+        model = ProductUoMPrice
+        fields = ['id', 'uom', 'uom_name', 'price_net', 'price_gross']
+
 
 class ProductAttributeSerializer(serializers.ModelSerializer):
     class Meta:
@@ -55,6 +63,14 @@ class PricingRuleSerializer(serializers.ModelSerializer):
     class Meta:
         model = PricingRule
         fields = '__all__'
+
+    def validate(self, data):
+        product = data.get('product') or getattr(self.instance, 'product', None)
+        if product and product.is_dynamic_pricing:
+            raise serializers.ValidationError({
+                "product": "No se pueden crear ni aplicar reglas de precio a un producto con precio dinámico."
+            })
+        return data
 
 class CustomFieldTemplateSerializer(serializers.ModelSerializer):
     class Meta:
@@ -121,7 +137,7 @@ class ProductSimpleSerializer(serializers.ModelSerializer):
         model = Product
         fields = [
             'id', 'internal_code', 'name', 'variant_display_name', 
-            'sale_price', 'cost_price', 'is_favorite', 'attribute_values', 'attribute_values_data',
+            'sale_price', 'cost_price', 'is_favorite', 'active', 'attribute_values', 'attribute_values_data',
             'product_type', 'requires_advanced_manufacturing', 'uom', 'uom_name', 'uom_category', 'image', 'image_thumbnail'
         ]
 
@@ -150,6 +166,7 @@ class ProductSerializer(serializers.ModelSerializer):
     
     current_stock = serializers.SerializerMethodField()
     effective_price = serializers.SerializerMethodField()
+    effective_price_net = serializers.SerializerMethodField()
     last_purchase_price = serializers.SerializerMethodField()
     manufacturable_quantity = serializers.SerializerMethodField()
     bom_cost = serializers.SerializerMethodField()
@@ -162,6 +179,9 @@ class ProductSerializer(serializers.ModelSerializer):
     qty_reserved = serializers.SerializerMethodField()
     qty_available = serializers.SerializerMethodField()
     
+    # UoM-specific prices
+    uom_prices = ProductUoMPriceSerializer(many=True, required=False)
+
     # Manufacturing fields: Support multiple BOMs
     boms = serializers.SerializerMethodField()
     product_custom_fields = ProductCustomFieldSerializer(many=True, required=False)
@@ -205,6 +225,8 @@ class ProductSerializer(serializers.ModelSerializer):
             'is_variable_amount', 'is_dynamic_pricing', 'track_inventory', 'can_be_sold', 'can_be_purchased',
             'uom', 'sale_uom', 'purchase_uom', 'allowed_sale_uoms', 'receiving_warehouse',
             'sale_price', 'sale_price_gross', 'cost_price', 'is_favorite', 'active', 'income_account', 'expense_account',
+            'price_inheritance_mode', 'price_surcharge', 'effective_price_net',
+            'uom_prices',
             'preferred_supplier', 'preferred_supplier_name',
             'category_name', 'uom_name', 'uom_category', 'sale_uom_name', 'purchase_uom_name',
             'receiving_warehouse_name', 'current_stock', 'effective_price', 'last_purchase_price',
@@ -242,14 +264,14 @@ class ProductSerializer(serializers.ModelSerializer):
         # Convert QueryDict to a dict that preserves lists for our specific fields
         if isinstance(data, QueryDict):
             ret = data.dict()  # Start with standard dict (last-value)
-            for field in ['boms', 'product_custom_fields', 'allowed_sale_uoms', 'attribute_values', 'variant_updates', 'variant_generation_selection']:
+            for field in ['boms', 'product_custom_fields', 'allowed_sale_uoms', 'attribute_values', 'variant_updates', 'variant_generation_selection', 'uom_prices']:
                 if field in data:
                     ret[field] = data.getlist(field)
         else:
             ret = data.copy() if hasattr(data, 'copy') else data
-        
+
         # Process the list fields (handle JSON strings if necessary)
-        for field in ['boms', 'product_custom_fields', 'allowed_sale_uoms', 'attribute_values', 'variant_updates', 'variant_generation_selection']:
+        for field in ['boms', 'product_custom_fields', 'allowed_sale_uoms', 'attribute_values', 'variant_updates', 'variant_generation_selection', 'uom_prices']:
             if field in ret:
                 raw_value = ret[field]
                 
@@ -304,6 +326,13 @@ class ProductSerializer(serializers.ModelSerializer):
     def get_effective_price(self, obj):
         from .services import PricingService
         return PricingService.get_product_price(obj, 1)
+
+    def get_effective_price_net(self, obj):
+        from .services import PricingService
+        if obj.parent_template_id:
+            net, _ = PricingService.resolve_variant_price(obj)
+            return net
+        return obj.sale_price
 
     def get_qty_reserved(self, obj):
         request = self.context.get('request')
@@ -395,7 +424,8 @@ class ProductSerializer(serializers.ModelSerializer):
         allowed_sale_uoms = validated_data.pop('allowed_sale_uoms', [])
         attribute_values = validated_data.pop('attribute_values', [])
         variant_generation_selection = validated_data.pop('variant_generation_selection', None)
-        
+        uom_prices_data = validated_data.pop('uom_prices', [])
+
         product = Product.objects.create(**validated_data)
         
         if allowed_sale_uoms:
@@ -413,11 +443,14 @@ class ProductSerializer(serializers.ModelSerializer):
             
         for pcf in pcf_data:
             ProductCustomField.objects.create(product=product, **pcf)
-        
+
+        for uom_price in uom_prices_data:
+            ProductUoMPrice.objects.create(product=product, **uom_price)
+
         # Handle initial variant generation
         if variant_generation_selection and product.has_variants:
             ProductService.generate_variants(product, variant_generation_selection)
-            
+
         return product
 
     def update(self, instance, validated_data):
@@ -426,6 +459,7 @@ class ProductSerializer(serializers.ModelSerializer):
         allowed_sale_uoms = validated_data.pop('allowed_sale_uoms', None)
         attribute_values = validated_data.pop('attribute_values', None)
         variant_updates = validated_data.pop('variant_updates', None)
+        uom_prices_data = validated_data.pop('uom_prices', None)
         
         # Standard update
         for attr, value in validated_data.items():
@@ -437,7 +471,21 @@ class ProductSerializer(serializers.ModelSerializer):
             
         if attribute_values is not None:
             instance.attribute_values.set(attribute_values)
-        
+
+        # Propagate parent-level fields to child variants (only for template products)
+        _VARIANT_SYNC_FIELDS = {'uom', 'purchase_uom', 'can_be_sold', 'can_be_purchased', 'category', 'track_inventory'}
+        _changed_sync = {k: v for k, v in validated_data.items() if k in _VARIANT_SYNC_FIELDS}
+        if (_changed_sync or allowed_sale_uoms is not None) and not instance.parent_template_id:
+            _children = list(Product.objects.filter(parent_template=instance))
+            if _children:
+                for _child in _children:
+                    for _field, _value in _changed_sync.items():
+                        setattr(_child, _field, _value)
+                    _child.save()
+                if allowed_sale_uoms is not None:
+                    for _child in _children:
+                        _child.allowed_sale_uoms.set(instance.allowed_sale_uoms.all())
+
         if boms_data is not None:
             # Simple sync: Delete missing BOMs, update existing ones, create new ones.
             # However, for nested data in DRF, it's safer to either match by ID or 
@@ -480,8 +528,12 @@ class ProductSerializer(serializers.ModelSerializer):
             instance.product_custom_fields.all().delete()
             for pcf in pcf_data:
                 ProductCustomField.objects.create(product=instance, **pcf)
-        
-                
+
+        if uom_prices_data is not None:
+            instance.uom_prices.all().delete()
+            for uom_price in uom_prices_data:
+                ProductUoMPrice.objects.create(product=instance, **uom_price)
+
         if variant_updates:
             for update_data in variant_updates:
                 variant_id = update_data.get('id')
@@ -492,14 +544,16 @@ class ProductSerializer(serializers.ModelSerializer):
                     variant_product = Product.objects.get(id=variant_id, parent_template=instance)
                     
                     # Fields we allow to update via variant_updates
-                    for field in ['sale_price', 'code', 'has_bom', 'product_type']:
+                    for field in ['sale_price', 'code', 'has_bom', 'product_type',
+                                  'price_inheritance_mode', 'price_surcharge']:
                         if field in update_data:
                             setattr(variant_product, field, update_data[field])
-                    
-                    # Force has_bom for variants as per user requirement
-                    variant_product.has_bom = True
-                    variant_product.product_type = Product.Type.MANUFACTURABLE
-                    
+
+                    # When switching to INHERIT or SURCHARGE, clear any OVERRIDE price lock
+                    mode = update_data.get('price_inheritance_mode')
+                    if mode == 'INHERIT':
+                        variant_product.price_surcharge = None
+
                     # Special handlings
                     if 'sale_uom' in update_data:
                         uom_id = update_data['sale_uom']
@@ -509,12 +563,14 @@ class ProductSerializer(serializers.ModelSerializer):
                             variant_product.sale_uom = None
 
                     # Handle BOM cloning
-                    copy_bom_from_id = update_data.get('copy_bom_from')
-                    if copy_bom_from_id:
+                    copy_bom_from_raw = update_data.get('copy_bom_from')
+                    if copy_bom_from_raw:
                         from production.models import BillOfMaterials, BillOfMaterialsLine
                         try:
-                            # source_product could be the template or another variant
-                            source_product = Product.objects.get(id=copy_bom_from_id)
+                            if str(copy_bom_from_raw) == 'template':
+                                source_product = instance
+                            else:
+                                source_product = Product.objects.get(id=copy_bom_from_raw)
                             source_bom = source_product.boms.filter(active=True).first()
                             
                             if source_bom:
@@ -546,7 +602,7 @@ class ProductSerializer(serializers.ModelSerializer):
                                 if variant_product.product_type != Product.Type.MANUFACTURABLE:
                                     variant_product.product_type = Product.Type.MANUFACTURABLE
 
-                        except Product.DoesNotExist:
+                        except (Product.DoesNotExist, ValueError):
                             pass
 
                     variant_product.save()

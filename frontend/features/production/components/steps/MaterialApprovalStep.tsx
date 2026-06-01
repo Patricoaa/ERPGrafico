@@ -1,7 +1,7 @@
 "use client"
 
 import { cn } from '@/lib/utils'
-import { StatusBadge } from '@/components/shared/StatusBadge'
+import { StatusBadge } from '@/components/shared'
 import { ApprovalTaskList } from './ApprovalTaskList'
 import type { WorkOrder, WorkOrderMaterial, WorkOrderTask } from '../../types'
 

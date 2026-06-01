@@ -1,10 +1,7 @@
 "use client"
 
 import { usePathname, useSearchParams } from "next/navigation"
-import Link from "next/link"
 import { PageHeader } from "@/components/shared"
-import { Button } from "@/components/ui/button"
-import { FileText } from "lucide-react"
 
 export function HRHeader() {
     const pathname = usePathname()
@@ -40,7 +37,7 @@ export function HRHeader() {
 
     const navigation = {
         moduleName: "Recursos Humanos",
-        moduleHref: "/hr",
+        moduleHref: "/hr/employees",
         tabs,
         activeValue,
         subActiveValue,
@@ -65,14 +62,6 @@ export function HRHeader() {
 
     const config = getHeaderConfig()
 
-    const headerChildren = activeValue === 'payrolls' ? (
-        <Link href="/hr/payrolls?action=generate_drafts">
-            <Button variant="outline" size="sm" className="h-9">
-                <FileText className="mr-2 h-4 w-4" /> Generar Borradores
-            </Button>
-        </Link>
-    ) : null
-
     return (
         <PageHeader 
             title={config.title} 
@@ -80,8 +69,6 @@ export function HRHeader() {
             iconName={config.icon} 
             variant="minimal" 
             navigation={navigation}
-        >
-            {headerChildren}
-        </PageHeader>
+        />
     )
 }

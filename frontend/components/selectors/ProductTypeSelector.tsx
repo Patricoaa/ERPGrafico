@@ -1,9 +1,8 @@
 "use client"
 
-import { useState } from "react"
-import { Package, Zap, Factory, Wrench, Repeat, ChevronDown } from "lucide-react"
+import { Package, Zap, Factory, Wrench, Repeat } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select"
 import { LabeledContainer } from "@/components/shared"
 
 interface ProductTypeSelectorProps {
@@ -17,11 +16,11 @@ interface ProductTypeSelectorProps {
 }
 
 const PRODUCT_TYPES = [
-    { id: 'STORABLE', label: 'Almacenable', icon: Package, color: 'text-blue-500' },
-    { id: 'CONSUMABLE', label: 'Consumible', icon: Zap, color: 'text-amber-500' },
-    { id: 'MANUFACTURABLE', label: 'Fabricable', icon: Factory, color: 'text-emerald-500' },
-    { id: 'SERVICE', label: 'Servicio (Único)', icon: Wrench, color: 'text-purple-500' },
-    { id: 'SUBSCRIPTION', label: 'Suscripción (Recurrente)', icon: Repeat, color: 'text-rose-500' }
+    { id: 'STORABLE',       label: 'Almacenable',             icon: Package, color: 'text-info'        },
+    { id: 'CONSUMABLE',     label: 'Consumible',              icon: Zap,     color: 'text-warning'     },
+    { id: 'MANUFACTURABLE', label: 'Fabricable',              icon: Factory, color: 'text-success'     },
+    { id: 'SERVICE',        label: 'Servicio (Único)',         icon: Wrench,  color: 'text-primary'     },
+    { id: 'SUBSCRIPTION',   label: 'Suscripción (Recurrente)', icon: Repeat,  color: 'text-destructive' },
 ]
 
 export function ProductTypeSelector({
@@ -33,8 +32,6 @@ export function ProductTypeSelector({
     error,
     lockedType
 }: ProductTypeSelectorProps) {
-    const [open, setOpen] = useState(false)
-    
     const selectedType = PRODUCT_TYPES.find(t => t.id === value)
     const isDisabled = disabled || !!lockedType
 

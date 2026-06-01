@@ -2,6 +2,7 @@
 
 import React from "react"
 import { cn } from "@/lib/utils"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 
 interface ColorBarProps {
   /** Orientation of the bar. Default is 'horizontal'. */
@@ -34,7 +35,7 @@ export function ColorBar({ orientation = "horizontal", showScales = true, classN
   return (
     <div
       className={cn(
-        "flex gap-[1px] p-[1px] bg-border/20 border border-border/10 select-none pointer-events-none",
+        "flex gap-[1px] p-[1px] bg-border/20 border border-border/10 select-none",
         orientation === "vertical" ? "flex-col" : "flex-row",
         className
       )}
@@ -46,25 +47,32 @@ export function ColorBar({ orientation = "horizontal", showScales = true, classN
         >
           {showScales ? (
             SCALES.map((scale) => (
-              <div
-                key={`${cmyk.name}-${scale}`}
-                className={cn(
-                  "w-3 h-3 sm:w-4 sm:h-4 transition-opacity",
-                  orientation === "vertical" ? "w-3 sm:w-4" : "h-3 sm:h-4"
-                )}
-                style={{
-                  backgroundColor: cmyk.color,
-                  opacity: scale === 0 ? 0.05 : scale / 100,
-                }}
-                title={`${cmyk.label} ${scale}%`}
-              />
+              <Tooltip key={`${cmyk.name}-${scale}`}>
+                <TooltipTrigger asChild>
+                  <div
+                    className={cn(
+                      "w-3 h-3 sm:w-4 sm:h-4 transition-opacity",
+                      orientation === "vertical" ? "w-3 sm:w-4" : "h-3 sm:h-4"
+                    )}
+                    style={{
+                      backgroundColor: cmyk.color,
+                      opacity: scale === 0 ? 0.05 : scale / 100,
+                    }}
+                  />
+                </TooltipTrigger>
+                <TooltipContent side="top">{cmyk.label} {scale}%</TooltipContent>
+              </Tooltip>
             ))
           ) : (
-            <div
-              className={cn("w-4 h-4", orientation === "vertical" ? "w-4 h-8" : "w-8 h-4")}
-              style={{ backgroundColor: cmyk.color }}
-              title={cmyk.label}
-            />
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div
+                  className={cn("w-4 h-4", orientation === "vertical" ? "w-4 h-8" : "w-8 h-4")}
+                  style={{ backgroundColor: cmyk.color }}
+                />
+              </TooltipTrigger>
+              <TooltipContent side="top">{cmyk.label}</TooltipContent>
+            </Tooltip>
           )}
         </div>
       ))}

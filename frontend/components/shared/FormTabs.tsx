@@ -58,24 +58,33 @@ export function FormTabs({
     const effectiveListClassName = listClassName || tabsListClassName
 
     const isVertical = orientation === "vertical"
+    const isUnderline = variant === "underline" && !isVertical
 
     // Common Trigger Style.
-    const triggerStyles = cn(
-        "group relative w-auto h-auto transition-all duration-200",
-        isVertical ? "rounded-l-lg rounded-r-none" : "rounded-t-lg rounded-b-none",
-        isVertical ? "border-y border-l border-r-0" : "border-x border-t border-b-0",
-        // Browser-style colors
-        "hover:bg-muted hover:text-foreground",
-        "data-[state=active]:bg-card data-[state=active]:text-primary",
-        "data-[state=active]:border-transparent",
-        "data-[state=active]:shadow-[-4px_4px_12px_-4px_rgba(0,0,0,0.10)] z-20",
-        "data-[state=inactive]:bg-primary-foreground/70 data-[state=inactive]:border-border/40 data-[state=inactive]:text-muted-foreground",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
-        "disabled:opacity-20 disabled:pointer-events-none",
-        isVertical
-            ? "px-2 overflow-hidden data-[state=active]:min-h-24 data-[state=active]:py-4 data-[state=inactive]:min-h-0 data-[state=inactive]:py-2.5 hover:!min-h-24 hover:!py-4"
-            : "min-w-24 px-6 py-2"
-    )
+    const triggerStyles = isUnderline
+        ? cn(
+            "group relative w-auto h-12 transition-all duration-200 bg-transparent rounded-none",
+            "border-b-2 border-transparent",
+            "data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:font-semibold",
+            "data-[state=inactive]:text-muted-foreground hover:text-foreground",
+            "focus-visible:outline-none disabled:opacity-20 disabled:pointer-events-none px-1 flex items-center justify-center gap-2"
+        )
+        : cn(
+            "group relative w-auto h-auto transition-all duration-200",
+            isVertical ? "rounded-l-lg rounded-r-none" : "rounded-t-lg rounded-b-none",
+            isVertical ? "border-y border-l border-r-0" : "border-x border-t border-b-0",
+            // Browser-style colors
+            "hover:bg-muted hover:text-foreground",
+            "data-[state=active]:bg-card data-[state=active]:text-primary",
+            "data-[state=active]:border-transparent",
+            "data-[state=active]:shadow-[-4px_4px_12px_-4px_rgba(0,0,0,0.10)] z-20",
+            "data-[state=inactive]:bg-primary-foreground/70 data-[state=inactive]:border-border/40 data-[state=inactive]:text-muted-foreground",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
+            "disabled:opacity-20 disabled:pointer-events-none",
+            isVertical
+                ? "px-2 overflow-hidden data-[state=active]:min-h-24 data-[state=active]:py-4 data-[state=inactive]:min-h-0 data-[state=inactive]:py-2.5 hover:!min-h-24 hover:!py-4"
+                : "min-w-24 px-6 py-2"
+        )
 
     const renderTabsList = () => {
         const list = (
@@ -83,7 +92,9 @@ export function FormTabs({
                 className={cn(
                     "bg-transparent rounded-none p-0 z-20",
                     isVertical ? "h-auto w-auto flex-col items-start justify-start gap-3 col-start-1 overflow-visible max-h-full"
-                        : "h-auto w-auto flex-row items-end justify-center gap-1 px-1 pb-0",
+                        : isUnderline
+                            ? "h-full w-auto flex-row items-end justify-start gap-8 px-1 pb-0"
+                            : "h-auto w-auto flex-row items-end justify-center gap-1 px-1 pb-0",
                     effectiveListClassName
                 )}
                 style={isVertical ? {
@@ -151,6 +162,14 @@ export function FormTabs({
         )
 
         if (isVertical) return list;
+
+        if (isUnderline) {
+            return (
+                <div className={cn("flex items-end justify-start w-full border-b border-border/20 px-6 h-12 bg-transparent", headerClassName)}>
+                    {list}
+                </div>
+            )
+        }
 
         return (
             <div className={cn("flex justify-center w-full", headerClassName || "bg-muted/5")}>

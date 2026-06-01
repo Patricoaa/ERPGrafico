@@ -1,7 +1,9 @@
 import { Metadata } from "next"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
-import { WarehouseList, MovementList, StockReport } from "@/features/inventory"
-import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
+import { redirect } from "next/navigation"
+import { WarehouseClientView, MovementClientView, StockReport } from "@/features/inventory"
+
+import { FadeIn, ToolbarCreateButton } from '@/components/shared'
 
 export const metadata: Metadata = {
     title: "Stock e Inventario | ERPGrafico",
@@ -17,34 +19,46 @@ export default async function UnifiedStockPage({ searchParams }: PageProps) {
     const activeTab = resolvedParams.tab || "report"
     const modal = resolvedParams.modal
 
+    if (!resolvedParams.tab) {
+        redirect('/inventory/stock?tab=report')
+    }
+
     return (
-        <div className="pt-2">
-            <Tabs value={activeTab} className="space-y-4">
-                <TabsContent value="report" className="mt-0 outline-none">
-                    <StockReport />
+        <div className="pt-2 flex-1 min-h-0 flex flex-col">
+            <Tabs value={activeTab} className="space-y-4 h-full flex flex-col">
+                <div className="flex-1 min-h-0">
+                    <TabsContent value="report" className="h-full mt-0 outline-none">
+                        <FadeIn className="h-full">
+                            <StockReport />
+                        </FadeIn>
+                    </TabsContent>
+                    <TabsContent value="movements" className="h-full mt-0 outline-none">
+                        <FadeIn className="h-full">
+                            <MovementClientView
+                            externalOpen={activeTab === 'movements' && modal === 'adjustment'}
+                            createAction={
+                                <ToolbarCreateButton
+                                    label="Nuevo Ajuste"
+                                    href="/inventory/stock?tab=movements&modal=adjustment"
+                                />
+                            }
+                        />
+                    </FadeIn>
                 </TabsContent>
-                <TabsContent value="movements" className="mt-0 outline-none">
-                    <MovementList
-                        externalOpen={activeTab === 'movements' && modal === 'adjustment'}
-                        createAction={
-                            <ToolbarCreateButton
-                                label="Nuevo Ajuste"
-                                href="/inventory/stock?tab=movements&modal=adjustment"
-                            />
-                        }
-                    />
+                    <TabsContent value="warehouses" className="h-full mt-0 outline-none">
+                        <FadeIn className="h-full">
+                            <WarehouseClientView
+                            externalOpen={activeTab === 'warehouses' && modal === 'new'}
+                            createAction={
+                                <ToolbarCreateButton
+                                    label="Nuevo Almacén"
+                                    href="/inventory/stock?tab=warehouses&modal=new"
+                                />
+                            }
+                        />
+                    </FadeIn>
                 </TabsContent>
-                <TabsContent value="warehouses" className="mt-0 outline-none">
-                    <WarehouseList
-                        externalOpen={activeTab === 'warehouses' && modal === 'new'}
-                        createAction={
-                            <ToolbarCreateButton
-                                label="Nuevo Almacén"
-                                href="/inventory/stock?tab=warehouses&modal=new"
-                            />
-                        }
-                    />
-                </TabsContent>
+                </div>
             </Tabs>
         </div>
     )

@@ -1,14 +1,10 @@
 "use client"
 
-import { lazy, Suspense, useState, useEffect, useRef } from "react"
-import { TableSkeleton } from "@/components/shared"
+import { useState, useEffect } from "react"
 import { Tabs } from "@/components/ui/tabs"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
-
-const SalesOrdersClientView = lazy(() =>
-    import("@/features/sales").then(m => ({ default: m.SalesOrdersClientView }))
-)
+import { SalesOrdersClientView } from "@/features/sales"
 
 export default function SalesOrdersPage() {
     const searchParams = useSearchParams()
@@ -17,7 +13,6 @@ export default function SalesOrdersPage() {
     const viewMode = (searchParams.get('tab') as 'orders' | 'notes') || 'orders'
     const legacyId = searchParams.get('id')
     const selectedId = searchParams.get('selected')
-    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
     const { openHub, isHubOpen } = useHubPanel()
 
     // 1. Backward compatibility for legacy ?id=
@@ -58,19 +53,26 @@ export default function SalesOrdersPage() {
         }
     }, [isHubOpen, hubEverOpened, selectedId, pathname, searchParams, router])
 
+    // 4. Ensure URL consistency for default tab
+    useEffect(() => {
+        if (!searchParams.get('tab') && !legacyId) {
+            const params = new URLSearchParams(searchParams.toString())
+            params.set('tab', 'orders')
+            router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+        }
+    }, [searchParams, pathname, router, legacyId])
+
     if (legacyId) {
         return <div className="p-8 text-center text-muted-foreground">Redirigiendo...</div>
     }
 
     return (
-        <Tabs value={viewMode} className="w-full pt-2">
-            <Suspense fallback={<TableSkeleton rows={10} columns={6} />}>
-                <SalesOrdersClientView
-                    viewMode={viewMode}
-                    isCreateModalOpen={isCreateModalOpen}
-                    setCreateModalOpen={setIsCreateModalOpen}
-                />
-            </Suspense>
-        </Tabs>
+        <div className="pt-2 flex-1 min-h-0 flex flex-col">
+            <Tabs value={viewMode} className="w-full flex flex-col h-full gap-4">
+                <div className="flex-1 min-h-0">
+                    <SalesOrdersClientView viewMode={viewMode} />
+                </div>
+            </Tabs>
+        </div>
     )
 }

@@ -1,4 +1,9 @@
 /**
+ * @deprecated Usa `renderSubComponent` de DataTable directamente, o el helper
+ * `createExpandableRowView()` de `@/lib/view-helpers` para lazy-loading.
+ * ExpandableTableRow se mantiene para compatibilidad pero será eliminado en
+ * una versión futura. Los nuevos consumidores deben usar DataTable nativo.
+ *
  * ExpandableTableRow
  *
  * Primitiva reutilizable para filas de tabla que expanden un panel de detalle.

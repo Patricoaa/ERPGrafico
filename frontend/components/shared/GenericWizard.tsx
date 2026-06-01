@@ -1,10 +1,10 @@
 "use client"
 
-import React, { useState, useTransition } from "react"
+import React from "react"
 import { BaseModal, BaseModalProps } from "./BaseModal"
 import { ActionSlideButton } from "./ActionSlideButton"
 import { Button } from "@/components/ui/button"
-import { Loader2, ChevronLeft, ChevronRight, CheckCircle2 } from "lucide-react"
+import { ChevronLeft, ChevronRight, CheckCircle2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { LoadingFallback } from "./LoadingFallback"
 
@@ -48,7 +48,6 @@ export function GenericWizard({
     onClose,
     initialStep = 0,
     completeButtonLabel = "Finalizar",
-    completeButtonIcon = <CheckCircle2 className="h-4 w-4" />,
     isCompleting = false,
     isLoading = false,
     successContent,

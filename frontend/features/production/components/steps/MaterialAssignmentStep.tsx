@@ -1,24 +1,25 @@
 "use client"
 
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { Plus, Truck, Pencil, Trash2 } from 'lucide-react'
+import { Plus, Truck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { EmptyState } from '@/components/shared/EmptyState'
+import { ActionConfirmModal, Chip, DataCell, EmptyState } from '@/components/shared'
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
 import { Skeleton } from '@/components/shared'
 import { ProductSelector } from '@/components/selectors/ProductSelector'
 import { UoMSelector } from '@/components/selectors/UoMSelector'
-import { AdvancedContactSelector } from '@/components/selectors/AdvancedContactSelector'
+import { useProductionVariants, productionApi } from '../../hooks'
 import { MaterialAssignmentTabs } from '../MaterialAssignmentTabs'
-import { formatCurrency } from '@/lib/currency'
+import { useVatRate } from '@/hooks/useVatRate'
+import { useWorkOrderMutations } from '../../hooks'
+
 import { cn } from '@/lib/utils'
 import { showApiError } from '@/lib/errors'
-import api from '@/lib/api'
-import type { WorkOrder, WorkOrderMaterial, ProductMinimal, UoM } from '../../types'
+import type { WorkOrder, WorkOrderMaterial, ProductMinimal } from '../../types'
+
 
 interface MaterialAssignmentStepProps {
   order: WorkOrder
@@ -30,73 +31,47 @@ interface MaterialAssignmentStepProps {
 export function MaterialAssignmentStep({
   order, isViewingCurrentStage, onMaterialSaved, onMaterialDeleted,
 }: MaterialAssignmentStepProps) {
+  const { multiplier: vatMultiplier } = useVatRate()
+  const { addMaterial, updateMaterial, removeMaterial, isAddingMaterial } = useWorkOrderMutations(
+    order.id,
+    { onSuccess: onMaterialSaved }
+  )
+
   // ── form state (local — not shared) ─────────────────────────────────────
   const [isAddOpen, setIsAddOpen] = useState(false)
-  const [isOutsourced, setIsOutsourced] = useState(false)
   const [editingMaterialId, setEditingMaterialId] = useState<number | null>(null)
+  const [materialToDelete, setMaterialToDelete] = useState<WorkOrderMaterial | null>(null)
 
   const [productId, setProductId] = useState<string | null>(null)
   const [qty, setQty] = useState('1')
   const [uomId, setUomId] = useState<string>('')
   const [productObj, setProductObj] = useState<ProductMinimal | null>(null)
-  const { data: variants = [], isLoading: loadingVariants } = useQuery({
-    queryKey: ['productVariants', productObj?.id],
-    queryFn: async () => {
-      const res = await api.get(`/inventory/products/?parent_template=${productObj?.id}`)
-      return res.data.results ?? res.data
-    },
-    enabled: !!productObj?.has_variants
-  })
+  const { variants, isVariantsLoading: loadingVariants } = useProductionVariants(
+    productObj?.has_variants ? productObj.id : undefined
+  )
 
   const reset = () => {
     setIsAddOpen(false)
-    setIsOutsourced(false)
     setEditingMaterialId(null)
     setProductId(null)
     setQty('1')
     setUomId('')
     setProductObj(null)
-    setSupplierId(null)
-    setGrossPrice('0')
-    setNetPrice('0')
-    setDocumentType('FACTURA')
   }
 
   const handleSave = async () => {
     if (!productId) return
     if (parseFloat(qty) <= 0) return
-    if (isOutsourced && !supplierId) return
-    if (isOutsourced && parseFloat(grossPrice) <= 0) return
 
-    setSaving(true)
     try {
       if (editingMaterialId) {
-        await api.post(`/production/orders/${order.id}/update_material/`, {
-          material_id: editingMaterialId,
-          quantity: qty,
-          uom_id: uomId,
-          is_outsourced: isOutsourced,
-          supplier_id: supplierId,
-          unit_price: netPrice,
-          document_type: documentType,
-        })
+        await updateMaterial({ materialId: editingMaterialId, quantity: qty, uomId })
       } else {
-        await api.post(`/production/orders/${order.id}/add_material/`, {
-          product_id: productId,
-          quantity: qty,
-          uom_id: uomId,
-          is_outsourced: isOutsourced,
-          supplier_id: supplierId,
-          unit_price: netPrice,
-          document_type: documentType,
-        })
+        await addMaterial({ productId, quantity: qty, uomId })
       }
       reset()
-      onMaterialSaved()
     } catch (err) {
       showApiError(err, 'Error al guardar material')
-    } finally {
-      setSaving(false)
     }
   }
 
@@ -105,20 +80,16 @@ export function MaterialAssignmentStep({
     setProductId(m.component.toString())
     setQty(m.quantity_planned.toString())
     setUomId(m.uom.toString())
-    setIsOutsourced(m.is_outsourced)
-    setSupplierId(m.supplier?.toString() ?? null)
-    setNetPrice(m.unit_price?.toString() ?? '0')
-    setGrossPrice(m.unit_price ? (parseFloat(m.unit_price) * 1.19).toFixed(2) : '0')
-    setDocumentType(m.document_type ?? 'FACTURA')
-    api.get(`/inventory/products/${m.component}/`).then((res) => {
-      setProductObj(res.data)
+    // Fetch product to populate selector
+    productionApi.getProduct(m.component).then((data) => {
+      setProductObj(data as any)
       setIsAddOpen(true)
     })
   }
 
   const handleDelete = async (materialId: number) => {
     try {
-      await api.post(`/production/orders/${order.id}/remove_material/`, { material_id: materialId })
+      await removeMaterial(materialId)
       onMaterialDeleted()
     } catch (err) {
       showApiError(err, 'Error al eliminar material')
@@ -127,66 +98,6 @@ export function MaterialAssignmentStep({
 
   const stockMaterials = order.materials?.filter((m: WorkOrderMaterial) => !m.is_outsourced) ?? []
   const outsourcedMaterials = order.materials?.filter((m: WorkOrderMaterial) => m.is_outsourced) ?? []
-
-  // ── Reusable outsourced form ───────────────────────────────────────────────
-  const OutsourcedForm = () => (
-    <div className="p-4 border-2 border-primary/20 rounded-md bg-primary/5 space-y-4 animate-in slide-in-from-top-2 duration-300">
-      <div className="flex flex-col md:flex-row gap-4 items-end">
-        <div className="flex-1 space-y-2">
-          <label className="text-xs font-bold uppercase">Servicio</label>
-          <ProductSelector
-            value={productId}
-            onChange={setProductId}
-            onSelect={(obj) => { setProductObj(obj); if (obj?.uom_id) setUomId(obj.uom_id.toString()) }}
-            disabled={!!editingMaterialId}
-            customFilter={(p) => p.product_type === 'SERVICE' && (p as any).can_be_purchased}
-          />
-        </div>
-        <div className="w-full md:w-32 space-y-2">
-          <label className="text-xs font-bold uppercase">Cantidad</label>
-          <Input type="number" value={qty} onChange={(e) => setQty(e.target.value)} />
-        </div>
-        <div className="w-full md:w-40 space-y-2">
-          <label className="text-xs font-bold uppercase">Unidad</label>
-          <UoMSelector product={productObj as any} context="bom" value={uomId} onChange={setUomId} />
-        </div>
-      </div>
-      <div className="flex flex-col md:flex-row gap-4 w-full pt-2 border-t border-primary/10 mt-2">
-        <div className="flex-1 space-y-2">
-          <label className="text-xs font-bold uppercase text-primary">Proveedor</label>
-          <AdvancedContactSelector value={supplierId} onChange={setSupplierId} contactType="SUPPLIER" />
-        </div>
-        <div className="w-full md:w-32 space-y-2">
-          <label className="text-xs font-bold uppercase text-primary">Precio Bruto</label>
-          <Input
-            type="number"
-            value={grossPrice}
-            onChange={(e) => {
-              setGrossPrice(e.target.value)
-              setNetPrice(e.target.value ? (parseFloat(e.target.value) / 1.19).toFixed(2) : '0')
-            }}
-          />
-        </div>
-        <div className="flex-1 space-y-2">
-          <label className="text-xs font-bold uppercase text-primary">Documento</label>
-          <select
-            className="w-full rounded-md border border-primary/30 bg-background px-3 py-2 text-sm ring-offset-background focus:ring-2 focus:ring-primary"
-            value={documentType}
-            onChange={(e) => setDocumentType(e.target.value)}
-          >
-            <option value="FACTURA">Factura</option>
-            <option value="BOLETA">Boleta</option>
-          </select>
-        </div>
-      </div>
-      <div className="flex justify-end gap-2 pt-2">
-        <Button variant="ghost" size="sm" onClick={reset}>Cancelar</Button>
-        <Button size="sm" onClick={handleSave} disabled={saving}>
-          {editingMaterialId ? 'Guardar' : 'Añadir Servicio'}
-        </Button>
-      </div>
-    </div>
-  )
 
   return (
     <div className="space-y-6">
@@ -228,22 +139,18 @@ export function MaterialAssignmentStep({
                             <p className="text-[10px] text-muted-foreground">Disponible</p>
                           </div>
                         </td>
-                        <td className="p-2 text-right font-bold">{formatCurrency(m.total_cost)}</td>
+                        <td className="p-2 text-right">
+                          <DataCell.Currency value={m.total_cost} className="justify-end font-bold text-xs" />
+                        </td>
                         <td className="p-2">
-                          <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border border-border bg-muted/50 text-muted-foreground whitespace-nowrap">
-                            {m.source}
-                          </span>
+                          <Chip size="xs">{m.source}</Chip>
                         </td>
                         <td className="p-2">
                           {m.source === 'MANUAL' && isViewingCurrentStage && (
-                            <div className="flex gap-1">
-                              <Button variant="ghost" size="icon" className="h-6 w-6 text-primary" onClick={() => handleEdit(m)}>
-                                <Pencil className="h-3 w-3" />
-                              </Button>
-                              <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => handleDelete(m.id)}>
-                                <Trash2 className="h-3 w-3" />
-                              </Button>
-                            </div>
+                            <DataCell.ActionGroup>
+                              <DataCell.Action action="edit" onClick={() => handleEdit(m)} />
+                              <DataCell.Action action="delete" onClick={() => setMaterialToDelete(m)} />
+                            </DataCell.ActionGroup>
                           )}
                         </td>
                       </tr>
@@ -262,7 +169,7 @@ export function MaterialAssignmentStep({
               {/* Add stock material form */}
               {isViewingCurrentStage && (
                 <>
-                  {isAddOpen && !isOutsourced ? (
+                  {isAddOpen ? (
                     <div className="p-4 border rounded-md bg-muted/20 space-y-4 animate-in slide-in-from-top-2">
                       <div className="flex flex-col md:flex-row gap-4 items-end">
                         <div className="flex-1 space-y-2">
@@ -279,8 +186,8 @@ export function MaterialAssignmentStep({
                             customFilter={(p) => {
                               if (order.main_product_id && p.id.toString() === order.main_product_id.toString()) return false
                               if (p.product_type === 'CONSUMABLE') return false
-                              if (p.product_type === 'MANUFACTURABLE' && !(p as any).requires_advanced_manufacturing) return false
-                              if ((p as any).requires_advanced_manufacturing && !p.track_inventory) return false
+                              if (p.product_type === 'MANUFACTURABLE' && !p.requires_advanced_manufacturing) return false
+                              if (p.requires_advanced_manufacturing && !p.track_inventory) return false
                               return p.product_type !== 'SERVICE'
                             }}
                           />
@@ -321,12 +228,12 @@ export function MaterialAssignmentStep({
                         </div>
                         <div className="w-full md:w-40 space-y-2">
                           <label className="text-xs font-bold uppercase">Unidad</label>
-                          <UoMSelector product={productObj as any} context="bom" value={uomId} onChange={setUomId} />
+                          <UoMSelector product={productObj as any} context="bom" value={uomId} onChange={setUomId} uoms={[]} />
                         </div>
                         <div className="flex gap-2">
                           <Button variant="outline" size="sm" onClick={reset}>Cancelar</Button>
-                          <Button size="sm" onClick={handleSave} disabled={saving}>
-                            {saving ? (editingMaterialId ? 'Guardando...' : 'Añadiendo...') : (editingMaterialId ? 'Guardar' : 'Añadir')}
+                          <Button size="sm" onClick={handleSave} disabled={isAddingMaterial}>
+                            {isAddingMaterial ? (editingMaterialId ? 'Guardando...' : 'Añadiendo...') : (editingMaterialId ? 'Guardar' : 'Añadir')}
                           </Button>
                         </div>
                       </div>
@@ -335,7 +242,7 @@ export function MaterialAssignmentStep({
                     <div className="flex flex-col gap-3">
                       <Button
                         variant="outline" size="sm" className="w-full border-dashed"
-                        onClick={() => { reset(); setIsOutsourced(false); setIsAddOpen(true) }}
+                        onClick={() => { reset(); setIsAddOpen(true) }}
                       >
                         <Plus className="mr-2 h-4 w-4" />
                         Agregar Material de Stock
@@ -361,32 +268,30 @@ export function MaterialAssignmentStep({
                           <span>•</span>
                           <span>Cant: {m.quantity_planned} {m.uom_name}</span>
                           <span>•</span>
-                          <span>{formatCurrency(parseFloat(m.unit_price ?? '0') * 1.19)} (Bruto) c/u</span>
+                          <span className="inline-flex items-center gap-1">
+                            <DataCell.Currency value={parseFloat(m.unit_price ?? '0') * vatMultiplier} className="w-auto justify-start font-bold text-[10px] text-muted-foreground p-0 inline-flex" />
+                            <span>(Bruto) c/u</span>
+                          </span>
                         </div>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
-                      <div className="text-right mr-2">
+                      <div className="text-right mr-2 flex flex-col items-end">
                         <p className="text-[10px] font-bold uppercase text-muted-foreground">Total Estimado</p>
-                        <p className="text-sm font-bold text-primary">
-                          {formatCurrency(parseFloat(String(m.quantity_planned)) * parseFloat(m.unit_price ?? '0') * 1.19)}
-                        </p>
+                        <DataCell.Currency
+                          value={parseFloat(String(m.quantity_planned)) * parseFloat(m.unit_price ?? '0') * vatMultiplier}
+                          className="justify-end font-bold text-sm text-primary w-auto p-0 inline-flex"
+                        />
                       </div>
                       {isViewingCurrentStage && !m.purchase_order_number && (
-                        <div className="flex gap-1">
-                          <Button variant="ghost" size="icon" onClick={() => handleEdit(m)} className="h-8 w-8">
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon" onClick={() => handleDelete(m.id)} className="h-8 w-8 text-destructive hover:bg-destructive/10">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
+                        <DataCell.ActionGroup>
+                          <DataCell.Action action="edit" onClick={() => handleEdit(m)} />
+                          <DataCell.Action action="delete" onClick={() => setMaterialToDelete(m)} />
+                        </DataCell.ActionGroup>
                       )}
                       {m.purchase_order_number && (
                         <div className="flex items-center gap-2">
-                          <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded border border-border bg-muted/50 text-muted-foreground whitespace-nowrap">
-                            OCS-{m.purchase_order_number}
-                          </span>
+                          <Chip size="xs">OCS-{m.purchase_order_number}</Chip>
                           <span className="text-[10px] font-medium text-muted-foreground">({m.supplier_name})</span>
                         </div>
                       )}
@@ -400,27 +305,28 @@ export function MaterialAssignmentStep({
                 )}
               </div>
 
-              {/* Add outsourced form */}
-              {isViewingCurrentStage && (
-                <>
-                  {isAddOpen && isOutsourced ? (
-                    <OutsourcedForm />
-                  ) : (
-                    <Button
-                      variant="outline" size="sm"
-                      className="w-full border-dashed text-primary border-primary/20 bg-primary/5 hover:bg-primary/10"
-                      onClick={() => { reset(); setIsOutsourced(true); setIsAddOpen(true) }}
-                    >
-                      <Plus className="mr-2 h-4 w-4" />
-                      Agregar Servicio Tercerizado
-                    </Button>
-                  )}
-                </>
-              )}
+              {/* Outsourced services are managed in OutsourcingAssignmentStep */}
             </div>
           }
         />
       </div>
+
+      <ActionConfirmModal
+        open={materialToDelete !== null}
+        onOpenChange={(open) => { if (!open) setMaterialToDelete(null) }}
+        onConfirm={async () => {
+          if (materialToDelete) await handleDelete(materialToDelete.id)
+        }}
+        title="Eliminar material"
+        description={
+          <>
+            ¿Eliminar <strong>{materialToDelete?.component_name}</strong> de la orden de trabajo?
+            Esta acción no se puede deshacer.
+          </>
+        }
+        variant="destructive"
+        confirmText="Eliminar"
+      />
     </div>
   )
 }

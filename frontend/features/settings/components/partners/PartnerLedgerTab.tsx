@@ -1,4 +1,5 @@
-﻿"use client"
+"use client"
+import { formatCurrency } from "@/lib/money"
 
 import React, { useEffect, useState } from "react"
 import {
@@ -6,28 +7,22 @@ import {
     ArrowUpRight,
     Wallet,
     Calendar,
-    Package,
     LogOut,
     History
 } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import { TableRow, TableCell } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
+
+import { DataCell } from "@/components/shared"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
 import { Partner, PartnerTransaction } from "@/features/contacts/types/partner"
 import { toast } from "sonner"
-import { formatCurrency, formatPlainDate as formatDate, cn } from "@/lib/utils"
+import {formatPlainDate as formatDate} from "@/lib/utils"
 import {
-    DropdownMenu,
-    DropdownMenuContent,
     DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { PartnerContributionWizard } from "@/features/settings/components/partners/PartnerContributionWizard"
 import { PartnerWithdrawalWizard } from "@/features/settings/components/partners/PartnerWithdrawalWizard"
-import { DataTable } from "@/components/ui/data-table"
+import { DataTable } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
 
 const TRANSACTION_TYPE_OPTIONS = [
@@ -101,19 +96,30 @@ export function PartnerLedgerTab() {
         return 'bg-muted/50 text-muted-foreground border-transparent'
     }
 
+    const getTransactionIntent = (type: string): "info" | "warning" | "success" | "destructive" | "neutral" => {
+        if (type === 'SUBSCRIPTION') return 'info'
+        if (type.includes('TRANSFER')) return 'warning'
+        if (isInflow(type)) return 'success'
+        if (isOutflow(type)) return 'destructive'
+        return 'neutral'
+    }
+
     type TransactionWithBalance = PartnerTransaction & { balance_after: number }
 
     // Calculate Running Balance
     const txsWithBalance = React.useMemo(() => {
         const sorted = [...transactions].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-        let balance = 0
-        const withBal = sorted.map(tx => {
-            const amount = parseFloat(tx.amount) || 0
-            if (isInflow(tx.transaction_type)) balance += amount
-            else if (isOutflow(tx.transaction_type)) balance -= amount
-            return { ...tx, balance_after: balance }
-        })
-        return withBal.reverse() // Display newest first
+        const { result } = sorted.reduce<{ result: Array<PartnerTransaction & { balance_after: number }>, balance: number }>(
+            (acc, tx) => {
+                const amount = parseFloat(tx.amount) || 0
+                let newBalance = acc.balance
+                if (isInflow(tx.transaction_type)) newBalance += amount
+                else if (isOutflow(tx.transaction_type)) newBalance -= amount
+                return { result: [...acc.result, { ...tx, balance_after: newBalance }], balance: newBalance }
+            },
+            { result: [], balance: 0 }
+        )
+        return result.reverse() // Display newest first
     }, [transactions])
 
     const columns: ColumnDef<TransactionWithBalance>[] = [
@@ -130,7 +136,7 @@ export function PartnerLedgerTab() {
         {
             accessorKey: "partner_name",
             header: "Socio",
-            cell: ({ row }) => <span className="text-[11px] font-black tracking-tight">{row.getValue("partner_name")}</span>,
+            cell: ({ row }) => <DataCell.Text>{row.getValue("partner_name") as string}</DataCell.Text>,
             filterFn: (row, id, value) => {
                 // value comes from selection
                 return value.length === 0 || value.includes(row.original.partner?.toString()) || value.includes(row.original.partner_name)
@@ -141,9 +147,7 @@ export function PartnerLedgerTab() {
             header: "Concepto",
             cell: ({ row }) => (
                 <div className="flex flex-col gap-0.5">
-                    <Badge variant="outline" className={cn("text-[8px] font-black uppercase tracking-wider w-fit h-4 px-1.5 leading-none", getTransactionColor(row.original.transaction_type))}>
-                        {row.original.transaction_type_display}
-                    </Badge>
+                    <DataCell.Chip intent={getTransactionIntent(row.original.transaction_type)}>{row.original.transaction_type_display}</DataCell.Chip>
                     <span className="text-[10px] text-muted-foreground italic truncate max-w-[180px] leading-tight">
                         {row.getValue("description")}
                     </span>
@@ -156,10 +160,8 @@ export function PartnerLedgerTab() {
             cell: ({ row }) => {
                 const val = row.getValue("journal_entry_display")
                 return val ? (
-                    <Button variant="ghost" className="h-6 px-2 text-[9px] font-mono hover:bg-primary/5 hover:text-primary transition-all rounded-sm">
-                        {val as string}
-                    </Button>
-                ) : <span className="text-muted-foreground/30 px-2">-</span>
+                    <DataCell.Code>{val as string}</DataCell.Code>
+                ) : <DataCell.Code>{''}</DataCell.Code>
             }
         },
         {
@@ -195,8 +197,9 @@ export function PartnerLedgerTab() {
     ]
 
     return (
-        <div className="space-y-4">
-            <DataTable
+        <div className="space-y-4 h-full flex flex-col">
+            <div className="flex-1 min-h-0">
+                <DataTable
                 columns={columns}
                 data={txsWithBalance}
                 isLoading={loading}
@@ -250,9 +253,9 @@ export function PartnerLedgerTab() {
                                 <div className="space-y-1">
                                     <p className="text-[10px] font-black uppercase text-muted-foreground tracking-tighter">Resumen de Selección</p>
                                     <div className="flex items-center gap-2">
-                                        <Badge variant="outline" className="bg-primary/5 text-primary text-[9px] font-mono border-primary/20">
+                                        <DataCell.Chip intent="primary" className="bg-primary/5 border-primary/20">
                                             {rows.length} MOVIMIENTOS
-                                        </Badge>
+                                        </DataCell.Chip>
                                     </div>
                                 </div>
                             </TableCell>
@@ -272,7 +275,7 @@ export function PartnerLedgerTab() {
                                     </span>
                                 </div>
                             </TableCell>
-                            <TableCell className="text-right pr-6 py-4">
+                            <TableCell className="text-right py-4">
                                 <div className="flex flex-col items-end">
                                     <span className="text-[9px] font-black uppercase text-primary tracking-[0.2em] mb-1.5 opacity-60">Running Balance</span>
                                     <div className="bg-primary text-primary-foreground px-3 py-1.5 rounded text-sm font-black tracking-tighter shadow-lg shadow-primary/10">
@@ -284,6 +287,7 @@ export function PartnerLedgerTab() {
                     )
                 }}
             />
+            </div>
 
             {/* Movement Wizard Modals */}
             <PartnerContributionWizard

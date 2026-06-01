@@ -1,14 +1,15 @@
+import { formatCurrency } from "@/lib/money"
 import { getErrorMessage } from "@/lib/errors"
 
 import { useState } from "react"
 import { PhaseCard } from "./PhaseCard"
 import { Banknote, Hash, Trash2, AlertCircle, Gavel } from "lucide-react"
-import { formatDocumentId } from '@/features/orders/utils/status'
-import { cn, formatCurrency } from "@/lib/utils"
-import api from "@/lib/api"
+import { formatEntity } from '@/features/orders/utils/status'
+import { cn } from "@/lib/utils"
 import { toast } from "sonner"
-import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
-import { TransactionNumberForm } from "@/features/finance/components/TransactionNumberForm"
+import { useDeletePayment, useAnnulPayment } from "../../hooks/useOrdersMutations"
+import { ActionConfirmModal } from '@/components/shared'
+import { TransactionNumberDrawer } from "@/features/finance/components/TransactionNumberDrawer"
 import { saleOrderActions } from '@/features/sales/actions'
 import { purchaseOrderActions } from '@/features/purchasing/actions'
 import { Order, PhaseDocument, Payment } from "../../types"
@@ -22,6 +23,7 @@ interface TreasuryPhaseProps {
     onActionSuccess?: () => void
     openDetails: (docType: string, id: number | string) => void
     posSessionId?: number | null
+    isSale?: boolean
     // Accordion props
     collapsible?: boolean
     isOpen?: boolean
@@ -37,13 +39,15 @@ export function TreasuryPhase({
     onActionSuccess,
     openDetails,
     posSessionId,
+    isSale = false,
     collapsible,
     isOpen,
     onOpenChange,
 }: TreasuryPhaseProps) {
-    const registry = (activeDoc?.document_type === 'PURCHASE_ORDER' || activeDoc?.document_type === 'SERVICE_OBLIGATION') 
-        ? purchaseOrderActions 
-        : saleOrderActions
+    const registry = isSale ? saleOrderActions : purchaseOrderActions
+
+    const deletePayment = useDeletePayment()
+    const annulPayment = useAnnulPayment()
 
     const [confirmModal, setConfirmModal] = useState<{
         open: boolean,
@@ -87,8 +91,7 @@ export function TreasuryPhase({
         }
 
         try {
-            await api.delete(`/treasury/payments/${id}/`)
-            toast.success("Pago eliminado correctamente")
+            await deletePayment.mutateAsync(id)
             setConfirmModal(prev => ({ ...prev, open: false }))
             onActionSuccess?.()
         } catch (error: unknown) {
@@ -107,8 +110,7 @@ export function TreasuryPhase({
                         confirmText: "Anular Pago",
                         onConfirm: async () => {
                             try {
-                                await api.post(`/treasury/payments/${id}/annul/`)
-                                toast.success("Pago anulado correctamente")
+                                await annulPayment.mutateAsync(id)
                                 setConfirmModal(prev => ({ ...prev, open: false }))
                                 onActionSuccess?.()
                             } catch (err: unknown) {
@@ -138,7 +140,7 @@ export function TreasuryPhase({
                     const isWriteOff = p.payment_method === 'WRITE_OFF'
                     return {
                         type: isWriteOff ? 'Castigo' : (p.payment_method_display || 'Pago'),
-                        number: formatDocumentId(isWriteOff ? 'CAS' : (p.payment_type === 'INBOUND' ? 'ING' : 'EGR'), p.id, p.display_id),
+                        number: formatEntity(isWriteOff ? 'CAS' : (p.payment_type === 'INBOUND' ? 'ING' : 'EGR'), p.id, p.display_id),
                         icon: isWriteOff ? Gavel : Banknote,
                         isWarning: isWriteOff,
                         id: p.id,
@@ -182,7 +184,7 @@ export function TreasuryPhase({
                             {formatCurrency(Number(activeDoc.total || 0) - Number(activeDoc.pending_amount || 0))}
                         </span>
                     </div>
-                    
+
                     <div className="h-6 w-[1px] bg-border/20 mx-2" />
 
                     <div className="flex flex-col gap-0.5 text-right">
@@ -203,7 +205,7 @@ export function TreasuryPhase({
                 )}
             </PhaseCard>
 
-            <TransactionNumberForm
+            <TransactionNumberDrawer
                 open={trForm.open}
                 onOpenChange={(open) => setTrForm({ ...trForm, open })}
                 paymentId={trForm.id}

@@ -3,7 +3,7 @@
 import { cn } from '@/lib/utils'
 import { LayoutDashboard } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { StatusBadge } from '@/components/shared/StatusBadge'
+import { StatusBadge } from '@/components/shared'
 import { ApprovalTaskList } from './ApprovalTaskList'
 import { useHubPanel } from '@/components/providers/HubPanelProvider'
 import type { WorkOrder, WorkOrderMaterial, WorkOrderTask } from '../../types'

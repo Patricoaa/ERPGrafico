@@ -2,7 +2,7 @@
 import React from "react"
 import { LucideIcon, Inbox, SearchX, Receipt, Package, Users, Database, Monitor, Layers, Landmark, ShoppingCart, Truck } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { IndustryMark } from "@/components/shared/IndustryMark"
+import { IndustryMark } from '@/components/shared'
 
 export type EmptyStateContext = 'search' | 'inventory' | 'finance' | 'users' | 'generic' | 'database' | 'production' | 'pos' | 'bom' | 'treasury' | 'sale' | 'purchase'
 export type EmptyStateVariant = 'full' | 'compact' | 'minimal'

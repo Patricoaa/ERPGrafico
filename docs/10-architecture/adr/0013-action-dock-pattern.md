@@ -1,9 +1,9 @@
 ---
 id: 0013
 title: ActionDock pattern for floating tasks
-status: Proposed
+status: Accepted
 date: 2026-05-07
-author: Antigravity
+author: frontend-team
 ---
 
 # 0013 — ActionDock pattern for floating tasks

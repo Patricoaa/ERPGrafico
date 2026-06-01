@@ -2,7 +2,8 @@ from django.db import models, transaction
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.db.models import Q, QuerySet
-from .models import Product, Warehouse, StockMove, PricingRule, UoM, ProductAttributeValue
+from django.contrib.contenttypes.models import ContentType
+from .models import Product, Warehouse, StockMove, PricingRule, UoM, ProductAttributeValue, ProductUoMPrice
 import itertools
 from accounting.models import JournalEntry, JournalItem, Account, AccountType
 from accounting.services import JournalEntryService
@@ -165,7 +166,9 @@ class StockService:
             date=timezone.now().date(),
             description=f"Ajuste Stock {product.internal_code}: {description} ({adjustment_reason or 'Manual'})",
             reference=f"STK-{move.id}",
-            status=JournalEntry.State.DRAFT
+            status=JournalEntry.State.DRAFT,
+            source_content_type=ContentType.objects.get_for_model(StockMove),
+            source_object_id=move.id,
         )
 
         if quantity > 0:
@@ -259,9 +262,20 @@ class PricingService:
         if uom is None:
             # If still no UoM, we can't do advanced pricing rules that depend on it
             return product.sale_price_gross or (product.sale_price * Decimal('1.19')).quantize(Decimal('1'))
-            
-        base_price = product.sale_price_gross or (product.sale_price * Decimal('1.19')).quantize(Decimal('1'))
+
+        # Check for an explicit per-UoM price before falling back to proportional conversion
+        uom_price_obj = ProductUoMPrice.objects.filter(product=product, uom=uom).first()
+        if uom_price_obj:
+            base_price = uom_price_obj.price_gross
+        else:
+            _, base_price = PricingService.resolve_variant_price(product)
         
+        # Build product filters including parent template if it's a variant
+        product_filters = Q(product=product) | Q(category=product.category)
+        if hasattr(product, 'parent_template_id') and product.parent_template_id:
+            if product.price_inheritance_mode in ['INHERIT', 'SURCHARGE']:
+                product_filters |= Q(product_id=product.parent_template_id)
+
         # Find active rules
         rules = PricingRule.objects.filter(
             active=True
@@ -270,7 +284,7 @@ class PricingService:
         ).filter(
             Q(end_date__isnull=True) | Q(end_date__gte=date)
         ).filter(
-            Q(product=product) | Q(category=product.category)
+            product_filters
         ).order_by('-priority')
         
         best_price = base_price
@@ -321,18 +335,32 @@ class PricingService:
                 # Calculate price
                 if rule.rule_type == PricingRule.RuleType.FIXED:
                     if rule.fixed_price_gross is not None:
-                        best_price = rule.fixed_price_gross
+                        rule_base = rule.fixed_price_gross
                     elif rule.fixed_price is not None:
-                        best_price = (rule.fixed_price * Decimal('1.19')).quantize(Decimal('1'), rounding='ROUND_HALF_UP')
+                        rule_base = (rule.fixed_price * Decimal('1.19')).quantize(Decimal('1'), rounding='ROUND_HALF_UP')
+                    
+                    if getattr(product, 'parent_template_id', None) and product.price_inheritance_mode == 'SURCHARGE' and rule.product_id == product.parent_template_id:
+                        surcharge = product.price_surcharge or Decimal('0')
+                        surcharge_gross = (surcharge * Decimal('1.19')).quantize(Decimal('1'), rounding='ROUND_HALF_UP')
+                        rule_base += surcharge_gross
+                        
+                    best_price = rule_base
                 elif rule.rule_type == PricingRule.RuleType.PACKAGE_FIXED:
                     # Package fixed price is also usually interpreted as Gross
                     p_price = rule.fixed_price_gross if rule.fixed_price_gross is not None else (rule.fixed_price * Decimal('1.19') if rule.fixed_price else None)
                     if p_price is not None:
                          # We need to return UNIT price, so we divide by quantity
                          if quantity > 0:
-                             best_price = (p_price / quantity).quantize(Decimal('1'), rounding='ROUND_HALF_UP')
+                             unit_price = (p_price / quantity).quantize(Decimal('1'), rounding='ROUND_HALF_UP')
                          else:
-                             best_price = p_price
+                             unit_price = p_price
+                             
+                         if getattr(product, 'parent_template_id', None) and product.price_inheritance_mode == 'SURCHARGE' and rule.product_id == product.parent_template_id:
+                             surcharge = product.price_surcharge or Decimal('0')
+                             surcharge_gross = (surcharge * Decimal('1.19')).quantize(Decimal('1'), rounding='ROUND_HALF_UP')
+                             unit_price += surcharge_gross
+                             
+                         best_price = unit_price
                 else:
                     if rule.discount_percentage is not None:
                         best_price = (base_price * (1 - (rule.discount_percentage / 100))).quantize(Decimal('1'), rounding='ROUND_HALF_UP')
@@ -341,6 +369,36 @@ class PricingService:
                 break
             
         return best_price
+
+    @staticmethod
+    def resolve_variant_price(variant: 'Product') -> tuple:
+        """
+        Devuelve (price_net, price_gross) resolviendo el modo de herencia de precio.
+
+        - INHERIT:   usa los precios del template padre directamente.
+        - SURCHARGE: precio_template + price_surcharge (neto); recalcula bruto.
+        - OVERRIDE:  precio propio de la variante (comportamiento anterior).
+
+        Si la variante no tiene parent_template, devuelve su precio propio.
+        """
+        vat = Decimal('1.19')
+        if not variant.parent_template_id:
+            return variant.sale_price, variant.sale_price_gross
+
+        mode = variant.price_inheritance_mode
+        if mode == 'INHERIT':
+            t = variant.parent_template
+            return t.sale_price, t.sale_price_gross
+        elif mode == 'SURCHARGE':
+            t = variant.parent_template
+            surcharge = variant.price_surcharge or Decimal('0')
+            net = t.sale_price + surcharge
+            gross = (net * vat).quantize(Decimal('1'), rounding='ROUND_HALF_UP')
+            return net, gross
+
+        # OVERRIDE — precio propio
+        return variant.sale_price, variant.sale_price_gross
+
 
 class UoMService:
     """
@@ -732,6 +790,11 @@ class ProductService:
                     sale_price=template.sale_price,
                     cost_price=template.cost_price,
                     requires_advanced_manufacturing=template.requires_advanced_manufacturing,
+                    mfg_auto_finalize=template.mfg_auto_finalize,
+                    mfg_enable_prepress=template.mfg_enable_prepress,
+                    mfg_enable_press=template.mfg_enable_press,
+                    mfg_enable_postpress=template.mfg_enable_postpress,
+                    price_inheritance_mode=Product.PriceInheritance.INHERIT,
                 )
                 variant.attribute_values.set(combo)
                 variant.save()  # Triggers display name generation

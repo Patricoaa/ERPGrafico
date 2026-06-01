@@ -1,8 +1,8 @@
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
-import { Badge } from "@/components/ui/badge"
-import { Eye, CheckCircle2, ChevronDown } from "lucide-react"
+import { DataCell, StatusBadge } from "@/components/shared"
+import { CheckCircle2, ChevronDown } from "lucide-react"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { useState, useEffect, useId } from "react"
 import { Card } from "@/components/ui/card"
@@ -42,7 +42,6 @@ export function PhaseCard({
     actions,
     order,
     userPermissions,
-    onActionSuccess,
     variant = 'neutral',
     documents = [],
     onViewDetail,
@@ -120,7 +119,6 @@ export function PhaseCard({
             isActive && "border-primary/30 bg-primary/5 shadow-primary/5",
             className
         )}>
-
 
             {/* HEADER — Clickable when collapsible */}
             <div
@@ -309,14 +307,19 @@ export function PhaseCard({
                                                 <div className="flex flex-col justify-center">
                                                     <span className="text-[10px] font-bold text-muted-foreground uppercase">{doc.type}</span>
                                                     <div className="flex items-center gap-2">
-                                                        <span className={cn(
-                                                            "font-black text-foreground/90 truncate",
-                                                            "text-[13px] max-w-full"
-                                                        )} title={doc.number}>
-                                                            {doc.number}
-                                                        </span>
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <span className={cn(
+                                                                    "font-black text-foreground/90 truncate",
+                                                                    "text-[13px] max-w-full"
+                                                                )}>
+                                                                    {doc.number}
+                                                                </span>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent side="top">{doc.number}</TooltipContent>
+                                                        </Tooltip>
                                                         {doc.status === 'CANCELLED' && (
-                                                            <Badge variant="outline" className="text-[9px] h-4 px-1.5 border-muted-foreground/30 text-muted-foreground font-bold uppercase">Anulada</Badge>
+                                                            <StatusBadge status="VOIDED" size="sm" />
                                                         )}
                                                     </div>
                                                 </div>
@@ -346,32 +349,22 @@ export function PhaseCard({
                                                 </Tooltip>
                                             ))}
 
-                                            <Tooltip>
-                                                <TooltipTrigger asChild>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className={cn("text-muted-foreground hover:text-primary hover:bg-primary/20 rounded", "h-7 w-7")}
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            e.preventDefault();
-                                                            if (!doc.disabled) onViewDetail?.(doc.docType, doc.id);
-                                                        }}
-                                                        disabled={doc.disabled}
-                                                    >
-                                                        <Eye className="h-3.5 w-3.5" />
-                                                    </Button>
-                                                </TooltipTrigger>
-                                                <TooltipContent>
-                                                    <p>Ver Detalles</p>
-                                                </TooltipContent>
-                                            </Tooltip>
+                                            <DataCell.Action
+                                                action="view"
+                                                title="Ver Detalles"
+                                                disabled={doc.disabled}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    e.preventDefault();
+                                                    if (!doc.disabled) onViewDetail?.(doc.docType, doc.id);
+                                                }}
+                                            />
                                         </div>
                                     </div>
                                 ))
                             ) : (
                                 <div className="flex flex-col items-center justify-center py-1.5 border border-dashed border-border/10 rounded-md">
-                                    <span className="text-[8px] text-muted-foreground/30 font-black uppercase tracking-widest">{emptyMessage}</span>
+                                    <span className="text-[9px] text-muted-foreground/30 font-black uppercase tracking-widest">{emptyMessage}</span>
                                 </div>
                             )}
                         </div>

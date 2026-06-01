@@ -74,10 +74,11 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         model = PurchaseOrder
         fields = [
             'id', 'number', 'display_id', 'supplier', 'supplier_name', 'warehouse', 'warehouse_name',
-            'date', 'status', 'notes', 'total_net', 'total_tax', 'total', 'total_paid', 
+            'date', 'status', 'receiving_status', 'notes', 'total_net', 'total_tax', 'total', 'total_paid', 
             'pending_amount', 'is_invoiced', 'invoice_details', 'serialized_payments',
             'work_order', 'work_order_number', 'related_documents', 'lines', 'created_at', 'updated_at'
         ]
+        read_only_fields = ['id', 'number', 'status', 'receiving_status', 'total_net', 'total_tax', 'total']
 
     def get_total_paid(self, obj):
         # Exclude payments specific to Notes (NC/ND)
@@ -222,7 +223,7 @@ class WritePurchaseOrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = PurchaseOrder
         fields = ['id', 'supplier', 'warehouse', 'work_order', 'notes', 'lines', 'supplier_reference', 'payment_method']
-        read_only_fields = ['id']
+        read_only_fields = ['id', 'number', 'status']
 
     def create(self, validated_data):
         lines_data = validated_data.pop('lines')
@@ -293,6 +294,7 @@ class PurchaseReceiptSerializer(serializers.ModelSerializer):
     class Meta:
         model = PurchaseReceipt
         fields = '__all__'
+        read_only_fields = ['id', 'number', 'status']
 
 class PurchaseReturnLineSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source='product.name', read_only=True)
@@ -314,6 +316,7 @@ class PurchaseReturnSerializer(serializers.ModelSerializer):
     class Meta:
         model = PurchaseReturn
         fields = '__all__'
+        read_only_fields = ['id', 'number', 'status']
 
 class NoteCreationSerializer(serializers.Serializer):
     note_type = serializers.ChoiceField(choices=[('NOTA_CREDITO', 'Nota de Crédito'), ('NOTA_DEBITO', 'Nota de Débito')])

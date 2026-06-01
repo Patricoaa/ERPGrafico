@@ -14,7 +14,11 @@ class InvoiceViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = Invoice.objects.all().order_by('-date', '-id')
     serializer_class = InvoiceSerializer
     filter_backends = [DjangoFilterBackend, drf_filters.SearchFilter]
-    search_fields = ['contact__name', 'contact__rut']
+    search_fields = [
+        'contact__name', 'contact__tax_id',
+        'purchase_order__supplier__name', 'purchase_order__supplier__tax_id',
+        'sale_order__customer__name', 'sale_order__customer__tax_id',
+    ]
     filterset_fields = {
         'dte_type': ['exact', 'in'],
         'sale_order': ['exact', 'isnull'],
@@ -22,6 +26,24 @@ class InvoiceViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         'status': ['exact', 'in'],
         'contact': ['exact'],
     }
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if instance.status != 'DRAFT':
+            return Response(
+                {'error': 'Solo se pueden editar facturas en estado Borrador.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        return super().update(request, *args, **kwargs)
+
+    def partial_update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if instance.status != 'DRAFT':
+            return Response(
+                {'error': 'Solo se pueden editar facturas en estado Borrador.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        return super().partial_update(request, *args, **kwargs)
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -184,7 +206,6 @@ class InvoiceViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         # New delivery parameters
         delivery_type = request.data.get('delivery_type', 'IMMEDIATE')
         delivery_date = request.data.get('delivery_date')
-        delivery_notes = request.data.get('delivery_notes', '')
         immediate_lines = request.data.get('immediate_lines')
         if isinstance(immediate_lines, str):
             import json
@@ -231,7 +252,6 @@ class InvoiceViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                 document_attachment=document_attachment,
                 delivery_type=delivery_type,
                 delivery_date=delivery_date,
-                delivery_notes=delivery_notes,
                 immediate_lines=immediate_lines,
                 payment_type=payment_type,
                 line_files=line_files,

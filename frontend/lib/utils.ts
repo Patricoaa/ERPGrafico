@@ -5,26 +5,23 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+import { STATUS_MAP } from './badge-resolvers'
+
 export function translateStatus(status: string | null | undefined): string {
   if (!status) return ''
-  const map: Record<string, string> = {
-    'DRAFT': 'Borrador',
-    'CONFIRMED': 'Confirmado',
-    'INVOICED': 'Facturado',
-    'PAID': 'Pagado',
-    'CANCELLED': 'Anulado',
-    'RECEIVED': 'Recibido',
+  const upper = status.toUpperCase();
+
+  if (STATUS_MAP[upper]) {
+    return STATUS_MAP[upper].label;
+  }
+
+  const fallbackMap: Record<string, string> = {
     'PARTIAL_RECEIVED': 'Recibido Parcial',
-    'OPEN': 'Abierto',
-    'POSTED': 'Publicado',
     'CANCEL': 'Cancelado',
     'ACTIVE': 'Activo',
     'PAUSED': 'Pausado',
-    'PENDING': 'Pendiente',
-    'IN_PROGRESS': 'En Proceso',
     'FINISHED': 'Terminada',
     'REJECTED': 'Rechazado',
-    'RECONCILED': 'Conciliado',
     'VOID': 'Anulado',
     // Production Stages (some might be used as status)
     'MATERIAL_ASSIGNMENT': 'Asignación de Materiales',
@@ -33,24 +30,15 @@ export function translateStatus(status: string | null | undefined): string {
     'PRESS': 'Impresión',
     'POSTPRESS': 'Post-Impresión',
     'RECTIFICATION': 'Rectificación',
-    'PARTIAL': 'Parcial',
     'SUBSCRIPTION_IN_PROGRESS': 'Suscripción en Proceso',
   }
-  return map[status.toUpperCase()] || status
+  return fallbackMap[upper] || status
 }
 
 export function translateProductionStage(stage: string): string {
   if (!stage) return ''
-  const map: Record<string, string> = {
-    'MATERIAL_ASSIGNMENT': 'Asignación de Materiales',
-    'MATERIAL_APPROVAL': 'Aprobación de Stock',
-    'PREPRESS': 'Pre-Impresión',
-    'PRESS': 'Impresión',
-    'POSTPRESS': 'Post-Impresión',
-    'RECTIFICATION': 'Rectificación',
-    'FINISHED': 'Finalizada',
-  }
-  return map[stage.toUpperCase()] || stage.toLowerCase().replace(/_/g, ' ')
+  const translated = translateStatus(stage)
+  return translated !== stage ? translated : stage.toLowerCase().replace(/_/g, ' ')
 }
 
 export function translateSalesChannel(channel: string): string {
@@ -65,13 +53,7 @@ export function translateSalesChannel(channel: string): string {
 }
 
 export function translateReceivingStatus(status: string): string {
-  if (!status) return ''
-  const map: Record<string, string> = {
-    'RECEIVED': 'Recibido',
-    'PARTIAL': 'Parcial',
-    'PENDING': 'Pendiente',
-  }
-  return map[status.toUpperCase()] || status
+  return translateStatus(status)
 }
 
 export function translateFieldName(field: string): string {
@@ -177,8 +159,62 @@ export function translateFieldName(field: string): string {
     'is_indefinite': 'Contrato Indefinido',
     'contract_end_date': 'Fin de Contrato',
     'income_account': 'Cuenta de Ingresos',
-    'expense_account': 'Cuenta de Gastos',
     'preferred_supplier': 'Proveedor Preferido',
+    'active': 'Activo',
+    'sale_price': 'Precio de Venta',
+    'tax': 'Impuesto',
+    'actions': 'Acciones',
+    'attributes': 'Atributos',
+    'availability': 'Disponibilidad',
+    'select': 'Selección',
+    'created_at': 'Fec. Creación',
+    'updated_at': 'Últ. Actualización',
+    'number': 'Folio',
+    'partner_name': 'Proveedor/Cliente',
+    'dte_type': 'Tipo Doc',
+    'dte_type_display': 'Tipo Doc',
+    'payment_status': 'Estado Pago',
+    'pending_amount': 'Monto Pendiente',
+    'sale_order_number': 'NV Asociada',
+    'start_date': 'Fecha Inicio',
+    'end_date': 'Fecha Fin',
+    'current_stage': 'Etapa',
+    'product_name': 'Producto',
+    'lines_count': 'Componentes',
+    'total_cost': 'Costo Total',
+    'reception_status': 'Estado Recepción',
+    'billing_status': 'Estado Facturación',
+    'treasury_status': 'Estado Pago',
+    'logistics_status': 'Estado Despacho',
+    'production_status': 'Estado Producción',
+    'display_id': 'Código',
+    'nombre': 'Nombre',
+    'prevision': 'Previsión / Salud',
+    'position': 'Cargo',
+    'base_salary': 'Sueldo Base',
+    'employee_name': 'Empleado',
+    'absence_type_display': 'Tipo',
+    'days': 'Días',
+    'employee': 'Empleado',
+    'period_label': 'Período',
+    'total_haberes': 'Haberes',
+    'legal_deductions_worker': 'Descuentos Legales',
+    'employer_contribution': 'Aporte Patronal',
+    'other_deductions': 'Otros Descuentos',
+    'advances_total': 'Anticipos',
+    'net_salary': 'Sueldo Líquido',
+    'remuneration_paid_status': 'Estado Remuneración',
+    'previred_paid_status': 'Estado Previred',
+    'is_discounted': '¿Descontado?',
+    'payroll_display_id': 'Liquidación',
+    'line_number': 'Nº Línea',
+    'transaction_date': 'Fecha Transacción',
+    'reconciliation_state': 'Estado Conciliación',
+    'matched_payment': 'Pago Vinculado',
+    'state': 'Estado',
+    'partner': 'Tercero',
+    'debit': 'Cargo / Debe',
+    'credit': 'Abono / Haber',
   };
 
   if (exactMap[lowerField]) return exactMap[lowerField];
@@ -230,15 +266,7 @@ export function translatePaymentMethod(method: string | null | undefined): strin
   return map[method.toUpperCase()] || method
 }
 
-export function formatCurrency(amount: number | string | null | undefined): string {
-  if (amount === null || amount === undefined) return '$0'
-  const numericAmount = Math.round(typeof amount === 'string' ? parseFloat(amount) : amount)
-  return new Intl.NumberFormat('es-CL', {
-    style: 'currency',
-    currency: 'CLP',
-    maximumFractionDigits: 0,
-  }).format(numericAmount)
-}
+
 
 
 export function formatBytes(bytes: number, decimals = 2) {
@@ -281,7 +309,7 @@ export function formatPlainDate(value: string | Date | null | undefined): string
 
 import { formatEntityDisplay } from './entity-registry'
 
-export function formatDocumentId(type: string | null | undefined, number: string | number | null | undefined): string {
+export function formatEntity(type: string | null | undefined, number: string | number | null | undefined): string {
   if (!number) return '---'
 
   const typeMap: Record<string, string> = {

@@ -512,7 +512,28 @@ class Product(models.Model):
         help_text=_("Precio con IVA incluido, usado para cálculos de venta")
     )
     cost_price = models.DecimalField(_("Costo Ponderado"), max_digits=12, decimal_places=0, default=0, editable=False)
-    
+
+    class PriceInheritance(models.TextChoices):
+        INHERIT   = 'INHERIT',   _('Heredar del template')
+        OVERRIDE  = 'OVERRIDE',  _('Precio propio')
+        SURCHARGE = 'SURCHARGE', _('Precio template + sobrecargo')
+
+    price_inheritance_mode = models.CharField(
+        _("Modo de precio"),
+        max_length=10,
+        choices=PriceInheritance.choices,
+        default=PriceInheritance.INHERIT,
+        help_text=_("Solo aplica para variantes. Determina cómo se resuelve el precio de venta.")
+    )
+    price_surcharge = models.DecimalField(
+        _("Sobrecargo sobre precio template"),
+        max_digits=12,
+        decimal_places=0,
+        null=True,
+        blank=True,
+        help_text=_("Monto adicional (neto) sobre el precio del template. Solo aplica cuando el modo es SURCHARGE.")
+    )
+
     # Accounting Overrides
     income_account = models.ForeignKey(
         Account, on_delete=models.SET_NULL, null=True, blank=True, related_name='product_incomes',
@@ -604,7 +625,14 @@ class Product(models.Model):
         # We default to True for STORABLE if not specified, otherwise respect input.
         if self.pk is None and self.track_inventory is None:
              self.track_inventory = (self.product_type == self.Type.STORABLE)
-            
+             
+        # Express manufacturables (mfg_auto_finalize) do not track inventory
+        auto_finalize = self.mfg_profile.mfg_auto_finalize if hasattr(self, 'mfg_profile') and self.mfg_profile else self.mfg_auto_finalize
+        advanced_mfg = self.mfg_profile.requires_advanced_manufacturing if hasattr(self, 'mfg_profile') and self.mfg_profile else self.requires_advanced_manufacturing
+        if auto_finalize:
+            self.track_inventory = False
+        elif self.product_type == self.Type.MANUFACTURABLE and not advanced_mfg:
+            self.track_inventory = True
         # Fallback for base UoM if missing but others are present
         if not self.uom:
             if self.sale_uom:
@@ -690,9 +718,9 @@ class Product(models.Model):
                 self.variant_display_name = f"{self.parent_template.name} (Variante)"
 
         # BOM Requirement for Express Products
-        # Express products (mfg_auto_finalize=True) without variants MUST have a BOM
+        # Express products (mfg_auto_finalize=True) MUST have a BOM
         auto_finalize = self.mfg_profile.mfg_auto_finalize if self.mfg_profile else self.mfg_auto_finalize
-        if auto_finalize and not self.has_variants and not self.parent_template:
+        if auto_finalize and not self.parent_template:
             self.has_bom = True
 
         super().save(*args, **kwargs)
@@ -1302,6 +1330,48 @@ class Subscription(models.Model):
 
     def __str__(self):
         return f"{self.product.name} - {self.supplier.name}"
+
+
+class ProductUoMPrice(models.Model):
+    """Precio base específico para una UoM de venta permitida de un producto.
+
+    Cuando existe, PricingService lo usa en lugar de la conversión proporcional
+    (basePrice × ratio). Si no existe para una UoM dada, el sistema hace fallback
+    a la conversión proporcional (comportamiento anterior).
+    """
+    product = models.ForeignKey(
+        Product, on_delete=models.CASCADE, related_name='uom_prices',
+        verbose_name=_("Producto")
+    )
+    uom = models.ForeignKey(
+        UoM, on_delete=models.PROTECT,
+        verbose_name=_("Unidad de Medida")
+    )
+    price_net = models.DecimalField(
+        _("Precio Neto"), max_digits=12, decimal_places=0,
+        validators=[MinValueValidator(0)]
+    )
+    price_gross = models.DecimalField(
+        _("Precio Bruto"), max_digits=12, decimal_places=0,
+        validators=[MinValueValidator(0)]
+    )
+
+    class Meta:
+        verbose_name = _("Precio por UoM")
+        verbose_name_plural = _("Precios por UoM")
+        unique_together = ('product', 'uom')
+
+    def __str__(self):
+        return f"{self.product.name} / {self.uom.name}"
+
+    def save(self, *args, **kwargs):
+        from decimal import Decimal
+        vat = Decimal('1.19')
+        if self.price_net and not self.price_gross:
+            self.price_gross = (self.price_net * vat).quantize(Decimal('1'), rounding='ROUND_HALF_UP')
+        elif self.price_gross and not self.price_net:
+            self.price_net = (self.price_gross / vat).quantize(Decimal('1'), rounding='ROUND_HALF_UP')
+        super().save(*args, **kwargs)
 
 
 class ProductFavorite(models.Model):

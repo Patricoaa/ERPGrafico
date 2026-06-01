@@ -1,8 +1,7 @@
 "use client"
 
 import { showApiError, getErrorMessage } from "@/lib/errors"
-import { useState, useEffect, useMemo, useRef, useCallback } from "react"
-import { useQuery } from "@tanstack/react-query"
+import {useState, useEffect, useMemo, useRef} from "react"
 import { PricingUtils } from '@/features/inventory/utils/pricing'
 import { Button } from "@/components/ui/button"
 import { Step1_CustomerDTE } from "./Step1_CustomerDTE"
@@ -15,28 +14,22 @@ import { OrderSummaryCard } from "./OrderSummaryCard"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { ProcessSummarySidebar } from "./ProcessSummarySidebar"
 import { toast } from "sonner"
-import api from "@/lib/api"
+import { useContact, useContactCreditLedger } from "@/features/contacts"
+import { useAccountingSettings } from "@/features/accounting"
+import { useInvoices } from "@/features/billing"
+import { getTask } from "@/features/workflow"
 
-import { Check, ChevronRight, ChevronLeft, Loader2, ShoppingCart, AlertCircle, AlertTriangle, ShieldAlert, CheckCircle2, FileWarning, Printer, Truck } from "lucide-react"
-import { User, Info } from "lucide-react"
-import { LabeledContainer, FormSection } from "@/components/shared"
+import {Check, ChevronRight, ChevronLeft, Loader2, ShoppingCart, AlertCircle, ShieldAlert, CheckCircle2, FileWarning, Truck} from "lucide-react"
+import {User} from "lucide-react"
+import {BaseModal, FormSection, SubmitButton} from '@/components/shared'
 import { cn } from "@/lib/utils"
-import { SubmitButton } from "@/components/shared/ActionButtons"
-import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
+
 import { useAuth } from "@/contexts/AuthContext"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import {
-    AlertDialog,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
 import { useServerDate } from "@/hooks/useServerDate"
-import { BaseModal } from "@/components/shared/BaseModal"
+
 import { PINPadModal } from "@/features/pos/components/PINPadModal"
-import { SaleOrder, SaleOrderLine, CheckoutDTEData, CheckoutPaymentData, CheckoutDeliveryData, PendingDebt, AccountingSettings, CheckoutResponse, CreditApprovalTask } from "../../types"
+import {SaleOrder, SaleOrderLine, CheckoutDTEData, CheckoutPaymentData, CheckoutDeliveryData, CheckoutResponse, CreditApprovalTask} from "../../types"
 import { Contact } from "@/features/contacts/types"
 import { ManualTerminalNotice, ManualTerminalReason } from "@/features/treasury"
 
@@ -112,7 +105,8 @@ export function SalesCheckoutWizardContent({
     const { dateString, serverDate } = useServerDate()
     const { openHub, isHubOpen } = useHubPanel()
     const { hasPermission } = useAuth()
-    
+    const { posCheckout, requestCredit } = useInvoices()
+
     const [currentOrderLines, setCurrentOrderLines] = useState<SaleOrderLine[]>(initialOrderLines)
     const [step, setStep] = useState(initialStep || 1)
     const [loading, setLoading] = useState(false)
@@ -121,8 +115,6 @@ export function SalesCheckoutWizardContent({
         line.product_type === 'MANUFACTURABLE' && line.requires_advanced_manufacturing
     ), [initialOrderLines]);
 
-    const isOnlyService = currentOrderLines.every((line: SaleOrderLine) => line.product_type === 'SERVICE');
-
     const steps = useMemo(() => {
         const s: { id: string; label: string }[] = [
             { id: 'customer_dte', label: 'Cliente & Doc' },
@@ -130,15 +122,12 @@ export function SalesCheckoutWizardContent({
         if (hasManufacturing) {
             s.push({ id: 'manufacturing', label: 'Fabricación' })
         }
-        if (!isOnlyService) {
-            s.push({ id: 'delivery', label: 'Entrega' })
-        }
+        s.push({ id: 'delivery', label: 'Entrega' })
         s.push({ id: 'payment', label: 'Pago' })
         return s
-    }, [hasManufacturing, isOnlyService])
+    }, [hasManufacturing])
 
     const totalSteps = steps.length;
-
 
     const [selectedCustomerId, setSelectedCustomerId] = useState(initialCustomerId)
     const [selectedCustomerName, setSelectedCustomerName] = useState(initialCustomerName)
@@ -160,7 +149,6 @@ export function SalesCheckoutWizardContent({
     const [deliveryData, setDeliveryData] = useState<CheckoutDeliveryData>(initialDeliveryData || {
         type: 'IMMEDIATE',
         date: null,
-        notes: ''
     })
     const [isFolioValid, setIsFolioValid] = useState(true)
 
@@ -176,7 +164,7 @@ export function SalesCheckoutWizardContent({
         if (!didHydrateRef.current) {
             didHydrateRef.current = true
             setCurrentOrderLines(initialOrderLines)
-            
+
             if (quickSale && currentOrderLines.length > 0) {
                 if (initialCustomerId) setSelectedCustomerId(initialCustomerId)
                 setStep(totalSteps)
@@ -186,7 +174,7 @@ export function SalesCheckoutWizardContent({
                 setStep(initialStep ?? 1)
             }
         }
-    }, [initialStep, quickSale, totalSteps, currentOrderLines.length]) 
+    }, [initialStep, quickSale, totalSteps, currentOrderLines.length])
 
     useEffect(() => {
         if (dateString && !initialDteData) {
@@ -231,15 +219,10 @@ export function SalesCheckoutWizardContent({
     const [showInvoiceReminder, setShowInvoiceReminder] = useState(false)
     const [checkoutResponse, setCheckoutResponse] = useState<CheckoutResponse | null>(null)
 
-
-    const { data: pendingDebts = null, isLoading: loadingDebts, refetch: refreshDebts } = useQuery({
-        queryKey: ['pendingDebts', selectedCustomer?.id],
-        queryFn: async () => {
-            const res = await api.get<PendingDebt[]>(`/contacts/${selectedCustomer?.id}/credit_ledger/`)
-            return res.data.filter((d: PendingDebt) => Number(d.balance) > 0)
-        },
-        enabled: !!selectedCustomer && Number(selectedCustomer.credit_balance_used || 0) > 0
-    })
+    // Solo fetcheamos credit ledger si el cliente tiene saldo a usar.
+    const creditLedgerEnabled = !!selectedCustomer && Number(selectedCustomer.credit_balance_used || 0) > 0
+    const { data: pendingDebts = null, isLoading: loadingDebts, refetch: refreshDebts } =
+        useContactCreditLedger(creditLedgerEnabled ? selectedCustomer?.id ?? null : null)
 
     // Sync debts when Hub closes (after potential payments)
     const prevHubOpenRef = useRef(isHubOpen)
@@ -250,22 +233,8 @@ export function SalesCheckoutWizardContent({
         prevHubOpenRef.current = isHubOpen
     }, [isHubOpen, refreshDebts])
 
-    const { data: salesSettings = null } = useQuery({
-        queryKey: ['salesSettings'],
-        queryFn: async () => {
-            const res = await api.get('/accounting/settings/current/')
-            return res.data
-        }
-    })
-
-    const { data: customerDetails } = useQuery({
-        queryKey: ['contact', selectedCustomerId],
-        queryFn: async () => {
-            const res = await api.get(`/contacts/${selectedCustomerId}/`)
-            return res.data
-        },
-        enabled: !!selectedCustomerId
-    })
+    const { data: salesSettings = null } = useAccountingSettings()
+    const { data: customerDetails } = useContact(selectedCustomerId ?? null)
 
     useEffect(() => {
         if (customerDetails) {
@@ -389,7 +358,7 @@ export function SalesCheckoutWizardContent({
                         }
                     }
                     return { isValid: true }
-                
+
                 case 'manufacturing':
                     const pendingItems = currentOrderLines.filter((line: SaleOrderLine) =>
                         line.product_type === 'MANUFACTURABLE' && line.requires_advanced_manufacturing && !line.manufacturing_data
@@ -399,10 +368,10 @@ export function SalesCheckoutWizardContent({
                         return { isValid: false }
                     }
                     return { isValid: true }
-                
+
                 case 'delivery':
                     return { isValid: true }
-                
+
                 case 'payment':
                     if (!paymentData.method) {
                         toast.error("Debe seleccionar un método de pago.")
@@ -427,7 +396,7 @@ export function SalesCheckoutWizardContent({
                         }
                     }
                     return { isValid: true }
-                    
+
                 default:
                     return { isValid: true }
             }
@@ -437,7 +406,6 @@ export function SalesCheckoutWizardContent({
             return { isValid: false }
         }
     }
-
 
     const handleNext = async () => {
         const validation = await validateCurrentStep()
@@ -475,11 +443,10 @@ export function SalesCheckoutWizardContent({
                 lines: currentOrderLines.map((l: SaleOrderLine) => {
                     let cleanMfgData = null
                     if (l.manufacturing_data) {
-                        const { design_files, approval_file, ...rest } = l.manufacturing_data as any
+                        const { design_files, ...rest } = l.manufacturing_data as any
                         cleanMfgData = {
                             ...rest,
                             design_filenames: ((design_files as any) || []).map((f: File) => f.name),
-                            approval_filename: approval_file ? (approval_file as any).name : null
                         }
                     }
                     return {
@@ -505,9 +472,6 @@ export function SalesCheckoutWizardContent({
                             formData.append(`line_${lineIdx}_design_${fileIdx}`, file)
                         })
                     }
-                    if ((l.manufacturing_data as any).approval_file) {
-                        formData.append(`line_${lineIdx}_approval`, (l.manufacturing_data as any).approval_file)
-                    }
                 }
             })
 
@@ -529,8 +493,6 @@ export function SalesCheckoutWizardContent({
 
             formData.append('delivery_type', deliveryData.type)
             if (deliveryData.date) formData.append('delivery_date', deliveryData.date)
-            if (deliveryData.notes) formData.append('delivery_notes', deliveryData.notes)
-
             if (deliveryData.type === 'PARTIAL' && deliveryData.partialQuantities) {
                 formData.append('immediate_lines', JSON.stringify(deliveryData.partialQuantities.map(pq => ({
                     line_id: pq.lineId,
@@ -560,15 +522,15 @@ export function SalesCheckoutWizardContent({
                 formData.append('pos_pin', pin)
             }
 
-            const res = await api.post<CheckoutResponse>('/billing/invoices/pos_checkout/', formData)
+            const data = await posCheckout(formData) as CheckoutResponse
             toast.success("Venta procesada correctamente")
-            onComplete(res.data)
+            onComplete(data)
         } catch (error: unknown) {
             console.error("Checkout error:", error)
             const rawError = getErrorMessage(error) || "Error al procesar la venta"
             const errorMessage = Array.isArray(rawError) ? rawError[0] : String(rawError)
-            
-            if (errorMessage.includes("Intento de aumento de crédito") || 
+
+            if (errorMessage.includes("Intento de aumento de crédito") ||
                 errorMessage.includes("Aprobación de crédito fue emitida para otro cliente") ||
                 errorMessage.includes("Seguridad:")) {
                 setSecurityErrorMessage(errorMessage)
@@ -682,8 +644,8 @@ export function SalesCheckoutWizardContent({
             if (posSessionId) formData.append('pos_session_id', posSessionId.toString())
             if (initialDraftId) formData.append('draft_id', initialDraftId.toString())
 
-            const response = await api.post('/billing/invoices/request_credit/', formData)
-            const taskId = response.data.task_id
+            const response = await requestCredit(formData) as { task_id: number }
+            const taskId = response.task_id
             setApprovalTaskId(taskId)
             pollApprovalStatus(taskId)
         } catch (error: unknown) {
@@ -695,8 +657,7 @@ export function SalesCheckoutWizardContent({
 
     const checkApprovalStatus = async (taskId: number, silent = false) => {
         try {
-            const response = await api.get(`/workflow/tasks/${taskId}/`)
-            const task = response.data
+            const task = await getTask<{ status: string, data: unknown, rejection_reason?: string }>(taskId)
 
             if (task.status === 'COMPLETED') {
                 if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current)
@@ -758,7 +719,6 @@ export function SalesCheckoutWizardContent({
         return () => { if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current) }
     }, [])
 
-
     return (
         <div className={`flex h-full min-h-0 ${isInline ? 'flex-col' : ''}`}>
             {!isInline && (
@@ -785,13 +745,12 @@ export function SalesCheckoutWizardContent({
                     <>
                         {/* Pending Debts Banner - Removed from here, moved to Step1_CustomerDTE */}
 
-
                         {/* Credit Approval Alert */}
                         {creditApprovalRequired && (
                             <Alert className={cn(
                                 "mb-4 border-l-4 rounded-none",
-                                isApproved 
-                                    ? "border-success bg-success/5 shadow-sm" 
+                                isApproved
+                                    ? "border-success bg-success/5 shadow-sm"
                                     : "border-warning bg-warning/5 shadow-sm"
                             )}>
                                 <div className="flex items-start gap-4">
@@ -819,10 +778,10 @@ export function SalesCheckoutWizardContent({
                                                 "text-sm leading-relaxed",
                                                 isApproved ? "text-success-foreground/80" : "text-warning-foreground/80"
                                             )}>
-                                                {isWaitingApproval 
-                                                    ? "La solicitud ha sido enviada. Consumiendo en tiempo real el estado de la verificación..." 
-                                                    : isApproved 
-                                                        ? "El supervisor ha verificado y autorizado la línea de crédito. Puede continuar y finalizar la venta." 
+                                                {isWaitingApproval
+                                                    ? "La solicitud ha sido enviada. Consumiendo en tiempo real el estado de la verificación..."
+                                                    : isApproved
+                                                        ? "El supervisor ha verificado y autorizado la línea de crédito. Puede continuar y finalizar la venta."
                                                         : creditApprovalReason}
                                             </span>
                                             {!isApproved && (
@@ -871,16 +830,16 @@ export function SalesCheckoutWizardContent({
                                         <AlertTitle className="font-black uppercase tracking-tight text-xs mb-1 text-destructive">Alerta de Seguridad</AlertTitle>
                                         <AlertDescription className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                                             <span className="text-sm text-destructive/80 leading-relaxed">{securityErrorMessage}</span>
-                                            <Button 
-                                                size="sm" 
-                                                variant="outline" 
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
                                                 onClick={() => {
                                                     setSecurityErrorMessage(null)
                                                     setApprovalTaskId(null)
                                                     setIsApproved(false)
                                                     setIsWaitingApproval(false)
                                                     setCreditApprovalRequired(false)
-                                                }} 
+                                                }}
                                                 className="h-8 border-destructive/30 text-destructive hover:bg-destructive/10 shrink-0 uppercase font-bold text-[10px]"
                                             >
                                                 Entendido
@@ -890,7 +849,7 @@ export function SalesCheckoutWizardContent({
                                 </div>
                             </Alert>
                         )}
-                        
+
                         <div className={((creditApprovalRequired || isWaitingApproval) && !isApproved) || securityErrorMessage ? "opacity-30 pointer-events-none" : ""}>
                             {renderStep()}
                         </div>
@@ -911,8 +870,8 @@ export function SalesCheckoutWizardContent({
                         </div>
                         <div className="flex gap-4">
                             {step < totalSteps && (
-                                <Button 
-                                    onClick={handleNext} 
+                                <Button
+                                    onClick={handleNext}
                                     className="w-40 font-bold"
                                 >
                                     Siguiente
@@ -1021,14 +980,14 @@ export function SalesCheckoutWizardContent({
                         </h4>
                         <p className="text-sm text-muted-foreground leading-relaxed">
                             Al finalizar el cobro, ten presente que marcaste la <b>Factura</b> para ser emitida posteriormente.
-                            <br/><br/>
+                            <br /><br />
                             No olvides emitirla externamente e ingresarle los folios al sistema una vez concluido el servicio.
                         </p>
                     </div>
                     <div className="w-full pt-4">
                         <Button
                             variant="default"
-                            className="w-full h-12 font-bold uppercase tracking-widest text-xs rounded-sm shadow-lg shadow-primary/20"
+                            className="w-full h-12 font-bold uppercase tracking-widest text-xs rounded-sm "
                             onClick={() => {
                                 setShowInvoiceReminder(false)
                                 if (isSessionHost) {

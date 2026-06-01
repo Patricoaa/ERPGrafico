@@ -8,6 +8,26 @@ from simple_history.models import HistoricalRecords
 from sales.models import SaleOrder
 from inventory.models import Product, Warehouse, UoM
 
+class ProductionSettings(models.Model):
+    number_format = models.CharField(_("Formato de Numeración"), max_length=50, default='{seq:06d}')
+    use_year_prefix = models.BooleanField(_("Usar prefijo de año"), default=False)
+
+    class Meta:
+        verbose_name = _("Configuración de Producción")
+        verbose_name_plural = _("Configuraciones de Producción")
+
+    def save(self, *args, **kwargs):
+        self.pk = 1
+        super().save(*args, **kwargs)
+
+    @classmethod
+    def load(cls):
+        obj, created = cls.objects.get_or_create(pk=1)
+        return obj
+
+def default_stage_data():
+    return {"_version": 1}
+
 class WorkOrder(models.Model):
     class Status(models.TextChoices):
         DRAFT = 'DRAFT', _('Borrador')
@@ -85,7 +105,7 @@ class WorkOrder(models.Model):
     # Store dynamic data for each stage
     stage_data = models.JSONField(
         _("Datos de Etapas"),
-        default=dict,
+        default=default_stage_data,
         blank=True,
         help_text="Datos de diseño, folios, confirmaciones de impresión, etc."
     )
@@ -98,9 +118,6 @@ class WorkOrder(models.Model):
         help_text="Bodega de donde se obtendrán los materiales"
     )
     
-    # Specs
-    specifications = models.TextField(_("Especificaciones Técnicas"), blank=True, help_text="Papel, Tintas, Terminaciones, etc.")
-
     estimated_completion_date = models.DateField(_("Fecha Estimada de Finalización"), null=True, blank=True)
     start_date = models.DateField(_("Fecha de Inicio"), null=True, blank=True)
 
@@ -131,6 +148,15 @@ class WorkOrder(models.Model):
         verbose_name = _("Orden de Trabajo")
         verbose_name_plural = _("Ordenes de Trabajo")
         ordering = ['-id']
+        constraints = [
+            # TASK-201: Prevent duplicate active WorkOrders for the same sale_line.
+            # Allows re-creation only after cancellation.
+            models.UniqueConstraint(
+                fields=['sale_line'],
+                condition=models.Q(status__in=['DRAFT', 'IN_PROGRESS']),
+                name='unique_active_workorder_per_saleline',
+            ),
+        ]
 
     def __str__(self):
         return f"{self.display_id} {self.description}"
@@ -138,6 +164,18 @@ class WorkOrder(models.Model):
     @property
     def display_id(self):
         return f"OT-{self.number}"
+    
+    @property
+    def canonical_stage_data(self) -> dict:
+        """
+        Returns the stage_data with the latest schema.
+        Applies on-the-fly migrations for data lacking versioning.
+        """
+        data = self.stage_data or {}
+        if '_version' not in data:
+            # v1 migration
+            data['_version'] = 1
+        return data
     
     @property
     def product_info(self):
@@ -229,15 +267,28 @@ class WorkOrder(models.Model):
         except ValueError:
             return False
 
+    @property
+    def canonical_stage_data(self) -> dict:
+        """TASK-112: Return stage_data normalized to v1 canonical shape.
+
+        Migrates legacy nested documents (prepress/press/postpress sub-dicts) to
+        the flat v1 layout on-the-fly. Does NOT persist the normalized data —
+        call .save() explicitly if you want to persist after migration.
+        """
+        from .stage_data_schema import migrate_stage_data_to_v1
+        return migrate_stage_data_to_v1(self.stage_data or {})
+
+
     def save(self, *args, **kwargs):
         if not self.number:
+            from core.services import SequenceService
             from django.db import transaction
+            settings = ProductionSettings.load()
             with transaction.atomic():
-                last_order = WorkOrder.objects.select_for_update().order_by('-id').first()
-                if last_order and last_order.number and last_order.number.isdigit():
-                    self.number = str(int(last_order.number) + 1).zfill(6)
-                else:
-                    self.number = '000001'
+                self.number = SequenceService.get_next_number(
+                    WorkOrder, 
+                    year_prefix=settings.use_year_prefix
+                )
         
         # Sync related_contact from stage_data['contact_id'] if present
         # This ensures OTs created via the checkout flow or manual wizard are correctly linked
@@ -325,12 +376,34 @@ class WorkOrderMaterial(models.Model):
         default='FACTURA'
     )
     
+    unit_cost_snapshot = models.DecimalField(
+        _("Costo Unitario (Snapshot)"), max_digits=12, decimal_places=4, default=0,
+        help_text=_("Costo planificado del material en el momento de crear la OT")
+    )
+    
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         verbose_name = _("Material de OT")
         verbose_name_plural = _("Materiales de OT")
-        unique_together = [['work_order', 'component']]
+        # TASK-207: Replace strict unique_together with a flexible constraint
+        # that allows the same component with different supplier/UoM (outsourcing).
+        constraints = [
+            # TASK-207: Flexible constraint allowing same component with different
+            # supplier/UoM (outsourcing). nulls_distinct=False treats NULL == NULL
+            # so two stock rows (supplier=None) of the same component+uom are blocked.
+            models.UniqueConstraint(
+                fields=['work_order', 'component', 'is_outsourced', 'supplier', 'uom'],
+                name='unique_workorder_material_variant',
+                nulls_distinct=False,  # NULL == NULL: two stock rows with same component+uom are blocked
+            ),
+        ]
+
+    def save(self, *args, **kwargs):
+        if not self.pk and not self.unit_cost_snapshot:
+            if self.component and hasattr(self.component, 'cost_price'):
+                self.unit_cost_snapshot = self.component.cost_price or 0
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.component.name} ({self.work_order.number})"
@@ -383,8 +456,17 @@ class BillOfMaterials(models.Model):
         help_text="Unidad en la que se expresa el rendimiento (se usa la unidad base del producto si se omite)"
     )
     
+    # TASK-314: Estimated minutes per production stage — used to suggest due_date on OT creation
+    estimated_prepress_min = models.PositiveIntegerField(_("Minutos Pre-Impresión"), default=0)
+    estimated_press_min = models.PositiveIntegerField(_("Minutos Impresión"), default=0)
+    estimated_postpress_min = models.PositiveIntegerField(_("Minutos Post-Impresión"), default=0)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    @property
+    def total_estimated_minutes(self):
+        return self.estimated_prepress_min + self.estimated_press_min + self.estimated_postpress_min
 
     class Meta:
         verbose_name = _("Lista de Materiales (BOM)")
@@ -474,3 +556,54 @@ class BillOfMaterialsLine(models.Model):
 
     def __str__(self):
         return f"{self.component.code} x {self.quantity} {self.uom.name if self.uom else ''}"
+
+
+class WorkOrderTemplate(models.Model):
+    """
+    TASK-312: Reusable template for quickly creating WorkOrders with preset data.
+    Created from an existing OT or manually. Used in WorkOrderForm to preload fields.
+    """
+    name = models.CharField(_("Nombre de la plantilla"), max_length=200)
+    customer = models.ForeignKey(
+        'contacts.Contact',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='work_order_templates',
+        verbose_name=_("Cliente"),
+    )
+    # Stores a subset of WorkOrder fields: description, stage_data, materials config, etc.
+    default_data = models.JSONField(_("Datos predeterminados"), default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = _("Plantilla de OT")
+        verbose_name_plural = _("Plantillas de OT")
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
+
+
+class ScanToken(models.Model):
+    """
+    TASK-313: Short-lived token embedded in printed QR codes.
+    Scanning the QR from a mobile device triggers a stage transition
+    without requiring the operator to log in.
+    """
+    work_order = models.ForeignKey(WorkOrder, on_delete=models.CASCADE, related_name='scan_tokens')
+    token = models.CharField(max_length=64, unique=True, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    used_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = _("Token de Escaneo")
+        verbose_name_plural = _("Tokens de Escaneo")
+
+    def is_valid(self):
+        from django.utils import timezone
+        return self.used_at is None and self.expires_at > timezone.now()
+
+    def __str__(self):
+        return f"ScanToken({self.work_order_id}, expires={self.expires_at:%Y-%m-%d %H:%M})"

@@ -60,10 +60,12 @@ export function useAutoSaveForm<T extends FieldValues>(
     const isResettingRef = useRef(false)
     const hasPendingChangesRef = useRef(false)
 
-    onSaveRef.current = onSave
-    validateRef.current = validate
-    enabledRef.current = enabled
-    debounceMsRef.current = debounceMs
+    useEffect(() => {
+        onSaveRef.current = onSave
+        validateRef.current = validate
+        enabledRef.current = enabled
+        debounceMsRef.current = debounceMs
+    }, [onSave, validate, enabled, debounceMs])
 
     const clearDebounce = () => {
         if (debounceTimerRef.current) {

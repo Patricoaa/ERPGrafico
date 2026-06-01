@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useCallback, useState } from "react"
+import React, {useEffect, useCallback} from "react"
 import { useForm, UseFormReturn, Path } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useBillingSettings } from "@/features/settings"
@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Form, FormField, FormItem } from "@/components/ui/form"
 import { Check } from "lucide-react"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
-import { AutoSaveStatusBadge, LabeledInput } from "@/components/shared"
+import {AutoSaveStatusBadge, FadeIn} from "@/components/shared"
 import { useAutoSaveForm } from "@/hooks/useAutoSaveForm"
 import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard"
 
@@ -47,15 +47,11 @@ export const BillingSettingsView: React.FC<{ activeTab?: string }> = ({ activeTa
             keys.forEach((key) => {
                 const val = settings[key]
                 if (val === null || val === undefined) {
-                    if (key === 'default_vat_rate') {
-                        (formattedSettings as Record<string, unknown>)[key] = 19.00;
-                    } else if (key === 'allowed_dte_types_emit' || key === 'allowed_dte_types_receive') {
+                    if (key === 'allowed_dte_types_emit' || key === 'allowed_dte_types_receive') {
                         (formattedSettings as Record<string, unknown>)[key] = [];
                     } else {
                         (formattedSettings as Record<string, unknown>)[key] = null;
                     }
-                } else if (key === 'default_vat_rate') {
-                    (formattedSettings as Record<string, unknown>)[key] = parseFloat(val.toString())
                 } else {
                     (formattedSettings as Record<string, unknown>)[key] = val
                 }
@@ -77,58 +73,59 @@ export const BillingSettingsView: React.FC<{ activeTab?: string }> = ({ activeTa
             </div>
             <Form {...form}>
                 <form className="mt-6 space-y-6">
-                    {activeTab === "accounts" && (
-                        <div className="space-y-6 m-0 p-0 border-0 outline-none mt-4">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <Card>
-                                    <CardHeader>
-                                        <CardTitle className="text-lg text-primary">Cuentas por Cobrar</CardTitle>
-                                        <CardDescription>Gestión de clientes y anticipos recibidos</CardDescription>
-                                    </CardHeader>
-                                    <CardContent className="space-y-4">
-                                        <AccountField form={form} name="default_receivable_account" label="CxC Clientes (Activo)" accountType="ASSET" />
-                                        <AccountField form={form} name="default_advance_payment_account" label="Anticipos de Clientes (Pasivo)" accountType="LIABILITY" />
-                                    </CardContent>
-                                </Card>
+                    <FadeIn key={activeTab}>
+                        {activeTab === "accounts" && (
+                            <div className="space-y-6 m-0 p-0 border-0 outline-none mt-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <Card variant="transparent">
+                                        <CardHeader>
+                                            <CardTitle className="text-lg text-primary">Cuentas por Cobrar</CardTitle>
+                                            <CardDescription>Gestión de clientes y anticipos recibidos</CardDescription>
+                                        </CardHeader>
+                                        <CardContent className="space-y-4">
+                                            <AccountField form={form} name="default_receivable_account" label="CxC Clientes (Activo)" accountType="ASSET" />
+                                            <AccountField form={form} name="default_advance_payment_account" label="Anticipos de Clientes (Pasivo)" accountType="LIABILITY" />
+                                        </CardContent>
+                                    </Card>
 
-                                <Card>
-                                    <CardHeader>
-                                        <CardTitle className="text-lg text-primary">Cuentas por Pagar</CardTitle>
-                                        <CardDescription>Gestión de proveedores y anticipos entregados</CardDescription>
-                                    </CardHeader>
-                                    <CardContent className="space-y-4">
-                                        <AccountField form={form} name="default_payable_account" label="CxP Proveedores (Pasivo)" accountType="LIABILITY" />
-                                        <AccountField form={form} name="default_prepayment_account" label="Anticipos a Proveedores (Activo)" accountType="ASSET" />
-                                    </CardContent>
-                                </Card>
+                                    <Card variant="transparent">
+                                        <CardHeader>
+                                            <CardTitle className="text-lg text-primary">Cuentas por Pagar</CardTitle>
+                                            <CardDescription>Gestión de proveedores y anticipos entregados</CardDescription>
+                                        </CardHeader>
+                                        <CardContent className="space-y-4">
+                                            <AccountField form={form} name="default_payable_account" label="CxP Proveedores (Pasivo)" accountType="LIABILITY" />
+                                            <AccountField form={form} name="default_prepayment_account" label="Anticipos a Proveedores (Activo)" accountType="ASSET" />
+                                        </CardContent>
+                                    </Card>
+                                </div>
                             </div>
-                        </div>
-                    )}
+                        )}
 
-                    {activeTab === "dtes" && (
-                        <div className="space-y-6 m-0 p-0 border-0 outline-none mt-4">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <DTEConfigCard
-                                    form={form}
-                                    name="allowed_dte_types_emit"
-                                    title="Documentos a Emitir (Ventas/POS)"
-                                    description="Seleccione qué tipos de documentos están habilitados para ser emitidos."
-                                />
-                                <DTEConfigCard
-                                    form={form}
-                                    name="allowed_dte_types_receive"
-                                    title="Documentos a Recibir (Compras)"
-                                    description="Seleccione qué tipos de documentos están habilitados para ser registrados."
-                                />
+                        {activeTab === "dtes" && (
+                            <div className="space-y-6 m-0 p-0 border-0 outline-none mt-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <DTEConfigCard
+                                        form={form}
+                                        name="allowed_dte_types_emit"
+                                        title="Documentos a Emitir (Ventas/POS)"
+                                        description="Seleccione qué tipos de documentos están habilitados para ser emitidos."
+                                    />
+                                    <DTEConfigCard
+                                        form={form}
+                                        name="allowed_dte_types_receive"
+                                        title="Documentos a Recibir (Compras)"
+                                        description="Seleccione qué tipos de documentos están habilitados para ser registrados."
+                                    />
+                                </div>
                             </div>
-                        </div>
-                    )}
+                        )}
+                    </FadeIn>
                 </form>
             </Form>
         </div>
     )
 }
-
 
 export default BillingSettingsView
 
@@ -173,7 +170,7 @@ function DTEConfigCard({ form, name, title, description }: DTEConfigCardProps) {
     ]
 
     return (
-        <Card>
+        <Card variant="transparent">
             <CardHeader>
                 <CardTitle className="text-lg">{title}</CardTitle>
                 <CardDescription>{description}</CardDescription>

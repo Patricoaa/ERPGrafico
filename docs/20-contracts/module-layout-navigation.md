@@ -4,7 +4,7 @@ doc: module-layout-navigation
 status: active
 owner: frontend-team
 stability: stable
-last_review: 2026-05-08
+last_review: 2026-05-28
 ---
 
 # Contrato: Layout y Navegación Dinámica por Módulo
@@ -106,7 +106,7 @@ La página `[id]/page.tsx` es un **Server Component** que:
 1. Fetch de la entidad vía API.
 2. Valida permiso `view_*` — devuelve 403 si no autorizado.
 3. Llama `notFound()` si el id no existe.
-4. Renderiza `<EntityDetailPage>` con el form/editor existente como `children`.
+4. **Redirige server-side a `<list_url>?selected={id}`** (ADR-0020). La lista abre el modal/drawer de edición existente con ese `?selected`. No renderiza `EntityDetailPage` (componente decommissionado en T-95).
 
 ### 7.2 Tabla app → módulo frontend
 
@@ -157,79 +157,24 @@ La página `[id]/page.tsx` es un **Server Component** que:
 | `core.user` | `/settings/users` | `/settings/users/{id}` | ❌ (T-77) | No |
 | `core.attachment` | `/files` | `/files/{id}` | ❌ (T-77) | **Sí** |
 
-### 7.4 Shell `EntityDetailPage`
+### 7.4 Shell `EntityDetailPage` — eliminado (T-95)
 
-**Archivo:** `frontend/components/shared/EntityDetailPage.tsx` (T-71)
+> [!CAUTION]
+> **`EntityDetailPage` y las 16 páginas `*DetailClient.tsx` fueron eliminadas en T-95 (ADR-0020).** No existe una ruta de detalle standalone. El patrón canónico es el redirect server-side de `[id]/page.tsx` hacia `<list_url>?selected={id}`, que abre sobre la lista el modal/drawer de edición existente.
 
-```tsx
-<EntityDetailPage
-  entityType="sale_order"        // para ActivitySidebar
-  title="Nota de Venta"
-  displayId="NV-001"
-  icon="receipt-text"
-  breadcrumb={[{ label: 'Ventas', href: '/sales' }, { label: 'Órdenes', href: '/sales/orders' }]}
-  actions={[...]}               // opcional — botones en footer
-  sidebar={<ActivitySidebar />} // opcional — default activo si instanceId presente
-  readonly={false}              // opcional — ver §7.5
->
-  {/* form/editor existente sin modificar */}
-  <SaleOrderForm initialData={order} />
-</EntityDetailPage>
-```
+**Contexto histórico:** [ADR-0019](../10-architecture/adr/0019-entity-detail-route-convention.md) introdujo rutas `[id]` reales con un shell `EntityDetailPage`; [ADR-0020](../10-architecture/adr/0020-modal-on-list-edit-ux.md) lo revirtió al patrón URL-state (`?selected`). Los componentes quedaron huérfanos y se borraron en T-95.
 
-**Layout:**
-```
-┌─────────────────────────────────────────────┐
-│ [icon] displayId · title     [breadcrumb]   │  ← header sticky
-├──────────────────────────┬──────────────────┤
-│                          │                  │
-│     children (form)      │  ActivitySidebar │  ← main flex
-│                          │  hidden lg:flex  │
-│                          │  w-72 border-l   │
-├──────────────────────────┴──────────────────┤
-│  [danger action]        [cancel] [submit]   │  ← footer opcional
-└─────────────────────────────────────────────┘
-```
-
-**Props:**
-
-| Prop | Tipo | Requerido | Descripción |
-|------|------|-----------|-------------|
-| `entityType` | `string` | ✅ | Registra el tipo para `ActivitySidebar` |
-| `title` | `string` | ✅ | Nombre de la entidad en el header |
-| `displayId` | `string` | No | Identificador visible (ej. `NV-001`) |
-| `icon` | `string` | ✅ | Nombre de icono Lucide |
-| `breadcrumb` | `BreadcrumbItem[]` | ✅ | Items: `{ label, href }` |
-| `actions` | `ActionItem[]` | No | Botones extra en el footer |
-| `sidebar` | `ReactNode` | No | Default: `<ActivitySidebar>` si `instanceId` presente |
-| `readonly` | `boolean` | No | Activa modo lectura — ver §7.5 |
-| `children` | `ReactNode` | ✅ | Form o contenido principal |
-
-### 7.5 Modo `readonly`
-
-Usado cuando la entidad no tiene formulario de edición (`StockMove`, `BankStatement`, `POSSession` cerrada, `Attachment`).
-
-Cuando `readonly={true}`:
-- El slot `children` renderiza una vista de detalle (no un form). Recomendado: `<dl>` semántico o tabla de detalle.
-- No se renderiza `FormFooter` con acciones de edición.
-- El header mantiene el icono + displayId + breadcrumb.
-- El `ActivitySidebar` sigue presente si la entidad tiene historial.
-
-### 7.6 Reglas de implementación
-
-1. **La page `[id]/page.tsx` es siempre Server Component.** Nunca Client Component.
-2. **No modificar el form/editor existente** al montarlo en `EntityDetailPage` — solo envolver.
-3. **Redirect desde `?selected=id`** (patrón legacy): la página lista detecta el param y redirige a `/<module>/<entity>/[id]` durante la ventana de migración.
-4. **`apps.py::ready()`** debe ser actualizado (T-78) con `list_url` y `detail_url_pattern` en inglés una vez que la ruta `[id]` exista.
-5. **Test Playwright obligatorio** (T-79): cada ruta `[id]` debe pasar sin 404 ni 500 con un fixture de datos.
+Para implementar hoy:
+- **Redirect de la ruta `[id]`:** ver [list-modal-edit-pattern.md §7](./list-modal-edit-pattern.md).
+- **Elección de superficie** (modal centrado vs drawer de entidad embebido): ver [ADR-0027](../10-architecture/adr/0027-basedrawer-crud-forms.md).
 
 ### 7.7 Cross-references
 
 - Decision tree para forms: [component-decision-tree.md §5](./component-decision-tree.md)
 - Shell `FormSplitLayout` + `ActivitySidebar`: [form-layout-architecture.md §5-6](./form-layout-architecture.md)
 - Playbook para nueva entidad con ruta `[id]`: [add-feature.md §6](../30-playbooks/add-feature.md)
-- ADR de la convención: [ADR-0019](../10-architecture/adr/0019-entity-detail-route-convention.md)
-- ADR de Opción A (URL-state redirect): [ADR-0020](../10-architecture/adr/0020-modal-on-list-edit-ux.md)
+- ADR original (superseded): [ADR-0019](../10-architecture/adr/0019-entity-detail-route-convention.md) — revertido por ADR-0020
+- ADR canónico (URL-state redirect): [ADR-0020](../10-architecture/adr/0020-modal-on-list-edit-ux.md)
 - **Patrón canónico de edición desde lista / Universal Search:** [list-modal-edit-pattern.md](./list-modal-edit-pattern.md)
 - Matriz de gap: [F7-route-matrix.md](../../docs/50-audit/Arquitectura%20Django/F7-route-matrix.md)
 

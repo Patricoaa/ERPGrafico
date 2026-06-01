@@ -1,7 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import api from '@/lib/api'
+import { posApi } from '../api/posApi'
 import { toast } from 'sonner'
 import { useAuth } from '@/contexts/AuthContext'
+import { useRealtime } from '@/features/realtime'
+
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { POS_KEYS } from './queryKeys'
 
 // ── Types ────────────────────────────────────────────────────────
 
@@ -47,7 +51,12 @@ function getBrowserSessionKey(): string {
     const KEY = 'pos_browser_session_key'
     let key = sessionStorage.getItem(KEY)
     if (!key) {
-        key = crypto.randomUUID()
+        if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+            key = crypto.randomUUID()
+        } else {
+            // Fallback for non-secure contexts where crypto.randomUUID is undefined
+            key = 'session_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
+        }
         sessionStorage.setItem(KEY, key)
     }
     return key
@@ -79,6 +88,111 @@ export function useDraftSync({
     useEffect(() => {
         callbacksRef.current = { onNewDraft, onDraftDeleted, onDraftUpdated, onLockChanged, onSessionStateChange }
     }, [onNewDraft, onDraftDeleted, onDraftUpdated, onLockChanged, onSessionStateChange])
+
+    const handleSocketEvent = useCallback((data: any) => {
+        const { event, draft, draft_id, error } = data
+        const currentUserId = user?.id
+
+        if (event === 'LOCK_LOST') {
+            if (draft_id === activeLockDraftId) {
+                setActiveLockDraftId(null)
+                toast.warning('Bloqueo perdido', { description: error })
+            }
+            return
+        }
+
+        setSyncDrafts(prev => {
+            let next = [...prev]
+
+            if (event === 'CREATED') {
+                if (!next.find(d => d.id === draft.id)) {
+                    next.push(draft)
+                    if (draft.locked_by_id !== currentUserId) {
+                        callbacksRef.current.onNewDraft?.(draft)
+                    }
+                }
+            } else if (event === 'UPDATED') {
+                const index = next.findIndex(d => d.id === draft.id)
+                if (index !== -1) {
+                    const old = next[index]
+                    next[index] = draft
+
+                    // Detect lock changes
+                    if (old.is_locked !== draft.is_locked || old.locked_by_id !== draft.locked_by_id) {
+                        callbacksRef.current.onLockChanged?.(draft)
+                    }
+
+                    // Detect content updates
+                    if (old.updated_at !== draft.updated_at && draft.locked_by_id !== currentUserId) {
+                        callbacksRef.current.onDraftUpdated?.(draft)
+                    }
+                } else {
+                    // It's an update for something we didn't have? Add it.
+                    next.push(draft)
+                }
+            } else if (event === 'DELETED') {
+                next = next.filter(d => d.id !== draft_id)
+                callbacksRef.current.onDraftDeleted?.(draft_id)
+            }
+
+            // Sort by updated_at desc
+            return next.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
+        })
+    }, [user?.id, activeLockDraftId])
+
+    // ── Mutation hooks for draft sync operations ────────────────
+    const queryClient = useQueryClient()
+    const { markLocalMutation } = useRealtime()
+
+    const syncDraftsMutation = useMutation({
+        mutationFn: (posSessionId: number) => posApi.syncDrafts({ pos_session_id: posSessionId }),
+        onSuccess: (data) => {
+            setSyncDrafts(data.drafts)
+            prevDraftsRef.current = data.drafts
+            queryClient.invalidateQueries({ queryKey: POS_KEYS.drafts.lists() })
+            markLocalMutation()
+        },
+        onError: (error: Error) => {
+            console.debug('[DraftSync] Sync failed:', error)
+        }
+    })
+
+    const lockDraftMutation = useMutation({
+        mutationFn: ({ draftId, sessionKey }: { draftId: number; sessionKey: string }) =>
+            posApi.lockDraft(draftId, { pos_session_id: posSessionId, session_key: sessionKey }),
+        onSuccess: (data, variables) => {
+            setActiveLockDraftId(variables.draftId)
+            queryClient.invalidateQueries({ queryKey: POS_KEYS.drafts.detailById(variables.draftId) })
+            markLocalMutation()
+        },
+        onError: () => {}
+    })
+
+    const unlockDraftMutation = useMutation({
+        mutationFn: (draftId: number) => posApi.unlockDraft(draftId, { pos_session_id: posSessionId, session_key: browserSessionKey }),
+        onSuccess: () => {
+            setActiveLockDraftId(null)
+            queryClient.invalidateQueries({ queryKey: POS_KEYS.drafts.detailById(draftId) })
+            markLocalMutation()
+        },
+        onError: () => {}
+    })
+
+    // ── Initial Fetch & Fallback ────────────────────────────────
+    const initialFetch = useCallback(async () => {
+        if (!posSessionId) return
+        try {
+            const data: SyncResponse = await syncDraftsMutation.mutateAsync(posSessionId)
+            setSyncDrafts(data.drafts)
+            prevDraftsRef.current = data.drafts
+            
+            if (data.session_status === 'CLOSED') {
+                callbacksRef.current.onSessionStateChange?.('CLOSED', data.closed_by_name)
+            }
+        } catch (error) {
+            console.debug('[DraftSync] Initial fetch failed:', error)
+        }
+    }, [posSessionId, syncDraftsMutation])
 
     // ── WebSocket Logic ──────────────────────────────────────────
 
@@ -136,75 +250,6 @@ export function useDraftSync({
         }
     }, [enabled, posSessionId])
 
-    const handleSocketEvent = useCallback((data: any) => {
-        const { event, draft, draft_id, error } = data
-        const currentUserId = user?.id
-
-        if (event === 'LOCK_LOST') {
-            if (draft_id === activeLockDraftId) {
-                setActiveLockDraftId(null)
-                toast.warning('Bloqueo perdido', { description: error })
-            }
-            return
-        }
-
-        setSyncDrafts(prev => {
-            let next = [...prev]
-
-            if (event === 'CREATED') {
-                if (!next.find(d => d.id === draft.id)) {
-                    next.push(draft)
-                    if (draft.locked_by_id !== currentUserId) {
-                        callbacksRef.current.onNewDraft?.(draft)
-                    }
-                }
-            } else if (event === 'UPDATED') {
-                const index = next.findIndex(d => d.id === draft.id)
-                if (index !== -1) {
-                    const old = next[index]
-                    next[index] = draft
-
-                    // Detect lock changes
-                    if (old.is_locked !== draft.is_locked || old.locked_by_id !== draft.locked_by_id) {
-                        callbacksRef.current.onLockChanged?.(draft)
-                    }
-
-                    // Detect content updates
-                    if (old.updated_at !== draft.updated_at && draft.locked_by_id !== currentUserId) {
-                        callbacksRef.current.onDraftUpdated?.(draft)
-                    }
-                } else {
-                    // It's an update for something we didn't have? Add it.
-                    next.push(draft)
-                }
-            } else if (event === 'DELETED') {
-                next = next.filter(d => d.id !== draft_id)
-                callbacksRef.current.onDraftDeleted?.(draft_id)
-            }
-
-            // Sort by updated_at desc
-            return next.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
-        })
-    }, [user?.id, activeLockDraftId])
-
-    // ── Initial Fetch & Fallback ────────────────────────────────
-
-    const initialFetch = useCallback(async () => {
-        if (!posSessionId) return
-        try {
-            const res = await api.get(`/sales/pos-drafts/sync/?pos_session_id=${posSessionId}`)
-            const data: SyncResponse = res.data
-            setSyncDrafts(data.drafts)
-            prevDraftsRef.current = data.drafts
-            
-            if (data.session_status === 'CLOSED') {
-                callbacksRef.current.onSessionStateChange?.('CLOSED', data.closed_by_name)
-            }
-        } catch (error) {
-            console.debug('[DraftSync] Initial fetch failed:', error)
-        }
-    }, [posSessionId])
-
     // Use a slow polling fallback ONLY if socket is disconnected for a long time
     useEffect(() => {
         if (!enabled || !posSessionId || isSocketConnected) return
@@ -257,10 +302,7 @@ export function useDraftSync({
     const acquireLock = useCallback(async (draftId: number) => {
         if (!posSessionId) return { acquired: false, error: 'Sin sesión' }
         try {
-            await api.post(`/sales/pos-drafts/${draftId}/lock/`, {
-                pos_session_id: posSessionId,
-                session_key: browserSessionKey,
-            })
+            await lockDraftMutation.mutateAsync({ draftId, sessionKey: browserSessionKey })
             setActiveLockDraftId(draftId)
             return { acquired: true }
         } catch (error: any) {
@@ -270,19 +312,16 @@ export function useDraftSync({
                 locked_by_name: error.response?.data?.locked_by_name
             }
         }
-    }, [posSessionId, browserSessionKey])
+    }, [posSessionId, browserSessionKey, lockDraftMutation])
 
     const releaseLock = useCallback(async (draftId?: number) => {
         const targetId = draftId || activeLockDraftId
         if (!targetId || !posSessionId) return
         try {
-            await api.post(`/sales/pos-drafts/${targetId}/unlock/`, {
-                pos_session_id: posSessionId,
-                session_key: browserSessionKey,
-            })
-        } catch (error) {}
+            await unlockDraftMutation.mutateAsync(targetId)
+        } catch {}
         if (targetId === activeLockDraftId) setActiveLockDraftId(null)
-    }, [activeLockDraftId, posSessionId, browserSessionKey])
+    }, [activeLockDraftId, posSessionId, browserSessionKey, unlockDraftMutation])
 
     const getLockInfo = useCallback((draftId: number) => {
         const draft = syncDrafts.find(d => d.id === draftId)

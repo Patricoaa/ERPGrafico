@@ -3,7 +3,7 @@ layer: 20-contracts
 doc: component-selectors
 status: active
 owner: frontend-team
-last_review: 2026-04-23
+last_review: 2026-05-28
 stability: beta
 ---
 
@@ -132,7 +132,7 @@ Feature hook: `useProductSearch` from `features/inventory`.
 
 ## AdvancedContactSelector 🟡
 
-Combobox for customers/suppliers. Debounced search, RUT display. Lazy-loads `ContactModal` for quick contact creation.
+Combobox for customers/suppliers. Debounced search, RUT display. Lazy-loads `ContactDrawer` for quick contact creation.
 
 ```tsx
 <AdvancedContactSelector
@@ -163,7 +163,7 @@ Feature hook: `useContactSearch` from `features/contacts`.
 
 ## AdvancedSaleOrderSelector 🟡
 
-Combobox for sale orders. Debounced search, inline preview via `TransactionViewModal`.
+Combobox for sale orders. Debounced search, inline preview via the entity drawer (`openEntity('sales.saleorder', id)` — see [component-entity-drawers.md](./component-entity-drawers.md)).
 
 ```tsx
 <AdvancedSaleOrderSelector

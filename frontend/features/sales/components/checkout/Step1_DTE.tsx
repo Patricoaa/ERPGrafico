@@ -3,17 +3,14 @@
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Checkbox } from "@/components/ui/checkbox"
-import { FileText, Receipt, AlertCircle, Loader2, CheckCircle, ShieldAlert } from "lucide-react"
-import { useFolioValidation } from "@/hooks/useFolioValidation"
+import {FileText, Receipt, AlertCircle} from "lucide-react"
 import { useEffect, useMemo } from "react"
 import { cn } from "@/lib/utils"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useBillingSettingsQuery } from "@/features/settings"
 import { useServerDate } from "@/hooks/useServerDate"
-import { DocumentAttachmentDropzone } from "@/components/shared/DocumentAttachmentDropzone"
 
-import { FolioValidationInput } from "@/components/shared/FolioValidationInput"
-import { PeriodValidationDateInput } from "@/components/shared/PeriodValidationDateInput"
+import { DocumentAttachmentDropzone, FolioValidationInput, PeriodValidationDateInput } from '@/components/shared'
 
 import { CheckoutDTEData } from "../../types"
 
@@ -48,7 +45,6 @@ export function Step1_DTE({
         const allowed = settings.allowed_dte_types_emit || [];
         return allowed.length > 0 ? allowed : ['BOLETA', 'FACTURA', 'BOLETA_EXENTA', 'FACTURA_EXENTA'];
     }, [settings])
-
 
     // Enforce allowed DTE types
     useEffect(() => {

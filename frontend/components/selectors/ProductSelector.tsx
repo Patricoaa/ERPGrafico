@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Check, ChevronDown, Search, Loader2, AlertCircle } from "lucide-react"
+import { Check, ChevronDown, Search, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { getEntityIcon } from "@/lib/entity-registry"
 import { PricingUtils } from '@/features/inventory/utils/pricing'
@@ -17,13 +17,13 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover"
-import { BaseModal } from "@/components/shared/BaseModal"
+
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { useProductSearch, useSingleProduct } from "@/features/inventory/hooks/useProductSearch"
-import { EmptyState } from "@/components/shared/EmptyState"
+
 import { Product } from "@/types/entities"
-import { CardSkeleton } from "@/components/shared"
+import { BaseModal, CardSkeleton, EmptyState, LabeledContainer } from '@/components/shared'
 
 interface ProductSelectorProps {
     value?: string | number | null
@@ -338,7 +338,7 @@ export function ProductSelector({
                                                 ) : (
                                                     <>
                                                         ${(Number(product.sale_price_gross) || PricingUtils.netToGross(Number(product.sale_price))).toLocaleString()}
-                                                        <span className="text-[8px] text-muted-foreground ml-0.5">IVA Inc.</span>
+                                                        <span className="text-[9px] text-muted-foreground ml-0.5">IVA Inc.</span>
                                                     </>
                                                 )}
                                             </span>

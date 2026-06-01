@@ -594,11 +594,14 @@ class MatchingService:
             if p.account and p.account != stmt_account:
                 # Create Transfer Entry
                 from accounting.models import JournalEntry, JournalItem
+                from django.contrib.contenttypes.models import ContentType
                 transfer_entry = JournalEntry.objects.create(
                     date=line.transaction_date,
                     reference=f"Transferencia Conciliación {line.statement.display_id}",
                     description=f"Movimiento de fondos por conciliación ({p.get_payment_method_display()})",
-                    status=JournalEntry.State.DRAFT
+                    status=JournalEntry.State.DRAFT,
+                    source_content_type=ContentType.objects.get_for_model(line.statement._meta.model),
+                    source_object_id=line.statement.id,
                 )
                 
                 # Dr Bank (Destination)

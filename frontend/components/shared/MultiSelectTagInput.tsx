@@ -1,15 +1,11 @@
 "use client"
 
 import React, { useState, useMemo } from "react"
-import { Check, ChevronDown, Search, X } from "lucide-react"
+import { Check, ChevronDown, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import { IconButton } from "@/components/shared"
-import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
-} from "@/components/ui/popover"
+
 import { Separator } from "@/components/ui/separator"
 
 export interface MultiSelectOption {
@@ -23,6 +19,7 @@ interface MultiSelectTagInputProps {
     options: MultiSelectOption[]
     value: string[]
     onChange: (value: string[]) => void
+    onCreateOption?: (value: string) => void
     error?: string
     required?: boolean
     containerClassName?: string
@@ -40,6 +37,7 @@ export function MultiSelectTagInput({
     options,
     value,
     onChange,
+    onCreateOption,
     error,
     required,
     containerClassName,
@@ -48,7 +46,19 @@ export function MultiSelectTagInput({
 }: MultiSelectTagInputProps) {
     const [open, setOpen] = useState(false)
     const [searchQuery, setSearchQuery] = useState("")
+    const inputRef = React.useRef<HTMLInputElement>(null)
+    const containerRef = React.useRef<HTMLDivElement>(null)
     const hasError = !!error
+
+    React.useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+                setOpen(false)
+            }
+        }
+        document.addEventListener("mousedown", handleClickOutside)
+        return () => document.removeEventListener("mousedown", handleClickOutside)
+    }, [])
 
     const selectedOptions = useMemo(() => {
         return options.filter(opt => value.includes(opt.value))
@@ -56,7 +66,7 @@ export function MultiSelectTagInput({
 
     const filteredOptions = useMemo(() => {
         if (!searchQuery) return options
-        return options.filter(opt => 
+        return options.filter(opt =>
             opt.label.toLowerCase().includes(searchQuery.toLowerCase())
         )
     }, [options, searchQuery])
@@ -73,98 +83,127 @@ export function MultiSelectTagInput({
         onChange(value.filter(v => v !== optionValue))
     }
 
-    return (
-        <div className={cn("space-y-1 relative w-full group", containerClassName)}>
-            <Popover open={open} onOpenChange={setOpen}>
-                <PopoverTrigger asChild>
-                    <fieldset
-                        className={cn(
-                            "notched-field transition-all duration-200 cursor-pointer min-h-[44px] pb-1.5 pt-1",
-                            open ? "border-primary ring-1 ring-primary/20" : "group-hover:border-muted-foreground/50",
-                            hasError && "border-destructive ring-destructive/20",
-                            disabled && "opacity-50 cursor-not-allowed pointer-events-none"
-                        )}
-                        data-error={hasError || undefined}
-                        data-disabled={disabled || undefined}
-                    >
-                        {label && (
-                            <legend className={cn(
-                                "px-1.5 text-[10px] font-black uppercase tracking-[0.15em] transition-colors duration-200",
-                                hasError ? "text-destructive" : (open ? "text-primary" : "text-muted-foreground"),
-                                disabled && "text-muted-foreground/50"
-                            )}>
-                                {label}
-                                {required && (
-                                    <span className="text-destructive ml-0.5" aria-hidden="true">
-                                        *
-                                    </span>
-                                )}
-                            </legend>
-                        )}
+    const exactMatch = options.find(opt => opt.label.toLowerCase() === searchQuery.toLowerCase())
+    const showCreate = onCreateOption && searchQuery.trim() !== "" && !exactMatch
 
-                        <div className="flex items-center w-full px-1">
-                            <div className="flex flex-wrap items-center gap-1.5 px-2 flex-1">
-                                {selectedOptions.length > 0 ? (
-                                    selectedOptions.map((opt) => (
-                                        <Badge
-                                            key={opt.value}
-                                            variant="secondary"
-                                            className="flex items-center gap-1 px-2 py-0.5 h-6 text-[11px] font-bold border-secondary/50 animate-in zoom-in-95 duration-200"
-                                        >
-                                            {opt.label}
-                                            <IconButton
-                                                type="button"
-                                                variant="ghost"
-                                                className="h-3 w-3 p-0 hover:bg-transparent hover:text-destructive"
-                                                onClick={(e) => removeOption(e, opt.value)}
-                                            >
-                                                <X className="h-2.5 w-2.5" />
-                                            </IconButton>
-                                        </Badge>
-                                    ))
-                                ) : (
-                                    <span className="text-sm text-muted-foreground/50 h-7 flex items-center pl-1">
-                                        {placeholder}
-                                    </span>
-                                )}
-                            </div>
-                            
-                            <div className="flex items-center justify-center pr-2 pl-1 text-muted-foreground/40 group-hover:text-muted-foreground transition-colors shrink-0 select-none">
-                                <ChevronDown className={cn("h-4 w-4 transition-transform duration-200", open && "rotate-180")} />
-                            </div>
-                        </div>
-                    </fieldset>
-                </PopoverTrigger>
-                
-                <PopoverContent 
-                    className="w-[var(--radix-popover-trigger-width)] p-0 rounded-md border-border/80 overflow-hidden shadow-xl" 
-                    align="start"
-                >
-                    <div className="flex flex-col">
-                        {/* Search Area */}
-                        <div className="flex items-center px-3 py-2 border-b border-border/50 bg-muted/5">
-                            <Search className="h-3.5 w-3.5 text-muted-foreground/60 mr-2" />
-                            <input
-                                type="text"
-                                className="flex-1 bg-transparent border-none outline-none text-xs font-medium placeholder:text-muted-foreground/40 h-5"
-                                placeholder="Buscar opciones..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                autoFocus
-                            />
-                            {searchQuery && (
-                                <IconButton 
-                                    variant="ghost" 
-                                    className="h-5 w-5 p-0 text-muted-foreground/40 hover:text-foreground"
-                                    onClick={() => setSearchQuery("")}
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === "Enter" && searchQuery.trim()) {
+            e.preventDefault()
+            if (exactMatch) {
+                if (!value.includes(exactMatch.value)) {
+                    onChange([...value, exactMatch.value])
+                }
+                setSearchQuery("")
+            } else if (showCreate) {
+                onCreateOption(searchQuery.trim())
+                setSearchQuery("")
+            }
+        } else if (e.key === "Backspace" && !searchQuery && value.length > 0) {
+            e.preventDefault()
+            const newVals = [...value]
+            newVals.pop()
+            onChange(newVals)
+        }
+    }
+
+    return (
+        <div className={cn("space-y-1 relative w-full group", containerClassName)} ref={containerRef}>
+            <fieldset
+                className={cn(
+                    "notched-field transition-all duration-200 cursor-text min-h-[44px] pb-1.5 pt-1",
+                    open ? "border-primary ring-1 ring-primary/20" : "group-hover:border-muted-foreground/50",
+                    hasError && "border-destructive ring-destructive/20",
+                    disabled && "opacity-50 cursor-not-allowed pointer-events-none"
+                )}
+                data-error={hasError || undefined}
+                data-disabled={disabled || undefined}
+                onClick={() => {
+                    if (!disabled) {
+                        setOpen(true)
+                        inputRef.current?.focus()
+                    }
+                }}
+            >
+                {label && (
+                    <legend className={cn(
+                        "px-1.5 text-[10px] font-black uppercase tracking-[0.15em] transition-colors duration-200",
+                        hasError ? "text-destructive" : (open ? "text-primary" : "text-muted-foreground"),
+                        disabled && "text-muted-foreground/50"
+                    )}>
+                        {label}
+                        {required && (
+                            <span className="text-destructive ml-0.5" aria-hidden="true">
+                                *
+                            </span>
+                        )}
+                    </legend>
+                )}
+
+                <div className="flex items-center w-full px-1">
+                    <div className="flex flex-wrap items-center gap-1.5 px-2 flex-1">
+                        {selectedOptions.map((opt) => (
+                            <Badge
+                                key={opt.value}
+                                variant="secondary"
+                                className="flex items-center gap-1 px-2 py-0.5 h-6 text-[11px] font-bold border-secondary/50 animate-in zoom-in-95 duration-200"
+                            >
+                                {opt.label}
+                                <IconButton
+                                    type="button"
+                                    variant="ghost"
+                                    className="h-3 w-3 p-0 hover:bg-transparent hover:text-destructive"
+                                    onClick={(e) => removeOption(e, opt.value)}
                                 >
-                                    <X className="h-3 w-3" />
+                                    <X className="h-2.5 w-2.5" />
                                 </IconButton>
-                            )}
-                        </div>
+                            </Badge>
+                        ))}
+                        <input
+                            ref={inputRef}
+                            type="text"
+                            className="flex-1 bg-transparent border-none outline-none text-[11px] uppercase font-bold placeholder:text-muted-foreground/40 placeholder:normal-case placeholder:font-medium min-w-[80px] h-7"
+                            placeholder={selectedOptions.length === 0 ? placeholder : ""}
+                            value={searchQuery}
+                            onChange={(e) => {
+                                setSearchQuery(e.target.value)
+                                if (!open) setOpen(true)
+                            }}
+                            onFocus={() => setOpen(true)}
+                            onKeyDown={handleKeyDown}
+                            disabled={disabled}
+                        />
+                    </div>
+
+                    <div
+                        className="flex items-center justify-center pr-2 pl-1 text-muted-foreground/40 group-hover:text-muted-foreground transition-colors shrink-0 select-none cursor-pointer"
+                        onClick={(e) => {
+                            e.stopPropagation()
+                            setOpen(!open)
+                        }}
+                    >
+                        <ChevronDown className={cn("h-4 w-4 transition-transform duration-200", open && "rotate-180")} />
+                    </div>
+                </div>
+            </fieldset>
+
+            {open && (
+                <div className="absolute top-[calc(100%+4px)] left-0 w-full z-50 bg-popover rounded-md border border-border/80 shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                    <div className="flex flex-col">
 
                         {/* Options List */}
                         <div className="max-h-[250px] overflow-y-auto p-1 custom-scrollbar">
+                            {showCreate && (
+                                <div
+                                    className="relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-[10px] uppercase font-bold tracking-tight outline-none hover:bg-accent hover:text-accent-foreground transition-colors text-primary bg-primary/5"
+                                    onClick={() => {
+                                        onCreateOption(searchQuery.trim())
+                                        setSearchQuery("")
+                                    }}
+                                >
+                                    <span className="flex-1">Crear &quot;{searchQuery.trim()}&quot;</span>
+                                </div>
+                            )}
+
                             {filteredOptions.length > 0 ? (
                                 filteredOptions.map((option) => {
                                     const isSelected = value.includes(option.value)
@@ -175,7 +214,10 @@ export function MultiSelectTagInput({
                                                 "relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-[10px] uppercase font-bold tracking-tight outline-none hover:bg-accent hover:text-accent-foreground transition-colors",
                                                 isSelected ? "bg-primary/5 text-primary" : "text-muted-foreground"
                                             )}
-                                            onClick={() => toggleOption(option.value)}
+                                            onClick={() => {
+                                                toggleOption(option.value)
+                                                inputRef.current?.focus()
+                                            }}
                                         >
                                             <div
                                                 className={cn(
@@ -191,7 +233,7 @@ export function MultiSelectTagInput({
                                         </div>
                                     )
                                 })
-                            ) : (
+                            ) : !showCreate && (
                                 <div className="py-6 px-2 text-center text-[10px] font-bold uppercase text-muted-foreground/40 italic">
                                     No se encontraron resultados
                                 </div>
@@ -213,8 +255,8 @@ export function MultiSelectTagInput({
                             </>
                         )}
                     </div>
-                </PopoverContent>
-            </Popover>
+                </div>
+            )}
 
             {hasError && (
                 <p role="alert" className="text-[10px] font-medium text-destructive animate-in fade-in slide-in-from-top-1 duration-200 pl-1">

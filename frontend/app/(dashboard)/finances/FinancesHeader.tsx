@@ -62,7 +62,7 @@ export function FinancesHeader() {
     const currentSegment = segments[1] || 'statements'
 
     const activeValue = currentSegment
-    const subActiveValue = searchParams.get('tab')
+    const subActiveValue = searchParams.get('tab') ?? undefined
 
     const navigation = {
         moduleName: "Finanzas",

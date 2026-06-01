@@ -1,164 +1,165 @@
 import { showApiError } from "@/lib/errors"
-import { Button } from "@/components/ui/button"
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table"
-import { EmptyState } from "@/components/shared/EmptyState"
-import { cn } from "@/lib/utils"
-import { Card } from "@/components/ui/card"
-import { Info, Plus, Pencil, Trash2 } from "lucide-react"
-import api from "@/lib/api"
+import { ActionConfirmModal, Chip, DataCell, EmptyState, StatusBadge } from '@/components/shared'
+import { FormLineItemsTable } from "@/components/shared"
+import { TableBody, TableCell, TableRow } from "@/components/ui/table"
+
+import { Percent, Pencil, Info } from "lucide-react"
 import { toast } from "sonner"
-import { formatCurrency } from "@/lib/currency"
+import { formatCurrency } from "@/lib/money"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
-import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+
 import { Product, PricingRule } from "@/types/entities"
 import { ProductInitialData } from "@/types/forms"
+import { usePricingRules } from "../../hooks/usePricingRules"
+
+function getRuleStatus(rule: PricingRule): 'RULE_ACTIVE' | 'RULE_EXPIRED' | 'RULE_INACTIVE' {
+    if (!rule.active) return 'RULE_INACTIVE'
+    if (rule.end_date && new Date(rule.end_date) < new Date()) return 'RULE_EXPIRED'
+    return 'RULE_ACTIVE'
+}
 
 interface ProductPricingTabProps {
     initialData?: ProductInitialData | Partial<Product>
     pricingRules: PricingRule[]
     fetchPricingRules: () => void
     onOpenRuleDialog: (rule?: PricingRule) => void
+    isDynamicPricing?: boolean
+    isVariant?: boolean
 }
 
-export function ProductPricingTab({ initialData, pricingRules, fetchPricingRules, onOpenRuleDialog }: ProductPricingTabProps) {
+const COLUMNS = [
+    { header: "Nivel",                  width: "w-[10%]",  align: "left"   as const },
+    { header: "Descripción / Vigencia", width: "w-[35%]",  align: "left"   as const },
+    { header: "Cant. Mín.",             width: "w-[15%]",  align: "center" as const },
+    { header: "Precio / Dcto.",         width: "w-[20%]",  align: "right"  as const },
+    { header: "Estado",                 width: "w-[12%]",  align: "center" as const },
+    { header: "",                       width: "w-[8%]" },
+]
+
+export function ProductPricingTab({ initialData, pricingRules, fetchPricingRules, onOpenRuleDialog, isDynamicPricing, isVariant }: ProductPricingTabProps) {
+    const { deletePricingRule } = usePricingRules()
     const deleteConfirm = useConfirmAction<number>(async (id) => {
         try {
-            await api.delete(`/inventory/pricing-rules/${id}/`)
+            await deletePricingRule(id)
             toast.success("Regla eliminada")
+            // El hook invalida PRICING_RULES_QUERY_KEY automáticamente. Llamamos
+            // fetchPricingRules para que el padre (ProductForm) refresque su
+            // estado local imperativo. Cuando ProductForm migre a usePricingRules
+            // este callback puede removerse.
             fetchPricingRules()
         } catch (error) {
             showApiError(error, "Error al eliminar la regla")
         }
     })
-    return (
-        <div className="space-y-4 h-full flex flex-col">
-            {initialData && (
-                <Card variant="dashed" className="flex items-center justify-between p-4 rounded-md border bg-primary/5 border-primary/10 shadow-sm">
-                    <div className="flex gap-4 items-center">
-                        <Info className="h-5 w-5 text-muted-foreground" />
-                        <div>
-                            <h3 className="font-semibold text-sm">Políticas de Precios Dinámicas</h3>
-                            <p className="text-[10px] text-muted-foreground">Las reglas se aplican automáticamente según la cantidad y vigencia.</p>
-                        </div>
-                    </div>
-                    <Button
-                        type="button"
-                        variant="default"
-                        size="sm"
-                        onClick={() => onOpenRuleDialog()}
-                        className="rounded-md text-xs font-bold"
-                    >
-                        <Plus className="h-4 w-4 mr-2" />
-                        Nueva Regla
-                    </Button>
-                </Card>
-            )}
 
+    return (
+        <div className="space-y-4 flex flex-col">
+            {/* Not-yet-saved state — product must exist before rules */}
             {!initialData && (
-                <div className="flex-1 min-h-[600px] border-2 border-dashed rounded-md flex flex-col items-center justify-center text-center px-6">
+                <div className="flex-1 border-2 border-dashed rounded-md flex flex-col items-center justify-center text-center px-2 py-8">
                     <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-4">
                         <Pencil className="h-6 w-6 text-muted-foreground" />
                     </div>
                     <h4 className="font-medium text-muted-foreground">Debe crear el producto primero</h4>
-                    <p className="text-xs text-muted-foreground/60 max-w-xs mt-1">Las reglas de precios específicas requieren que el producto esté registrado en el sistema.</p>
+                    <p className="text-xs text-muted-foreground/60 max-w-xs mt-1">
+                        Las reglas de precios específicas requieren que el producto esté registrado en el sistema.
+                    </p>
                 </div>
             )}
 
-            {initialData && (
-                <div className="border rounded-md overflow-hidden shadow-sm">
-                    <Table>
-                        <TableHeader>
-                            <TableRow className="bg-muted/50 hover:bg-muted/50 border-none">
-                                <TableHead>Nivel</TableHead>
-                                <TableHead>Descripción / Vigencia</TableHead>
-                                <TableHead>Cantidad Mín</TableHead>
-                                <TableHead className="text-right">Precio / Descuento</TableHead>
-                                <TableHead className="text-center w-[100px]">Estado</TableHead>
-                                <TableHead className="text-right w-[60px]"></TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {pricingRules.length === 0 ? (
-                                <TableRow>
-                                    <TableCell colSpan={6}>
-                                        <EmptyState context="finance" variant="compact" title="Sin reglas de precio" description="No hay reglas de precio personalizadas para este producto." />
-                                    </TableCell>
-                                </TableRow>
-                            ) : (
-                                pricingRules.map((rule) => {
-                                    const isProductRule = rule.product !== null;
-                                    return (
-                                        <TableRow key={rule.id} className="group transition-colors">
-                                            <TableCell>
-                                                {rule.is_category_rule ? (
-                                                    <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border bg-amber-500/10 text-amber-600 border-amber-500/20">
-                                                        Categoría
-                                                    </span>
-                                                ) : (
-                                                    <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border bg-primary/5 text-primary border-primary/20">
-                                                        Producto
-                                                    </span>
-                                                )}
-                                            </TableCell>
-                                            <TableCell>
-                                                <div className="flex flex-col">
-                                                    <span className="font-bold text-sm">{rule.name}</span>
-                                                    {(rule.start_date || rule.end_date) && (
-                                                        <span className="text-[10px] text-muted-foreground font-medium flex gap-2">
-                                                            <span>📅 {rule.start_date || '∞'}</span>
-                                                            <span>➜</span>
-                                                            <span>{rule.end_date || '∞'}</span>
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            </TableCell>
-                                            <TableCell className="text-sm font-semibold tabular-nums">{Number(rule.min_quantity)} unidad(es)</TableCell>
-                                            <TableCell className="text-right font-black text-primary">
-                                                {rule.rule_type === 'FIXED'
-                                                    ? formatCurrency(rule.fixed_price)
-                                                    : `-${Number(rule.discount_percentage)}%`}
-                                            </TableCell>
-                                            <TableCell className="text-center">
-                                                <div className={cn(
-                                                    "inline-flex px-2 py-0.5 rounded-full text-[9px] font-black uppercase border transition-colors",
-                                                    rule.active
-                                                        ? 'bg-success/10 text-success border-success/20'
-                                                        : 'bg-muted/50 text-muted-foreground border-transparent'
-                                                )}>
-                                                    {rule.active ? "Activa" : "Inactiva"}
-                                                </div>
-                                            </TableCell>
-                                            <TableCell className="text-right flex gap-1 justify-end">
-                                                {isProductRule && (
-                                                    <>
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                                                            onClick={() => {
-                                                                onOpenRuleDialog(rule)
-                                                            }}
-                                                        >
-                                                            <Pencil className="h-3 w-3" />
-                                                        </Button>
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            className="h-8 w-8 text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
-                                                            onClick={() => deleteConfirm.requestConfirm(rule.id)}
-                                                        >
-                                                            <Trash2 className="h-3 w-3" />
-                                                        </Button>
-                                                    </>
-                                                )}
-                                            </TableCell>
-                                        </TableRow>
-                                    )
-                                })
-                            )}
-                        </TableBody>
-                    </Table>
+            {/* Variant notice — rules are managed at template level */}
+            {initialData && isVariant && (
+                <div className="flex items-start gap-3 p-4 rounded-lg bg-info/5 border border-info/20 text-sm">
+                    <Info className="h-4 w-4 text-info mt-0.5 shrink-0" />
+                    <p className="text-info/80 font-medium text-xs leading-relaxed">
+                        Las reglas de precios se gestionan en el <strong>producto plantilla</strong>, no en variantes individuales.
+                        El precio efectivo de esta variante depende de su modo de precio (Hereda / Propio / Sobrecargo).
+                    </p>
                 </div>
+            )}
+
+            {initialData && !isDynamicPricing && (
+                <FormLineItemsTable
+                    icon={Percent}
+                    title="Reglas de Precio"
+                    subtitle={
+                        pricingRules.length > 0
+                            ? `${pricingRules.length} regla(s) activa(s)`
+                            : "Descuentos por volumen y precios especiales"
+                    }
+                    columns={COLUMNS}
+                    onAdd={isVariant ? undefined : () => onOpenRuleDialog()}
+                    addButtonText="Nueva Regla"
+                >
+                    <TableBody>
+                        {pricingRules.length === 0 ? (
+                            <TableRow>
+                                <TableCell colSpan={6}>
+                                    <EmptyState
+                                        context="finance"
+                                        variant="compact"
+                                        title="Sin reglas de precio"
+                                        description="No hay reglas de precio personalizadas para este producto."
+                                    />
+                                </TableCell>
+                            </TableRow>
+                        ) : (
+                            pricingRules.map((rule) => {
+                                const isProductRule = rule.product !== null
+                                return (
+                                    <TableRow key={rule.id} className="group hover:bg-primary/5 transition-colors">
+                                        <TableCell className="p-3">
+                                            {rule.is_category_rule ? (
+                                                <Chip size="sm" intent="warning">Categoría</Chip>
+                                            ) : (
+                                                <Chip size="xs" intent="primary">Producto</Chip>
+                                            )}
+                                        </TableCell>
+                                        <TableCell className="p-3">
+                                            <div className="flex flex-col">
+                                                <span className="font-bold text-sm">{rule.name}</span>
+                                                {(rule.start_date || rule.end_date) && (
+                                                    <span className="text-[10px] text-muted-foreground font-medium flex gap-2">
+                                                        <span>📅 {rule.start_date || '∞'}</span>
+                                                        <span>➜</span>
+                                                        <span>{rule.end_date || '∞'}</span>
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </TableCell>
+                                        <TableCell className="p-3 text-center text-sm font-semibold tabular-nums">
+                                            {Number(rule.min_quantity)} uds.
+                                        </TableCell>
+                                        <TableCell className="p-3 text-right font-black text-primary">
+                                            {rule.rule_type === 'FIXED'
+                                                ? formatCurrency(rule.fixed_price)
+                                                : `-${Number(rule.discount_percentage)}%`}
+                                        </TableCell>
+                                        <TableCell className="p-3 text-center">
+                                            <StatusBadge status={getRuleStatus(rule)} />
+                                        </TableCell>
+                                        <TableCell className="p-3 text-right">
+                                            {isProductRule && (
+                                                <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <DataCell.ActionGroup>
+                                                        <DataCell.Action
+                                                            action="edit"
+                                                            onClick={() => onOpenRuleDialog(rule)}
+                                                        />
+                                                        <DataCell.Action
+                                                            action="delete"
+                                                            onClick={() => deleteConfirm.requestConfirm(rule.id)}
+                                                        />
+                                                    </DataCell.ActionGroup>
+                                                </div>
+                                            )}
+                                        </TableCell>
+                                    </TableRow>
+                                )
+                            })
+                        )}
+                    </TableBody>
+                </FormLineItemsTable>
             )}
 
             <ActionConfirmModal

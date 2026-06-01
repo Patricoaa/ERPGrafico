@@ -1,21 +1,17 @@
 "use client"
 
-import { useState, useEffect, useCallback, useMemo } from "react"
-import {
-    getCreditPortfolio,
-    getGlobalCreditHistory,
-    CreditContact,
-    CreditPortfolioResponse,
-    CreditHistoryEntry
-} from '@/features/credits/api/creditsApi'
-import { toast } from "sonner"
+import { useCallback, useMemo } from "react"
+import { CreditContact, CreditHistoryEntry } from '@/features/credits/api/creditsApi'
 import CreditAssignmentModal from "./CreditAssignmentModal"
-import { Button } from "@/components/ui/button"
-import { DataTable } from "@/components/ui/data-table"
-import { EmptyState } from "@/components/shared/EmptyState"
+import { DataTable } from '@/components/shared'
 import { PortfolioKpiGrid } from "./PortfolioKpiGrid"
 import { PortfolioTable } from "./PortfolioTable"
 import { getPortfolioColumns, historyColumns } from "./PortfolioColumns"
+import { SmartSearchBar, useClientSearch } from "@/components/shared"
+import { creditContactSearchDef, creditHistorySearchDef } from "../searchDef"
+import { useCreditPortfolio, useCreditHistory } from "../hooks/useCredits"
+import { useSelectedEntity } from "@/hooks/useSelectedEntity"
+import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
 
 const EMPTY_CONTACTS: CreditContact[] = []
 const EMPTY_HISTORY: CreditHistoryEntry[] = []
@@ -29,100 +25,68 @@ export function CreditPortfolioView({
     externalOpen?: boolean,
     createAction?: React.ReactNode
 }) {
-    const [data, setData] = useState<CreditPortfolioResponse | null>(null)
-    const [loading, setLoading] = useState(true)
-    const [error, setError] = useState<string | null>(null)
+    const { data, contacts: rawContacts, isLoading, refetch } = useCreditPortfolio()
+    const { data: rawHistory, isLoading: loadingHistory } = useCreditHistory()
 
-    const [history, setHistory] = useState<CreditHistoryEntry[] | null>(null)
-    const [loadingHistory, setLoadingHistory] = useState(false)
-
-    const [assignmentModalOpen, setAssignmentModalOpen] = useState(false)
-    const [editingContact, setEditingContact] = useState<CreditContact | null>(null)
+    // ADR-0020: edit modal opens via ?selected={contactId}
+    const { entity: selectedContact, isLoading: isLoadingSelected, clearSelection } =
+        useSelectedEntity<CreditContact>({ endpoint: '/contacts' })
+    const { openSelected } = useEntityRouteActions()
 
     const handleEditLimit = useCallback((contact: CreditContact) => {
-        setEditingContact(contact)
-        setAssignmentModalOpen(true)
-    }, [])
+        openSelected(contact.id)
+    }, [openSelected])
 
     const portfolioCols = useMemo(() => getPortfolioColumns(handleEditLimit), [handleEditLimit])
 
-    const load = useCallback(async () => {
-        setLoading(true)
-        setError(null)
-        try {
-            const result = await getCreditPortfolio()
-            setData(result)
-        } catch (error) {
-            const e = error as { message?: string }
-            setError(e.message || "Error cargando datos")
-        } finally {
-            setLoading(false)
-        }
-    }, [])
+    const { filterFn: filterContacts } = useClientSearch<CreditContact>(creditContactSearchDef)
+    const { filterFn: filterHistory } = useClientSearch<CreditHistoryEntry>(creditHistorySearchDef)
 
-    useEffect(() => { load() }, [load])
-
-    useEffect(() => {
-        if (activeTab === 'history' && !history) {
-            setLoadingHistory(true)
-            getGlobalCreditHistory()
-                .then(setHistory)
-                .catch(() => toast.error("Error cargando historial"))
-                .finally(() => setLoadingHistory(false))
-        }
-    }, [activeTab, history])
-
-    useEffect(() => {
-        if (externalOpen) {
-            setEditingContact(null)
-            setAssignmentModalOpen(true)
-        }
-    }, [externalOpen])
-
-    if (error) return (
-        <EmptyState
-            context="finance"
-            title="Error al cargar datos"
-            description={error}
-            action={<Button onClick={load}>Reintentar</Button>}
-        />
+    const contacts = useMemo(
+        () => filterContacts(rawContacts),
+        [rawContacts, filterContacts],
+    )
+    const history = useMemo(
+        () => filterHistory(rawHistory ?? EMPTY_HISTORY),
+        [rawHistory, filterHistory],
     )
 
-    const contacts = data?.contacts || EMPTY_CONTACTS
+    const handleModalSuccess = useCallback(async () => {
+        await refetch()
+        clearSelection()
+    }, [refetch, clearSelection])
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 h-full flex flex-col">
             <CreditAssignmentModal
-                open={assignmentModalOpen}
-                onOpenChange={setAssignmentModalOpen}
-                contact={editingContact}
-                onSuccess={load}
+                open={!!selectedContact || isLoadingSelected || externalOpen}
+                onOpenChange={(open) => { if (!open) clearSelection() }}
+                contact={selectedContact}
+                onSuccess={handleModalSuccess}
             />
 
             {activeTab === 'portfolio' ? (
-                <>
+                <div className="flex-1 min-h-0 flex flex-col">
                     <PortfolioKpiGrid data={data} />
-
-                    <div className="mt-6">
+                    <div className="mt-6 flex-1 min-h-0">
                         <PortfolioTable
                             columns={portfolioCols}
                             data={contacts}
-                            isLoading={loading}
-                            onRefresh={load}
+                            isLoading={isLoading}
+                            onRefresh={refetch}
                             createAction={createAction}
+                            leftAction={<SmartSearchBar searchDef={creditContactSearchDef} placeholder="Cliente o RUT..." className="w-full" />}
                         />
                     </div>
-                </>
+                </div>
             ) : (
-                <div className="mt-2">
+                <div className="mt-2 flex-1 min-h-0">
                     <DataTable
                         columns={historyColumns}
-                        data={history || EMPTY_HISTORY}
+                        data={history ?? EMPTY_HISTORY}
                         variant="embedded"
                         isLoading={loadingHistory}
-                        useAdvancedFilter
-                        globalFilterFields={["customer_name", "number"]}
-                        searchPlaceholder="Filtrar historial..."
+                        leftAction={<SmartSearchBar searchDef={creditHistorySearchDef} placeholder="Cliente o folio..." className="w-full" />}
                     />
                 </div>
             )}

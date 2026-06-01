@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useMemo } from "react"
 import { Check, ChevronDown, Search, Loader2 } from "lucide-react"
 import { getEntityIcon } from "@/lib/entity-registry"
 import { cn } from "@/lib/utils"
@@ -10,8 +10,8 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover"
-import { BaseModal } from "@/components/shared/BaseModal"
-import { EmptyState } from "@/components/shared/EmptyState"
+
+import { BaseModal, EmptyState } from '@/components/shared'
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useAccountSearch, useSingleAccount } from "@/features/accounting/hooks/useAccountSearch"
@@ -37,7 +37,7 @@ export function AccountSelector({ value, onChange, placeholder = "Seleccionar cu
 
     // We fetch all accounts once (or all leaves), and then filter client-side
     const { accounts: allAccounts, loading: accountsLoading } = useAccountSearch("", !showAll)
-    
+
     // We also fetch the single selected account to ensure it's displayed properly even if not in the list
     const { account: singleAccount } = useSingleAccount(value || null)
 
@@ -99,7 +99,7 @@ export function AccountSelector({ value, onChange, placeholder = "Seleccionar cu
 
     return (
         <div className={cn("relative w-full flex flex-col group", className)}>
-            <fieldset 
+            <fieldset
                 className={cn(
                     "notched-field w-full group transition-all",
                     open && "focused",
@@ -136,57 +136,57 @@ export function AccountSelector({ value, onChange, placeholder = "Seleccionar cu
                             <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                         </Button>
                     </PopoverTrigger>
-                <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
-                    <div className="p-2">
-                        <div className="flex items-center px-3 border rounded-md mb-2">
-                            <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-                            <input
-                                className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
-                                placeholder="Buscar código o nombre..."
-                                value={searchTerm}
-                                onChange={(e) => searchAccounts(e.target.value)}
-                            />
-                        </div>
-                        <div className="max-h-[200px] overflow-y-auto space-y-1">
-                            {accountsLoading ? (
-                                <div className="p-4 flex justify-center"><Loader2 className="h-4 w-4 animate-spin" /></div>
-                            ) : filteredAccounts.length === 0 ? (
-                                <EmptyState context="search" variant="compact" title="No se encontraron cuentas" />
-                            ) : (
-                                filteredAccounts.slice(0, 20).map((account) => (
-                                    <div
-                                        key={account.id}
-                                        className={cn(
-                                            "relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
-                                            selectedAccount?.id === account.id && "bg-accent"
-                                        )}
-                                        onClick={() => handleSelect(account)}
-                                    >
-                                        <Check
+                    <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
+                        <div className="p-2">
+                            <div className="flex items-center px-3 border rounded-md mb-2">
+                                <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+                                <input
+                                    className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                                    placeholder="Buscar código o nombre..."
+                                    value={searchTerm}
+                                    onChange={(e) => searchAccounts(e.target.value)}
+                                />
+                            </div>
+                            <div className="max-h-[200px] overflow-y-auto space-y-1">
+                                {accountsLoading ? (
+                                    <div className="p-4 flex justify-center"><Loader2 className="h-4 w-4 animate-spin" /></div>
+                                ) : filteredAccounts.length === 0 ? (
+                                    <EmptyState context="search" variant="compact" title="No se encontraron cuentas" />
+                                ) : (
+                                    filteredAccounts.slice(0, 20).map((account) => (
+                                        <div
+                                            key={account.id}
                                             className={cn(
-                                                "mr-2 h-4 w-4",
-                                                selectedAccount?.id === account.id ? "opacity-100" : "opacity-0"
+                                                "relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+                                                selectedAccount?.id === account.id && "bg-accent"
                                             )}
-                                        />
-                                        {account.code} - {account.name}
-                                    </div>
-                                ))
-                            )}
-                            {filteredAccounts.length > 20 && (
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        setOpen(false)
-                                        setModalOpen(true)
-                                    }}
-                                    className="w-full p-2 text-xs text-center text-primary hover:underline border-t"
-                                >
-                                    Use búsqueda avanzada para ver más...
-                                </button>
-                            )}
+                                            onClick={() => handleSelect(account)}
+                                        >
+                                            <Check
+                                                className={cn(
+                                                    "mr-2 h-4 w-4",
+                                                    selectedAccount?.id === account.id ? "opacity-100" : "opacity-0"
+                                                )}
+                                            />
+                                            {account.code} - {account.name}
+                                        </div>
+                                    ))
+                                )}
+                                {filteredAccounts.length > 20 && (
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setOpen(false)
+                                            setModalOpen(true)
+                                        }}
+                                        className="w-full p-2 text-xs text-center text-primary hover:underline border-t"
+                                    >
+                                        Use búsqueda avanzada para ver más...
+                                    </button>
+                                )}
+                            </div>
                         </div>
-                    </div>
-                </PopoverContent>
+                    </PopoverContent>
                 </Popover>
             </fieldset>
             {error && (
@@ -204,7 +204,7 @@ export function AccountSelector({ value, onChange, placeholder = "Seleccionar cu
             >
                 <div className="space-y-4 pt-4">
                     <Input
-                        placeholder="Filtrar por código o nombre..."
+                        placeholder="Buscar por código o nombre..."
                         value={searchTerm}
                         onChange={(e) => searchAccounts(e.target.value)}
                     />

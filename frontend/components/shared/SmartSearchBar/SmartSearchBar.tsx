@@ -1,7 +1,7 @@
 'use client'
 
-import { useRef, useState, useCallback, useEffect, KeyboardEvent } from 'react'
-import { Search, X, ChevronRight, ChevronLeft, Loader2, CornerDownLeft } from 'lucide-react'
+import { useRef, useState, useCallback, useEffect, KeyboardEvent, useMemo } from 'react'
+import { Search, X, ChevronRight, ChevronLeft, CornerDownLeft } from 'lucide-react'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { DateRange } from 'react-day-picker'
@@ -10,6 +10,7 @@ import { Calendar } from '@/components/ui/calendar'
 import type { SearchDefinition, FieldDef, EnumFieldDef, DateRangeFieldDef, TextFieldDef } from '@/types/search'
 import { useSmartSearch } from './useSmartSearch'
 import { useSuggestions } from '@/hooks/useSuggestions'
+import { Chip } from '@/components/shared'
 
 interface SmartSearchBarProps {
   searchDef: SearchDefinition
@@ -21,8 +22,13 @@ type DropdownStage =
   | { type: 'fields' }
   | { type: 'enum-options'; field: EnumFieldDef }
   | { type: 'daterange'; field: DateRangeFieldDef }
-  | { type: 'text-input'; field: TextFieldDef }
   | { type: 'closed' }
+
+function hasSubcategories(field: FieldDef): boolean {
+  if (field.type === 'enum') return true
+  if (field.type === 'daterange') return true
+  return false
+}
 
 export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className }: SmartSearchBarProps) {
   const { filters, chips, inputValue, setInputValue, applyFilter, removeFilter, clearAll } = useSmartSearch(searchDef)
@@ -30,14 +36,35 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
   const [stage, setStage] = useState<DropdownStage>({ type: 'closed' })
   const [focusedIndex, setFocusedIndex] = useState(-1)
   const [dateRange, setDateRange] = useState<DateRange | undefined>()
-  const [pendingTextValue, setPendingTextValue] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
-  const dropdownInputRef = useRef<HTMLInputElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
-  const isOpen = stage.type !== 'closed'
 
-  const activeSuggestionsUrl = stage.type === 'text-input' ? stage.field.suggestionsUrl : undefined
-  const { suggestions, isLoading: isSuggestionsLoading } = useSuggestions(activeSuggestionsUrl, pendingTextValue)
+  const parsedActiveFieldInfo = useMemo(() => {
+    const trimmedInput = inputValue.trim()
+    const colonIndex = trimmedInput.indexOf(':')
+    if (colonIndex === -1) return null
+
+    const prefix = trimmedInput.slice(0, colonIndex).trim().toLowerCase()
+    const value = trimmedInput.slice(colonIndex + 1).trim()
+
+    const matchedField = searchDef.fields.find(
+      (f) =>
+        f.label.toLowerCase() === prefix ||
+        f.key.toLowerCase() === prefix ||
+        (f.type === 'text' && f.serverParam.toLowerCase() === prefix)
+    )
+
+    if (matchedField && matchedField.type === 'text') {
+      return { field: matchedField, value }
+    }
+    return null
+  }, [inputValue, searchDef.fields])
+
+  const activeSuggestionsUrl = parsedActiveFieldInfo?.field.suggestionsUrl
+  const suggestionQuery = parsedActiveFieldInfo?.value ?? ''
+  const { suggestions, isLoading: isSuggestionsLoading } = useSuggestions(activeSuggestionsUrl, suggestionQuery)
+
+  const isOpen = stage.type !== 'closed' || !!activeSuggestionsUrl
 
   // Fields not yet applied (avoid offering duplicates for non-daterange fields)
   const availableFields = searchDef.fields.filter((f) => {
@@ -71,18 +98,22 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
 
   const handleFieldSelect = useCallback(
     (field: FieldDef) => {
-      setInputValue('')
       setFocusedIndex(-1)
-      if (field.type === 'enum') {
-        setStage({ type: 'enum-options', field })
-      } else if (field.type === 'daterange') {
-        setStage({ type: 'daterange', field })
-        setDateRange(undefined)
+      if (hasSubcategories(field)) {
+        setInputValue('')
+        if (field.type === 'enum') {
+          setStage({ type: 'enum-options', field })
+        } else if (field.type === 'daterange') {
+          setStage({ type: 'daterange', field })
+          setDateRange(undefined)
+        }
       } else {
-        setStage({ type: 'text-input', field })
-        setPendingTextValue('')
-        // Focus the dropdown input after it renders
-        setTimeout(() => dropdownInputRef.current?.focus(), 0)
+        // Simple text filter: Prefill the exact label as a prefix in the main input
+        setInputValue(`${field.label}: `)
+        setStage({ type: 'closed' })
+        setFocusedIndex(-1)
+        // Focus the main input after a short delay
+        setTimeout(() => inputRef.current?.focus(), 0)
       }
     },
     [setInputValue],
@@ -111,30 +142,52 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
   const handleSuggestionSelect = useCallback(
     async (field: TextFieldDef, value: string) => {
       await applyFilter(field.serverParam, value)
-      setPendingTextValue('')
+      setInputValue('')
       close()
       inputRef.current?.focus()
     },
-    [applyFilter, close],
+    [applyFilter, close, setInputValue],
   )
 
   const handleTextSubmit = useCallback(async () => {
-    const trimmed = pendingTextValue.trim()
-    if (!trimmed) return
-    const activeField = stage.type === 'text-input'
-      ? stage.field
-      : (searchDef.fields.find((f) => f.type === 'text') as TextFieldDef | undefined)
-    if (!activeField) return
-    await applyFilter(activeField.serverParam, trimmed)
-    setPendingTextValue('')
+    // If we are in the main input
+    const trimmedInput = inputValue.trim()
+    if (!trimmedInput) return
+
+    const colonIndex = trimmedInput.indexOf(':')
+    if (colonIndex !== -1) {
+      const prefix = trimmedInput.slice(0, colonIndex).trim().toLowerCase()
+      const value = trimmedInput.slice(colonIndex + 1).trim()
+
+      // Find if the prefix matches any field's label or key
+      const matchedField = searchDef.fields.find(
+        (f) =>
+          f.label.toLowerCase() === prefix ||
+          f.key.toLowerCase() === prefix ||
+          (f.type === 'text' && f.serverParam.toLowerCase() === prefix)
+      )
+
+      if (matchedField) {
+        if (value && matchedField.type !== 'daterange') {
+          await applyFilter(matchedField.serverParam, value)
+          setInputValue('')
+          close()
+        }
+        return
+      }
+    }
+
+    // Fallback to Global Search (search query parameter)
+    await applyFilter('search', trimmedInput)
+    setInputValue('')
     close()
-  }, [pendingTextValue, stage, searchDef.fields, applyFilter, close])
+  }, [inputValue, searchDef.fields, applyFilter, close, setInputValue])
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent<HTMLInputElement>) => {
       if (e.key === 'Escape') { close(); return }
 
-      const currentVal = stage.type === 'text-input' ? pendingTextValue : inputValue
+      const currentVal = inputValue
 
       if (e.key === 'Backspace' && currentVal === '') {
         if (stage.type !== 'fields' && stage.type !== 'closed') {
@@ -158,14 +211,12 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
           if (opt) { e.preventDefault(); handleEnumSelect(stage.field, opt.value) }
           return
         }
-        if (stage.type === 'text-input' && focusedIndex >= 0 && suggestions[focusedIndex]) {
+        if (activeSuggestionsUrl && focusedIndex >= 0 && suggestions[focusedIndex]) {
           e.preventDefault()
-          handleSuggestionSelect(stage.field, suggestions[focusedIndex])
+          handleSuggestionSelect(parsedActiveFieldInfo!.field, suggestions[focusedIndex])
           return
         }
-        if (stage.type === 'text-input') {
-          handleTextSubmit()
-        } else if (stage.type === 'closed' || stage.type === 'fields') {
+        if (stage.type === 'closed' || stage.type === 'fields' || activeSuggestionsUrl) {
           handleTextSubmit()
         }
         return
@@ -177,7 +228,7 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
           ? filteredFields
           : stage.type === 'enum-options'
             ? stage.field.options
-            : stage.type === 'text-input'
+            : activeSuggestionsUrl
               ? suggestions
               : []
         setFocusedIndex((i) => Math.min(i + 1, list.length - 1))
@@ -188,7 +239,7 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
         setFocusedIndex((i) => Math.max(i - 1, -1))
       }
     },
-    [inputValue, pendingTextValue, chips, stage, filteredFields, focusedIndex, suggestions, close, removeFilter, handleFieldSelect, handleEnumSelect, handleSuggestionSelect, handleTextSubmit, handleBack],
+    [inputValue, chips, stage, filteredFields, focusedIndex, suggestions, activeSuggestionsUrl, parsedActiveFieldInfo, close, removeFilter, handleFieldSelect, handleEnumSelect, handleSuggestionSelect, handleTextSubmit, handleBack],
   )
 
   // Close dropdown on outside click
@@ -201,23 +252,26 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
   }, [close])
 
   const hasActiveFilters = chips.length > 0
-  const showEnterHint = stage.type === 'text-input' && inputValue.trim().length > 0 && focusedIndex < 0
+  const showEnterHint =
+    (stage.type === 'closed' || stage.type === 'fields' || !!activeSuggestionsUrl) &&
+    inputValue.trim().length > 0 &&
+    focusedIndex < 0
 
   return (
     <div ref={containerRef} className={cn('relative w-full', className)}>
       {/* Input row */}
       <div
         className={cn(
-          'flex items-center gap-1.5 flex-wrap min-h-9 px-3 rounded-md',
-          'bg-muted/20 border border-border/40 transition-all',
+          'flex items-center gap-1.5 h-9 px-3 rounded-md overflow-x-auto scrollbar-hide',
+          'bg-muted/20 border border-border/50 shadow-sm transition-all',
           'focus-within:bg-background focus-within:border-border',
           isOpen && 'bg-background border-border rounded-b-none',
         )}
         onClick={() => {
-          if (stage.type === 'text-input') {
-            dropdownInputRef.current?.focus()
-          } else {
-            inputRef.current?.focus()
+          inputRef.current?.focus()
+          const hasColon = inputValue.includes(':')
+          if (stage.type === 'closed' && !hasColon && !inputValue.trim()) {
+            openFieldList()
           }
         }}
       >
@@ -225,21 +279,25 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
 
         {/* Active chips */}
         {chips.map((chip) => (
-          <span
+          <Chip
             key={chip.key}
-            className="inline-flex items-center gap-1 h-5 px-1.5 rounded bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-wide shrink-0"
+            intent="primary"
+            size="xs"
+            className="shrink-0"
           >
-            <span className="text-primary/60">{chip.label}:</span>
-            {chip.valueLabel}
-            <button
-              type="button"
-              onClick={(e) => { e.stopPropagation(); removeFilter(chip.key) }}
-              className="text-primary/50 hover:text-primary transition-colors ml-0.5"
-              aria-label={`Eliminar filtro ${chip.label}`}
-            >
-              <X className="h-2.5 w-2.5" />
-            </button>
-          </span>
+            <span className="flex items-center gap-1">
+              <span className="opacity-60">{chip.label}:</span>
+              <span>{chip.valueLabel}</span>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); removeFilter(chip.key) }}
+                className="hover:bg-primary/20 rounded-full p-0.5 transition-colors ml-0.5 -mr-1 flex items-center justify-center shrink-0"
+                aria-label={`Eliminar filtro ${chip.label}`}
+              >
+                <X className="h-2.5 w-2.5" />
+              </button>
+            </span>
+          </Chip>
         ))}
 
 
@@ -249,19 +307,30 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
           ref={inputRef}
           value={inputValue}
           onChange={(e) => {
-            setInputValue(e.target.value)
+            const val = e.target.value
+            setInputValue(val)
             setFocusedIndex(-1)
-            // If in a sub-stage, typing in the main bar should go back to field selection
+
+            const hasColon = val.includes(':')
+
             if (stage.type !== 'closed' && stage.type !== 'fields') {
               setStage({ type: 'fields' })
-            } else if (stage.type === 'closed') {
+            } else if (stage.type === 'closed' && !hasColon) {
+              openFieldList()
+            } else if (stage.type === 'fields' && hasColon) {
+              setStage({ type: 'closed' })
+              setFocusedIndex(-1)
+            }
+          }}
+          onFocus={() => {
+            const hasColon = inputValue.includes(':')
+            if (stage.type === 'closed' && !hasColon && !inputValue.trim()) {
               openFieldList()
             }
           }}
-          onFocus={() => { if (stage.type === 'closed') openFieldList() }}
           onKeyDown={handleKeyDown}
           placeholder={hasActiveFilters ? '' : placeholder}
-          className="flex-1 min-w-[80px] bg-transparent border-none outline-none text-[11px] uppercase font-bold tracking-widest placeholder:text-muted-foreground/40 py-1.5"
+          className="flex-1 h-9 min-w-[80px] bg-transparent border-none outline-none text-[11px] uppercase font-bold tracking-widest placeholder:text-muted-foreground/40 py-0"
           role="combobox"
           aria-expanded={isOpen}
           aria-haspopup="listbox"
@@ -271,7 +340,7 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
 
         {/* Enter hint — visible when actively typing a text filter */}
         {showEnterHint && (
-          <span className="inline-flex items-center gap-0.5 text-[9px] text-muted-foreground/40 shrink-0 select-none">
+          <span className="inline-flex items-center text-[8px] text-muted-foreground/40 shrink-0 select-none">
             <CornerDownLeft className="h-2.5 w-2.5" />
           </span>
         )}
@@ -320,7 +389,7 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
                     )}
                   >
                     <span>{field.label}</span>
-                    <ChevronRight className="h-3 w-3 text-muted-foreground/50" />
+                    {hasSubcategories(field) && <ChevronRight className="h-3 w-3 text-muted-foreground/50" />}
                   </button>
                 ))
               )}
@@ -330,18 +399,16 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
           {/* Stage: enum options */}
           {stage.type === 'enum-options' && (
             <div className="py-1">
-              <div className="flex items-center gap-2 px-3 py-1.5 border-b border-border/40">
-                <button
-                  type="button"
-                  onClick={(e) => { e.stopPropagation(); handleBack() }}
-                  className="p-1 -ml-1 rounded-sm hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
-                >
-                  <ChevronLeft className="h-3.5 w-3.5" />
-                </button>
-                <span className="text-[9px] text-muted-foreground uppercase tracking-widest font-bold">
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); handleBack() }}
+                className="w-full flex items-center gap-2 px-3 py-1.5 border-b border-border/40 hover:bg-muted/40 transition-colors group text-left"
+              >
+                <ChevronLeft className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
+                <span className="text-[9px] text-muted-foreground uppercase tracking-widest font-bold group-hover:text-foreground transition-colors">
                   {stage.field.label}
                 </span>
-              </div>
+              </button>
               {stage.field.options.map((opt, i) => (
                 <button
                   key={opt.value}
@@ -362,99 +429,34 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
             </div>
           )}
 
-          {/* Stage: text input — universal for all text fields */}
-          {stage.type === 'text-input' && (
-            <div>
-              {/* Header */}
-              <div className="flex items-center gap-2 px-3 py-1.5 border-b border-border/40">
-                <button
-                  type="button"
-                  onClick={(e) => { e.stopPropagation(); handleBack() }}
-                  className="p-1 -ml-1 rounded-sm hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
-                >
-                  <ChevronLeft className="h-3.5 w-3.5" />
-                </button>
-                <span className="text-[9px] text-muted-foreground uppercase tracking-widest font-bold">
-                  {stage.field.label}
-                </span>
-                {isSuggestionsLoading && <Loader2 className="h-2.5 w-2.5 animate-spin text-muted-foreground/50 ml-auto" />}
-              </div>
-
-              {/* Real input in dropdown */}
-              <div className="px-3 pt-3 pb-2">
-                <div
-                  className={cn(
-                    'flex items-center h-9 px-3 rounded-md border transition-all',
-                    'bg-background border-border shadow-sm focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary',
-                  )}
-                >
-                  <input
-                    ref={dropdownInputRef}
-                    value={pendingTextValue}
-                    onChange={(e) => {
-                      setPendingTextValue(e.target.value)
-                      setFocusedIndex(-1)
-                    }}
-                    onKeyDown={handleKeyDown}
-                    placeholder="Escribe el valor..."
-                    className="flex-1 bg-transparent border-none outline-none text-[11px] font-bold tracking-widest uppercase placeholder:text-muted-foreground/30 placeholder:font-normal placeholder:normal-case placeholder:tracking-normal"
-                  />
-                  {pendingTextValue && (
-                    <span className="flex items-center gap-0.5 text-[9px] text-primary/50 shrink-0 ml-2 animate-in fade-in slide-in-from-right-1">
-                      <CornerDownLeft className="h-2.5 w-2.5" />
-                      <span className="font-bold uppercase tracking-widest">Enter</span>
-                    </span>
-                  )}
-                </div>
-
-                {/* Apply button — only when there's a value */}
-                {pendingTextValue.trim() && (
-                  <button
-                    type="button"
-                    onClick={() => handleTextSubmit()}
-                    className={cn(
-                      'mt-2 w-full flex items-center justify-center gap-1.5 h-7 rounded-md',
-                      'bg-primary text-primary-foreground',
-                      'text-[10px] font-bold uppercase tracking-widest',
-                      'transition-opacity hover:opacity-90',
-                    )}
-                  >
-                    <CornerDownLeft className="h-3 w-3" />
-                    Aplicar «{pendingTextValue.trim()}»
-                  </button>
-                )}
-              </div>
-
-              {/* Suggestions — only when suggestionsUrl is configured */}
-              {stage.field.suggestionsUrl && (
-                <div className="border-t border-border/30">
-                  {pendingTextValue.length < 2 ? (
-                    <p className="px-3 py-2 text-[10px] text-muted-foreground/60">Escribe 2 o más caracteres para ver sugerencias</p>
-                  ) : isSuggestionsLoading ? (
-                    <p className="px-3 py-2 text-[10px] text-muted-foreground/60">Buscando...</p>
-                  ) : suggestions.length === 0 ? (
-                    <p className="px-3 py-2 text-[10px] text-muted-foreground/60">Sin coincidencias</p>
-                  ) : (
-                    <div className="py-1">
-                      {suggestions.map((value, i) => (
-                        <button
-                          key={value}
-                          id={`ssb-option-${i}`}
-                          type="button"
-                          role="option"
-                          aria-selected={i === focusedIndex}
-                          onClick={() => handleSuggestionSelect(stage.field, value)}
-                          className={cn(
-                            'w-full flex items-center px-3 py-1.5 text-left transition-colors',
-                            'text-[11px] font-medium',
-                            i === focusedIndex ? 'bg-primary/10 text-primary' : 'hover:bg-muted/40 text-foreground',
-                          )}
-                        >
-                          {value}
-                        </button>
-                      ))}
-                    </div>
-                  )}
+          {/* Dynamic Suggestions for Text Field under Main Input */}
+          {activeSuggestionsUrl && (
+            <div className="py-1 border-t border-border/30">
+              {suggestionQuery.length < 2 ? (
+                <p className="px-3 py-2 text-[10px] text-muted-foreground/60">Escribe 2 o más caracteres para ver sugerencias</p>
+              ) : isSuggestionsLoading ? (
+                <p className="px-3 py-2 text-[10px] text-muted-foreground/60">Buscando...</p>
+              ) : suggestions.length === 0 ? (
+                <p className="px-3 py-2 text-[10px] text-muted-foreground/60">Sin coincidencias</p>
+              ) : (
+                <div className="py-1">
+                  {suggestions.map((value, i) => (
+                    <button
+                      key={value}
+                      id={`ssb-option-${i}`}
+                      type="button"
+                      role="option"
+                      aria-selected={i === focusedIndex}
+                      onClick={() => handleSuggestionSelect(parsedActiveFieldInfo!.field, value)}
+                      className={cn(
+                        'w-full flex items-center px-3 py-1.5 text-left transition-colors',
+                        'text-[11px] font-medium',
+                        i === focusedIndex ? 'bg-primary/10 text-primary' : 'hover:bg-muted/40 text-foreground',
+                      )}
+                    >
+                      {value}
+                    </button>
+                  ))}
                 </div>
               )}
             </div>
@@ -463,18 +465,16 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
           {/* Stage: daterange picker */}
           {stage.type === 'daterange' && (
             <div className="p-3 flex flex-col gap-3">
-              <div className="flex items-center gap-2 -mt-1 -ml-1 mb-1">
-                <button
-                  type="button"
-                  onClick={(e) => { e.stopPropagation(); handleBack() }}
-                  className="p-1 rounded-sm hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
-                >
-                  <ChevronLeft className="h-3.5 w-3.5" />
-                </button>
-                <span className="text-[9px] text-muted-foreground uppercase tracking-widest font-bold">
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); handleBack() }}
+                className="w-full flex items-center gap-2 px-3 py-1.5 border-b border-border/40 hover:bg-muted/40 transition-colors group text-left -mt-1 -ml-1 mb-1 rounded-t-md"
+              >
+                <ChevronLeft className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
+                <span className="text-[9px] text-muted-foreground uppercase tracking-widest font-bold group-hover:text-foreground transition-colors">
                   {stage.field.label}
                 </span>
-              </div>
+              </button>
               <Calendar
                 mode="range"
                 selected={dateRange}

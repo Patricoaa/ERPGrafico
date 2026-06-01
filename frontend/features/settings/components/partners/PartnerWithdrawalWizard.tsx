@@ -1,27 +1,26 @@
 "use client"
+import { formatCurrency } from "@/lib/money"
 
 import React, { useState, useEffect } from "react"
-import { 
-    Wallet, 
-    Package, 
-    Users, 
-    Warehouse as WarehouseIcon, 
-    Info,
+import {
+    Wallet,
+    Package,
+    Users,
+    Warehouse as WarehouseIcon,
     ArrowUpCircle,
     Banknote,
     AlertTriangle
 } from "lucide-react"
-import { GenericWizard, WizardStep } from "@/components/shared/GenericWizard"
+import { LabeledInput, LabeledSelect, LabeledContainer, PeriodValidationDateInput, Chip, GenericWizard, WizardStep } from "@/components/shared"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
 import { Partner } from "@/features/contacts/types/partner"
 import { TreasuryAccount } from "@/features/treasury/types"
 import { Product } from "@/features/inventory/types"
-import api from "@/lib/api"
+import { settingsApi } from "../../hooks"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
-import { LabeledInput, LabeledSelect, LabeledContainer, PeriodValidationDateInput } from "@/components/shared"
-import { Badge } from "@/components/ui/badge"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { formatCurrency, cn } from "@/lib/utils"
+
+import {Alert} from "@/components/ui/alert"
+import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 import { showApiError } from "@/lib/errors"
 
@@ -42,16 +41,16 @@ export function PartnerWithdrawalWizard({
 }: PartnerWithdrawalWizardProps) {
     const [loading, setLoading] = useState(false)
     const [isCompleting, setIsCompleting] = useState(false)
-    
+
     // Data lists
     const [partners, setPartners] = useState<Partner[]>([])
     const [warehouses, setWarehouses] = useState<any[]>([])
     const [treasuryAccounts, setTreasuryAccounts] = useState<TreasuryAccount[]>([])
-    
+
     // Form State
     const [partnerId, setPartnerId] = useState(initialPartnerId || "")
     const [method, setMethod] = useState<WithdrawalMethod>("CASH")
-    
+
     // Cash specific
     const [cashData, setCashData] = useState({
         amount: "",
@@ -59,7 +58,7 @@ export function PartnerWithdrawalWizard({
         date: new Date().toISOString().split('T')[0],
         description: ""
     })
-    
+
     // Assets specific
     const [assetData, setAssetData] = useState({
         warehouseId: "",
@@ -70,7 +69,7 @@ export function PartnerWithdrawalWizard({
         date: new Date().toISOString().split('T')[0],
         description: ""
     })
-    
+
     // Product details for assets
     const [productDetails, setProductDetails] = useState<Product | null>(null)
     const [productUoMs, setProductUoMs] = useState<any[]>([])
@@ -81,13 +80,13 @@ export function PartnerWithdrawalWizard({
             setLoading(true)
             Promise.all([
                 partnersApi.getPartners(),
-                api.get('/inventory/warehouses/'),
-                api.get('/treasury/accounts/')
-            ]).then(([pData, wRes, aRes]) => {
+                settingsApi.getWarehouses(),
+                settingsApi.getTreasuryAccounts()
+            ]).then(([pData, warehouses, accounts]) => {
                 setPartners(pData)
-                setWarehouses(wRes.data.results || wRes.data)
-                setTreasuryAccounts(aRes.data)
-                
+                setWarehouses(warehouses)
+                setTreasuryAccounts(accounts as any)
+
                 if (initialPartnerId) setPartnerId(initialPartnerId)
             }).catch(err => {
                 console.error(err)
@@ -124,19 +123,17 @@ export function PartnerWithdrawalWizard({
             setProductUoMs([])
             return
         }
-        
-        api.get(`/inventory/products/${assetData.productId}/`)
-            .then(res => {
-                const data = res.data
-                setProductDetails(data)
-                setAssetData(prev => ({ ...prev, unitCost: data.cost_price?.toString() || "0" }))
 
-                if (data.uom_category) {
-                    api.get(`/inventory/uoms/?category=${data.uom_category}`)
-                        .then(uomRes => {
-                            const uoms = uomRes.data.results || uomRes.data
+        settingsApi.getProduct(assetData.productId)
+            .then(data => {
+                setProductDetails(data as any)
+                setAssetData(prev => ({ ...prev, unitCost: (data as any).cost_price?.toString() || "0" }))
+
+                if ((data as any).uom_category) {
+                    settingsApi.getUoms({ category: (data as any).uom_category })
+                        .then(uoms => {
                             setProductUoMs(uoms)
-                            const baseId = typeof data.uom === 'object' ? data.uom.id : data.uom
+                            const baseId = typeof (data as any).uom === 'object' ? (data as any).uom.id : (data as any).uom
                             const base = uoms.find((u: { id: number }) => u.id === baseId)
                             if (base) setAssetData(prev => ({ ...prev, uomId: base.id.toString() }))
                         })
@@ -161,7 +158,7 @@ export function PartnerWithdrawalWizard({
                     description: cashData.description || 'Retiro Provisorio de Utilidades'
                 })
             } else {
-                await api.post('/inventory/moves/adjust/', {
+                await settingsApi.createInventoryAdjustment({
                     product_id: assetData.productId,
                     warehouse_id: assetData.warehouseId,
                     quantity: -Number(assetData.quantity), // Negative for withdrawal
@@ -172,7 +169,7 @@ export function PartnerWithdrawalWizard({
                     partner_contact_id: partnerId
                 })
             }
-            
+
             toast.success("Retiro registrado exitosamente")
             onSuccess()
             onOpenChange(false)
@@ -211,7 +208,7 @@ export function PartnerWithdrawalWizard({
                         <div className="p-3 bg-destructive/5 border-2 border-dashed border-destructive/20 rounded-lg space-y-2 animate-in fade-in zoom-in-95 duration-300">
                             <div className="flex justify-between items-center text-[10px] text-muted-foreground uppercase font-black">
                                 <span>Pasivo con el Socio</span>
-                                <Badge variant="outline" className="h-4 py-0 text-[8px] border-destructive/20 text-destructive uppercase">Deuda del Socio</Badge>
+                                <Chip size="xs" intent="destructive">Deuda del Socio</Chip>
                             </div>
                             <div className="grid grid-cols-2 gap-4 pt-1">
                                 <div className="space-y-0.5">
@@ -239,8 +236,8 @@ export function PartnerWithdrawalWizard({
                         onClick={() => setMethod("CASH")}
                         className={cn(
                             "group flex flex-col items-center gap-4 p-6 rounded-xl border-2 transition-all text-center",
-                            method === "CASH" 
-                                ? "border-destructive bg-destructive/5 shadow-lg shadow-destructive/10" 
+                            method === "CASH"
+                                ? "border-destructive bg-destructive/5 shadow-lg shadow-destructive/10"
                                 : "border-muted hover:border-destructive/30 hover:bg-muted/50"
                         )}
                     >
@@ -255,13 +252,13 @@ export function PartnerWithdrawalWizard({
                             <p className="text-[10px] text-muted-foreground leading-tight">Egreso de caja o transferencia bancaria.</p>
                         </div>
                     </button>
-                    
+
                     <button
                         onClick={() => setMethod("ASSETS")}
                         className={cn(
                             "group flex flex-col items-center gap-4 p-6 rounded-xl border-2 transition-all text-center",
-                            method === "ASSETS" 
-                                ? "border-warning bg-warning/5 shadow-lg shadow-warning/10" 
+                            method === "ASSETS"
+                                ? "border-warning bg-warning/5 shadow-lg shadow-warning/10"
                                 : "border-muted hover:border-warning/30 hover:bg-muted/50"
                         )}
                     >
@@ -283,7 +280,7 @@ export function PartnerWithdrawalWizard({
             id: "details",
             title: "Detalles del Retiro",
             description: "Complete la información de registro",
-            isValid: method === "CASH" 
+            isValid: method === "CASH"
                 ? (!!cashData.amount && !!cashData.treasuryAccountId)
                 : (!!assetData.productId && !!assetData.warehouseId && !!assetData.quantity),
             component: method === "CASH" ? (
@@ -338,7 +335,7 @@ export function PartnerWithdrawalWizard({
                             placeholder="Almacén"
                         />
                         <LabeledContainer label="Producto / Recurso">
-                            <ProductSelector 
+                            <ProductSelector
                                 value={assetData.productId}
                                 onChange={(val) => setAssetData(prev => ({ ...prev, productId: val || "" }))}
                                 allowedTypes={["STORABLE", "MANUFACTURABLE"]}
@@ -346,7 +343,7 @@ export function PartnerWithdrawalWizard({
                             />
                         </LabeledContainer>
                     </div>
-                    
+
                     <div className="grid grid-cols-3 gap-4">
                         <LabeledInput
                             label="Cantidad"

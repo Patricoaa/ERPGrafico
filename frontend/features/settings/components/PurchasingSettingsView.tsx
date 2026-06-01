@@ -3,10 +3,10 @@
 import { useCallback } from "react"
 import { useForm, UseFormReturn, Path } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import api from "@/lib/api"
+import { settingsApi } from "../hooks"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Form, FormField } from "@/components/ui/form"
-import { AutoSaveStatusBadge, FormSkeleton } from "@/components/shared"
+import { AutoSaveStatusBadge } from "@/components/shared"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { useAutoSaveForm } from "@/hooks/useAutoSaveForm"
 import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard"
@@ -24,7 +24,7 @@ export function PurchasingSettingsView() {
     })
 
     const onSave = useCallback(async (data: PurchasingFormValues) => {
-        await api.patch('/accounting/settings/current/', data)
+        await settingsApi.updateCurrentSettings(data as any)
     }, [])
 
     const { status, invalidReason, lastSavedAt, retry } = useAutoSaveForm({
@@ -47,7 +47,7 @@ export function PurchasingSettingsView() {
             </div>
             <Form {...form}>
                 <form className="space-y-6">
-                    <Card className="rounded-md border-2">
+                    <Card variant="transparent" className="border-2">
                         <CardHeader className="pb-4">
                             <CardTitle className="text-sm font-black uppercase text-primary tracking-widest">Cuentas de Gastos Predeterminadas</CardTitle>
                             <CardDescription className="text-[10px] uppercase font-bold text-muted-foreground italic">Configuración de contrapartidas contables para compras y gastos operativos</CardDescription>

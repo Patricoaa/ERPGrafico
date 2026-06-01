@@ -7,6 +7,15 @@ from django.db.models import Sum
 from django.utils import timezone
 from django.core.validators import MinValueValidator, MaxValueValidator
 
+class ContactRole(models.TextChoices):
+    CUSTOMER = 'CUSTOMER', _('Cliente')
+    SUPPLIER = 'SUPPLIER', _('Proveedor')
+    EMPLOYEE = 'EMPLOYEE', _('Empleado')
+    USER = 'USER', _('Usuario Sistema')
+    PARTNER = 'PARTNER', _('Socio / Accionista')
+    RELATED = 'RELATED', _('Relacionado')
+    CARRIER = 'CARRIER', _('Transportista')
+
 
 class RiskLevel(models.TextChoices):
     LOW = 'LOW', _('Bajo Riesgo')
@@ -27,6 +36,12 @@ class Contact(models.Model):
     address = models.TextField(_("Dirección"), blank=True)
     code = models.CharField(_("Código"), max_length=20, unique=True, editable=False, null=True)
     
+    roles = models.JSONField(
+        default=list,
+        blank=True,
+        help_text=_("Roles manuales asignados al contacto (Cliente, Proveedor, etc.)")
+    )
+
     history = HistoricalRecords()
     
     # Accounting links
@@ -162,12 +177,8 @@ class Contact(models.Model):
     @property
     def contact_type(self):
         """
-        Returns the contact type based on associated documents:
-        - 'CUSTOMER': has sale orders only
-        - 'SUPPLIER': has purchase orders only
-        - 'BOTH': has both sale and purchase orders
-        - 'RELATED': has related work orders but no sales/purchases
-        - 'NONE': has no orders yet
+        [DEPRECADO] Usar active_roles en su lugar.
+        Mantiene compatibilidad hacia atrás temporalmente.
         """
         has_sales = self.is_customer
         has_purchases = self.is_supplier
@@ -183,6 +194,36 @@ class Contact(models.Model):
             return 'RELATED'
         else:
             return 'NONE'
+
+    @property
+    def active_roles(self):
+        """
+        Retorna una lista unificada de roles activos:
+        Los asignados explícitamente por el usuario (self.roles) + 
+        los detectados implícitamente por transacciones (duck typing).
+        """
+        # Empezamos con los roles explícitos asignados manualmente en la base de datos
+        system_roles = set(getattr(self, 'roles', [])) if getattr(self, 'roles', None) else set()
+        
+        # Agregamos los roles implícitos basados en historial de transacciones
+        if self.is_customer:
+            system_roles.add('CUSTOMER')
+        if self.is_supplier:
+            system_roles.add('SUPPLIER')
+        if self.related_work_orders.exists():
+            system_roles.add('RELATED')
+            
+        # Agregamos roles basados en campos o relaciones específicas
+        if self.is_partner:
+            system_roles.add('PARTNER')
+            
+        # Duck typing para futuros modelos satélites
+        if self.employees.exists():
+            system_roles.add('EMPLOYEE')
+        if hasattr(self, 'system_user'):
+            system_roles.add('USER')
+            
+        return list(system_roles) if system_roles else ['NONE']
 
     @property
     def credit_balance_used(self) -> Decimal:

@@ -1,18 +1,11 @@
 "use client"
+import { formatCurrency } from "@/lib/money";
 
-import { FormSkeleton } from "@/components/shared"
+import { BaseModal, SkeletonShell, StatusBadge } from '@/components/shared'
 
-import { useState, useEffect } from "react"
-import { useRouter, usePathname, useSearchParams } from "next/navigation"
-import { BaseModal } from "@/components/shared/BaseModal"
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table"
+import {useState} from "react"
+
+import { DataTable, StatCard } from "@/components/shared"
 import {
     History,
     TrendingUp,
@@ -21,18 +14,18 @@ import {
     Factory,
     ArrowUpRight,
     ArrowDownRight,
-    Eye,
     LayoutDashboard
 } from "lucide-react"
-import api from "@/lib/api"
+import { useProductInsights } from "../hooks/useProducts"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
-import { DataCell } from "@/components/ui/data-table-cells"
+import { DataCell } from '@/components/shared'
 import { formatEntityDisplay } from "@/lib/entity-registry"
-import { StatusBadge } from "@/components/shared/StatusBadge"
+
 import { FormTabs, FormTabsContent } from "@/components/shared"
-import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
-import { WorkOrderWizard } from "@/features/production/components/WorkOrderWizard"
+import { LazyDrawer, type TransactionType } from "@/features/_shared/transaction-drawer"
+import { WorkOrderWizard } from "@/features/production"
+import type { ColumnDef } from "@tanstack/react-table"
 import {
     ResponsiveContainer,
     XAxis,
@@ -43,8 +36,6 @@ import {
     AreaChart,
     Area
 } from 'recharts'
-import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
 
 interface ProductInsightsModalProps {
     productId: number | null
@@ -99,74 +90,29 @@ interface ProductInsights {
 }
 
 export function ProductInsightsModal({ productId, productName, open, onOpenChange }: ProductInsightsModalProps) {
-    const [data, setData] = useState<ProductInsights | null>(null)
-    const [loading, setLoading] = useState(false)
+    // useProductInsights cachea por PRODUCTS_KEYS.detail(id) + 'insights'.
+    // Cualquier mutación del producto invalida también este bundle vía
+    // prefix match en PRODUCTS_KEYS.all.
+    const { data, isLoading: loading, refetch: refetchInsights } = useProductInsights<ProductInsights>(open ? productId : null)
     const [activeTab, setActiveTab] = useState("overview")
 
-    const router = useRouter()
-    const pathname = usePathname()
-    const searchParams = useSearchParams()
-
-    const transactionId = searchParams.get('transaction')
-    const transactionType = searchParams.get('transactionType') as import("@/types/transactions").TransactionType | null
-    const workOrderId = searchParams.get('workOrder')
-
-    const [selectedTransaction, setSelectedTransaction] = useState<{ id: number | string, type: import("@/types/transactions").TransactionType } | null>(null)
+    const [selectedTransaction, setSelectedTransaction] = useState<{ id: number | string, type: TransactionType } | null>(null)
     const [activeWorkOrderId, setActiveWorkOrderId] = useState<number | null>(null)
 
-    useEffect(() => {
-        if (transactionId && transactionType && !selectedTransaction) {
-            setSelectedTransaction({ id: transactionId, type: transactionType })
-        }
-        if (workOrderId && !activeWorkOrderId) {
-            setActiveWorkOrderId(Number(workOrderId))
-        }
-    }, [transactionId, transactionType, workOrderId, selectedTransaction, activeWorkOrderId])
-
     const openTransaction = (id: number | string, type: string) => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.set('transaction', String(id))
-        params.set('transactionType', type)
-        router.push(`${pathname}?${params.toString()}`, { scroll: false })
+        setSelectedTransaction({ id, type: type as TransactionType })
     }
 
     const closeTransaction = () => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.delete('transaction')
-        params.delete('transactionType')
-        router.replace(`${pathname}?${params.toString()}`, { scroll: false })
         setSelectedTransaction(null)
     }
 
     const openWorkOrder = (id: number) => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.set('workOrder', String(id))
-        router.push(`${pathname}?${params.toString()}`, { scroll: false })
+        setActiveWorkOrderId(id)
     }
 
     const closeWorkOrder = () => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.delete('workOrder')
-        router.replace(`${pathname}?${params.toString()}`, { scroll: false })
         setActiveWorkOrderId(null)
-    }
-
-    useEffect(() => {
-        if (open && productId) {
-            fetchInsights()
-        }
-    }, [open, productId])
-
-    const fetchInsights = async () => {
-        setLoading(true)
-        try {
-            const res = await api.get(`/inventory/products/${productId}/insights/`)
-            setData(res.data)
-        } catch (error) {
-            console.error("Error fetching product insights:", error)
-        } finally {
-            setLoading(false)
-        }
     }
 
     if (!open) return null
@@ -184,38 +130,24 @@ export function ProductInsightsModal({ productId, productName, open, onOpenChang
             hideScrollArea={true}
             allowOverflow={true}
             className="max-w-5xl"
-            headerClassName="sr-only" // We are using a custom header inside for complex layout
-            title={`Insights del Producto: ${productName}`}
+            variant="form-tabs"
+            icon={BarChart3}
+            title="Insights del Producto"
+            description={productName || undefined}
         >
             <div className="flex flex-col h-full overflow-visible">
-                {loading ? (
-                    <div className="p-6">
-                        <FormSkeleton hasTabs tabs={4} cards={1} fields={6} />
-                    </div>
-                ) : !data ? (
-                    <div className="flex-1 flex items-center justify-center py-20">
-                        <p className="text-muted-foreground">Error al cargar datos.</p>
-                    </div>
+                {loading || !data ? (
+                    <SkeletonShell isLoading={loading || !data} ariaLabel="Cargando insights del producto">
+                        <div className="p-6">
+                            {/* Content will be rendered by SkeletonShell when loading */}
+                        </div>
+                    </SkeletonShell>
                 ) : (
                     <FormTabs
                         value={activeTab}
                         onValueChange={setActiveTab}
-                        orientation="vertical"
-                        header={
-                            <div className="p-6 pb-2 flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                    <BarChart3 className="h-5 w-5 text-muted-foreground" />
-                                    <div>
-                                        <h2 className="text-xl font-bold">Insights del Producto</h2>
-                                        {productName && (
-                                            <p className="text-sm text-muted-foreground font-medium">
-                                                {productName}
-                                            </p>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-                        }
+                        orientation="horizontal"
+                        variant="underline"
                         items={[
                             { value: "overview", label: "Resumen", icon: LayoutDashboard },
                             { value: "history", label: "Precios", icon: History },
@@ -229,40 +161,34 @@ export function ProductInsightsModal({ productId, productName, open, onOpenChang
                             {/* OVERVIEW TAB */}
                             <FormTabsContent value="overview" className="mt-0 space-y-6">
                                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                                    <Card className="bg-success/10 border-success/10">
-                                        <CardContent className="pt-4">
-                                            <p className="text-[10px] font-bold text-success uppercase tracking-wider">Ventas Totales</p>
-                                            <div className="flex items-baseline gap-2">
-                                                <p className="text-2xl font-black text-success">{data.sales_analysis.total_sold}</p>
-                                                <span className="text-xs text-success">uds</span>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                    <Card className="bg-primary/10 border-primary/10">
-                                        <CardContent className="pt-4">
-                                            <p className="text-[10px] font-bold text-primary uppercase tracking-wider">Ingresos (Neto)</p>
-                                            <DataCell.Currency value={data.sales_analysis.total_revenue} className="text-2xl font-black text-primary text-left" />
-                                        </CardContent>
-                                    </Card>
-                                    <Card className="bg-warning/10 border-warning/10">
-                                        <CardContent className="pt-4">
-                                            <p className="text-[10px] font-bold text-warning uppercase tracking-wider">Margen Bruto</p>
-                                            <div className="flex items-baseline gap-2">
-                                                <DataCell.Currency value={margin} className="text-2xl font-black text-warning text-left" />
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                    <Card className={marginPercent >= 20 ? "bg-primary/10 border-info/10" : "bg-destructive/10 border-destructive/20"}>
-                                        <CardContent className="pt-4">
-                                            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">% de Margen</p>
-                                            <div className="flex items-center gap-2">
-                                                <p className={`text-2xl font-black ${marginPercent >= 20 ? 'text-info' : 'text-destructive'}`}>
-                                                    {marginPercent.toFixed(1)}%
-                                                </p>
-                                                {marginPercent >= 20 ? <ArrowUpRight className="h-5 w-5 text-primary" /> : <ArrowDownRight className="h-5 w-5 text-destructive" />}
-                                            </div>
-                                        </CardContent>
-                                    </Card>
+                                    <StatCard
+                                        label="Ventas Totales"
+                                        value={<>{data.sales_analysis.total_sold} <span className="text-xs">uds</span></>}
+                                        variant="compact"
+                                        accent="success"
+                                    />
+                                    <StatCard
+                                        label="Ingresos (Neto)"
+                                        value={<DataCell.Currency value={data.sales_analysis.total_revenue} className="text-2xl font-black text-left" />}
+                                        variant="compact"
+                                        accent="primary"
+                                    />
+                                    <StatCard
+                                        label="Margen Bruto"
+                                        value={<DataCell.Currency value={margin} className="text-2xl font-black text-left" />}
+                                        variant="compact"
+                                        accent="warning"
+                                    />
+                                    <StatCard
+                                        label="% de Margen"
+                                        value={`${marginPercent.toFixed(1)}%`}
+                                        variant="compact"
+                                        accent={marginPercent >= 20 ? "info" : "destructive"}
+                                    >
+                                        <div className="flex items-center gap-2 mt-1">
+                                            {marginPercent >= 20 ? <ArrowUpRight className="h-4 w-4 text-primary" /> : <ArrowDownRight className="h-4 w-4 text-destructive" />}
+                                        </div>
+                                    </StatCard>
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -339,7 +265,7 @@ export function ProductInsightsModal({ productId, productName, open, onOpenChang
                                             <YAxis fontSize={10} />
                                             <RechartsTooltip
                                                 labelFormatter={(val) => format(new Date(val), 'PPP', { locale: es })}
-                                                formatter={(val) => [new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(Number(val || 0)), '']}
+                                                formatter={(val) => [formatCurrency(Number(val || 0)), '']}
                                             />
                                             <Legend verticalAlign="top" height={36} />
                                             <Area type="monotone" name="Precio Venta" dataKey="sale_price" stroke="var(--primary)" fillOpacity={1} fill="url(#colorSale)" strokeWidth={2} />
@@ -349,157 +275,28 @@ export function ProductInsightsModal({ productId, productName, open, onOpenChang
                                 </div>
 
                                 <div className="rounded-md border">
-                                    <Table>
-                                        <TableHeader>
-                                            <TableRow className="bg-muted/50">
-                                                <TableHead>Fecha</TableHead>
-                                                <TableHead>Usuario</TableHead>
-                                                <TableHead>Precio de Venta</TableHead>
-                                                <TableHead>Costo Ponderado</TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {data.price_history.map((entry, i) => (
-                                                <TableRow key={i}>
-                                                    <TableCell className="text-xs">
-                                                        {format(new Date(entry.date), "dd/MM/yyyy HH:mm", { locale: es })}
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded-[0.25rem] border border-border bg-muted/50 text-muted-foreground whitespace-nowrap">
-                                                            {entry.user}
-                                                        </span>
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <DataCell.Currency value={entry.sale_price} className="text-left font-bold" />
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <DataCell.Currency value={entry.cost_price} className="text-left text-muted-foreground" />
-                                                    </TableCell>
-                                                </TableRow>
-                                            ))}
-                                        </TableBody>
-                                    </Table>
+                                    <PriceHistoryTable entries={data.price_history} />
                                 </div>
                             </FormTabsContent>
 
                             {/* KARDEX TAB */}
                             <FormTabsContent value="kardex" className="mt-0">
                                 <div className="rounded-md border">
-                                    <Table>
-                                        <TableHeader>
-                                            <TableRow className="bg-muted/50">
-                                                <TableHead>Fecha</TableHead>
-                                                <TableHead>N°</TableHead>
-                                                <TableHead>Tipo</TableHead>
-                                                <TableHead>Cantidad</TableHead>
-                                                <TableHead>P. Unitario</TableHead>
-                                                <TableHead>Total</TableHead>
-                                                <TableHead>Bodega</TableHead>
-                                                <TableHead className="text-right">Acciones</TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {data.kardex.map((move, i) => (
-                                                <TableRow key={i}>
-                                                    <TableCell className="text-xs">
-                                                        {format(new Date(move.date), "dd/MM/yyyy")}
-                                                    </TableCell>
-                                                    <TableCell className="font-mono text-[10px] font-bold">
-                                                        {move.display_id}
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <StatusBadge
-                                                            status={move.type === 'IN' ? 'SUCCESS' : move.type === 'OUT' ? 'DESTRUCTIVE' : 'WARNING'}
-                                                            label={move.type === 'IN' ? 'Entrada' : move.type === 'OUT' ? 'Salida' : 'Ajuste'}
-                                                        />
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <DataCell.Number value={move.quantity} className="text-left" suffix={move.uom} decimals={2} />
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <DataCell.Currency value={move.unit_price || 0} className="text-left" />
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <DataCell.Currency value={move.total_price || 0} className="text-left" />
-                                                    </TableCell>
-                                                    <TableCell className="text-xs">{move.warehouse}</TableCell>
-                                                    <TableCell className="text-right">
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            className="h-8 w-8 text-primary"
-                                                            onClick={() => {
-                                                                if (move.related_type === 'work_order') {
-                                                                    openWorkOrder(move.related_id)
-                                                                } else {
-                                                                    openTransaction(move.related_id, move.related_type)
-                                                                }
-                                                            }}
-                                                        >
-                                                            <Eye className="h-4 w-4" />
-                                                        </Button>
-                                                    </TableCell>
-                                                </TableRow>
-                                            ))}
-                                            {data.kardex.length === 0 && (
-                                                <TableRow>
-                                                    <TableCell colSpan={8} className="text-center py-10 text-muted-foreground italic">
-                                                        Sin movimientos registrados
-                                                    </TableCell>
-                                                </TableRow>
-                                            )}
-                                        </TableBody>
-                                    </Table>
+                                    <KardexTable
+                                        entries={data.kardex}
+                                        onOpenWorkOrder={openWorkOrder}
+                                        onOpenTransaction={openTransaction}
+                                    />
                                 </div>
                             </FormTabsContent>
 
                             {/* PRODUCTION TAB */}
                             <FormTabsContent value="production" className="mt-0">
                                 <div className="rounded-md border">
-                                    <Table>
-                                        <TableHeader>
-                                            <TableRow className="bg-muted/50">
-                                                <TableHead>Fecha</TableHead>
-                                                <TableHead>N° OT</TableHead>
-                                                <TableHead>Cantidad Consumida</TableHead>
-                                                <TableHead className="text-right">Acciones</TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {data.production_usage.map((usage, i) => (
-                                                <TableRow key={i}>
-                                                    <TableCell className="text-xs">
-                                                        {format(new Date(usage.date), "dd/MM/yyyy")}
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded-[0.25rem] border border-border bg-muted/50 text-muted-foreground whitespace-nowrap">
-                                                            {formatEntityDisplay('production.workorder', { number: usage.ot_number })}
-                                                        </span>
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <DataCell.Number value={usage.quantity} className="text-left" decimals={2} />
-                                                    </TableCell>
-                                                    <TableCell className="text-right">
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            className="h-8 w-8 text-primary"
-                                                            onClick={() => openWorkOrder(usage.ot_id)}
-                                                        >
-                                                            <Eye className="h-4 w-4" />
-                                                        </Button>
-                                                    </TableCell>
-                                                </TableRow>
-                                            ))}
-                                            {data.production_usage.length === 0 && (
-                                                <TableRow>
-                                                    <TableCell colSpan={4} className="text-center py-10 text-muted-foreground italic">
-                                                        Este producto no ha sido utilizado como material en producción.
-                                                    </TableCell>
-                                                </TableRow>
-                                            )}
-                                        </TableBody>
-                                    </Table>
+                                    <ProductionUsageTable
+                                        entries={data.production_usage}
+                                        onOpenWorkOrder={openWorkOrder}
+                                    />
                                 </div>
                             </FormTabsContent>
                         </div>
@@ -508,22 +305,216 @@ export function ProductInsightsModal({ productId, productName, open, onOpenChang
             </div>
 
             {selectedTransaction && (
-                <TransactionViewModal
+                <LazyDrawer
+                    type={selectedTransaction.type}
+                    id={Number(selectedTransaction.id)}
                     open={!!selectedTransaction}
                     onOpenChange={(open) => !open && closeTransaction()}
-                    type={selectedTransaction.type}
-                    id={selectedTransaction.id}
                 />
             )}
 
             {activeWorkOrderId && (
                 <WorkOrderWizard
-                    orderId={activeWorkOrderId}
+                    mode={{ kind: 'manage', orderId: activeWorkOrderId }}
                     open={!!activeWorkOrderId}
                     onOpenChange={(open) => !open && closeWorkOrder()}
-                    onSuccess={() => fetchInsights()}
+                    onSuccess={() => refetchInsights()}
                 />
             )}
         </BaseModal>
+    )
+}
+
+function PriceHistoryTable({ entries }: { entries: PriceHistoryEntry[] }) {
+    const columns: ColumnDef<PriceHistoryEntry>[] = [
+        {
+            header: "Fecha",
+            cell: ({ row }) => (
+                <span className="text-xs">{format(new Date(row.original.date), "dd/MM/yyyy HH:mm", { locale: es })}</span>
+            ),
+        },
+        {
+            header: "Usuario",
+            cell: ({ row }) => (
+                <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded-[0.25rem] border border-border bg-muted/50 text-muted-foreground whitespace-nowrap">
+                    {row.original.user}
+                </span>
+            ),
+        },
+        {
+            header: "Precio de Venta",
+            cell: ({ row }) => (
+                <DataCell.Currency value={row.original.sale_price} className="text-left font-bold" />
+            ),
+        },
+        {
+            header: "Costo Ponderado",
+            cell: ({ row }) => (
+                <DataCell.Currency value={row.original.cost_price} className="text-left text-muted-foreground" />
+            ),
+        },
+    ]
+
+    return (
+        <DataTable
+            columns={columns}
+            data={entries}
+            variant="embedded"
+            hidePagination
+            emptyState={{
+                context: "search",
+                title: "Sin historial de precios",
+                description: "No hay cambios de precio registrados para este producto.",
+            }}
+        />
+    )
+}
+
+function KardexTable({ entries, onOpenWorkOrder, onOpenTransaction }: {
+    entries: KardexEntry[]
+    onOpenWorkOrder: (id: number) => void
+    onOpenTransaction: (id: number | string, type: string) => void
+}) {
+    const columns: ColumnDef<KardexEntry>[] = [
+        {
+            header: "Fecha",
+            cell: ({ row }) => (
+                <span className="text-xs">{format(new Date(row.original.date), "dd/MM/yyyy")}</span>
+            ),
+        },
+        {
+            header: "N°",
+            cell: ({ row }) => (
+                <span className="font-mono text-[10px] font-bold">{row.original.display_id}</span>
+            ),
+        },
+        {
+            header: "Tipo",
+            cell: ({ row }) => {
+                const m = row.original
+                return (
+                    <StatusBadge
+                        status={m.type === 'IN' ? 'SUCCESS' : m.type === 'OUT' ? 'DESTRUCTIVE' : 'WARNING'}
+                        label={m.type === 'IN' ? 'Entrada' : m.type === 'OUT' ? 'Salida' : 'Ajuste'}
+                    />
+                )
+            },
+        },
+        {
+            header: "Cantidad",
+            cell: ({ row }) => {
+                const m = row.original
+                return <DataCell.Number value={m.quantity} className="text-left" suffix={m.uom} />
+            },
+        },
+        {
+            header: "P. Unitario",
+            cell: ({ row }) => (
+                <DataCell.Currency value={row.original.unit_price || 0} className="text-left" />
+            ),
+        },
+        {
+            header: "Total",
+            cell: ({ row }) => (
+                <DataCell.Currency value={row.original.total_price || 0} className="text-left" />
+            ),
+        },
+        {
+            header: "Bodega",
+            cell: ({ row }) => (
+                <span className="text-xs">{row.original.warehouse}</span>
+            ),
+        },
+        {
+            header: "Acciones",
+            cell: ({ row }) => {
+                const m = row.original
+                return (
+                    <div className="text-right">
+                        <DataCell.ActionGroup>
+                            <DataCell.Action
+                                action="view"
+                                onClick={() => {
+                                    if (m.related_type === 'work_order') {
+                                        onOpenWorkOrder(m.related_id)
+                                    } else {
+                                        onOpenTransaction(m.related_id, m.related_type)
+                                    }
+                                }}
+                            />
+                        </DataCell.ActionGroup>
+                    </div>
+                )
+            },
+        },
+    ]
+
+    return (
+        <DataTable
+            columns={columns}
+            data={entries}
+            variant="embedded"
+            hidePagination
+            emptyState={{
+                context: "search",
+                title: "Sin movimientos",
+                description: "Sin movimientos registrados para este producto.",
+            }}
+        />
+    )
+}
+
+function ProductionUsageTable({ entries, onOpenWorkOrder }: {
+    entries: ProductionUsage[]
+    onOpenWorkOrder: (id: number) => void
+}) {
+    const columns: ColumnDef<ProductionUsage>[] = [
+        {
+            header: "Fecha",
+            cell: ({ row }) => (
+                <span className="text-xs">{format(new Date(row.original.date), "dd/MM/yyyy")}</span>
+            ),
+        },
+        {
+            header: "N° OT",
+            cell: ({ row }) => (
+                <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded-[0.25rem] border border-border bg-muted/50 text-muted-foreground whitespace-nowrap">
+                    {formatEntityDisplay('production.workorder', { number: row.original.ot_number })}
+                </span>
+            ),
+        },
+        {
+            header: "Cantidad Consumida",
+            cell: ({ row }) => (
+                <DataCell.Number value={row.original.quantity} className="text-left" />
+            ),
+        },
+        {
+            header: "Acciones",
+            cell: ({ row }) => (
+                <div className="text-right">
+                    <DataCell.ActionGroup>
+                        <DataCell.Action
+                            action="view"
+                            onClick={() => onOpenWorkOrder(row.original.ot_id)}
+                        />
+                    </DataCell.ActionGroup>
+                </div>
+            ),
+        },
+    ]
+
+    return (
+        <DataTable
+            columns={columns}
+            data={entries}
+            variant="embedded"
+            hidePagination
+            emptyState={{
+                context: "search",
+                title: "Sin uso en producción",
+                description: "Este producto no ha sido utilizado como material en producción.",
+            }}
+        />
     )
 }

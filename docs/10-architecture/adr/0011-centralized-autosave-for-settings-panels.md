@@ -1,7 +1,7 @@
 ---
 id: 0011
 title: Centralized autosave for settings panels
-status: Proposed
+status: Accepted
 date: 2026-05-05
 author: frontend-team
 ---
@@ -23,7 +23,7 @@ Adoptamos un sistema centralizado de autosave para todos los paneles de configur
 
 1. **Hook canónico**: `useAutoSaveForm<T>` ubicado en `frontend/hooks/useAutoSaveForm.ts`. Acepta una instancia de `react-hook-form`, una callback `onSave`, un `debounceMs` configurable (default 1000), una callback opcional `validate` para gating semántico, y un `enabled` para condiciones externas (loading inicial). Expone los estados `idle | dirty | invalid | saving | synced | error` y métodos `flush` y `retry`.
 2. **Badge canónico**: `AutoSaveStatusBadge` en `frontend/components/shared/`. Sustituye los `Loader2` ad-hoc y los toasts de "Configuración aplicada" por un componente único.
-3. **Guarda de navegación**: `useUnsavedChangesGuard(status, flush)` que engancha `beforeunload` cuando hay un guardado pendiente o en vuelo.
+3. **Guarda de navegación**: `useUnsavedChangesGuard(status)` que engancha `beforeunload` cuando hay un guardado pendiente o en vuelo.
 4. **Helper para colecciones**: `useCombinedAutoSaveStatus(...statuses)` consolida el peor estado de varias instancias del hook (necesario para filas Workflow con dos forms).
 5. **Matriz de aplicabilidad**:
    - **Singletons sin validación** → `useAutoSaveForm` con debounce 1000 ms.

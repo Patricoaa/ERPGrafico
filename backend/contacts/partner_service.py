@@ -11,7 +11,9 @@ Handles:
 from django.db import transaction
 from django.core.exceptions import ValidationError
 from django.utils import timezone
+from django.contrib.contenttypes.models import ContentType
 from decimal import Decimal
+from .partner_models import PartnerTransaction
 
 from contacts.models import Contact
 from contacts.partner_models import (
@@ -150,6 +152,11 @@ class PartnerService:
             treasury_movement=movement,
             created_by=created_by,
         )
+
+        # Link source document back to entry
+        entry.source_content_type = ContentType.objects.get_for_model(PartnerTransaction)
+        entry.source_object_id = ptx.id
+        entry.save(update_fields=['source_content_type', 'source_object_id'])
 
         return ptx
 
@@ -323,7 +330,13 @@ class PartnerService:
             )
             if not primary_ptx:
                 primary_ptx = ptx_prov
-        
+
+        # Link source document back to entry
+        if primary_ptx:
+            entry.source_content_type = ContentType.objects.get_for_model(PartnerTransaction)
+            entry.source_object_id = primary_ptx.id
+            entry.save(update_fields=['source_content_type', 'source_object_id'])
+
         return primary_ptx
 
     # ──────────────────────────────────────────────────────────────
@@ -410,6 +423,11 @@ class PartnerService:
             created_by=created_by,
         )
 
+        # Link source document back to entry
+        entry.source_content_type = ContentType.objects.get_for_model(PartnerTransaction)
+        entry.source_object_id = ptx.id
+        entry.save(update_fields=['source_content_type', 'source_object_id'])
+
         return ptx
 
     @staticmethod
@@ -494,6 +512,11 @@ class PartnerService:
             source_transaction=ptx,
             created_by=created_by,
         )
+
+        # Link source document back to entry
+        entry.source_content_type = ContentType.objects.get_for_model(PartnerTransaction)
+        entry.source_object_id = ptx.id
+        entry.save(update_fields=['source_content_type', 'source_object_id'])
 
         return ptx
 
@@ -591,6 +614,11 @@ class PartnerService:
             created_by=created_by,
         )
 
+        # Link source document back to entry
+        entry.source_content_type = ContentType.objects.get_for_model(PartnerTransaction)
+        entry.source_object_id = seller_tx.id
+        entry.save(update_fields=['source_content_type', 'source_object_id'])
+
         return seller_tx, buyer_tx
 
     # ──────────────────────────────────────────────────────────────
@@ -678,6 +706,13 @@ class PartnerService:
         )
 
         entry.check_balance()
+
+        # Link source document to first partner transaction
+        first_ptx = PartnerTransaction.objects.filter(journal_entry=entry).first()
+        if first_ptx:
+            entry.source_content_type = ContentType.objects.get_for_model(PartnerTransaction)
+            entry.source_object_id = first_ptx.id
+            entry.save(update_fields=['source_content_type', 'source_object_id'])
 
         # Recalculate percentages
         PartnerService._recalculate_and_snapshot_stakes(
@@ -826,6 +861,12 @@ class PartnerService:
                 source_transaction=ptx_reinv,
                 created_by=created_by,
             )
+
+        # Link source document to first partner transaction
+        if ptx_list:
+            entry.source_content_type = ContentType.objects.get_for_model(PartnerTransaction)
+            entry.source_object_id = ptx_list[0].id
+            entry.save(update_fields=['source_content_type', 'source_object_id'])
 
         return ptx_list
 

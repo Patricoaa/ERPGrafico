@@ -1,7 +1,12 @@
-# ADR 0012: Unified System Versioning
+---
+id: 0012
+title: Unified System Versioning
+status: Accepted
+date: 2026-05-07
+author: core-team
+---
 
-## Status
-Accepted
+# 0012 — Unified System Versioning
 
 ## Context
 As the project grows, it becomes difficult to track which version of the frontend is compatible with which version of the backend. Furthermore, the lack of a standardized release process makes it hard to identify specific builds in production and link them back to the source code (traceability).

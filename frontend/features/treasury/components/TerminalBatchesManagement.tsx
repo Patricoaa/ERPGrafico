@@ -1,24 +1,17 @@
 "use client"
 
 import React, { useState, useEffect, lazy, Suspense, useMemo } from "react"
-import { DataTable } from "@/components/ui/data-table"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { BaseModal, DataTableView, EntityCard, StatusBadge } from '@/components/shared'
+import { DataTableColumnHeader } from '@/components/shared'
 import type { ColumnDef } from "@tanstack/react-table"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Plus, FileText, CreditCard, Calendar, Building2 } from "lucide-react"
-import api from "@/lib/api"
-import { toast } from "sonner"
-import { format, subDays } from "date-fns"
-import { es } from "date-fns/locale"
-import { BaseModal } from "@/components/shared/BaseModal"
+import { Plus, Building2 } from "lucide-react"
+import { format } from "date-fns"
+
 import { useTerminalBatches } from "@/features/treasury"
-import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
-import { DateRangeFilter } from "@/components/shared/DateRangeFilter"
-import { StatusBadge } from "@/components/shared/StatusBadge"
-import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
-import { FormSkeleton } from "@/components/shared"
-import type { DateRange } from "react-day-picker"
+import type { TerminalBatch } from "@/features/treasury/types"
+import { DataCell, createActionsColumn } from '@/components/shared'
+import { SkeletonShell, SmartSearchBar, useSmartSearch } from "@/components/shared"
+import { terminalBatchSearchDef } from "@/features/treasury/searchDef"
 
 // Lazy load feature components
 const LazyTerminalBatchForm = lazy(() => import("./TerminalBatchForm"))
@@ -41,13 +34,10 @@ export function TerminalBatchesManagement({
     onExternalOpenInvoiceChange,
     createAction
 }: TerminalBatchesManagementProps) {
-    const { batches, isLoading, refetch } = useTerminalBatches()
+    const { filters } = useSmartSearch(terminalBatchSearchDef)
+    const { batches, isLoading, refetch } = useTerminalBatches(filters)
     const [openCreate, setOpenCreate] = useState(false)
     const [openInvoice, setOpenInvoice] = useState(false)
-    const [dateRange, setDateRange] = useState<DateRange | undefined>({
-        from: subDays(new Date(), 30),
-        to: new Date()
-    })
     const [isMounted, setIsMounted] = useState(false)
 
     useEffect(() => {
@@ -66,7 +56,7 @@ export function TerminalBatchesManagement({
         }
     }, [isMounted, externalOpenInvoice])
 
-    const columns = useMemo<ColumnDef<any>[]>(() => [
+    const columns = useMemo<ColumnDef<TerminalBatch>[]>(() => [
         {
             accessorKey: "sales_date",
             header: ({ column }: any) => <DataTableColumnHeader column={column} title="Fecha Ventas" className="justify-center" />,
@@ -112,8 +102,8 @@ export function TerminalBatchesManagement({
                 const amount = row.original.commission_total
                 return (
                     <div className="flex justify-center w-full">
-                        <DataCell.Currency 
-                            value={amount ? -Math.abs(parseFloat(amount)) : 0} 
+                        <DataCell.Currency
+                            value={amount ? -Math.abs(parseFloat(amount)) : 0}
                         />
                     </div>
                 )
@@ -122,73 +112,78 @@ export function TerminalBatchesManagement({
         {
             accessorKey: "status",
             header: ({ column }: any) => <DataTableColumnHeader column={column} title="Estado" className="justify-center" />,
-            cell: ({ row }: any) => (
-                <div className="flex justify-center w-full">
-                    <StatusBadge status={row.original.status} />
-                </div>
-            ),
+            cell: ({ row }: any) =>
+                <DataCell.Status status={row.original.status} />,
             meta: {
                 title: "Estado"
             }
         },
-        createActionsColumn<any>({
-            renderActions: () => null // Vacío como en el original
+        createActionsColumn<TerminalBatch>({
+            renderActions: () => null
         })
     ], [])
 
     return (
-        <div className="space-y-4">
-            <DataTable
-                columns={columns}
-                data={batches}
-                isLoading={isLoading}
-                variant="embedded"
-                useAdvancedFilter={true}
-                facetedFilters={[
-                    {
-                        column: "status",
-                        title: "Estado",
-                        options: [
-                            { label: "Pendiente", value: "PENDING" },
-                            { label: "Liquidado", value: "SETTLED" },
-                            { label: "Facturado", value: "INVOICED" },
-                            { label: "Conciliado", value: "RECONCILED" },
-                        ]
-                    }
-                ]}
-                customFilters={
-                    <DateRangeFilter onDateChange={setDateRange} label="Fecha de Ventas" className="bg-transparent border-none w-full" />
-                }
-                isCustomFiltered={!!dateRange}
-                customFilterCount={dateRange ? 1 : 0}
-                onReset={() => setDateRange(undefined)}
-                createAction={createAction}
-            />
-
-            <Suspense fallback={<FormSkeleton />}>
-                <TerminalBatchModal
-                    open={openCreate}
-                    onOpenChange={(open: boolean) => {
-                        setOpenCreate(open)
-                        if (!open) onExternalOpenBatchChange?.(false)
-                    }}
-                    onSuccess={() => {
-                        setOpenCreate(false)
-                        onExternalOpenBatchChange?.(false)
-                        refetch()
-                    }}
+        <div className="h-full flex flex-col">
+            <div className="flex-1 min-h-0">
+                <DataTableView
+                    entityLabel="treasury.terminalbatch"
+                    columns={columns}
+                    data={batches}
+                    isLoading={isLoading}
+                    variant="embedded"
+                    leftAction={<SmartSearchBar searchDef={terminalBatchSearchDef} placeholder="Buscar liquidaciones..." className="w-full" />}
+                    createAction={createAction}
+                    renderCard={(batch: TerminalBatch) => (
+                        <EntityCard onClick={() => setOpenCreate(true)}>
+                            <EntityCard.Header
+                                title={batch.batch_number}
+                                subtitle={batch.provider_name ?? 'Sin proveedor'}
+                                trailing={
+                                    <StatusBadge
+                                        status={batch.is_settled ? 'settled' : 'pending'}
+                                        label={batch.is_settled ? 'Liquidado' : 'Pendiente'}
+                                        size="sm"
+                                    />
+                                }
+                            />
+                            <EntityCard.Body>
+                                <EntityCard.Field label="Transacciones" value={<DataCell.Number value={batch.transaction_count} />} />
+                                <EntityCard.Field label="Neto" value={<DataCell.Currency value={batch.net_amount} />} />
+                            </EntityCard.Body>
+                        </EntityCard>
+                    )}
                 />
-            </Suspense>
+            </div>
 
-            <Suspense fallback={<FormSkeleton />}>
-                <MonthlyInvoiceModal
-                    open={openInvoice}
-                    onOpenChange={(open: boolean) => {
-                        setOpenInvoice(open)
-                        if (!open) onExternalOpenInvoiceChange?.(false)
-                    }}
-                />
-            </Suspense>
+             <SkeletonShell isLoading={isLoading} ariaLabel="Cargando modal de lote de terminal">
+                 <Suspense fallback={<div />}>
+                     <TerminalBatchModal
+                     open={openCreate}
+                     onOpenChange={(open: boolean) => {
+                         setOpenCreate(open)
+                         if (!open) onExternalOpenBatchChange?.(false)
+                     }}
+                     onSuccess={() => {
+                         setOpenCreate(false)
+                         onExternalOpenBatchChange?.(false)
+                         refetch()
+                     }}
+                 />
+                 </Suspense>
+             </SkeletonShell>
+
+             <SkeletonShell isLoading={isLoading} ariaLabel="Cargando modal de factura mensual">
+                 <Suspense fallback={<div />}>
+                     <MonthlyInvoiceModal
+                     open={openInvoice}
+                     onOpenChange={(open: boolean) => {
+                         setOpenInvoice(open)
+                         if (!open) onExternalOpenInvoiceChange?.(false)
+                     }}
+                 />
+                 </Suspense>
+             </SkeletonShell>
         </div>
     )
 }
@@ -206,15 +201,15 @@ function TerminalBatchModal({ open, onOpenChange, onSuccess }: { open: boolean, 
                 </div>
             }
             description="Ingrese los datos de la liquidación diaria informada por el proveedor del terminal de cobro."
-        >
-            <Suspense fallback={<FormSkeleton />}>
-                <LazyTerminalBatchForm onSuccess={onSuccess} onCancel={() => onOpenChange(false)} />
-            </Suspense>
-        </BaseModal>
+         >
+             <SkeletonShell isLoading={true} ariaLabel="Cargando formulario de lote de terminal">
+                 <Suspense fallback={<div />}>
+                     <LazyTerminalBatchForm onSuccess={onSuccess} onCancel={() => onOpenChange(false)} />
+                 </Suspense>
+             </SkeletonShell>
+         </BaseModal>
     )
 }
 
 export default TerminalBatchesManagement
-
-
 

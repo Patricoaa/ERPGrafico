@@ -1,11 +1,5 @@
-import { lazy, Suspense } from "react"
-import { TableSkeleton, ToolbarCreateButton } from "@/components/shared"
-
-const TreasuryAccountsView = lazy(() =>
-    import("@/features/treasury").then(module => ({
-        default: module.TreasuryAccountsView
-    }))
-)
+import { ToolbarCreateButton } from "@/components/shared"
+import { TreasuryAccountsView } from "@/features/treasury"
 
 interface PageProps {
     searchParams: Promise<{ tab?: string; modal?: string }>
@@ -27,10 +21,6 @@ export default async function AccountsPage({ searchParams }: PageProps) {
     const createAction = action ? <ToolbarCreateButton label={action.label} href={action.href} /> : null
 
     return (
-        <div className="pt-2">
-            <Suspense fallback={<TableSkeleton rows={10} columns={6} />}>
-                <TreasuryAccountsView activeTab={activeTab} externalOpen={modalOpen} createAction={createAction} />
-            </Suspense>
-        </div>
+        <TreasuryAccountsView activeTab={activeTab} externalOpen={modalOpen} createAction={createAction} />
     )
 }

@@ -1,19 +1,19 @@
 "use client"
 
-import React, { useState, useEffect, useCallback } from "react"
+import React, { useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
-import { AbsenceFormModal } from "@/features/hr"
-import { getAbsences, deleteAbsence, getEmployees } from '@/features/hr/api/hrApi'
+import { AbsenceDrawer } from "@/features/hr"
 import type { Absence, Employee } from "@/types/hr"
 import { ColumnDef } from "@tanstack/react-table"
-import { DataTable } from "@/components/ui/data-table"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
-import { createActionsColumn, DataCell } from "@/components/ui/data-table-cells"
-import { StatusBadge } from "@/components/shared/StatusBadge"
+import { DataTableView } from '@/components/shared'
+import { DataTableColumnHeader } from '@/components/shared'
+import { createActionsColumn, DataCell } from '@/components/shared'
+import { EntityCard } from "@/components/shared"
 import { Pencil, Trash2 } from "lucide-react"
-
-import { ToolbarCreateButton } from "@/components/shared"
+import { ToolbarCreateButton, SmartSearchBar, useSmartSearch } from "@/components/shared"
+import { useAbsences, deleteAbsence, getEmployees } from "@/features/hr"
+import { absenceSearchDef } from "@/features/hr/searchDef"
 
 // Absence schemas and types moved to features/hr/components/AbsenceFormDialog
 
@@ -21,10 +21,10 @@ export default function AbsencesPage() {
     const createAction = <ToolbarCreateButton label="Nueva Inasistencia" href="/hr/absences?modal=new" />
     const router = useRouter()
     const searchParams = useSearchParams()
-    const [absences, setAbsences] = useState<Absence[]>([])
+    const { filters } = useSmartSearch(absenceSearchDef)
+    const { absences, isLoading: loading, refetch: fetchAbsences } = useAbsences(filters)
     const [employees, setEmployees] = useState<Employee[]>([])
-    const [loading, setLoading] = useState(true)
-    
+
     // Dialog state synchronized with URL or local edit
     const isNewModalOpen = searchParams.get("modal") === "new"
     const [editingAbsence, setEditingAbsence] = useState<Absence | null>(null)
@@ -41,25 +41,9 @@ export default function AbsencesPage() {
         }
     }
 
-    const fetchAbsences = useCallback(async () => {
-        try {
-            const data = await getAbsences()
-            setAbsences(data)
-        } catch {
-            toast.error("Error al cargar inasistencias")
-        } finally {
-            setLoading(false)
-        }
+    useEffect(() => {
+        getEmployees().then(setEmployees).catch(() => { })
     }, [])
-
-    const fetchAll = useCallback(async () => {
-        await Promise.all([
-            fetchAbsences(),
-            getEmployees().then(setEmployees)
-        ])
-    }, [fetchAbsences])
-
-    useEffect(() => { fetchAll() }, [fetchAll])
 
     const handleDelete = async (id: number) => {
         if (!confirm("¿Eliminar esta inasistencia?")) return
@@ -81,11 +65,8 @@ export default function AbsencesPage() {
         {
             accessorKey: "absence_type_display",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Tipo" className="justify-center" />,
-            cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <StatusBadge status={row.original.absence_type} label={row.original.absence_type_display} />
-                </div>
-            ),
+            cell: ({ row }) =>
+                <DataCell.Status status={row.original.absence_type} label={row.original.absence_type_display} />,
         },
         {
             accessorKey: "start_date",
@@ -122,40 +103,42 @@ export default function AbsencesPage() {
     ]
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-4 h-full flex flex-col">
 
-            <AbsenceFormModal
+            <AbsenceDrawer
                 open={dialogOpen}
                 onOpenChange={setDialogOpen}
                 absence={editingAbsence}
                 employees={employees}
-                onSaved={() => { setDialogOpen(false); fetchAll() }}
+                onSaved={() => { setDialogOpen(false); fetchAbsences() }}
             />
 
-            <DataTable
-                columns={columns}
-                data={absences}
-                isLoading={loading}
-                variant="embedded"
-                globalFilterFields={["employee_name", "absence_type_display"]}
-                searchPlaceholder="Buscar por empleado o tipo..."
-                facetedFilters={[
-                    {
-                        column: "absence_type_display",
-                        title: "Tipo",
-                        options: [
-                            { label: "Ausentismo", value: "Ausentismo Injustificado" },
-                            { label: "Licencia", value: "Licencia Médica" },
-                            { label: "Permiso Sin Goce", value: "Permiso sin Goce de Sueldo" },
-                            { label: "Ausencia de Horas", value: "Ausencia de Horas" },
-                        ],
-                    },
-                ]}
-                useAdvancedFilter={true}
-                defaultPageSize={20}
-                onRowClick={(row: Absence) => { setEditingAbsence(row); setDialogOpen(true) }}
-                createAction={createAction}
-            />
+            <div className="flex-1 min-h-0">
+                <DataTableView
+                    entityLabel="hr.absence"
+                    columns={columns}
+                    data={absences}
+                    isLoading={loading}
+                    variant="embedded"
+                    leftAction={<SmartSearchBar searchDef={absenceSearchDef} placeholder="Buscar inasistencias..." className="w-full" />}
+                    defaultPageSize={20}
+                    onRowClick={(row: Absence) => { setEditingAbsence(row); setDialogOpen(true) }}
+                    createAction={createAction}
+                    renderCard={(absence: Absence) => (
+                        <EntityCard key={absence.id} onClick={() => { setEditingAbsence(absence); setDialogOpen(true) }}>
+                            <EntityCard.Header
+                                title={absence.employee_name}
+                                subtitle={absence.absence_type_display}
+                            />
+                            <EntityCard.Body>
+                                <EntityCard.Field label="Inicio" value={absence.start_date} />
+                                <EntityCard.Field label="Fin" value={absence.end_date} />
+                                <EntityCard.Field label="Días" value={String(absence.days)} />
+                            </EntityCard.Body>
+                        </EntityCard>
+                    )}
+                />
+            </div>
         </div>
     )
 }

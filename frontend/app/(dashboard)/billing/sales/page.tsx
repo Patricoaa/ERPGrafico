@@ -1,10 +1,9 @@
 "use client"
 
-import { Suspense, useEffect, useState } from "react"
+import { useEffect, useState } from "react"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { SalesInvoicesClientView } from "@/features/billing"
-import { TableSkeleton } from "@/components/shared"
 
 export default function SalesInvoicesPage() {
     const searchParams = useSearchParams()
@@ -39,8 +38,6 @@ export default function SalesInvoicesPage() {
     }, [isHubOpen, hubEverOpened, selectedId, pathname, searchParams, router])
 
     return (
-        <Suspense fallback={<TableSkeleton rows={10} columns={6} />}>
-            <SalesInvoicesClientView />
-        </Suspense>
+        <SalesInvoicesClientView />
     )
 }

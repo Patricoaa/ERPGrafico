@@ -19,7 +19,7 @@ export function AccountingHeader() {
     }
 
     const activeValue = segmentToTab[currentSegment] || 'ledger'
-    const subActiveValue = searchParams.get('tab')
+    const subActiveValue = searchParams.get('tab') ?? undefined
 
     const tabs = [
         { value: "ledger", label: "Plan de Cuentas", iconName: "list-tree", href: "/accounting/ledger" },

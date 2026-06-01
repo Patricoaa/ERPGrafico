@@ -46,8 +46,8 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-z_@n0q5=yw43a$i1x61*c
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DEBUG', '1') == '1'
 
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
-CSRF_TRUSTED_ORIGINS = os.environ.get('CSRF_TRUSTED_ORIGINS', 'http://localhost:3000,http://127.0.0.1:3000').split(',')
+ALLOWED_HOSTS = [host.strip() for host in os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',') if host.strip()]
+CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in os.environ.get('CSRF_TRUSTED_ORIGINS', 'http://localhost:3000,http://127.0.0.1:3000').split(',') if origin.strip()]
 
 
 # Application definition
@@ -101,10 +101,11 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'allauth.account.middleware.AccountMiddleware',
     'simple_history.middleware.HistoryRequestMiddleware',
+    'core.middleware.CurrentUserMiddleware',
     'core.middleware.AuditMiddleware',
 ]
 
-CORS_ALLOW_ALL_ORIGINS = False
+CORS_ALLOW_ALL_ORIGINS = True
 
 CORS_ALLOWED_ORIGIN_REGEXES = [
     r"^https://erpgrafico\.vercel\.app$",
@@ -397,7 +398,43 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'sales.tasks.cleanup_old_draft_carts',
         'schedule': crontab(hour=3, minute=0),   # Daily at 03:00 AM
     },
+
+    # ── Production ───────────────────────────────────────────────────────────
+    # Notifica una vez al día a los responsables de OTs atrasadas (due_date < today)
+    'notify_overdue_work_orders_hourly': {
+        'task': 'production.tasks.notify_overdue_work_orders',
+        'schedule': crontab(minute=15),          # Hourly at XX:15
+    },
+
+    # ── Observability ────────────────────────────────────────────────────────
+    # Sends a liveness ping to Healthchecks.io (or compatible). No-op if
+    # HEALTHCHECK_PING_URL is unset. Ver docs/50-audit/observability/.
+    'observability_healthcheck_ping': {
+        'task': 'core.tasks.ping_healthcheck',
+        'schedule': crontab(minute='*/5'),       # Every 5 minutes
+    },
 }
+
+# ── Observability: Sentry (errores y trazas) ────────────────────────────────
+# Opt-in: si SENTRY_DSN no está definido, Sentry no se inicializa y no se envía
+# telemetría. Estrategia completa en docs/50-audit/observability/strategy.md.
+SENTRY_DSN = os.environ.get('SENTRY_DSN', '').strip()
+if SENTRY_DSN:
+    import sentry_sdk
+    from sentry_sdk.integrations.django import DjangoIntegration
+    from sentry_sdk.integrations.celery import CeleryIntegration
+    from sentry_sdk.integrations.redis import RedisIntegration
+
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        environment=os.environ.get('SENTRY_ENVIRONMENT', 'production' if not DEBUG else 'development'),
+        release=os.environ.get('GIT_HASH', 'unknown'),
+        integrations=[DjangoIntegration(), CeleryIntegration(), RedisIntegration()],
+        # Performance: bajo por defecto para no exceder el free tier
+        traces_sample_rate=float(os.environ.get('SENTRY_TRACES_SAMPLE_RATE', '0.05')),
+        # Privacidad: no enviar PII por defecto (emails, IPs, headers de auth)
+        send_default_pii=False,
+    )
 
 # --- TIME TRAVEL PATCH FOR TESTING ---
 # Para simular otra fecha, descomenta el bloque de abajo y cambia MOCK_DATE.
@@ -428,4 +465,6 @@ import sys
 # 1. Configurar la zona horaria real
 TIME_ZONE = 'America/Santiago'  # Ajusta según tu ubicación
 USE_TZ = True  # Mantener en True para manejo profesional de zonas horarias
+USE_X_FORWARDED_HOST = True
+USE_X_FORWARDED_PORT = True
 #

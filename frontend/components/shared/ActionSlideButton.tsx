@@ -40,7 +40,7 @@ export const ActionSlideButton = React.forwardRef<HTMLButtonElement, ActionSlide
                     "relative inline-flex items-center justify-center overflow-hidden z-10 transition-all duration-300 ease-out",
                     "h-9 px-5 text-[10px] font-black tracking-widest uppercase rounded-sm shadow-sm",
                     "border",
-                    isPrimary && "border-primary text-primary hover:text-primary-foreground bg-primary/5",
+                    isPrimary && "text-primary hover:text-primary-foreground bg-primary/5",
                     isDestructive && "border-destructive text-destructive hover:text-destructive-foreground bg-destructive/5",
                     isSuccess && "border-success text-success hover:text-success-foreground bg-success/5",
                     isDisabled && "opacity-50 cursor-not-allowed pointer-events-none",
@@ -53,16 +53,16 @@ export const ActionSlideButton = React.forwardRef<HTMLButtonElement, ActionSlide
                   Slide background: Starts at -100% X offset, slides to 0% on hover.
                   Uses slightly more than 100% (-101%) to prevent subpixel bleeding lines.
                 */}
-                <div 
+                <div
                     className={cn(
-                        "absolute inset-0 -z-10 transition-transform duration-300 ease-out transform -translate-x-[101%]",
+                        "absolute inset-0 -z-10 transition-transform duration-300 ease-out transform -translate-x-[100%]",
                         "group-hover:translate-x-0 group-focus-visible:translate-x-0 group-active:translate-x-0",
                         isPrimary && "bg-primary",
                         isDestructive && "bg-destructive",
                         isSuccess && "bg-success"
                     )}
                 />
-                
+
                 {/* Content wrapper to ensure text stays above the animated background */}
                 <span className="flex items-center justify-center gap-2">
                     {loading ? (

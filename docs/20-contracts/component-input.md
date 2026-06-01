@@ -17,15 +17,7 @@ Estos componentes pertenecen al nivel **Atomic Elements** de la jerarquía de ra
 
 ## ¿Cuándo usar `LabeledInput`?
 
-Usa `LabeledInput` o `LabeledSelect` siempre que necesites un **par label + campo** simple. Es el reemplazo directo del patrón deprecated:
-
-```tsx
-// ❌ DEPRECATED — no usar en código nuevo
-<FormLabel className={FORM_STYLES.label}>Nombre</FormLabel>
-<Input className={FORM_STYLES.input} {...field} />
-
-// ✅ CORRECTO
-<LabeledInput label="Nombre" required {...field} error={fieldState.error?.message} />
+Usa `LabeledInput` o `LabeledSelect` siempre que necesites un **par label + campo** simple.
 
 // ✅ CORRECTO para Selects
 <LabeledSelect
@@ -286,10 +278,6 @@ Variante del selector múltiple que utiliza un dropdown para elegir entre opcion
 ```tsx
 // ✅ DO — dejar que el componente maneje el label y el error
 <LabeledInput label="Ciudad" error={fieldState.error?.message} {...field} />
-
-// ❌ DON'T — mezclar LabeledInput con FormLabel manual
-<FormLabel className={FORM_STYLES.label}>Ciudad</FormLabel>
-<LabeledInput label="Ciudad" {...field} />
 
 // ✅ DO — usar LabeledSelect para selects simples nativos
 <LabeledSelect label="Región" options={[{value: "RM", label: "RM"}]} value={val} onChange={setVal} />

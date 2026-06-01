@@ -7,8 +7,8 @@ import { useSearchParams } from 'next/navigation'
 import { useQueryClient } from '@tanstack/react-query'
 import dynamic from 'next/dynamic'
 import { Button } from '@/components/ui/button'
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { StatusBadge } from '@/components/shared/StatusBadge'
+import { Card } from '@/components/ui/card'
+import { PrintableReceipt, BaseModal } from '@/components/shared'
 import { Loader2, LayoutGrid, FileText, ChevronDown, BarChart3, Save, Lock, ArrowRightLeft, LogOut, ShoppingCart, Wallet } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
@@ -16,52 +16,45 @@ import {
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuCheckboxItem,
-    DropdownMenuLabel,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { toast } from 'sonner'
-import api from '@/lib/api'
+import { posApi } from '../api/posApi'
 import * as Validation from '@/features/pos/utils/validation'
 import { cn } from "@/lib/utils"
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
 import { Check, Printer } from 'lucide-react'
-import { PrintableReceipt } from '@/components/shared/transaction-modal/PrintableReceipt'
+import { isPOSProductDisabled } from '@/features/pos/utils/product-availability'
 
-import { POSProvider, usePOS } from '@/features/pos/contexts/POSContext'
+import { usePOS } from '@/features/pos/contexts/POSContext'
 import { useAuth } from '@/contexts/AuthContext'
-import { 
-    useProducts, 
-    useCart, 
-    useStockValidation, 
-    useDrafts, 
+import {
+    useProducts,
+    useCart,
+    useStockValidation,
+    useDrafts,
     useDraftSync,
-    type SyncDraft 
+    type SyncDraft
 } from '@/features/pos/hooks'
 import { type CheckoutResponse } from '@/features/sales/types'
-import type { Customer, Product, WizardState } from '@/types/pos'
+import type { Product } from '@/types/pos'
 import type { TransactionData } from '@/types/transactions'
 import { type DraftCart } from './DraftCartsList'
 import type { CheckoutWizardState } from '@/features/sales/components/checkout/SalesCheckoutWizardContent'
 
-// UI Components from Feature
-import { SearchBar, CategoryFilter, ProductGrid, Cart, POSCheckoutHeader, POSLayoutSkeleton } from '@/features/pos/components'
+import { SearchBar } from './SearchBar'
+import { CategoryFilter } from './CategoryFilter'
+import { ProductGrid } from './ProductGrid'
+import { Cart } from './Cart'
+import { POSCheckoutHeader } from './POSCheckoutHeader'
+import { POSLayoutSkeleton } from './skeletons/POSLayoutSkeleton'
 import { SalesCheckoutWizardContent } from '@/features/sales/components/checkout/SalesCheckoutWizardContent'
 
 // Shared components
 import { SessionControl, SessionControlHandle } from '@/features/pos/components/SessionControl'
 import { ScannerFeedback, ScannerFeedbackHandle } from '@/features/pos/components/ScannerFeedback'
 import { PricingUtils } from '@/features/inventory/utils/pricing'
-import { SalesOrdersModal } from '@/features/pos/components/SalesOrdersModal'
+import { SalesOrdersDrawer } from '@/features/pos/components/SalesOrdersDrawer'
 import { AdvancedContactSelector } from '@/components/selectors/AdvancedContactSelector'
 import { Label } from '@/components/ui/label'
 import { useTouchMode } from '@/hooks/useTouchMode'
@@ -108,9 +101,8 @@ export function POSClientView() {
 
     const { isTouchMode, toggleTouchMode } = useTouchMode()
 
-
     const { user } = useAuth()
-    
+
     // Stable onStateChange for the wizard to break feedback loops
     const handleWizardStateChange = useCallback((state: any) => {
         setWizardState(state)
@@ -131,7 +123,7 @@ export function POSClientView() {
         // Silently refresh — the list will update via sync
     }, [])
 
-    const { syncDrafts, acquireLock, releaseLock, isLockedByOther, getLockInfo, forceSync, browserSessionKey } = useDraftSync({
+    const { syncDrafts, acquireLock, releaseLock, getLockInfo, forceSync, browserSessionKey } = useDraftSync({
         posSessionId: (currentSession?.id ?? null) as number | null,
         enabled: !!currentSession?.id,
         onNewDraft: handleNewDraft,
@@ -301,12 +293,12 @@ export function POSClientView() {
 
     const handleConfirmSale = async () => {
         const check = canCheckout(); if (!check.valid) { toast.error(check.error); return }
-        
+
         // Pre-save draft if it doesn't exist yet to avoid the "flash" when auto-save assigns an ID later
         if (!currentDraftId) {
             await saveDraft(undefined, true)
         }
-        
+
         setWizardState({ step: 1, isQuickSale: false }); setPosMode('CHECKOUT')
     }
 
@@ -323,12 +315,11 @@ export function POSClientView() {
 
         setIsWithdrawing(true)
         try {
-            const res = await api.post(`/sales/pos-drafts/${currentDraftId}/withdraw/`, {
+            const data = await posApi.withdrawDraft(currentDraftId, {
                 pos_session_id: currentSession?.id,
-                partner_id: selectedPartnerId
+                partner_id: selectedPartnerId,
             })
-
-            toast.success(res.data.message || "Retiro procesado exitosamente")
+            toast.success((data as any).message || "Retiro procesado exitosamente")
             setWithdrawDialogOpen(false)
             setSelectedPartnerId(null)
             setSelectedPartnerName("")
@@ -383,17 +374,16 @@ export function POSClientView() {
 
     const handleQuickSale = async () => {
         const check = Validation.canQuickSale(items, selectedCustomerId); if (!check.allowed) { toast.error(check.reason); return }
-        
+
         // Pre-save draft to stabilize ID before entering checkout flow
         if (!currentDraftId) {
             await saveDraft(undefined, true)
         }
-        
+
         if (!selectedCustomerId && defaultCustomerId) setSelectedCustomerId(defaultCustomerId)
-        const isOnlyService = items.every(line => line.product_type === 'SERVICE')
         const hasMfg = items.some(line => line.product_type === 'MANUFACTURABLE' && line.requires_advanced_manufacturing)
-        const lastStep = (isOnlyService ? 3 : 4) + (hasMfg ? 1 : 0)
-        setWizardState({ step: lastStep, isQuickSale: true, dteData: { type: 'BOLETA', number: '', date: new Date().toISOString().split('T')[0], attachment: null, isPending: false }, deliveryData: { type: 'IMMEDIATE', date: null, notes: '' } } as any)
+        const lastStep = 3 + (hasMfg ? 1 : 0)
+        setWizardState({ step: lastStep, isQuickSale: true, dteData: { type: 'BOLETA', number: '', date: new Date().toISOString().split('T')[0], attachment: null, isPending: false }, deliveryData: { type: 'IMMEDIATE', date: null } } as any)
         setTimeout(() => setPosMode('CHECKOUT'), 0)
     }
 
@@ -403,7 +393,7 @@ export function POSClientView() {
 
     return (
         <div className="flex-1 p-4 pt-2 flex flex-col gap-2 overflow-hidden animate-in fade-in duration-500">
-            <div className="flex items-center justify-between py-1 px-1 mb-2 relative min-h-[56px] border-b pb-2">
+            <div className="flex items-center justify-between py-1 px-1 mb-2 relative min-h-[56px] pb-2">
                 {/* Left: Terminal & Session Info */}
                 <div className="flex items-center gap-4 flex-1">
                     <h2 className="text-xl font-bold tracking-tight">
@@ -411,10 +401,10 @@ export function POSClientView() {
                     </h2>
                     {currentSession?.status === 'OPEN' && (
                         <div className="hidden sm:flex items-center gap-2">
-                            <span className="border border-primary/20 bg-primary/5 text-primary tracking-widest px-2 py-0.5 text-[10px] h-6 font-bold uppercase transition-colors rounded-sm">
+                            <span className="border border-primary/20 bg-primary/5 text-primary tracking-widest px-2 py-1 h-6 flex items-center text-[10px] font-bold uppercase transition-colors rounded-sm">
                                 Sesión #{currentSession.id}
                             </span>
-                            <span className="border border-success/30 bg-success/5 text-success px-2 py-0.5 text-[10px] h-6 font-medium uppercase rounded-sm">
+                            <span className="border border-success/30 bg-success/5 text-success px-2 py-1 h-6 flex items-center text-[10px] font-medium uppercase rounded-sm">
                                 {user?.first_name} {user?.last_name}
                             </span>
                         </div>
@@ -431,9 +421,8 @@ export function POSClientView() {
                 {/* Right: Actions & Menu */}
                 <div className="flex items-center gap-2 flex-1 justify-end">
                     {(() => {
-                        const isOnlyService = items.every(line => line.product_type === 'SERVICE')
                         const hasMfg = items.some(line => line.product_type === 'MANUFACTURABLE' && line.requires_advanced_manufacturing)
-                        const totalSteps = (isOnlyService ? 3 : 4) + (hasMfg ? 1 : 0)
+                        const totalSteps = 3 + (hasMfg ? 1 : 0)
                         const isPaymentStep = wizardState?.step === totalSteps
 
                         // Prioritize current draft in quick view
@@ -458,7 +447,7 @@ export function POSClientView() {
                                             variant="outline"
                                             size="sm"
                                             className={cn(
-                                                "h-10 min-w-[40px] px-3 text-[10px] font-mono font-bold transition-all duration-300 gap-1.5 relative rounded-sm",
+                                                "h-7 min-w-[40px] px-2 text-[10px] font-mono font-bold transition-all duration-300 gap-1.5 relative rounded-sm",
                                                 currentDraftId === d.id ? "bg-primary/5 border-primary text-primary shadow-sm border-solid ring-1 ring-primary/20" : "border-dashed text-muted-foreground",
                                                 isSaving && currentDraftId === d.id && "animate-pulse opacity-70",
                                                 lockedByOther && "border-destructive/40 opacity-60",
@@ -481,7 +470,7 @@ export function POSClientView() {
                                     )
                                 })}
                                 {currentDraftId === null && items.length > 0 && (
-                                    <span className="h-10 border border-dashed border-muted-foreground/30 text-[9px] px-3 opacity-50 bg-muted/20 flex items-center justify-center rounded-sm text-muted-foreground uppercase font-bold tracking-widest">
+                                    <span className="h-7 border border-dashed border-muted-foreground/30 text-[9px] px-2 opacity-50 bg-muted/20 flex items-center justify-center rounded-sm text-muted-foreground uppercase font-bold tracking-widest">
                                         Nuevo...
                                     </span>
                                 )}
@@ -490,8 +479,8 @@ export function POSClientView() {
                     })()}
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="outline" size="sm" className="gap-2 h-10 px-4">
-                                <LayoutGrid className="h-4 w-4" />
+                            <Button variant="outline" size="sm" className="gap-2 h-7 px-3 text-xs">
+                                <LayoutGrid className="h-3.5 w-3.5" />
                                 <span className="hidden sm:inline">Menú</span>
                                 <ChevronDown className="h-3 w-3 opacity-50" />
                             </Button>
@@ -553,12 +542,12 @@ export function POSClientView() {
                     <AnimatePresence mode="wait">
                         {posMode === 'SHOPPING' ? (
                             <motion.div key="shop" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, scale: 0.98 }} className="flex-1 flex flex-col min-h-0">
-                                <Card className="flex-1 flex flex-col overflow-hidden bg-muted/10 border">
-                                    <div className="p-4 border-b bg-background/50 space-y-4">
+                                <Card className="flex-1 flex flex-col overflow-hidden bg-muted/10 border py-2">
+                                    <div className="px-2 pt-2 pb-2 border-b bg-background/50 space-y-3">
                                         <SearchBar value={searchTerm} onChange={setSearchTerm} onEnter={handleSearchEnter} />
                                         <CategoryFilter categories={categories} selectedCategoryId={selectedCategoryId} onSelectCategory={setSelectedCategoryId} />
                                     </div>
-                                    <div className="flex-1 p-4"><ProductGrid products={filteredProducts} categories={categories} limits={stockLimits} onProductClick={handleProductClick} onToggleFavorite={toggleFavorite} /></div>
+                                    <div className="flex-1 px-2 pt-2 pb-0"><ProductGrid products={filteredProducts} categories={categories} limits={stockLimits} isProductDisabled={(p) => isPOSProductDisabled(p as unknown as Product)} onProductClick={(p) => handleProductClick(p as unknown as Product)} onToggleFavorite={toggleFavorite} /></div>
                                 </Card>
                             </motion.div>
                         ) : (
@@ -626,20 +615,23 @@ export function POSClientView() {
             <DraftCartsList open={draftsListOpen} onOpenChange={setDraftsListOpen} posSessionId={currentSession?.id || null} onLoadDraft={handleLoadDraft} showTrigger={false} syncDrafts={syncDrafts as any} getLockInfo={getLockInfo} />
             <NumpadModal open={numpadOpen} onOpenChange={setNumpadOpen} title={numpadConfig?.field === 'qty' ? "Cantidad" : "Precio"} value={numpadValue} onChange={setNumpadValue} onConfirm={() => handleNumpadConfirm(parseFloat(numpadValue))} allowDecimal />
             <ScannerFeedback ref={scannerFeedbackRef} />
-            <SalesOrdersModal open={ordersModalOpen} onOpenChange={setOrdersModalOpen} posSessionId={currentSession?.id} />
+            <SalesOrdersDrawer open={ordersModalOpen} onOpenChange={setOrdersModalOpen} posSessionId={currentSession?.id} />
 
-            <AlertDialog open={!!completedSaleData} onOpenChange={(open) => { if (!open) setCompletedSaleData(null) }}>
-                <AlertDialogContent className="max-w-md bg-card border-primary/10 shadow-sm rounded-lg">
-                    <AlertDialogHeader>
+            <BaseModal
+                open={!!completedSaleData}
+                onOpenChange={(open) => { if (!open) setCompletedSaleData(null) }}
+                size="sm"
+                title={
+                    <div className="flex flex-col items-center w-full">
                         <div className="mx-auto bg-primary text-primary-foreground p-4 rounded-full mb-4 shadow-sm">
                             <Check className="h-10 w-10 stroke-[3px]" />
                         </div>
-                        <AlertDialogTitle className="text-2xl font-black text-center text-foreground">¡Venta Exitosa!</AlertDialogTitle>
-                        <AlertDialogDescription className="text-center text-primary/60 font-medium">
-                            La venta se ha procesado correctamente. ¿Desea imprimir el comprobante térmico?
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter className="flex-col sm:flex-row gap-3 mt-4">
+                        <span className="text-xl font-black tracking-tight text-center text-foreground">¡Venta Exitosa!</span>
+                    </div>
+                }
+                description="La venta se ha procesado correctamente. ¿Desea imprimir el comprobante térmico?"
+                footer={
+                    <div className="flex flex-col sm:flex-row gap-3 w-full mt-4">
                         <Button
                             className="flex-1 h-14 rounded-md text-lg font-black uppercase tracking-widest bg-primary hover:bg-primary/90 shadow-sm group"
                             onClick={() => {
@@ -650,61 +642,53 @@ export function POSClientView() {
                             <Printer className="mr-3 h-5 w-5 group-hover:scale-110 transition-transform" />
                             Imprimir
                         </Button>
-                        <AlertDialogCancel
+                        <Button
+                            variant="outline"
                             className="flex-1 h-14 border-primary/20 text-primary hover:bg-primary/5 rounded-md text-lg font-bold"
                             onClick={() => setCompletedSaleData(null)}
                         >
                             Cerrar
-                        </AlertDialogCancel>
-                    </AlertDialogFooter>
-
-                    {/* Hidden Receipt for Printing */}
-                    {completedSaleData && (
-                        <PrintableReceipt
-                            ref={posContentRef}
-                            data={{
-                                ...(completedSaleData.sale_order_detail as TransactionData || completedSaleData),
-                                terminal_name: currentSession?.terminal_name
-                            }}
-                            currentType={completedSaleData.sale_order_detail ? "sale_order" : "invoice"}
-                            mainTitle="Ticket de Venta"
-                            subTitle={(completedSaleData as any)?.client_name || "Cliente Contado"}
-                        />
-                    )}
-                </AlertDialogContent>
-            </AlertDialog>
+                        </Button>
+                    </div>
+                }
+            >
+                {/* Hidden Receipt for Printing */}
+                {completedSaleData && (
+                    <PrintableReceipt
+                        ref={posContentRef}
+                        data={{
+                            ...(completedSaleData.sale_order_detail as TransactionData || completedSaleData),
+                            terminal_name: currentSession?.terminal_name
+                        }}
+                        currentType={completedSaleData.sale_order_detail ? "sale_order" : "invoice"}
+                        mainTitle="Ticket de Venta"
+                        subTitle={(completedSaleData as any)?.client_name || "Cliente Contado"}
+                    />
+                )}
+            </BaseModal>
 
             {/* Partner Withdrawal Confirmation */}
-            <AlertDialog open={withdrawDialogOpen} onOpenChange={setWithdrawDialogOpen}>
-                <AlertDialogContent className="max-w-md bg-card border-warning/10 shadow-sm rounded-lg">
-                    <AlertDialogHeader>
+            <BaseModal
+                open={withdrawDialogOpen}
+                onOpenChange={setWithdrawDialogOpen}
+                size="sm"
+                title={
+                    <div className="flex flex-col items-center w-full">
                         <div className="mx-auto bg-warning/10 text-warning p-4 rounded-full mb-4 border border-warning/20">
                             <ShoppingCart className="h-8 w-8" />
                         </div>
-                        <AlertDialogTitle className="text-xl font-bold text-center text-warning">Confirmar Retiro de Socio</AlertDialogTitle>
-                        <AlertDialogDescription className="text-center text-warning/60 font-medium pt-2 text-sm">
-                            Se registrará un retiro de stock por concepto de <strong>Retiro de Utilidades</strong>.
-                            <br />
-                            Esta acción descontará el inventario inmediatamente y no genera factura ni boleta.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-
-                    <div className="space-y-4 my-2">
-                        <div className="space-y-1.5">
-                            <Label className="text-[10px] font-black uppercase text-warning/50 tracking-widest pl-1">Seleccionar Socio</Label>
-                            <AdvancedContactSelector
-                                value={selectedPartnerId}
-                                onChange={setSelectedPartnerId}
-                                onSelectContact={(c) => setSelectedPartnerName(c.name)}
-                                isPartnerOnly={true}
-                                placeholder="Buscar socio..."
-                            />
-                        </div>
-
-
+                        <span className="text-xl font-black tracking-tight text-center text-warning">Confirmar Retiro de Socio</span>
                     </div>
-
-                    <AlertDialogFooter className="flex-col sm:flex-row gap-3 mt-2">
+                }
+                description={
+                    <div className="text-center text-warning-foreground/60 font-medium pt-2 text-sm leading-relaxed">
+                        Se registrará un retiro de stock por concepto de <strong>Retiro de Utilidades</strong>.
+                        <br />
+                        Esta acción descontará el inventario inmediatamente y no genera factura ni boleta.
+                    </div>
+                }
+                footer={
+                    <div className="flex flex-col sm:flex-row gap-3 w-full mt-2">
                         <Button
                             className="flex-1 h-12 rounded-md text-sm font-bold uppercase tracking-wider bg-warning hover:bg-warning shadow-sm disabled:opacity-50"
                             onClick={handleWithdraw}
@@ -713,15 +697,30 @@ export function POSClientView() {
                             {isWithdrawing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Check className="mr-2 h-4 w-4" />}
                             Confirmar Retiro
                         </Button>
-                        <AlertDialogCancel
+                        <Button
+                            variant="outline"
                             className="flex-1 h-12 border-warning/20 text-warning hover:bg-warning/10 rounded-md text-sm font-bold"
+                            onClick={() => setWithdrawDialogOpen(false)}
                             disabled={isWithdrawing}
                         >
                             Cancelar
-                        </AlertDialogCancel>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
+                        </Button>
+                    </div>
+                }
+            >
+                <div className="space-y-4 my-2">
+                    <div className="space-y-1.5">
+                        <Label className="text-[10px] font-black uppercase text-warning/50 tracking-widest pl-1">Seleccionar Socio</Label>
+                        <AdvancedContactSelector
+                            value={selectedPartnerId}
+                            onChange={setSelectedPartnerId}
+                            onSelectContact={(c) => setSelectedPartnerName(c.name)}
+                            isPartnerOnly={true}
+                            placeholder="Buscar socio..."
+                        />
+                    </div>
+                </div>
+            </BaseModal>
         </div>
     )
 }

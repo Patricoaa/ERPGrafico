@@ -1,20 +1,22 @@
 "use client"
 
 import { ProfileView, ProfileSidePanel } from "@/features/profile"
-import { PageHeader } from "@/components/shared/PageHeader"
-import { PageContainer } from "@/components/shared"
+
+import { PageContainer, PageHeader } from '@/components/shared'
 import { useSearchParams } from "next/navigation"
 import { useState, useEffect, useCallback } from "react"
-import { getMyProfile } from '@/features/profile/api/profileApi'
+import { getMyProfile } from '@/features/profile'
 import { toast } from "sonner"
 import type { MyProfile } from "@/types/profile"
-import { CardSkeleton, FormSkeleton } from "@/components/shared"
+import { SkeletonShell } from "@/components/shared"
 
 export default function ProfilePage() {
     const searchParams = useSearchParams()
     const activeTab = searchParams.get("tab") || "account"
+    const activeSubTab = searchParams.get("subtab") || (activeTab === "account" ? "preferences" : "employee")
     const [profile, setProfile] = useState<MyProfile | null>(null)
     const [loading, setLoading] = useState(true)
+    const [panelOpen, setPanelOpen] = useState(true)
 
     const fetchProfile = useCallback(async () => {
         try {
@@ -30,24 +32,45 @@ export default function ProfilePage() {
     useEffect(() => { fetchProfile() }, [fetchProfile])
 
     if (loading) {
-        return (
-            <PageContainer>
-                <CardSkeleton variant="compact" count={1} className="mb-6 border-0 bg-transparent p-0" />
-                <FormSkeleton hasTabs tabs={2} fields={4} className="pt-0" />
-                <ProfileSidePanel profile={null} />
-            </PageContainer>
-        )
-    }
+         return (
+             <PageContainer>
+                 <SkeletonShell isLoading={loading} ariaLabel="Cargando perfil de usuario">
+                     <div className="mb-6 border-0 bg-transparent p-0" />
+                     <div className="pt-0" />
+                     <ProfileSidePanel profile={null} />
+                 </SkeletonShell>
+             </PageContainer>
+         )
+     }
 
     const contactDetail = profile?.contact_detail || profile?.employee?.contact_detail
     const isPartner = contactDetail?.is_partner
 
     const tabs = [
-        { value: "account", label: "Cuenta", iconName: "user-cog", href: "/profile?tab=account" },
-        { value: "personal", label: "Personal", iconName: "badge-check", href: "/profile?tab=personal" },
+        { 
+            value: "account", 
+            label: "Cuenta", 
+            iconName: "user-cog", 
+            href: "/profile?tab=account&subtab=preferences",
+            subTabs: [
+                { value: "preferences", label: "Preferencias", iconName: "sliders", href: "/profile?tab=account&subtab=preferences" },
+                { value: "security", label: "Seguridad", iconName: "shield-check", href: "/profile?tab=account&subtab=security" },
+            ]
+        },
+        { 
+            value: "personal", 
+            label: "Personal", 
+            iconName: "badge-check", 
+            href: "/profile?tab=personal&subtab=employee",
+            subTabs: [
+                { value: "employee", label: "Ficha de Empleado", iconName: "badge-check", href: "/profile?tab=personal&subtab=employee" },
+                { value: "payrolls", label: "Liquidaciones", iconName: "file-text", href: "/profile?tab=personal&subtab=payrolls" },
+                { value: "payments", label: "Pagos y Anticipos", iconName: "credit-card", href: "/profile?tab=personal&subtab=payments" },
+            ]
+        },
     ]
     if (isPartner) {
-        tabs.push({ value: "partner", label: "Socio", iconName: "briefcase", href: "/profile?tab=partner" })
+        tabs.push({ value: "partner", label: "Socio", iconName: "briefcase", href: "/profile?tab=partner", subTabs: [] })
     }
 
     const getHeaderConfig = () => {
@@ -79,18 +102,21 @@ export default function ProfilePage() {
 
     const navigation = {
         tabs,
-        activeValue: activeTab
+        activeValue: activeTab,
+        subActiveValue: (activeTab === "personal" || activeTab === "account") ? activeSubTab : undefined
     }
 
     return (
-        <PageContainer>
-            <PageHeader title={title} description={description} iconName={iconName} variant="minimal" navigation={navigation} />
+        <>
+            <PageContainer>
+                <PageHeader title={title} description={description} iconName={iconName} variant="minimal" navigation={navigation} />
 
-            <div className="pt-4">
-                <ProfileView activeTab={activeTab} initialProfile={profile ?? undefined} />
-            </div>
+                <div className="pt-4">
+                    <ProfileView activeTab={activeTab} activeSubTab={activeSubTab} initialProfile={profile ?? undefined} />
+                </div>
+            </PageContainer>
 
-            <ProfileSidePanel profile={profile} />
-        </PageContainer>
+            <ProfileSidePanel profile={profile} open={panelOpen} onOpenChange={setPanelOpen} />
+        </>
     )
 }

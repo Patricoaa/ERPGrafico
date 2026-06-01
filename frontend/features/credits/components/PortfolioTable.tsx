@@ -1,7 +1,6 @@
 "use client"
 
-import { useState, useCallback } from "react"
-import { ExpandableTableRow } from "@/components/shared"
+import { useState, useMemo, useEffect } from "react"
 import {
     getContactCreditLedger,
     writeOffDebt,
@@ -12,27 +11,14 @@ import {
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import {
-    ChevronDown, ChevronRight,
-    RefreshCw, ShieldAlert, Gavel
+    RefreshCw, ShieldAlert, Gavel, ChevronDown, ChevronRight
 } from "lucide-react"
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { Button } from "@/components/ui/button"
-import { TableSkeleton } from "@/components/shared"
-import { DataTable } from "@/components/ui/data-table"
-import { type Table as ReactTable, type Row, type HeaderGroup, type Header, type Cell, flexRender, ColumnDef } from "@tanstack/react-table"
-import { TableCell } from "@/components/ui/table"
-import { EmptyState } from "@/components/shared/EmptyState"
-import { StatusBadge } from "@/components/shared/StatusBadge"
+import { SkeletonShell, ActionConfirmModal, DataCell, EntityBadge } from "@/components/shared"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
+import { DataTable } from '@/components/shared'
+import { ColumnDef } from "@tanstack/react-table"
 
 const fmt = (v: string | number | undefined) =>
     Number(v || 0).toLocaleString("es-CL", { style: "currency", currency: "CLP", maximumFractionDigits: 0 })
@@ -70,15 +56,19 @@ function AgingBar({ aging }: { aging: CreditContact["credit_aging"] }) {
             {keys.map((k, i) => {
                 const pct = (Number(aging[k]) / total) * 100
                 return pct > 0 ? (
-                    <div key={k} className={cn("h-full", colors[i])} style={{ width: `${pct}%` }} title={`${agingLabel[k]}: ${fmt(aging[k])}`} />
+                    <Tooltip key={k}>
+                        <TooltipTrigger asChild>
+                            <div className={cn("h-full", colors[i])} style={{ width: `${pct}%` }} />
+                        </TooltipTrigger>
+                        <TooltipContent side="top">{agingLabel[k]}: {fmt(aging[k])}</TooltipContent>
+                    </Tooltip>
                 ) : null
             })}
         </div>
     )
 }
 
-function ExpandableContactRow({ row, onRefresh }: { row: Row<CreditContact>, onRefresh: () => void }) {
-    const contact = row.original
+function PortfolioContactPanel({ contact, onRefresh }: { contact: CreditContact, onRefresh: () => void }) {
     const [ledger, setLedger] = useState<CreditLedgerEntry[] | null>(null)
     const [loadingLedger, setLoadingLedger] = useState(false)
     const [writingOff, setWritingOff] = useState(false)
@@ -90,6 +80,20 @@ function ExpandableContactRow({ row, onRefresh }: { row: Row<CreditContact>, onR
     const isDefault = contact.is_default_customer
     const [writingOffDocId, setWritingOffDocId] = useState<number | null>(null)
     const [showWriteOffDocDialog, setShowWriteOffDocDialog] = useState<{ id: number, number: string, balance: number } | null>(null)
+
+    // Lazy load ledger on first expansion
+    useEffect(() => {
+        if (ledger === null && !loadingLedger) {
+            setLoadingLedger(true)
+            getContactCreditLedger(contact.id)
+                .then(setLedger)
+                .catch(() => {
+                    toast.error("Error al cargar historial de documentos")
+                    setLedger([])
+                })
+                .finally(() => setLoadingLedger(false))
+        }
+    }, [ledger, loadingLedger, contact.id])
 
     const handleWriteOff = async () => {
         setWritingOff(true)
@@ -126,24 +130,7 @@ function ExpandableContactRow({ row, onRefresh }: { row: Row<CreditContact>, onR
     const agingBuckets = ['current', 'overdue_30', 'overdue_60', 'overdue_90', 'overdue_90plus'] as const;
 
     return (
-        <ExpandableTableRow
-            row={row}
-            onExpand={async (isExpanding) => {
-                if (isExpanding && !ledger) {
-                    setLoadingLedger(true)
-                    try {
-                        const data = await getContactCreditLedger(contact.id)
-                        setLedger(data)
-                    } catch (error) {
-                        console.error("Error fetching credit ledger:", error)
-                        toast.error("Error al cargar historial de documentos")
-                        setLedger([])
-                    } finally {
-                        setLoadingLedger(false)
-                    }
-                }
-            }}
-        >
+        <>
             <div className="mb-6 flex items-center gap-4">
                 <div className="flex-1">
                     <AgingBar aging={aging} />
@@ -174,37 +161,29 @@ function ExpandableContactRow({ row, onRefresh }: { row: Row<CreditContact>, onR
                 </div>
             </div>
 
-            <AlertDialog open={showWriteOffDialog} onOpenChange={setShowWriteOffDialog}>
-                <AlertDialogContent className="max-w-md">
-                    <AlertDialogHeader>
-                        <ShieldAlert className="h-6 w-6" />
-                        <AlertDialogTitle className="text-xl font-black">¿Confirmar Castigo de Deuda?</AlertDialogTitle>
-                        <div className="space-y-3 pt-2">
-                            <AlertDialogDescription>
-                                Esta acción es **irreversible** y tiene las siguientes consecuencias:
-                            </AlertDialogDescription>
-                            <ul className="list-disc list-inside space-y-1 text-sm font-medium text-muted-foreground">
-                                <li>Se generará un asiento contable de pérdida por <span className="text-foreground font-bold">{fmt(totalDebt)}</span>.</li>
-                                <li>El cliente quedará bloqueado permanentemente.</li>
-                                <li>La clasificación de riesgo pasará a <span className="text-destructive font-bold uppercase tracking-wider text-[10px]">Crítico</span>.</li>
-                                <li>Se realizarán ajustes técnicos en tesorería para saldar los documentos pendientes.</li>
-                            </ul>
-                        </div>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter className="gap-2 mt-4">
-                        <AlertDialogCancel className="font-bold">Cancelar</AlertDialogCancel>
-                        <AlertDialogAction
-                            className="bg-destructive hover:bg-destructive/90 text-white font-bold"
-                            onClick={handleWriteOff}
-                        >
-                            Confirmar Castigo
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
+            <ActionConfirmModal
+                open={showWriteOffDialog}
+                onOpenChange={setShowWriteOffDialog}
+                onConfirm={handleWriteOff}
+                title="¿Confirmar Castigo de Deuda?"
+                description={
+                    <div className="space-y-3 pt-1 text-sm leading-relaxed">
+                        <p>Esta acción es <strong>irreversible</strong> y tiene las siguientes consecuencias:</p>
+                        <ul className="list-disc list-inside space-y-1 font-medium text-muted-foreground">
+                            <li>Se generará un asiento contable de pérdida por <span className="text-foreground font-bold">{fmt(totalDebt)}</span>.</li>
+                            <li>El cliente quedará bloqueado permanentemente.</li>
+                            <li>La clasificación de riesgo pasará a <span className="text-destructive font-bold uppercase tracking-wider text-[10px]">Crítico</span>.</li>
+                            <li>Se realizarán ajustes técnicos en tesorería para saldar los documentos pendientes.</li>
+                        </ul>
+                    </div>
+                }
+                variant="destructive"
+                icon={ShieldAlert}
+                confirmText="Confirmar Castigo"
+            />
 
             {loadingLedger ? (
-                <TableSkeleton rows={2} />
+                <SkeletonShell isLoading ariaLabel="Cargando..." />
             ) : ledger && ledger.length > 0 ? (
                 <div className="overflow-x-auto">
                     <table className="w-full text-left">
@@ -226,42 +205,53 @@ function ExpandableContactRow({ row, onRefresh }: { row: Row<CreditContact>, onR
                                 <tr key={entry.id} className="text-[12px] group">
                                     <td className="py-2 pr-4 text-center">
                                         <button
-                                            className="font-bold text-primary hover:underline flex items-center justify-center gap-1 mx-auto"
+                                            className="mx-auto block hover:opacity-85 transition-opacity"
                                             onClick={(e) => {
                                                 e.stopPropagation()
                                                 openHub({ orderId: entry.id, type: 'sale' })
                                             }}
                                         >
-                                            NV-{entry.number}
+                                            <EntityBadge label="sales.saleorder" data={{ id: entry.id, number: entry.number }} link={false} size="sm" />
                                         </button>
                                     </td>
-                                    <td className="py-2 pr-4 text-muted-foreground text-center">{entry.date}</td>
-                                    <td className="py-2 pr-4 text-muted-foreground text-center">
-                                        {entry.due_date}
-                                        {entry.days_overdue > 0 && (
-                                            <span className="ml-1 text-destructive font-bold">({entry.days_overdue}d)</span>
-                                        )}
+                                    <td className="py-2 pr-4 text-center">
+                                        <DataCell.Date value={entry.date} />
                                     </td>
-                                    <td className="py-2 pr-4 text-center font-mono">{fmt(entry.effective_total)}</td>
-                                    <td className="py-2 pr-4 text-center font-mono text-success font-medium">{fmt(entry.paid_amount)}</td>
-                                    <td className="py-2 pr-4 text-center font-mono font-bold">{fmt(entry.balance)}</td>
+                                    <td className="py-2 pr-4 text-center">
+                                        <div className="flex justify-center items-center gap-1.5 w-full">
+                                            <DataCell.Date value={entry.due_date} />
+                                            {entry.days_overdue > 0 && (
+                                                <span className="text-destructive font-bold text-[11px]">({entry.days_overdue}d)</span>
+                                            )}
+                                        </div>
+                                    </td>
+                                    <td className="py-2 pr-4 text-center">
+                                        <DataCell.Currency value={entry.effective_total} />
+                                    </td>
+                                    <td className="py-2 pr-4 text-center">
+                                        <DataCell.Currency value={entry.paid_amount} className="text-success font-medium" />
+                                    </td>
+                                    <td className="py-2 pr-4 text-center">
+                                        <DataCell.Currency value={entry.balance} className="font-bold" />
+                                    </td>
                                     <td className="py-2 pr-4 text-center">
                                         <div className="flex justify-center">
                                             {entry.credit_assignment_origin_display ? (
-                                                <span className={cn("text-[9px] font-bold px-1.5 py-0.5 rounded border whitespace-nowrap", originBg[entry.credit_assignment_origin || ""])}>
+                                                <DataCell.Chip
+                                                    intent={entry.credit_assignment_origin === "MANUAL" ? "neutral" : entry.credit_assignment_origin === "SALE" ? "info" : "warning"}
+                                                    size="xs"
+                                                    className="w-fit"
+                                                >
                                                     {entry.credit_assignment_origin_display}
-                                                </span>
+                                                </DataCell.Chip>
                                             ) : <span className="text-muted-foreground/30">—</span>}
                                         </div>
                                     </td>
                                     <td className="py-2 pr-4 text-center">
-                                        <div className="flex justify-center">
-                                            <StatusBadge
-                                                variant="default"
-                                                status={entry.aging_bucket === 'current' ? 'SUCCESS' : (entry.days_overdue > 60 ? 'ERROR' : 'WARNING')}
-                                                label={agingLabel[entry.aging_bucket]}
-                                            />
-                                        </div>
+                                        <DataCell.Status
+                                            status={entry.aging_bucket === 'current' ? 'SUCCESS' : (entry.days_overdue > 60 ? 'ERROR' : 'WARNING')}
+                                            label={agingLabel[entry.aging_bucket]}
+                                        />
                                     </td>
                                     <td className="py-2 pr-2 text-center">
                                         <div className="flex justify-center gap-1">
@@ -294,29 +284,21 @@ function ExpandableContactRow({ row, onRefresh }: { row: Row<CreditContact>, onR
                 <p className="text-[12px] text-muted-foreground italic text-center py-4">Sin documentos pendientes.</p>
             )}
 
-            <AlertDialog open={!!showWriteOffDocDialog} onOpenChange={(o) => !o && setShowWriteOffDocDialog(null)}>
-                <AlertDialogContent className="max-w-md">
-                    <AlertDialogHeader>
-                        <ShieldAlert className="h-6 w-6" />
-                        <AlertDialogTitle className="text-xl font-black">¿Castigar Documento NV-{showWriteOffDocDialog?.number}?</AlertDialogTitle>
-                        <div className="space-y-3 pt-2">
-                            <AlertDialogDescription>
-                                Se castigará el saldo pendiente de <strong>{fmt(showWriteOffDocDialog?.balance)}</strong> para este documento.
-                            </AlertDialogDescription>
-                        </div>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter className="gap-2 mt-4">
-                        <AlertDialogCancel className="font-bold">Cancelar</AlertDialogCancel>
-                        <AlertDialogAction
-                            className="bg-destructive hover:bg-destructive/90 text-white font-bold"
-                            onClick={() => showWriteOffDocDialog && handleWriteOffDoc(showWriteOffDocDialog.id)}
-                        >
-                            Confirmar Castigo
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
-        </ExpandableTableRow>
+            <ActionConfirmModal
+                open={!!showWriteOffDocDialog}
+                onOpenChange={(o) => !o && setShowWriteOffDocDialog(null)}
+                onConfirm={() => showWriteOffDocDialog ? handleWriteOffDoc(showWriteOffDocDialog.id) : undefined}
+                title={`¿Castigar Documento NV-${showWriteOffDocDialog?.number}?`}
+                description={
+                    <div className="space-y-3 pt-1 text-sm leading-relaxed">
+                        <p>Se castigará el saldo pendiente de <strong>{fmt(showWriteOffDocDialog?.balance)}</strong> para este documento.</p>
+                    </div>
+                }
+                variant="destructive"
+                icon={ShieldAlert}
+                confirmText="Confirmar Castigo"
+            />
+        </>
     )
 }
 
@@ -325,61 +307,62 @@ export function PortfolioTable({
     data,
     isLoading,
     onRefresh,
-    createAction
+    createAction,
+    leftAction,
 }: {
     columns: ColumnDef<CreditContact>[],
     data: CreditContact[],
     isLoading: boolean,
     onRefresh: () => void,
-    createAction?: React.ReactNode
+    createAction?: React.ReactNode,
+    leftAction?: React.ReactNode,
 }) {
-    const renderPortfolioCustomView = useCallback((table: ReactTable<CreditContact>) => {
-        const rows = table.getRowModel().rows
-        if (rows.length === 0 && !isLoading) {
-            return (
-                <EmptyState
-                    context="finance"
-                    title="No hay clientes con crédito"
-                    description="Habilite cupos de crédito para sus clientes para comenzar el seguimiento."
-                />
-            )
-        }
-        return (
-            <div className="overflow-x-auto pb-4">
-                <table className="w-full text-left">
-                    <thead className="border-b border-border/50">
-                        {table.getHeaderGroups().map((headerGroup: HeaderGroup<CreditContact>) => (
-                            <tr key={headerGroup.id}>
-                                {headerGroup.headers.map((header: Header<CreditContact, unknown>) => (
-                                    <th key={header.id} className="px-4 py-3 text-muted-foreground font-black text-[10px] uppercase tracking-widest whitespace-nowrap text-center">
-                                        {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
-                                    </th>
-                                ))}
-                                <th className="px-3 py-3 w-12" />
-                            </tr>
-                        ))}
-                    </thead>
-                    <tbody className="divide-y divide-border/50">
-                        {table.getRowModel().rows.map((row: Row<CreditContact>) => (
-                            <ExpandableContactRow key={row.id} row={row} onRefresh={onRefresh} />
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-        )
-    }, [isLoading, onRefresh])
+    const columnsWithExpander = useMemo<ColumnDef<CreditContact>[]>(() => [
+        {
+            id: "expander",
+            header: () => null,
+            cell: ({ row }) => (
+                <button
+                    onClick={(e) => {
+                        e.stopPropagation()
+                        row.toggleExpanded()
+                    }}
+                    className="p-1 text-muted-foreground hover:text-foreground transition-colors"
+                >
+                    {row.getIsExpanded() ? (
+                        <ChevronDown className="h-4 w-4" />
+                    ) : (
+                        <ChevronRight className="h-4 w-4" />
+                    )}
+                </button>
+            ),
+            size: 40,
+            enableSorting: false,
+            enableHiding: false,
+        },
+        ...columns,
+    ], [columns])
 
     return (
-        <DataTable
-            columns={columns}
-            data={data}
-            variant="embedded"
-            isLoading={isLoading}
-            useAdvancedFilter
-            globalFilterFields={["name", "tax_id"]}
-            searchPlaceholder="Buscar cliente..."
-            renderCustomView={renderPortfolioCustomView}
-            createAction={createAction}
-        />
+        <div className="h-full flex flex-col">
+            <div className="flex-1 min-h-0">
+                <DataTable
+                    columns={columnsWithExpander}
+                    data={data}
+                    variant="embedded"
+                    isLoading={isLoading}
+                    renderSubComponent={(row) => (
+                        <PortfolioContactPanel contact={row.original} onRefresh={onRefresh} />
+                    )}
+                    emptyState={{
+                        context: "finance",
+                        title: "No hay clientes con crédito",
+                        description: "Habilite cupos de crédito para sus clientes para comenzar el seguimiento.",
+                    }}
+                    createAction={createAction}
+                    leftAction={leftAction}
+                />
+            </div>
+        </div>
     )
 }

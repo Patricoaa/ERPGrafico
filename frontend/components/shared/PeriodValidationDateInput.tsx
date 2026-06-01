@@ -4,8 +4,8 @@ import { useEffect, useRef } from "react"
 import { Loader2 } from "lucide-react"
 import { usePeriodValidation } from "@/hooks/usePeriodValidation"
 import { cn } from "@/lib/utils"
-import { DatePicker } from "@/components/shared/DatePicker"
-import { LabeledContainer } from "@/components/shared/LabeledContainer"
+import { DatePicker, LabeledContainer } from '@/components/shared'
+
 import { format } from "date-fns"
 
 interface PeriodValidationDateInputProps {

@@ -28,7 +28,7 @@ export function FormSplitLayout({
         <div className="flex-1 flex overflow-hidden min-h-[400px]">
             {/* Main Form Area */}
             <div className={cn(
-                "flex-1 flex flex-col overflow-y-auto pr-6 pl-1 pb-4 pt-4 scrollbar-thin",
+                "flex-1 flex flex-col overflow-y-auto px-6 pb-4 pt-4 scrollbar-thin",
                 className
             )}>
                 {children}

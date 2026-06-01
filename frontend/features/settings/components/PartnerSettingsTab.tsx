@@ -4,15 +4,15 @@ import React, { useEffect, useState } from "react"
 import { toast } from "sonner"
 import { Card, CardContent, CardHeader, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { DataTable } from "@/components/ui/data-table"
-import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
-import { Building2, Plus, ArrowUpRight, ArrowDownRight, Wallet, Users, Banknote, Edit2, Search, TrendingUp, TrendingDown, Loader2 } from "lucide-react"
+import { DataTable } from '@/components/shared'
+import { DataCell, createActionsColumn, StatCard } from '@/components/shared'
+import { DataTableColumnHeader } from '@/components/shared'
+import {Building2, Plus, ArrowUpRight, ArrowDownRight, Wallet, Users, Banknote, Edit2, TrendingUp, TrendingDown, Loader2} from "lucide-react"
 import { ColumnDef } from "@tanstack/react-table"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
 import { PartnerSummary } from "@/features/contacts/types/partner"
 import { CashMovementModal } from "@/features/treasury/components/CashMovementModal"
-import { PartnerEditModal } from "./PartnerEditModal"
+import { PartnerEditDrawer } from "./PartnerEditDrawer"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { accountingApi } from "@/features/accounting/api/accountingApi"
@@ -42,7 +42,7 @@ export function PartnerSettingsTab() {
             setPartners(partnersData)
             setSummary(summaryData)
             setAccountingSettings(settingsData)
-        } catch (error) {
+        } catch {
             toast.error("Error al cargar la información")
         } finally {
             setLoading(false)
@@ -74,7 +74,7 @@ export function PartnerSettingsTab() {
             toast.success("Cuenta de Capital Social actualizada correctamente")
             const updated = await accountingApi.getSettings()
             setAccountingSettings(updated)
-        } catch (error) {
+        } catch {
             toast.error("Error al actualizar la configuración contable")
         } finally {
             setIsUpdatingSettings(false)
@@ -84,12 +84,12 @@ export function PartnerSettingsTab() {
     const columns: ColumnDef<any>[] = [
         {
             accessorKey: "name",
-            header: ({ column }) => <DataTableColumnHeader column={column} className="justify-start" title="Socio" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} className="justify-center" title="Socio" />,
             cell: ({ row }) => <DataCell.Text className="font-bold">{row.getValue("name")}</DataCell.Text>,
         },
         {
             accessorKey: "tax_id",
-            header: ({ column }) => <DataTableColumnHeader column={column} className="justify-start" title="RUT" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} className="justify-center" title="RUT" />,
             cell: ({ row }) => <DataCell.Code>{row.getValue("tax_id")}</DataCell.Code>,
         },
         {
@@ -103,7 +103,7 @@ export function PartnerSettingsTab() {
         },
         {
             accessorKey: "partner_balance",
-            header: ({ column }) => <DataTableColumnHeader column={column} className="justify-end" title="Saldo Particular (Neto)" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} className="justify-center" title="Saldo Particular (Neto)" />,
             cell: ({ row }) => <DataCell.Currency className="font-bold text-foreground" value={row.getValue("partner_balance")} />,
         },
         createActionsColumn<any>({
@@ -126,7 +126,7 @@ export function PartnerSettingsTab() {
     ]
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 h-full flex flex-col">
             <div className="flex justify-between items-center bg-muted/30 p-4 rounded-lg border">
                 <div className="flex items-center gap-3">
                     <Building2 className="h-5 w-5" />
@@ -182,39 +182,24 @@ export function PartnerSettingsTab() {
                     </CardContent>
                 </Card>
 
-                <Card className="shadow-sm border">
-                    <CardHeader className="p-4 pb-2">
-                        <CardDescription className="text-[10px] uppercase font-bold tracking-widest flex items-center gap-2">
-                            <Users className="h-3.5 w-3.5" /> Total Socios
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="p-4 pt-0">
-                        <p className="text-2xl font-bold">{summary?.total_partners || 0}</p>
-                    </CardContent>
-                </Card>
-
-                <Card className="shadow-sm border border-success/20 bg-success/5">
-                    <CardHeader className="p-4 pb-2">
-                        <CardDescription className="text-[10px] uppercase font-bold tracking-widest text-success flex items-center gap-2">
-                            <ArrowUpRight className="h-3.5 w-3.5" /> Total Aportes
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="p-4 pt-0">
-                        <DataCell.Currency className="text-2xl font-bold text-success" value={summary?.total_contributions || 0} />
-                    </CardContent>
-                </Card>
-
-                <Card className="shadow-sm border border-destructive/20 bg-destructive/5">
-                    <CardHeader className="p-4 pb-2">
-                        <CardDescription className="text-[10px] uppercase font-bold tracking-widest text-destructive flex items-center gap-2">
-                            <ArrowDownRight className="h-3.5 w-3.5" /> Total Retiros
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="p-4 pt-0">
-                        <DataCell.Currency className="text-2xl font-bold text-destructive" value={summary?.total_withdrawals || 0} />
-                    </CardContent>
-                </Card>
-
+                <StatCard
+                    label="Total Socios"
+                    value={summary?.total_partners || 0}
+                    icon={Users}
+                    accent="muted"
+                />
+                <StatCard
+                    label="Total Aportes"
+                    value={<DataCell.Currency value={summary?.total_contributions || 0} />}
+                    icon={ArrowUpRight}
+                    accent="success"
+                />
+                <StatCard
+                    label="Total Retiros"
+                    value={<DataCell.Currency value={summary?.total_withdrawals || 0} />}
+                    icon={ArrowDownRight}
+                    accent="destructive"
+                />
                 <Card className="shadow-sm border bg-foreground text-background md:col-span-2 lg:col-span-1">
                     <CardHeader className="p-4 pb-2">
                         <CardDescription className="text-[10px] uppercase font-bold tracking-widest text-muted flex items-center gap-2">
@@ -227,11 +212,12 @@ export function PartnerSettingsTab() {
                 </Card>
             </div>
 
-            <div className="border bg-card rounded-lg shadow-sm">
+            <div className="border bg-card rounded-lg shadow-sm flex-1 min-h-0">
                 <DataTable
                     columns={columns}
                     data={partners}
                     isLoading={loading}
+                    variant="embedded"
                     searchPlaceholder="Buscar socio..."
                     noBorder={true}
                     globalFilterFields={['name', 'tax_id']}
@@ -257,7 +243,7 @@ export function PartnerSettingsTab() {
                 }}
             />
 
-            <PartnerEditModal
+            <PartnerEditDrawer
                 open={isEditModalOpen}
                 onOpenChange={setIsEditModalOpen}
                 contact={selectedPartner}

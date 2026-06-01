@@ -7,13 +7,15 @@ class AccountSerializer(serializers.ModelSerializer):
     debit_total = serializers.DecimalField(max_digits=20, decimal_places=2, read_only=True)
     credit_total = serializers.DecimalField(max_digits=20, decimal_places=2, read_only=True)
     balance = serializers.DecimalField(max_digits=20, decimal_places=2, read_only=True)
+    has_posted_items = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = Account
         fields = [
             'id', 'code', 'name', 'account_type', 'account_type_display', 
             'bs_category', 'bs_category_display',
-            'parent', 'is_reconcilable', 'is_selectable', 'debit_total', 'credit_total', 
+            'parent', 'is_reconcilable', 'is_selectable', 'has_posted_items',
+            'debit_total', 'credit_total', 
             'balance', 'is_category', 'cf_category'
         ]
         extra_kwargs = {
@@ -48,10 +50,20 @@ class JournalEntrySerializer(serializers.ModelSerializer):
     items = JournalItemSerializer(many=True, read_only=True)
     source_documents = serializers.ListField(source='get_source_documents', read_only=True)
     display_id = serializers.CharField(read_only=True)
-    
+    reversal_of = serializers.SerializerMethodField()
+
     class Meta:
         model = JournalEntry
-        fields = ['id', 'number', 'display_id', 'date', 'description', 'reference', 'status', 'items', 'source_documents', 'created_at']
+        fields = ['id', 'number', 'display_id', 'date', 'description', 'status', 'is_manual', 'items', 'source_documents', 'reversal_of', 'created_at', 'source_content_type_id', 'source_object_id']
+        read_only_fields = ['id', 'number', 'status']
+
+    def get_reversal_of(self, obj):
+        if obj.reversal_of_id:
+            return {
+                'id': obj.reversal_of.id,
+                'display_id': obj.reversal_of.display_id,
+            }
+        return None
 
 # --- Budgeting Serializers ---
 

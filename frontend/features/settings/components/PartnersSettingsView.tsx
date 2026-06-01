@@ -36,7 +36,7 @@ export function PartnersSettingsView({
     }, [activeTab, onSavingChange])
 
     return (
-        <div className="space-y-6">
+        <div className="h-full flex flex-col">
             {activeTab === "composition" && (
                 <EquityCompositionTab
                     initialAddPartnerOpen={initialAddPartnerOpen}

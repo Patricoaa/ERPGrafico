@@ -1,8 +1,8 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import {useState, useEffect} from "react"
 import { LabeledInput, LabeledSelect, LabeledContainer, PeriodValidationDateInput } from "@/components/shared"
-import api from "@/lib/api"
+import { purchasingApi } from "../../api/purchasingApi"
 import { useServerDate } from "@/hooks/useServerDate"
 import {
     Table,
@@ -56,12 +56,12 @@ export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
     useEffect(() => {
         const fetchMetadata = async () => {
             try {
-                const [uomsRes, warehousesRes] = await Promise.all([
-                    api.get('/inventory/uoms/'),
-                    api.get('/inventory/warehouses/')
+                const [uomsData, warehousesData] = await Promise.all([
+                    purchasingApi.getUoms(),
+                    purchasingApi.getWarehouses()
                 ])
-                setUoMs(uomsRes.data.results || uomsRes.data)
-                setWarehouses(warehousesRes.data.results || warehousesRes.data)
+                setUoMs(uomsData as any)
+                setWarehouses(warehousesData as any)
             } catch (error) {
                 console.error("Failed to fetch receipt metadata", error)
             }
@@ -262,7 +262,7 @@ export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
                                         <TableRow key={line.id || idx}>
                                             <TableCell className="font-medium">{line.product_name || line.name || line.description}</TableCell>
                                             <TableCell className="text-right font-semibold">
-                                                {pendingQty.toLocaleString('es-CL')}
+                                                {pendingQty}
                                             </TableCell>
                                             <TableCell>
                                                 <LabeledInput

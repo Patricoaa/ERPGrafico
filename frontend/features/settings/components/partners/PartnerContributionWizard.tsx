@@ -1,26 +1,25 @@
 "use client"
+import { formatCurrency } from "@/lib/money"
 
 import React, { useState, useEffect } from "react"
-import { 
-    Wallet, 
-    Package, 
-    Users, 
-    Warehouse as WarehouseIcon, 
-    Info,
+import {
+    Wallet,
+    Package,
+    Users,
+    Warehouse as WarehouseIcon,
     ArrowDownCircle,
     Banknote
 } from "lucide-react"
-import { GenericWizard, WizardStep } from "@/components/shared/GenericWizard"
+import { LabeledInput, LabeledSelect, LabeledContainer, PeriodValidationDateInput, Chip, GenericWizard, WizardStep } from "@/components/shared"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
 import { Partner } from "@/features/contacts/types/partner"
 import { TreasuryAccount } from "@/features/treasury/types"
 import { Product } from "@/features/inventory/types"
-import api from "@/lib/api"
+import { settingsApi } from "../../hooks"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
-import { LabeledInput, LabeledSelect, LabeledContainer, PeriodValidationDateInput } from "@/components/shared"
-import { Badge } from "@/components/ui/badge"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { formatCurrency, cn } from "@/lib/utils"
+
+import {Alert} from "@/components/ui/alert"
+import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 import { showApiError } from "@/lib/errors"
 
@@ -41,16 +40,16 @@ export function PartnerContributionWizard({
 }: PartnerContributionWizardProps) {
     const [loading, setLoading] = useState(false)
     const [isCompleting, setIsCompleting] = useState(false)
-    
+
     // Data lists
     const [partners, setPartners] = useState<Partner[]>([])
     const [warehouses, setWarehouses] = useState<any[]>([])
     const [treasuryAccounts, setTreasuryAccounts] = useState<TreasuryAccount[]>([])
-    
+
     // Form State
     const [partnerId, setPartnerId] = useState(initialPartnerId || "")
     const [method, setMethod] = useState<ContributionMethod>("CASH")
-    
+
     // Cash specific
     const [cashData, setCashData] = useState({
         amount: "",
@@ -58,7 +57,7 @@ export function PartnerContributionWizard({
         date: new Date().toISOString().split('T')[0],
         description: ""
     })
-    
+
     // Assets specific
     const [assetData, setAssetData] = useState({
         warehouseId: "",
@@ -69,7 +68,7 @@ export function PartnerContributionWizard({
         date: new Date().toISOString().split('T')[0],
         description: ""
     })
-    
+
     // Product details for assets
     const [productDetails, setProductDetails] = useState<Product | null>(null)
     const [productUoMs, setProductUoMs] = useState<any[]>([])
@@ -80,13 +79,13 @@ export function PartnerContributionWizard({
             setLoading(true)
             Promise.all([
                 partnersApi.getPartners(),
-                api.get('/inventory/warehouses/'),
-                api.get('/treasury/accounts/')
-            ]).then(([pData, wRes, aRes]) => {
+                settingsApi.getWarehouses(),
+                settingsApi.getTreasuryAccounts()
+            ]).then(([pData, warehouses, accounts]) => {
                 setPartners(pData)
-                setWarehouses(wRes.data.results || wRes.data)
-                setTreasuryAccounts(aRes.data)
-                
+                setWarehouses(warehouses)
+                setTreasuryAccounts(accounts as any)
+
                 if (initialPartnerId) setPartnerId(initialPartnerId)
             }).catch(err => {
                 console.error(err)
@@ -123,19 +122,17 @@ export function PartnerContributionWizard({
             setProductUoMs([])
             return
         }
-        
-        api.get(`/inventory/products/${assetData.productId}/`)
-            .then(res => {
-                const data = res.data
-                setProductDetails(data)
-                setAssetData(prev => ({ ...prev, unitCost: data.cost_price?.toString() || "0" }))
 
-                if (data.uom_category) {
-                    api.get(`/inventory/uoms/?category=${data.uom_category}`)
-                        .then(uomRes => {
-                            const uoms = uomRes.data.results || uomRes.data
+        settingsApi.getProduct(assetData.productId)
+            .then(data => {
+                setProductDetails(data as any)
+                setAssetData(prev => ({ ...prev, unitCost: (data as any).cost_price?.toString() || "0" }))
+
+                if ((data as any).uom_category) {
+                    settingsApi.getUoms({ category: (data as any).uom_category })
+                        .then(uoms => {
                             setProductUoMs(uoms)
-                            const baseId = typeof data.uom === 'object' ? data.uom.id : data.uom
+                            const baseId = typeof (data as any).uom === 'object' ? (data as any).uom.id : (data as any).uom
                             const base = uoms.find((u: { id: number }) => u.id === baseId)
                             if (base) setAssetData(prev => ({ ...prev, uomId: base.id.toString() }))
                         })
@@ -148,7 +145,7 @@ export function PartnerContributionWizard({
     const selectedPartner = partners.find(p => p.id.toString() === partnerId)
     const selectedUoM = productUoMs.find(u => u.id.toString() === assetData.uomId)
     const baseUoM = typeof productDetails?.uom === 'object' ? productDetails.uom : productUoMs.find(u => u.id === productDetails?.uom)
-    
+
     const assetTotalValue = (Number(assetData.quantity) || 0) * (Number(assetData.unitCost) || 0)
 
     const handleComplete = async () => {
@@ -163,7 +160,7 @@ export function PartnerContributionWizard({
                     description: cashData.description
                 })
             } else {
-                await api.post('/inventory/moves/adjust/', {
+                await settingsApi.createInventoryAdjustment({
                     product_id: assetData.productId,
                     warehouse_id: assetData.warehouseId,
                     quantity: Number(assetData.quantity),
@@ -174,7 +171,7 @@ export function PartnerContributionWizard({
                     partner_contact_id: partnerId
                 })
             }
-            
+
             toast.success("Aporte registrado exitosamente")
             onSuccess()
             onOpenChange(false)
@@ -213,7 +210,7 @@ export function PartnerContributionWizard({
                         <div className="p-3 bg-muted/30 border-2 border-dashed rounded-lg space-y-2 animate-in fade-in zoom-in-95 duration-300">
                             <div className="flex justify-between items-center text-[10px] text-muted-foreground uppercase font-black">
                                 <span>Estado Societario</span>
-                                <Badge variant="outline" className="h-4 py-0 text-[8px] border-primary/20 text-primary">Activo</Badge>
+                                <Chip size="xs" intent="primary">Activo</Chip>
                             </div>
                             <div className="grid grid-cols-2 gap-4 pt-1">
                                 <div className="space-y-0.5">
@@ -241,8 +238,8 @@ export function PartnerContributionWizard({
                         onClick={() => setMethod("CASH")}
                         className={cn(
                             "group flex flex-col items-center gap-4 p-6 rounded-xl border-2 transition-all text-center",
-                            method === "CASH" 
-                                ? "border-success bg-success/5 shadow-lg shadow-success/10" 
+                            method === "CASH"
+                                ? "border-success bg-success/5 shadow-lg shadow-success/10"
                                 : "border-muted hover:border-success/30 hover:bg-muted/50"
                         )}
                     >
@@ -257,13 +254,13 @@ export function PartnerContributionWizard({
                             <p className="text-[10px] text-muted-foreground leading-tight">Caja, banco o transferencia bancaria electrónica.</p>
                         </div>
                     </button>
-                    
+
                     <button
                         onClick={() => setMethod("ASSETS")}
                         className={cn(
                             "group flex flex-col items-center gap-4 p-6 rounded-xl border-2 transition-all text-center",
-                            method === "ASSETS" 
-                                ? "border-warning bg-warning/5 shadow-lg shadow-warning/10" 
+                            method === "ASSETS"
+                                ? "border-warning bg-warning/5 shadow-lg shadow-warning/10"
                                 : "border-muted hover:border-warning/30 hover:bg-muted/50"
                         )}
                     >
@@ -285,7 +282,7 @@ export function PartnerContributionWizard({
             id: "details",
             title: "Detalles del Aporte",
             description: "Complete la información de registro",
-            isValid: method === "CASH" 
+            isValid: method === "CASH"
                 ? (!!cashData.amount && !!cashData.treasuryAccountId)
                 : (!!assetData.productId && !!assetData.warehouseId && !!assetData.quantity && Number(assetData.unitCost) > 0),
             component: method === "CASH" ? (
@@ -340,7 +337,7 @@ export function PartnerContributionWizard({
                             placeholder="Almacén"
                         />
                         <LabeledContainer label="Producto / Recurso">
-                            <ProductSelector 
+                            <ProductSelector
                                 value={assetData.productId}
                                 onChange={(val) => setAssetData(prev => ({ ...prev, productId: val || "" }))}
                                 allowedTypes={["STORABLE", "MANUFACTURABLE"]}
@@ -348,7 +345,7 @@ export function PartnerContributionWizard({
                             />
                         </LabeledContainer>
                     </div>
-                    
+
                     <div className="grid grid-cols-3 gap-4">
                         <LabeledInput
                             label="Cantidad"

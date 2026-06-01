@@ -1,6 +1,7 @@
 from django.db import transaction
 from django.core.exceptions import ValidationError
 from django.utils import timezone
+from django.contrib.contenttypes.models import ContentType
 from .models import TreasuryMovement, TreasuryAccount, TerminalBatch, PaymentMethod
 from accounting.models import JournalEntry, JournalItem, AccountingSettings
 from accounting.services import JournalEntryService
@@ -271,7 +272,9 @@ class TreasuryService:
              date=date,
              description=description,
              reference=f"MOV-{movement.id}",
-             status=JournalEntry.State.DRAFT
+             status=JournalEntry.State.DRAFT,
+             source_content_type=ContentType.objects.get_for_model(TreasuryMovement),
+             source_object_id=movement.id,
         )
 
         from_acc = movement.from_account.account if movement.from_account else None
@@ -651,11 +654,16 @@ class TerminalBatchService:
         # 3. Create Accounting Entry (Settlement)
         # Description: Liquidación Terminal [Provider] - [Date]
         description = f"Liq. {provider.name} - {sales_date}"
+        first_movement = payments.first()
+        source_ct = ContentType.objects.get_for_model(TreasuryMovement) if first_movement else None
+        source_oid = first_movement.id if first_movement else None
         entry = JournalEntry.objects.create(
             date=batch.settlement_date,
             description=description,
             reference=batch.display_id,
-            status=JournalEntry.State.DRAFT
+            status=JournalEntry.State.DRAFT,
+            source_content_type=source_ct,
+            source_object_id=source_oid,
         )
         
         # A. Commission Expense - Net (Debit)
@@ -827,6 +835,8 @@ class TerminalBatchService:
             description=f"Cruce comisiones terminales {provider.name} - {month}/{year}",
             reference=f"BRIDGE-{invoice.display_id}",
             status=JournalEntry.State.DRAFT,
+            source_content_type=ContentType.objects.get_for_model(TreasuryMovement),
+            source_object_id=invoice.id,
         )
         JournalItem.objects.create(entry=bridge_entry, account=payable_acc, debit=bridge_total, credit=0)
         JournalItem.objects.create(entry=bridge_entry, account=comm_bridge, debit=0, credit=total_commission_net)

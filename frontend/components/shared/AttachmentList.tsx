@@ -1,10 +1,11 @@
 "use client"
 
 import React from "react"
-import { Paperclip, FileText, Download, ExternalLink, Trash2, Loader2 } from "lucide-react"
-import { EmptyState } from "@/components/shared/EmptyState"
+import { Paperclip, FileText, ExternalLink, Trash2, Loader2 } from "lucide-react"
+import { EmptyState } from '@/components/shared'
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { cn, formatPlainDate } from "@/lib/utils"
 
 interface Attachment {
@@ -53,9 +54,14 @@ export function AttachmentList({
                     </div>
 
                     <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold truncate pr-2" title={file.original_filename}>
-                            {file.original_filename}
-                        </p>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <p className="text-sm font-bold truncate pr-2">
+                                    {file.original_filename}
+                                </p>
+                            </TooltipTrigger>
+                            <TooltipContent side="top">{file.original_filename}</TooltipContent>
+                        </Tooltip>
                         <div className="flex items-center gap-2 mt-0.5">
                             <span className="text-[10px] text-muted-foreground font-medium">
                                 {file.file_size_formatted}

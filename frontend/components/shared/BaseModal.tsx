@@ -15,22 +15,14 @@ import { type VariantProps } from "class-variance-authority"
 import { dialogContentVariants } from "@/components/ui/dialog"
 import * as DialogPrimitive from "@radix-ui/react-dialog"
 import { SheetCloseButton } from "./SheetCloseButton"
+import { PanelHeader, type PanelBaseProps } from "./PanelHeader"
 
-export type BaseModalVariant = "default" | "transaction" | "wizard" | "raw"
+export type BaseModalVariant = "default" | "transaction" | "wizard" | "form-tabs" | "raw"
 
-export interface BaseModalProps extends 
+export interface BaseModalProps extends
     Omit<React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>, "title">,
-    VariantProps<typeof dialogContentVariants> {
-    open: boolean
-    onOpenChange: (open: boolean) => void
-    title: string | React.ReactNode
-    description?: string | React.ReactNode
-    children: React.ReactNode
-    footer?: React.ReactNode
-    headerActions?: React.ReactNode
-    contentClassName?: string
-    headerClassName?: string
-    footerClassName?: string
+    VariantProps<typeof dialogContentVariants>,
+    PanelBaseProps {
     hideScrollArea?: boolean
     allowOverflow?: boolean
     variant?: BaseModalVariant
@@ -40,6 +32,7 @@ export interface BaseModalProps extends
 export function BaseModal({
     open,
     onOpenChange,
+    icon,
     title,
     description,
     children,
@@ -58,26 +51,41 @@ export function BaseModal({
 }: BaseModalProps) {
     const isTransaction = variant === "transaction"
     const isWizard = variant === "wizard"
+    const isFormTabs = variant === "form-tabs"
     const isRaw = variant === "raw"
 
     const headerStyles = cn(
         "px-6 py-4 flex-shrink-0",
         isTransaction && "bg-primary text-primary-foreground border-b-0",
         isWizard && "border-b pb-2",
+        isFormTabs && "border-b bg-background/50 backdrop-blur-sm",
         !isRaw && "border-b",
         headerClassName
     )
 
     const titleStyles = cn(
-        "text-xl font-bold flex items-center gap-2",
+        "text-lg font-bold min-w-0 truncate",
         isTransaction && "tracking-tight text-white"
+    )
+
+    const descriptionStyles = cn(
+        "text-xs font-medium text-muted-foreground truncate",
+        isTransaction && "text-primary-foreground/80"
     )
 
     const footerStyles = cn(
         "px-6 py-4 flex-shrink-0",
-        !isRaw && "border-t bg-muted/20",
+        !isRaw && "border-t",
         footerClassName
     )
+
+    const iconElement: React.ReactNode = icon
+        ? (typeof icon === "function" || (typeof icon === "object" && "render" in (icon as any)))
+            ? React.createElement(icon as React.ComponentType<{ className?: string }>, {
+                className: cn("h-9 w-9 flex-shrink-0", isTransaction ? "text-white" : "text-muted-foreground/80")
+            })
+            : icon as React.ReactNode
+        : null
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -93,7 +101,7 @@ export function BaseModal({
                 {...props}
             >
                 {showCloseButton && (
-                    <SheetCloseButton 
+                    <SheetCloseButton
                         onClick={() => onOpenChange(false)}
                         className="absolute top-4 right-4 z-[60]"
                     />
@@ -103,28 +111,25 @@ export function BaseModal({
                         Modal Window
                     </DialogTitle>
                 )}
-                {(title || description || headerActions) && (
+                {(title || description || headerActions || icon) && (
                     <DialogHeader className={headerStyles}>
-                        <div className="flex items-center justify-between gap-4 w-full">
-                            <div className={cn("flex flex-col gap-1 w-full")}>
+                        <PanelHeader
+                            icon={iconElement}
+                            title={
                                 <DialogTitle className={titleStyles}>
                                     {title}
                                 </DialogTitle>
-                                {description && (
-                                    <DialogDescription
-                                        asChild={typeof description !== "string"}
-                                        className={cn(isTransaction && "text-primary-foreground/80")}
-                                    >
-                                        {description}
-                                    </DialogDescription>
-                                )}
-                            </div>
-                            {headerActions && (
-                                <div className="flex items-center gap-2 flex-shrink-0">
-                                    {headerActions}
-                                </div>
-                            )}
-                        </div>
+                            }
+                            description={description ? (
+                                <DialogDescription
+                                    asChild={typeof description !== "string"}
+                                    className={descriptionStyles}
+                                >
+                                    {description}
+                                </DialogDescription>
+                            ) : undefined}
+                            headerActions={headerActions}
+                        />
                     </DialogHeader>
                 )}
 

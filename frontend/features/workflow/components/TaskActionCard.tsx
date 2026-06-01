@@ -1,9 +1,9 @@
 "use client"
 
 import { Task, TaskAttachment } from '@/features/workflow/api/workflowApi'
-import { Badge } from "@/components/ui/badge"
+
 import { Input } from "@/components/ui/input"
-import { CheckCircle2, Circle, Clock, User, Paperclip, MessageSquare, Download, AlertCircle, ChevronDown, ChevronUp } from "lucide-react"
+import {CheckCircle2, Circle, User, Paperclip, MessageSquare, Download, AlertCircle, ChevronDown, ChevronUp} from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"

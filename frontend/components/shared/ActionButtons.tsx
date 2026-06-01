@@ -1,5 +1,5 @@
 import * as React from "react"
-import { Loader2, Save } from "lucide-react"
+import { Save } from "lucide-react"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
@@ -8,7 +8,7 @@ import { ActionSlideButton } from "./ActionSlideButton"
 
 type ButtonBaseProps = React.ComponentProps<"button"> & VariantProps<typeof buttonVariants> & { asChild?: boolean }
 
-export interface SubmitButtonProps extends React.ComponentProps<typeof ActionSlideButton> {}
+export type SubmitButtonProps = React.ComponentProps<typeof ActionSlideButton>
 
 export const SubmitButton = React.forwardRef<HTMLButtonElement, SubmitButtonProps>(
   ({ loading = false, children = "Guardar", icon = <Save className="h-3.5 w-3.5" />, ...props }, ref) => {
@@ -27,7 +27,7 @@ export const SubmitButton = React.forwardRef<HTMLButtonElement, SubmitButtonProp
 )
 SubmitButton.displayName = "SubmitButton"
 
-export interface DangerButtonProps extends React.ComponentProps<typeof ActionSlideButton> {}
+export type DangerButtonProps = React.ComponentProps<typeof ActionSlideButton>
 
 export const DangerButton = React.forwardRef<HTMLButtonElement, DangerButtonProps>(
   ({ loading = false, children = "Eliminar", ...props }, ref) => {

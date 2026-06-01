@@ -12,7 +12,7 @@ export default function PayrollDetailPage({ params }: Props) {
     const payrollId = parseInt(resolvedParams.id)
 
     return (
-        <div className="flex-1 space-y-6 p-8 pt-6">
+        <div className="flex-1 space-y-6">
             <PayrollDetailContent payrollId={payrollId} />
         </div>
     )

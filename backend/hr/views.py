@@ -2,7 +2,7 @@ from decimal import Decimal
 from django.db import transaction, models
 from django.db.models import Sum
 from django.utils import timezone
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.core.exceptions import ValidationError
@@ -99,8 +99,9 @@ class EmployeeFilter(django_filters.FilterSet):
 class EmployeeViewSet(AuditHistory, viewsets.ModelViewSet):
     queryset = Employee.objects.select_related('contact', 'afp').all()
     serializer_class = EmployeeSerializer
-    filter_backends = [DjangoFilterBackend]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_class = EmployeeFilter
+    search_fields = ['contact__name', 'contact__tax_id', 'position']
 
 
 # --- Absence ---
@@ -139,8 +140,9 @@ class PayrollViewSet(viewsets.ModelViewSet):
         'employee', 'employee__contact',
         'journal_entry', 'previred_journal_entry'
     ).prefetch_related('items', 'items__concept').all()
-    filter_backends = [DjangoFilterBackend]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_class = PayrollFilter
+    search_fields = ['employee__contact__name']
 
     def get_serializer_class(self):
         if self.action in ('retrieve', 'create', 'update', 'partial_update'):
@@ -193,20 +195,21 @@ class PayrollViewSet(viewsets.ModelViewSet):
         treasury_account_id = request.data.get('treasury_account_id')
         if not treasury_account_id:
             return Response({'detail': 'Se requiere la cuenta de tesorería (treasury_account_id).'}, status=status.HTTP_400_BAD_REQUEST)
+        amount = request.data.get('amount')
+        if amount is not None:
+            try: amount = Decimal(str(amount))
+            except (ValueError, TypeError): return Response({'detail': 'Monto inválido.'}, status=status.HTTP_400_BAD_REQUEST)
         try:
             payment = PayrollPaymentService.pay_previred(
-                self.get_object(),
-                treasury_account_id=int(treasury_account_id),
+                self.get_object(), treasury_account_id=int(treasury_account_id),
                 payment_date=request.data.get('documentDate') or request.data.get('date') or timezone.now().date().isoformat(),
                 payment_method=request.data.get('paymentMethod', 'TRANSFER'),
-                payment_method_id=request.data.get('payment_method_new'),
-                notes=request.data.get('notes', ''),
+                payment_method_id=request.data.get('payment_method_new'), notes=request.data.get('notes', ''),
                 transaction_number=request.data.get('transaction_number'),
                 is_pending_registration=request.data.get('is_pending_registration', False),
-                created_by=request.user,
+                created_by=request.user, amount=amount,
             )
-        except ValidationError as e:
-            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except ValidationError as e: return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         return Response(PayrollPaymentSerializer(payment).data, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=['post'])
@@ -214,20 +217,21 @@ class PayrollViewSet(viewsets.ModelViewSet):
         treasury_account_id = request.data.get('treasury_account_id')
         if not treasury_account_id:
             return Response({'detail': 'Se requiere la cuenta de tesorería (treasury_account_id).'}, status=status.HTTP_400_BAD_REQUEST)
+        amount = request.data.get('amount')
+        if amount is not None:
+            try: amount = Decimal(str(amount))
+            except (ValueError, TypeError): return Response({'detail': 'Monto inválido.'}, status=status.HTTP_400_BAD_REQUEST)
         try:
             payment = PayrollPaymentService.pay_salary(
-                self.get_object(),
-                treasury_account_id=int(treasury_account_id),
+                self.get_object(), treasury_account_id=int(treasury_account_id),
                 payment_date=request.data.get('documentDate') or request.data.get('date') or timezone.now().date().isoformat(),
                 payment_method=request.data.get('paymentMethod', 'TRANSFER'),
-                payment_method_id=request.data.get('payment_method_new'),
-                notes=request.data.get('notes', ''),
+                payment_method_id=request.data.get('payment_method_new'), notes=request.data.get('notes', ''),
                 transaction_number=request.data.get('transaction_number'),
                 is_pending_registration=request.data.get('is_pending_registration', False),
-                created_by=request.user,
+                created_by=request.user, amount=amount,
             )
-        except ValidationError as e:
-            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except ValidationError as e: return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         return Response(PayrollPaymentSerializer(payment).data, status=status.HTTP_201_CREATED)
 
     @action(detail=False, methods=['post'])

@@ -1,26 +1,25 @@
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import React, { useState, useEffect, lazy, Suspense } from "react"
 import { ColumnDef } from "@tanstack/react-table"
-import { Edit, Trash2, Building2, User as UserIcon, Banknote } from "lucide-react"
+import { Building2, User as UserIcon, Banknote } from "lucide-react"
 
 import { formatRUT } from "@/lib/utils/format"
-import { DataTable } from "@/components/ui/data-table"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { DataTableView } from '@/components/shared'
+import { DataTableColumnHeader } from '@/components/shared'
+import { EmptyState } from '@/components/shared'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
+import { DataCell, createActionsColumn, Chip, EntityCard } from '@/components/shared'
 import { useContacts, type Contact } from "@/features/contacts"
 import { LoadingFallback, SmartSearchBar, StatusBadge, useSmartSearch } from "@/components/shared"
 import { contactSearchDef } from "@/features/contacts/searchDef"
 import type { ContactFilters } from "@/features/contacts/types"
-import { cn } from "@/lib/utils"
+import { formatCurrency } from "@/lib/money"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
-import { formatEntityDisplay } from "@/lib/entity-registry"
+import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
 
 // Lazy load heavy components
-const ContactModal = lazy(() => import("./ContactModal"))
+const ContactDrawer = lazy(() => import("./ContactDrawer"))
 const ActionConfirmModal = lazy(() => import("@/components/shared/ActionConfirmModal").then(m => ({ default: m.ActionConfirmModal })))
-
-
 
 interface ContactsClientViewProps {
     isNewModalOpen?: boolean
@@ -37,6 +36,8 @@ export function ContactsClientView({ isNewModalOpen = false, createAction }: Con
     const router = useRouter()
     const searchParams = useSearchParams()
     const pathname = usePathname()
+
+    const { openSelected } = useEntityRouteActions()
 
     const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<Contact>({
         endpoint: '/contacts'
@@ -84,7 +85,7 @@ export function ContactsClientView({ isNewModalOpen = false, createAction }: Con
         try {
             await deleteContact(contact.id)
             setIsDeleteModalOpen(false)
-        } catch (error) {
+        } catch {
             // Error handling is done in the hook
         }
     }
@@ -96,8 +97,16 @@ export function ContactsClientView({ isNewModalOpen = false, createAction }: Con
     const columns: ColumnDef<Contact>[] = [
         {
             accessorKey: "display_id",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Código" className="justify-center" />,
-            cell: ({ row }) => <div className="flex justify-center w-full"><DataCell.Code className="font-semibold">{formatEntityDisplay('contacts.contact', row.original)}</DataCell.Code></div>,
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Código Interno" className="justify-center" />,
+            cell: ({ row }) => <DataCell.Code>{row.original.display_id}</DataCell.Code>,
+        },
+        {
+            accessorKey: "tax_id",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="RUT / Identificación" className="justify-center" />,
+            cell: ({ row }) => {
+                const taxId = row.getValue("tax_id") as string | null
+                return <DataCell.Text>{taxId ? formatRUT(taxId) : 'S/Rut'}</DataCell.Text>
+            },
         },
         {
             accessorKey: "name",
@@ -107,12 +116,12 @@ export function ContactsClientView({ isNewModalOpen = false, createAction }: Con
                 return (
                     <div className="flex items-center justify-center gap-2 w-full">
                         <DataCell.Text>{contact.name}</DataCell.Text>
-                        <div className="flex gap-1">
+                        <div className="flex gap-1 shrink-0">
                             {contact.is_default_customer && (
                                 <TooltipProvider>
                                     <Tooltip>
-                                        <TooltipTrigger>
-                                            <DataCell.Icon icon={UserIcon} className="bg-primary/10 text-primary h-6 w-6" />
+                                        <TooltipTrigger asChild>
+                                            <Chip size="xs" intent="primary" icon={UserIcon} className="cursor-help shrink-0">Cliente</Chip>
                                         </TooltipTrigger>
                                         <TooltipContent>Cliente por defecto</TooltipContent>
                                     </Tooltip>
@@ -121,8 +130,8 @@ export function ContactsClientView({ isNewModalOpen = false, createAction }: Con
                             {contact.is_default_vendor && (
                                 <TooltipProvider>
                                     <Tooltip>
-                                        <TooltipTrigger>
-                                            <DataCell.Icon icon={Building2} className="bg-primary/10 text-primary h-6 w-6" />
+                                        <TooltipTrigger asChild>
+                                            <Chip size="xs" intent="success" icon={Building2} className="cursor-help shrink-0">Proveedor</Chip>
                                         </TooltipTrigger>
                                         <TooltipContent>Proveedor por defecto</TooltipContent>
                                     </Tooltip>
@@ -131,24 +140,24 @@ export function ContactsClientView({ isNewModalOpen = false, createAction }: Con
                             {(Number(contact.credit_limit || 0) > 0 || Number(contact.credit_balance_used || 0) > 0) && !contact.credit_blocked && (
                                 <TooltipProvider>
                                     <Tooltip>
-                                        <TooltipTrigger>
-                                            <DataCell.Icon
+                                        <TooltipTrigger asChild>
+                                            <Chip
+                                                size="xs"
+                                                intent={Number(contact.credit_balance_used || 0) > 0 ? "warning" : "success"}
                                                 icon={Banknote}
-                                                className={
-                                                    Number(contact.credit_balance_used || 0) > 0
-                                                        ? "bg-warning/10 text-warning h-6 w-6"
-                                                        : "bg-success/10 text-success h-6 w-6"
-                                                }
-                                            />
+                                                className="cursor-help shrink-0"
+                                            >
+                                                Crédito
+                                            </Chip>
                                         </TooltipTrigger>
                                         <TooltipContent>
                                             <div className="flex flex-col gap-1">
                                                 {Number(contact.credit_limit || 0) > 0 && (
-                                                    <span>Límite de Crédito: ${Number(contact.credit_limit || 0).toLocaleString()} ({contact.credit_days} días)</span>
+                                                    <span>Límite de Crédito: {formatCurrency(Number(contact.credit_limit || 0))} ({contact.credit_days} días)</span>
                                                 )}
                                                 {Number(contact.credit_balance_used || 0) > 0 && (
                                                     <span className="font-bold text-warning">
-                                                        Deuda Activa: ${Number(contact.credit_balance_used || 0).toLocaleString()}
+                                                        Deuda Activa: {formatCurrency(Number(contact.credit_balance_used || 0))}
                                                     </span>
                                                 )}
                                             </div>
@@ -161,46 +170,41 @@ export function ContactsClientView({ isNewModalOpen = false, createAction }: Con
                 )
             },
         },
+
         {
-            accessorKey: "tax_id",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="RUT / Identificación" className="justify-center" />,
+            accessorKey: "active_roles",
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Roles" className="justify-center" />,
             cell: ({ row }) => {
-                const taxId = row.getValue("tax_id") as string | null
-                return <div className="flex justify-center w-full"><DataCell.Code>{taxId ? formatRUT(taxId) : 'S/Rut'}</DataCell.Code></div>
+                const roles = row.original.active_roles || []
+                return (
+                    <div className="flex flex-wrap gap-1 justify-center w-full">
+                        {roles.map(role => (
+                            <Chip.Category key={role} domain="contact_type" value={role} size="xs" />
+                        ))}
+                    </div>
+                )
             },
-        },
-        {
-            accessorKey: "contact_type",
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Tipo" className="justify-center" />,
-            cell: ({ row }) => <div className="flex justify-center w-full">{getContactTypeBadge(row.getValue("contact_type"))}</div>,
         },
         {
             accessorKey: "email",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Email" className="justify-center" />,
-            cell: ({ row }) => <div className="flex justify-center w-full"><DataCell.Secondary>{row.getValue("email") || "-"}</DataCell.Secondary></div>,
+            cell: ({ row }) => <DataCell.Text>{row.getValue("email") || "-"}</DataCell.Text>,
         },
         {
             accessorKey: "phone",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Teléfono" className="justify-center" />,
-            cell: ({ row }) => <div className="flex justify-center w-full"><DataCell.Secondary>{row.getValue("phone") || "-"}</DataCell.Secondary></div>,
+            cell: ({ row }) => <DataCell.Text>{row.getValue("phone") || "-"}</DataCell.Text>,
         },
         createActionsColumn<Contact>({
             renderActions: (contact) => (
                 <>
                     <DataCell.Action
-                        icon={Edit}
-                        title="Editar"
-                        onClick={() => {
-                            const params = new URLSearchParams(searchParams.toString())
-                            params.set('selected', String(contact.id))
-                            router.push(`${pathname}?${params.toString()}`, { scroll: false })
-                        }}
+                        action="edit"
+                        onClick={() => openSelected(contact.id)}
                     />
                     {!contact.is_default_customer && !contact.is_default_vendor && (
                         <DataCell.Action
-                            icon={Trash2}
-                            title="Eliminar"
-                            className="text-destructive"
+                            action="delete"
                             onClick={() => handleDelete(contact)}
                         />
                     )}
@@ -210,19 +214,56 @@ export function ContactsClientView({ isNewModalOpen = false, createAction }: Con
     ]
 
     return (
-        <>
-            <DataTable
-                columns={columns}
-                data={contacts}
-                isLoading={isLoading}
-                variant="embedded"
-                leftAction={<SmartSearchBar searchDef={contactSearchDef} placeholder="Buscar por nombre, RUT o tipo..." />}
-                defaultPageSize={20}
-                createAction={createAction}
-            />
+
+        <div className="h-full flex flex-col">
+            <div className="flex-1 min-h-0">
+                {!isLoading && contacts.length === 0 ? (
+                    <EmptyState context="users" title="No hay contactos" description="No se encontraron contactos con los criterios de búsqueda actuales." />
+                ) : (
+                    <DataTableView
+                        entityLabel="contacts.contact"
+                        columns={columns}
+                        data={contacts}
+                        isLoading={isLoading}
+                        variant="embedded"
+                        leftAction={<SmartSearchBar searchDef={contactSearchDef} placeholder="Buscar por nombre, RUT o tipo..." className="w-full" />}
+                        defaultPageSize={20}
+                        createAction={createAction}
+                        renderCard={(contact: Contact) => (
+                            <EntityCard key={contact.id} onClick={() => openSelected(contact.id)}>
+                                <EntityCard.Header
+                                    title={contact.name}
+                                    subtitle={contact.tax_id || 'S/Rut'}
+                                    trailing={
+                                        <div className="flex flex-col items-end gap-1">
+                                            <div className="flex gap-1 flex-wrap justify-end">
+                                                {contact.active_roles?.map(role => (
+                                                    <Chip.Category key={role} domain="contact_type" value={role} size="xs" />
+                                                ))}
+                                            </div>
+                                            <div className="flex gap-1">
+                                                {contact.is_default_customer && <Chip size="xs" intent="primary" icon={UserIcon}>Cliente</Chip>}
+                                                {contact.is_default_vendor && <Chip size="xs" intent="success" icon={Building2}>Proveedor</Chip>}
+                                            </div>
+                                        </div>
+                                    }
+                                />
+                                <EntityCard.Body>
+                                    <EntityCard.Field label="Email" value={contact.email || '-'} />
+                                    <EntityCard.Field label="Teléfono" value={contact.phone || '-'} />
+                                    {Number(contact.credit_limit || 0) > 0 && (
+                                        <EntityCard.Field label="Crédito" value={`${formatCurrency(Number(contact.credit_limit))} (${contact.credit_days}d)`} />
+                                    )}
+                                </EntityCard.Body>
+                            </EntityCard>
+                        )}
+                    />
+                )}
+
+            </div>
 
             <Suspense fallback={<LoadingFallback />}>
-                <ContactModal
+                <ContactDrawer
                     open={modalOpen}
                     onOpenChange={handleCloseModal}
                     contact={selectedContact}
@@ -249,6 +290,6 @@ export function ContactsClientView({ isNewModalOpen = false, createAction }: Con
                     }
                 />
             </Suspense>
-        </>
+        </div>
     )
 }

@@ -41,8 +41,10 @@ function makeWrapper() {
     const queryClient = new QueryClient({
         defaultOptions: { queries: { retry: false, gcTime: 0 } },
     })
-    return ({ children }: { children: React.ReactNode }) =>
+    const Wrapper = ({ children }: { children: React.ReactNode }) =>
         React.createElement(QueryClientProvider, { client: queryClient }, children)
+    Wrapper.displayName = "TestQueryWrapper"
+    return Wrapper
 }
 
 // Lazily import the mocked api instance after vi.mock has replaced it
@@ -98,18 +100,18 @@ describe('useSelectedEntity', () => {
         expect(result.current.isLoading).toBe(false)
     })
 
-    // ── 3. Cache hit — no re-fetcha ───────────────────────────────────────
-    // Usa un QueryClient compartido con staleTime: Infinity para que el segundo
-    // subscriber use la cache sin re-fetch (comportamiento production equivalente
-    // cuando la lista ya cargó el item en su propia query).
+    // ── 3. Cache hit — devuelve datos inmediatos pero re-fetchea en background ──
+    // staleTime: 0 (forzado en el hook) garantiza que al reabrir un panel
+    // siempre se obtienen datos frescos, incluso si ya había una entrada en cache.
+    // Tradeoff aceptado: 1 GET extra por reapertura a cambio de nunca mostrar
+    // datos obsoletos tras una mutación remota o de otro tab.
 
-    it('reutiliza la cache si la entidad ya fue fetcheada (mismo queryKey)', async () => {
+    it('devuelve datos de cache inmediatamente y re-fetchea en background (staleTime: 0)', async () => {
         mockGet.mockReturnValue('7')
         apiGetMock.mockResolvedValue({ data: { id: 7, name: 'Herramientas' } })
 
-        // Shared QueryClient — staleTime: Infinity simula cache caliente
         const queryClient = new QueryClient({
-            defaultOptions: { queries: { retry: false, staleTime: Infinity } },
+            defaultOptions: { queries: { retry: false } },
         })
         const wrapper = ({ children }: { children: React.ReactNode }) =>
             React.createElement(QueryClientProvider, { client: queryClient }, children)
@@ -122,16 +124,60 @@ describe('useSelectedEntity', () => {
         await waitFor(() => expect(r1.current.entity).not.toBeNull())
         expect(apiGetMock).toHaveBeenCalledTimes(1)
 
-        // Segundo hook — misma instancia de QueryClient con staleTime: Infinity
-        // → datos no son stale → NO hace fetch adicional
+        // Segundo hook — misma queryKey. Con staleTime: 0 los datos son
+        // inmediatamente stale → devuelve cache al instante pero dispara
+        // un refetch en background (no loading state visible para el usuario).
         const { result: r2 } = renderHook(
             () => useSelectedEntity({ endpoint: '/api/inventory/categories' }),
             { wrapper }
         )
-        await waitFor(() => expect(r2.current.entity).not.toBeNull())
+        // Dato disponible de inmediato desde cache (sin flash de loading)
+        expect(r2.current.entity).toEqual({ id: 7, name: 'Herramientas' })
+        // Background refetch ocurre: 2 llamadas en total
+        await waitFor(() => expect(apiGetMock).toHaveBeenCalledTimes(2))
+    })
 
-        // api.get debe haberse llamado exactamente 1 vez (no 2)
-        expect(apiGetMock).toHaveBeenCalledTimes(1)
+    // ── 3b. Regresión: re-apertura del mismo id nunca muestra datos viejos ──
+    // Bug original: placeholderData servía el valor previo inmediatamente al
+    // reabrir el formulario tras guardar, mostrando datos antes del cambio.
+    // Con gcTime: 0 el caché se descarta al desactivarse la query, garantizando
+    // que la próxima apertura siempre espera el fetch fresco.
+
+    it('NO muestra datos stale al reabrir el mismo id tras clearSelection (regresión bug stale-form)', async () => {
+        mockGet.mockReturnValue('5')
+        const freshData = { id: 5, name: 'Nombre actualizado' }
+
+        // Primera apertura: retorna datos viejos
+        apiGetMock.mockResolvedValueOnce({ data: { id: 5, name: 'Nombre viejo' } })
+
+        const queryClient = new QueryClient({
+            defaultOptions: { queries: { retry: false } },
+        })
+        const wrapper = ({ children }: { children: React.ReactNode }) =>
+            React.createElement(QueryClientProvider, { client: queryClient }, children)
+
+        const { result, rerender } = renderHook(
+            () => useSelectedEntity({ endpoint: '/api/inventory/categories' }),
+            { wrapper }
+        )
+        await waitFor(() => expect(result.current.entity).toEqual({ id: 5, name: 'Nombre viejo' }))
+
+        // Simula clearSelection: selectedId = null → query desactivada → gcTime:0 limpia el caché
+        mockGet.mockReturnValue(null)
+        rerender()
+        // Con gcTime:0 el caché debe estar vacío; entity vuelve a null
+        await waitFor(() => expect(result.current.entity).toBeNull())
+
+        // Re-apertura: el hook debe hacer un nuevo fetch y NO servir datos viejos
+        apiGetMock.mockResolvedValueOnce({ data: freshData })
+        mockGet.mockReturnValue('5')
+        rerender()
+
+        // Mientras fetchea, entity es null (no hay placeholder con datos viejos)
+        expect(result.current.entity).toBeNull()
+
+        // Cuando el fetch termina, devuelve los datos frescos
+        await waitFor(() => expect(result.current.entity).toEqual(freshData))
     })
 
     // ── 4. 404 → toast + clearSelection ──────────────────────────────────

@@ -1,12 +1,12 @@
 "use client"
 
 import { Separator } from "@/components/ui/separator"
-import { Badge } from "@/components/ui/badge"
+import { Chip, EmptyState } from '@/components/shared'
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { ShoppingBag } from "lucide-react"
-import { EmptyState } from "@/components/shared/EmptyState"
-import { formatCurrency } from "@/lib/currency"
-import { cn } from "@/lib/utils"
 
+import { formatCurrency } from "@/lib/money"
+import { cn } from "@/lib/utils"
 
 interface NoteItemsSummaryProps {
     items: any[]
@@ -15,7 +15,6 @@ interface NoteItemsSummaryProps {
     total: number
     isExempt?: boolean
 }
-
 
 export function NoteItemsSummary({
     items,
@@ -42,17 +41,22 @@ export function NoteItemsSummary({
                                 items.map((item, idx) => (
                                     <div key={idx} className="flex justify-between items-start gap-4 animate-in fade-in duration-500">
                                         <div className="space-y-1.5 flex-1 min-w-0">
-                                            <p className="font-bold text-[13px] leading-tight text-foreground/90 truncate mr-2" title={item.product_name}>
-                                                {item.product_name || `Producto ${item.product_id}`}
-                                            </p>
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <p className="font-bold text-[13px] leading-tight text-foreground/90 truncate mr-2">
+                                                        {item.product_name || `Producto ${item.product_id}`}
+                                                    </p>
+                                                </TooltipTrigger>
+                                                <TooltipContent side="top">{item.product_name || `Producto ${item.product_id}`}</TooltipContent>
+                                            </Tooltip>
                                             <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
-                                                <Badge variant="secondary" className="text-[9px] px-1.5 py-0 h-4 bg-muted text-muted-foreground font-bold">
+                                                <Chip size="xs" intent="neutral" className="bg-muted">
                                                     {item.quantity} {item.uom_name || 'un'}
-                                                </Badge>
+                                                </Chip>
                                                 {item.reason && (
-                                                    <Badge variant="outline" className="text-[8px] h-3 px-1 font-normal opacity-70 border-muted-foreground/20 italic truncate max-w-[120px]">
+                                                    <Chip size="xs" intent="neutral" className="h-3 px-1 font-normal opacity-70 italic truncate max-w-[120px]">
                                                         {item.reason}
-                                                    </Badge>
+                                                    </Chip>
                                                 )}
                                             </div>
                                         </div>

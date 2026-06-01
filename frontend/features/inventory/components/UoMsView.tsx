@@ -1,8 +1,8 @@
 "use client"
 
 import React from "react"
-import { UoMList } from "@/features/inventory/components/UoMList"
-import { UoMCategoryList } from "@/features/inventory/components/UoMCategoryList"
+import { UoMClientView } from "@/features/inventory/components/UoMClientView"
+import { UoMCategoryClientView } from "@/features/inventory/components/UoMCategoryClientView"
 
 interface UoMsViewProps {
     activeTab: string
@@ -18,16 +18,16 @@ interface UoMsViewProps {
  */
 export function UoMsView({ activeTab, externalOpen, onExternalOpenChange, createAction }: UoMsViewProps) {
     return (
-        <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+        <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 h-full flex flex-col">
             {activeTab === "units" && (
-                <UoMList
+                <UoMClientView
                     externalOpen={externalOpen}
                     onExternalOpenChange={onExternalOpenChange}
                     createAction={createAction}
                 />
             )}
             {activeTab === "categories" && (
-                <UoMCategoryList
+                <UoMCategoryClientView
                     externalOpen={externalOpen}
                     onExternalOpenChange={onExternalOpenChange}
                     createAction={createAction}

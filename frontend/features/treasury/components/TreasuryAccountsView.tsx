@@ -2,23 +2,26 @@
 
 import React, { useState, useEffect } from "react"
 import { useTreasuryAccounts, type TreasuryAccount } from "@/features/treasury"
-import { Button } from "@/components/ui/button"
+import { EntityCard, SmartSearchBar, useSmartSearch } from '@/components/shared'
+import { treasuryAccountSearchDef } from "../searchDef"
 import {
     ColumnDef
 } from "@tanstack/react-table"
-import { DataTable } from "@/components/ui/data-table"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
-import { Badge } from "@/components/ui/badge"
-import { Landmark, Pencil, Trash2, Lock } from "lucide-react"
+import { DataTableView } from '@/components/shared'
+import { DataTableColumnHeader } from '@/components/shared'
+
+import {Landmark, Lock} from "lucide-react"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { BankManagement, PaymentMethodManagement, TerminalManagement } from "@/features/treasury"
-import { StatusBadge } from "@/components/shared/StatusBadge"
-import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
+
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
-import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
+import { DataCell, createActionsColumn, FadeIn } from '@/components/shared'
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
+
+import { createEntityCardView } from "@/lib/view-helpers"
 
 interface TreasuryAccountsViewProps {
     activeTab: string
@@ -27,8 +30,9 @@ interface TreasuryAccountsViewProps {
 }
 
 export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ activeTab, externalOpen, createAction }) => {
-    const { openTreasuryAccount } = useGlobalModalActions()
-    const { accounts, isLoading, deleteAccount } = useTreasuryAccounts()
+    const { openEntity, closeEntity } = useGlobalModalActions()
+    const { filters } = useSmartSearch(treasuryAccountSearchDef)
+    const { accounts, isLoading, deleteAccount } = useTreasuryAccounts({ filters })
     const [isBankModalOpen, setIsBankModalOpen] = useState(false)
     const [isMethodModalOpen, setIsMethodModalOpen] = useState(false)
     const [isLocalAccountModalOpen, setIsLocalAccountModalOpen] = useState(false)
@@ -43,9 +47,9 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
 
     useEffect(() => {
         if (selectedFromUrl) {
-            openTreasuryAccount(selectedFromUrl.id)
+            openEntity('treasury.treasuryaccount', selectedFromUrl.id)
         }
-    }, [selectedFromUrl, openTreasuryAccount])
+    }, [selectedFromUrl, openEntity])
 
     const handleCloseModal = () => {
         setIsBankModalOpen(false)
@@ -61,7 +65,7 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
     }
 
     const handleAdd = () => {
-        openTreasuryAccount(null)
+        closeEntity()
     }
 
     const handleEdit = (account: TreasuryAccount) => {
@@ -99,7 +103,7 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
     const handleDelete = async (id: number) => {
         try {
             await deleteAccount(id)
-        } catch (error) {
+        } catch {
             // Error already handled by hook
         }
     }
@@ -122,7 +126,7 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
             ),
             cell: ({ row }: { row: any }) => (
                 <div className="flex flex-col items-center text-center w-full">
-                    <DataCell.Text className="font-bold text-primary uppercase tracking-tight">
+                    <DataCell.Text>
                         {row.original.name}
                     </DataCell.Text>
                     {row.original.bank_name && (
@@ -141,7 +145,7 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
             ),
             cell: ({ row }: { row: any }) => (
                 <div className="flex justify-center w-full">
-                    <DataCell.Text className="text-muted-foreground font-medium text-xs">
+                    <DataCell.Text>
                         {row.original.account_type_display || typeLabels[row.original.account_type] || row.original.account_type}
                     </DataCell.Text>
                 </div>
@@ -156,9 +160,14 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
                 const name = row.original.account_name
                 if (!name) return <DataCell.Secondary className="italic text-center">No vinculada</DataCell.Secondary>
                 return (
-                    <div className="flex flex-col items-center justify-center w-full" title={`${row.original.account_code || ''} - ${name}`}>
+                    <div className="flex flex-col items-center justify-center w-full">
                         <DataCell.Code>{row.original.account_code}</DataCell.Code>
-                        <DataCell.Secondary className="truncate max-w-[180px]">{name}</DataCell.Secondary>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <DataCell.Secondary>{name}</DataCell.Secondary>
+                            </TooltipTrigger>
+                            <TooltipContent side="top">{row.original.account_code || ''} - {name}</TooltipContent>
+                        </Tooltip>
                     </div>
                 )
             }
@@ -183,22 +192,32 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
         },
         {
             accessorKey: "account_type",
-            header: "Tipo (Filtro)",
+            header: "Tipo",
             enableHiding: true,
+            cell: ({ row }: { row: any }) => {
+                const val = row.original.account_type
+                if (!val) return null
+                const upperVal = String(val).toUpperCase()
+                return (
+                    <DataCell.Text>
+                        {typeLabels[upperVal] || val}
+                    </DataCell.Text>
+                )
+            }
         },
         createActionsColumn<TreasuryAccount>({
             renderActions: (item) => (
                 item.is_system_managed ? (
                     <DataCell.Action
-                        icon={Lock}
+                        action="lock"
                         title="Gestionada por sistema"
                         onClick={() => handleEdit(item)}
                         className="text-muted-foreground cursor-default opacity-50"
                     />
                 ) : (
                     <>
-                        <DataCell.Action icon={Pencil} title="Editar" onClick={() => handleEdit(item)} />
-                        <DataCell.Action icon={Trash2} title="Eliminar" className="text-destructive" onClick={() => handleDelete(item.id)} />
+                        <DataCell.Action action="edit" onClick={() => handleEdit(item)} />
+                        <DataCell.Action action="delete" onClick={() => handleDelete(item.id)} />
                     </>
                 )
             ),
@@ -206,76 +225,98 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
     ]
 
     return (
-        <Tabs value={activeTab} className="space-y-4">
-            <TabsContent value="accounts" className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
-                <DataTable
-                    columns={columns}
-                    data={accounts}
-                    isLoading={isLoading}
-                    variant="embedded"
-                    searchPlaceholder="Buscar cuentas por nombre..."
-                    filterColumn="name"
-                    initialColumnVisibility={{
-                        account_type: false
-                    }}
-                    facetedFilters={[
-                        {
-                            column: "account_type",
-                            title: "Tipo de Cuenta",
-                            options: [
-                                { label: "Caja Física (Efectivo)", value: "CASH" },
-                                { label: "Cuenta Bancaria", value: "CHECKING" },
-                                { label: "T. Débito Empresa", value: "DEBIT_CARD" },
-                                { label: "T. Crédito Empresa", value: "CREDIT_CARD" },
-                                { label: "Chequera / Instr.", value: "CHECKBOOK" },
-                                { label: "Puente", value: "BRIDGE" },
-                                { label: "Cta. Recaudadora", value: "MERCHANT" },
-                            ]
-                        }
-                    ]}
-                    useAdvancedFilter={true}
-                    createAction={activeTab === "accounts" ? createAction : undefined}
-                />
+        <Tabs value={activeTab} className="space-y-4 h-full flex flex-col">
+            <TabsContent value="accounts" className="space-y-6 flex-1 min-h-0">
+                <div className="h-full flex flex-col">
+                    <div className="flex-1 min-h-0">
+                        <DataTableView
+                            entityLabel="treasury.treasuryaccount"
+                            columns={columns}
+                            data={accounts}
+                            isLoading={isLoading}
+                            variant="embedded"
+                            createAction={activeTab === "accounts" ? createAction : undefined}
+                            leftAction={<SmartSearchBar searchDef={treasuryAccountSearchDef} placeholder="Buscar cuenta..." className="w-full" />}
+                            renderCustomView={createEntityCardView('treasury.treasuryaccount', {
+                                renderCard: (acc: TreasuryAccount) => {
+                                    const name = acc.account_name
+                                    return (
+                                        <EntityCard key={acc.id} onClick={() => handleEdit(acc)}>
+                                            <EntityCard.Header
+                                                title={acc.name}
+                                                subtitle={acc.bank_name || 'Sin banco vinculado'}
+                                                trailing={
+                                                    acc.is_system_managed ? <Lock className="h-4 w-4 text-muted-foreground opacity-50" /> : null
+                                                }
+                                            />
+                                            <EntityCard.Body>
+                                                <EntityCard.Field label="Tipología" value={acc.account_type_display || typeLabels[acc.account_type?.toUpperCase()] || acc.account_type} />
+                                                <EntityCard.Field label="Cuenta Contable" value={
+                                                    name ? (
+                                                        <div className="flex flex-col gap-0.5">
+                                                            <DataCell.Code className="text-[10px] bg-transparent p-0">{acc.account_code}</DataCell.Code>
+                                                            <DataCell.Secondary className="truncate max-w-[140px] leading-tight">{name}</DataCell.Secondary>
+                                                        </div>
+                                                    ) : <DataCell.Secondary className="italic">No vinculada</DataCell.Secondary>
+                                                } />
+                                            </EntityCard.Body>
+                                            <EntityCard.Footer className="justify-between items-center border-t bg-muted/10 py-2 px-4">
+                                                <span className="text-[10px] font-bold text-muted-foreground uppercase">Saldo Actual</span>
+                                                <DataCell.Currency value={acc.current_balance} currency={acc.currency} className="font-bold text-base" />
+                                            </EntityCard.Footer>
+                                        </EntityCard>
+                                    )
+                                }
+                            })}
+                        />
+                    </div>
+                </div>
             </TabsContent>
 
-            <TabsContent value="banks">
-                <BankManagement
-                    externalOpen={isBankModalOpen || (activeTab === "banks" && !!externalOpen)}
-                    onOpenChange={(open) => {
-                        if (!open) {
-                            handleCloseModal()
-                        } else {
-                            setIsBankModalOpen(true)
-                        }
-                    }}
-                    createAction={activeTab === "banks" ? createAction : undefined}
-                />
+            <TabsContent value="banks" className="flex-1 min-h-0">
+                <FadeIn className="h-full">
+                    <BankManagement
+                        externalOpen={isBankModalOpen || (activeTab === "banks" && !!externalOpen)}
+                        onOpenChange={(open) => {
+                            if (!open) {
+                                handleCloseModal()
+                            } else {
+                                setIsBankModalOpen(true)
+                            }
+                        }}
+                        createAction={activeTab === "banks" ? createAction : undefined}
+                    />
+                </FadeIn>
             </TabsContent>
 
-            <TabsContent value="methods">
-                <PaymentMethodManagement
-                    externalOpen={isMethodModalOpen || (activeTab === "methods" && !!externalOpen)}
-                    onOpenChange={(open) => {
-                        if (!open) {
-                            handleCloseModal()
-                        } else {
-                            setIsMethodModalOpen(true)
-                        }
-                    }}
-                    createAction={activeTab === "methods" ? createAction : undefined}
-                />
+            <TabsContent value="methods" className="flex-1 min-h-0">
+                <FadeIn className="h-full">
+                    <PaymentMethodManagement
+                        externalOpen={isMethodModalOpen || (activeTab === "methods" && !!externalOpen)}
+                        onOpenChange={(open) => {
+                            if (!open) {
+                                handleCloseModal()
+                            } else {
+                                setIsMethodModalOpen(true)
+                            }
+                        }}
+                        createAction={activeTab === "methods" ? createAction : undefined}
+                    />
+                </FadeIn>
             </TabsContent>
 
-            <TabsContent value="terminals">
-                <TerminalManagement
-                    externalOpen={activeTab === "terminals" && !!externalOpen}
-                    onExternalOpenChange={(open) => {
-                        if (!open) {
-                            handleCloseModal()
-                        }
-                    }}
-                    createAction={activeTab === "terminals" ? createAction : undefined}
-                />
+            <TabsContent value="terminals" className="flex-1 min-h-0">
+                <FadeIn className="h-full">
+                    <TerminalManagement
+                        externalOpen={activeTab === "terminals" && !!externalOpen}
+                        onExternalOpenChange={(open) => {
+                            if (!open) {
+                                handleCloseModal()
+                            }
+                        }}
+                        createAction={activeTab === "terminals" ? createAction : undefined}
+                    />
+                </FadeIn>
             </TabsContent>
         </Tabs>
     )

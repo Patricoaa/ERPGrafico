@@ -7,6 +7,7 @@ export const INVENTORY_SETTINGS_QUERY_KEY = ['settings-inventory']
 
 interface UseInventorySettingsReturn {
     settings: InventorySettings
+    isLoading: boolean
     saving: boolean
     updateSettings: (payload: InventorySettingsUpdatePayload) => Promise<void>
     refetch: () => Promise<unknown>

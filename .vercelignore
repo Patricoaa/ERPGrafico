@@ -1,0 +1,14 @@
+# Ignore backend and non-frontend files for Vercel
+backend/
+docs/
+nginx/
+memory/
+docker-compose*.yml
+.agents/
+.claude/
+.github/
+package.json
+release.sh
+CHANGELOG.md
+CLAUDE.md
+scripts/

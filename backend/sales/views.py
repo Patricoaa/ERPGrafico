@@ -3,6 +3,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 import django_filters
+from django.contrib.contenttypes.models import ContentType
 from .models import SaleOrder, SalesSettings, SaleDelivery, SaleReturn
 from .serializers import (
     SaleOrderSerializer, 
@@ -157,10 +158,12 @@ class SaleOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     permission_classes = [StandardizedModelPermissions]
     filter_backends = [DjangoFilterBackend, drf_filters.SearchFilter]
     filterset_class = SaleOrderFilterSet
-    search_fields = ['customer__name', 'number']
+    search_fields = ['customer__name', 'customer__tax_id', 'number']
     
     def get_serializer_class(self):
         if self.action == 'create':
+            return CreateSaleOrderSerializer
+        if self.action in ['update', 'partial_update']:
             return CreateSaleOrderSerializer
         return SaleOrderSerializer
 
@@ -243,6 +246,24 @@ class SaleOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         SalesService.confirm_sale(order, line_files=line_files)
         
         return Response(SaleOrderSerializer(order).data, status=status.HTTP_201_CREATED)
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if instance.status != 'DRAFT':
+            return Response(
+                {'error': 'Solo se pueden editar notas de venta en estado Borrador.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        return super().update(request, *args, **kwargs)
+
+    def partial_update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if instance.status != 'DRAFT':
+            return Response(
+                {'error': 'Solo se pueden editar notas de venta en estado Borrador.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        return super().partial_update(request, *args, **kwargs)
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -493,7 +514,9 @@ class SaleOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                 entry = JournalEntry.objects.create(
                     description=f"Castigo de documento {order.number}: {contact.name}",
                     reference=f"CASTIGO-{order.number}",
-                    status='POSTED'
+                    status='POSTED',
+                    source_content_type=ContentType.objects.get_for_model(SaleOrder),
+                    source_object_id=order.id,
                 )
                 JournalItem.objects.create(
                     entry=entry,
@@ -536,6 +559,43 @@ class SaleOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             })
         except Exception as e:
             return Response({"error": f"Error interno: {str(e)}"}, status=500)
+
+    @action(detail=True, methods=['get', 'post'], url_path='comments')
+    def comments(self, request, pk=None):
+        """TASK-307: Unified comment feed for an NV (includes linked OT comments)."""
+        from django.contrib.contenttypes.models import ContentType
+        from workflow.models import Comment
+        from workflow.serializers import CommentSerializer
+        from production.models import WorkOrder
+
+        order = self.get_object()
+        so_ct = ContentType.objects.get_for_model(SaleOrder)
+
+        if request.method == 'GET':
+            qs = Comment.objects.filter(content_type=so_ct, object_id=order.pk)
+            
+            # Fetch comments from all related WorkOrders
+            production_orders = order.production_orders.all()
+            if production_orders.exists():
+                wo_ct = ContentType.objects.get_for_model(WorkOrder)
+                wo_qs = Comment.objects.filter(content_type=wo_ct, object_id__in=production_orders.values_list('pk', flat=True))
+                qs = (qs | wo_qs).order_by('created_at')
+            else:
+                qs = qs.order_by('created_at')
+                
+            serializer = CommentSerializer(qs, many=True)
+            return Response(serializer.data)
+
+        text = (request.data.get('text') or '').strip()
+        if not text:
+            return Response({'error': 'text es requerido'}, status=status.HTTP_400_BAD_REQUEST)
+        comment = Comment.objects.create(
+            content_type=so_ct,
+            object_id=order.pk,
+            user=request.user,
+            text=text,
+        )
+        return Response(CommentSerializer(comment).data, status=status.HTTP_201_CREATED)
 
 class SaleDeliveryViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = SaleDelivery.objects.all()

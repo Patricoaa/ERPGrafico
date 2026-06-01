@@ -1,8 +1,9 @@
 "use client"
 
-import { FileText, Package, Layers, Download } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { FileText, Package, Layers } from 'lucide-react'
+import { DataCell } from '@/components/shared'
 import { Label } from '@/components/ui/label'
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { formatBytes } from '@/lib/utils'
 import { ApprovalTaskList } from './ApprovalTaskList'
 import type { WorkOrder, WorkOrderTask, ProductionAttachment } from '../../types'
@@ -34,16 +35,21 @@ export function PrepressStep({
                 {order.checkout_files.map((att: ProductionAttachment) => (
                   <div key={att.id} className="flex items-center gap-2 p-2 bg-primary/10/50 rounded border border-primary/10/50 text-xs hover:border-primary/20 transition-colors">
                     <FileText className="h-3.5 w-3.5 text-primary shrink-0" />
-                    <div className="flex-1 truncate font-medium text-primary" title={att.original_filename}>
-                      {att.original_filename}
-                    </div>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="flex-1 truncate font-medium text-primary">
+                          {att.original_filename}
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent side="top">{att.original_filename}</TooltipContent>
+                    </Tooltip>
                     <div className="text-[10px] text-muted-foreground shrink-0">
                       {formatBytes(Number(att.file_size ?? 0))}
                     </div>
-                    <Button variant="ghost" size="icon" className="h-6 w-6 hover:bg-primary/10 text-primary"
-                      onClick={() => window.open(att.file, '_blank')} title="Descargar">
-                      <Download className="h-3 w-3" />
-                    </Button>
+                    <DataCell.Action
+                      action="download"
+                      onClick={() => window.open(att.file, '_blank')}
+                    />
                   </div>
                 ))}
               </div>
@@ -62,16 +68,21 @@ export function PrepressStep({
                   .map((att: ProductionAttachment) => (
                     <div key={att.id} className="flex items-center gap-2 p-2 bg-white/50 rounded border border-primary/20 text-xs hover:border-primary/40 transition-colors">
                       <FileText className="h-3.5 w-3.5 text-primary shrink-0" />
-                      <div className="flex-1 truncate font-medium" title={att.original_filename}>
-                        {att.original_filename}
-                      </div>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="flex-1 truncate font-medium">
+                            {att.original_filename}
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent side="top">{att.original_filename}</TooltipContent>
+                      </Tooltip>
                       <div className="text-[10px] text-muted-foreground shrink-0">
                         {formatBytes(Number(att.file_size ?? 0))}
                       </div>
-                      <Button variant="ghost" size="icon" className="h-6 w-6 hover:bg-primary/10"
-                        onClick={() => window.open(att.file, '_blank')} title="Descargar">
-                        <Download className="h-3 w-3" />
-                      </Button>
+                      <DataCell.Action
+                        action="download"
+                        onClick={() => window.open(att.file, '_blank')}
+                      />
                     </div>
                   ))}
               </div>

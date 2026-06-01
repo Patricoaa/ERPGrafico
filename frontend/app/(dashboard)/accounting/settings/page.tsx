@@ -1,7 +1,4 @@
-import { lazy, Suspense } from "react"
-import { TableSkeleton } from "@/components/shared"
-
-const AccountingSettingsView = lazy(() => import("@/features/settings").then(m => ({ default: m.AccountingSettingsView })))
+import { AccountingSettingsView } from "@/features/settings"
 
 interface PageProps {
     searchParams: Promise<{ tab?: string }>
@@ -9,13 +6,9 @@ interface PageProps {
 
 export default async function AccountingSettingsPage({ searchParams }: PageProps) {
     const { tab } = await searchParams
-    const activeTab = tab || "global"
+    const activeTab = tab || "structure"
 
     return (
-        <div className="pt-2">
-            <Suspense fallback={<TableSkeleton rows={10} columns={6} />}>
-                <AccountingSettingsView activeTab={activeTab} />
-            </Suspense>
-        </div>
+        <AccountingSettingsView activeTab={activeTab} />
     )
 }

@@ -2,18 +2,15 @@
 
 import { showApiError } from "@/lib/errors"
 import { useState, useEffect } from "react"
-import { BaseModal } from "@/components/shared/BaseModal"
+
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
-import { FileText, Loader2, Upload, ShieldAlert, Plus } from "lucide-react"
-import { FormFooter, LabeledInput, LabeledSelect, FormSection } from "@/components/shared"
+import {FileText, Loader2, Upload} from "lucide-react"
+import {BaseModal, CancelButton, DocumentAttachmentDropzone, FolioValidationInput, FormFooter, FormSection, LabeledSelect, PeriodValidationDateInput} from '@/components/shared'
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
-import api from "@/lib/api"
+import { purchasingApi } from "../api/purchasingApi"
 import { useServerDate } from "@/hooks/useServerDate"
-import { DocumentAttachmentDropzone } from "@/components/shared/DocumentAttachmentDropzone"
-import { PeriodValidationDateInput } from "@/components/shared/PeriodValidationDateInput"
-import { FolioValidationInput } from "@/components/shared/FolioValidationInput"
 
 interface DocumentRegistrationModalProps {
     open: boolean
@@ -88,9 +85,7 @@ export function DocumentRegistrationModal({
                 formData.append('document_attachment', attachment)
             }
 
-            await api.post('/billing/invoices/create_from_order/', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            })
+            await purchasingApi.createInvoiceFromOrder(formData)
 
             toast.success(isPending ? "Documento registrado como pendiente" : "Documento registrado correctamente")
             onOpenChange(false)
@@ -108,20 +103,14 @@ export function DocumentRegistrationModal({
             open={open}
             onOpenChange={onOpenChange}
             size="md"
-            title={
-                <div className="flex items-center gap-2">
-                    <FileText className="h-5 w-5" />
-                    Registrar Factura/Boleta - OCS-{orderNumber}
-                </div>
-            }
+            icon={FileText}
+            title={`Registrar Factura/Boleta - OCS-${orderNumber}`}
             description="Ingrese los datos del documento tributario recibido del proveedor."
             footer={
                 <FormFooter
                     actions={
                         <>
-                            <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>
-                                Cancelar
-                            </Button>
+                            <CancelButton onClick={() => onOpenChange(false)} disabled={submitting} />
                             <Button 
                                 onClick={handleSubmit} 
                                 disabled={submitting || (!isPending && (!isPeriodValid || !isFolioValid))}

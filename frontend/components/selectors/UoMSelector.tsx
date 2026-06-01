@@ -199,7 +199,7 @@ export function UoMSelector({
                                     <Info className="h-4 w-4 text-muted-foreground/70" />
                                 </div>
                             </TooltipTrigger>
-                            <TooltipContent side="top" align="center" className="bg-popover text-popover-foreground border shadow-md font-medium text-xs">
+                            <TooltipContent side="top" align="center">
                                 <p>{conversionHint}</p>
                             </TooltipContent>
                         </Tooltip>
@@ -218,7 +218,7 @@ export function UoMSelector({
                                 <Info className="h-4 w-4 text-muted-foreground/70" />
                             </div>
                         </TooltipTrigger>
-                        <TooltipContent side="top" align="center" className="bg-popover text-popover-foreground border shadow-md font-medium text-xs">
+                        <TooltipContent side="top" align="center">
                             <p>{conversionHint}</p>
                         </TooltipContent>
                     </Tooltip>

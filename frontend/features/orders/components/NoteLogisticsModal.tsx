@@ -2,10 +2,10 @@
 
 import { showApiError } from "@/lib/errors"
 import { useState, useEffect } from "react"
-import { BaseModal } from "@/components/shared/BaseModal"
+
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { LabeledInput, LabeledSelect, PeriodValidationDateInput } from "@/components/shared"
+import { BaseModal, LabeledInput, LabeledSelect, PeriodValidationDateInput } from '@/components/shared'
 import {
     Table,
     TableBody,
@@ -14,10 +14,10 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
-import api from "@/lib/api"
+import { Chip } from "@/components/shared"
 import { toast } from "sonner"
-import { Loader2, Package, AlertTriangle, CheckCircle2, ArrowLeftRight } from "lucide-react"
+import { ordersApi, useProcessLogistics } from "../hooks/useOrdersMutations"
+import {Loader2} from "lucide-react"
 import { useServerDate } from "@/hooks/useServerDate"
 
 import { Order } from "../types"
@@ -41,6 +41,7 @@ interface NoteLogisticsModalProps {
 
 export function NoteLogisticsModal({ open, onOpenChange, invoice, onSuccess }: NoteLogisticsModalProps) {
     const { dateString } = useServerDate()
+    const processLogistics = useProcessLogistics()
     const [warehouses, setWarehouses] = useState<Record<string, unknown>[]>([])
     const [selectedWarehouse, setSelectedWarehouse] = useState<number | null>(null)
     const [processQuantities, setProcessQuantities] = useState<{ [pId: number]: number }>({})
@@ -61,31 +62,18 @@ export function NoteLogisticsModal({ open, onOpenChange, invoice, onSuccess }: N
     const isCredit = invoice?.dte_type === 'NOTA_CREDITO'
     // const lines = invoice?.lines || [] // REMOVED: Use displayLines instead
 
-    useEffect(() => {
-        if (open && invoice) {
-            // Reset display lines to props initially while loading fresh data
-            setDisplayLines((invoice.lines as any) || [])
-            fetchData()
-        }
-    }, [open, invoice])
-
     const fetchData = async () => {
         setLoading(true)
         try {
-            // Fetch warehouses
-            const warehousesResponse = await api.get('/inventory/warehouses/')
-            const warehousesList = warehousesResponse.data.results || warehousesResponse.data
+            const warehousesList = await ordersApi.getWarehouses() as Record<string, unknown>[]
             setWarehouses(warehousesList)
 
             if (warehousesList.length > 0) {
-                setSelectedWarehouse(warehousesList[0].id)
+                setSelectedWarehouse(warehousesList[0].id as number)
             }
 
-            // Fetch FRESH invoice data to ensure we have latest 'quantity_delivered'/'quantity_received'
-            // The serializer logic augments these fields with (Sum of Returns)
-            const invoiceResponse = await api.get(`/billing/invoices/${invoice.id}/`)
-            const freshInvoice = invoiceResponse.data
-            const freshLines = freshInvoice.lines || []
+            const freshInvoice = await ordersApi.getInvoice(invoice.id) as Record<string, unknown>
+            const freshLines = (freshInvoice.lines || []) as InvoiceLine[]
 
             setDisplayLines(freshLines)
 
@@ -107,6 +95,14 @@ export function NoteLogisticsModal({ open, onOpenChange, invoice, onSuccess }: N
             setLoading(false)
         }
     }
+
+    useEffect(() => {
+        if (open && invoice) {
+            // Reset display lines to props initially while loading fresh data
+            setDisplayLines((invoice.lines as any) || [])
+            fetchData()
+        }
+    }, [open, invoice])
 
     const handleQuantityChange = (pId: number, value: string, max: number) => {
         const num = parseFloat(value) || 0
@@ -133,14 +129,16 @@ export function NoteLogisticsModal({ open, onOpenChange, invoice, onSuccess }: N
 
         setSubmitting(true)
         try {
-            await api.post(`/billing/invoices/${invoice.id}/process_logistics/`, {
-                warehouse_id: selectedWarehouse,
-                date: date,
-                line_data: lineData,
-                notes: notes
+            await processLogistics.mutateAsync({
+                id: invoice.id,
+                data: {
+                    warehouse_id: selectedWarehouse,
+                    date: date,
+                    line_data: lineData,
+                    notes: notes
+                }
             })
 
-            toast.success("Logística procesada correctamente")
             onOpenChange(false)
             onSuccess?.()
         } catch (error: unknown) {
@@ -220,10 +218,10 @@ export function NoteLogisticsModal({ open, onOpenChange, invoice, onSuccess }: N
                                             <TableCell className="font-medium">{line.product_name}</TableCell>
                                             <TableCell className="text-center">{line.quantity}</TableCell>
                                             <TableCell className="text-center">
-                                                <Badge variant={processed > 0 ? "success" : "outline"}>{processed}</Badge>
+                                                <Chip.Count value={processed} hideOnZero={false} intent="success" />
                                             </TableCell>
                                             <TableCell className="text-center">
-                                                <Badge variant={pending > 0 ? "warning" : "outline"}>{pending}</Badge>
+                                                <Chip.Count value={pending} hideOnZero={false} intent="warning" />
                                             </TableCell>
                                             <TableCell>
                                                 <Input

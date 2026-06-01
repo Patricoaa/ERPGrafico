@@ -1,3 +1,14 @@
+---
+layer: 40-quality
+doc: benchmark-search-baseline
+status: historical
+owner: backend-team
+last_review: 2026-05-21
+kind: benchmark
+benchmark_date: 2026-05
+superseded_by: ADR-0018
+---
+
 # Benchmark: UniversalSearch Baseline (2026-05)
 
 > **Estado:** Línea base histórica (icontains). Post-FTS (2026-05-10): p95 medido en 22–72 ms. Ver ADR-0018.

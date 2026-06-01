@@ -7,8 +7,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Banknote, CreditCard, Building2, ClipboardList } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { EmptyState } from "@/components/shared/EmptyState"
-import { CardSkeleton, LabeledContainer } from "@/components/shared"
+
+import { CardSkeleton, EmptyState, LabeledContainer } from '@/components/shared'
 
 export interface PaymentMethodValue {
     methodType: 'CASH' | 'CARD' | 'TRANSFER' | 'CHECK' | null
@@ -133,7 +133,6 @@ export function PaymentMethodSelector({
         }
     }, [value.methodType, currentTypeMethods, onChange, value.paymentMethodId, value.treasuryAccountId])
 
-
     // Handle Type Change
     const handleTypeChange = (type: string) => {
         // Find methods for this new type
@@ -234,7 +233,7 @@ export function PaymentMethodSelector({
                             <SelectTrigger className="h-8 border-0 focus:ring-0 bg-transparent shadow-none px-2">
                                 <SelectValue placeholder="Seleccione opción..." />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="w-[var(--radix-select-trigger-width)]">
                                 {currentTypeMethods.map(m => (
                                     <SelectItem key={m.id} value={m.id.toString()}>
                                         {m.name === 'Transferencia Scotiabank' ? 'Scotiabank' : m.name}

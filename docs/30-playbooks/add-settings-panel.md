@@ -3,7 +3,7 @@ layer: 30-playbooks
 doc: add-settings-panel
 status: active
 owner: frontend-team
-last_review: 2026-05-07
+last_review: 2026-05-28
 preconditions:
   - autosave-contract.md
   - component-form-patterns.md §8
@@ -27,7 +27,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import api from "@/lib/api"
 import { Form, FormField } from "@/components/ui/form"
-import { AutoSaveStatusBadge, FormSkeleton } from "@/components/shared"
+import { AutoSaveStatusBadge, SkeletonShell } from "@/components/shared"
 import { useAutoSaveForm } from "@/hooks/useAutoSaveForm"
 import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard"
 import { mySchema, type MyFormValues } from "./MySettingsView.schema"
@@ -68,24 +68,25 @@ export function MySettingsView() {
     // 4. Guardar en unmount + advertir si hay cambios pendientes al navegar
     useUnsavedChangesGuard(status)
 
-    if (loading) return <FormSkeleton fields={4} />
-
     return (
         <div className="max-w-6xl mx-auto space-y-6">
-            {/* Badge siempre en la esquina superior derecha */}
-            <div className="flex justify-end">
-                <AutoSaveStatusBadge
-                    status={status}
-                    invalidReason={invalidReason}
-                    lastSavedAt={lastSavedAt}
-                    onRetry={retry}
-                />
-            </div>
-            <Form {...form}>
-                <form className="space-y-6">
-                    {/* campos */}
-                </form>
-            </Form>
+            <SkeletonShell isLoading={loading} ariaLabel="Cargando configuración">
+                {/* Badge siempre en la esquina superior derecha */}
+                <div className="flex justify-end">
+                    <AutoSaveStatusBadge
+                        status={status}
+                        invalidReason={invalidReason}
+                        lastSavedAt={lastSavedAt}
+                        onRetry={retry}
+                    />
+                </div>
+
+                <Form {...form}>
+                    <form className="space-y-6">
+                        {/* campos */}
+                    </form>
+                </Form>
+            </SkeletonShell>
         </div>
     )
 }
@@ -148,4 +149,4 @@ No llamar `form.reset(data)` en `onSave` — `useAutoSaveForm` ya hace el reset 
 | `form.reset(data)` dentro de `onSave` | `useAutoSaveForm` ya lo hace; hacerlo de nuevo puede crear bucles |
 | `toast.success("Guardado")` en `onSave` | El badge `synced` cubre este rol |
 | `setSaving(true/false)` manual + `onSavingChange?.(saving)` | El status del hook expone el estado; usar `status === 'saving'` si el padre lo necesita |
-| Botón "Guardar" en paneles singleton | Solo válido en catálogos CRUD — ver [add-catalog-crud.md](./add-catalog-crud.md) |
+| Botón "Guardar" en paneles singleton | Solo válido en catálogos CRUD (submit manual) — ver [component-form-patterns.md §8](../20-contracts/component-form-patterns.md) |

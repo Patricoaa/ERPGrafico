@@ -2,7 +2,7 @@
 
 import { showApiError } from "@/lib/errors"
 
-import { useState, useEffect, useMemo, useCallback } from "react"
+import { useState, useMemo, useCallback } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import {
     ColumnDef
@@ -17,45 +17,25 @@ import {
     Archive,
     History
 } from "lucide-react"
-import api from "@/lib/api"
 import { toast } from "sonner"
-import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
-import { StatusBadge } from "@/components/shared/StatusBadge"
-import { ProductForm } from "@/features/inventory/components/ProductForm"
+
+import { ActionConfirmModal, Chip, EntityCard, StatusBadge } from '@/components/shared'
+import { ProductDrawer } from "@/features/inventory/components/ProductDrawer"
 import { SubscriptionHistoryModal } from "@/features/inventory/components/SubscriptionHistoryModal"
 import { ArchivingRestrictionsModal } from "@/features/inventory/components/ArchivingRestrictionsModal"
-import { DataTable } from "@/components/ui/data-table"
+import { DataTableView } from '@/components/shared'
 import type { Product } from "@/types/entities"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
-import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
-import { PageHeader, PageHeaderButton } from "@/components/shared"
+import { DataTableColumnHeader } from '@/components/shared'
+import { DataCell, createActionsColumn, StatCard } from '@/components/shared'
+import { PageHeader, PageHeaderButton, SmartSearchBar, useSmartSearch } from "@/components/shared"
 import { Restriction } from "@/features/inventory/types"
 import { PageContainer } from "@/components/shared"
 import { cn } from "@/lib/utils"
+import { useSubscriptions, useSubscriptionStats, type Subscription } from "@/features/inventory/hooks/useSubscriptions"
+import { useProducts } from "@/features/inventory/hooks/useProducts"
+import { subscriptionSearchDef } from "@/features/inventory/searchDef"
 
-interface Subscription {
-    id: number
-    product: number
-    product_name: string
-    product_code: string
-    product_internal_code?: string
-    category_name?: string
-    supplier_name: string
-    supplier_id: number
-    start_date: string
-    end_date: string | null
-    next_payment_date: string
-    amount: string
-    currency: string
-    status: string
-    status_display: string
-    recurrence_period: string
-    recurrence_display: string
-    payment_day_type: string | null
-    payment_day: number | null
-    payment_interval_days: number | null
-    notes: string
-}
+// Subscription type imported from useSubscriptions hook
 
 interface Stats {
     active_subscriptions: number
@@ -72,10 +52,10 @@ interface SubscriptionsViewProps {
 }
 
 export function SubscriptionsView({ hideHeader = false, externalOpen = false, createAction }: SubscriptionsViewProps) {
-    const [subscriptions, setSubscriptions] = useState<Subscription[]>([])
-    const [stats, setStats] = useState<Stats | null>(null)
-    const [loading, setLoading] = useState(true)
-
+    const { filters } = useSmartSearch(subscriptionSearchDef)
+    const { subscriptions, isLoading: loading, refetch: fetchSubscriptions, pauseSubscription, resumeSubscription } = useSubscriptions(filters)
+    const { data: stats } = useSubscriptionStats<Stats>()
+    const { updateProduct, fetchProductById } = useProducts()
 
     // Form & Actions state
     const [isFormOpen, setIsFormOpen] = useState(false)
@@ -97,7 +77,7 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false, cr
     const handleCloseModal = () => {
         setIsFormOpen(false)
         setEditingProduct(null)
-        
+
         if (externalOpen || searchParams.get("modal")) {
             const params = new URLSearchParams(searchParams.toString())
             params.delete("modal")
@@ -105,57 +85,17 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false, cr
         }
     }
 
-    const fetchSubscriptions = useCallback(async () => {
-        try {
-            setLoading(true)
-            const response = await api.get('/inventory/subscriptions/')
-            setSubscriptions(response.data.results || response.data)
-        } catch (error) {
-            console.error("Error fetching subscriptions:", error)
-            showApiError(error, "Error al cargar suscripciones")
-        } finally {
-            setLoading(false)
-        }
-    }, [])
-
-    const fetchStats = useCallback(async () => {
-        try {
-            const response = await api.get('/inventory/subscriptions/stats/')
-            setStats(response.data)
-        } catch (error) {
-            console.error("Error fetching stats:", error)
-        }
-    }, [])
-
-    useEffect(() => {
-        let isMounted = true
-        
-        const load = async () => {
-            if (isMounted) {
-                await Promise.all([
-                    fetchSubscriptions(),
-                    fetchStats()
-                ])
-            }
-        }
-
-        load()
-
-        return () => {
-            isMounted = false
-        }
-    }, [fetchSubscriptions, fetchStats])
+    // stats viene reactivo de useSubscriptionStats (declarado al inicio).
+    // pause/resume invalidan SUBSCRIPTIONS + PRODUCTS_KEYS automáticamente.
 
     const handlePause = useCallback(async (id: number) => {
         try {
-            await api.post(`/inventory/subscriptions/${id}/pause/`)
+            await pauseSubscription(id)
             toast.success("Suscripción pausada")
-            fetchSubscriptions()
-            fetchStats()
         } catch (error: unknown) {
             showApiError(error, "Error al pausar suscripción")
         }
-    }, [fetchSubscriptions, fetchStats])
+    }, [pauseSubscription])
 
     const handleArchive = useCallback(async () => {
         if (!currentArchivingProduct) return
@@ -165,9 +105,8 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false, cr
         }
 
         try {
-            await api.patch(`/inventory/products/${currentArchivingProduct.id}/`, { active: false })
+            await updateProduct({ id: currentArchivingProduct.id, payload: { active: false } as never })
             toast.success("Producto archivado correctamente")
-            fetchSubscriptions()
             setIsConfirmModalOpen(false)
             setIsRestrictionsDialogOpen(false)
         } catch (error: unknown) {
@@ -185,31 +124,28 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false, cr
         } finally {
             setIsRetrying(false)
         }
-    }, [currentArchivingProduct, isRestrictionsDialogOpen, fetchSubscriptions])
+    }, [currentArchivingProduct, isRestrictionsDialogOpen, updateProduct])
 
     const openEditForm = useCallback(async (productId: number) => {
         try {
-            const response = await api.get(`/inventory/products/${productId}/`)
-            setEditingProduct(response.data)
+            // fetchProductById usa cache de TanStack Query si está fresh, fetch en otro caso.
+            const product = await fetchProductById(productId)
+            setEditingProduct(product as Product)
             setIsFormOpen(true)
         } catch (error) {
             console.error("Error fetching product details:", error)
             showApiError(error, "Error al cargar detalles del producto")
         }
-    }, [])
-
-
+    }, [fetchProductById])
 
     const handleResume = useCallback(async (id: number) => {
         try {
-            await api.post(`/inventory/subscriptions/${id}/resume/`)
+            await resumeSubscription(id)
             toast.success("Suscripción reactivada")
-            fetchSubscriptions()
-            fetchStats()
         } catch (error: unknown) {
             showApiError(error, "Error al reactivar suscripción")
         }
-    }, [fetchSubscriptions, fetchStats])
+    }, [resumeSubscription])
 
     const getPaymentScheduleText = (sub: Subscription) => {
         if (sub.payment_day_type === "FIXED_DAY" && sub.payment_day) {
@@ -254,14 +190,10 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false, cr
                         <DataCell.Text className="font-medium text-xs leading-tight text-center">{sub.product_name}</DataCell.Text>
                         <div className="flex flex-wrap justify-center gap-1 mt-1">
                             {sub.product_internal_code && (
-                                <DataCell.Badge className="text-[10px] h-4 px-1.5 font-normal opacity-80 uppercase">
-                                    {sub.product_internal_code}
-                                </DataCell.Badge>
+                                <Chip size="xs" className="opacity-80">{sub.product_internal_code}</Chip>
                             )}
                             {sub.product_code && sub.product_code !== sub.product_internal_code && (
-                                <DataCell.Badge className="text-[10px] h-4 px-1.5 font-normal opacity-80 uppercase bg-primary/5 text-primary border-primary/20">
-                                    {sub.product_code}
-                                </DataCell.Badge>
+                                <Chip size="xs" intent="primary" className="opacity-80">{sub.product_code}</Chip>
                             )}
                         </div>
                     </div>
@@ -277,9 +209,9 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false, cr
                 const value = row.getValue("category_name") as string;
                 return (
                     <div className="flex justify-center w-full">
-                        <DataCell.Secondary className="text-xs text-center">
+                        <DataCell.Text className="font-normal">
                             {value || "Sin Categoría"}
-                        </DataCell.Secondary>
+                        </DataCell.Text>
                     </div>
                 );
             },
@@ -291,8 +223,8 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false, cr
             ),
             cell: ({ row }) => (
                 <div className="flex justify-center w-full">
-                    <DataCell.ContactLink 
-                        contactId={row.original.supplier_id} 
+                    <DataCell.ContactLink
+                        contactId={row.original.supplier_id}
                     >
                         {row.getValue("supplier_name")}
                     </DataCell.ContactLink>
@@ -313,7 +245,7 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false, cr
             ),
             cell: ({ row }) => (
                 <div className="text-center">
-                    <DataCell.Secondary className="text-foreground">{getPaymentScheduleText(row.original)}</DataCell.Secondary>
+                    <DataCell.Text className="font-normal">{getPaymentScheduleText(row.original)}</DataCell.Text>
                 </div>
             ),
         },
@@ -396,10 +328,8 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false, cr
             disabled: (items) => items.length === 0 || !items.every(s => s.status === "ACTIVE"),
             onClick: async (items) => {
                 try {
-                    await Promise.all(items.map(s => api.post(`/inventory/subscriptions/${s.id}/pause/`)))
+                    await Promise.all(items.map(s => pauseSubscription(s.id)))
                     toast.success(`${items.length} suscripciones pausadas`)
-                    fetchSubscriptions()
-                    fetchStats()
                 } catch (error) {
                     showApiError(error, "Error al pausar suscripciones")
                 }
@@ -413,10 +343,8 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false, cr
             disabled: (items) => items.length === 0 || !items.every(s => s.status === "PAUSED"),
             onClick: async (items) => {
                 try {
-                    await Promise.all(items.map(s => api.post(`/inventory/subscriptions/${s.id}/resume/`)))
+                    await Promise.all(items.map(s => resumeSubscription(s.id)))
                     toast.success(`${items.length} suscripciones reactivadas`)
-                    fetchSubscriptions()
-                    fetchStats()
                 } catch (error) {
                     showApiError(error, "Error al reactivar suscripciones")
                 }
@@ -430,18 +358,17 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false, cr
             disabled: (items) => items.length === 0 || !items.every(s => s.status === "ACTIVE" || s.status === "PAUSED"),
             onClick: async (items) => {
                 try {
-                    await Promise.all(items.map(s => api.patch(`/inventory/products/${s.product}/`, { active: false })))
+                    await Promise.all(items.map(s => updateProduct({ id: s.product, payload: { active: false } as never })))
                     toast.success(`${items.length} productos de suscripción archivados`)
-                    fetchSubscriptions()
                 } catch (error) {
                     showApiError(error, "Error al archivar suscripciones")
                 }
             },
         },
-    ], [fetchSubscriptions, fetchStats])
+    ], [pauseSubscription, resumeSubscription, updateProduct])
 
     return (
-        <PageContainer className={cn(hideHeader && "pt-0")}>
+        <PageContainer className={cn("h-full flex flex-col", hideHeader && "pt-0")}>
             {!hideHeader && (
                 <PageHeader
                     title="Suscripciones y Recurrentes"
@@ -464,59 +391,75 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false, cr
                 </PageHeader>
             )}
 
-            <div className="space-y-4">
+            <div className="flex-1 h-full flex flex-col">
 
-                <div className="space-y-6">
-                {/* Industrial Stats Panel */}
-                {stats && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <div className="p-4 rounded-md border bg-card/50 shadow-sm flex flex-col gap-1 items-center md:items-start">
-                            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Suscripciones Activas</span>
-                            <span className="text-2xl font-black text-foreground tabular-nums">{stats.active_subscriptions}</span>
+                <div className="flex-1 min-h-0 flex flex-col space-y-6">
+                    {/* Industrial Stats Panel */}
+                    {stats && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <StatCard
+                                label="Suscripciones Activas"
+                                value={stats.active_subscriptions}
+                                variant="minimal"
+                                accent="muted"
+                                className="bg-card/50 shadow-sm flex-col gap-1 items-center md:items-start p-4 rounded-md"
+                            />
+                            <StatCard
+                                label="Costo Mensual Total"
+                                value={<DataCell.Currency value={stats.total_monthly_cost} />}
+                                variant="minimal"
+                                accent="muted"
+                                className="bg-card/50 shadow-sm flex-col gap-1 items-center md:items-start p-4 rounded-md"
+                            />
+                            <StatCard
+                                label="Próximas Renovaciones"
+                                value={stats.upcoming_renewals_30_days}
+                                variant="minimal"
+                                accent="warning"
+                                className="bg-card/50 shadow-sm flex-col gap-1 items-center md:items-start p-4 rounded-md"
+                            />
+                            <StatCard
+                                label="Estado Pausadas"
+                                value={stats.paused_subscriptions}
+                                variant="minimal"
+                                accent="muted"
+                                className="bg-card/50 shadow-sm flex-col gap-1 items-center md:items-start p-4 rounded-md"
+                            />
                         </div>
-                        <div className="p-4 rounded-md border bg-card/50 shadow-sm flex flex-col gap-1 items-center md:items-start">
-                            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Costo Mensual Total</span>
-                            <div className="text-2xl font-black text-foreground tabular-nums">
-                                <DataCell.Currency value={stats.total_monthly_cost} />
-                            </div>
-                        </div>
-                        <div className="p-4 rounded-md border bg-card/50 shadow-sm flex flex-col gap-1 items-center md:items-start">
-                            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Próximas Renovaciones</span>
-                            <span className="text-2xl font-black text-warning tabular-nums">{stats.upcoming_renewals_30_days}</span>
-                        </div>
-                        <div className="p-4 rounded-md border bg-card/50 shadow-sm flex flex-col gap-1 items-center md:items-start">
-                            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Estado Pausadas</span>
-                            <span className="text-2xl font-black text-muted-foreground tabular-nums">{stats.paused_subscriptions}</span>
-                        </div>
+                    )}
+                    <div className="flex-1 min-h-0">
+                        <DataTableView
+                            entityLabel="inventory.subscription"
+                            columns={columns}
+                            data={subscriptions}
+                            isLoading={loading}
+                            variant="embedded"
+                            leftAction={<SmartSearchBar searchDef={subscriptionSearchDef} placeholder="Buscar suscripciones..." className="w-full" />}
+                            defaultPageSize={20}
+                            bulkActions={bulkActions}
+                            createAction={createAction}
+                            renderCard={(sub: Subscription) => (
+                                <EntityCard key={sub.id}>
+                                    <EntityCard.Header
+                                        title={sub.product_name || sub.name}
+                                        subtitle={`${sub.frequency || ''}${sub.amount ? ` - $${sub.amount}` : ''}`}
+                                        trailing={<StatusBadge status={sub.status} label={sub.status_display || sub.status} size="sm" />}
+                                    />
+                                    <EntityCard.Body>
+                                        <EntityCard.Field label="Categoría" value={sub.category_name || '-'} />
+                                        <EntityCard.Field label="Proveedor" value={sub.supplier_name || '-'} />
+                                        {sub.next_payment_date && (
+                                            <EntityCard.Field label="Próximo Pago" value={sub.next_payment_date} />
+                                        )}
+                                    </EntityCard.Body>
+                                </EntityCard>
+                            )}
+                        />
                     </div>
-                )}
-                <DataTable
-                    columns={columns}
-                    data={subscriptions}
-                    isLoading={loading}
-                    variant="embedded"
-                    filterColumn="product"
-                    searchPlaceholder="Buscar por producto..."
-                    facetedFilters={[
-                        {
-                            column: "status",
-                            title: "Estado",
-                            options: [
-                                { label: "Activo", value: "ACTIVE" },
-                                { label: "Pausado", value: "PAUSED" },
-                                { label: "Cancelado", value: "CANCELLED" },
-                            ],
-                        },
-                    ]}
-                    useAdvancedFilter={true}
-                    defaultPageSize={20}
-                    bulkActions={bulkActions}
-                    createAction={createAction}
-                />
-            </div>
+                </div>
             </div>
 
-            <ProductForm
+            <ProductDrawer
                 open={isFormOpen || !!externalOpen}
                 onOpenChange={(open) => {
                     if (!open) {

@@ -1,49 +1,25 @@
 import { useQuery } from '@tanstack/react-query'
-import api, { pollTask } from '@/lib/api'
-
-export const STATEMENTS_QUERY_KEY = ['statements']
-
-interface StatementParams {
-    start_date?: string
-    end_date?: string
-    comp_start_date?: string
-    comp_end_date?: string
-    showComparison?: boolean
-}
-
-async function fetchStatement(endpoint: string, params: StatementParams) {
-    const queryParams: any = {
-        start_date: params.start_date,
-        end_date: params.end_date,
-        is_async: true
-    }
-
-    if (params.showComparison && params.comp_start_date && params.comp_end_date) {
-        queryParams.comp_start_date = params.comp_start_date
-        queryParams.comp_end_date = params.comp_end_date
-    }
-
-    const res = await api.get(endpoint, { params: queryParams })
-    return res.data.task_id ? pollTask(res.data.task_id) : res.data
-}
+import { financeApi } from '../api/financeApi'
+import type { StatementParams } from '../api/financeApi'
+import { FINANCE_KEYS } from './queryKeys'
 
 export function useStatements(params: StatementParams) {
     const { data: balanceSheet, isLoading: isLoadingBS, refetch: refetchBS } = useQuery({
-        queryKey: [...STATEMENTS_QUERY_KEY, 'balance-sheet', params],
-        queryFn: () => fetchStatement('finances/api/balance-sheet/', params),
-        staleTime: 5 * 60 * 1000, // 5 min — reporte costoso
+        queryKey: FINANCE_KEYS.statements.balanceSheet(params),
+        queryFn: () => financeApi.getBalanceSheet(params),
+        staleTime: 5 * 60 * 1000,
     })
 
     const { data: incomeStatement, isLoading: isLoadingPL, refetch: refetchPL } = useQuery({
-        queryKey: [...STATEMENTS_QUERY_KEY, 'income-statement', params],
-        queryFn: () => fetchStatement('finances/api/income-statement/', params),
-        staleTime: 5 * 60 * 1000, // 5 min
+        queryKey: FINANCE_KEYS.statements.incomeStatement(params),
+        queryFn: () => financeApi.getIncomeStatement(params),
+        staleTime: 5 * 60 * 1000,
     })
 
     const { data: cashFlow, isLoading: isLoadingCF, refetch: refetchCF } = useQuery({
-        queryKey: [...STATEMENTS_QUERY_KEY, 'cash-flow', params],
-        queryFn: () => fetchStatement('finances/api/cash-flow/', params),
-        staleTime: 5 * 60 * 1000, // 5 min
+        queryKey: FINANCE_KEYS.statements.cashFlow(params),
+        queryFn: () => financeApi.getCashFlow(params),
+        staleTime: 5 * 60 * 1000,
     })
 
     const refetch = async () => {

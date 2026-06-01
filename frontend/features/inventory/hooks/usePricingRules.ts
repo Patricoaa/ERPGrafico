@@ -1,5 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '@/lib/api'
+import type { FilterState } from '@/components/shared'
+import { useRealtime } from '@/features/realtime'
 import { PRODUCTS_QUERY_KEY } from './queryKeys'
 
 export interface PricingRule {
@@ -29,26 +31,45 @@ export interface PricingRule {
 
 export const PRICING_RULES_QUERY_KEY = ['pricingRules']
 
-export function usePricingRules() {
+export function usePricingRules(filters?: FilterState) {
     const queryClient = useQueryClient()
+    const { markLocalMutation } = useRealtime()
 
     const { data: rules, isLoading, refetch } = useQuery({
-        queryKey: PRICING_RULES_QUERY_KEY,
+        queryKey: [...PRICING_RULES_QUERY_KEY, filters],
         queryFn: async (): Promise<PricingRule[]> => {
-            const response = await api.get('/inventory/pricing-rules/')
-            return response.data.results || response.data
+            const params = new URLSearchParams()
+            if (filters?.search) params.append('search', filters.search)
+            if (filters?.active !== undefined) params.append('active', filters.active)
+            const response = await api.get<PricingRule[]>('/inventory/pricing-rules/', { params })
+            return response.data
         },
-        staleTime: 5 * 60 * 1000, // 5 min
     })
 
+    const invalidate = () => {
+        queryClient.invalidateQueries({ queryKey: PRICING_RULES_QUERY_KEY })
+        // Pricing rule mutations cambian precios computados → invalidar products.
+        queryClient.invalidateQueries({ queryKey: PRODUCTS_QUERY_KEY })
+    }
+
     const deleteMutation = useMutation({
-        mutationFn: async (id: number) => {
-            return api.delete(`/inventory/pricing-rules/${id}/`)
+        mutationFn: async (id: number) => api.delete(`/inventory/pricing-rules/${id}/`),
+        onSuccess: () => {
+            markLocalMutation()
+            invalidate()
+        },
+    })
+
+    const saveMutation = useMutation({
+        mutationFn: async ({ id, payload }: { id: number | null, payload: Record<string, unknown> }) => {
+            const res = id !== null
+                ? await api.put<PricingRule>(`/inventory/pricing-rules/${id}/`, payload)
+                : await api.post<PricingRule>('/inventory/pricing-rules/', payload)
+            return res.data
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: PRICING_RULES_QUERY_KEY })
-            // A deleted rule can change computed prices shown in the product list
-            queryClient.invalidateQueries({ queryKey: PRODUCTS_QUERY_KEY })
+            markLocalMutation()
+            invalidate()
         },
     })
 
@@ -57,6 +78,37 @@ export function usePricingRules() {
         isLoading,
         refetch,
         deletePricingRule: deleteMutation.mutateAsync,
-        isDeleting: deleteMutation.isPending
+        isDeleting: deleteMutation.isPending,
+        savePricingRule: saveMutation.mutateAsync,
+        isSaving: saveMutation.isPending,
+    }
+}
+
+/**
+ * Pricing rules scoped to a single product. Returns null/empty while the
+ * productId is missing (creating a new product, before save).
+ *
+ * El queryKey usa el formato product-aware [PRICING_RULES_QUERY_KEY, 'byProduct', id]
+ * de modo que las invalidaciones masivas de PRICING_RULES_QUERY_KEY también
+ * lo cubren, y las mutaciones de un producto pueden invalidar selectivamente
+ * sólo este sub-conjunto si fuera necesario.
+ */
+export function useProductPricingRules(productId: number | null | undefined) {
+    const { data: rules, isLoading, refetch } = useQuery({
+        queryKey: productId
+            ? [...PRICING_RULES_QUERY_KEY, 'byProduct', productId]
+            : [...PRICING_RULES_QUERY_KEY, 'byProduct', 'noop'],
+        queryFn: async (): Promise<PricingRule[]> => {
+            if (!productId) return []
+            const response = await api.get<PricingRule[]>(`/inventory/pricing-rules/?product=${productId}`)
+            return response.data
+        },
+        enabled: !!productId,
+    })
+
+    return {
+        rules: rules ?? [],
+        isLoading,
+        refetch,
     }
 }

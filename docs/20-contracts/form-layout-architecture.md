@@ -5,6 +5,8 @@ status: active
 owner: frontend-team
 last_review: 2026-04-25
 changelog:
+  - 2026-05-26: §4/§6/§7 corregido: padding y anti-patrón ahora mencionan Drawer además de BaseModal. §5 ActivitySidebar: regla "Dentro de BaseDrawer" reemplazada por "Drawer de solo lectura". Sección §6/§7: "BaseModal" generalizado a "Drawer o BaseModal". Ver [component-drawer.md](./component-drawer.md) para API de Drawer.
+  - 2026-05-26: §8 reescrito. API por string (`FORM_WIDTHS.X.Y`) reemplazada por helpers tipados `formDrawerWidth()` / `formModalSize()`. Migrados 15 callers; eliminados ~24 accesos rotos por casing. Tier `special` renombrado a `micro`; añadido tier `master`. Drawer y BaseModal usan ahora helpers distintos (no se puede pasar `%` a BaseModal).
   - 2026-04-25: Agregado contrato completo de ActivitySidebar (§5). Reglas de cuándo usar, posición, separadores, entityType válidos. Corrección de padding §4 (px-1→px-4). FormFooter obligatorio en §7.
 stability: contract-changes-require-ADR
 preconditions:
@@ -75,10 +77,11 @@ Seguir este orden dentro del flujo vertical del formulario para mejorar la cogni
 
 - **Between Sections**: Use `FormSection` with icons and a standard vertical gap (`space-y-6` on form, but `pt-4` inside `FormSection`).
 - **Between Fields**: `gap-4` (Standard) or `gap-6` (Complex grids).
-- **Internal Padding (forma directa en BaseModal)**: Usar `px-4 pb-4 pt-2` en el contenedor `<form>` cuando el modal mantiene su `ScrollArea` nativa.
-- **Internal Padding (con FormSplitLayout)**: Pasar `contentClassName="p-0"` **y** `hideScrollArea={true}` al `BaseModal`. El padding lo inyecta `FormSplitLayout` en su área principal. Ver [§6](#6-split-layouts-formspitlayout) para el patrón completo.
+- **Internal Padding (forma directa, sin FormSplitLayout)**: Usar `px-4 pb-4 pt-2` en el contenedor `<form>`. El padding del surface (Drawer: default `px-8 pb-8`; BaseModal: `p-6` con ScrollArea) se mantiene intacto.
+- **Internal Padding (con FormSplitLayout en Drawer)**: Pasar `contentClassName="p-0"` al `Drawer`. El padding lo inyecta `FormSplitLayout` en su área principal.
+- **Internal Padding (con FormSplitLayout en BaseModal)**: Pasar `contentClassName="p-0"` **y** `hideScrollArea={true}` al `BaseModal`. El padding lo inyecta `FormSplitLayout`.
 
-> **Anti-patrón "double padding"**: Nunca dejar el padding por defecto de `BaseModal` (`p-6`) activo cuando `FormSplitLayout` es el hijo directo. Obtendrás padding duplicado y dos barras de scroll. Ver [§6](#6-split-layouts-formspitlayout).
+> **Anti-patrón "double padding"**: Nunca dejar el padding por defecto del surface (Drawer: `px-8 pb-8`; BaseModal: `p-6`) activo cuando `FormSplitLayout` es el hijo directo. Obtendrás padding duplicado y dos barras de scroll. Ver [§6](#6-split-layouts-formspitlayout).
 
 ---
 
@@ -211,14 +214,14 @@ Sidebar de auditoría que muestra el historial de cambios de una entidad (via Dj
 | Formulario **Micro o Simple** (1–6 campos) | ❌ No — ocupa demasiado espacio relativo |
 | Dentro de `GenericWizard` | ❌ No — los wizards no tienen modo edición |
 | Dentro de `ActionConfirmModal` | ❌ No — no es un formulario |
-| Dentro de `BaseDrawer` | ❌ No — BaseDrawer ya es una subvista de solo lectura |
+| Dentro de `Drawer` de solo lectura (sin formulario) | ❌ No — ya es una subvista; usar solo en formularios CRUD editables |
 
 #### Posición en el layout
 
 El sidebar **siempre** ocupa el lado derecho del área del formulario. Lo posiciona `FormSplitLayout`; no se debe mover ni reposicionar manualmente.
 
 ```
-BaseModal (hideScrollArea + contentClassName="p-0")
+Drawer (contentClassName="p-0") o BaseModal (hideScrollArea + contentClassName="p-0")
   └─ FormTabs [opcional]
        └─ FormTabsContent
             └─ FormSplitLayout          ← gestiona la bipartición
@@ -295,10 +298,10 @@ Layout estandarizado para el footer de formularios y modales.
 | `className` | `string` | ❌ | — | Clases adicionales |
 
 **Reglas de footer:**
-- **Primary Action**: `SubmitButton` o `ActionSlideButton` con `shadow-lg shadow-primary/20`.
+- **Primary Action**: `SubmitButton` o `ActionSlideButton` con ``.
 - **Secondary**: `CancelButton` (Outline/Ghost) a la izquierda del primary.
 - **Contextual**: Danger actions (`DangerButton`) al extremo izquierdo.
-- **Typography**: Todos los botones deben ser `font-black text-[11px] uppercase tracking-widest`.
+- **Typography**: Todos los botones deben ser `font-black text-[10px] uppercase tracking-widest`.
 
 ---
 
@@ -315,7 +318,7 @@ Cuando un formulario incluye un sidebar de auditoría o actividad (típicamente 
 
 ### Implementation Pattern
 > [!WARNING]
-> **Anti-Patrón de Doble Padding:** `BaseModal` inyecta padding (`p-6`) y scroll por defecto. `FormSplitLayout` también inyecta su propio padding y scroll. Si usas ambos sin configuración, obtendrás barras de scroll dobles y paddings gigantes. **SIEMPRE** debes pasar `hideScrollArea={true}` y `contentClassName="p-0"` al `BaseModal` cuando su hijo directo sea `FormSplitLayout`.
+> **Anti-Patrón de Doble Padding:** `Drawer` inyecta padding (`px-8 pb-8`) y scroll por defecto. `BaseModal` inyecta padding (`p-6`) y ScrollArea. `FormSplitLayout` también inyecta su propio padding y scroll. Si usas el surface + `FormSplitLayout` sin configuración, obtendrás barras de scroll dobles y paddings gigantes. **SIEMPRE** debes pasar `contentClassName="p-0"` al surface cuando su hijo directo sea `FormSplitLayout`. En `BaseModal` además debes pasar `hideScrollArea={true}`.
 
 ```tsx
 <BaseModal
@@ -340,13 +343,13 @@ Cuando un formulario incluye un sidebar de auditoría o actividad (típicamente 
 
 ## 7. Form Footer
 
-Todo formulario modal **debe** usar `FormFooter` en la prop `footer` de `BaseModal`. Nunca usar `<div>` raw.
+Todo formulario en drawer o modal **debe** usar `FormFooter` en la prop `footer` del surface (`Drawer` o `BaseModal`). Nunca usar `<div>` raw.
 
 **Reglas:**
 - **Primary Action**: `SubmitButton` o `ActionSlideButton` — obligatorio a la derecha.
 - **Secondary**: `CancelButton` (Outline/Ghost) — obligatorio a la izquierda del primary.
 - **Contextual**: `DangerButton` (Delete, Void) — al extremo izquierdo via `leftActions`.
-- **Typography**: Todos los botones deben ser `font-black text-[11px] uppercase tracking-widest`.
+- **Typography**: Todos los botones deben ser `font-black text-[10px] uppercase tracking-widest`.
 
 ### Footer estándar (sin acciones peligrosas)
 
@@ -394,3 +397,106 @@ Todo formulario modal **debe** usar `FormFooter` en la prop `footer` de `BaseMod
 > ❌ **Forbidden**: `<div className="flex justify-end gap-3">` directo como footer. Siempre `FormFooter`.
 
 > Ver [component-button.md](./component-button.md) para la API completa de `CancelButton`, `SubmitButton` y `ActionSlideButton`.
+
+---
+
+## 8. Form Width Constants
+
+El ancho del contenedor (drawer o modal) se elige según la **complejidad** del formulario — cantidad de campos y secciones — usando los helpers de [`@/lib/form-widths`](../../frontend/lib/form-widths.ts). El sistema absorbe automáticamente el ancho del `ActivitySidebar` (~288 px) cuando el form está en modo edición.
+
+> ⚠️ **No acceder a las constantes por nombre** (ej: `FORM_WIDTHS.complex.edit`). Usar los helpers tipados. El acceso por string crea bugs silenciosos por casing (`COMPLEX` vs `complex`) y por modo (`create` vs `CREATE`).
+
+### Two surfaces, two helpers
+
+| Surface | Helper | Returns | Cuándo |
+|---------|--------|---------|--------|
+| `<Drawer />` (panel lateral) | `formDrawerWidth(complexity, hasSidebar)` | `string` (`"30%"`, `"55%"`, …) — Drawer acepta `number \| string` en `defaultSize` | Default para formularios CRUD (slide-in lateral). |
+| `<BaseModal />` (overlay centrado) | `formModalSize(complexity, hasSidebar)` | token CVA discreto (`"sm"`, `"md"`, `"lg"`, `"xl"`, `"2xl"`) — BaseModal **no** acepta porcentajes | Sólo cuando el form se renderiza como modal centrado en lugar de drawer. |
+
+### Complejidad → ancho
+
+| `FormComplexity` | Field count | Drawer create / edit | Modal create / edit |
+|:----------------:|:-----------:|:--------------------:|:-------------------:|
+| `"micro"`   | 1 campo (ej: `TransactionNumberForm`, `GroupForm`) | `25%` / `40%` | `xs` / `sm` |
+| `"simple"`  | 2–3 campos (ej: `WarehouseForm`, `UoMForm`) | `30%` / `45%` | `sm` / `md` |
+| `"medium"`  | 4–6 campos (ej: `AccountForm`, `AbsenceForm`) | `40%` / `55%` | `md` / `lg` |
+| `"complex"` | 7+ campos / múltiples secciones / field arrays (ej: `ProductForm`, `PurchaseOrderForm`) | `50%` / `65%` | `lg` / `xl` |
+| `"master"`  | Ficha maestra multi-tab (ej: `EmployeeDrawer`) | `65%` / `80%` | `xl` / `2xl` |
+
+La columna **edit** se aplica cuando `hasSidebar` es `true` (presencia del `ActivitySidebar`). Para Drawer es +10–15% absoluto sobre el viewport. Para Modal es un tier discreto arriba.
+
+### Implementation Pattern
+
+#### Drawer (default)
+
+```tsx
+import { formDrawerWidth } from "@/lib/form-widths"
+
+export function AccountForm({ open, onOpenChange, initialData }: Props) {
+  const width = formDrawerWidth("medium", !!initialData?.id)
+
+  return (
+    <Drawer
+      open={open}
+      onOpenChange={onOpenChange}
+      side="left"
+      defaultSize={width}
+      contentClassName={initialData?.id ? "p-0" : undefined}
+      footer={<FormFooter actions={<><CancelButton/><ActionSlideButton>Guardar</ActionSlideButton></>} />}
+    >
+      <FormSplitLayout
+        showSidebar={!!initialData?.id}
+        sidebar={initialData?.id ? <ActivitySidebar entityType="account" entityId={initialData.id} /> : undefined}
+      >
+        {/* form fields */}
+      </FormSplitLayout>
+    </Drawer>
+  )
+}
+```
+
+#### Modal (excepción — cuando el form se renderiza como overlay centrado)
+
+```tsx
+import { formModalSize } from "@/lib/form-widths"
+
+export function PurchaseOrderForm({ open, onOpenChange, initialData }: Props) {
+  const size = formModalSize("complex", !!initialData)
+
+  return (
+    <BaseModal
+      open={open}
+      onOpenChange={onOpenChange}
+      size={size}
+      hideScrollArea
+      contentClassName="p-0"
+      // ...
+    >
+      {/* form */}
+    </BaseModal>
+  )
+}
+```
+
+### Reglas
+
+1. **Type-safe siempre**: nunca volver al acceso por string (`FORM_WIDTHS.X.Y`). Si necesitás un nuevo tier, agregalo a `FormComplexity` en [`lib/form-widths.ts`](../../frontend/lib/form-widths.ts).
+2. **No usar `useMemo` para envolver la llamada**: los helpers son funciones puras que retornan primitivas; el overhead de `useMemo` es mayor que el del cálculo.
+3. **`hasSidebar` debe coincidir con la presencia real del sidebar**: típicamente `!!initialData?.id` o `!!entity`. Mentir aquí produce drawers con espacio en blanco a la derecha.
+4. **Sidebar sólo en modo edición**: ver [§5 ActivitySidebar](#activitysidebar-) — no instanciar en creación.
+5. **Si dudás entre dos tiers**, elegí el menor. Es mejor un drawer un poco ajustado que uno desproporcionadamente ancho.
+
+### Why this design (vs. raw px or t-shirt sizes only)
+
+- **Drawer usa `%`** porque los paneles laterales escalan proporcionalmente al viewport (estándar en Linear/Notion/Figma).
+- **Modal usa tokens CVA en px** porque los overlays centrados tienen líneas de lectura óptimas en valores absolutos (50–75 ch).
+- **Helper functions** (no nested objects) hacen imposible el bug "key mal escrito" (`COMPLEX` vs `complex`) que generó ~24 callers rotos en la primera iteración del sistema.
+
+### Verification Checklist
+
+- [ ] Importé el helper correcto según surface (`formDrawerWidth` o `formModalSize`)
+- [ ] Pasé el tier de `FormComplexity` correcto según la cantidad de campos
+- [ ] `hasSidebar` refleja la presencia real del `ActivitySidebar`
+- [ ] No usé `useMemo` ni constante intermedia para el cálculo
+- [ ] El `ActivitySidebar` aparece sólo en modo edición, dentro de `FormSplitLayout`
+- [ ] `npm run type-check` pasa sin errores nuevos

@@ -9,6 +9,7 @@ export const SALES_SETTINGS_QUERY_KEY = ['settings-sales']
 
 interface UseSalesSettingsReturn {
     settings: SalesSettings
+    isLoading: boolean
     saving: boolean
     updateSettings: (payload: SalesSettingsUpdatePayload) => Promise<void>
     refetch: () => Promise<unknown>

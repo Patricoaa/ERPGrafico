@@ -1,3 +1,12 @@
+---
+layer: 90-governance
+doc: versioning-policy
+status: active
+owner: core-team
+last_review: 2026-05-21
+stability: stable
+---
+
 # Versioning Policy
 
 This document defines how ERPGrafico manages its versioning and release lifecycle.

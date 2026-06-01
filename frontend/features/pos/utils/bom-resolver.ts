@@ -28,9 +28,8 @@ export async function fetchBOM(
 
     // Fetch from API
     try {
-        const res = await api.get(`/production/boms/?product_id=${productId}&active=true`)
-        const boms = res.data.results || res.data
-        const activeBom = boms.find((b: BOM) => b.active)
+        const res = await api.get<BOM[]>(`/production/boms/?product_id=${productId}&active=true`)
+        const activeBom = res.data.find((b: BOM) => b.active)
         if (activeBom) {
             updateBomCache(productId, activeBom)
             return activeBom

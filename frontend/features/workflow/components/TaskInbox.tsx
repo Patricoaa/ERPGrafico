@@ -1,22 +1,22 @@
 "use client"
-
+import { formatPlainDate } from "@/lib/utils";
 import { useState, useEffect } from "react"
 import { getTasks, Task } from '@/features/workflow/api/workflowApi'
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { CheckCircle2, ListTodo, ChevronDown, ChevronRight, User, ExternalLink, Package, FileText, Wallet, MapPin, TrendingUp } from "lucide-react"
+import {CheckCircle2, ListTodo, ChevronDown, ChevronRight, User, ExternalLink, Package, FileText, Wallet, TrendingUp} from "lucide-react"
 import { toast } from "sonner"
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
-import api from "@/lib/api"
 import { useRef } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
-import { CardSkeleton, MoneyDisplay, EntityBadge } from "@/components/shared"
+import { SkeletonShell, MoneyDisplay, EntityBadge, Chip } from "@/components/shared"
 import { useAuth } from "@/contexts/AuthContext"
-import { formatEntityDisplay, getEntityMetadata, detectEntityLabel } from "@/lib/entity-registry"
+import {formatEntityDisplay, detectEntityLabel} from "@/lib/entity-registry"
+import { useUpdateTask } from "../hooks/useWorkflowMutations"
 
 const HUB_STAGE_LABELS: Record<string, string> = {
     origin: 'Origen',
@@ -24,6 +24,39 @@ const HUB_STAGE_LABELS: Record<string, string> = {
     billing: 'Facturación',
     treasury: 'Tesorería',
 }
+
+const CollapsibleSection = ({
+    title,
+    count,
+    expanded,
+    onToggle,
+    children
+}: {
+    title: string
+    count: number
+    expanded: boolean
+    onToggle: () => void
+    children: React.ReactNode
+}) => (
+    <div className="mb-4">
+        <button
+            onClick={onToggle}
+            className="flex items-center justify-between w-full p-2 text-sm font-semibold text-muted-foreground uppercase tracking-wide hover:text-foreground transition-colors rounded-md hover:bg-muted/50"
+        >
+            <span>{title} ({count})</span>
+            {expanded ? (
+                <ChevronDown className="h-4 w-4" />
+            ) : (
+                <ChevronRight className="h-4 w-4" />
+            )}
+        </button>
+        {expanded && (
+            <div className="mt-2 space-y-2">
+                {children}
+            </div>
+        )}
+    </div>
+)
 
 export function TaskInbox() {
     const [approvalTasks, setApprovalTasks] = useState<Task[]>([])
@@ -33,13 +66,13 @@ export function TaskInbox() {
     const [activeTab, setActiveTab] = useState("approvals")
     const [approvalsExpanded, setApprovalsExpanded] = useState(true)
     const [completedExpanded, setCompletedExpanded] = useState(false)
-    const { openWorkOrder, openContact } = useGlobalModalActions()
+    const { openEntity } = useGlobalModalActions()
     const { openHub } = useHubPanel()
     const { user } = useAuth()
     const searchParams = useSearchParams()
     const router = useRouter()
     const selectedId = searchParams.get('selected')
-    
+
     // Track counts for notifications
     const lastApprovalsCount = useRef<number | null>(null)
     const lastTasksCount = useRef<number | null>(null)
@@ -75,11 +108,11 @@ export function TaskInbox() {
                     })
                 }
             }
-            
+
             lastApprovalsCount.current = currentPendingApprovals
             lastTasksCount.current = currentPendingTasks
 
-        } catch (error) {
+        } catch {
             if (!silent) toast.error("Error al cargar tareas")
         } finally {
             if (!silent) setLoading(false)
@@ -93,23 +126,6 @@ export function TaskInbox() {
         return () => clearInterval(interval)
     }, [])
 
-    // Handle deep-linked task (ADR-0020)
-    useEffect(() => {
-        if (selectedId && !loading) {
-            const task = [...approvalTasks, ...operationalTasks].find(t => t.id === parseInt(selectedId))
-            if (task) {
-                navigateToTask(task)
-                // Clear selection after navigation to avoid infinite loops if it redirects back
-                const params = new URLSearchParams(searchParams.toString())
-                params.delete('selected')
-                router.replace(`?${params.toString()}`, { scroll: false })
-            } else if (!loading) {
-                 // If not found in current list, try to fetch it specifically or handle error
-                 // For now, we assume it will be in the list after fetchTasks
-            }
-        }
-    }, [selectedId, loading, approvalTasks, operationalTasks])
-
     const navigateToTask = (task: Task) => {
         // Smart navigation based on task type
         if (!task.object_id) {
@@ -122,11 +138,11 @@ export function TaskInbox() {
             if (saleOrderId) {
                 openHub({ orderId: saleOrderId, type: 'sale', onActionSuccess: () => fetchTasks() })
             } else {
-                openWorkOrder(task.object_id)
+                openEntity('production.workorder', task.object_id)
             }
         } else if (task.task_type?.includes('OT_')) {
             // Work Order approval tasks
-            openWorkOrder(task.object_id)
+            openEntity('production.workorder', task.object_id)
         } else if (task.task_type?.includes('OC_')) {
             // Purchase Order tasks
             openHub({ orderId: task.object_id, type: 'purchase', onActionSuccess: () => fetchTasks() })
@@ -164,6 +180,23 @@ export function TaskInbox() {
         }
     }
 
+    // Handle deep-linked task (ADR-0020)
+    useEffect(() => {
+        if (selectedId && !loading) {
+            const task = [...approvalTasks, ...operationalTasks].find(t => t.id === parseInt(selectedId))
+            if (task) {
+                navigateToTask(task)
+                // Clear selection after navigation to avoid infinite loops if it redirects back
+                const params = new URLSearchParams(searchParams.toString())
+                params.delete('selected')
+                router.replace(`?${params.toString()}`, { scroll: false })
+            } else if (!loading) {
+                // If not found in current list, try to fetch it specifically or handle error
+                // For now, we assume it will be in the list after fetchTasks
+            }
+        }
+    }, [selectedId, loading, approvalTasks, operationalTasks])
+
     const getUserInitials = (task: Task): string => {
         const user = task.assigned_to_data
         if (!user) return "??"
@@ -179,6 +212,8 @@ export function TaskInbox() {
         return "??"
     }
 
+    const updateTaskMutation = useUpdateTask()
+
     const handleCreditAction = async (e: React.MouseEvent, task: Task, action: 'APPROVE' | 'REJECT') => {
         e.stopPropagation() // Prevent card click
         try {
@@ -187,9 +222,12 @@ export function TaskInbox() {
             // Add a small note if approved/rejected
             const notes = action === 'APPROVE' ? 'Aprobado desde Inbox POS' : 'Rechazado desde Inbox POS'
 
-            await api.patch(`/workflow/tasks/${task.id}/`, {
-                status,
-                notes: task.notes ? `${task.notes}\n${notes}` : notes
+            await updateTaskMutation.mutateAsync({
+                id: task.id,
+                payload: {
+                    status,
+                    notes: task.notes ? `${task.notes}\n${notes}` : notes
+                }
             })
 
             toast.success(`Crédito ${action === 'APPROVE' ? 'Aprobado' : 'Rechazado'}`)
@@ -204,15 +242,15 @@ export function TaskInbox() {
 
     const getTaskEntityData = (task: Task): { label: string, data: any } | null => {
         if (!task.object_id) return null;
-        
+
         const label = detectEntityLabel(task.task_type || '') || detectEntityLabel(task.title || '');
         if (!label) return null;
 
         return {
             label,
-            data: { 
-                id: task.object_id, 
-                number: task.data?.order_number || task.object_id 
+            data: {
+                id: task.object_id,
+                number: task.data?.order_number || task.object_id
             }
         };
     }
@@ -220,7 +258,7 @@ export function TaskInbox() {
     const formatShortDate = (dateStr: string) => {
         if (!dateStr) return '-'
         const val = new Date(dateStr)
-        return val.toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric' })
+        return formatPlainDate(val)
     }
 
     const renderTaskCard = (task: Task) => {
@@ -266,55 +304,51 @@ export function TaskInbox() {
                 {task.task_type?.startsWith('HUB_') && (
                     <div className="text-[11px] text-muted-foreground space-y-1.5 bg-muted/30 p-2.5 rounded-md border border-border/30">
                         {task.data?.contact_name && (
-                                <div className="flex justify-between items-center">
-                                    <span className="opacity-70">{task.data?.order_type === 'purchase' ? 'Proveedor:' : 'Cliente:'}</span>
-                                    <span className="font-medium text-foreground">{task.data.contact_name}</span>
-                                </div>
-                            )}
-                            {task.data?.stage === 'logistics' ? (
-                                <div className="flex justify-between items-center">
-                                    <span className="opacity-70">Fecha {task.data?.order_type === 'purchase' ? 'Recepción' : 'Entrega'}:</span>
-                                    <span className="font-medium text-foreground">
-                                        {task.data.delivery_date ? formatShortDate(task.data.delivery_date) : 'Pendiente'}
-                                    </span>
-                                </div>
-                            ) : task.data?.order_total ? (
-                                <div className="flex justify-between items-center">
-                                    <span className="opacity-70">Total Orden:</span>
-                                    <MoneyDisplay amount={task.data.order_total} className="text-success" />
-                                </div>
-                            ) : null}
-                            <div className="flex justify-between items-center pt-1 mt-1 border-t border-border/30">
-                                <span className="font-bold text-warning">Acción Requerida:</span>
-                                <span className="font-medium text-warning text-right">
-                                    {task.data?.stage === 'logistics' && (task.data?.is_invoice ? 'Registrar Devolución' : 'Registrar Despacho')}
-                                    {task.data?.stage === 'billing' && (task.data?.action_name ? `Registrar ${task.data.action_name}` : (task.data?.is_invoice ? 'Registrar Nota' : 'Registrar Factura'))}
-                                    {task.data?.stage === 'treasury' && (task.data?.is_invoice && task.data?.prefix === 'NC' ? 'Devolver Pago' : 'Registrar Pago')}
-                                    {task.data?.stage === 'origin' && (task.data?.is_invoice ? 'Confirmar Nota' : 'Confirmar Orden')}
+                            <div className="flex justify-between items-center">
+                                <span className="opacity-70">{task.data?.order_type === 'purchase' ? 'Proveedor:' : 'Cliente:'}</span>
+                                <span className="font-medium text-foreground">{task.data.contact_name}</span>
+                            </div>
+                        )}
+                        {task.data?.stage === 'logistics' ? (
+                            <div className="flex justify-between items-center">
+                                <span className="opacity-70">Fecha {task.data?.order_type === 'purchase' ? 'Recepción' : 'Entrega'}:</span>
+                                <span className="font-medium text-foreground">
+                                    {task.data.delivery_date ? formatShortDate(task.data.delivery_date) : 'Pendiente'}
                                 </span>
                             </div>
+                        ) : task.data?.order_total ? (
+                            <div className="flex justify-between items-center">
+                                <span className="opacity-70">Total Orden:</span>
+                                <MoneyDisplay amount={task.data.order_total} className="text-success" />
+                            </div>
+                        ) : null}
+                        <div className="flex justify-between items-center pt-1 mt-1 border-t border-border/30">
+                            <span className="font-bold text-warning">Acción Requerida:</span>
+                            <span className="font-medium text-warning text-right">
+                                {task.data?.stage === 'logistics' && (task.data?.is_invoice ? 'Registrar Devolución' : 'Registrar Despacho')}
+                                {task.data?.stage === 'billing' && (task.data?.action_name ? `Registrar ${task.data.action_name}` : (task.data?.is_invoice ? 'Registrar Nota' : 'Registrar Factura'))}
+                                {task.data?.stage === 'treasury' && (task.data?.is_invoice && task.data?.prefix === 'NC' ? 'Devolver Pago' : 'Registrar Pago')}
+                                {task.data?.stage === 'origin' && (task.data?.is_invoice ? 'Confirmar Nota' : 'Confirmar Orden')}
+                            </span>
                         </div>
+                    </div>
                 )}
 
                 {/* Row 2: Status & Timeline */}
                 <div className="flex items-center justify-between text-[11px] font-medium tracking-tight">
                     <div>
                         {entityData ? (
-                            <EntityBadge 
-                                label={entityData.label} 
-                                data={entityData.data} 
-                                size="sm" 
+                            <EntityBadge
+                                label={entityData.label}
+                                data={entityData.data}
+                                size="sm"
                                 link={false}
                                 className="bg-primary/5 text-primary border-primary/20 font-mono"
                             />
                         ) : task.task_type === 'CREDIT_POS_REQUEST' ? (
-                            <span className="bg-warning/10 text-warning px-2 py-0.5 rounded-full border border-warning/20 font-mono">
-                                CREDITO
-                            </span>
+                            <Chip intent="warning">CREDITO</Chip>
                         ) : task.object_id ? (
-                            <span className="bg-muted text-muted-foreground px-2 py-0.5 rounded-full border border-border/50 font-mono">
-                                #{task.object_id}
-                            </span>
+                            <Chip>#{task.object_id}</Chip>
                         ) : null}
                     </div>
                     <div className="flex items-center gap-2 text-muted-foreground group-hover:text-foreground transition-colors">
@@ -345,7 +379,7 @@ export function TaskInbox() {
                                 className="text-[10px] font-bold text-muted-foreground uppercase flex items-center gap-2 hover:text-primary transition-colors group/name"
                                 onClick={(e) => {
                                     e.stopPropagation();
-                                    if (task.data?.customer_id) openContact(task.data.customer_id);
+                                    if (task.data?.customer_id) openEntity('contacts.contact', task.data.customer_id);
                                 }}
                             >
                                 <User className="h-3 w-3" />
@@ -405,127 +439,98 @@ export function TaskInbox() {
     const approvalsPending = approvalTasks.filter(t => t.status === 'PENDING')
     const approvalsCompleted = approvalTasks.filter(t => t.status === 'COMPLETED')
 
-    const CollapsibleSection = ({
-        title,
-        count,
-        expanded,
-        onToggle,
-        children
-    }: {
-        title: string
-        count: number
-        expanded: boolean
-        onToggle: () => void
-        children: React.ReactNode
-    }) => (
-        <div className="mb-4">
-            <button
-                onClick={onToggle}
-                className="flex items-center justify-between w-full p-2 text-sm font-semibold text-muted-foreground uppercase tracking-wide hover:text-foreground transition-colors rounded-md hover:bg-muted/50"
-            >
-                <span>{title} ({count})</span>
-                {expanded ? (
-                    <ChevronDown className="h-4 w-4" />
-                ) : (
-                    <ChevronRight className="h-4 w-4" />
-                )}
-            </button>
-            {expanded && (
-                <div className="mt-2 space-y-2">
-                    {children}
-                </div>
-            )}
-        </div>
-    )
-
     return (
         <div className="space-y-4 p-4 h-full overflow-auto">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                    <TabsList className="grid w-full grid-cols-2 bg-muted/50 p-1 border border-border/50 backdrop-blur-md rounded-md">
-                        <TabsTrigger
-                            value="approvals"
-                            className="flex items-center justify-center h-9 gap-2 text-xs rounded-md transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm border border-transparent data-[state=active]:border-border/50 group/trigger text-muted-foreground"
-                        >
-                            <CheckCircle2 className="h-3.5 w-3.5" />
-                            <span className="hidden sm:inline">Aprobaciones</span>
-                            <span className="sm:hidden">Aprob.</span>
-                            <span className={cn(
-                                "text-[10px] ml-1 px-1.5 py-0.5 rounded-full font-bold transition-colors border",
-                                "bg-muted text-muted-foreground border-border/50",
-                                approvalsPending.length > 0 && "bg-primary/10 text-primary border-primary/20 group-data-[state=active]/trigger:bg-primary/20"
-                            )}>
-                                {approvalsPending.length}
-                            </span>
-                        </TabsTrigger>
-                        <TabsTrigger
-                            value="tasks"
-                            className="flex items-center justify-center h-9 gap-2 text-xs rounded-md transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm border border-transparent data-[state=active]:border-border/50 group/trigger text-muted-foreground"
-                        >
-                            <ListTodo className="h-3.5 w-3.5" />
-                            <span className="hidden sm:inline">Tareas</span>
-                            <span className="sm:hidden">Tareas</span>
-                            <span className={cn(
-                                "text-[10px] ml-1 px-1.5 py-0.5 rounded-full font-bold transition-colors border",
-                                "bg-muted text-muted-foreground border-border/50",
-                                operationalTasks.length > 0 && "bg-primary/10 text-primary border-primary/20 group-data-[state=active]/trigger:bg-primary/20"
-                            )}>
-                                {operationalTasks.length}
-                            </span>
-                        </TabsTrigger>
-                    </TabsList>
+                <TabsList className="grid w-full grid-cols-2 bg-muted/50 p-1 border border-border/50 backdrop-blur-md rounded-md">
+                    <TabsTrigger
+                        value="approvals"
+                        className="flex items-center justify-center h-9 gap-2 text-xs rounded-md transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm border border-transparent data-[state=active]:border-border/50 group/trigger text-muted-foreground"
+                    >
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                        <span className="hidden sm:inline">Aprobaciones</span>
+                        <span className="sm:hidden">Aprob.</span>
+                        <Chip size="xs" intent={approvalsPending.length > 0 ? "primary" : "neutral"} className="ml-1">
+                            {approvalsPending.length}
+                        </Chip>
+                    </TabsTrigger>
+                    <TabsTrigger
+                        value="tasks"
+                        className="flex items-center justify-center h-9 gap-2 text-xs rounded-md transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm border border-transparent data-[state=active]:border-border/50 group/trigger text-muted-foreground"
+                    >
+                        <ListTodo className="h-3.5 w-3.5" />
+                        <span className="hidden sm:inline">Tareas</span>
+                        <span className="sm:hidden">Tareas</span>
+                        <Chip size="xs" intent={operationalTasks.length > 0 ? "primary" : "neutral"} className="ml-1">
+                            {operationalTasks.length}
+                        </Chip>
+                    </TabsTrigger>
+                </TabsList>
 
-                    <TabsContent value="approvals" className="mt-4">
-                        {loading ? (
-                            <CardSkeleton variant="compact" count={3} className="gap-2" />
-                        ) : (
-                            <>
-                                {approvalsPending.length > 0 && (
-                                    <CollapsibleSection
-                                        title="Pendientes"
-                                        count={approvalsPending.length}
-                                        expanded={approvalsExpanded}
-                                        onToggle={() => setApprovalsExpanded(!approvalsExpanded)}
-                                    >
-                                        {approvalsPending.map(task => renderTaskCard(task))}
-                                    </CollapsibleSection>
-                                )}
+                 <TabsContent value="approvals" className="mt-4">
+                     {loading ? (
+                         <SkeletonShell isLoading={true} ariaLabel="Cargando tareas de aprobación">
+                             <div className="flex flex-col gap-2">
+                                 <div className="p-3 border border-muted/50 rounded-md">Placeholder 1</div>
+                                 <div className="p-3 border border-muted/50 rounded-md">Placeholder 2</div>
+                                 <div className="p-3 border border-muted/50 rounded-md">Placeholder 3</div>
+                             </div>
+                         </SkeletonShell>
+                     ) : (
+                         <>
+                             {approvalsPending.length > 0 && (
+                                 <CollapsibleSection
+                                     title="Pendientes"
+                                     count={approvalsPending.length}
+                                     expanded={approvalsExpanded}
+                                     onToggle={() => setApprovalsExpanded(!approvalsExpanded)}
+                                 >
+                                     {approvalsPending.map(task => renderTaskCard(task))}
+                                 </CollapsibleSection>
+                             )}
 
-                                {approvalsCompleted.length > 0 && (
-                                    <CollapsibleSection
-                                        title="Completadas"
-                                        count={approvalsCompleted.length}
-                                        expanded={completedExpanded}
-                                        onToggle={() => setCompletedExpanded(!completedExpanded)}
-                                    >
-                                        {approvalsCompleted.slice(0, 10).map(task => renderTaskCard(task))}
-                                    </CollapsibleSection>
-                                )}
+                            {approvalsCompleted.length > 0 && (
+                                <CollapsibleSection
+                                    title="Completadas"
+                                    count={approvalsCompleted.length}
+                                    expanded={completedExpanded}
+                                    onToggle={() => setCompletedExpanded(!completedExpanded)}
+                                >
+                                    {approvalsCompleted.slice(0, 10).map(task => renderTaskCard(task))}
+                                </CollapsibleSection>
+                            )}
 
-                                {approvalTasks.length === 0 && (
-                                    <div className="text-center py-12 bg-muted/30 rounded-md border border-dashed text-muted-foreground">
-                                        <CheckCircle2 className="h-8 w-8 mx-auto mb-2 opacity-20" />
-                                        <p className="text-xs">No tienes aprobaciones</p>
-                                    </div>
-                                )}
-                            </>
-                        )}
-                    </TabsContent>
+                            {approvalTasks.length === 0 && (
+                                <div className="text-center py-12 bg-muted/30 rounded-md border border-dashed text-muted-foreground">
+                                    <CheckCircle2 className="h-8 w-8 mx-auto mb-2 opacity-20" />
+                                    <p className="text-xs">No tienes aprobaciones</p>
+                                </div>
+                            )}
+                        </>
+                    )}
+                </TabsContent>
 
-                    <TabsContent value="tasks" className="mt-4">
-                        {loading ? (
-                            <CardSkeleton variant="compact" count={3} className="gap-2" />
-                        ) : operationalTasks.length === 0 ? (
-                            <div className="text-center py-12 bg-muted/10 rounded-lg border border-dashed text-muted-foreground">
-                                <ListTodo className="h-8 w-8 mx-auto mb-2 opacity-20" />
-                                <p className="text-xs">No tienes tareas pendientes</p>
-                            </div>
-                        ) : (
-                            <div className="space-y-2">
-                                {operationalTasks.map(task => renderTaskCard(task))}
-                            </div>
-                        )}
-                    </TabsContent>
-                </Tabs>
+                 <TabsContent value="tasks" className="mt-4">
+                     {loading ? (
+                         <SkeletonShell isLoading={true} ariaLabel="Cargando tareas operativas">
+                             <div className="flex flex-col gap-2">
+                                 <div className="p-3 border border-muted/50 rounded-md">Placeholder 1</div>
+                                 <div className="p-3 border border-muted/50 rounded-md">Placeholder 2</div>
+                                 <div className="p-3 border border-muted/50 rounded-md">Placeholder 3</div>
+                             </div>
+                         </SkeletonShell>
+                     ) : operationalTasks.length === 0 ? (
+                         <div className="text-center py-12 bg-muted/10 rounded-lg border border-dashed text-muted-foreground">
+                             <ListTodo className="h-8 w-8 mx-auto mb-2 opacity-20" />
+                             <p className="text-xs">No tienes tareas pendientes</p>
+                         </div>
+                     ) : (
+                         <div className="space-y-2">
+                             {operationalTasks.map(task => renderTaskCard(task))}
+                         </div>
+                     )}
+                </TabsContent>
+            </Tabs>
         </div>
     )
 }

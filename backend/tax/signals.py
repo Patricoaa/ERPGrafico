@@ -50,8 +50,8 @@ def mark_invoices_as_closed(sender, instance, **kwargs):
 def mark_journal_entries_as_closed(sender, instance, **kwargs):
     """
     When an accounting period is closed, mark all journal entries
-    as period_closed=True to prevent modifications.
-    When reopened, unlock the entries.
+    as period_closed=True and their status to CLOSED to prevent modifications.
+    When reopened, revert to POSTED and unlock.
     """
     from accounting.models import JournalEntry
     from datetime import date
@@ -64,16 +64,28 @@ def mark_journal_entries_as_closed(sender, instance, **kwargs):
         end_date = date(instance.year, instance.month + 1, 1)
     
     if instance.status == AccountingPeriod.Status.CLOSED:
-        # Mark all entries in this period as closed
+        # Mark POSTED entries as CLOSED (affect balances but locked)
+        JournalEntry.objects.filter(
+            date__gte=start_date,
+            date__lt=end_date,
+            status=JournalEntry.Status.POSTED
+        ).update(period_closed=True, status=JournalEntry.Status.CLOSED)
+        # Also mark non-POSTED entries (DRAFT should not exist per close_period validation)
         JournalEntry.objects.filter(
             date__gte=start_date,
             date__lt=end_date
-        ).update(period_closed=True)
+        ).exclude(status=JournalEntry.Status.POSTED).update(period_closed=True)
     
     elif instance.status == AccountingPeriod.Status.OPEN:
-        # If reopened, unlock entries
+        # If reopened, revert CLOSED entries back to POSTED
+        JournalEntry.objects.filter(
+            date__gte=start_date,
+            date__lt=end_date,
+            status=JournalEntry.Status.CLOSED
+        ).update(period_closed=False, status=JournalEntry.Status.POSTED)
+        # Also unlock non-CLOSED entries
         JournalEntry.objects.filter(
             date__gte=start_date,
             date__lt=end_date
-        ).update(period_closed=False)
+        ).exclude(status=JournalEntry.Status.CLOSED).update(period_closed=False)
 

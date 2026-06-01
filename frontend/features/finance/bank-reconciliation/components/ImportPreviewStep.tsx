@@ -1,12 +1,11 @@
 "use client"
 
 import React from "react"
+import { formatCurrency } from "@/lib/money"
 import { AlertCircle, CheckCircle2, AlertTriangle, Calendar, FileText, DollarSign, Wallet } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { formatCurrency } from "@/lib/utils"
-import { Badge } from "@/components/ui/badge"
-import { FormSection } from "@/components/shared"
+import {DataTable, DataCell, FormSection} from "@/components/shared"
+import type { ColumnDef } from "@tanstack/react-table"
 
 export interface DryRunWarning {
     line: number | null
@@ -56,14 +55,14 @@ export default function ImportPreviewStep({ data, isLoading }: ImportPreviewStep
     }
 
     if (!data) return null
-    
+
     const hasWarnings = data.warnings.length > 0
     const hasErrors = data.errors.length > 0
 
     return (
         <div className="px-4 pb-4 pt-2 space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
             <FormSection title="Resumen de la Cartola" icon={FileText} />
-            
+
             {data.is_duplicate && (
                 <Alert className="border-warning/50 bg-warning/10 text-warning">
                     <AlertTriangle className="h-4 w-4" />
@@ -75,29 +74,29 @@ export default function ImportPreviewStep({ data, isLoading }: ImportPreviewStep
             )}
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <MetricCard 
-                    title="Líneas Válidas" 
-                    value={data.total_lines} 
-                    icon={FileText} 
+                <MetricCard
+                    title="Líneas Válidas"
+                    value={data.total_lines}
+                    icon={FileText}
                 />
-                <MetricCard 
-                    title="Período" 
+                <MetricCard
+                    title="Período"
                     value={
-                        data.period_start === data.period_end 
+                        data.period_start === data.period_end
                             ? data.period_start || "N/A"
                             : `${data.period_start} al ${data.period_end}`
-                    } 
-                    icon={Calendar} 
+                    }
+                    icon={Calendar}
                 />
-                <MetricCard 
-                    title="Balance Inicial" 
-                    value={formatCurrency(parseFloat(data.opening_balance))} 
-                    icon={DollarSign} 
+                <MetricCard
+                    title="Balance Inicial"
+                    value={formatCurrency(parseFloat(data.opening_balance))}
+                    icon={DollarSign}
                 />
-                <MetricCard 
-                    title="Balance Final" 
-                    value={formatCurrency(parseFloat(data.closing_balance))} 
-                    icon={Wallet} 
+                <MetricCard
+                    title="Balance Final"
+                    value={formatCurrency(parseFloat(data.closing_balance))}
+                    icon={Wallet}
                 />
             </div>
 
@@ -133,35 +132,40 @@ export default function ImportPreviewStep({ data, isLoading }: ImportPreviewStep
             )}
 
             {hasWarnings && (
-                <div className="rounded-lg border border-border/40 overflow-hidden bg-background max-h-[40vh] overflow-y-auto custom-scrollbar">
-                    <Table>
-                        <TableHeader className="sticky top-0 bg-muted/90 backdrop-blur z-10">
-                            <TableRow>
-                                <TableHead className="w-[100px] text-xs font-black uppercase">Línea</TableHead>
-                                <TableHead className="w-[120px] text-xs font-black uppercase">Tipo</TableHead>
-                                <TableHead className="text-xs font-black uppercase">Mensaje</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {data.warnings.map((warn, i) => (
-                                <TableRow key={i} className="hover:bg-muted/30">
-                                    <TableCell className="text-xs font-mono font-medium">
-                                        {warn.line ?? "General"}
-                                    </TableCell>
-                                    <TableCell>
-                                        <Badge variant="outline" className="text-[10px] font-black uppercase tracking-wider bg-warning/10 text-warning border-warning/20">
-                                            Advertencia
-                                        </Badge>
-                                    </TableCell>
-                                    <TableCell className="text-xs text-muted-foreground font-medium">
-                                        {warn.message}
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
+                <div className="rounded-lg border border-border/40 overflow-hidden bg-background">
+                    <WarningTable warnings={data.warnings} />
                 </div>
             )}
         </div>
+    )
+}
+
+function WarningTable({ warnings }: { warnings: DryRunWarning[] }) {
+    const columns: ColumnDef<DryRunWarning>[] = [
+        {
+            header: "Línea",
+            cell: ({ row }) => (
+                <DataCell.Code>{row.original.line ?? "General"}</DataCell.Code>
+            ),
+        },
+        {
+            header: "Tipo",
+            cell: () => <DataCell.Chip intent="warning">Advertencia</DataCell.Chip>,
+        },
+        {
+            header: "Mensaje",
+            cell: ({ row }) => (
+                <DataCell.Secondary>{row.original.message}</DataCell.Secondary>
+            ),
+        },
+    ]
+
+    return (
+        <DataTable
+            columns={columns}
+            data={warnings}
+            variant="embedded"
+            hidePagination
+        />
     )
 }

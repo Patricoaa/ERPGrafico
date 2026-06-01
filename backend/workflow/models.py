@@ -262,3 +262,29 @@ class NotificationRule(models.Model):
         if self.assigned_user: destinatarios.append(str(self.assigned_user))
         if self.assigned_group: destinatarios.append(f"Grupo:{self.assigned_group.name}")
         return f"{self.notification_type} -> {', '.join(destinatarios)}"
+
+
+class Comment(models.Model):
+    """
+    Polymorphic comment attached to any model (WorkOrder, SaleOrder, etc.).
+    Comments on linked objects (e.g. OT ↔ NV) are surfaced together at query time.
+    """
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField()
+    content_object = GenericForeignKey('content_type', 'object_id')
+
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='comments')
+    text = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['created_at']
+        verbose_name = _("Comentario")
+        verbose_name_plural = _("Comentarios")
+        indexes = [
+            models.Index(fields=['content_type', 'object_id']),
+        ]
+
+    def __str__(self):
+        return f"{self.user} @ {self.created_at:%Y-%m-%d}: {self.text[:50]}"

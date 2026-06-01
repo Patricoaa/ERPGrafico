@@ -7,6 +7,7 @@ export const PARTNER_SETTINGS_QUERY_KEY = ['settings-partner']
 
 interface UsePartnerSettingsReturn {
     settings: PartnerSettings
+    isLoading: boolean
     saving: boolean
     updateSettings: (payload: PartnerSettingsUpdatePayload) => Promise<void>
     refetch: () => Promise<unknown>

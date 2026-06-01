@@ -23,22 +23,51 @@ function SheetClose({
 }
 
 function SheetPortal({
+  container,
   ...props
-}: React.ComponentProps<typeof SheetPrimitive.Portal>) {
-  return <SheetPrimitive.Portal data-slot="sheet-portal" {...props} />
+}: React.ComponentProps<typeof SheetPrimitive.Portal> & { container?: HTMLElement }) {
+  const [target, setTarget] = React.useState<HTMLElement | null>(null)
+
+  React.useEffect(() => {
+    setTarget(document.getElementById("module-sheets-portal-container") || document.body)
+  }, [])
+
+  return (
+    <SheetPrimitive.Portal 
+      container={container || target || undefined} 
+      data-slot="sheet-portal" 
+      {...props} 
+    />
+  )
 }
 
 function SheetOverlay({
   className,
+  isPlain = false,
   ...props
-}: React.ComponentProps<typeof SheetPrimitive.Overlay>) {
+}: React.ComponentProps<typeof SheetPrimitive.Overlay> & { isPlain?: boolean }) {
+  const classes = cn(
+    "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed top-20 inset-x-0 bottom-0 z-50 bg-black/50 backdrop-blur-sm ease-[cubic-bezier(0.16,1,0.3,1)] duration-500",
+    className
+  )
+
+  if (isPlain) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { forceMount, asChild, ...divProps } = props
+    return (
+      <div
+        data-slot="sheet-overlay"
+        data-state="open"
+        className={classes}
+        {...divProps}
+      />
+    )
+  }
+
   return (
     <SheetPrimitive.Overlay
       data-slot="sheet-overlay"
-      className={cn(
-        "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed top-20 inset-x-0 bottom-0 z-50 bg-black/50 backdrop-blur-sm",
-        className
-      )}
+      className={classes}
       {...props}
     />
   )
@@ -49,6 +78,7 @@ function SheetContent({
   children,
   side = "right",
   hideOverlay = false,
+  isPlainOverlay = false,
   onPointerDownOutside,
   onFocusOutside,
   onInteractOutside,
@@ -60,15 +90,18 @@ function SheetContent({
   onPointerDownOutside?: (event: Event) => void
   onFocusOutside?: (event: Event) => void
   onInteractOutside?: (event: Event) => void
+  container?: HTMLElement
+  overlayClassName?: string
+  isPlainOverlay?: boolean
 }) {
-  const { hideCloseButton, ...restProps } = props
+  const { hideCloseButton, container, overlayClassName, ...restProps } = props
   return (
-    <SheetPortal>
-      {!hideOverlay && <SheetOverlay />}
+    <SheetPortal container={container}>
+      {!hideOverlay && <SheetOverlay className={overlayClassName} isPlain={isPlainOverlay} />}
       <SheetPrimitive.Content
         data-slot="sheet-content"
         className={cn(
-          "bg-background data-[state=open]:animate-in data-[state=closed]:animate-out fixed z-50 flex flex-col gap-4 shadow-2xl transition ease-in-out data-[state=closed]:duration-300 data-[state=open]:duration-500",
+          "bg-background data-[state=open]:animate-in data-[state=closed]:animate-out fixed z-50 flex flex-col gap-4 ease-[cubic-bezier(0.16,1,0.3,1)] duration-500",
           side === "right" &&
             "data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right top-20 bottom-4 right-4 h-[calc(100vh-6rem)] w-3/4 border border-white/5 rounded-lg sm:max-w-sm",
           side === "left" &&

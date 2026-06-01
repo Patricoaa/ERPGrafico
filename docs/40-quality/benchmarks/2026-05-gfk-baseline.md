@@ -1,3 +1,13 @@
+---
+layer: 40-quality
+doc: benchmark-gfk-baseline
+status: historical
+owner: backend-team
+last_review: 2026-05-21
+kind: benchmark
+benchmark_date: 2026-05
+---
+
 # Benchmark: GenericForeignKey (GFK) Baseline (2026-05)
 
 ## Entorno de Prueba

@@ -3,19 +3,17 @@
 import React, { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import {
-    Plus, Edit, Trash2, Workflow, Box, Layers, Copy
+    Plus, Edit, Trash2, Workflow, Box, Layers, Copy, History
 } from "lucide-react"
-import { StatusBadge } from "@/components/shared/StatusBadge"
-import { BOMFormModal } from "./BOMFormModal"
 
-import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
-import { DropdownMenuItem } from "@/components/ui/dropdown-menu"
-import { LabeledSelect } from "@/components/shared"
+import { BOMDrawer } from "./BOMDrawer"
+
+import { ActionConfirmModal, Chip, LabeledSelect, StatusBadge } from '@/components/shared'
 import { cn } from "@/lib/utils"
-import { DataTable } from "@/components/ui/data-table"
+import { DataTable } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
-import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
+import { DataTableColumnHeader } from '@/components/shared'
+import { DataCell, createActionsColumn } from '@/components/shared'
 
 import { BOM, ProductMinimal } from "../types"
 
@@ -125,16 +123,11 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
                 return (
                     <div className="flex items-center justify-center gap-2 w-full">
                         {isBase ? (
-                            <DataCell.Badge
-                                variant="outline"
-                                className="text-[9px] font-black uppercase tracking-widest bg-primary/5 text-primary border-primary/20 h-5 px-1.5"
-                            >
-                                BASE
-                            </DataCell.Badge>
+                            <Chip size="xs" intent="primary">BASE</Chip>
                         ) : (
                             <div className="flex flex-col items-center gap-0.5">
                                 <DataCell.Code>{row.original.product_internal_code || 'VAR'}</DataCell.Code>
-                                <DataCell.Secondary className="text-[10px] truncate max-w-[120px]">{row.original.product_name}</DataCell.Secondary>
+                                <DataCell.Text className="text-[10px] truncate max-w-[120px]">{row.original.product_name}</DataCell.Text>
                             </div>
                         )}
                     </div>
@@ -176,9 +169,9 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
             header: ({ column }) => <DataTableColumnHeader column={column} title="Comp." className="justify-center" />,
             cell: ({ row }) => (
                 <div className="flex justify-center">
-                    <DataCell.Secondary className="font-black opacity-60">
+                    <DataCell.Text className="font-black opacity-60">
                         {`${row.original.lines?.length || 0} ITEMS`}
-                    </DataCell.Secondary>
+                    </DataCell.Text>
                 </div>
             )
         },
@@ -220,7 +213,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
 
     return (
         <>
-            <div className={cn("w-full space-y-0 rounded-l border bg-muted/5 overflow-hidden", variantMode && "bg-transparent")}>
+            <div className={cn("w-full h-full flex flex-col space-y-0 rounded-l border bg-muted/5 overflow-hidden", variantMode && "bg-transparent")}>
                 {!variantMode && (
                     <div className="pb-6 px-6 pt-6 border-b bg-background/50">
                         <div className="flex items-center justify-between gap-4">
@@ -279,7 +272,7 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
                                             e.stopPropagation()
                                             handleCreate()
                                         }}
-                                        className="w-full md:w-auto h-10 px-6 gap-2 rounded-lg font-black uppercase tracking-widest text-[11px] shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5"
+                                        className="w-full md:w-auto h-10 px-6 gap-2 rounded-lg font-black uppercase tracking-widest text-[11px]  transition-all hover:-translate-y-0.5"
                                         disabled={selectedVariantId === "all"}
                                     >
                                         <Plus className="h-4 w-4" />
@@ -312,17 +305,54 @@ export function BOMManager({ product, variantMode = false, onBomsChange }: BOMMa
                     </div>
                 )}
 
-                <div className="p-0 overflow-hidden">
-                    <DataTable
-                        columns={columns}
-                        data={boms}
-                        variant="embedded"
-                        isLoading={isBOMsLoading}
-                    />
+                <div className="p-0 flex-1 min-h-0">
+                    {!isBOMsLoading && boms.length === 0 ? (
+                        <div className="py-16 flex flex-col items-center justify-center text-center gap-5 border-2 border-dashed border-primary/20 rounded-b-md bg-muted/5">
+                            <div className="bg-primary/10 p-5 rounded-full ring-4 ring-primary/5">
+                                <Workflow className="h-10 w-10 text-primary" />
+                            </div>
+                            <div className="space-y-1.5 max-w-sm">
+                                <p className="text-base font-black uppercase tracking-widest text-primary">Sin recetas de producción</p>
+                                <p className="text-[13px] font-medium text-muted-foreground/80">
+                                    Defina la lista de materiales (BOM) y el ruteo de etapas para fabricar este producto.
+                                </p>
+                            </div>
+                            <div className="flex items-center gap-3 mt-2">
+                                <Button
+                                    type="button"
+                                    onClick={handleCreate}
+                                    className="gap-2 h-10 px-6 text-xs font-black uppercase tracking-widest shadow-md hover:-translate-y-0.5 transition-transform"
+                                >
+                                    <Plus className="h-4 w-4" />
+                                    Crear receta base
+                                </Button>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => {
+                                        // TODO: Implement generate from history
+                                        handleCreate()
+                                    }}
+                                    className="gap-2 h-10 px-6 text-xs font-black uppercase tracking-widest border-primary/20 text-primary hover:bg-primary/5"
+                                    title="Próximamente: Auto-completar según OTs manuales previas"
+                                >
+                                    <History className="h-4 w-4" />
+                                    Generar desde histórico
+                                </Button>
+                            </div>
+                        </div>
+                    ) : (
+                        <DataTable
+                            columns={columns}
+                            data={boms}
+                            variant="embedded"
+                            isLoading={isBOMsLoading}
+                        />
+                    )}
                 </div>
             </div>
 
-            <BOMFormModal
+            <BOMDrawer
                 open={dialogOpen}
                 onOpenChange={setDialogOpen}
                 product={

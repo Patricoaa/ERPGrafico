@@ -9,6 +9,7 @@ export interface Account {
     credit_total: string
     balance: string
     is_selectable: boolean
+    has_posted_items: boolean
     is_reconcilable: boolean
     is_category: string | null
     cf_category: string | null
@@ -21,6 +22,7 @@ export interface AccountFilters {
     name?: string
     account_type?: string
     is_leaf?: boolean
+    search?: string
 }
 
 export interface LedgerData {

@@ -1,24 +1,25 @@
 "use client"
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { motion, AnimatePresence } from 'framer-motion'
-import { AlertTriangle, Package, FileText, CheckCircle2 } from 'lucide-react'
+import { AlertTriangle, Package, FileText, Plus, CheckCircle2, Keyboard, Printer } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { BaseModal } from '@/components/shared/BaseModal'
-import { ActionConfirmModal } from '@/components/shared/ActionConfirmModal'
-import { LabeledSelect } from '@/components/shared'
+import { Input } from '@/components/ui/input'
+
+import { ActionConfirmModal, BaseModal, CancelButton, FormFooter, LabeledSelect } from '@/components/shared'
 import { cn } from '@/lib/utils'
 import { showApiError } from '@/lib/errors'
 import { useConfirmAction } from '@/hooks/useConfirmAction'
+import { useVatRate } from '@/hooks/useVatRate'
 import { useAuth } from '@/contexts/AuthContext'
 import { useHubPanel } from '@/components/providers/HubPanelProvider'
-import api from '@/lib/api'
+import { useWorkOrderMutations, productionApi } from '../hooks'
 import { completeTask } from '@/features/workflow/api/workflowApi'
-import dynamic from 'next/dynamic'
-import { FormSkeleton } from '@/components/shared'
 
 import { WizardHeader } from './WizardHeader'
+import { WizardModeBanner } from './WizardModeBanner'
 import { WizardProcessSidebar } from './WizardProcessSidebar'
 import { WizardStickyFooter } from './WizardStickyFooter'
 import { WizardRightSidebar } from './WizardRightSidebar'
@@ -34,26 +35,84 @@ import {
   FinishedStep,
 } from './steps'
 import { useWizardStore, selectPendingTasks } from './WorkOrderWizardStore'
-import type { WorkOrder, WorkOrderMaterial, WorkOrderStage, WorkOrderTask } from '../types'
+import type { WorkOrder, WorkOrderMaterial, WorkOrderStage, WorkOrderTask, WizardMode } from '../types'
+import type { WorkOrderInitialData } from '@/types/forms'
+import { STAGES_ORDERED } from '../constants/stages'
 
-const WorkOrderForm = dynamic(
-  () => import('@/features/production/components/forms/WorkOrderForm').then((m) => m.WorkOrderForm),
-  { ssr: false, loading: () => <FormSkeleton /> }
-)
+import { OriginSelectionStep } from './steps/OriginSelectionStep'
+import { SaleOrderProductStep } from './steps/SaleOrderProductStep'
+import { ProductSelectionStep } from './steps/ProductSelectionStep'
+import { ManufacturingConfigStep } from './steps/ManufacturingConfigStep'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const BASE_STAGES: WorkOrderStage[] = [
-  { id: 'MATERIAL_ASSIGNMENT',      label: 'Asignación de Materiales',     icon: Package,        alwaysShow: true  },
-  { id: 'MATERIAL_APPROVAL',        label: 'Aprobación de Stock',          icon: CheckCircle2,   alwaysShow: false },
-  { id: 'OUTSOURCING_ASSIGNMENT',   label: 'Asignación de Tercerizados',   icon: Package,        alwaysShow: true  },
-  { id: 'PREPRESS',                 label: 'Pre-Impresión',                icon: FileText,       alwaysShow: false },
-  { id: 'PRESS',                    label: 'Impresión',                    icon: Package,        alwaysShow: false },
-  { id: 'POSTPRESS',                label: 'Post-Impresión',               icon: Package,        alwaysShow: false },
-  { id: 'OUTSOURCING_VERIFICATION', label: 'Verificación de Tercerizados', icon: Package,        alwaysShow: false },
-  { id: 'RECTIFICATION',            label: 'Rectificación',                icon: Package,        alwaysShow: false },
-  { id: 'FINISHED',                 label: 'Finalizada',                   icon: CheckCircle2,   alwaysShow: true  },
-]
+const STEP_ORIGIN: WorkOrderStage = {
+  id: 'ORIGIN_SELECTION',
+  label: 'Origen de Fabricación',
+  icon: Package,
+  alwaysShow: true,
+  isCreationStep: true,
+}
+
+const STEP_SALE_ORDER_PRODUCT: WorkOrderStage = {
+  id: 'SALE_ORDER_PRODUCT',
+  label: 'Selección de NV y Producto',
+  icon: FileText,
+  alwaysShow: true,
+  isCreationStep: true,
+}
+
+const STEP_PRODUCT_SELECTION: WorkOrderStage = {
+  id: 'PRODUCT_SELECTION',
+  label: 'Selección de Producto',
+  icon: Plus,
+  alwaysShow: true,
+  isCreationStep: true,
+}
+
+const STEP_MFG_CONFIG: WorkOrderStage = {
+  id: 'MFG_CONFIG',
+  label: 'Configurar Fabricación',
+  icon: Printer,
+  alwaysShow: true,
+  isCreationStep: true,
+}
+
+const BASE_STAGES: WorkOrderStage[] = STAGES_ORDERED.filter(s => s.id !== 'CANCELLED')
+
+function getCreateStages(otType: 'LINKED' | 'NONE' | null): WorkOrderStage[] {
+  if (otType === null) return [STEP_ORIGIN]
+
+  const virtualSteps: WorkOrderStage[] = [STEP_ORIGIN]
+  if (otType === "LINKED") {
+    virtualSteps.push(STEP_SALE_ORDER_PRODUCT)
+  } else {
+    virtualSteps.push(STEP_PRODUCT_SELECTION)
+  }
+  virtualSteps.push(STEP_MFG_CONFIG)
+  return [...virtualSteps, ...BASE_STAGES.filter((s) => s.alwaysShow)]
+}
+
+function getUnifiedStages(
+  chosenOtType: 'LINKED' | 'NONE' | null,
+  order: WorkOrder | null
+): WorkOrderStage[] {
+  // Build completed creation steps
+  const creationSteps: WorkOrderStage[] = [{ ...STEP_ORIGIN, alwaysShow: true }]
+  if (chosenOtType === "LINKED") {
+    creationSteps.push({ ...STEP_SALE_ORDER_PRODUCT, alwaysShow: true })
+  } else if (chosenOtType === "NONE") {
+    creationSteps.push({ ...STEP_PRODUCT_SELECTION, alwaysShow: true })
+  }
+  creationSteps.push({ ...STEP_MFG_CONFIG, alwaysShow: true })
+
+  // Build workflow steps (filtered if order is available, otherwise alwaysShow)
+  const workflowStages = order
+    ? [...getFilteredStages(order)]
+    : [...BASE_STAGES.filter((s) => s.alwaysShow)]
+
+  return [...creationSteps, ...workflowStages]
+}
 
 function getFilteredStages(order: WorkOrder): WorkOrderStage[] {
   return BASE_STAGES.filter((stage) => {
@@ -76,46 +135,75 @@ function getFilteredStages(order: WorkOrder): WorkOrderStage[] {
   })
 }
 
+const EDITABLE_STAGES = ['MATERIAL_ASSIGNMENT', 'MATERIAL_APPROVAL', 'PREPRESS']
+
 // ── Props ─────────────────────────────────────────────────────────────────────
 
 interface WorkOrderWizardProps {
-  orderId: number
+  mode: WizardMode
   open: boolean
   onOpenChange: (open: boolean) => void
-  onSuccess?: () => void
-  targetStage?: string
+  onSuccess?: (workOrderId?: number) => void
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
-export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, targetStage }: WorkOrderWizardProps) {
+export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrderWizardProps) {
+  const router = useRouter()
   const { user } = useAuth()
   const { openHub } = useHubPanel()
-  const [isEditOpen, setIsEditOpen] = useState(false)
+  const { multiplier: vatMultiplier } = useVatRate()
+  const [isDuplicateModalOpen, setIsDuplicateModalOpen] = useState(false)
+  const [isSaveTemplateOpen, setIsSaveTemplateOpen] = useState(false)
+  const [templateName, setTemplateName] = useState('')
+  const [isSavingTemplate, setIsSavingTemplate] = useState(false)
+
+  // localOrderId: null = create mode, number = manage mode
+  const [localOrderId, setLocalOrderId] = useState<number | null>(
+    mode.kind === 'manage' ? mode.orderId : null
+  )
+  const wasCreatingRef = useRef(false)
+  const isCreating = localOrderId === null
+
+  // ── mutations (all write ops via hook) ─────────────────────────────────────
+  const mutations = useWorkOrderMutations(localOrderId ?? 0, { onSuccess: () => { fetchOrder(); onSuccess?.() } })
 
   // ── store ──────────────────────────────────────────────────────────────────
   const {
-    order, loading, viewingStepIndex,
+    order, loading, viewingStepIndex, stepMode,
     taskNotes, taskFiles,
     isAnnulModalOpen, isDeleteModalOpen, isBackwardModalOpen, pendingPrevStage,
     showPOPreview, outsourcedPending,
-    rectificationAdjustments, rectificationProducedQty,
-    setOrder, setLoading, setViewingStepIndex,
+    rectificationAdjustments, rectificationProducedQty, rectificationOutsourcedAdjustments,
+    // Creation flow state
+    chosenOtType, selectedSaleOrder, selectedSaleLine, selectedProduct, mfgConfig,
+    selectedContact, quantity, uomId, startDate, dueDate, internalNotes,
+    setOrder, setLoading, setViewingStepIndex, navigateToStep,
     setTaskNote, setTaskFile,
     setIsAnnulModalOpen, setIsDeleteModalOpen, setIsBackwardModalOpen, setPendingPrevStage,
     setShowPOPreview, setOutsourcedPending,
-    setRectificationAdjustments, setRectificationProducedQty,
+    setRectificationAdjustments, setRectificationProducedQty, setRectificationOutsourcedAdjustments,
+    // Creation flow actions
+    setChosenOtType, setSelectedSaleOrder, setSelectedSaleLine, setSelectedProduct, setProductDescription, setMfgConfig,
+    setSelectedContact, setQuantity, setUomId, setStartDate, setDueDate, setInternalNotes,
     reset: resetStore,
   } = useWizardStore()
 
-  // local UI state that doesn't need to be in the store
-  const finishConfirm = useConfirmAction<string>(async (stageId) => { handleTransition(stageId) })
+  const [showCheatsheet, setShowCheatsheet] = useState(false)
 
   // ── derived ────────────────────────────────────────────────────────────────
-  const STAGES = order ? getFilteredStages(order) : BASE_STAGES.filter((s) => s.alwaysShow)
-  const actualStepIndex = STAGES.findIndex((s) => s.id === order?.current_stage)
+  const STAGES = useMemo(
+    () => isCreating
+      ? getCreateStages(chosenOtType)
+      : getUnifiedStages(chosenOtType, order),
+    [isCreating, chosenOtType, order]
+  )
+  const actualStepIndex = isCreating
+    ? viewingStepIndex
+    : STAGES.findIndex((s) => s.id === order?.current_stage)
   const isViewingCurrentStage = viewingStepIndex === actualStepIndex
   const pendingTasks = selectPendingTasks(order)
+  const isBasicInfoEditable = !isCreating && EDITABLE_STAGES.includes(order?.current_stage ?? '')
 
   const canUserCompleteTask = (task: WorkOrderTask): boolean => {
     if (!user) return false
@@ -124,7 +212,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
     const userGroups = user.groups ?? []
     return userGroups.some((g: string) => {
       const groupName = g.toLowerCase()
-      const gName = (task.data as any)?.candidate_group
+      const gName = (task.data as Record<string, unknown>)?.candidate_group
       return (
         (task.assigned_group_name && task.assigned_group_name.toLowerCase() === groupName) ||
         (gName && typeof gName === 'string' && gName.toLowerCase() === groupName) ||
@@ -137,18 +225,27 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
 
   // ── data fetching ──────────────────────────────────────────────────────────
   const fetchOrder = async () => {
+    if (!localOrderId) return
     setLoading(true)
     try {
-      const res = await api.get(`/production/orders/${orderId}/`)
-      setOrder(res.data)
-      const filteredStages = getFilteredStages(res.data)
-      const currentIndex = filteredStages.findIndex((s) => s.id === res.data.current_stage)
-      let resolvedIndex = currentIndex !== -1 ? currentIndex : 0
+      const orderData = await productionApi.getWorkOrder(localOrderId)
+      setOrder(orderData as any)
+
+      // Infer order type from data so STAGES stays consistent
+      const inferredType = orderData.sale_order ? "LINKED" as const : "NONE" as const
+      setChosenOtType(inferredType)
+
+      // Resolve index using the same STAGES the component uses
+      const stages = getUnifiedStages(inferredType, orderData as any)
+      let resolvedIndex = -1
+      const targetStage = mode.kind === 'manage' ? mode.targetStage : undefined
       if (targetStage) {
-        const targetIndex = filteredStages.findIndex((s) => s.id === targetStage)
-        if (targetIndex !== -1) resolvedIndex = targetIndex
+        resolvedIndex = stages.findIndex((s) => s.id === targetStage)
       }
-      setViewingStepIndex(resolvedIndex)
+      if (resolvedIndex === -1) {
+        resolvedIndex = stages.findIndex((s) => s.id === (orderData as any).current_stage)
+      }
+      setViewingStepIndex(resolvedIndex >= 0 ? resolvedIndex : 1)
     } catch {
       toast.error('No se pudo cargar la información de la OT')
     } finally {
@@ -156,33 +253,72 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
     }
   }
 
-  useEffect(() => {
-    if (open && orderId) fetchOrder()
-    if (!open) resetStore()
-  }, [open, orderId])
+  // Synchronize state with props during render to avoid useEffect setStates
+  const [prevMode, setPrevMode] = useState(mode)
+  const [prevOpen, setPrevOpen] = useState(open)
 
-  // ── keyboard navigation ────────────────────────────────────────────────────
-  useEffect(() => {
-    if (!open) return
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') { onOpenChange(false); return }
-      if (!e.ctrlKey) return
-      if (e.key === 'ArrowRight' && isViewingCurrentStage && order?.status !== 'FINISHED') {
-        const nextStage = STAGES[viewingStepIndex + 1]
-        if (!nextStage) return
-        const blocked = pendingTasks.some((t) => !canUserCompleteTask(t)) ||
-          (STAGES[viewingStepIndex]?.id === 'MATERIAL_APPROVAL' && order?.materials?.some((m: WorkOrderMaterial) => !m.is_available))
-        if (!blocked) {
-          nextStage.id === 'FINISHED' ? finishConfirm.requestConfirm(nextStage.id) : handleTransition(nextStage.id)
+  if (mode !== prevMode || open !== prevOpen) {
+    setPrevMode(mode)
+    setPrevOpen(open)
+    setLocalOrderId(open && mode.kind === 'manage' ? mode.orderId : null)
+    if (open) {
+      if (mode.kind === 'create') {
+        const defaultType = mode.defaultOtType || null
+        setChosenOtType(defaultType)
+        // Reset creation flow state
+        setSelectedSaleOrder(null)
+        setSelectedSaleLine(null)
+        setSelectedProduct(null)
+        setMfgConfig(null)
+        setSelectedContact(null)
+        setQuantity("")
+        setUomId("")
+        setStartDate(null)
+        setDueDate(null)
+        setInternalNotes("")
+
+        if (defaultType === "LINKED") {
+          setViewingStepIndex(0) // ORIGIN_SELECTION
+        } else if (defaultType === "NONE") {
+          setViewingStepIndex(0) // ORIGIN_SELECTION (will go to PRODUCT_SELECTION after)
+        } else {
+          setViewingStepIndex(0) // ORIGIN_SELECTION
         }
-      }
-      if (e.key === 'ArrowLeft' && viewingStepIndex > 0) {
-        setViewingStepIndex((v) => v - 1)
+      } else {
+        // chosenOtType gets set by fetchOrder after the order loads
       }
     }
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [open, viewingStepIndex, isViewingCurrentStage, order, pendingTasks])
+  }
+
+  useEffect(() => {
+    if (open) {
+      if (localOrderId) {
+        fetchOrder()
+      } else {
+        setLoading(false)
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, localOrderId])
+
+  useEffect(() => {
+    return () => {
+      resetStore()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Sync viewing stage to URL step query param
+  useEffect(() => {
+    if (localOrderId === null) return
+    const stage = STAGES[viewingStepIndex]?.id
+    if (!stage) return
+    const url = new URL(window.location.href)
+    if (url.searchParams.get('selected') !== String(localOrderId)) return
+    if (url.searchParams.get('step') === stage) return
+    url.searchParams.set('step', stage)
+    router.replace(url.pathname + url.search, { scroll: false })
+  }, [viewingStepIndex, localOrderId, STAGES, router])
 
   // ── handlers ───────────────────────────────────────────────────────────────
   const handleTransition = async (nextStageId: string, data: Record<string, unknown> = {}) => {
@@ -211,70 +347,78 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
       if (isMovingForward) {
         const toApprove = pendingTasks.filter(canUserCompleteTask)
         if (toApprove.length > 0) {
-          await Promise.all(toApprove.map((t) => completeTask(t.id as any, taskNotes[t.id], taskFiles[t.id] ? [taskFiles[t.id]!] : undefined)))
+          await Promise.all(toApprove.map((t) => completeTask(t.id as number, taskNotes[t.id], taskFiles[t.id] ? [taskFiles[t.id]!] : undefined)))
         }
       }
-      const formData = new FormData()
-      formData.append('next_stage', nextStageId)
-      formData.append('data', JSON.stringify(data))
-      await api.post(`/production/orders/${orderId}/transition/`, formData, { headers: { 'Content-Type': 'multipart/form-data' } })
-      toast.success('Etapa actualizada')
-      fetchOrder()
-      onSuccess?.()
+      await mutations.transition({ nextStageId, data })
     } catch (err) {
       showApiError(err, 'Error al cambiar de etapa')
     }
   }
 
+  const finishConfirm = useConfirmAction<string>(async (stageId) => { handleTransition(stageId) })
+
+  // ── keyboard navigation ────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!open) return
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') { onOpenChange(false); return }
+      if (e.key === '?' && !e.ctrlKey && !e.altKey && !(e.target instanceof HTMLInputElement) && !(e.target instanceof HTMLTextAreaElement)) {
+        setShowCheatsheet((v) => !v); return
+      }
+      if (!e.ctrlKey) return
+      if (e.key === 'ArrowRight' && isViewingCurrentStage && order?.status !== 'FINISHED') {
+        const nextStage = STAGES[viewingStepIndex + 1]
+        if (!nextStage) return
+        const blocked = pendingTasks.some((t) => !canUserCompleteTask(t)) ||
+          (STAGES[viewingStepIndex]?.id === 'MATERIAL_APPROVAL' && order?.materials?.some((m: WorkOrderMaterial) => !m.is_available))
+        if (!blocked) {
+          nextStage.id === 'FINISHED' ? finishConfirm.requestConfirm(nextStage.id) : handleTransition(nextStage.id)
+        }
+      }
+      if (e.key === 'ArrowLeft' && viewingStepIndex > 0) {
+        setViewingStepIndex((v) => v - 1)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [open, viewingStepIndex, isViewingCurrentStage, order, pendingTasks])
+
   const handleRectifyAndFinish = async () => {
     if (!order) return
     try {
-      await api.post(`/production/orders/${orderId}/rectify/`, {
-        material_adjustments: rectificationAdjustments,
-        produced_quantity: rectificationProducedQty,
+      await mutations.rectify({
+        materialAdjustments: rectificationAdjustments,
+        outsourcedAdjustments: rectificationOutsourcedAdjustments,
+        producedQuantity: rectificationProducedQty,
         notes: 'Rectificación desde wizard',
       })
-      await handleTransition('FINISHED')
+      await mutations.transition({ nextStageId: 'FINISHED' })
     } catch (err) {
       showApiError(err, 'Error al rectificar y finalizar la OT')
     }
   }
 
-  const handleAddComment = async (text: string) => {
-    if (!order) return
-    const updatedStageData = {
-      ...order.stage_data,
-      comments: [...(order.stage_data?.comments ?? []), {
-        id: Date.now(),
-        user: user?.first_name ?? user?.username ?? 'Usuario',
-        text,
-        timestamp: new Date().toISOString(),
-      }],
-    }
-    try {
-      await api.patch(`/production/orders/${orderId}/`, { stage_data: updatedStageData })
-      setOrder({ ...order, stage_data: updatedStageData })
-      toast.success('Comentario registrado')
-    } catch { toast.error('Error al registrar comentario') }
-  }
-
   const handleAnnul = async () => {
     try {
-      await api.post(`/production/orders/${orderId}/annul/`)
-      toast.success('Orden de Trabajo anulada exitosamente')
+      await mutations.annul('')
       setIsAnnulModalOpen(false)
-      fetchOrder()
     } catch (err) { showApiError(err, 'Error al anular la orden') }
   }
 
   const handleDelete = async () => {
     try {
-      await api.delete(`/production/orders/${orderId}/`)
-      toast.success('Orden de Trabajo eliminada')
+      await mutations.deleteOrder()
       setIsDeleteModalOpen(false)
       onOpenChange(false)
-      onSuccess?.()
     } catch (err) { showApiError(err, 'Error al eliminar la orden') }
+  }
+
+  const handleDuplicate = async () => {
+    try {
+      await mutations.duplicateOrder()
+      setIsDuplicateModalOpen(false)
+    } catch (err) { showApiError(err, 'Error al duplicar la orden') }
   }
 
   // ── task callbacks (passed down to steps) ─────────────────────────────────
@@ -305,14 +449,17 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
         contentClassName="h-full"
         title={
           <WizardHeader
-            order={order as WorkOrder}
+            order={order}
             currentStageLabel={STAGES[viewingStepIndex]?.label}
-            onEdit={() => setIsEditOpen(true)}
-            onOpenCommandCenter={(id, type) => openHub({ orderId: id, type: type as any, onActionSuccess: fetchOrder })}
+            onEdit={() => setViewingStepIndex(0)}
+            onOpenCommandCenter={(id, type) => openHub({ orderId: id, type: type as 'sale' | 'purchase', onActionSuccess: fetchOrder })}
             onAnnul={() => setIsAnnulModalOpen(true)}
             onDelete={() => setIsDeleteModalOpen(true)}
-            isAnnuling={false}
-            isDeleting={false}
+            onDuplicate={() => setIsDuplicateModalOpen(true)}
+            onSaveAsTemplate={() => { setTemplateName(''); setIsSaveTemplateOpen(true) }}
+            isAnnuling={mutations.isAnnuling}
+            isDeleting={mutations.isDeleting}
+            isDuplicating={mutations.isDuplicating}
           />
         }
       >
@@ -321,19 +468,32 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
             stages={STAGES}
             viewingStepIndex={viewingStepIndex}
             actualStepIndex={actualStepIndex}
-            onStepClick={setViewingStepIndex}
-            order={order as WorkOrder}
+            stepMode={stepMode}
+            onStepClick={(index, mode) => {
+              if (mode === 'rewind') {
+                // Trigger backward transition modal without moving the viewing index yet
+                const targetStage = STAGES[index]
+                if (targetStage) {
+                  setPendingPrevStage(targetStage.id)
+                  setIsBackwardModalOpen(true)
+                }
+              } else {
+                navigateToStep(index, mode)
+              }
+            }}
+            order={order}
           />
 
           {/* Center content */}
-          <div className="flex-1 flex flex-col p-6 overflow-hidden relative">
-            <div className="mb-6">
+          <div className="flex-1 flex flex-col overflow-hidden relative">
+            <div className="px-6 pt-6 mb-4 flex-shrink-0 space-y-2">
               <h3 className="text-lg font-semibold">{STAGES[viewingStepIndex]?.label}</h3>
+              <WizardModeBanner mode={stepMode} isViewingCurrentStage={isViewingCurrentStage} />
             </div>
 
-            <div className="flex-1 overflow-y-auto min-h-0 relative">
+            <div className="flex flex-1 flex-col min-h-0 px-6 relative">
               {/* Mobile navigation */}
-              <div className="md:hidden sticky top-0 z-10 bg-background/95 backdrop-blur border-b p-3 mb-4">
+              <div className="md:hidden sticky top-0 z-10 bg-background/95 backdrop-blur p-3 mb-4">
                 <LabeledSelect
                   value={STAGES[viewingStepIndex]?.id}
                   onChange={(val) => {
@@ -344,9 +504,13 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                   options={STAGES.map((s, i) => {
                     const isPast = actualStepIndex > i
                     const isCurrent = actualStepIndex === i
+                    let disabled = !isPast && !isCurrent
+                    if (isCreating) {
+                      disabled = s.id !== 'ORIGIN_SELECTION' && chosenOtType === null
+                    }
                     return {
                       value: s.id,
-                      disabled: !isPast && !isCurrent,
+                      disabled,
                       label: (
                         <div className="flex items-center gap-2">
                           <s.icon className="h-4 w-4" />
@@ -355,7 +519,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                         </div>
                       ),
                     }
-                  }) as any}
+                  }) as Parameters<typeof LabeledSelect>[0]['options']}
                 />
               </div>
 
@@ -366,8 +530,114 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
                   transition={{ duration: 0.2 }}
-                  className={cn('space-y-6', !isViewingCurrentStage && 'pointer-events-none opacity-80')}
+                  className={cn(
+                    'flex flex-col flex-1 min-h-0 overflow-y-auto space-y-6 pb-6',
+                    // Lock creation steps (other than MFG_CONFIG which has its own summary)
+                    // once the OT has been created — they become read-only history.
+                    !isCreating && (
+                      currentStageId === 'ORIGIN_SELECTION'
+                      || currentStageId === 'SALE_ORDER_PRODUCT'
+                      || currentStageId === 'PRODUCT_SELECTION'
+                    ) && 'pointer-events-none opacity-70',
+                    // Disable interaction only in view mode for closed workflow steps (not edit-in-place)
+                    stepMode === 'view' && !isViewingCurrentStage
+                      && currentStageId !== 'ORIGIN_SELECTION'
+                      && currentStageId !== 'SALE_ORDER_PRODUCT'
+                      && currentStageId !== 'PRODUCT_SELECTION'
+                      && currentStageId !== 'MFG_CONFIG'
+                      && 'pointer-events-none opacity-70'
+                  )}
                 >
+                  {currentStageId === 'ORIGIN_SELECTION' && (
+                    <OriginSelectionStep
+                      selected={chosenOtType}
+                      onChoose={(type) => {
+                        setChosenOtType(type)
+                        const idx = getCreateStages(type).findIndex(s => s.id === (type === "LINKED" ? 'SALE_ORDER_PRODUCT' : 'PRODUCT_SELECTION'))
+                        setViewingStepIndex(idx >= 0 ? idx : 1)
+                      }}
+                    />
+                  )}
+                  {currentStageId === 'SALE_ORDER_PRODUCT' && chosenOtType === "LINKED" && (
+                    <SaleOrderProductStep
+                      onChooseProduct={(otType, productId, quantity, uomId, productDescription, saleOrderId, saleLineId) => {
+                        setChosenOtType(otType)
+                        setSelectedSaleOrder(saleOrderId)
+                        setSelectedSaleLine(saleLineId)
+                        setSelectedProduct(productId)
+                        setQuantity(quantity)
+                        setUomId(uomId)
+                        setProductDescription(productDescription)
+                        const idx = getCreateStages("LINKED").findIndex(s => s.id === 'MFG_CONFIG')
+                        setViewingStepIndex(idx >= 0 ? idx : 1)
+                      }}
+                      initialOtType={chosenOtType}
+                    />
+                  )}
+                  {currentStageId === 'PRODUCT_SELECTION' && chosenOtType === "NONE" && (
+                    <ProductSelectionStep
+                      onChooseProduct={(otType, productId, quantity, uomId, productDescription) => {
+                        setChosenOtType(otType)
+                        setSelectedProduct(productId)
+                        setQuantity(quantity)
+                        setUomId(uomId)
+                        setProductDescription(productDescription)
+                        const idx = getCreateStages("NONE").findIndex(s => s.id === 'MFG_CONFIG')
+                        setViewingStepIndex(idx >= 0 ? idx : 1)
+                      }}
+                      initialOtType={chosenOtType}
+                    />
+                  )}
+                  {currentStageId === 'MFG_CONFIG' && (
+                    <ManufacturingConfigStep
+                      formId="wizard-basic-form"
+                      initialData={isCreating ? (mode.kind === 'create' ? mode.initialData : undefined) : (order as unknown as WorkOrderInitialData)}
+                      onSuccess={(workOrderId) => {
+                        if (isCreating) {
+                          wasCreatingRef.current = true
+                          setLocalOrderId(workOrderId)
+                          // Navigate to MATERIAL_ASSIGNMENT immediately in unified stages
+                          const unifiedStages = getUnifiedStages(chosenOtType, null)
+                          const matIdx = unifiedStages.findIndex(s => s.id === 'MATERIAL_ASSIGNMENT')
+                          setViewingStepIndex(matIdx >= 0 ? matIdx : 0)
+
+                          // Sync URL transition create -> manage
+                          const url = new URL(window.location.href)
+                          url.searchParams.delete('new')
+                          url.searchParams.delete('modal')
+                          url.searchParams.delete('type')
+                          url.searchParams.delete('product_id')
+                          url.searchParams.set('selected', String(workOrderId))
+                          url.searchParams.set('step', 'MATERIAL_ASSIGNMENT')
+                          router.replace(url.pathname + url.search, { scroll: false })
+
+                          onSuccess?.(workOrderId)
+                        } else {
+                          fetchOrder()
+                          onSuccess?.(workOrderId)
+                        }
+                      }}
+                      onRestartComplete={() => {
+                        // Navigate to create mode — URL change naturally switches wizard from manage → create
+                        const url = new URL(window.location.href)
+                        url.searchParams.delete('selected')
+                        url.searchParams.delete('step')
+                        url.searchParams.set('new', '1')
+                        url.searchParams.set('type', order?.sale_order ? 'sale' : 'stock')
+                        router.push(url.pathname + url.search)
+                      }}
+                      onCorrectionComplete={(newOrderId) => {
+                        // Navigate to the newly created order
+                        const url = new URL(window.location.href)
+                        url.searchParams.delete('new')
+                        url.searchParams.delete('type')
+                        url.searchParams.delete('product_id')
+                        url.searchParams.set('selected', String(newOrderId))
+                        url.searchParams.delete('step')
+                        router.push(url.pathname + url.search)
+                      }}
+                    />
+                  )}
                   {currentStageId === 'MATERIAL_ASSIGNMENT' && (
                     <MaterialAssignmentStep
                       order={order!}
@@ -403,20 +673,31 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                     <div className="space-y-6">
                       <RectificationStep
                         order={order!}
-                        onChange={(adjustments, producedQty) => {
+                        onChange={(adjustments, producedQty, outsourcedAdj) => {
                           setRectificationAdjustments(adjustments)
                           setRectificationProducedQty(producedQty)
+                          if (outsourcedAdj) setRectificationOutsourcedAdjustments(outsourcedAdj)
                         }}
                       />
                     </div>
                   )}
-                  {currentStageId === 'FINISHED' && <FinishedStep order={order!} />}
+                  {currentStageId === 'FINISHED' && (
+                    <FinishedStep
+                      order={order!}
+                      onUploadPhoto={mutations.uploadFinalPhoto}
+                      isUploadingPhoto={mutations.isUploadingPhoto}
+                      onPrintCopy={mutations.duplicateOrder}
+                      isDuplicating={mutations.isDuplicating}
+                    />
+                  )}
                 </motion.div>
               </AnimatePresence>
             </div>
 
             <WizardStickyFooter
               isViewingCurrentStage={isViewingCurrentStage}
+              stepMode={stepMode}
+              onCancelEdit={() => navigateToStep(viewingStepIndex, 'view')}
               onClose={() => onOpenChange(false)}
               pendingTasks={pendingTasks}
               canApproveAll={canApproveAll}
@@ -424,7 +705,7 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
               viewingStepIndex={viewingStepIndex}
               actualStepIndex={actualStepIndex}
               stages={STAGES}
-              transitioning={false}
+              transitioning={loading}
               onTransition={handleTransition}
               onBackToCurrent={() => setViewingStepIndex(actualStepIndex)}
               onBack={() => {
@@ -437,48 +718,47 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
               hasMaterials={orderHasMaterials}
               isRectificationStep={currentStageId === 'RECTIFICATION'}
               onRectifyAndFinish={handleRectifyAndFinish}
+              isCreating={isCreating}
+              isBasicInfoEditable={isBasicInfoEditable}
+              chosenOtType={chosenOtType}
+              onStepChange={setViewingStepIndex}
             />
           </div>
 
-          <WizardRightSidebar
-            order={order!}
-            viewingStepIndex={viewingStepIndex}
-            productName={productName}
-            stageData={stageData}
-            comments={order?.stage_data?.comments ?? []}
-            onAddComment={handleAddComment}
-          />
+          {order && (
+            <WizardRightSidebar
+              order={order}
+              viewingStepIndex={viewingStepIndex}
+              productName={productName}
+              stageData={stageData}
+            />
+          )}
         </div>
       </BaseModal>
-
-      {/* Edit form */}
-      {isEditOpen && order && (
-        <WorkOrderForm
-          open={isEditOpen}
-          onOpenChange={setIsEditOpen}
-          initialData={order as any}
-          onSuccess={() => { setIsEditOpen(false); fetchOrder() }}
-        />
-      )}
 
       {/* PO Preview */}
       <BaseModal
         open={showPOPreview}
         onOpenChange={setShowPOPreview}
-        size="md"
-        title={<div className="flex items-center gap-2"><Package className="h-5 w-5 text-primary" />Vista Previa de Órdenes de Compra</div>}
+        icon={Package}
+        title="Vista Previa de Órdenes de Compra"
         description="Se generarán las siguientes Órdenes de Compra en borrador para los servicios tercerizados asignados."
+        size="md"
         footer={
-          <div className="flex justify-end gap-3 w-full">
-            <Button variant="outline" onClick={() => setShowPOPreview(false)}>Cancelar y Revisar</Button>
-            <Button onClick={() => {
-              setShowPOPreview(false)
-              const nextStage = STAGES[actualStepIndex + 1]?.id
-              if (nextStage) handleTransition(nextStage)
-            }}>
-              Confirmar y Generar OC
-            </Button>
-          </div>
+          <FormFooter
+            actions={
+              <>
+                <CancelButton onClick={() => setShowPOPreview(false)}>Cancelar y Revisar</CancelButton>
+                <Button onClick={() => {
+                  setShowPOPreview(false)
+                  const nextStage = STAGES[actualStepIndex + 1]?.id
+                  if (nextStage) handleTransition(nextStage)
+                }}>
+                  Confirmar y Generar OC
+                </Button>
+              </>
+            }
+          />
         }
       >
         <div className="space-y-4 py-4">
@@ -499,9 +779,9 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
                     <td className="p-2 font-medium">{m.supplier_name}</td>
                     <td className="p-2">{m.component_name}</td>
                     <td className="p-2 text-right">{m.quantity_planned}</td>
-                    <td className="p-2 text-right">{(parseFloat(m.unit_price ?? '0') * 1.19).toFixed(0)}</td>
+                    <td className="p-2 text-right">{(parseFloat(m.unit_price ?? '0') * vatMultiplier).toFixed(0)}</td>
                     <td className="p-2 text-right font-bold">
-                      {(parseFloat(String(m.quantity_planned)) * parseFloat(m.unit_price ?? '0') * 1.19).toFixed(0)}
+                      {(parseFloat(String(m.quantity_planned)) * parseFloat(m.unit_price ?? '0') * vatMultiplier).toFixed(0)}
                     </td>
                   </tr>
                 ))}
@@ -552,6 +832,16 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
       />
 
       <ActionConfirmModal
+        open={isDuplicateModalOpen}
+        onOpenChange={setIsDuplicateModalOpen}
+        title="Duplicar Orden de Trabajo"
+        variant="default"
+        onConfirm={handleDuplicate}
+        confirmText="Duplicar"
+        description="Se creará una nueva OT en Borrador con los mismos materiales y configuración. No se vinculará a la Nota de Venta original."
+      />
+
+      <ActionConfirmModal
         open={isBackwardModalOpen}
         onOpenChange={setIsBackwardModalOpen}
         title="Retroceder Etapa"
@@ -577,6 +867,79 @@ export function WorkOrderWizard({ orderId, open, onOpenChange, onSuccess, target
         description="¿Estás seguro de finalizar la producción? Una vez finalizada la OT, no se puede modificar."
         confirmText="Finalizar"
       />
+
+      <BaseModal
+        open={isSaveTemplateOpen}
+        onOpenChange={setIsSaveTemplateOpen}
+        icon={FileText}
+        title="Guardar como plantilla"
+        description="Se guardará la configuración de esta OT como plantilla reutilizable."
+        size="sm"
+        footer={
+          <FormFooter
+            actions={
+              <>
+                <CancelButton onClick={() => setIsSaveTemplateOpen(false)} />
+                <Button
+                  disabled={!templateName.trim() || isSavingTemplate}
+                  onClick={async () => {
+                    setIsSavingTemplate(true)
+                    try {
+                      await productionApi.saveTemplate(localOrderId!, templateName.trim())
+                      toast.success('Plantilla guardada correctamente.')
+                      setIsSaveTemplateOpen(false)
+                    } catch {
+                      toast.error('Error al guardar la plantilla.')
+                    } finally {
+                      setIsSavingTemplate(false)
+                    }
+                  }}
+                >
+                  {isSavingTemplate ? 'Guardando…' : 'Guardar'}
+                </Button>
+              </>
+            }
+          />
+        }
+      >
+        <div className="space-y-4 py-2">
+          <Input
+            placeholder="Nombre de la plantilla…"
+            value={templateName}
+            onChange={e => setTemplateName(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur() }}
+          />
+        </div>
+      </BaseModal>
+
+      <BaseModal
+        open={showCheatsheet}
+        onOpenChange={setShowCheatsheet}
+        icon={Keyboard}
+        title="Atajos de teclado"
+        description="Combinaciones rápidas para optimizar su flujo de trabajo."
+        size="sm"
+      >
+        <div className="space-y-2 text-sm">
+          {[
+            { keys: ['Ctrl', '→'], desc: 'Avanzar a la siguiente etapa' },
+            { keys: ['Ctrl', '←'], desc: 'Ver etapa anterior (sin transicionar)' },
+            { keys: ['Esc'], desc: 'Cerrar el wizard' },
+            { keys: ['?'], desc: 'Mostrar/ocultar esta ayuda' },
+          ].map(({ keys, desc }) => (
+            <div key={desc} className="flex items-center justify-between gap-4 py-1.5 border-b border-border/40 last:border-0">
+              <span className="text-muted-foreground text-xs">{desc}</span>
+              <div className="flex gap-1 shrink-0">
+                {keys.map((k) => (
+                  <kbd key={k} className="px-2 py-0.5 text-[10px] font-mono font-bold bg-muted border border-border rounded">
+                    {k}
+                  </kbd>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </BaseModal>
     </>
   )
 }

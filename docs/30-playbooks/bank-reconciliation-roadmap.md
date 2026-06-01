@@ -1,3 +1,12 @@
+---
+layer: 30-playbooks
+doc: bank-reconciliation-roadmap
+status: active
+owner: core-team
+last_review: 2026-05-21
+kind: roadmap
+---
+
 # Bank Reconciliation — Roadmap LLM-Executable
 
 **Audiencia:** agente LLM (Claude Code u otro) ejecutando tareas atómicas.
@@ -651,7 +660,7 @@ Objetivo: limpiar deuda y consolidar.
   - Decidir consolidación: `/[id]` como detalle + tab interna, o `/[id]/workbench` separado. Documentar decisión en ADR `docs/10-architecture/`.
   - Eliminar el state `view='matching'` interno en `[id]/page.tsx` si se opta por ruta separada.
 - **DoD:** una sola ruta por concepto; sin enlaces rotos (test e2e mínimo).
-- **Verificación:** Rutas `/process` y `/match` eliminadas; ADR 0005 creado decidiendo separación estricta `/id` vs `/workbench`. Menú Dashboard actualizado a usar `/workbench` en vez de `/match` ✅
+- **Verificación:** Rutas `/process` y `/match` eliminadas; ADR-0021 creado decidiendo separación estricta `/id` vs `/workbench`. Menú Dashboard actualizado a usar `/workbench` en vez de `/match` ✅
 
 ### S7.2 · Breadcrumbs en todas las rutas de reconciliation [COMPLETADA]
 - **Gaps:** F3

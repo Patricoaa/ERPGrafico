@@ -1,8 +1,7 @@
 "use client"
 
-import { useRef, useMemo, useState, useEffect, useCallback } from "react"
+import {useMemo, useState, useEffect, useCallback} from "react"
 import { TooltipProvider } from "@/components/ui/tooltip"
-import { Button } from "@/components/ui/button"
 import { OriginPhase } from "./phases/OriginPhase"
 import { ProductionPhase } from "./phases/ProductionPhase"
 import { LogisticsPhase } from "./phases/LogisticsPhase"
@@ -10,8 +9,6 @@ import { BillingPhase } from "./phases/BillingPhase"
 import { TreasuryPhase } from "./phases/TreasuryPhase"
 import { saleOrderActions } from '@/features/sales/actions'
 import { purchaseOrderActions } from '@/features/purchasing/actions'
-import { ActionCategory } from "./ActionCategory"
-import { cn } from "@/lib/utils"
 // IndustrialCard removed here as we are moving to individual Card components per phase
 import { getHubStatuses } from '@/features/orders/utils/status'
 import { Order, Payment } from "../types"
@@ -160,6 +157,7 @@ export function OrderHubIntegrated({
                         collapsible={true}
                         isOpen={openPhases.has('billing')}
                         onOpenChange={togglePhase('billing')}
+                        isSale={type === 'sale'}
                     />
 
                     {/* 3. Tesorería */}
@@ -175,6 +173,7 @@ export function OrderHubIntegrated({
                         collapsible={true}
                         isOpen={openPhases.has('treasury')}
                         onOpenChange={togglePhase('treasury')}
+                        isSale={type === 'sale'}
                     />
 
                     {/* 4. Producción */}
@@ -189,6 +188,7 @@ export function OrderHubIntegrated({
                             collapsible={true}
                             isOpen={openPhases.has('production')}
                             onOpenChange={togglePhase('production')}
+                            isSale={type === 'sale'}
                         />
                     )}
 

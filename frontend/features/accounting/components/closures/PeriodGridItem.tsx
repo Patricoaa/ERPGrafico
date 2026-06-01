@@ -1,7 +1,7 @@
 import React from 'react';
-import { EntityCard } from '@/components/shared/EntityCard';
-import { StatusBadge } from '@/components/shared/StatusBadge';
-import { IconButton } from '@/components/shared';
+;
+;
+import { Chip, EntityCard, IconButton, StatusBadge } from '@/components/shared';
 import { AccountingPeriod } from '../../types';
 import { Calendar, Lock, LockOpen, CheckCircle2, Clock, ShieldCheck, ShieldAlert } from 'lucide-react';
 import { formatPlainDate } from '@/lib/utils';
@@ -21,20 +21,13 @@ const StatusIcon = ({ status }: { status: string }) => {
         case 'CLOSED': return <Lock className="w-4 h-4 text-muted-foreground" />;
         default: return null;
     }
-};export function PeriodGridItem({ period, onClose, onReopen, isActionLoading }: PeriodGridItemProps) {
-    const getStatusToken = (status: string) => {
-        switch (status) {
-            case 'OPEN': return 'success';
-            case 'UNDER_REVIEW': return 'warning';
-            case 'CLOSED': return 'info';
-            default: return 'generic';
-        }
-    };
+};
 
+export function PeriodGridItem({ period, onClose, onReopen, isActionLoading }: PeriodGridItemProps) {
     const taxClosed = !!(period.tax_period_id && period.tax_period_status === 'CLOSED');
 
     return (
-        <EntityCard className="h-full hover:border-primary/30 hover:shadow-xl hover:shadow-primary/10">
+        <EntityCard className="h-full">
             <EntityCard.Header
                 title={
                     <div className="flex items-center gap-2">
@@ -51,7 +44,7 @@ const StatusIcon = ({ status }: { status: string }) => {
                         </span>
                     </div>
                 }
-                trailing={<StatusBadge status={getStatusToken(period.status)} label={period.status_display} />}
+                trailing={<StatusBadge status={period.status} label={period.status_display} />}
             />
 
             <EntityCard.Body className="grid-cols-1 pt-2">
@@ -75,12 +68,11 @@ const StatusIcon = ({ status }: { status: string }) => {
                             <TooltipProvider>
                                 <Tooltip>
                                     <TooltipTrigger asChild>
-                                        <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-warning/10 border border-warning/20 cursor-help animate-pulse-subtle">
-                                            <ShieldCheck className="w-3 h-3 text-warning" />
-                                            <span className="text-[10px] font-bold uppercase text-warning tracking-wider">F29 Cerrado</span>
-                                        </div>
+                                        <Chip intent="warning" icon={ShieldCheck} className="cursor-help animate-pulse-subtle">
+                                            F29 Cerrado
+                                        </Chip>
                                     </TooltipTrigger>
-                                    <TooltipContent side="top" className="max-w-[200px] bg-popover border-border">
+                                    <TooltipContent side="top" className="max-w-[200px]">
                                         <p className="text-xs font-medium">El periodo tributario (F29) está oficialmente cerrado ante el SII. Se bloquea la reapertura contable para garantizar integridad fiscal.</p>
                                     </TooltipContent>
                                 </Tooltip>

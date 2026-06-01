@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { billingApi } from '../api/billingApi'
 import { toast } from 'sonner'
+import { useRealtime } from '@/features/realtime'
 import type { InvoiceFilters } from '../types'
 import { SALES_KEYS } from '@/features/sales/hooks/useSalesOrders'
 
@@ -15,6 +16,7 @@ interface UseInvoicesProps {
 
 export function useInvoices({ filters }: UseInvoicesProps = {}) {
     const queryClient = useQueryClient()
+    const { markLocalMutation } = useRealtime()
 
     const { data: invoices, isLoading, refetch } = useQuery({
         queryKey: [...INVOICES_QUERY_KEY, filters],
@@ -22,15 +24,20 @@ export function useInvoices({ filters }: UseInvoicesProps = {}) {
         staleTime: 2 * 60 * 1000, // 2 min — TODO Fase 2: eliminar client-side filter
     })
 
+    const invalidateBilling = () => {
+        queryClient.invalidateQueries({ queryKey: INVOICES_QUERY_KEY })
+        // Invoice mutations afectan también el estado de la orden de venta padre.
+        queryClient.invalidateQueries({ queryKey: SALES_KEYS.all })
+    }
+
     const annulMutation = useMutation({
         mutationFn: async ({ id, force }: { id: number, force: boolean }) => {
             return billingApi.annulInvoice(id, { force })
         },
         onSuccess: () => {
+            markLocalMutation()
             toast.success('Documento anulado correctamente')
-            // Invoice annul changes both billing list AND the parent sale order status
-            queryClient.invalidateQueries({ queryKey: INVOICES_QUERY_KEY })
-            queryClient.invalidateQueries({ queryKey: SALES_KEYS.all })
+            invalidateBilling()
         },
         onError: (error: Error) => {
             // Let component handle specific errors
@@ -38,11 +45,64 @@ export function useInvoices({ filters }: UseInvoicesProps = {}) {
         }
     })
 
+    const confirmMutation = useMutation({
+        mutationFn: async ({ id, payload }: { id: number, payload: FormData | Record<string, unknown> }) =>
+            billingApi.confirmInvoice(id, payload),
+        onSuccess: () => {
+            markLocalMutation()
+            invalidateBilling()
+        },
+    })
+
+    const registerNoteMutation = useMutation({
+        mutationFn: async ({ invoiceId, payload }: { invoiceId: number, payload: FormData }) =>
+            billingApi.registerNoteOnInvoice(invoiceId, payload),
+        onSuccess: () => {
+            markLocalMutation()
+            invalidateBilling()
+        },
+    })
+
+    const posCheckoutMutation = useMutation({
+        mutationFn: async (payload: FormData) => billingApi.posCheckout(payload),
+        onSuccess: () => {
+            markLocalMutation()
+            invalidateBilling()
+        },
+    })
+
+    const requestCreditMutation = useMutation({
+        mutationFn: async (payload: FormData) => billingApi.requestCredit(payload),
+        onSuccess: () => {
+            markLocalMutation()
+            invalidateBilling()
+        },
+    })
+
     return {
         invoices: invoices ?? [],
         isLoading,
         refetch,
         annulInvoice: annulMutation.mutateAsync,
-        isAnnulling: annulMutation.isPending
+        isAnnulling: annulMutation.isPending,
+        confirmInvoice: confirmMutation.mutateAsync,
+        isConfirming: confirmMutation.isPending,
+        registerNoteOnInvoice: registerNoteMutation.mutateAsync,
+        posCheckout: posCheckoutMutation.mutateAsync,
+        isCheckingOut: posCheckoutMutation.isPending,
+        requestCredit: requestCreditMutation.mutateAsync,
+        isRequestingCredit: requestCreditMutation.isPending,
     }
+}
+
+/**
+ * Fetch a single invoice by id. queryKey alineada con INVOICES_QUERY_KEY +
+ * id para que invalidaciones masivas refresquen también el detalle.
+ */
+export function useInvoice(id: number | null | undefined) {
+    return useQuery({
+        queryKey: id ? [...INVOICES_QUERY_KEY, 'detail', id] : [...INVOICES_QUERY_KEY, 'detail', 'noop'],
+        queryFn: () => billingApi.getInvoice(id!),
+        enabled: !!id,
+    })
 }

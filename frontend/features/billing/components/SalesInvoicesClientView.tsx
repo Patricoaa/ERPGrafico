@@ -1,27 +1,25 @@
 "use client"
 
 import { showApiError, getErrorMessage } from "@/lib/errors"
-import React, { useState, useEffect } from "react"
+import React, { useState } from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
-import { DataTable } from "@/components/ui/data-table"
-import { DataCell } from "@/components/ui/data-table-cells"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { ActionConfirmModal, DataTableView } from '@/components/shared'
+import { DataCell } from '@/components/shared'
+import { DataTableColumnHeader } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
-import { IconButton, SmartSearchBar, useSmartSearch } from "@/components/shared"
-import { EntityCard } from "@/components/shared/EntityCard"
+import {IconButton, SmartSearchBar, useSmartSearch} from "@/components/shared"
 import { invoiceSearchDef } from "@/features/billing/searchDef"
-import { LayoutDashboard, ArrowRight, ArrowLeft, List } from "lucide-react"
+import { ArrowRight, ArrowLeft } from "lucide-react"
 import { treasuryApi } from "@/features/treasury/api/treasuryApi"
 import { useInvoices } from "@/features/billing/hooks/useInvoices"
 import { Invoice } from "@/features/billing/types"
-import { EmptyState } from "@/components/shared/EmptyState"
 import { toast } from "sonner"
 import { SaleNoteModal } from "@/features/sales"
 import { PaymentModal } from "@/features/treasury/components/PaymentModal"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
-import { InvoiceCard } from "@/features/billing/components/InvoiceCard"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
-import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+
+import { getDtePrefix } from "@/lib/entity-registry"
 
 export function SalesInvoicesClientView() {
     const { filters } = useSmartSearch(invoiceSearchDef)
@@ -32,29 +30,6 @@ export function SalesInvoicesClientView() {
     const router = useRouter()
     const searchParams = useSearchParams()
     const pathname = usePathname()
-
-    const [currentView, setCurrentView] = React.useState<'card' | 'list'>(
-        (searchParams.get('view') as 'card' | 'list') ?? 'card'
-    )
-
-    const handleViewChange = (v: string) => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.set('view', v)
-        router.push(`${pathname}?${params.toString()}`, { scroll: false })
-        setCurrentView(v as 'card' | 'list')
-    }
-
-    useEffect(() => {
-        const viewParam = searchParams.get('view')
-        if (!viewParam) {
-            const params = new URLSearchParams(searchParams.toString())
-            params.set('view', 'card')
-            router.replace(`${pathname}?${params.toString()}`, { scroll: false })
-            setCurrentView('card')
-        } else if (viewParam !== currentView) {
-            setCurrentView(viewParam as 'card' | 'list')
-        }
-    }, [searchParams, pathname, router, currentView])
 
     const toggleSelection = (inv: Invoice) => {
         const isSelected = hubConfig?.invoiceId === inv.id
@@ -67,12 +42,6 @@ export function SalesInvoicesClientView() {
         const query = params.toString()
         router.push(query ? `${pathname}?${query}` : pathname, { scroll: false })
     }
-
-    const viewOptions = [
-        { label: "Lista", value: "list", icon: List },
-        { label: "Tarjeta", value: "card", icon: LayoutDashboard }
-
-    ]
 
     const forceAnnulConfirm = useConfirmAction<number>(async (id) => {
         try {
@@ -109,7 +78,8 @@ export function SalesInvoicesClientView() {
             let paymentType = 'INBOUND'
             if (payingInv.dte_type === 'NOTA_CREDITO') paymentType = 'OUTBOUND'
             formData.append('payment_type', paymentType)
-            formData.append('reference', `${payingInv.dte_type === 'NOTA_CREDITO' ? 'NC' : payingInv.dte_type === 'NOTA_DEBITO' ? 'ND' : 'PAGO'}-${payingInv.number}`)
+            const prefix = ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(payingInv.dte_type) ? getDtePrefix(payingInv.dte_type) : 'PAGO';
+            formData.append('reference', `${prefix}-${payingInv.number}`)
             formData.append('sale_order', payingInv.sale_order ? payingInv.sale_order.toString() : '')
             formData.append('invoice', payingInv.id.toString())
             formData.append('payment_method', d.paymentMethod)
@@ -135,7 +105,7 @@ export function SalesInvoicesClientView() {
         {
             accessorKey: "number",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Folio" className="justify-center" />,
-            cell: ({ row }) => <DataCell.DocumentId label="billing.invoice" data={row.original} />,
+            cell: ({ row }) => <DataCell.Code>{row.original.display_id ?? row.original.number}</DataCell.Code>,
         },
         {
             accessorKey: "date",
@@ -145,7 +115,7 @@ export function SalesInvoicesClientView() {
         {
             accessorKey: "dte_type_display",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Tipo" className="justify-center" />,
-            cell: ({ row }) => <DataCell.Secondary className="font-bold uppercase text-[10px] text-center">{row.getValue("dte_type_display")}</DataCell.Secondary>
+            cell: ({ row }) => <DataCell.Secondary>{row.getValue("dte_type_display")}</DataCell.Secondary>
         },
         {
             accessorKey: "partner_name",
@@ -183,59 +153,22 @@ export function SalesInvoicesClientView() {
     ]
 
     return (
-        <div className="space-y-4 px-1">
+        <div className="px-1 h-full flex flex-col">
 
-            <DataTable
-                columns={columns}
-                data={invoices}
-                isLoading={isLoading}
-                onRowClick={(row: Invoice) => toggleSelection(row)}
-                variant="embedded"
-                currentView={currentView}
-                onViewChange={handleViewChange}
-                viewOptions={viewOptions}
-                leftAction={<SmartSearchBar searchDef={invoiceSearchDef} placeholder="Buscar facturas..." />}
-                defaultPageSize={20}
-                renderCustomView={currentView === 'card' ? (table) => {
-                    const rows = table.getRowModel().rows
-                    if (rows.length === 0) {
-                        return (
-                            <div className="py-12">
-                                <EmptyState
-                                    context="search"
-                                    title="No hay documentos"
-                                    description="No se encontraron facturas o boletas emitidas."
-                                />
-                            </div>
-                        )
-                    }
-                    return (
-                        <div className="grid gap-3 pt-2">
-                            {rows.map((row: any) => {
-                                const inv = row.original as Invoice
-                                const isSelected = hubConfig?.invoiceId === inv.id
-                                return (
-                                    <InvoiceCard
-                                        key={inv.id}
-                                        item={inv}
-                                        type="sale_invoice"
-                                        isSelected={isSelected}
-                                        visibleColumns={table.getState().columnVisibility}
-                                        onClick={() => toggleSelection(inv)}
-                                    />
-                                )
-                            })}
-                        </div>
-                    )
-                } : undefined}
-                renderLoadingView={currentView === 'card' ? () => (
-                    <div className="grid gap-3 pt-2">
-                        {Array.from({ length: 8 }).map((_, i) => (
-                            <EntityCard.Skeleton key={i} />
-                        ))}
-                    </div>
-                ) : undefined}
-            />
+            <div className="flex-1 min-h-0">
+                <DataTableView
+                    entityLabel="billing.invoice"
+                    columns={columns}
+                    data={invoices}
+                    isLoading={isLoading}
+                    onRowClick={(row: Invoice) => toggleSelection(row)}
+                    variant="embedded"
+                    leftAction={<SmartSearchBar searchDef={invoiceSearchDef} placeholder="Buscar facturas..." className="w-full" />}
+                    defaultPageSize={20}
+                    isSelected={(data: Invoice) => hubConfig?.invoiceId === data.id}
+                    isHubOpen={isHubOpen}
+                />
+            </div>
 
             {notingInvoice && (
                 <SaleNoteModal
