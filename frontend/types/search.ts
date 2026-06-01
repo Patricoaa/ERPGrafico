@@ -34,4 +34,6 @@ export type ActiveChip = {
   key: string
   label: string
   valueLabel: string
+  /** True for the global free-text search param (rendered without prefix, neutral color). */
+  isGlobalSearch: boolean
 }

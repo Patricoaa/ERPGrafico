@@ -282,17 +282,20 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
         {chips.map((chip) => (
           <Chip
             key={chip.key}
-            intent="primary"
+            intent={chip.isGlobalSearch ? 'neutral' : 'primary'}
             size="xs"
             className="shrink-0"
           >
             <span className="flex items-center gap-1">
-              <span className="opacity-60">{chip.label}:</span>
+              {!chip.isGlobalSearch && <span className="opacity-60">{chip.label}:</span>}
               <span>{chip.valueLabel}</span>
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); removeFilter(chip.key) }}
-                className="hover:bg-primary/20 rounded-full p-0.5 transition-colors ml-0.5 -mr-1 flex items-center justify-center shrink-0"
+                className={cn(
+                  'rounded-full p-0.5 transition-colors ml-0.5 -mr-1 flex items-center justify-center shrink-0',
+                  chip.isGlobalSearch ? 'hover:bg-foreground/10' : 'hover:bg-primary/20',
+                )}
                 aria-label={`Eliminar filtro ${chip.label}`}
               >
                 <X className="h-2.5 w-2.5" />
@@ -373,7 +376,29 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
           {stage.type === 'fields' && (
             <div className="py-1">
               {filteredFields.length === 0 ? (
-                <p className="px-3 py-2 text-[10px] text-muted-foreground uppercase tracking-widest">Sin coincidencias</p>
+                inputValue.trim() ? (
+                  <button
+                    type="button"
+                    role="option"
+                    aria-selected={false}
+                    onClick={() => handleTextSubmit()}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-left transition-colors hover:bg-muted/40"
+                  >
+                    <Search className="h-3.5 w-3.5 text-muted-foreground/60 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[11px] text-foreground truncate">
+                        Buscar <span className="font-bold">«{inputValue.trim()}»</span>
+                      </p>
+                      <p className="text-[9px] text-muted-foreground/60">Búsqueda general en todos los campos</p>
+                    </div>
+                    <span className="inline-flex items-center gap-1 text-[9px] text-muted-foreground/50 uppercase tracking-widest shrink-0">
+                      Enter
+                      <CornerDownLeft className="h-2.5 w-2.5" />
+                    </span>
+                  </button>
+                ) : (
+                  <p className="px-3 py-2 text-[10px] text-muted-foreground uppercase tracking-widest">Sin coincidencias</p>
+                )
               ) : (
                 filteredFields.map((field, i) => (
                   <button
