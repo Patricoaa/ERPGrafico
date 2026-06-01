@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.22](https://github.com/Patricoaa/ERPGrafico/compare/v0.1.21...v0.1.22) (2026-06-01)
+
+
+### ✨ Features
+
+* estandarización de layout fluido, ESLint rules, refactors y mejoras en shared components ([a8ab066](https://github.com/Patricoaa/ERPGrafico/commit/a8ab06614878e1dacb5b79091e5d89188d6c46d4))
+* **frontend:** fluid responsive layout — tokens, grids, sidebar ([f6e39dd](https://github.com/Patricoaa/ERPGrafico/commit/f6e39ddc7766424999a2e24592e116318537c3b7))
+
+
+### 🐛 Bug Fixes
+
+* **frontend:** alinear bordes y sombras de main y paneles laterales via [@utility](https://github.com/utility) panel-surface ([fee0df1](https://github.com/Patricoaa/ERPGrafico/commit/fee0df1f03f1896e792d10562bcf4b13df43375e))
+* **layout:** estandarizar layout fluido, alturas, padding de paneles y empty states ([63a60ef](https://github.com/Patricoaa/ERPGrafico/commit/63a60ef2e22d6b678baa9e37c652e3845939df4f))
+* **shared:** align EmptyState icon card and SmartSearchBar styling ([9224b19](https://github.com/Patricoaa/ERPGrafico/commit/9224b19f3073a411551e240c0398d09494705f36))
+* **types:** resolve 52 TypeScript errors + refactor P3 set-state-in-effect ([0f4584e](https://github.com/Patricoaa/ERPGrafico/commit/0f4584e2b8dc371de884c9727810f20de654fc75))
+
+
+### ⚙️ Refactors
+
+* **production:** migrate WorkOrderWizard from BaseModal to embedded bottom Drawer ([3d023c0](https://github.com/Patricoaa/ERPGrafico/commit/3d023c08ea1fd4dc73d464424b886fd76d271abf))
+
 ### [0.1.21](https://github.com/Patricoaa/ERPGrafico/compare/v0.1.20...v0.1.21) (2026-06-01)
 
 
