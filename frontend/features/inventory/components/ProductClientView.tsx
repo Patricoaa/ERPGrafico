@@ -1,6 +1,6 @@
 "use client"
 
-import {showApiError} from "@/lib/errors"
+import { showApiError } from "@/lib/errors"
 
 import React, { useEffect, useState, useMemo } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
@@ -37,7 +37,7 @@ interface ProductClientViewProps {
 }
 
 export function ProductClientView({ externalOpen, onExternalOpenChange, createAction }: ProductClientViewProps) {
-    const { filters: smartFilters } = useSmartSearch(productSearchDef)
+    const { filters: smartFilters, isFiltered } = useSmartSearch(productSearchDef)
     const filters = useMemo<ProductFilters>(() => ({
         active: 'all',
         parent_template__isnull: true,
@@ -150,11 +150,15 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
 
     useEffect(() => {
         if (selectedFromUrl) {
-            setEditingProduct(selectedFromUrl)
-            setIsFormOpen(true)
+            requestAnimationFrame(() => {
+                setEditingProduct(selectedFromUrl)
+                setIsFormOpen(true)
+            })
         } else {
-            setIsFormOpen(false)
-            setEditingProduct(null)
+            requestAnimationFrame(() => {
+                setIsFormOpen(false)
+                setEditingProduct(null)
+            })
         }
     }, [selectedFromUrl])
 
@@ -441,9 +445,16 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                     data={displayProducts}
                     isLoading={isLoading}
                     variant="embedded"
-                    leftAction={<SmartSearchBar searchDef={productSearchDef} placeholder="Buscar por nombre, SKU o tipo..." className="w-full" />}
+                    leftAction={<SmartSearchBar searchDef={productSearchDef} placeholder="Buscar producto..." className="w-full" />}
                     initialColumnVisibility={initialColumnVisibility}
                     renderCustomView={createEntityCardView('inventory.product', {
+                        isFiltered,
+                        emptyState: {
+                            context: "inventory",
+                            title: "Aún no hay productos",
+                            description: "Crea tu primer producto para empezar a construir el catálogo.",
+                            action: createAction,
+                        },
                         renderCard: (product: Product) => (
                             <EntityCard key={product.id} onClick={() => {
                                 const params = new URLSearchParams(searchParams.toString())
@@ -487,6 +498,12 @@ export function ProductClientView({ externalOpen, onExternalOpenChange, createAc
                     bulkActions={bulkActions}
                     defaultPageSize={500}
                     createAction={createAction}
+                    isFiltered={isFiltered}
+                    emptyState={{
+                        context: "inventory",
+                        title: "Aún no hay productos",
+                        description: "Crea tu primer producto para empezar a construir el catálogo.",
+                    }}
                 />
             </div>
 

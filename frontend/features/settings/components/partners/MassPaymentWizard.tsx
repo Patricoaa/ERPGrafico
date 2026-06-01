@@ -46,12 +46,14 @@ export function MassPaymentWizard({ open, onOpenChange, resolution, onSuccess }:
 
     useEffect(() => {
         if (open) {
-            setSelectedAccountId("")
-            const initialPayments: Record<number, number> = {}
-            pendingLines.forEach(l => {
-                initialPayments[l.partner] = l.pendingAmount
+            requestAnimationFrame(() => {
+                setSelectedAccountId("")
+                const initialPayments: Record<number, number> = {}
+                pendingLines.forEach(l => {
+                    initialPayments[l.partner] = l.pendingAmount
+                })
+                setPayments(initialPayments)
             })
-            setPayments(initialPayments)
         }
     }, [open, pendingLines])
 

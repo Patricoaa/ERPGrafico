@@ -55,9 +55,11 @@ export function PartnerLedgerDrawer({
 
     useEffect(() => {
         if (open && partnerId) {
-            fetchData()
+            requestAnimationFrame(() => {
+                fetchData()
+            })
         } else {
-            setData(null)
+            setTimeout(() => setData(null), 0)
         }
     }, [open, partnerId])
 

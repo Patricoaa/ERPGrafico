@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useProduct } from "@/features/inventory/hooks/useProducts";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm, type SubmitHandler } from "react-hook-form";
+import { useForm, type SubmitHandler, type Resolver, type Control } from "react-hook-form";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { getErrorMessage } from "@/lib/errors";
@@ -132,24 +132,27 @@ export function ManufacturingConfigStep({
   // Set defaults from product when data arrives
   useEffect(() => {
     if (!selectedProduct) return;
-    setMfgData(emptyManufacturingData({
-      mfg_enable_prepress: selectedProduct.mfg_enable_prepress,
-      mfg_enable_press: selectedProduct.mfg_enable_press,
-      mfg_enable_postpress: selectedProduct.mfg_enable_postpress,
-      mfg_prepress_design: selectedProduct.mfg_prepress_design,
-      mfg_prepress_folio: selectedProduct.mfg_prepress_folio,
-      mfg_press_offset: selectedProduct.mfg_press_offset,
-      mfg_press_digital: selectedProduct.mfg_press_digital,
-      mfg_press_special: selectedProduct.mfg_press_special,
-    }));
-    if (selectedProduct.uom && !uomId) {
-      setUomId(String(selectedProduct.uom));
-    }
+    requestAnimationFrame(() => {
+      setMfgData(emptyManufacturingData({
+        mfg_enable_prepress: selectedProduct.mfg_enable_prepress,
+        mfg_enable_press: selectedProduct.mfg_enable_press,
+        mfg_enable_postpress: selectedProduct.mfg_enable_postpress,
+        mfg_prepress_design: selectedProduct.mfg_prepress_design,
+        mfg_prepress_folio: selectedProduct.mfg_prepress_folio,
+        mfg_press_offset: selectedProduct.mfg_press_offset,
+        mfg_press_digital: selectedProduct.mfg_press_digital,
+        mfg_press_special: selectedProduct.mfg_press_special,
+      }));
+      if (selectedProduct.uom && !uomId) {
+        setUomId(String(selectedProduct.uom));
+      }
+    })
   }, [selectedProduct]);
 
   // Initialize form with current values
   const form = useForm<WorkOrderFormValues>({
-    resolver: zodResolver(workOrderSchema) as unknown as SubmitHandler<WorkOrderFormValues>,
+    // Safe: discriminated union requires casting through unknown to align resolver/control types
+    resolver: zodResolver(workOrderSchema) as unknown as Resolver<WorkOrderFormValues>,
     defaultValues: {
       otType,
       description: otType === "LINKED" ? (productDescriptionFromStore ?? "") : "",
@@ -170,66 +173,68 @@ export function ManufacturingConfigStep({
   useEffect(() => {
     if (initialData) {
       const isLinked = !!initialData.sale_order;
-      form.reset({
-        otType: isLinked ? "LINKED" : "NONE",
-        description: initialData.description || "",
-        sale_order: isLinked ?
-          (typeof initialData.sale_order === 'object' ?
-            String(initialData.sale_order?.id || '') :
-            String(initialData.sale_order || "")) : "",
-        sale_line: isLinked ?
-          (typeof initialData.sale_line === 'object' ?
-            String(initialData.sale_line?.id || "") :
-            String(initialData.sale_line || "")) : "",
-        product_description: initialData.stage_data?.product_description ?? "",
-        product_id: (!isLinked && initialData.product) ? String(initialData.product.id) : "",
-        contact_id: initialData.stage_data?.contact_id?.toString() ?? "",
-        quantity: isLinked ? "" : (initialData.stage_data?.quantity?.toString() ?? ""),
-        uom_id: isLinked ? "" : (initialData.stage_data?.uom_id?.toString() ?? ""),
-        start_date: initialData.start_date ?
-          new Date(initialData.start_date) : new Date(),
-        due_date: initialData.estimated_completion_date ?
+      requestAnimationFrame(() => {
+        form.reset({
+          otType: isLinked ? "LINKED" : "NONE",
+          description: initialData.description || "",
+          sale_order: isLinked ?
+            (typeof initialData.sale_order === 'object' ?
+              String(initialData.sale_order?.id || '') :
+              String(initialData.sale_order || "")) : "",
+          sale_line: isLinked ?
+            (typeof initialData.sale_line === 'object' ?
+              String(initialData.sale_line?.id || "") :
+              String(initialData.sale_line || "")) : "",
+          product_description: initialData.stage_data?.product_description ?? "",
+          product_id: (!isLinked && initialData.product) ? String(initialData.product.id) : "",
+          contact_id: initialData.stage_data?.contact_id?.toString() ?? "",
+          quantity: isLinked ? "" : (initialData.stage_data?.quantity?.toString() ?? ""),
+          uom_id: isLinked ? "" : (initialData.stage_data?.uom_id?.toString() ?? ""),
+          start_date: initialData.start_date ?
+            new Date(initialData.start_date) : new Date(),
+          due_date: initialData.estimated_completion_date ?
+            new Date(initialData.estimated_completion_date) :
+            (initialData.sale_order_delivery_date ?
+              new Date(initialData.sale_order_delivery_date) : null),
+          internal_notes: initialData.stage_data?.internal_notes ?? "",
+        } as WorkOrderFormValues);
+
+        setMfgData({
+          phases: {
+            prepress: initialData.stage_data?.phases?.prepress ?? false,
+            press: initialData.stage_data?.phases?.press ?? false,
+            postpress: initialData.stage_data?.phases?.postpress ?? false,
+          },
+          specifications: {
+            prepress: initialData.stage_data?.prepress_specs ?? "",
+            press: initialData.stage_data?.press_specs ?? "",
+            postpress: initialData.stage_data?.postpress_specs ?? "",
+          },
+          design_needed: initialData.stage_data?.design_needed ?? false,
+          design_files: [],
+          existing_design_files: initialData.stage_data?.design_attachments ?? [],
+          folio_enabled: initialData.stage_data?.folio_enabled ?? false,
+          folio_start: initialData.stage_data?.folio_start ?? '',
+          print_type: (initialData.stage_data?.print_type as any) ?? null,
+          internal_notes: initialData.stage_data?.internal_notes ?? '',
+          product_description: initialData.stage_data?.product_description ?? '',
+        });
+
+        setSelectedContact({
+          id: Number(initialData.stage_data?.contact_id),
+          name: initialData.stage_data?.contact_name || "Contacto",
+          tax_id: initialData.stage_data?.contact_tax_id || ""
+        } as any);
+
+        setQuantity(isLinked ? "" : (initialData.stage_data?.quantity?.toString() ?? ""));
+        setUomId(isLinked ? "" : (initialData.stage_data?.uom_id?.toString() ?? ""));
+        setStartDate(initialData.start_date ?
+          new Date(initialData.start_date) : new Date());
+        setDueDate(initialData.estimated_completion_date ?
           new Date(initialData.estimated_completion_date) :
           (initialData.sale_order_delivery_date ?
-            new Date(initialData.sale_order_delivery_date) : null),
-        internal_notes: initialData.stage_data?.internal_notes ?? "",
-      } as WorkOrderFormValues);
-
-      setMfgData({
-        phases: {
-          prepress: initialData.stage_data?.phases?.prepress ?? false,
-          press: initialData.stage_data?.phases?.press ?? false,
-          postpress: initialData.stage_data?.phases?.postpress ?? false,
-        },
-        specifications: {
-          prepress: initialData.stage_data?.prepress_specs ?? "",
-          press: initialData.stage_data?.press_specs ?? "",
-          postpress: initialData.stage_data?.postpress_specs ?? "",
-        },
-        design_needed: initialData.stage_data?.design_needed ?? false,
-        design_files: [],
-        existing_design_files: initialData.stage_data?.design_attachments ?? [],
-        folio_enabled: initialData.stage_data?.folio_enabled ?? false,
-        folio_start: initialData.stage_data?.folio_start ?? '',
-        print_type: (initialData.stage_data?.print_type as any) ?? null,
-        internal_notes: initialData.stage_data?.internal_notes ?? '',
-        product_description: initialData.stage_data?.product_description ?? '',
-      });
-
-      setSelectedContact({
-        id: Number(initialData.stage_data?.contact_id),
-        name: initialData.stage_data?.contact_name || "Contacto",
-        tax_id: initialData.stage_data?.contact_tax_id || ""
-      } as any);
-
-      setQuantity(isLinked ? "" : (initialData.stage_data?.quantity?.toString() ?? ""));
-      setUomId(isLinked ? "" : (initialData.stage_data?.uom_id?.toString() ?? ""));
-      setStartDate(initialData.start_date ?
-        new Date(initialData.start_date) : new Date());
-      setDueDate(initialData.estimated_completion_date ?
-        new Date(initialData.estimated_completion_date) :
-        (initialData.sale_order_delivery_date ?
-          new Date(initialData.sale_order_delivery_date) : null));
+            new Date(initialData.sale_order_delivery_date) : null));
+      })
     }
   }, [initialData]);
 
@@ -260,13 +265,13 @@ export function ManufacturingConfigStep({
   };
 
   // Handle date changes
-  const handleStartDateChange = (date: Date | null) => {
-    setStartDate(date);
+  const handleStartDateChange = (date: Date | undefined) => {
+    setStartDate(date ?? null);
     form.setValue('start_date', date ?? undefined);
   };
 
-  const handleDueDateChange = (date: Date | null) => {
-    setDueDate(date);
+  const handleDueDateChange = (date: Date | undefined) => {
+    setDueDate(date ?? null);
     form.setValue('due_date', date ?? undefined);
   };
 
@@ -403,7 +408,8 @@ export function ManufacturingConfigStep({
   }
 
   const handleFormSubmit = (e: React.FormEvent) => {
-    form.handleSubmit(onSubmit)(e)
+    // Safe: discriminated union needs explicit type parameter for handleSubmit
+    (form.handleSubmit as (fn: SubmitHandler<WorkOrderFormValues>) => (e: React.FormEvent) => void)(onSubmit)(e)
   }
 
   return (
@@ -472,7 +478,8 @@ export function ManufacturingConfigStep({
               {/* Fechas */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
-                  control={form.control}
+                  // Safe: discriminated union forces cast through unknown
+                  control={form.control as unknown as Control<WorkOrderFormValues>}
                   name="start_date"
                   render={({ field }) => (
                     <PeriodValidationDateInput
@@ -485,7 +492,8 @@ export function ManufacturingConfigStep({
                   )}
                 />
                 <FormField
-                  control={form.control}
+                  // Safe: discriminated union forces cast through unknown
+                  control={form.control as unknown as Control<WorkOrderFormValues>}
                   name="due_date"
                   render={({ field }) => (
                     <PeriodValidationDateInput
@@ -527,7 +535,8 @@ export function ManufacturingConfigStep({
                   </div>
                 ) : (
                   <AdvancedContactSelector
-                    onSelectContact={handleContactSelect}
+                    // Safe: handleContactSelect only uses fields common to both Contact types (id, name, tax_id)
+                    onSelectContact={handleContactSelect as unknown as (contact: import("@/types/entities").Contact) => void}
                     onChange={() => { }}
                     placeholder="Buscar contacto..."
                     variant="inline"

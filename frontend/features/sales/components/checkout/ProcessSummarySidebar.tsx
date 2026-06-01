@@ -1,6 +1,6 @@
 "use client"
 
-import {User, CreditCard, ShoppingBag, CheckCircle2, Paintbrush} from "lucide-react"
+import {User, CreditCard, ShoppingBag, CheckCircle2, Paintbrush, FileWarning} from "lucide-react"
 import { cn, formatPlainDate } from "@/lib/utils"
 import { MoneyDisplay } from "@/components/shared"
 
@@ -44,19 +44,17 @@ export function ProcessSummarySidebar({
     paymentData,
     deliveryData
 }: ProcessSummarySidebarProps) {
-    // Dynamically build the steps list
+    // Mirror the wizard's steps exactly
     const steps = [
-        { id: 'customer_dte', label: 'Cliente & Doc', icon: User },
+        { id: 'customer', label: 'Cliente', icon: User },
+        { id: 'dte', label: 'Documento', icon: FileWarning },
     ]
 
     if (hasManufacturing) {
         steps.push({ id: 'manufacturing', label: 'Fabricación', icon: Paintbrush })
     }
 
-    if (totalSteps > (hasManufacturing ? 3 : 2)) {
-        steps.push({ id: 'delivery', label: 'Entrega', icon: ShoppingBag })
-    }
-
+    steps.push({ id: 'delivery', label: 'Entrega', icon: ShoppingBag })
     steps.push({ id: 'payment', label: 'Pago', icon: CreditCard })
 
     return (
@@ -91,10 +89,14 @@ export function ProcessSummarySidebar({
                         {/* Step Details */}
                         {isPast && (
                             <div className="px-3 pb-3 pt-1 space-y-1 animate-in fade-in duration-300">
-                                {step.id === 'customer_dte' && (
+                                {step.id === 'customer' && (
                                     <>
                                         {customerName && <p className="text-xs font-semibold truncate">{customerName}</p>}
-                                        {dteType && <p className="text-xs font-semibold mt-1">{dteType}</p>}
+                                    </>
+                                )}
+                                {step.id === 'dte' && (
+                                    <>
+                                        {dteType && <p className="text-xs font-semibold">{dteType}</p>}
                                     </>
                                 )}
                                 {step.id === 'payment' && paymentData && (

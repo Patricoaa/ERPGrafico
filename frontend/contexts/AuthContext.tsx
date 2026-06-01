@@ -1,7 +1,8 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from "react";
 import {useRouter} from "next/navigation";
+import axios from "axios";
 import api from "@/lib/api";
 import { useTheme } from "next-themes";
 
@@ -37,35 +38,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const { setTheme } = useTheme();
 
-    const fetchUser = async () => {
+    // Use a ref to break the dependency chain: next-themes@0.4.x memoizes setTheme
+    // with useCallback(fn, [theme]), causing its reference to change on every theme
+    // transition. Without the ref, fetchUser would re-create -> effect re-runs ->
+    // re-reads stale server theme -> setTheme -> infinite light/dark oscillation.
+    const setThemeRef = useRef(setTheme);
+    useEffect(() => { setThemeRef.current = setTheme; }, [setTheme]);
+
+    // Single source of truth for resolving the current session from a stored token.
+    // Used both on mount (session restore) and after login. Keeping one path with one
+    // endpoint avoids the divergence that previously called a non-existent /core/me/.
+    const fetchUser = useCallback(async () => {
         try {
             const token = typeof window !== 'undefined' ? localStorage.getItem("access_token") : null;
             if (!token) {
-                setIsLoading(false);
+                setUser(null);
+                setIsAuthenticated(false);
                 return;
             }
 
-            const res = await api.get('/core/auth/me/');
+            const res = await api.get<User>('/core/auth/me/');
+            const userData = res.data;
+            setUser(userData);
+            setIsAuthenticated(true);
 
-            if (res.status === 200) {
-                const userData = res.data;
-                setUser(userData);
-                setIsAuthenticated(true);
-                
-                // Automatically synchronize theme with server-persisted preference
-                if (userData.theme) {
-                    setTheme(userData.theme);
-                }
-            } else {
-                localStorage.removeItem("access_token");
-                localStorage.removeItem("refresh_token");
-                setIsAuthenticated(false);
+            // Automatically synchronize theme with server-persisted preference
+            if (userData.theme) {
+                setThemeRef.current(userData.theme);
             }
         } catch (error) {
             console.error("Auth init error:", error);
+            setUser(null);
             setIsAuthenticated(false);
-            // On storage error or other failure, clear tokens
-            if (typeof window !== 'undefined') {
+            // Only discard credentials when the server explicitly rejects them.
+            // A transient network failure or 5xx must not log the user out.
+            const status = axios.isAxiosError(error) ? error.response?.status : undefined;
+            if ((status === 401 || status === 403) && typeof window !== 'undefined') {
                 try {
                     localStorage.removeItem("access_token");
                     localStorage.removeItem("refresh_token");
@@ -74,11 +82,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } finally {
             setIsLoading(false);
         }
-    }
+    }, []);
 
     useEffect(() => {
-        fetchUser();
-    }, []);
+        // Session restore on mount: legitimately syncs React state from
+        // localStorage + the server (the canonical use case for an effect).
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        void fetchUser();
+    }, [fetchUser]);
 
     const login = async (token: string) => {
         localStorage.setItem("access_token", token);

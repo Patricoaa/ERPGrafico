@@ -420,8 +420,8 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess }: 
                                                                 <SelectItem value="ignore" className="text-xs font-bold uppercase">Ignorar Columna</SelectItem>
                                                                 <SelectItem value="date" className="text-xs font-bold uppercase">Fecha Movimiento</SelectItem>
                                                                 <SelectItem value="description" className="text-xs font-bold uppercase">Descripción / Glosa</SelectItem>
-                                                                <SelectItem value="debit" className="text-xs font-bold uppercase text-destructive">Cargos (Egresos)</SelectItem>
-                                                                <SelectItem value="credit" className="text-xs font-bold uppercase text-success">Abonos (Ingresos)</SelectItem>
+                                                                <SelectItem value="debit" className="text-xs font-bold uppercase text-expense">Cargos (Egresos)</SelectItem>
+                                                                <SelectItem value="credit" className="text-xs font-bold uppercase text-income">Abonos (Ingresos)</SelectItem>
                                                                 <SelectItem value="balance" className="text-xs font-bold uppercase">Saldo</SelectItem>
                                                                 <SelectItem value="reference" className="text-xs font-bold uppercase font-mono">Referencia / Doc</SelectItem>
                                                                 <SelectItem value="transaction_id" className="text-xs font-bold uppercase font-mono">ID Ext. Transacción</SelectItem>

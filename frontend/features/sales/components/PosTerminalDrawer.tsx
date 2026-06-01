@@ -7,7 +7,7 @@ import * as z from "zod"
 import { toast } from "sonner"
 import { MonitorSmartphone, Banknote, CreditCard, Landmark, Smartphone, Printer } from "lucide-react"
 import { usePaymentMethods, useTerminalDevices, type Terminal } from "@/features/treasury"
-import { treasuryApi } from "../api/treasuryApi"
+import { treasuryApi } from "@/features/treasury/api/treasuryApi"
 import { cn } from "@/lib/utils"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Button } from "@/components/ui/button"
@@ -30,7 +30,7 @@ const terminalSchema = z.object({
 
 type TerminalFormValues = z.infer<typeof terminalSchema>
 
-interface TerminalDrawerProps {
+interface PosTerminalDrawerProps {
     open: boolean
     onOpenChange: (open: boolean) => void
     terminal?: Terminal | null
@@ -38,7 +38,7 @@ interface TerminalDrawerProps {
     mode?: DrawerMode
 }
 
-export function TerminalDrawer({ open, onOpenChange, terminal, onSuccess, mode: modeProp }: TerminalDrawerProps) {
+export function PosTerminalDrawer({ open, onOpenChange, terminal, onSuccess, mode: modeProp }: PosTerminalDrawerProps) {
     const mode: DrawerMode = modeProp ?? (terminal ? 'edit' : 'create')
     const isView = mode === 'view'
     const printRef = useRef<HTMLDivElement>(null)
@@ -405,4 +405,4 @@ export function TerminalDrawer({ open, onOpenChange, terminal, onSuccess, mode: 
     )
 }
 
-export default TerminalDrawer
+export default PosTerminalDrawer

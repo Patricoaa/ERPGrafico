@@ -65,7 +65,7 @@ export function CashMovementDrawer({ id, open, onOpenChange, movementId }: CashM
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <span className="text-xs text-muted-foreground">Monto</span>
-                  <p className={`font-bold text-lg ${movement.movement_type === 'OUTBOUND' ? 'text-destructive' : 'text-success'}`}>
+                  <p className={`font-bold text-lg ${movement.movement_type === 'OUTBOUND' ? 'text-expense' : 'text-income'}`}>
                     {movement.movement_type === 'OUTBOUND' ? '-' : '+'}
                     {formatCurrency(Number(movement.amount))}
                   </p>

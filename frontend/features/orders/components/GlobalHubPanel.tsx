@@ -25,7 +25,9 @@ export function GlobalHubPanel() {
     // Tracking Inbox state to push Hub left if they sit side-by-side
     const [isInboxOpen, setIsInboxOpen] = React.useState(false)
     React.useEffect(() => {
-        setIsInboxOpen(document.body.hasAttribute('data-inbox-open'))
+        requestAnimationFrame(() => {
+            setIsInboxOpen(document.body.hasAttribute('data-inbox-open'))
+        })
         const observer = new MutationObserver(() => {
             setIsInboxOpen(document.body.hasAttribute('data-inbox-open'))
         })

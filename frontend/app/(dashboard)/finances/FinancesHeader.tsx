@@ -2,6 +2,7 @@
 
 import { usePathname, useSearchParams } from "next/navigation"
 import { PageHeader } from "@/components/shared"
+import { getModuleIconName } from "@/lib/module-registry"
 
 export const FINANCES_TABS = [
     {
@@ -96,7 +97,7 @@ export function FinancesHeader() {
             if (subActiveValue === 'distributions') return { title: "Distribución de Utilidades", description: "Gestión de actas, resolución de dividendos y reinversiones.", iconName: "pie-chart" as const }
             return { title: "Composición Societaria", description: "Gestión de capital suscrito y pagado por los socios.", iconName: "users" as const }
         }
-        return { title: "Finanzas", description: "", iconName: "trending-up" as const }
+        return { title: "Finanzas", description: "", iconName: getModuleIconName('finances') ?? "pie-chart" }
     }
 
     const config = getHeaderConfig()

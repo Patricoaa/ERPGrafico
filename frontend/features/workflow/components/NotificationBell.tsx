@@ -49,17 +49,24 @@ export function NotificationBell() {
     }
 
     useEffect(() => {
-        // Initial check
-        fetchCount()
+        const handle = requestAnimationFrame(() => {
+            fetchCount()
+        })
 
         // Polling every 60s
         const interval = setInterval(fetchCount, 60000)
-        return () => clearInterval(interval)
+        return () => {
+            cancelAnimationFrame(handle)
+            clearInterval(interval)
+        }
     }, [])
 
     useEffect(() => {
         if (open) {
-            fetchNotifications()
+            const handle = requestAnimationFrame(() => {
+                fetchNotifications()
+            })
+            return () => cancelAnimationFrame(handle)
         }
     }, [open])
 

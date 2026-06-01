@@ -45,7 +45,7 @@ export function DocumentCompletionModal({
 
     useEffect(() => {
         if (dateString && !date) {
-            setDate(dateString)
+            requestAnimationFrame(() => setDate(dateString))
         }
     }, [dateString])
 

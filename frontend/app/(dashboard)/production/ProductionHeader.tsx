@@ -2,6 +2,7 @@
 
 import { usePathname, useSearchParams } from "next/navigation"
 import { PageHeader } from "@/components/shared"
+import { getModuleIconName } from "@/lib/module-registry"
 
 export function ProductionHeader() {
     const pathname = usePathname()
@@ -14,7 +15,7 @@ export function ProductionHeader() {
     const subActiveValue = currentSegment === 'settings' ? (searchParams.get('tab') || 'global') : undefined
 
     const tabs = [
-        { value: "orders", label: "Órdenes de Trabajo", iconName: "clipboard-list", href: "/production/orders" },
+        { value: "orders", label: "Órdenes de Trabajo", iconName: "printer", href: "/production/orders" },
         { value: "boms", label: "Lista de Materiales", iconName: "layers", href: "/production/boms" },
         { value: "config", label: "Configuración", iconName: "settings", href: "/production/settings" },
     ]
@@ -29,13 +30,8 @@ export function ProductionHeader() {
 
     const getHeaderConfig = () => {
         if (activeValue === 'config') return { title: "Configuración de Producción", description: "Parametrización de procesos y fichas de fabricación.", iconName: "settings" as const }
-        return {
-            title: activeValue === 'orders' ? "Centro de Producción" : "Fichas Técnicas (BOM)",
-            description: activeValue === 'orders'
-                ? "Gestión de procesos fabriles, órdenes de trabajo y seguimiento."
-                : "Estructuras de productos, componentes y costos de fabricación.",
-            iconName: (activeValue === 'orders' ? "clipboard-list" : "layers") as "clipboard-list" | "layers",
-        }
+        if (activeValue === 'boms') return { title: "Fichas Técnicas (BOM)", description: "Estructuras de productos, componentes y costos de fabricación.", iconName: "layers" as const }
+        return { title: "Centro de Producción", description: "Gestión de procesos fabriles, órdenes de trabajo y seguimiento.", iconName: getModuleIconName('production') ?? "printer" }
     }
 
     const config = getHeaderConfig()

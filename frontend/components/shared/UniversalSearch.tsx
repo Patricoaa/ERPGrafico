@@ -4,24 +4,9 @@ import { useEffect, useRef, useState, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import {
     ArrowRight,
-    BookOpen,
-    CircleCheck,
     CornerDownLeft,
-    FileBadge,
-    FileText,
-    Landmark,
     Loader2,
-    NotebookPen,
-    Package,
-    ReceiptText,
     Search,
-    ShoppingCart,
-    Truck,
-    Undo2,
-    UserCheck,
-    Users,
-    Wallet,
-    Wrench,
     X,
 } from "lucide-react"
 import { DynamicIcon } from "@/components/shared"
@@ -33,24 +18,7 @@ import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
 import { Skeleton } from "@/components/ui/skeleton"
-
-const ICON_MAP: Record<string, any> = {
-    "book-open": BookOpen,
-    "circle-check": CircleCheck,
-    "file-badge": FileBadge,
-    "file-text": FileText,
-    "landmark": Landmark,
-    "notebook-pen": NotebookPen,
-    "package": Package,
-    "receipt-text": ReceiptText,
-    "shopping-cart": ShoppingCart,
-    "truck": Truck,
-    "undo-2": Undo2,
-    "user-check": UserCheck,
-    "users": Users,
-    "wallet": Wallet,
-    "wrench": Wrench,
-}
+import { useBranding } from "@/contexts/BrandingProvider"
 
 export function UniversalSearch() {
     const [open, setOpen] = useState(false)
@@ -59,8 +27,17 @@ export function UniversalSearch() {
     const [selectedType, setSelectedType] = useState<string | null>(null)
     const debouncedQuery = useDebounce(query, 200)
     const { results, isLoading } = useUniversalSearch(debouncedQuery)
+    const { logo, company } = useBranding()
     const router = useRouter()
     const inputRef = useRef<HTMLInputElement>(null)
+
+    const getInitials = () => {
+        const companyName = company?.trade_name || company?.name
+        if (companyName) {
+            return companyName.substring(0, 2).toUpperCase()
+        }
+        return "ERP"
+    }
 
     // keyboard shortcuts
     useEffect(() => {
@@ -77,8 +54,10 @@ export function UniversalSearch() {
     useEffect(() => {
         if (open) {
             setQuery("")
-            setActiveIndex(0)
-            setSelectedType(null)
+            requestAnimationFrame(() => {
+                setActiveIndex(0)
+                setSelectedType(null)
+            })
             setTimeout(() => inputRef.current?.focus(), 50)
         }
     }, [open])
@@ -105,7 +84,7 @@ export function UniversalSearch() {
     }, [results, selectedType])
 
     useEffect(() => {
-        setActiveIndex(0)
+        requestAnimationFrame(() => setActiveIndex(0))
     }, [filteredResults, selectedType])
 
     function navigate(url: string) {
@@ -138,22 +117,22 @@ export function UniversalSearch() {
                 type="button"
                 onClick={() => setOpen(true)}
                 aria-label="Búsqueda universal (Ctrl+K)"
-                className="group relative flex w-10 items-center gap-2 rounded-xl border border-border bg-muted/30 px-2 py-2 text-sm text-muted-foreground transition-all hover:bg-muted/50 hover:ring-2 hover:ring-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 sm:w-full sm:max-w-[600px]"
+                className="group relative flex w-10 items-center gap-1.5 rounded-xl border border-border bg-muted/30 px-2 py-1 text-xs text-muted-foreground transition-all hover:bg-muted/50 hover:ring-2 hover:ring-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 sm:w-full sm:max-w-[600px]"
             >
-                <Search className="size-4 transition-colors group-hover:text-foreground" aria-hidden />
+                <Search className="size-3.5 transition-colors group-hover:text-foreground" aria-hidden />
                 <span className="hidden flex-1 text-left sm:inline">Busqueda global...</span>
-                <kbd className="pointer-events-none hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex">
-                    <span className="text-xs">ctrl</span>+<span className="text-xs">k</span>
-                </kbd>
+                <span className="pointer-events-none hidden select-none items-center gap-1 font-mono text-[9px] font-medium text-muted-foreground/60 sm:flex">
+                    <span>ctrl</span>+<span>k</span>
+                </span>
             </button>
 
             <Dialog open={open} onOpenChange={setOpen}>
                 <DialogPortal>
-                    <DialogOverlay className="bg-black/40 backdrop-blur-md" />
+                    <DialogOverlay className="bg-overlay/40 backdrop-blur-md" />
                     <DialogContent
                         size="xl"
                         showCloseButton={false}
-                        className="gap-0 overflow-hidden border-none p-0 shadow-2xl backdrop-blur-3xl dark:bg-black/95"
+                        className="gap-0 overflow-hidden border-none p-0 shadow-2xl backdrop-blur-3xl dark:bg-overlay/95"
                         aria-label="Búsqueda universal"
                     >
                         <DialogTitle className="sr-only">Búsqueda universal</DialogTitle>
@@ -166,7 +145,7 @@ export function UniversalSearch() {
                         )}
 
                         {/* Search Input Area */}
-                        <div className="relative flex items-center border-b border-white/5 px-6 py-8">
+                        <div className="relative flex items-center border-b border-border px-6 py-8">
                             <Search className="mr-4 size-8 shrink-0 text-muted-foreground/60" aria-hidden />
                             <input
                                 ref={inputRef}
@@ -187,7 +166,7 @@ export function UniversalSearch() {
                                 </div>
                             ) : (
                                 <div className="flex items-center gap-3">
-                                    <button onClick={() => setOpen(false)} className="rounded-full p-2 hover:bg-white/10">
+                                    <button onClick={() => setOpen(false)} className="rounded-full p-2 hover:bg-accent">
                                         <X className="size-6 text-muted-foreground" />
                                     </button>
                                 </div>
@@ -196,7 +175,7 @@ export function UniversalSearch() {
 
                         {/* Segmenters (Tabs) - Horizontal Scrollable */}
                         {results.length > 0 && (
-                            <div className="flex items-center border-b border-white/5 bg-black/20 px-6 py-3">
+                            <div className="flex items-center border-b border-border bg-overlay/20 px-6 py-3">
                                 <div className="flex w-full items-center gap-2 overflow-x-auto flex-nowrap scrollbar-none [ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden pb-1">
                                     <button
                                         onClick={() => setSelectedType(null)}
@@ -204,7 +183,7 @@ export function UniversalSearch() {
                                             "flex shrink-0 items-center gap-2 rounded-lg px-4 py-2 text-xs font-medium transition-all",
                                             !selectedType
                                                 ? "bg-primary text-primary-foreground "
-                                                : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
+                                                : "text-muted-foreground hover:bg-accent hover:text-foreground"
                                         )}
                                     >
                                         Todos
@@ -217,7 +196,7 @@ export function UniversalSearch() {
                                                 "flex shrink-0 items-center gap-2 rounded-lg px-4 py-2 text-xs font-medium transition-all",
                                                 selectedType === type.label
                                                     ? "bg-primary text-primary-foreground "
-                                                    : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
+                                                    : "text-muted-foreground hover:bg-accent hover:text-foreground"
                                             )}
                                         >
                                             {type.icon && <DynamicIcon name={type.icon} className="size-3" />}
@@ -266,15 +245,16 @@ export function UniversalSearch() {
 
                                 {!isLoading && filteredResults.length === 0 && debouncedQuery.length < 2 && (
                                     <li className="flex flex-col items-center justify-center py-24 text-center">
-                                        <div className="relative mb-6 flex h-24 w-24 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 shadow-2xl">
+                                        <div className="relative mb-6 flex h-24 w-24 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 shadow-2xl overflow-hidden">
                                             <div className="absolute inset-0 animate-pulse rounded-2xl bg-primary/5 blur-xl" />
-                                            <span className="relative bg-gradient-to-br from-primary to-primary/50 bg-clip-text text-4xl font-black tracking-tighter text-transparent">
-                                                EG
-                                            </span>
+                                            {logo ? (
+                                                <img src={logo} alt="Logo" className="relative h-full w-full object-cover" />
+                                            ) : (
+                                                <span className="relative bg-gradient-to-br from-primary to-primary/50 bg-clip-text text-4xl font-black tracking-tighter text-transparent">
+                                                    {getInitials()}
+                                                </span>
+                                            )}
                                         </div>
-                                        <h3 className="mb-2 text-xl font-semibold tracking-tight text-foreground">
-                                            ERPGrafico
-                                        </h3>
                                         <p className="max-w-[300px] text-sm text-muted-foreground">
                                             Ingresa un número de documento, nombre de cliente o código de producto para comenzar.
                                         </p>
@@ -292,12 +272,12 @@ export function UniversalSearch() {
                                         className={cn(
                                             "group flex cursor-pointer items-center gap-4 px-4 py-3 transition-all",
                                             index === activeIndex
-                                                ? "bg-white/5"
-                                                : "hover:bg-white/5"
+                                                ? "bg-accent"
+                                                : "hover:bg-accent"
                                         )}
                                     >
                                         <div className="relative">
-                                            <Avatar className="size-10 border border-white/10 transition-transform group-hover:scale-105">
+                                            <Avatar className="size-10 border border-border transition-transform group-hover:scale-105">
                                                 <AvatarFallback className="bg-muted/50 text-xs font-semibold">
                                                     <DynamicIcon name={result.icon} className="size-4" />
                                                 </AvatarFallback>
@@ -338,20 +318,20 @@ export function UniversalSearch() {
                         </ScrollArea>
 
                         {/* Footer */}
-                        <div className="flex items-center justify-between border-t border-white/5 bg-black/40 px-4 py-3 text-[10px]">
+                        <div className="flex items-center justify-between border-t border-border bg-overlay/40 px-4 py-3 text-[10px]">
                             <div className="flex items-center gap-4 text-muted-foreground">
                                 <span className="flex items-center gap-1.5">
-                                    <kbd className="rounded bg-white/10 px-1 py-0.5 text-[9px] font-medium text-foreground">↑↓</kbd>
+                                    <kbd className="rounded bg-muted px-1 py-0.5 text-[9px] font-medium text-foreground">↑↓</kbd>
                                     Navegar
                                 </span>
                                 <span className="flex items-center gap-1.5">
-                                    <kbd className="rounded bg-white/10 px-1 py-0.5 text-[9px] font-medium text-foreground flex items-center justify-center w-5">
+                                    <kbd className="rounded bg-muted px-1 py-0.5 text-[9px] font-medium text-foreground flex items-center justify-center w-5">
                                         <CornerDownLeft className="size-2.5" />
                                     </kbd>
                                     Seleccionar
                                 </span>
                                 <span className="flex items-center gap-1.5">
-                                    <kbd className="rounded bg-white/10 px-2 py-0.5 text-[9px] font-medium text-foreground">⌘K</kbd>
+                                    <kbd className="rounded bg-muted px-2 py-0.5 text-[9px] font-medium text-foreground">⌘K</kbd>
                                     Cerrar
                                 </span>
                             </div>

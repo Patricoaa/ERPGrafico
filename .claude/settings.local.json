@@ -57,7 +57,26 @@
       "Bash(find /home/pato/Nextcloud/Pato/Aplicaciones/ERPGrafico -name \"activate\" -path \"*/bin/activate\" 2>/dev/null | head -5 *)",
       "Read(//home/pato/**)",
       "Bash(pip3 show *)",
-      "Bash(python3.12 -c ' *)"
+      "Bash(python3.12 -c ' *)",
+      "Bash(sed -n '233,243p' \"app/\\(dashboard\\)/accounting/entries/EntriesClientView.tsx\")",
+      "Bash(sed -n '401,415p' \"app/\\(dashboard\\)/purchasing/orders/components/PurchasingOrdersClientView.tsx\")",
+      "Bash(sed -n '256,267p' \"features/accounting/components/AccountsClientView.tsx\")",
+      "Bash(sed -n '230,236p' \"features/billing/components/PurchaseInvoicesClientView.tsx\")",
+      "Bash(sed -n '163,170p' \"features/billing/components/SalesInvoicesClientView.tsx\")",
+      "Bash(node -e ' *)",
+      "Bash(sed -n '25,70p' components/layout/QuickActionsMenu.tsx)",
+      "Bash(sed -n '1,120p' lib/api.ts)",
+      "Bash(echo \"EXIT=$?\")",
+      "Bash(sed -n '268,275p' components/shared/UniversalSearch.tsx)",
+      "Bash(sed -n '594,598p' features/hr/components/EmployeeDrawer.tsx)",
+      "Bash(echo \"--- exit: $? ---\")",
+      "Bash(echo \"--- eslint exit: $? ---\")",
+      "Bash(cd *)",
+      "Bash(awk -F/ '{print $1\"/\"$2}')",
+      "Bash(npx vitest *)",
+      "Bash(echo \"exit: $?\")",
+      "Bash(sort -t: -k1)",
+      "Bash(echo \"tw/no-raw-color: $\\(npx eslint . --no-cache 2>&1)"
     ],
     "additionalDirectories": [
       "/home/pato/Nextcloud/Pato/Aplicaciones/ERPGrafico/frontend/features/workflow"

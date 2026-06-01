@@ -1,7 +1,7 @@
 "use client"
 import { formatCurrency } from "@/lib/money";
 
-import { BaseModal, DateRangeFilter, EmptyState, SkeletonShell, StatusBadge } from '@/components/shared'
+import { BaseModal, Chip, DateRangeFilter, EmptyState, SkeletonShell, StatusBadge } from '@/components/shared'
 
 import { useState, useMemo } from "react"
 
@@ -181,7 +181,7 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                                                 </div>
                                             </div>
 
-                                            <div className="h-[400px] w-full bg-white rounded-md border p-6 shadow-sm">
+                                            <div className="h-[400px] w-full bg-card rounded-md border p-6 shadow-sm">
                                                 <ResponsiveContainer width="100%" height="100%">
                                                     <BarChart data={filteredPriceHistory}>
                                                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--muted)" />
@@ -195,7 +195,7 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                                                         <YAxis fontSize={10} stroke="var(--muted-foreground)" tickFormatter={(val) => formatCurrency(val)} />
                                                         <RechartsTooltip
                                                             labelFormatter={(val) => format(new Date(val), 'PPP', { locale: es })}
-                                                            formatter={(val: number | undefined) => [val !== undefined ? formatCurrency(val) : '---', 'Costo Unitario']}
+                                                            formatter={(val: unknown) => [typeof val === 'number' ? formatCurrency(val) : '---', 'Costo Unitario']}
                                                             contentStyle={{ borderRadius: 'var(--radius)', border: '1px solid var(--border)', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', padding: '12px', backgroundColor: 'var(--popover)', color: 'var(--popover-foreground)' }}
                                                         />
                                                         <Bar
@@ -334,9 +334,9 @@ function NoteTable({ notes, onOpenHub }: { notes: NoteHistoryEntry[]; onOpenHub:
         {
             header: "OCS Relacionada",
             cell: ({ row }) => (
-                <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded-[0.25rem] border border-border bg-muted/50 text-muted-foreground whitespace-nowrap font-mono">
+                <Chip size="xs" className="whitespace-nowrap">
                     OCS-{row.original.purchase_order_number}
-                </span>
+                </Chip>
             ),
         },
         {

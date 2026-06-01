@@ -38,7 +38,7 @@ interface ReportTableProps {
     periodLabel?: string;
     compPeriodLabel?: string;
     mode?: 'tree' | 'flat';
-    accentColor?: 'primary' | 'success' | 'info' | 'destructive';
+    accentColor?: 'primary' | 'success' | 'info' | 'destructive' | 'income' | 'expense' | 'asset' | 'liability';
 }
 
 const RowIcon = ({ isExpanded, hasChildren }: { isExpanded: boolean, hasChildren: boolean, level: number }) => {
@@ -161,6 +161,28 @@ export const ReportTableSkeleton = ({ showComparison }: { showComparison?: boole
     </div>
 );
 
+const accentBorderColor: Record<NonNullable<ReportTableProps['accentColor']>, string> = {
+    primary: "border-primary/20",
+    success: "border-success/20",
+    info: "border-info/20",
+    destructive: "border-destructive/20",
+    income: "border-income/20",
+    expense: "border-expense/20",
+    asset: "border-asset/20",
+    liability: "border-liability/20",
+}
+
+const accentBgColor: Record<NonNullable<ReportTableProps['accentColor']>, string> = {
+    primary: "bg-primary/5 border-primary/20",
+    success: "bg-success/5 border-success/20",
+    info: "bg-info/5 border-info/20",
+    destructive: "bg-destructive/5 border-destructive/20",
+    income: "bg-income/5 border-income/20",
+    expense: "bg-expense/5 border-expense/20",
+    asset: "bg-asset/5 border-asset/20",
+    liability: "bg-liability/5 border-liability/20",
+}
+
 export const ReportTable: React.FC<ReportTableProps> = ({ 
     data, 
     title, 
@@ -195,9 +217,7 @@ export const ReportTable: React.FC<ReportTableProps> = ({
                 <TableHeader className="bg-muted/30">
                     <TableRow className={cn(
                         "border-b-2",
-                        accentColor === 'primary' ? "border-primary/20" : 
-                        accentColor === 'success' ? "border-success/20" : 
-                        accentColor === 'info' ? "border-info/20" : "border-destructive/20"
+                        accentBorderColor[accentColor]
                     )}>
                         <TableHead className="font-black text-foreground py-4 px-4 h-12 uppercase tracking-widest text-[10px]">Cuenta / Concepto</TableHead>
                         <TableHead className="text-right w-[150px] font-black text-foreground py-4 px-4 h-12 uppercase tracking-widest text-[10px]">{periodLabel || 'Saldo'}</TableHead>
@@ -216,9 +236,7 @@ export const ReportTable: React.FC<ReportTableProps> = ({
                     {(totalLabel || isLoading) && (
                         <TableRow className={cn(
                             "font-black border-t-2 shadow-sm relative z-10",
-                            accentColor === 'primary' ? "bg-primary/5 border-primary/20" :
-                            accentColor === 'success' ? "bg-success/5 border-success/20" :
-                            accentColor === 'info' ? "bg-info/5 border-info/20" : "bg-destructive/5 border-destructive/20"
+                            accentBgColor[accentColor]
                         )}>
                             <TableCell className="p-5 text-foreground uppercase tracking-tighter text-sm font-black italic">
                                 {isLoading ? "————————————————" : totalLabel}

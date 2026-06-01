@@ -203,7 +203,7 @@ export function SessionCloseModal({
 
                         {/* Right Column: Counter */}
                         <div className="space-y-4">
-                            <div className="md:hidden mb-4 p-3 bg-primary/10 dark:bg-primary/20 rounded-lg border border-primary/10 dark:border-primary">
+                            <div className="md:hidden mb-4 p-3 bg-primary/10 dark:bg-primary/20 rounded-md border border-primary/10 dark:border-primary">
                                 <div className="flex justify-between text-sm font-bold">
                                     <span>Efectivo Esperado:</span>
                                     <span className="text-primary dark:text-primary/50">{formatCurrency(session.expected_cash)}</span>
@@ -211,7 +211,7 @@ export function SessionCloseModal({
                             </div>
 
                             <div className="flex justify-center">
-                                <div className="w-full bg-muted/30 p-4 rounded-lg">
+                                <div className="w-full bg-muted/30 p-4 rounded-md">
                                     <div className="text-right mb-4">
                                         <div className="text-xs font-bold uppercase text-muted-foreground">Efectivo Contado</div>
                                         <div className="text-3xl font-black font-mono tracking-tight text-primary">
@@ -238,7 +238,7 @@ export function SessionCloseModal({
             case 2: // Review & Difference
                 return (
                     <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-                        <div className="bg-card border rounded-lg p-4 space-y-3 shadow-sm">
+                        <div className="bg-card border rounded-md p-4 space-y-3 shadow-sm">
                             <div className="flex justify-between items-center text-sm">
                                 <span className="text-muted-foreground">Efectivo Esperado (Sistema):</span>
                                 <span className="font-medium">{formatCurrency(expected)}</span>
@@ -250,7 +250,7 @@ export function SessionCloseModal({
                         </div>
 
                         {hasDiff ? (
-                            <div className="bg-warning/10 dark:bg-warning/20 border border-warning/20 dark:border-warning rounded-lg p-4 space-y-3">
+                            <div className="bg-warning/10 dark:bg-warning/20 border border-warning/20 dark:border-warning rounded-md p-4 space-y-3">
                                 <div className="flex items-center gap-2 text-warning font-bold">
                                     <AlertTriangle className="h-4 w-4" />
                                     <span>Diferencia Detectada</span>
@@ -261,7 +261,7 @@ export function SessionCloseModal({
                                 </div>
                                 <LabeledContainer label="Motivo" required>
                                     <Select value={justifyReason} onValueChange={setJustifyReason}>
-                                        <SelectTrigger className="border-0 shadow-none focus-visible:ring-0 bg-white dark:bg-black/20 h-9">
+                                        <SelectTrigger className="border-0 shadow-none focus-visible:ring-0 bg-background h-9">
                                             <SelectValue placeholder="Seleccione motivo..." />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -315,7 +315,7 @@ export function SessionCloseModal({
 
                                         {/* Insufficient funds warning */}
                                         {insufficientFunds && selectedAccount && (
-                                            <div className="bg-destructive/10 dark:bg-destructive/20 border border-destructive/20 dark:border-destructive rounded-lg p-3 space-y-1">
+                                            <div className="bg-destructive/10 dark:bg-destructive/20 border border-destructive/20 dark:border-destructive rounded-md p-3 space-y-1">
                                                 <div className="flex items-start gap-2">
                                                     <AlertTriangle className="h-4 w-4 text-destructive dark:text-destructive mt-0.5 flex-shrink-0" />
                                                     <div className="text-sm text-destructive dark:text-destructive/20">
@@ -333,7 +333,7 @@ export function SessionCloseModal({
                                 )}
                             </div>
                         ) : (
-                            <div className="text-center p-6 bg-success/10 text-success rounded-lg">
+                            <div className="text-center p-6 bg-success/10 text-success rounded-md">
                                 <span className="text-4xl block mb-2">✨</span>
                                 <div className="font-bold">¡Cierre Perfecto!</div>
                                 <div className="text-sm opacity-80">El efectivo coincide exactamente con el sistema.</div>
@@ -399,7 +399,7 @@ export function SessionCloseModal({
             case 4: // Withdrawal (Optional Step)
                 return (
                     <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-                        <div className="p-4 bg-muted/20 rounded-lg space-y-4">
+                        <div className="p-4 bg-muted/20 rounded-md space-y-4">
                             <div className="space-y-4">
                                 <div className="text-right">
                                     <div className="text-xs font-bold uppercase text-muted-foreground">Monto a Retirar</div>

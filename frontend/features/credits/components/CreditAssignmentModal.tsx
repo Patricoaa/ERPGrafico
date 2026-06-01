@@ -50,15 +50,17 @@ export default function CreditAssignmentModal({
 
     useEffect(() => {
         if (open) {
-            if (initialContact) {
-                setSelectedContact(initialContact as unknown as Contact)
-                form.reset({
-                    credit_limit: initialContact.credit_limit ? Number(initialContact.credit_limit) : null
-                })
-            } else {
-                setSelectedContact(null)
-                form.reset({ credit_limit: null })
-            }
+            requestAnimationFrame(() => {
+                if (initialContact) {
+                    setSelectedContact(initialContact as unknown as Contact)
+                    form.reset({
+                        credit_limit: initialContact.credit_limit ? Number(initialContact.credit_limit) : null
+                    })
+                } else {
+                    setSelectedContact(null)
+                    form.reset({ credit_limit: null })
+                }
+            })
         }
     }, [open, initialContact, form])
 

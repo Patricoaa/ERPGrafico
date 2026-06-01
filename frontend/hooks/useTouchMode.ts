@@ -4,8 +4,14 @@ import { useState, useEffect, useCallback } from "react"
 
 const EVENT_NAME = "pos_touch_mode_changed"
 
+function getInitialTouchMode(): boolean {
+    if (typeof window === "undefined") return true
+    const stored = sessionStorage.getItem("pos_touch_mode")
+    return stored !== null ? stored === "true" : true
+}
+
 export function useTouchMode() {
-    const [isTouchMode, setIsTouchMode] = useState(true)
+    const [isTouchMode, setIsTouchMode] = useState(getInitialTouchMode)
 
     const syncState = useCallback(() => {
         const stored = sessionStorage.getItem("pos_touch_mode")
@@ -15,7 +21,6 @@ export function useTouchMode() {
     }, [])
 
     useEffect(() => {
-        syncState()
         window.addEventListener(EVENT_NAME, syncState)
         window.addEventListener("storage", syncState)
 

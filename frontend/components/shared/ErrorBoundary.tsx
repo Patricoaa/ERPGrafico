@@ -3,7 +3,6 @@
 import React, { Component, ErrorInfo, ReactNode } from "react"
 import { AlertTriangle, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { IndustryMark } from '@/components/shared'
 import { getErrorMessage } from "@/lib/errors"
 
 interface Props {
@@ -45,11 +44,6 @@ export class ErrorBoundary extends Component<Props, State> {
             return (
                 <div className="flex min-h-[400px] h-screen w-full flex-col items-center justify-center bg-background p-8 text-center animate-in fade-in duration-500">
                     <div className="relative flex h-24 w-24 items-center justify-center border border-destructive/20 bg-destructive/5 mb-8">
-                        <IndustryMark 
-                            positions={['top-left', 'bottom-right']} 
-                            active 
-                            className="text-destructive/40" 
-                        />
                         <AlertTriangle className="h-10 w-10 text-destructive/60" />
                     </div>
 

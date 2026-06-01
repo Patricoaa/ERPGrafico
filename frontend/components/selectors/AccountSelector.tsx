@@ -11,11 +11,11 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover"
 
-import { BaseModal, EmptyState } from '@/components/shared'
+import { BaseModal, DataTable, EmptyState, StatusBadge } from '@/components/shared'
 import { Input } from "@/components/ui/input"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useAccountSearch, useSingleAccount } from "@/features/accounting/hooks/useAccountSearch"
 import { Account } from "@/types/entities"
+import type { ColumnDef } from "@tanstack/react-table"
 
 interface AccountSelectorProps {
     value?: string | number | null
@@ -29,6 +29,30 @@ interface AccountSelectorProps {
     error?: string
     className?: string
 }
+
+const accountColumns: ColumnDef<Account, unknown>[] = [
+    {
+        id: 'code',
+        header: 'Código',
+        cell: ({ row }) => (
+            <span className="font-mono text-xs font-semibold text-primary">{row.original.code}</span>
+        ),
+    },
+    {
+        id: 'name',
+        header: 'Nombre',
+        cell: ({ row }) => (
+            <span className="text-sm truncate">{row.original.name}</span>
+        ),
+    },
+    {
+        id: 'type',
+        header: 'Tipo',
+        cell: ({ row }) => (
+            <StatusBadge status={row.original.account_type} size="xs" />
+        ),
+    },
+]
 
 export function AccountSelector({ value, onChange, placeholder = "Seleccionar cuenta...", accountType, showAll = false, isReconcilable, disabled = false, label, error, className }: AccountSelectorProps) {
     const [open, setOpen] = useState(false)
@@ -147,6 +171,17 @@ export function AccountSelector({ value, onChange, placeholder = "Seleccionar cu
                                     onChange={(e) => searchAccounts(e.target.value)}
                                 />
                             </div>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                    setOpen(false)
+                                    setModalOpen(true)
+                                }}
+                                className="w-full mb-1 text-xs text-center text-primary hover:underline"
+                            >
+                                Búsqueda avanzada…
+                            </Button>
                             <div className="max-h-[200px] overflow-y-auto space-y-1">
                                 {accountsLoading ? (
                                     <div className="p-4 flex justify-center"><Loader2 className="h-4 w-4 animate-spin" /></div>
@@ -172,18 +207,6 @@ export function AccountSelector({ value, onChange, placeholder = "Seleccionar cu
                                         </div>
                                     ))
                                 )}
-                                {filteredAccounts.length > 20 && (
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setOpen(false)
-                                            setModalOpen(true)
-                                        }}
-                                        className="w-full p-2 text-xs text-center text-primary hover:underline border-t"
-                                    >
-                                        Use búsqueda avanzada para ver más...
-                                    </button>
-                                )}
                             </div>
                         </div>
                     </PopoverContent>
@@ -208,37 +231,15 @@ export function AccountSelector({ value, onChange, placeholder = "Seleccionar cu
                         value={searchTerm}
                         onChange={(e) => searchAccounts(e.target.value)}
                     />
-                    <div className="border rounded-md overflow-hidden">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead className="w-1/3">Código</TableHead>
-                                    <TableHead>Nombre</TableHead>
-                                    <TableHead>Tipo</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {filteredAccounts.map((account) => (
-                                    <TableRow
-                                        key={account.id}
-                                        className="cursor-pointer hover:bg-accent"
-                                        onClick={() => handleSelect(account)}
-                                    >
-                                        <TableCell className="font-mono">{account.code}</TableCell>
-                                        <TableCell>{account.name}</TableCell>
-                                        <TableCell>{account.account_type}</TableCell>
-                                    </TableRow>
-                                ))}
-                                {filteredAccounts.length === 0 && (
-                                    <TableRow>
-                                        <TableCell colSpan={3}>
-                                            <EmptyState context="search" variant="compact" title="No se encontraron resultados" />
-                                        </TableCell>
-                                    </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
-                    </div>
+                    <DataTable
+                        variant="compact"
+                        gridTemplate="grid-cols-[1fr_2fr_1fr]"
+                        columns={accountColumns}
+                        data={filteredAccounts}
+                        isLoading={accountsLoading}
+                        onRowClick={handleSelect}
+                        emptyState={{ context: "search", title: "No se encontraron resultados" }}
+                    />
                 </div>
             </BaseModal>
         </div>

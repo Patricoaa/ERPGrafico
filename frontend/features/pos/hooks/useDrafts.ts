@@ -197,7 +197,7 @@ export function useDrafts(options: UseDraftsOptions = {}) {
                 await options.releaseLock(currentDraftId)
             }
 
-            const draft = await posApi.getDraft(draftId) as any
+            const draft = await posApi.getDraft(draftId, { pos_session_id: currentSession?.id }) as any
 
             // Reconstruct cart items from draft
             const itemPromises = draft.items.map(async (draftItem: { product_id: number; quantity: number; uom_id: number; unit_price_net: number; unit_price_gross: number; manufacturing_data?: unknown }) => {

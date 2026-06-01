@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import dynamic from "next/dynamic"
 import { useRouter, usePathname } from "next/navigation"
 import { MiniSidebar } from "@/components/layout/MiniSidebar"
@@ -13,8 +13,11 @@ import { useHeader } from "@/components/providers/HeaderProvider"
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion"
 import { Skeleton } from "@/components/ui/skeleton"
 import { HeaderNavDropdowns, PageHeaderSkeleton, UniversalSearch } from '@/components/shared'
-import { Loader2 } from "lucide-react"
+import { Loader2, PanelLeft } from "lucide-react"
 import { DynamicIcon } from '@/components/shared'
+import { useDeviceContext } from "@/hooks/useDeviceContext"
+import { Button } from "@/components/ui/button"
+import { getModuleDefaultUrl } from "@/lib/module-registry"
 
 // Lazy load: solo se compila al abrir el inbox, no en la carga inicial de cada página
 const TaskInboxSidebar = dynamic(
@@ -29,6 +32,16 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
 
     const activeCategory = pathname.split('/')[1] || "dashboard"
     const [isInboxOpen, setIsInboxOpen] = useState(false)
+
+    const { isMediumScreen, isSmallScreen } = useDeviceContext()
+    const isCramped = isMediumScreen || isSmallScreen
+    const [sidebarOpen, setSidebarOpen] = useState(!isCramped)
+
+    const toggleSidebar = useCallback(() => {
+        setSidebarOpen(prev => !prev)
+    }, [])
+
+    const effectiveSidebarWidth = isCramped && !sidebarOpen ? '0rem' : '3.5rem'
 
     const { config } = useHeader()
     const { isHubEffectivelyOpen } = useHubPanel()
@@ -53,34 +66,35 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
         setIsInboxOpen(prev => !prev)
     }
 
-    const categoryToUrl: Record<string, string> = {
-        "dashboard": "/",
-        "accounting": "/accounting/ledger",
-        "contacts": "/contacts",
-        "sales": "/sales/orders?tab=orders",
-        "billing": "/billing/sales?view=card",
-        "inventory": "/inventory/products?tab=products",
-        "production": "/production/orders",
-        "treasury": "/treasury/movements",
-        "purchasing": "/purchasing/orders?tab=orders",
-        "finances": "/finances/statements?tab=bs",
-        "hr": "/hr/employees",
-    }
-
     return (
-        <div className="relative h-screen bg-background overflow-hidden font-sans">
+        <div className="relative h-screen bg-background overflow-hidden font-sans" style={{ '--sidebar-width': effectiveSidebarWidth } as React.CSSProperties}>
             {/* Mini Sidebar - Now Floating & Independent */}
             <MiniSidebar
                 activeCategory={activeCategory}
                 onCategoryChange={(cat: string) => {
-                    if (categoryToUrl[cat]) {
-                        router.push(categoryToUrl[cat])
+                    const url = getModuleDefaultUrl(cat)
+                    if (url) {
+                        if (isCramped) setSidebarOpen(false)
+                        router.push(url)
                     }
                 }}
+                collapsed={isCramped ? !sidebarOpen : false}
             />
 
             {/* ── TOP BAR ────────────────────────────────────────────── */}
-            <div className="absolute top-0 left-14 right-0 h-16 flex items-center bg-background z-30 px-6">
+            <div className="absolute top-0 left-[var(--sidebar-width)] right-0 h-16 flex items-center bg-background z-30 gap-3 px-4 md:px-6 transition-[left] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]">
+                {/* Sidebar toggle (visible when cramped) */}
+                {isCramped && (
+                    <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        onClick={toggleSidebar}
+                        className="shrink-0"
+                        aria-label="Toggle sidebar"
+                    >
+                        <PanelLeft className="h-4 w-4" />
+                    </Button>
+                )}
 
                 {/* Left: page title & meta — shrinks to content */}
                 <div className="flex-none flex items-center gap-4 min-w-0 pointer-events-none">
@@ -148,7 +162,7 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                                 </div>
 
                                 {config.children && (
-                                    <div className="flex items-center gap-2 ml-2 pl-3 border-l border-white/5 shrink-0">
+                                    <div className="flex items-center gap-2 ml-2 pl-3 border-l border-border shrink-0">
                                         {config.children}
                                     </div>
                                 )}
@@ -171,14 +185,15 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
             </div>
 
             <div
-                className="h-full flex flex-col min-w-0 relative transition-[margin-right] duration-500 ease-[var(--ease-premium)] pt-20 pl-[4.5rem] pr-4 pb-4"
+                className="h-full flex flex-col min-w-0 relative transition-[margin-right,padding-left] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] pt-[var(--page-padding-top)] pr-[var(--page-gap-right)] pb-[var(--page-gap-bottom)]"
                 style={{
-                    marginRight: `${totalSheetsWidth}px`
+                    marginRight: `${totalSheetsWidth}px`,
+                    paddingLeft: `calc(${effectiveSidebarWidth} + var(--page-gap-left))`,
                 }}
             >
                 <main
                     id="main-content"
-                    className="flex-1 flex flex-col overflow-hidden relative canvas-prepress bg-card border border-border/10 rounded-xl shadow-2xl"
+                    className="flex-1 flex flex-col overflow-hidden relative canvas-prepress panel-surface"
                 >
                     <motion.div
                         initial={shouldReduceMotion ? { opacity: 0 } : { y: 8, opacity: 0 }}

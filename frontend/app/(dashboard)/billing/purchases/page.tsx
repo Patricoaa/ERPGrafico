@@ -64,7 +64,7 @@ interface PurchasePaymentData {
 }
 
 export default function PurchaseInvoicesPage() {
-    const { filters, clearAll } = useSmartSearch(purchaseInvoiceSearchDef)
+    const { filters, clearAll, isFiltered } = useSmartSearch(purchaseInvoiceSearchDef)
 
     // Data Fetching (TanStack Query)
     const { invoices, isLoading: isDataLoading, refetch } = usePurchaseInvoices({
@@ -378,6 +378,12 @@ export default function PurchaseInvoicesPage() {
                     variant="embedded"
                     isLoading={isDataLoading}
                     entityLabel="billing.invoice"
+                    isFiltered={isFiltered}
+                    emptyState={{
+                        context: "purchase",
+                        title: "Aún no hay documentos de compra",
+                        description: "Las facturas y boletas de proveedores que registres aparecerán aquí.",
+                    }}
                     leftAction={
                         <SmartSearchBar
                             searchDef={purchaseInvoiceSearchDef}

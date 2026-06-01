@@ -4,7 +4,8 @@ import { showApiError, getErrorMessage } from "@/lib/errors"
 import {useState, useEffect, useMemo, useRef} from "react"
 import { PricingUtils } from '@/features/inventory/utils/pricing'
 import { Button } from "@/components/ui/button"
-import { Step1_CustomerDTE } from "./Step1_CustomerDTE"
+import { Step1_Customer } from "./Step1_Customer"
+import { Step2_DTE } from "./Step2_DTE"
 import { Step2_Payment } from "./Step2_Payment"
 import { useTreasuryAccounts } from "@/hooks/useTreasuryAccounts"
 import { useAllowedPaymentMethods } from "@/hooks/useAllowedPaymentMethods"
@@ -73,6 +74,7 @@ export interface SalesCheckoutWizardContentProps {
     onStateChange?: (state: CheckoutWizardState) => void
     isInline?: boolean
     isSessionHost?: boolean
+    touchMode?: boolean
 }
 
 export function SalesCheckoutWizardContent({
@@ -100,7 +102,8 @@ export function SalesCheckoutWizardContent({
     initialDraftId,
     onStateChange,
     isInline = false,
-    isSessionHost = false
+    isSessionHost = false,
+    touchMode = false
 }: SalesCheckoutWizardContentProps) {
     const { dateString, serverDate } = useServerDate()
     const { openHub, isHubOpen } = useHubPanel()
@@ -117,7 +120,8 @@ export function SalesCheckoutWizardContent({
 
     const steps = useMemo(() => {
         const s: { id: string; label: string }[] = [
-            { id: 'customer_dte', label: 'Cliente & Doc' },
+            { id: 'customer', label: 'Cliente' },
+            { id: 'dte', label: 'Documento' },
         ]
         if (hasManufacturing) {
             s.push({ id: 'manufacturing', label: 'Fabricación' })
@@ -159,26 +163,34 @@ export function SalesCheckoutWizardContent({
     const canDirectApprove = hasPermission('sales.approve_credit')
     const didHydrateRef = useRef(false)
 
+    // Draft step migration: old customer_dte split into customer (step 1) + dte (step 2).
+    // Drafts saved before this change used step >= 2 for the second step onward.
+    const migratedInitialStep = initialStep !== undefined && initialStep >= 2 ? initialStep + 1 : initialStep;
+
     // Sync order lines and hydrate step data
     useEffect(() => {
         if (!didHydrateRef.current) {
             didHydrateRef.current = true
-            setCurrentOrderLines(initialOrderLines)
+            requestAnimationFrame(() => {
+                setCurrentOrderLines(initialOrderLines)
 
-            if (quickSale && currentOrderLines.length > 0) {
-                if (initialCustomerId) setSelectedCustomerId(initialCustomerId)
-                setStep(totalSteps)
-            } else if (initialStep && initialStep > 1 && !quickSale) {
-                setStep(initialStep)
-            } else {
-                setStep(initialStep ?? 1)
-            }
+                if (quickSale && currentOrderLines.length > 0) {
+                    if (initialCustomerId) setSelectedCustomerId(initialCustomerId)
+                    setStep(totalSteps)
+                } else if (migratedInitialStep && migratedInitialStep > 1 && !quickSale) {
+                    setStep(migratedInitialStep)
+                } else {
+                    setStep(migratedInitialStep ?? 1)
+                }
+            })
         }
-    }, [initialStep, quickSale, totalSteps, currentOrderLines.length])
+    }, [migratedInitialStep, quickSale, totalSteps, currentOrderLines.length])
 
     useEffect(() => {
         if (dateString && !initialDteData) {
-            setDteData((prev: CheckoutDTEData) => ({ ...prev, date: dateString }))
+            requestAnimationFrame(() => {
+                setDteData((prev: CheckoutDTEData) => ({ ...prev, date: dateString }))
+            })
         }
     }, [dateString, initialDteData])
 
@@ -234,14 +246,18 @@ export function SalesCheckoutWizardContent({
     }, [isHubOpen, refreshDebts])
 
     const { data: salesSettings = null } = useAccountingSettings()
-    const { data: customerDetails } = useContact(selectedCustomerId ?? null)
+    const { data: customerDetails } = useContact(selectedCustomerId ? Number(selectedCustomerId) : null)
 
     useEffect(() => {
         if (customerDetails) {
-            setSelectedCustomer(customerDetails)
-            setSelectedCustomerName(customerDetails.name)
+            requestAnimationFrame(() => {
+                setSelectedCustomer(customerDetails)
+                setSelectedCustomerName(customerDetails.name)
+            })
         } else if (!selectedCustomerId) {
-            setSelectedCustomer(null)
+            requestAnimationFrame(() => {
+                setSelectedCustomer(null)
+            })
         }
     }, [customerDetails, selectedCustomerId])
 
@@ -280,21 +296,28 @@ export function SalesCheckoutWizardContent({
         if (!currentStepDef) return null;
 
         switch (currentStepDef.id) {
-            case 'customer_dte':
+            case 'customer':
                 return (
                     <div className="space-y-6">
-                        <FormSection title="Identificación y Documentación" icon={User} />
-                        <Step1_CustomerDTE
+                        <FormSection title="Identificación del Cliente" icon={User} />
+                        <Step1_Customer
                             selectedCustomerId={selectedCustomerId}
                             setSelectedCustomerId={(id) => setSelectedCustomerId(id || "")}
                             setSelectedCustomerName={setSelectedCustomerName}
+                            touchMode={touchMode}
+                            isInline={isInline}
+                        />
+                    </div>
+                )
+            case 'dte':
+                return (
+                    <div className="space-y-6">
+                        <Step2_DTE
                             dteData={dteData}
                             setDteData={setDteData}
                             isDefaultCustomer={!!selectedCustomer?.is_default_customer}
                             onValidityChange={(isValid) => setIsFolioValid(isValid)}
                             onPeriodValidityChange={(isValid) => setIsPeriodValid(isValid)}
-                            pendingDebts={pendingDebts}
-                            onDebtClick={(debt) => openHub({ orderId: debt.id, type: 'sale', onActionSuccess: refreshDebts })}
                         />
                     </div>
                 )
@@ -317,10 +340,7 @@ export function SalesCheckoutWizardContent({
                 )
             case 'payment':
                 return (
-                    <div className="space-y-6">
-                        <FormSection title="Cierre y Pago" icon={ShoppingCart} />
-                        <Step2_Payment paymentData={paymentData} setPaymentData={setPaymentData} total={currentTotal} terminalId={terminalId} customerCreditBalance={Number((selectedCustomer as any)?.credit_balance || 0)} />
-                    </div>
+                    <Step2_Payment paymentData={paymentData} setPaymentData={setPaymentData} total={currentTotal} terminalId={terminalId} customerCreditBalance={Number((selectedCustomer as any)?.credit_balance || 0)} />
                 )
             default:
                 return null;
@@ -334,7 +354,7 @@ export function SalesCheckoutWizardContent({
             if (!currentStepDef) return { isValid: false };
 
             switch (currentStepDef.id) {
-                case 'customer_dte':
+                case 'customer':
                     if (!selectedCustomerId) {
                         toast.error("Debe seleccionar un cliente para continuar.")
                         return { isValid: false }
@@ -343,6 +363,9 @@ export function SalesCheckoutWizardContent({
                         toast.error("No se puede utilizar el cliente por defecto para productos con fabricación avanzada.")
                         return { isValid: false }
                     }
+                    return { isValid: true }
+
+                case 'dte':
                     if (dteData.type !== 'BOLETA' && !dteData.isPending) {
                         if (!dteData.number || !dteData.date || !dteData.attachment) {
                             toast.error("Faltan datos obligatorios del documento DTE.")
@@ -412,7 +435,7 @@ export function SalesCheckoutWizardContent({
         if (!validation.isValid) return
 
         const currentStepDef = steps[step - 1];
-        if (currentStepDef.id === 'customer_dte' && !isFolioValid && !dteData.isPending) {
+        if (currentStepDef.id === 'dte' && !isFolioValid && !dteData.isPending) {
             toast.error("El número de folio ya ha sido utilizado. Ingrese uno válido para continuar.")
             return
         }
@@ -662,7 +685,7 @@ export function SalesCheckoutWizardContent({
             if (task.status === 'COMPLETED') {
                 if (pollingIntervalRef.current) clearInterval(pollingIntervalRef.current)
                 if (!silent) toast.success("¡Crédito aprobado!") // only explicitly toast if manual check
-                setApprovedTaskData(task.data)
+                setApprovedTaskData(task.data as CreditApprovalTask)
                 setIsWaitingApproval(false)
                 setIsApproved(true)
                 return 'COMPLETED'
@@ -740,10 +763,10 @@ export function SalesCheckoutWizardContent({
                 />
             )}
 
-            <div className="flex-1 flex flex-col min-w-0">
-                <div className="flex-1 p-6 overflow-y-auto">
+            <div className="flex-1 flex flex-col min-h-0">
+                <div className="flex-1 min-h-0 overflow-y-auto p-6">
                     <>
-                        {/* Pending Debts Banner - Removed from here, moved to Step1_CustomerDTE */}
+                        {/* Pending Debts Banner rendered inside Step2_DTE */}
 
                         {/* Credit Approval Alert */}
                         {creditApprovalRequired && (
@@ -792,7 +815,7 @@ export function SalesCheckoutWizardContent({
                                                                 Cancelar
                                                             </Button>
                                                             {approvalTaskId && (
-                                                                <Button size="sm" onClick={() => checkApprovalStatus(approvalTaskId, false)} className="h-8 bg-warning hover:bg-warning/90 text-white border-none shadow-sm uppercase font-bold text-[10px]">
+                                                                <Button size="sm" onClick={() => checkApprovalStatus(approvalTaskId, false)} className="h-8 bg-warning hover:bg-warning/90 text-warning-foreground border-none shadow-sm uppercase font-bold text-[10px]">
                                                                     Verificar
                                                                 </Button>
                                                             )}
@@ -807,7 +830,7 @@ export function SalesCheckoutWizardContent({
                                                                     Aprobar
                                                                 </Button>
                                                             )}
-                                                            <Button size="sm" onClick={handleRequestApproval} className="h-8 bg-primary hover:bg-primary/90 text-white shadow-sm uppercase font-bold text-[10px]">
+                                                            <Button size="sm" onClick={handleRequestApproval} className="h-8 bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm uppercase font-bold text-[10px]">
                                                                 Solicitar
                                                             </Button>
                                                         </>
@@ -907,7 +930,7 @@ export function SalesCheckoutWizardContent({
                                         loading={loading}
                                         disabled={loading || isWaitingApproval}
                                         icon={<Check className="mr-2 h-4 w-4" />}
-                                        className="w-48 bg-success hover:bg-success/90 font-black uppercase tracking-widest text-[10px] text-white shadow-lg shadow-success/20"
+                                        className="w-48 bg-success hover:bg-success/90 font-black uppercase tracking-widest text-[10px] text-success-foreground shadow-lg shadow-success/20"
                                     >
                                         Finalizar Venta
                                     </SubmitButton>

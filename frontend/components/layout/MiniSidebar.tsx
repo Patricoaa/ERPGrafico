@@ -1,8 +1,6 @@
 "use client"
 
-import { Home, Calculator, ShoppingCart, Package, Printer, Banknote, ShoppingBag, PieChart, Receipt, UserCog, Users } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { useAuth } from "@/contexts/AuthContext"
 
 import { PermissionGuard } from "@/components/auth/PermissionGuard"
 import {
@@ -13,46 +11,35 @@ import {
 } from "@/components/ui/tooltip"
 import { motion } from "framer-motion"
 import { useBranding } from "@/contexts/BrandingProvider"
+import { MODULE_REGISTRY } from "@/lib/module-registry"
 
 interface MiniSidebarProps {
     activeCategory: string | null
     onCategoryChange: (category: string) => void
+    collapsed?: boolean
 }
 
-const mainItems = [
-    { id: "dashboard", icon: Home, label: "Inicio", permission: null },
-    { id: "accounting", icon: Calculator, label: "Contabilidad", permission: "accounting.view_dashboard_accounting" },
-    { id: "billing", icon: Receipt, label: "Facturación", permission: "billing.view_dashboard_billing" },
-    { id: "sales", icon: ShoppingCart, label: "Ventas", permission: "sales.view_dashboard_sales" },
-    { id: "contacts", icon: Users, label: "Contactos", permission: null },
-    { id: "inventory", icon: Package, label: "Inventario", permission: "inventory.view_dashboard_inventory" },
-    { id: "production", icon: Printer, label: "Producción", permission: "production.view_dashboard_production" },
-    { id: "treasury", icon: Banknote, label: "Tesorería", permission: "treasury.view_dashboard_treasury" },
-    { id: "purchasing", icon: ShoppingBag, label: "Compras", permission: "purchasing.view_dashboard_purchasing" },
-    { id: "finances", icon: PieChart, label: "Finanzas", permission: "finances.view_dashboard_finances" },
-    { id: "hr", icon: UserCog, label: "RRHH", permission: "hr.view_dashboard_hr" },
-]
+const MODULE_ORDER = ["dashboard", "accounting", "billing", "sales", "contacts", "inventory", "production", "treasury", "purchasing", "finances", "hr"] as const
 
-export function MiniSidebar({ activeCategory, onCategoryChange }: MiniSidebarProps) {
-    const { user } = useAuth()
-    const { logo } = useBranding()
+const mainItems = MODULE_ORDER.map((id) => MODULE_REGISTRY[id]).filter(Boolean)
+
+export function MiniSidebar({ activeCategory, onCategoryChange, collapsed = false }: MiniSidebarProps) {
+    const { logo, company } = useBranding()
 
     const handleCategoryClick = (id: string) => {
         onCategoryChange(id)
     }
 
     const getInitials = () => {
-        // Assume user might have a tenant/company name, fallback to "SD"
-        const companyName = (user as any)?.tenant_name as string | undefined
-            || (user as any)?.company_name as string | undefined;
+        const companyName = company?.trade_name || company?.name
         if (companyName) {
             return companyName.substring(0, 2).toUpperCase()
         }
-        return "SD"
+        return "ERP"
     }
 
     return (
-        <aside className="fixed top-0 left-0 bottom-0 w-14 flex flex-col items-center py-4 gap-6 z-50">
+        <aside className={cn("fixed top-0 left-0 bottom-0 w-14 flex flex-col items-center py-4 gap-6 z-50 transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]", collapsed && "-translate-x-full")}>
             {/* 1. Logo */}
             <div className="w-10 h-10 mx-auto rounded-lg flex items-center justify-center text-primary font-black text-sm overflow-hidden shrink-0">
                 {logo ? (

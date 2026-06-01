@@ -7,5 +7,5 @@
 // Nota: CategoryFilterProps usa ProductCategory (de @/features/inventory/types)
 // en lugar del tipo Category (de @/types/pos). Son estructuralmente idénticos.
 
-export { CategoryFilter } from '@/components/shared/ProductSelector'
-export type { CategoryFilterProps } from '@/components/shared/ProductSelector'
+export { CategoryFilter } from '@/components/shared'
+export type { CategoryFilterProps } from '@/components/shared'

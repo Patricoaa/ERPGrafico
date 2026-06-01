@@ -21,6 +21,9 @@ export const treasurySchema = z.object({
     pos_rounding_adjustment_account: z.string().nullable(),
     pos_cashback_error_account: z.string().nullable(),
     pos_other_outflow_account: z.string().nullable(),
+    // Terminal bridge accounts
+    terminal_commission_bridge_account: z.string().nullable(),
+    terminal_iva_bridge_account: z.string().nullable(),
 })
 
 export type TreasuryFormValues = z.infer<typeof treasurySchema>

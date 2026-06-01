@@ -26,7 +26,9 @@ export function GroupManagement({ externalOpen, onExternalOpenChange, createActi
 
     useEffect(() => {
         if (externalOpen) {
-            setShowCreateModal(true)
+            requestAnimationFrame(() => {
+                setShowCreateModal(true)
+            })
         }
     }, [externalOpen])
 

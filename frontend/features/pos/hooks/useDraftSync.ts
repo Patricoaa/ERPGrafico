@@ -170,9 +170,9 @@ export function useDraftSync({
 
     const unlockDraftMutation = useMutation({
         mutationFn: (draftId: number) => posApi.unlockDraft(draftId, { pos_session_id: posSessionId, session_key: browserSessionKey }),
-        onSuccess: () => {
+        onSuccess: (_data, unlockDraftId) => {
             setActiveLockDraftId(null)
-            queryClient.invalidateQueries({ queryKey: POS_KEYS.drafts.detailById(draftId) })
+            queryClient.invalidateQueries({ queryKey: POS_KEYS.drafts.detailById(unlockDraftId) })
             markLocalMutation()
         },
         onError: () => {}

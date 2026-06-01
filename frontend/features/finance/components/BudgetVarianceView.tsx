@@ -65,13 +65,17 @@ export function BudgetVarianceView() {
 
     // Load available budgets
     useEffect(() => {
-        loadBudgets();
+        requestAnimationFrame(() => {
+            loadBudgets();
+        })
     }, []);
 
     // Load variance data when selection changes
     useEffect(() => {
         if (selectedBudget) {
-            loadVariance();
+            requestAnimationFrame(() => {
+                loadVariance();
+            })
         }
     }, [selectedBudget, selectedMonth, selectedYear]);
 

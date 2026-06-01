@@ -2,6 +2,7 @@
 
 
 import { PageHeader } from "@/components/shared"
+import { getModuleIconName } from "@/lib/module-registry"
 
 export function ContactsHeader() {
     const tabs = [
@@ -20,7 +21,7 @@ export function ContactsHeader() {
         <PageHeader
             title="Contactos"
             description="Directorio de clientes, proveedores y contactos."
-            iconName="users-2"
+            iconName={getModuleIconName('contacts') ?? "users"}
             variant="minimal"
             navigation={navigation}
         />

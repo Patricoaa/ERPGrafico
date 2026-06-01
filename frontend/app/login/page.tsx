@@ -3,73 +3,55 @@
 import { motion } from "framer-motion"
 import { LoginForm } from "@/features/auth"
 import { GuestGuard } from "@/components/auth"
+import { useBranding } from "@/contexts/BrandingProvider"
+import { getFrontendVersion } from "@/lib/version"
 
 export default function LoginPage() {
+    const { logo, company } = useBranding()
+    const companyName = company?.trade_name || company?.name
+    const initials = companyName?.substring(0, 2).toUpperCase() || "ERP"
+
     return (
         <GuestGuard>
-            <div className="min-h-screen w-full flex bg-background selection:bg-primary/20">
-                {/* Left Panel: Brand & Decorative (Industrial Dark) */}
-                <div className="hidden lg:flex lg:w-1/2 relative flex-col justify-between p-12 bg-sidebar overflow-hidden">
-                    {/* Decorative Grid Background */}
-                    <div className="absolute inset-0 bleed-guides opacity-20 pointer-events-none" />
-
-                    {/* Registration Marks (CSS Class based) */}
-                    <div className="absolute inset-8 registration-marks pointer-events-none opacity-40" />
-
-                    <motion.div
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-                        className="relative z-10"
-                    >
-                        <div className="flex items-center gap-3 mb-12">
-                            <span className="font-heading font-black text-xl uppercase tracking-tighter text-sidebar-foreground">
-                                ERPGrafico
-                            </span>
+            <div className="min-h-screen w-full flex items-center justify-center bg-background selection:bg-primary/20 relative overflow-hidden">
+                <motion.div
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+                    className="w-full max-w-sm relative z-10 mx-6"
+                >
+                    <div className="rounded-xl border bg-card shadow-sm p-8 canvas-prepress">
+                        {/* Logo */}
+                        <div className="mb-8 flex flex-col items-center">
+                            {logo ? (
+                                <img
+                                    src={logo}
+                                    alt={companyName || "Logo"}
+                                    className="h-14 w-auto object-contain mb-3"
+                                />
+                            ) : (
+                                <div className="w-14 h-14 rounded-lg flex items-center justify-center bg-primary text-primary-foreground font-black text-lg mb-3">
+                                    {initials}
+                                </div>
+                            )}
+                            {companyName && (
+                                <h1 className="font-heading font-bold text-sm uppercase tracking-widest text-muted-foreground">
+                                    {companyName}
+                                </h1>
+                            )}
                         </div>
 
-                        <h1 className="font-heading font-black text-6xl xl:text-7xl uppercase tracking-tighter leading-[0.9] text-sidebar-foreground mb-6">
-                            Impulsando la <br />
-                            <span className="text-primary">Producción</span> <br />
-                            Gráfica.
-                        </h1>
-                        <p className="max-w-md text-sidebar-foreground/60 text-lg font-medium leading-relaxed">
-                            La plataforma modular definitiva para la gestión de imprentas y talleres de artes gráficas.
-                        </p>
-                    </motion.div>
+                        {/* Login form */}
+                        <LoginForm />
 
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 0.4 }}
-                        transition={{ delay: 1, duration: 1 }}
-                        className="relative z-10 flex flex-wrap gap-4"
-                    >
-                        {["Producción", "Ventas", "Finanzas", "RRHH"].map((feature) => (
-                            <div
-                                key={feature}
-                                className="px-4 py-1.5 rounded-md border border-sidebar-border bg-sidebar-accent text-[10px] font-black uppercase tracking-widest text-sidebar-foreground"
-                            >
-                                {feature}
-                            </div>
-                        ))}
-                    </motion.div>
-
-                    {/* Industrial bottom mark */}
-                    <div className="absolute bottom-12 right-12 opacity-10 select-none pointer-events-none">
-                        <span className="font-mono text-[120px] font-black leading-none uppercase tracking-tighter">
-                            ERP-GR
-                        </span>
+                        {/* Version footer */}
+                        <div className="mt-10 pt-6 border-t border-border/40">
+                            <p className="text-[10px] text-muted-foreground/50 text-center font-mono uppercase tracking-widest">
+                                v{getFrontendVersion()}
+                            </p>
+                        </div>
                     </div>
-                </div>
-
-                {/* Right Panel: Auth Form */}
-                <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12 bg-background relative overflow-hidden">
-                    {/* Subtle background marks for light side */}
-                    <div className="absolute top-12 right-12 w-24 h-24 border-r border-t border-border/40 opacity-50" />
-                    <div className="absolute bottom-12 left-12 w-24 h-24 border-l border-b border-border/40 opacity-50" />
-
-                    <LoginForm />
-                </div>
+                </motion.div>
             </div>
         </GuestGuard>
     )

@@ -88,13 +88,16 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
     })
 
     useEffect(() => {
-        if (user) {
-            fetchData()
-            // Poll every 2 minutes as a fallback
-            const interval = setInterval(fetchData, 120000)
-            return () => clearInterval(interval)
-        }
-    }, [user, fetchData])
+        if (!user) return
+        let cancelled = false
+        ;(async () => {
+            await fetchData()
+        })()
+        const interval = setInterval(() => {
+            if (!cancelled) fetchData()
+        }, 120000)
+        return () => { cancelled = true; clearInterval(interval) }
+    }, [user])
 
     const handleNotificationClick = async (notification: Notification) => {
         if (!notification.read) {
@@ -136,7 +139,7 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                             <Link
                                 href="/pos"
                                 target="_blank"
-                                className="h-8 w-8 flex items-center justify-center rounded-md text-foreground/50 hover:bg-accent hover:text-accent-foreground transition-all duration-200"
+                                className="h-10 w-10 flex items-center justify-center rounded-md text-foreground/50 hover:bg-accent hover:text-accent-foreground transition-all duration-200"
                             >
                                 <Store className="h-5 w-5" />
                             </Link>
@@ -153,7 +156,7 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                         <motion.button
                             whileTap={{ scale: 0.95 }}
                             onClick={() => setIsCalculatorOpen(true)}
-                            className="h-8 w-8 flex items-center justify-center rounded-md text-foreground/50 hover:bg-accent hover:text-accent-foreground transition-all duration-200 bg-transparent border-none shadow-none"
+                            className="h-10 w-10 flex items-center justify-center rounded-md text-foreground/50 hover:bg-accent hover:text-accent-foreground transition-all duration-200 bg-transparent border-none shadow-none"
                         >
                             <Calculator className="h-5 w-5" />
                         </motion.button>
@@ -170,7 +173,7 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                             whileTap={{ scale: 0.95 }}
                             onClick={onInboxToggle}
                             className={cn(
-                                "relative h-8 w-8 flex items-center justify-center rounded-md transition-all duration-200",
+                                "relative h-10 w-10 flex items-center justify-center rounded-md transition-all duration-200",
                                 isInboxOpen
                                     // Active: filled primary to signal open panel
                                     ? "bg-primary text-primary-foreground"
@@ -180,7 +183,7 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                         >
                             <Inbox className="h-5 w-5" />
                             {pendingTasksCount > 0 && !isInboxOpen && (
-                                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] flex items-center justify-center bg-destructive text-white text-[9px] font-black rounded-full px-1 shadow-sm border-2 border-background">
+                                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] flex items-center justify-center bg-destructive text-destructive-foreground text-[9px] font-black rounded-full px-1 shadow-sm border-2 border-background">
                                     {pendingTasksCount > 99 ? '99+' : pendingTasksCount}
                                 </span>
                             )}
@@ -191,7 +194,7 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                     </TooltipContent>
                 </Tooltip>
 
-                <div className="w-px h-6 bg-white/5 mx-1" />
+                <div className="w-px h-6 bg-border mx-1" />
 
                 {/* Notifications */}
                 <DropdownMenu>
@@ -200,7 +203,7 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                             <DropdownMenuTrigger asChild>
                                 <motion.button
                                     whileTap={{ scale: 0.95 }}
-                                    className="relative h-8 w-8 flex items-center justify-center rounded-md text-foreground/50 hover:bg-accent hover:text-accent-foreground transition-all duration-200 bg-transparent border-none shadow-none"
+                                    className="relative h-10 w-10 flex items-center justify-center rounded-md text-foreground/50 hover:bg-accent hover:text-accent-foreground transition-all duration-200 bg-transparent border-none shadow-none"
                                 >
                                     <Bell className="h-5 w-5" />
                                     {unreadCount > 0 && (
@@ -251,7 +254,7 @@ export function UserActions({ isInboxOpen, onInboxToggle }: UserActionsProps) {
                             <DropdownMenuTrigger asChild>
                                 <motion.button
                                     whileTap={{ scale: 0.95 }}
-                                    className="relative h-8 w-8 flex items-center justify-center rounded-md text-foreground/50 hover:bg-accent hover:text-accent-foreground transition-all duration-200 bg-transparent border-none shadow-none"
+                                    className="relative h-10 w-10 flex items-center justify-center rounded-md text-foreground/50 hover:bg-accent hover:text-accent-foreground transition-all duration-200 bg-transparent border-none shadow-none"
                                 >
                                     <Avatar className="h-full w-full rounded-md bg-transparent">
                                         <AvatarFallback className="bg-transparent text-current font-heading font-black text-[10px] rounded-md">

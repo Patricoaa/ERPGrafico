@@ -15,7 +15,24 @@ class DraftCartViewSet(viewsets.ModelViewSet):
     """
     serializer_class = DraftCartSerializer
     permission_classes = [StandardizedModelPermissions]
-    
+
+    def retrieve(self, request, pk=None):
+        """
+        GET /api/sales/pos-drafts/{id}/ - Obtener borrador por ID
+        No requiere pos_session_id porque el borrador se busca por su PK.
+        """
+        try:
+            draft = DraftCart.objects.select_related(
+                'customer', 'created_by', 'last_modified_by', 'pos_session', 'locked_by'
+            ).get(id=pk)
+        except DraftCart.DoesNotExist:
+            return Response(
+                {"error": "Borrador no encontrado"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        serializer = self.get_serializer(draft)
+        return Response(serializer.data)
+
     def get_queryset(self):
         """
         Filtrar por sesión activa (no por usuario individual).

@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React, { useState } from "react"
 import { useRouter } from "next/navigation"
 import { EmployeeDrawer } from "@/features/hr"
 import type { Employee } from "@/types/hr"
@@ -25,7 +25,7 @@ export default function EmployeesPage() {
     const router = useRouter()
     const pathname = usePathname()
     const searchParams = useSearchParams()
-    const { filters } = useSmartSearch(employeeSearchDef)
+    const { filters, isFiltered } = useSmartSearch(employeeSearchDef)
     const { employees, isLoading: loading, refetch: fetchEmployees } = useEmployees(filters)
     const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<Employee>({
         endpoint: '/hr/employees'
@@ -34,15 +34,8 @@ export default function EmployeesPage() {
     // Dialog state synchronized with URL or local edit
     const isNewModalOpen = searchParams.get("modal") === "new"
     const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null)
-    const dialogOpen = isNewModalOpen || !!editingEmployee || !!selectedFromUrl
-
-    useEffect(() => {
-        if (selectedFromUrl) {
-            setEditingEmployee(selectedFromUrl)
-        } else {
-            setEditingEmployee(null)
-        }
-    }, [selectedFromUrl])
+    const activeEmployee = selectedFromUrl || editingEmployee
+    const dialogOpen = isNewModalOpen || !!activeEmployee
 
     const setDialogOpen = (open: boolean) => {
         if (!open) {
@@ -161,7 +154,20 @@ export default function EmployeesPage() {
                     leftAction={<SmartSearchBar searchDef={employeeSearchDef} placeholder="Buscar por nombre o RUT..." className="w-full" />}
                     defaultPageSize={20}
                     createAction={createAction}
+                    isFiltered={isFiltered}
+                    emptyState={{
+                        context: "users",
+                        title: "Aún no hay empleados",
+                        description: "Registra a tu personal para gestionar nóminas, anticipos e inasistencias.",
+                    }}
                     renderCustomView={createEntityCardView('hr.employee', {
+                        isFiltered,
+                        emptyState: {
+                            context: "users",
+                            title: "Aún no hay empleados",
+                            description: "Registra a tu personal para gestionar nóminas, anticipos e inasistencias.",
+                            action: createAction,
+                        },
                         renderCard: (emp: Employee) => (
                             <EntityCard key={emp.id} onClick={() => {
                                 const params = new URLSearchParams(searchParams.toString())
@@ -193,7 +199,7 @@ export default function EmployeesPage() {
             <EmployeeDrawer
                 open={dialogOpen}
                 onOpenChange={setDialogOpen}
-                employee={editingEmployee}
+                employee={activeEmployee}
                 onSaved={() => {
                     setDialogOpen(false)
                     fetchEmployees()

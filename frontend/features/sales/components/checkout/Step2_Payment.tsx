@@ -2,6 +2,8 @@
 
 import { PaymentMethodCardSelector, PaymentData } from "@/features/treasury/components/PaymentMethodCardSelector"
 import { CheckoutPaymentData } from "../../types"
+import { FormSection } from '@/components/shared'
+import { Wallet } from "lucide-react"
 
 interface Step2_PaymentProps {
     paymentData: CheckoutPaymentData
@@ -13,29 +15,24 @@ interface Step2_PaymentProps {
 
 export function Step2_Payment({ paymentData, setPaymentData, total, terminalId, customerCreditBalance }: Step2_PaymentProps) {
     return (
-        <div className="space-y-4">
-            <div className="p-0 space-y-4">
-                <p className="text-sm text-muted-foreground mb-2">
-                    Ingrese la información relacionada al Pago.
-                </p>
-
-                <PaymentMethodCardSelector
-                    operation="sales"
-                    terminalId={terminalId}
-                    total={total}
-                    paymentData={paymentData as PaymentData}
-                    onPaymentDataChange={setPaymentData as any}
-                    customerCreditBalance={customerCreditBalance}
-                    labels={{
-                        totalLabel: 'Total a Cobrar',
-                        amountLabel: 'Monto Recibido',
-                        differencePositiveLabel: 'Vuelto',
-                        differenceNegativeLabel: 'Crédito Asignado',
-                        amountModalTitle: 'Monto Recibido',
-                        amountModalDescription: 'Ingrese el monto recibido para este pago.'
-                    }}
-                />
-            </div>
+        <div className="space-y-6">
+            <PaymentMethodCardSelector
+                operation="sales"
+                terminalId={terminalId}
+                total={total}
+                paymentData={paymentData as PaymentData}
+                onPaymentDataChange={setPaymentData as any}
+                customerCreditBalance={customerCreditBalance}
+                methodTitle={<FormSection title="Método de Pago" icon={Wallet} />}
+                labels={{
+                    totalLabel: 'Total a Cobrar',
+                    amountLabel: 'Monto Recibido',
+                    differencePositiveLabel: 'Vuelto',
+                    differenceNegativeLabel: 'Crédito Asignado',
+                    amountModalTitle: 'Monto Recibido',
+                    amountModalDescription: 'Ingrese el monto recibido para este pago.'
+                }}
+            />
         </div>
     )
 }

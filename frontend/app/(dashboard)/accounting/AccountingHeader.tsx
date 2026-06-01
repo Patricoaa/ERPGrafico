@@ -2,6 +2,7 @@
 
 import { usePathname, useSearchParams } from "next/navigation"
 import { PageHeader } from "@/components/shared"
+import { getModuleIconName } from "@/lib/module-registry"
 
 export function AccountingHeader() {
     const pathname = usePathname()
@@ -53,7 +54,7 @@ export function AccountingHeader() {
         if (activeValue === 'entries') return { title: "Asientos Contables", description: "Libro diario y registro cronológico de transacciones.", iconName: "file-text" as const }
         if (activeValue === 'closures') return { title: "Gestión de Cierres", description: "Control de validación mensual y cierres de ejercicios anuales.", iconName: "calendar" as const }
         if (activeValue === 'tax') return { title: "Cumplimiento Tributario", description: "Declaraciones F29 y gestión de periodos fiscales.", iconName: "calculator" as const }
-        return { title: "Contabilidad", description: "", iconName: "calculator" as const }
+        return { title: "Contabilidad", description: "", iconName: getModuleIconName('accounting') ?? "calculator" }
     }
 
     const config = getHeaderConfig()

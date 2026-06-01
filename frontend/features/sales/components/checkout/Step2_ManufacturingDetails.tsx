@@ -139,7 +139,7 @@ export function Step2_ManufacturingDetails({ orderLines, setOrderLines }: Step2_
                     data={manufacturableItems}
                     variant="embedded"
                     hidePagination
-                    emptyState="No hay productos fabricables pendientes de configuración"
+                    emptyState={{ description: "No hay productos fabricables pendientes de configuración" }}
                 />
             </div>
 

@@ -4,8 +4,8 @@ export const posApi = {
     // ── Drafts ──
     getDrafts: (params?: Record<string, unknown>) =>
         api.get('/sales/pos-drafts/', { params }).then(r => r.data),
-    getDraft: (id: number) =>
-        api.get(`/sales/pos-drafts/${id}/`).then(r => r.data),
+    getDraft: (id: number, params?: Record<string, unknown>) =>
+        api.get(`/sales/pos-drafts/${id}/`, { params }).then(r => r.data),
     createDraft: (payload: Record<string, unknown>) =>
         api.post('/sales/pos-drafts/', payload).then(r => r.data),
     updateDraft: (id: number, payload: Record<string, unknown>) =>

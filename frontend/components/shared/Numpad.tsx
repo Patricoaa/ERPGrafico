@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Delete } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -12,6 +13,7 @@ interface NumpadProps {
     className?: string
     allowDecimal?: boolean
     hideDisplay?: boolean
+    hideConfirm?: boolean
     confirmLabel?: string
     onExactAmount?: () => void
     exactAmountLabel?: string
@@ -25,6 +27,7 @@ export function Numpad({
     className,
     allowDecimal = true,
     hideDisplay = false,
+    hideConfirm = false,
     confirmLabel = "OK",
     onExactAmount,
     exactAmountLabel
@@ -85,21 +88,21 @@ export function Numpad({
     }, [value, allowDecimal, onConfirm, onClose])
 
     return (
-        <div className={cn("flex flex-col gap-2 p-2 bg-background border rounded-lg shadow-[var(--shadow-overlay)] w-full max-w-[280px]", className)}>
+        <div className={cn("flex flex-col gap-2 p-1.5 bg-background border rounded-lg shadow-[var(--shadow-overlay)] w-full max-w-[260px] lg:max-w-[280px]", className)}>
             {!hideDisplay && (
                 <div className="flex justify-between items-center mb-1">
-                    <div className="text-2xl font-black tracking-tight text-primary truncate px-2 w-full text-right">
+                    <div className="lg:text-xl text-base font-black tracking-tight text-primary truncate px-2 w-full text-right">
                         {value}
                     </div>
                 </div>
             )}
 
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 lg:gap-1.5 gap-1">
                 {keys.map((key) => (
                     <Button
                         key={key}
                         variant="outline"
-                        className="h-14 text-xl font-bold active:scale-95 transition-transform"
+                        className="h-9 lg:h-11 text-xs lg:text-sm font-bold active:scale-95 transition-transform"
                         onClick={() => handleNumber(key)}
                     >
                         {key}
@@ -109,7 +112,7 @@ export function Numpad({
                 {/* Row 4 */}
                 <Button
                     variant="destructive"
-                    className="h-14 text-lg font-bold active:scale-95 transition-transform bg-destructive/10 text-destructive hover:bg-destructive/20 border-destructive/20"
+                    className="h-9 lg:h-11 text-xs lg:text-sm font-bold active:scale-95 transition-transform bg-destructive/10 text-destructive hover:bg-destructive/20 border-destructive/20"
                     onClick={handleClear}
                 >
                     C
@@ -117,7 +120,7 @@ export function Numpad({
 
                 <Button
                     variant="outline"
-                    className="h-14 text-xl font-bold active:scale-95 transition-transform"
+                    className="h-9 lg:h-11 text-xs lg:text-sm font-bold active:scale-95 transition-transform"
                     onClick={() => handleNumber("0")}
                 >
                     0
@@ -126,7 +129,7 @@ export function Numpad({
                 {allowDecimal ? (
                     <Button
                         variant="outline"
-                        className="h-14 text-xl font-bold active:scale-95 transition-transform"
+                        className="h-9 lg:h-11 text-xs lg:text-sm font-bold active:scale-95 transition-transform"
                         onClick={() => handleNumber(".")}
                     >
                         .
@@ -134,10 +137,10 @@ export function Numpad({
                 ) : (
                     <Button
                         variant="outline"
-                        className="h-14 text-warning font-bold active:scale-95 transition-transform"
+                        className="h-9 lg:h-11 text-warning font-bold active:scale-95 transition-transform"
                         onClick={handleDelete}
                     >
-                        <Delete className="h-6 w-6" />
+                        <Delete className="lg:h-4 lg:w-4 h-3.5 w-3.5" />
                     </Button>
                 )}
             </div>
@@ -145,16 +148,16 @@ export function Numpad({
             {onExactAmount && (
                 <Button
                     variant="outline"
-                    className="w-full h-12 font-bold text-sm bg-success/10 text-success hover:bg-success/20 hover:text-success border-success/20 mb-2"
+                    className="w-full lg:h-11 h-9 font-bold lg:text-sm text-xs bg-success/10 text-success hover:bg-success/20 hover:text-success border-success/20"
                     onClick={onExactAmount}
                 >
                     {exactAmountLabel || "MONTO EXACTO"}
                 </Button>
             )}
 
-            {onConfirm && (
+            {onConfirm && !hideConfirm && (
                 <Button
-                    className="w-full h-14 font-black uppercase tracking-widest text-lg bg-primary hover:bg-primary mt-2"
+                    className="w-full lg:h-11 h-9 font-black uppercase tracking-widest lg:text-sm text-[11px] bg-primary hover:bg-primary"
                     onClick={onConfirm}
                 >
                     {confirmLabel}

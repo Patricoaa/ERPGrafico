@@ -44,7 +44,7 @@ export function TaskActionCard({
                         <h4 className="text-sm font-semibold flex items-center gap-2">
                             {task.title}
                             {!isPending && (
-                                <span className="text-[10px] font-normal text-muted-foreground bg-white px-1.5 py-0.5 rounded border">
+                                <span className="text-[10px] font-normal text-muted-foreground bg-muted px-1.5 py-0.5 rounded border">
                                     ✓ {task.completed_by_data?.username || 'Sistema'}
                                 </span>
                             )}

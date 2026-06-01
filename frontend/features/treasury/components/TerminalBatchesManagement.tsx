@@ -34,7 +34,7 @@ export function TerminalBatchesManagement({
     onExternalOpenInvoiceChange,
     createAction
 }: TerminalBatchesManagementProps) {
-    const { filters } = useSmartSearch(terminalBatchSearchDef)
+    const { filters, isFiltered } = useSmartSearch(terminalBatchSearchDef)
     const { batches, isLoading, refetch } = useTerminalBatches(filters)
     const [openCreate, setOpenCreate] = useState(false)
     const [openInvoice, setOpenInvoice] = useState(false)
@@ -134,6 +134,12 @@ export function TerminalBatchesManagement({
                     variant="embedded"
                     leftAction={<SmartSearchBar searchDef={terminalBatchSearchDef} placeholder="Buscar liquidaciones..." className="w-full" />}
                     createAction={createAction}
+                    isFiltered={isFiltered}
+                    emptyState={{
+                        context: "treasury",
+                        title: "Aún no hay liquidaciones",
+                        description: "Las liquidaciones de terminales de pago aparecerán aquí.",
+                    }}
                     renderCard={(batch: TerminalBatch) => (
                         <EntityCard onClick={() => setOpenCreate(true)}>
                             <EntityCard.Header

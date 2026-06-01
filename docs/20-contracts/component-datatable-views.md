@@ -19,13 +19,14 @@ Este documento describe las reglas de arquitectura para el ecosistema `DataTable
 
 ## 1. Prop `variant` — Modo de renderizado
 
-El `DataTable` opera en tres modos excluyentes:
+El `DataTable` opera en cuatro modos excluyentes:
 
 | Valor | Cuándo usar |
 |---|---|
 | `"standalone"` | Tabla autónoma en página propia (ejm: `/inventory/products`). Incluye borde contenedor, header visible, padding externo. |
 | `"embedded"` | Tabla incrustada dentro de un card, modal o panel (ejm: líneas de una orden, historial en `ContactDrawer`). Sin borde externo; comparte el espacio visual con el contenedor padre. |
 | `"minimal"` | Tabla display-readonly dentro de tabs o paneles de detalle (ejm: variantes de producto, pricing, checkout steps). Sin toolbar, sin paginación. Usa el mismo motor TanStack pero con la mínima UI. |
+| `"compact"` | Tabla densa para modals/drawers con CSS Grid (ejm: borradores POS, listas de selección). Sin toolbar, sin paginación, sin borde. Requiere `gridTemplate`. Ver §1.2. |
 
 **Regla:** Siempre declarar `variant` explícitamente. La prop `cardMode` está deprecada y no debe usarse en código nuevo.
 
@@ -33,6 +34,7 @@ El `DataTable` opera en tres modos excluyentes:
 // ✅ Correcto
 <DataTable variant="embedded" ... />
 <DataTable variant="minimal" columns={columns} data={data} />
+<DataTable variant="compact" gridTemplate="grid-cols-[2rem_1fr_auto_auto_auto]" columns={columns} data={data} />
 
 // ❌ Deprecado
 <DataTable cardMode={true} ... />
@@ -52,6 +54,57 @@ El `DataTable` opera en tres modos excluyentes:
 | Empty state | Mismo `EmptyState` que las otras variantes |
 
 Las props `columns`, `data`, `isLoading`, `emptyState`, `noBorder`, `onRowClick`, `renderFooter`, `renderRow` funcionan igual que en los otros modos.
+
+### 1.2 `variant="compact"` — Comportamiento específico
+
+| Aspecto | Comportamiento |
+|---|---|
+| Rendering | CSS Grid (`<div>` elements), no `<table>` HTML |
+| Toolbar | No se renderiza |
+| Paginación | Oculta |
+| Bulk actions | No se renderizan |
+| Row selection | No disponible |
+| Borde | Sin borde externo |
+| Sticky header | Sí, sticky top-0 z-10 |
+| Scroll | `ScrollArea` con `max-h` configurable (default `max-h-[65vh]`) |
+| Separadores | `divide-y divide-border/60` entre filas |
+| Loading state | Skeleton grid con la misma estructura de columnas |
+| Empty state | Mismo `EmptyState` que las otras variantes |
+| Accesibilidad | `role="table"`, `role="row"`, `role="columnheader"`, `role="cell"` |
+
+**Props requeridas:** `gridTemplate` (clase CSS Grid, e.g. `"grid-cols-[2rem_1fr_auto_auto_auto]"`).
+
+**Props opcionales:** `gridGap` (default `"gap-x-3"`), `compactMaxHeight` (default `"max-h-[65vh]"`), `renderRowActions`.
+
+**Regla:** `gridTemplate` debe tener exactamente `columns.length` tracks cuando `renderRowActions` no se usa, o `columns.length + 1` tracks cuando sí se usa (el track extra es para acciones).
+
+```tsx
+// ✅ Correcto: 4 columnas + 1 track de acciones
+<DataTable
+  variant="compact"
+  gridTemplate="grid-cols-[2rem_1fr_auto_auto_auto]"
+  columns={columns}
+  data={data}
+  renderRowActions={(row) => <Button>...</Button>}
+/>
+
+// ✅ Correcto: 4 columnas sin acciones
+<DataTable
+  variant="compact"
+  gridTemplate="grid-cols-[2rem_1fr_auto_auto]"
+  columns={columns}
+  data={data}
+/>
+
+// ❌ Incorrecto: gridTemplate no coincide con columns.length
+<DataTable
+  variant="compact"
+  gridTemplate="grid-cols-[2rem_1fr_auto]"  // 3 tracks
+  columns={fourColumns}                       // 4 columnas
+/>
+```
+
+Las props `columns`, `data`, `isLoading`, `emptyState`, `onRowClick` funcionan igual que en los otros modos. Las primitivas `DataCell.*` (ya div-based) funcionan directamente dentro de las celdas grid.
 
 ---
 
@@ -366,7 +419,7 @@ import { ExpandableTableRow } from "@/components/shared"
 
 Cada PR que toque `DataTable` o sus consumidores debe verificar:
 
-- [ ] `variant` declarado explícitamente (`"embedded"` o `"standalone"`)
+- [ ] `variant` declarado explícitamente (`"embedded"`, `"standalone"`, `"minimal"` o `"compact"`)
 - [ ] `cardMode` **no** usado — solo `variant`
 - [ ] `isLoading` pasado si el componente hace fetch asíncrono
 - [ ] Si hay `viewOptions` con algo distinto de `"list"`: `renderCustomView` presente para esa opción
@@ -378,4 +431,6 @@ Cada PR que toque `DataTable` o sus consumidores debe verificar:
 - [ ] Card views usan `EntityCard` o `DomainCard` — **no inline JSX**
 - [ ] `variant="minimal"` usado en tablas display dentro de tabs de producto/config (no en listados CRUD)
 - [ ] `variant="minimal"` no recibe props de toolbar, paginación ni bulk actions
+- [ ] `variant="compact"` siempre declara `gridTemplate`
+- [ ] `variant="compact"` con `renderRowActions`: `gridTemplate` tiene `columns.length + 1` tracks
 - [ ] Expandable rows nuevos usan `renderSubComponent` o `createExpandableRowView` — **no** `ExpandableTableRow`

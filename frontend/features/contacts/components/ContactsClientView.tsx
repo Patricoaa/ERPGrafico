@@ -6,7 +6,6 @@ import { Building2, User as UserIcon, Banknote } from "lucide-react"
 import { formatRUT } from "@/lib/utils/format"
 import { DataTableView } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
-import { EmptyState } from '@/components/shared'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { DataCell, createActionsColumn, Chip, EntityCard } from '@/components/shared'
 import { useContacts, type Contact } from "@/features/contacts"
@@ -27,7 +26,7 @@ interface ContactsClientViewProps {
 }
 
 export function ContactsClientView({ isNewModalOpen = false, createAction }: ContactsClientViewProps) {
-    const { filters: smartFilters } = useSmartSearch(contactSearchDef)
+    const { filters: smartFilters, isFiltered } = useSmartSearch(contactSearchDef)
     const { contacts, isLoading, deleteContact } = useContacts({ filters: smartFilters as ContactFilters })
     const [selectedContact, setSelectedContact] = useState<Contact | null>(null)
     const [modalOpen, setModalOpen] = useState(false)
@@ -56,8 +55,10 @@ export function ContactsClientView({ isNewModalOpen = false, createAction }: Con
     // Sync modal with selected entity from URL (deep-link)
     useEffect(() => {
         if (selectedFromUrl) {
-            setSelectedContact(selectedFromUrl)
-            setModalOpen(true)
+            requestAnimationFrame(() => {
+                setSelectedContact(selectedFromUrl)
+                setModalOpen(true)
+            })
         }
     }, [selectedFromUrl])
 
@@ -217,9 +218,6 @@ export function ContactsClientView({ isNewModalOpen = false, createAction }: Con
 
         <div className="h-full flex flex-col">
             <div className="flex-1 min-h-0">
-                {!isLoading && contacts.length === 0 ? (
-                    <EmptyState context="users" title="No hay contactos" description="No se encontraron contactos con los criterios de búsqueda actuales." />
-                ) : (
                     <DataTableView
                         entityLabel="contacts.contact"
                         columns={columns}
@@ -229,6 +227,12 @@ export function ContactsClientView({ isNewModalOpen = false, createAction }: Con
                         leftAction={<SmartSearchBar searchDef={contactSearchDef} placeholder="Buscar por nombre, RUT o tipo..." className="w-full" />}
                         defaultPageSize={20}
                         createAction={createAction}
+                        isFiltered={isFiltered}
+                        emptyState={{
+                            context: "users",
+                            title: "Aún no hay contactos",
+                            description: "Crea tu primer cliente o proveedor para empezar a operar.",
+                        }}
                         renderCard={(contact: Contact) => (
                             <EntityCard key={contact.id} onClick={() => openSelected(contact.id)}>
                                 <EntityCard.Header
@@ -258,8 +262,6 @@ export function ContactsClientView({ isNewModalOpen = false, createAction }: Con
                             </EntityCard>
                         )}
                     />
-                )}
-
             </div>
 
             <Suspense fallback={<LoadingFallback />}>

@@ -3,6 +3,7 @@
 import { usePathname, useSearchParams } from "next/navigation"
 import { PageHeader } from "@/components/shared"
 import { ENTITY_REGISTRY } from "@/lib/entity-registry"
+import { getModuleIconName } from "@/lib/module-registry"
 
 export function SalesHeader() {
     const pathname = usePathname()
@@ -14,25 +15,22 @@ export function SalesHeader() {
     // Map physical routes to tab values
     const segmentToTab: Record<string, string> = {
         orders: 'orders',
-        terminals: 'pos',   // pos lives at /terminals
+        pos: 'pos',
         credits: 'credits',
-        sessions: 'pos',    // sessions is a sub of POS tab
+        sessions: 'pos',
         settings: 'config',
     }
 
-    // Detect hardware sub-tabs from ?tab= param
-    const isHardwareTab = ['providers', 'devices', 'batches'].includes(searchParams.get('tab') || '')
-    const activeValue = isHardwareTab ? 'hardware' : (segmentToTab[currentSegment] || 'orders')
-
     const tabParam = searchParams.get('tab')
+    const activeValue = segmentToTab[currentSegment] || 'orders'
+
     // Determine subActiveValue
     const subActiveValue = (() => {
         if (activeValue === 'config') return tabParam || 'income'
         if (activeValue === 'orders') return tabParam || 'orders'
-        if (activeValue === 'hardware') return tabParam || 'batches'
         if (activeValue === 'pos') {
             if (currentSegment === 'sessions') return 'sessions'
-            return tabParam || 'pos-terminals'
+            return tabParam || 'cajas'
         }
         if (activeValue === 'credits') return tabParam || 'portfolio'
         return undefined
@@ -53,21 +51,10 @@ export function SalesHeader() {
             value: "pos",
             label: "POS",
             iconName: "banknote",
-            href: "/sales/terminals?tab=pos-terminals",
+            href: "/sales/pos?tab=cajas",
             subTabs: [
-                { value: "pos-terminals", label: "POS", href: "/sales/terminals?tab=pos-terminals" },
+                { value: "cajas", label: "Cajas", href: "/sales/pos?tab=cajas" },
                 { value: "sessions", label: "Sesiones", href: "/sales/sessions" },
-            ]
-        },
-        {
-            value: "hardware",
-            label: "Terminal de Cobro",
-            iconName: "cpu",
-            href: "/sales/terminals?tab=batches",
-            subTabs: [
-                { value: "providers", label: "Proveedor de dispositivos", href: "/sales/terminals?tab=providers" },
-                { value: "devices", label: "Dispositivos", href: "/sales/terminals?tab=devices" },
-                { value: "batches", label: "Lotes de Pago", href: "/sales/terminals?tab=batches" },
             ]
         },
         {
@@ -90,7 +77,6 @@ export function SalesHeader() {
                 { value: "income", label: "Ingresos", href: "/sales/settings?tab=income", iconName: "trending-up" },
                 { value: "credit", label: "Crédito", href: "/sales/settings?tab=credit", iconName: "credit-card" },
                 { value: "config_pos", label: "POS", href: "/sales/settings?tab=config_pos", iconName: "settings" },
-                { value: "terminals", label: "Terminales", href: "/sales/settings?tab=terminals", iconName: "wallet" },
             ]
         },
     ]
@@ -110,11 +96,6 @@ export function SalesHeader() {
             if (subActiveValue === 'blacklist') return { title: "Lista Negra", description: "Clientes con historial de impago o riesgo crediticio.", iconName: "user-x" as const }
             return { title: "Cartera de Créditos", description: "Saldo por cliente, clasificación por antigüedad y estado de cobro.", iconName: "pie-chart" as const }
         }
-        if (activeValue === 'hardware') {
-            if (subActiveValue === 'batches') return { title: "Lotes de Pago", description: "Gestión de cierres diarios y liquidaciones de tarjetas.", iconName: "cpu" as const }
-            if (subActiveValue === 'devices') return { title: "Hardware de Pago", description: "Gestione los dispositivos físicos y su vinculación con el sistema.", iconName: "cpu" as const }
-            return { title: "Proveedores de Pago", description: "Configuración de cuentas y comisiones por proveedor (TUU, Transbank, etc.).", iconName: "cpu" as const }
-        }
         if (activeValue === 'pos') {
             if (subActiveValue === 'sessions') return { title: "Sesiones Punto de Venta", description: "Historial de aperturas y cierres de caja.", iconName: "list" as const }
             return { title: "Cajas POS", description: "Administre los puntos de venta y sus métodos de pago autorizados.", iconName: "banknote" as const }
@@ -123,7 +104,7 @@ export function SalesHeader() {
             if (subActiveValue === 'notes') return { title: "Notas de Crédito y Débito", description: "Gestión de devoluciones, correcciones de facturación y ajustes de cuenta.", iconName: "file-text" as const }
             return { title: ENTITY_REGISTRY['sales.saleorder']?.titlePlural || "Notas de Venta", description: "Seguimiento de pedidos, estados de fabricación y logística de entregas.", iconName: "shopping-cart" as const }
         }
-        return { title: "Ventas", description: "", iconName: "shopping-cart" as const }
+        return { title: "Ventas", description: "", iconName: getModuleIconName('sales') ?? "shopping-cart" }
     }
 
     const config = getHeaderConfig()

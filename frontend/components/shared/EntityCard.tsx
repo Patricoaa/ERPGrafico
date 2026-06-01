@@ -85,14 +85,14 @@ function EntityCardHeader({ title, subtitle, trailing, className }: EntityCardHe
 // ─── Body ─────────────────────────────────────────────────────────────────────
 
 interface EntityCardBodyProps {
-    /** Use grid-cols-2 by default, override via className */
+    /** Override grid columns via className. Default: auto-fit responsive grid */
     className?: string
     children: React.ReactNode
 }
 
 function EntityCardBody({ children, className }: EntityCardBodyProps) {
     return (
-        <div className={cn("grid grid-cols-2 gap-x-4 gap-y-2", className)}>
+        <div className={cn("grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-x-4 gap-y-2", className)}>
             {children}
         </div>
     )

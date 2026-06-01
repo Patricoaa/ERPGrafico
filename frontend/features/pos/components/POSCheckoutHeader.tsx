@@ -2,7 +2,7 @@
 
 import { usePOS } from "../contexts/POSContext"
 import { cn } from "@/lib/utils"
-import {Check, ChevronRight, ShoppingCart, User, Factory, Truck, Wallet as WalletIcon} from "lucide-react"
+import {Check, ChevronRight, ShoppingCart, User, Factory, Truck, Wallet as WalletIcon, FileWarning} from "lucide-react"
 
 export function POSCheckoutHeader() {
     const { posMode, setPosMode, wizardState, items } = usePOS()
@@ -11,13 +11,14 @@ export function POSCheckoutHeader() {
     const hasManufacturing = items.some(line =>
         line.product_type === 'MANUFACTURABLE' && line.requires_advanced_manufacturing
     )
-    // Define steps
+    // Define steps — mirrors SalesCheckoutWizardContent steps + leading 'Carrito'
     const steps = [
         { id: 1, label: 'Carrito', icon: ShoppingCart },
-        { id: 2, label: 'Cliente & Doc', icon: User },
+        { id: 2, label: 'Cliente', icon: User },
+        { id: 3, label: 'Documento', icon: FileWarning },
     ]
 
-    let nextStepId = 3
+    let nextStepId = 4
     if (hasManufacturing) {
         steps.push({ id: nextStepId++, label: 'Fabricación', icon: Factory })
     }
@@ -25,7 +26,7 @@ export function POSCheckoutHeader() {
     steps.push({ id: nextStepId++, label: 'Pago', icon: WalletIcon })
 
     return (
-        <div className="flex items-center justify-center gap-1 sm:gap-4 overflow-x-auto no-scrollbar py-1 animate-in fade-in duration-700">
+        <div className="flex items-center justify-center gap-[clamp(0.25rem,1.5vw,1rem)] overflow-x-auto no-scrollbar py-1 animate-in fade-in duration-700">
             {steps.map((step, index) => {
                 const Icon = step.icon
                 const isCompleted = currentStep > step.id
@@ -35,24 +36,24 @@ export function POSCheckoutHeader() {
                     <div key={step.id} className="flex items-center group">
                         <div
                             className={cn(
-                                "flex flex-col items-center gap-1 relative"
+                                "flex flex-col items-center gap-[clamp(0.15rem,0.5vw,0.35rem)] relative"
                             )}
                         >
                             <div className={cn(
-                                "h-7 w-7 rounded-sm flex items-center justify-center transition-all duration-300 border-2",
+                                "h-[clamp(1.5rem,3.5vw,2.25rem)] w-[clamp(1.5rem,3.5vw,2.25rem)] rounded-sm flex items-center justify-center transition-all duration-300 border-2",
                                 isActive ? "bg-primary border-primary text-primary-foreground scale-110" :
                                     isCompleted ? "bg-success/10 border-success text-success" :
                                         "bg-muted border-transparent text-muted-foreground opacity-40"
                             )}>
-                                {isCompleted ? <Check className="h-3.5 w-3.5" /> : <Icon className="h-3.5 w-3.5" />}
+                                {isCompleted ? <Check className="h-[clamp(0.65rem,1.6vw,1rem)] w-[clamp(0.65rem,1.6vw,1rem)]" /> : <Icon className="h-[clamp(0.65rem,1.6vw,1rem)] w-[clamp(0.65rem,1.6vw,1rem)]" />}
 
                                 {/* Indicator Pulse for Active */}
                                 {isActive && (
-                                    <span className="absolute -top-0.5 -right-0.5 h-3 w-3 bg-primary rounded-full border-2 border-background animate-pulse" />
+                                    <span className="absolute -top-0.5 -right-0.5 h-[clamp(0.5rem,1vw,0.75rem)] w-[clamp(0.5rem,1vw,0.75rem)] bg-primary rounded-full border-2 border-background animate-pulse" />
                                 )}
                             </div>
                             <span className={cn(
-                                "text-[8px] font-bold uppercase tracking-tight truncate max-w-[50px] sm:max-w-none transition-colors",
+                                "text-[clamp(0.4rem,1vw,0.65rem)] font-bold uppercase tracking-tight truncate max-w-[clamp(40px,10vw,80px)] transition-colors leading-tight",
                                 isActive ? "text-primary" : isCompleted ? "text-success" : "text-muted-foreground"
                             )}>
                                 {step.label}
@@ -60,9 +61,9 @@ export function POSCheckoutHeader() {
                         </div>
 
                         {index < steps.length - 1 && (
-                            <div className="mx-0.5 sm:mx-1 mb-3">
+                            <div className="mx-[clamp(0.1rem,0.5vw,0.35rem)] mb-[clamp(0.5rem,1.5vw,1rem)]">
                                 <ChevronRight className={cn(
-                                    "h-3 w-3 transition-colors opacity-30",
+                                    "h-[clamp(0.55rem,1.2vw,0.8rem)] w-[clamp(0.55rem,1.2vw,0.8rem)] transition-colors opacity-30",
                                     isCompleted ? "text-success" : "text-muted-foreground"
                                 )} />
                             </div>

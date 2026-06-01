@@ -1,30 +1,5 @@
-"use client"
+import { redirect } from "next/navigation"
 
-import { TerminalBatchesManagement } from "@/features/treasury"
-import { ToolbarCreateButton } from '@/components/shared'
-import { useState } from "react"
-
-export default function TerminalBatchesPage() {
-    const [openBatch, setOpenBatch] = useState(false)
-    const [openInvoice, setOpenInvoice] = useState(false)
-
-    const createAction = (
-        <ToolbarCreateButton
-            label="Registrar Liquidación"
-            onClick={() => setOpenBatch(true)}
-        />
-    )
-
-    return (
-        <div className="pt-2 flex-1 min-h-0 flex flex-col">
-            <TerminalBatchesManagement
-                showTitle={false}
-                externalOpenBatch={openBatch}
-                onExternalOpenBatchChange={setOpenBatch}
-                externalOpenInvoice={openInvoice}
-                onExternalOpenInvoiceChange={setOpenInvoice}
-                createAction={createAction}
-            />
-        </div>
-    )
+export default function TerminalBatchesRedirect() {
+    redirect('/treasury/terminal-cobro?tab=batches')
 }

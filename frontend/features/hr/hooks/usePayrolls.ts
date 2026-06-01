@@ -26,7 +26,7 @@ export function usePayrolls(filters?: FilterState) {
     }
 }
 
-type EmployeeBasic = {
+export type EmployeeBasic = {
     id: number
     contact_detail?: { name?: string; tax_id?: string }
     position?: string

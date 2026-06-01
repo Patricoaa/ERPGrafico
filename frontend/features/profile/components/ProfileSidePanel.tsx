@@ -30,7 +30,7 @@ export function ProfileSidePanel({ profile, open = true, onOpenChange }: Profile
                 <div className="flex-1 overflow-y-auto overflow-x-hidden p-6">
                     <SkeletonShell isLoading={true} ariaLabel="Cargando perfil">
                         <div className="flex-1 h-full">
-                            <div className="flex flex-col items-center justify-center py-12 gap-4 border-b border-white/5">
+                            <div className="flex flex-col items-center justify-center py-12 gap-4 border-b border-border">
                                 <div className="h-20 w-20 rounded-full border-2 border-primary/10" />
                                 <div className="flex flex-col items-center gap-2">
                                     <div className="h-4 w-32" />
@@ -114,7 +114,7 @@ export function ProfileSidePanel({ profile, open = true, onOpenChange }: Profile
             tabIcon={User}
             fullWidth={320}
         >
-            <div className="flex-1 overflow-y-auto overflow-x-hidden text-foreground canvas-prepress">
+            <div className="flex-1 overflow-y-auto overflow-x-hidden text-foreground ">
                 {/* Header / Avatar Area */}
                 <div className="flex flex-col items-center justify-center py-10 px-6 gap-5 border-border/10 relative overflow-hidden">
                     <Avatar className="h-24 w-24 border-2 border-primary/20 shadow-xl ring-4 ring-background relative z-10">

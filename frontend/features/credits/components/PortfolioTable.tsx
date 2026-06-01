@@ -84,14 +84,16 @@ function PortfolioContactPanel({ contact, onRefresh }: { contact: CreditContact,
     // Lazy load ledger on first expansion
     useEffect(() => {
         if (ledger === null && !loadingLedger) {
-            setLoadingLedger(true)
-            getContactCreditLedger(contact.id)
-                .then(setLedger)
-                .catch(() => {
-                    toast.error("Error al cargar historial de documentos")
-                    setLedger([])
-                })
-                .finally(() => setLoadingLedger(false))
+            requestAnimationFrame(() => {
+                setLoadingLedger(true)
+                getContactCreditLedger(contact.id)
+                    .then(setLedger)
+                    .catch(() => {
+                        toast.error("Error al cargar historial de documentos")
+                        setLedger([])
+                    })
+                    .finally(() => setLoadingLedger(false))
+            })
         }
     }, [ledger, loadingLedger, contact.id])
 

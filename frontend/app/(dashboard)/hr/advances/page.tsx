@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useCallback } from "react"
+import React, { useState, useEffect } from "react"
 import { toast } from "sonner"
 import { AdvanceDrawer } from "@/features/hr"
 import { createAdvance, deleteAdvance, getEmployees, getPayrolls } from "@/features/hr"
@@ -21,7 +21,7 @@ import { salaryAdvanceSearchDef } from "@/features/hr/searchDef"
 export default function AdvancesPage() {
     const createAction = <ToolbarCreateButton label="Nuevo Anticipo" href="/hr/advances?modal=new" />
     const searchParams = useSearchParams()
-    const { filters } = useSmartSearch(salaryAdvanceSearchDef)
+    const { filters, isFiltered } = useSmartSearch(salaryAdvanceSearchDef)
     const { advances, isLoading: loading, refetch: refetchAdvances } = useSalaryAdvances(filters)
     const [employees, setEmployees] = useState<Employee[]>([])
     const [payrolls, setPayrolls] = useState<Payroll[]>([])
@@ -45,17 +45,21 @@ export default function AdvancesPage() {
         }
     }
 
-    const fetchDropdownData = useCallback(async () => {
-        try {
-            const [emps, pays] = await Promise.all([getEmployees(), getPayrolls()])
-            setEmployees(emps)
-            setPayrolls(pays)
-        } catch {
-            toast.error("Error al cargar datos")
-        }
+    useEffect(() => {
+        let cancelled = false
+        ;(async () => {
+            try {
+                const [emps, pays] = await Promise.all([getEmployees(), getPayrolls()])
+                if (!cancelled) {
+                    setEmployees(emps)
+                    setPayrolls(pays)
+                }
+            } catch {
+                if (!cancelled) toast.error("Error al cargar datos")
+            }
+        })()
+        return () => { cancelled = true }
     }, [])
-
-    useEffect(() => { fetchDropdownData() }, [fetchDropdownData])
 
     const handleDelete = async (id: number) => {
         try {
@@ -154,6 +158,12 @@ export default function AdvancesPage() {
                     leftAction={<SmartSearchBar searchDef={salaryAdvanceSearchDef} placeholder="Buscar anticipos..." className="w-full" />}
                     defaultPageSize={20}
                     createAction={createAction}
+                    isFiltered={isFiltered}
+                    emptyState={{
+                        context: "finance",
+                        title: "Aún no hay anticipos",
+                        description: "Registra anticipos de sueldo para descontarlos en la nómina.",
+                    }}
                 />
             </div>
 

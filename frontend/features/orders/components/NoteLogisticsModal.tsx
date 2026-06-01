@@ -54,7 +54,7 @@ export function NoteLogisticsModal({ open, onOpenChange, invoice, onSuccess }: N
     // Sync date with server date
     useEffect(() => {
         if (dateString && !date) {
-            setDate(dateString)
+            requestAnimationFrame(() => setDate(dateString))
         }
     }, [dateString])
 
@@ -98,9 +98,11 @@ export function NoteLogisticsModal({ open, onOpenChange, invoice, onSuccess }: N
 
     useEffect(() => {
         if (open && invoice) {
-            // Reset display lines to props initially while loading fresh data
-            setDisplayLines((invoice.lines as any) || [])
-            fetchData()
+            requestAnimationFrame(() => {
+                // Reset display lines to props initially while loading fresh data
+                setDisplayLines((invoice.lines as any) || [])
+                fetchData()
+            })
         }
     }, [open, invoice])
 

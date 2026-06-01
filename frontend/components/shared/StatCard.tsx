@@ -52,9 +52,9 @@ const accentText = {
   primary: "text-primary",
   info: "text-info",
   success: "text-success",
-  warning: "text-warning",
+  warning: "text-warning-foreground",
   destructive: "text-destructive",
-  accent: "text-accent",
+  accent: "text-accent-foreground",
   muted: "text-muted-foreground",
 } as const
 
@@ -62,9 +62,9 @@ const accentIconBg = {
   primary: "bg-primary/10 text-primary border-primary/20",
   info: "bg-info/10 text-info border-info/20",
   success: "bg-success/10 text-success border-success/20",
-  warning: "bg-warning/10 text-warning border-warning/20",
+  warning: "bg-warning/10 text-warning-foreground border-warning/20",
   destructive: "bg-destructive/10 text-destructive border-destructive/20",
-  accent: "bg-accent/10 text-accent border-accent/20",
+  accent: "bg-accent/10 text-accent-foreground border-accent/20",
   muted: "bg-muted/30 text-muted-foreground border-border/40",
 } as const
 

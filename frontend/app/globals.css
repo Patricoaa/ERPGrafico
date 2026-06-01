@@ -2,6 +2,7 @@
 @plugin "tailwindcss-animate";
 
 
+@layer base {
 :root {
   /* 
    * DESIGN SYSTEM TOKENS - ERPGrafico
@@ -42,41 +43,90 @@
   --input-raw: 0.12 0.02 240;
   --input: oklch(var(--input-raw) / 0.1);
 
-  /* 10% - ACCENT & PRIMARY (Critical Actions & Highlights) */
-  --primary-raw: 0.62 0.24 301;
+  /*
+   * LAYER 1 — PROCESS COLORS (CMYK + Pantone)
+   * Fixed identity tokens representing physical printing inks.
+   * These do NOT change in dark mode (black is always black).
+   */
+  --cyan-raw: 0.65 0.18 235;
+  --cyan: oklch(var(--cyan-raw));
+  --magenta-raw: 0.55 0.28 340;
+  --magenta: oklch(var(--magenta-raw));
+  --yellow-raw: 0.90 0.18 95;
+  --yellow: oklch(var(--yellow-raw));
+  --black-raw: 0.15 0.01 60;
+  --black: oklch(var(--black-raw));
+
+  /* Derived process mixes (overprint) */
+  --red-raw: 0.55 0.24 25;
+  --red: oklch(var(--red-raw));
+  --green-raw: 0.65 0.18 145;
+  --green: oklch(var(--green-raw));
+  --blue-raw: 0.45 0.22 280;
+  --blue: oklch(var(--blue-raw));
+
+  /* Pantone spot colors */
+  --pantone-orange-raw: 0.72 0.18 55;
+  --pantone-orange: oklch(var(--pantone-orange-raw));
+  --pantone-violet-raw: 0.50 0.22 300;
+  --pantone-violet: oklch(var(--pantone-violet-raw));
+
+  /*
+   * DATA-VIZ — Categorical chart palette
+   * Mapped to the fixed CMYK/spot inks so chart series are maximally distinct
+   * and on-brand for a graphic-industry ERP. These are categorical IDENTIFIERS,
+   * not semantic state — never use a semantic intent (success/warning/
+   * destructive) as a series color. Consume via var(--chart-N) in recharts
+   * fill/stroke props. Charts are an authorized Layer-1 consumer (§8).
+   */
+  --chart-1: var(--cyan);
+  --chart-2: var(--magenta);
+  --chart-3: var(--green);
+  --chart-4: var(--pantone-orange);
+  --chart-5: var(--blue);
+  --chart-6: var(--yellow);
+
+  /*
+   * LAYER 2 — SEMANTIC INTENTS
+   * Alias to Layer 1. Dark mode adaptation happens here.
+   */
+  --primary-raw: var(--cyan-raw);
   --primary: oklch(var(--primary-raw));
-  --primary-foreground-raw: 0.99 0.01 310;
+  --primary-foreground-raw: 0.20 0.04 235;
   --primary-foreground: oklch(var(--primary-foreground-raw));
 
-  --accent-raw: 0.72 0.14 55;
+  /*
+   * accent = NEUTRAL interaction surface (hover / focus / selected / active).
+   * Aliases `secondary` so it adapts automatically in dark mode and never
+   * collides with `warning` (yellow). For emphasis use `primary`, not accent.
+   */
+  --accent-raw: var(--secondary-raw);
   --accent: oklch(var(--accent-raw));
-  --accent-foreground-raw: 0.15 0.03 55;
+  --accent-foreground-raw: var(--secondary-foreground-raw);
   --accent-foreground: oklch(var(--accent-foreground-raw));
 
-  /* SYSTEM STATES */
-  --destructive-raw: 0.47 0.18 25;
-  --destructive: oklch(var(--destructive-raw));
-  --destructive-foreground-raw: 0.99 0.01 25;
-  --destructive-foreground: oklch(var(--destructive-foreground-raw));
+  /* SYSTEM STATES (Layer 2 — alias to Layer 1 process colors) */
+  --info-raw: var(--blue-raw);
+  --info: oklch(var(--info-raw));
+  --info-foreground-raw: 0.99 0.01 280;
+  --info-foreground: oklch(var(--info-foreground-raw));
 
-  /* Success: Adjusted Hue to 145 per contract. Foreground: Darker for contrast (Light Mode) */
-  --success-raw: 0.65 0.18 145;
-  --success: oklch(var(--success-raw));
-  --success-foreground-raw: 0.20 0.04 145;
-  --success-foreground: oklch(var(--success-foreground-raw));
-
-  /* Warning: Foreground Darker for contrast (Light Mode) */
-  --warning-raw: 0.75 0.20 85;
+  --warning-raw: var(--yellow-raw);
   --warning: oklch(var(--warning-raw));
   --warning-foreground-raw: 0.20 0.04 85;
   --warning-foreground: oklch(var(--warning-foreground-raw));
 
-  /* Info: Foreground Darker for contrast (Light Mode) */
-  --info-raw: 0.65 0.20 240;
-  --info: oklch(var(--info-raw));
-  --info-foreground-raw: 0.20 0.04 240;
-  --info-foreground: oklch(var(--info-foreground-raw));
+  --success-raw: var(--green-raw);
+  --success: oklch(var(--success-raw));
+  --success-foreground-raw: 0.20 0.04 145;
+  --success-foreground: oklch(var(--success-foreground-raw));
 
+  --destructive-raw: var(--red-raw);
+  --destructive: oklch(var(--destructive-raw));
+  --destructive-foreground-raw: 0.99 0.01 25;
+  --destructive-foreground: oklch(var(--destructive-foreground-raw));
+
+  /* Neutral derived from black (desaturated, mid-gray) */
   --neutral-raw: 0.55 0.02 240;
   --neutral: oklch(var(--neutral-raw));
   --neutral-foreground-raw: 0.99 0.01 240;
@@ -100,109 +150,65 @@
   /* Base Radius (8px) — Industrial Atomic unit */
   --sidebar-width: 4rem; /* 64px - Activity Sidebar width */
   --sidebar-gap: 1rem;   /* 16px - Gap between sidebar and main content */
-  --ring-raw: 0.65 0.25 301;
+  /* Focus ring derives from the brand (Process Cyan), matching --color-sidebar-ring. */
+  --ring-raw: var(--primary-raw);
   --ring: oklch(var(--ring-raw) / 0.4);
 
-  --muted-primary-raw: 0.55 0.10 301;
-  /* Primary hue, reduced chroma */
-
+  /* Sidebar tokens — light mode */
   --sidebar-raw: 0.96 0.005 240;
-  --sidebar: oklch(var(--sidebar-raw));
-  --sidebar-foreground-raw: 0.12 0.02 240;
-  --sidebar-foreground: oklch(var(--sidebar-foreground-raw));
-  --sidebar-primary: var(--primary);
-  --sidebar-primary-foreground: var(--primary-foreground);
-  --sidebar-accent-raw: 0.12 0.02 240;
-  --sidebar-accent: oklch(var(--sidebar-accent-raw) / 0.05);
-  --sidebar-accent-foreground: oklch(var(--sidebar-accent-raw));
-  --sidebar-border-raw: 0.12 0.02 240;
-  --sidebar-border: oklch(var(--sidebar-border-raw) / 0.1);
-  --sidebar-ring: var(--primary);
-
-  --font-sans: var(--font-onest), system-ui, sans-serif;
-  --font-heading: var(--font-syne), system-ui, sans-serif;
-  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  --sidebar-foreground-raw: 0.30 0.03 240;
+  --sidebar-accent-raw: 0.96 0.005 240;
+  --sidebar-border-raw: 0.88 0.02 240;
 }
 
 .dark {
-  /* 1. DOMINANT SURFACES (Modern SaaS: Deep, Desaturated Grays) */
   --background-raw: 0.13 0.008 240;
-  /* Fondo base del lienzo (casi negro industrial) */
-  --foreground-raw: 0.98 0.0 0;
-  /* Texto principal brillante y nítido */
+  --foreground-raw: 0.93 0.008 240;
+  --card-raw: 0.16 0.01 240;
+  --card-foreground-raw: 0.93 0.008 240;
+  --popover-raw: 0.16 0.01 240;
+  --popover-foreground-raw: 0.93 0.008 240;
+  --muted-raw: 0.22 0.015 240;
+  --muted-foreground-raw: 0.60 0.02 240;
+  --secondary-raw: 0.22 0.02 240;
+  --secondary-foreground-raw: 0.95 0.01 240;
+  --border-raw: 0.93 0.008 240;
+  --input-raw: 0.93 0.008 240;
+  /*
+   * LAYER 2 — DARK ADAPTATION
+   * Layer 1 process inks stay FIXED (no overrides here). Semantic intents shift
+   * lighter for perceptual contrast on the dark background. This is where the
+   * dark-mode adaptation lives (Layer 1 = identity, Layer 2 = contrast).
+   */
+  --primary-raw:     0.72 0.16 235;
+  --info-raw:        0.58 0.20 280;
+  --success-raw:     0.68 0.16 145;
+  --warning-raw:     0.94 0.15 95;
+  --destructive-raw: 0.62 0.22 25;
 
-  --card-raw: 0.17 0.008 240;
-  /* Fondo del card principal (más elevado que el background) */
-  --card-foreground-raw: 0.98 0.0 0;
-
-  --popover-raw: 0.19 0.008 240;
-  /* Elementos más elevados (Dropdowns, modales) */
-  --popover-foreground-raw: 0.98 0.0 0;
-
-  /* 2. SIDEBAR (Específico para dark mode para que se funda bien) */
-  --sidebar-raw: 0.13 0.008 240;
-  /* Se funde con el background para un look "seamless" */
-  --sidebar-foreground-raw: 0.85 0.0 0;
-  /* Texto ligeramente más apagado para no distraer */
-  --sidebar-accent-raw: 0.95 0.0 0;
-  --sidebar-accent: oklch(var(--sidebar-accent-raw) / 0.05);
-  --sidebar-accent-foreground: oklch(var(--sidebar-accent-raw));
-  --sidebar-border-raw: 0.95 0.0 0;
-  --sidebar-border: oklch(var(--sidebar-border-raw) / 0.1);
-
-  /* 3. NEUTRALS & UI ELEMENTS (Bordes tenues y fondos secundarios) */
-  --muted-raw: 0.22 0.008 240;
-  /* Fondos tenues (skeletons, inputs inactivos) */
-  --muted-foreground-raw: 0.65 0.01 240;
-  /* Texto secundario (descripciones, placeholders) */
-
-  --secondary-raw: 0.26 0.008 240;
-  /* Botones secundarios */
-  --secondary-foreground-raw: 0.98 0.0 0;
-
-  /* Bordes ultra-finos y sutiles (Típico en Vercel/Railway) */
-  --border-raw: 0.95 0.0 0;
-  --border: oklch(var(--border-raw) / 0.08);
-  --input-raw: 0.95 0.0 0;
-  --input: oklch(var(--input-raw) / 0.08);
-
-  /* 4. BRAND ACCENTS (Minimalist SaaS: High Contrast White) */
-  --primary-raw: 0.95 0.0 0;
-  /* Blanco puro/gris perlado para máxima limpieza */
-  --primary-foreground-raw: 0.12 0.008 240;
-  /* Texto oscuro inverso para botones principales */
-
+  --primary-foreground-raw: 0.10 0.02 235;
+  --info-foreground-raw: 0.99 0.01 280;
+  --warning-foreground-raw: 0.20 0.04 85;
+  --success-foreground-raw: 0.95 0.01 145;
+  --destructive-foreground-raw: 0.10 0.02 25;
+  --neutral-foreground-raw: 0.20 0.02 240;
+  /* accent + accent-foreground adapt automatically via their alias to secondary. */
+  --high-contrast-bg: oklch(0 0 0);
+  --high-contrast-fg: oklch(1 0 0);
   --ring-raw: 0.95 0.0 0;
   --ring: oklch(var(--ring-raw) / 0.20);
-  /* Focus rings sutiles en blanco/plata */
 
-  /* ACCENT: Hover states (Tablas, Dropdowns, etc) */
-  --accent-raw: 0.20 0.008 240;
-  /* Gris elevado sutil, reemplaza al naranja */
-  --accent-foreground-raw: 0.98 0.0 0;
-  /* Texto blanco en hover */
+  /* Sidebar tokens — dark mode */
+  --sidebar-raw: 0.15 0.02 240;
+  --sidebar-foreground-raw: 0.95 0.01 240;
+  --sidebar-accent-raw: 0.95 0.01 240;
+  --sidebar-border-raw: 0.95 0.01 240;
 
-  /* 5. STATES (Semántica visual) */
-  --destructive-raw: 0.45 0.18 25;
-  --destructive-foreground-raw: 0.95 0.02 25;
-
-  --success-raw: 0.65 0.18 155;
-  --success-foreground-raw: 0.10 0.02 155;
-  --warning-raw: 0.75 0.20 85;
-  --warning-foreground-raw: 0.10 0.02 85;
-  --info-raw: 0.65 0.20 240;
-  --info-foreground-raw: 0.10 0.02 240;
-
-  --neutral-raw: 0.55 0.02 240;
-  --neutral-foreground-raw: 0.10 0.02 240;
-
-  --muted-primary-raw: 0.75 0.08 301;
-  /* Primary hue, reduced chroma */
-
-  /* GRAPHIC INDUSTRY TOKENS (Dark Mode) */
+  /* Industry graphic tokens — dark mode */
   --mark-color: oklch(0.98 0.01 240 / 0.25);
   --grid-line-color: oklch(0.98 0.01 240 / 0.04);
   --separator-industry: 2px dashed oklch(0.98 0.01 240 / 0.25);
+}
 }
 
 
@@ -219,7 +225,6 @@
   --color-secondary-foreground: oklch(var(--secondary-foreground-raw));
   --color-muted: oklch(var(--muted-raw));
   --color-muted-foreground: oklch(var(--muted-foreground-raw));
-  --color-muted-primary: oklch(var(--muted-primary-raw));
   --color-accent: oklch(var(--accent-raw));
   --color-accent-foreground: oklch(var(--accent-foreground-raw));
   --color-destructive: oklch(var(--destructive-raw));
@@ -227,6 +232,12 @@
   --color-border: oklch(var(--border-raw) / 0.15);
   --color-input: oklch(var(--input-raw) / 0.1);
   --color-ring: oklch(var(--ring-raw) / 0.4);
+  /*
+   * OVERLAY — scrim ink for modal backdrops, image darkeners and dropdown veils.
+   * Fixed dark value (does NOT invert): a scrim stays dark in both themes.
+   * Use via bg-overlay/40, bg-overlay/50… instead of raw bg-black/N.
+   */
+  --color-overlay: oklch(0.12 0.02 240);
   --radius-sm: var(--radius);
   /* 8px */
   --radius-md: calc(var(--radius) + 4px);
@@ -237,6 +248,20 @@
   /* 20px */
   --radius-2xl: calc(var(--radius) + 24px);
   /* Pill-ish */
+
+  /*
+   * LAYER 1 — PROCESS COLORS (CMYK + Pantone)
+   * Fixed identity tokens for the graphic industry palette.
+   */
+  --color-cyan: oklch(var(--cyan-raw));
+  --color-magenta: oklch(var(--magenta-raw));
+  --color-yellow: oklch(var(--yellow-raw));
+  --color-black: oklch(var(--black-raw));
+  --color-red: oklch(var(--red-raw));
+  --color-green: oklch(var(--green-raw));
+  --color-blue: oklch(var(--blue-raw));
+  --color-pantone-orange: oklch(var(--pantone-orange-raw));
+  --color-pantone-violet: oklch(var(--pantone-violet-raw));
 
   --color-sidebar: oklch(var(--sidebar-raw));
   --color-sidebar-foreground: oklch(var(--sidebar-foreground-raw));
@@ -270,7 +295,20 @@
   --font-sans: var(--font-sans);
   --font-heading: var(--font-heading);
 
-  /* 
+  /*
+   * FLUID TYPOGRAPHY — Override Tailwind defaults with viewport-scaled sizes.
+   * All text-xs through text-3xl now scale smoothly between 1024px and 1920px.
+   * Zero file changes needed — every component gets fluid type automatically.
+   */
+  --text-xs: clamp(0.6875rem, 0.4vw + 0.5rem, 0.75rem);
+  --text-sm: clamp(0.8125rem, 0.5vw + 0.55rem, 0.875rem);
+  --text-base: clamp(0.9375rem, 0.6vw + 0.6rem, 1rem);
+  --text-lg: clamp(1.0625rem, 0.8vw + 0.6rem, 1.125rem);
+  --text-xl: clamp(1.1875rem, 1vw + 0.6rem, 1.3125rem);
+  --text-2xl: clamp(1.375rem, 1.2vw + 0.6rem, 1.625rem);
+  --text-3xl: clamp(1.625rem, 1.5vw + 0.6rem, 2rem);
+
+  /*
    * MOTION TOKENS — Standardized easing & durations
    * Premium: overshoot for delightful interactions
    * Micro: subtle UI state changes
@@ -351,6 +389,42 @@
   --trim-mark-length: 12px;
   --trim-mark-offset: 4px;
 
+  /*
+   * LAYOUT — Shell measurements
+   * Centralized for zoom/viewport proportionality.
+   * Used by DashboardShell, CollapsibleSheet, and sheets.
+   */
+  --sidebar-width: 3.5rem;
+  --header-height: 4rem;
+  --page-gap-top: clamp(0.125rem, 0.5vh, 0.5rem);
+  --page-gap-bottom: clamp(0.5rem, 1.5vh, 1.5rem);
+  --page-gap-left: clamp(0.125rem, 0.5vw, 0.5rem);
+  --page-gap-right: clamp(0.5rem, 2vw, 2rem);
+  --page-padding-top: calc(var(--header-height) + var(--page-gap-top));
+  --page-padding-left: calc(var(--sidebar-width) + var(--page-gap-left));
+
+  /*
+   * FLUID TYPOGRAPHY — Scales proportionally to viewport width.
+   * Base reference: ~16px at 1440px, scales down to ~13px at 1024px.
+   * Use via text-[var(--text-fluid-*)] in components.
+   */
+  --text-fluid-xs:  clamp(0.65rem, 0.4vw + 0.5rem, 0.75rem);
+  --text-fluid-sm:  clamp(0.75rem, 0.6vw + 0.55rem, 0.875rem);
+  --text-fluid-base:clamp(0.875rem, 0.8vw + 0.6rem, 1rem);
+  --text-fluid-lg:  clamp(1rem,    1.2vw + 0.6rem, 1.125rem);
+  --text-fluid-xl:  clamp(1.125rem, 1.6vw + 0.6rem, 1.25rem);
+  --text-fluid-2xl: clamp(1.25rem, 2vw + 0.6rem,  1.5rem);
+  --text-fluid-3xl: clamp(1.5rem,  2.5vw + 0.6rem, 2rem);
+
+  /*
+   * FLUID SPACING — Responsive gaps and padding.
+   */
+  --space-fluid-xs: clamp(0.25rem, 0.3vw + 0.15rem, 0.5rem);
+  --space-fluid-sm: clamp(0.5rem,  0.5vw + 0.3rem,  0.75rem);
+  --space-fluid-md: clamp(0.75rem, 0.8vw + 0.4rem,  1rem);
+  --space-fluid-lg: clamp(1rem,    1.2vw + 0.5rem,  1.5rem);
+  --space-fluid-xl: clamp(1.5rem,  2vw + 0.6rem,    2rem);
+
   @keyframes shimmer {
     0% {
       background-position: -40rem 0;
@@ -360,6 +434,32 @@
       background-position: 40rem 0;
     }
   }
+}
+
+/*
+ * PANEL SURFACE — Unified visual treatment for the main shell and
+ * every floating side panel (CollapsibleSheet — Hub, Inbox, Profile,
+ * OrderActionPanel — and embedded Drawer). Guarantees a single
+ * border/radius/shadow/background so panels read as parallel frames
+ * when they sit side-by-side.
+ *
+ * Tokens used: --radius-xl (20px), --color-border @ 0.10, shadow-2xl,
+ * --color-card. Never override these individually in components —
+ * use this utility.
+ *
+ * The `!` important modifier on border / shadow guarantees this utility
+ * wins the cascade over Shadcn `SheetContent`'s default `border border-border
+ * rounded-lg` (full opacity) base classes that still appear in the same
+ * className. Without it, the order of class generation in the
+ * stylesheet determines the winner, which produces visible drift
+ * between Main and the side panels.
+ *
+ * See: docs/20-contracts/component-contracts.md (CollapsibleSheet)
+ *      docs/20-contracts/component-drawer.md (embedded Drawer)
+ *      docs/10-architecture/design-system.md (Radius Hierarchy)
+ */
+@utility panel-surface {
+  @apply rounded-xl border! border-border/10! shadow-2xl! bg-card;
 }
 
 /*
@@ -1149,22 +1249,18 @@ table [data-notched-field] {
   }
 
   /*
-   * EMBEDDED DRAWER — PREMIUM FLOATING EFFECT
-   * When a sheet-content is rendered inside #main-content (embedded boundary), lift it visually
-   * above the blurred canvas with:
-   *   - A multi-layer box-shadow that creates depth and a soft primary-color ambient glow
-   *   - A luminous border using the primary color at low opacity
-   *   - A smooth translateY lift that enters from slightly below, reinforcing the "modal on top" feel
+   * EMBEDDED DRAWER — PARALLEL FRAMING
+   * When a sheet-content is rendered inside #main-content (embedded boundary),
+   * it must share the same visual treatment as the main shell and
+   * CollapsibleSheet so the three surfaces read as parallel frames
+   * side-by-side. Visual tokens (border, shadow, background, radius)
+   * come from the @utility panel-surface applied at the component level.
+   * Here we only manage:
+   *   - The smooth transition for open/close animation
+   *   - The entrance transform override (Radix slide-in is disabled for embedded)
+   *   - The close-state fade-out of shadow/border before the DOM is pruned
    */
   #main-content [data-slot="sheet-content"] {
-    --embedded-glow: oklch(from var(--primary) l c h / 0.18);
-    --embedded-shadow:
-      0 0 0 1px oklch(from var(--primary) l c h / 0.22),
-      0 4px 16px -4px rgba(0, 0, 0, 0.55),
-      0 16px 48px -8px rgba(0, 0, 0, 0.45),
-      0 0 80px -16px var(--embedded-glow);
-    box-shadow: var(--embedded-shadow) !important;
-    border-color: oklch(from var(--primary) l c h / 0.28) !important;
     transition:
       box-shadow 400ms var(--ease-premium),
       border-color 400ms var(--ease-premium),
@@ -1179,4 +1275,17 @@ table [data-notched-field] {
     box-shadow: none !important;
     border-color: transparent !important;
   }
+}
+
+/*
+ * SMART CONTRAST LAYER
+ * The warning background (yellow) has L > 0.85, making it unsuitable for light
+ * foreground colors (muted). When a warning background is active, force
+ * .text-muted-foreground children to inherit the parent's (typically dark)
+ * foreground color for adequate contrast.
+ * (accent is no longer yellow — it is a neutral surface — so it is excluded.)
+ */
+.hover\:bg-warning:hover .text-muted-foreground,
+.bg-warning .text-muted-foreground {
+  color: inherit;
 }

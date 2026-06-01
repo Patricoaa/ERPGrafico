@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback } from "react"
 import { Table as ReactTable, type Row, type VisibilityState } from "@tanstack/react-table"
-import { DomainCard, EntityCard, EmptyState } from "@/components/shared"
+import { DomainCard, EntityCard, EmptyState, resolveEmptyState, type DataTableEmptyState } from "@/components/shared"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -14,6 +14,10 @@ import {
 import { Download, Upload, ChevronDown } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { ENTITY_REGISTRY } from "@/lib/entity-registry"
+
+// Full-height centered wrapper so card-grid empty states fill the canvas,
+// matching the table empty-state behavior.
+const CARD_EMPTY_WRAPPER = "flex h-full min-h-[12rem] items-center justify-center"
 
 /**
  * Creates a renderCustomView function for entities that use DomainCard (workflow entities).
@@ -32,17 +36,26 @@ export function createDomainCardView(
     onRowClick: (data: any) => void
     isSelected?: (data: any) => boolean
     isHubOpen?: boolean
+    emptyState?: DataTableEmptyState
+    isFiltered?: boolean
   }
 ) {
   const DomainCardView = (table: ReactTable<any>) => {
     const rows = table.getRowModel().rows
     if (rows.length === 0) {
-      const meta = ENTITY_REGISTRY[entityLabel]
-      return React.createElement(EmptyState, {
-        context: "search" as const,
-        title: `No se encontraron ${meta?.titlePlural?.toLowerCase() || 'resultados'}`,
-        description: "Ajusta los filtros o el rango de fechas para encontrar lo que buscas.",
-      })
+      const resolved = resolveEmptyState(options.emptyState, options.isFiltered)
+      return React.createElement(
+        "div",
+        { className: CARD_EMPTY_WRAPPER },
+        React.createElement(EmptyState, {
+          context: resolved.context,
+          icon: resolved.icon,
+          title: resolved.title,
+          description: resolved.description,
+          action: resolved.action,
+          className: "h-full w-full",
+        })
+      )
     }
     return React.createElement(
       "div",
@@ -79,24 +92,33 @@ export function createEntityCardView(
   options: {
     renderCard: (data: any, row: any) => React.ReactNode
     gridLayout?: 'single-column' | 'multi-column'
+    emptyState?: DataTableEmptyState
+    isFiltered?: boolean
   }
 ) {
   const policy = ENTITY_REGISTRY[entityLabel]?.viewPolicy
   const layout = options.gridLayout ?? policy?.gridLayout ?? 'single-column'
 
   const gridClass = layout === 'multi-column'
-    ? "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 pt-2"
+    ? "grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-3 pt-2"
     : "grid gap-3 pt-2"
 
   const EntityCardView = (table: ReactTable<any>) => {
     const rows = table.getRowModel().rows
     if (rows.length === 0) {
-      const meta = ENTITY_REGISTRY[entityLabel]
-      return React.createElement(EmptyState, {
-        context: "search" as const,
-        title: `No se encontraron ${meta?.titlePlural?.toLowerCase() || 'resultados'}`,
-        description: "Ajusta los filtros para encontrar lo que buscas.",
-      })
+      const resolved = resolveEmptyState(options.emptyState, options.isFiltered)
+      return React.createElement(
+        "div",
+        { className: CARD_EMPTY_WRAPPER },
+        React.createElement(EmptyState, {
+          context: resolved.context,
+          icon: resolved.icon,
+          title: resolved.title,
+          description: resolved.description,
+          action: resolved.action,
+          className: "h-full w-full",
+        })
+      )
     }
     return React.createElement(
       "div",
@@ -122,7 +144,7 @@ export function createCardLoadingView(
   count: number = 8
 ) {
   const gridClass = layout === 'multi-column'
-    ? "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 pt-2"
+    ? "grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-3 pt-2"
     : "grid gap-3 pt-1"
 
   const CardLoadingView = () =>

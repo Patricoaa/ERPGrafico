@@ -126,8 +126,6 @@ export function SalesSettingsView({ activeTab = "income" }: { activeTab?: string
             pos_line_discount_group: "",
             pos_global_discount_user: null,
             pos_global_discount_group: "",
-            terminal_commission_bridge_account: null,
-            terminal_iva_bridge_account: null,
             credit_auto_block_days: 60,
             default_uncollectible_expense_account: null,
         }
@@ -146,8 +144,6 @@ export function SalesSettingsView({ activeTab = "income" }: { activeTab?: string
                 pos_line_discount_group: settings.pos_line_discount_group ?? "",
                 pos_global_discount_user: settings.pos_global_discount_user ?? null,
                 pos_global_discount_group: settings.pos_global_discount_group ?? "",
-                terminal_commission_bridge_account: settings.terminal_commission_bridge_account?.toString() ?? null,
-                terminal_iva_bridge_account: settings.terminal_iva_bridge_account?.toString() ?? null,
                 credit_auto_block_days: settings.credit_auto_block_days ?? null,
                 default_uncollectible_expense_account: settings.default_uncollectible_expense_account?.toString() ?? null,
             })
@@ -354,20 +350,6 @@ export function SalesSettingsView({ activeTab = "income" }: { activeTab?: string
                         </div>
                     )}
 
-                    {activeTab === "terminals" && (
-                        <div className="space-y-6 m-0 p-0 border-0 outline-none mt-4">
-                            <Card variant="transparent">
-                                <CardHeader>
-                                    <CardTitle className="text-lg text-primary">Cuentas Puente de Terminales</CardTitle>
-                                    <CardDescription>Cuentas para comisiones de terminales de pago sin factura</CardDescription>
-                                </CardHeader>
-                                <CardContent className="space-y-4">
-                                    <AccountField form={form} name="terminal_commission_bridge_account" label="Puente Comisión Neto" accountType="ASSET" />
-                                    <AccountField form={form} name="terminal_iva_bridge_account" label="Puente IVA Comisión" accountType="ASSET" />
-                                </CardContent>
-                            </Card>
-                        </div>
-                    )}
                 </form>
             </Form>
         </div>

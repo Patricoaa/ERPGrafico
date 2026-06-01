@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
-import { usePayrollDetail } from "@/features/hr/hooks/usePayrolls"
+import { usePayrollDetail, type EmployeeBasic } from "@/features/hr/hooks/usePayrolls"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { showApiError } from "@/lib/errors"
@@ -40,13 +40,6 @@ const itemSchema = z.object({
     amount: z.string().min(1).refine(v => parseFloat(v) >= 0, "El monto debe ser mayor o igual a 0"),
 })
 type ItemFormValues = z.infer<typeof itemSchema>
-
-interface EmployeeBasic {
-    id: number
-    contact_detail?: { name?: string; tax_id?: string } | null
-    position?: string | null
-    department?: string | null
-}
 
 interface PayrollDetailContentProps {
     payrollId: number
@@ -153,6 +146,8 @@ export function PayrollDetailContent({
     const totalAdvances = payroll?.advances?.reduce((s: number, a: SalaryAdvance) => s + parseFloat(a.amount), 0) || 0
     const totalSalaryPaid = payments.filter((p: PayrollPayment) => p.payment_type === 'SALARIO').reduce((s: number, p: PayrollPayment) => s + parseFloat(p.amount), 0)
     const pendingSalary = Math.max(0, netSalary - totalAdvances - totalSalaryPaid)
+    const totalPrevired = payroll?.items?.filter((i: PayrollItem) => i.concept_detail?.category === 'DESCUENTO_LEGAL_TRABAJADOR').reduce((s: number, i: PayrollItem) => s + parseFloat(i.amount || "0"), 0) || 0
+    const pendingPrevired = Math.max(0, totalPrevired - payments.filter((p: PayrollPayment) => p.payment_type === 'PREVIRED').reduce((s: number, p: PayrollPayment) => s + parseFloat(p.amount), 0))
 
     const workerLegalDiscounts = payroll?.items?.filter((i: PayrollItem) => i.concept_detail?.category === 'DESCUENTO_LEGAL_TRABAJADOR') || []
 
@@ -458,7 +453,11 @@ function PayrollItemDialog({ payrollId, item, concepts, onSaved, onEditCleared, 
     const [open, setOpen] = useState(false)
     const [saving, setSaving] = useState(false)
 
-    useEffect(() => { if (item) setOpen(true) }, [item])
+    useEffect(() => {
+        if (item) {
+            requestAnimationFrame(() => setOpen(true))
+        }
+    }, [item])
 
     const form = useForm<ItemFormValues>({
         resolver: zodResolver(itemSchema),

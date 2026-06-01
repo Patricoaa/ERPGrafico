@@ -76,7 +76,7 @@ export function PartnerContributionWizard({
     // Load initial data
     useEffect(() => {
         if (open) {
-            setLoading(true)
+            setTimeout(() => setLoading(true), 0)
             Promise.all([
                 partnersApi.getPartners(),
                 settingsApi.getWarehouses(),
@@ -93,33 +93,37 @@ export function PartnerContributionWizard({
             }).finally(() => setLoading(false))
         } else {
             // Reset
-            setPartnerId(initialPartnerId || "")
-            setMethod("CASH")
-            setCashData({
-                amount: "",
-                treasuryAccountId: "",
-                date: new Date().toISOString().split('T')[0],
-                description: ""
-            })
-            setAssetData({
-                warehouseId: "",
-                productId: "",
-                quantity: "",
-                uomId: "",
-                unitCost: "0",
-                date: new Date().toISOString().split('T')[0],
-                description: ""
-            })
-            setProductDetails(null)
-            setProductUoMs([])
+            setTimeout(() => {
+                setPartnerId(initialPartnerId || "")
+                setMethod("CASH")
+                setCashData({
+                    amount: "",
+                    treasuryAccountId: "",
+                    date: new Date().toISOString().split('T')[0],
+                    description: ""
+                })
+                setAssetData({
+                    warehouseId: "",
+                    productId: "",
+                    quantity: "",
+                    uomId: "",
+                    unitCost: "0",
+                    date: new Date().toISOString().split('T')[0],
+                    description: ""
+                })
+                setProductDetails(null)
+                setProductUoMs([])
+            }, 0)
         }
     }, [open, initialPartnerId])
 
     // Load product details when productId changes
     useEffect(() => {
         if (!assetData.productId) {
-            setProductDetails(null)
-            setProductUoMs([])
+            requestAnimationFrame(() => {
+                setProductDetails(null)
+                setProductUoMs([])
+            })
             return
         }
 

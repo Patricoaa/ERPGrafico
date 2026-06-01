@@ -1,7 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useTerminals, type Terminal } from "@/features/treasury"
+import { usePosTerminals } from "@/features/sales"
+import type { Terminal } from "@/features/treasury"
 import { Button } from "@/components/ui/button"
 
 import { ActionConfirmModal, DataTableView, EntityCard, IconButton, StatusBadge } from '@/components/shared'
@@ -12,16 +13,16 @@ import { ColumnDef } from "@tanstack/react-table"
 import { Plus, Power, PowerOff, Trash2, Settings, MapPin, Smartphone, Banknote, CreditCard, Landmark } from "lucide-react"
 
 import { useConfirmAction } from "@/hooks/useConfirmAction"
-import { TerminalDrawer } from "./TerminalDrawer"
+import { PosTerminalDrawer } from "./PosTerminalDrawer"
 
-interface TerminalManagementProps {
+interface PosTerminalListProps {
     externalOpen?: boolean
     onExternalOpenChange?: (open: boolean) => void
     createAction?: React.ReactNode
 }
 
-export function TerminalManagement({ externalOpen, onExternalOpenChange, createAction }: TerminalManagementProps) {
-    const { terminals, toggleActive, deleteTerminal, refetch, isLoading } = useTerminals()
+export function PosTerminalList({ externalOpen, onExternalOpenChange, createAction }: PosTerminalListProps) {
+    const { terminals, toggleActive, deleteTerminal, refetch, isLoading } = usePosTerminals()
     const [dialogOpen, setDialogOpen] = useState(false)
     const [editingTerminal, setEditingTerminal] = useState<Terminal | null>(null)
 
@@ -190,7 +191,7 @@ export function TerminalManagement({ externalOpen, onExternalOpenChange, createA
                                             <div className="flex flex-wrap gap-1">
                                                 {Object.entries(methodsByType).map(([type, count]) => (
                                                     <div key={type} className="flex items-center gap-1 px-1.5 py-0.5 rounded-sm border bg-muted/30 text-[9px] uppercase font-bold text-foreground/70">
-                                                        {type === 'CASH' && <Banknote className="h-3 w-3 text-success" />}
+                                                        {type === 'CASH' && <Banknote className="h-3 w-3 text-primary" />}
                                                         {type === 'CARD' && <CreditCard className="h-3 w-3 text-info" />}
                                                         {type === 'TRANSFER' && <Landmark className="h-3 w-3 text-primary" />}
                                                         {type} <span className="ml-0.5 opacity-60">({count})</span>
@@ -209,7 +210,7 @@ export function TerminalManagement({ externalOpen, onExternalOpenChange, createA
                 />
             </div>
 
-            <TerminalDrawer
+            <PosTerminalDrawer
                 open={dialogOpen}
                 onOpenChange={(open: boolean) => {
                     setDialogOpen(open)
@@ -231,4 +232,4 @@ export function TerminalManagement({ externalOpen, onExternalOpenChange, createA
     )
 }
 
-export default TerminalManagement
+export default PosTerminalList
