@@ -85,7 +85,7 @@ export function EmptyState({
         >
             {/* Precision Icon Container */}
             <div className={cn(
-                "relative flex items-center justify-center rounded-none border border-border/40 bg-muted/10 mb-6",
+                "relative flex items-center justify-center rounded-lg border border-border bg-muted shadow-sm mb-6",
                 variant === 'full' ? "h-20 w-20" : "h-14 w-14"
             )}>
                 <Icon className={cn(
@@ -95,17 +95,17 @@ export function EmptyState({
             </div>
 
             {/* Content Section */}
-            <div className="max-w-md space-y-2">
+            <div className="flex max-w-md flex-col items-center space-y-2 text-center">
                 <h3 className={cn(
-                    "font-heading font-black uppercase tracking-tighter text-foreground/90",
+                    "w-full text-center font-heading font-black uppercase tracking-tighter text-foreground/90",
                     variant === 'full' ? "text-lg" : "text-sm"
                 )}>
                     {displayTitle}
                 </h3>
-                
+
                 {description && (
                     <p className={cn(
-                        "text-muted-foreground leading-relaxed mx-auto",
+                        "w-full text-center text-muted-foreground leading-relaxed",
                         variant === 'full' ? "text-sm max-w-[320px]" : "text-[11px] max-w-[240px]"
                     )}>
                         {description}
