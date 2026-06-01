@@ -437,6 +437,32 @@
 }
 
 /*
+ * PANEL SURFACE — Unified visual treatment for the main shell and
+ * every floating side panel (CollapsibleSheet — Hub, Inbox, Profile,
+ * OrderActionPanel — and embedded Drawer). Guarantees a single
+ * border/radius/shadow/background so panels read as parallel frames
+ * when they sit side-by-side.
+ *
+ * Tokens used: --radius-xl (20px), --color-border @ 0.10, shadow-2xl,
+ * --color-card. Never override these individually in components —
+ * use this utility.
+ *
+ * The `!` important modifier on border / shadow guarantees this utility
+ * wins the cascade over Shadcn `SheetContent`'s default `border border-border
+ * rounded-lg` (full opacity) base classes that still appear in the same
+ * className. Without it, the order of class generation in the
+ * stylesheet determines the winner, which produces visible drift
+ * between Main and the side panels.
+ *
+ * See: docs/20-contracts/component-contracts.md (CollapsibleSheet)
+ *      docs/20-contracts/component-drawer.md (embedded Drawer)
+ *      docs/10-architecture/design-system.md (Radius Hierarchy)
+ */
+@utility panel-surface {
+  @apply rounded-xl border! border-border/10! shadow-2xl! bg-card;
+}
+
+/*
  * TABLE SYSTEM — Shared utility classes
  * All table variants (DataTable, FormLineItemsTable, ReportTable)
  * should use these instead of ad-hoc padding/height values.
@@ -1223,22 +1249,18 @@ table [data-notched-field] {
   }
 
   /*
-   * EMBEDDED DRAWER — PREMIUM FLOATING EFFECT
-   * When a sheet-content is rendered inside #main-content (embedded boundary), lift it visually
-   * above the blurred canvas with:
-   *   - A multi-layer box-shadow that creates depth and a soft primary-color ambient glow
-   *   - A luminous border using the primary color at low opacity
-   *   - A smooth translateY lift that enters from slightly below, reinforcing the "modal on top" feel
+   * EMBEDDED DRAWER — PARALLEL FRAMING
+   * When a sheet-content is rendered inside #main-content (embedded boundary),
+   * it must share the same visual treatment as the main shell and
+   * CollapsibleSheet so the three surfaces read as parallel frames
+   * side-by-side. Visual tokens (border, shadow, background, radius)
+   * come from the @utility panel-surface applied at the component level.
+   * Here we only manage:
+   *   - The smooth transition for open/close animation
+   *   - The entrance transform override (Radix slide-in is disabled for embedded)
+   *   - The close-state fade-out of shadow/border before the DOM is pruned
    */
   #main-content [data-slot="sheet-content"] {
-    --embedded-glow: oklch(from var(--primary) l c h / 0.18);
-    --embedded-shadow:
-      0 0 0 1px oklch(from var(--primary) l c h / 0.22),
-      0 4px 16px -4px rgba(0, 0, 0, 0.55),
-      0 16px 48px -8px rgba(0, 0, 0, 0.45),
-      0 0 80px -16px var(--embedded-glow);
-    box-shadow: var(--embedded-shadow) !important;
-    border-color: oklch(from var(--primary) l c h / 0.28) !important;
     transition:
       box-shadow 400ms var(--ease-premium),
       border-color 400ms var(--ease-premium),

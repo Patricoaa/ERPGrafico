@@ -125,8 +125,8 @@ export function CollapsibleSheet({
             side={side}
             data-sheet-id={sheetId}
             className={cn(
-                "p-0 flex flex-col shadow-2xl overflow-visible", // Removed transition-all to allow inline style only
-                "top-[var(--page-padding-top)] bottom-[var(--page-gap-bottom)] right-4 h-[calc(100vh-var(--page-padding-top)-var(--page-gap-bottom))] border border-border rounded-xl",
+                "p-0 flex flex-col panel-surface overflow-visible", // panel-surface = rounded-xl + border-border/10 + shadow-2xl + bg-card
+                "top-[var(--page-padding-top)] bottom-[var(--page-gap-bottom)] right-4 h-[calc(100vh-var(--page-padding-top)-var(--page-gap-bottom))]",
                 // Disable default Radix/Shadcn animations to avoid conflicting with custom high-performance transforms
                 "data-[state=open]:animate-none data-[state=closed]:animate-none duration-0 sm:duration-500",
                 (!open || isCollapsed) ? "border-primary/10" : "translate-x-0",

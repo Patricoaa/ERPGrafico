@@ -785,6 +785,12 @@ Side panel with collapsible tab. Supports multi-sheet stacking via `GlobalModalP
 Requires `GlobalModalProvider` in layout for correct z-index stacking.
 DOM unmounts 500ms after close for exit animation.
 
+### Surface treatment (parallel framing)
+
+The outer `SheetContent` uses the shared `@utility panel-surface` (defined in `app/globals.css`): `rounded-xl` + `border border-border/10` + `shadow-2xl` + `bg-card`. This is **the same** treatment applied to the main `<main>` shell in `DashboardShell` and to the embedded `Drawer` (see [component-drawer.md](./component-drawer.md)). All three surfaces read as parallel frames when they sit side-by-side.
+
+> **Do not** override `border`, `shadow`, `rounded-*` or `bg-*` on `CollapsibleSheet` instances. If a variant is needed, add a new prop that composes with `panel-surface` instead of replacing it.
+
 ---
 
 ## CommentSystem 🟢
