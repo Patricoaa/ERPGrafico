@@ -213,3 +213,22 @@ Para subvistas de datos (tablas, libros mayores, históricos) sin formulario:
 - `side="bottom"` es el default — no hace falta explicitarlo.
 - No usar `FormFooter` ni `FormSplitLayout`.
 - Acepta un `<Button>Cerrar</Button>` en footer, o ningún footer.
+
+## Surface treatment (parallel framing)
+
+The `SheetContent` shell of the `Drawer` consumes the shared `@utility panel-surface` (defined in `app/globals.css`): `rounded-xl` + `border border-border/10` + `shadow-2xl` + `bg-card`. This is **the same** treatment applied to the main `<main>` shell in `DashboardShell` and to `CollapsibleSheet` (see [component-contracts.md §CollapsibleSheet](./component-contracts.md)). All three surfaces read as parallel frames when they sit side-by-side.
+
+### Side-specific corner overrides
+
+The `sideStyles` table in `components/shared/Drawer.tsx` keeps the `rounded-xl` family but selects one side so the Drawer reads as a true edge panel:
+
+| `side` | overrides |
+|--------|-----------|
+| `'right'` | `rounded-l-xl border-l-0` |
+| `'left'`  | `rounded-r-xl border-r-0` |
+| `'bottom'` | `rounded-t-xl border-t-0` |
+| `'top'`   | `rounded-b-xl border-b-0` |
+
+The `border-{side}-0` removes the border on the side that touches the parent container (the screen edge, or the `<main>` shell), so the panel appears flush with that edge while keeping the other three borders at `border-border/10`. The shadow and background are inherited from `panel-surface`.
+
+> **Do not** pass `border`, `shadow`, `rounded-*` or `bg-*` overrides via `className` on `Drawer`. If a variant is needed, add a new prop that composes with `panel-surface` and `sideStyles` instead of replacing them.

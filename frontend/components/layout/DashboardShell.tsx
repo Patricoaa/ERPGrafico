@@ -193,7 +193,7 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
             >
                 <main
                     id="main-content"
-                    className="flex-1 flex flex-col overflow-hidden relative canvas-prepress bg-card border border-border/10 rounded-xl shadow-2xl"
+                    className="flex-1 flex flex-col overflow-hidden relative canvas-prepress panel-surface"
                 >
                     <motion.div
                         initial={shouldReduceMotion ? { opacity: 0 } : { y: 8, opacity: 0 }}
