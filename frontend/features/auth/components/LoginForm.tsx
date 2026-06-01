@@ -3,7 +3,6 @@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { motion } from "framer-motion"
 import {ArrowRight} from "lucide-react"
@@ -14,7 +13,6 @@ import {
     Form,
     FormField,
 } from "@/components/ui/form"
-import { useAuth } from "@/contexts/AuthContext"
 import { LabeledInput, SubmitButton } from '@/components/shared'
 
 const formSchema = z.object({
@@ -27,8 +25,6 @@ const formSchema = z.object({
 })
 
 export function LoginForm() {
-    const router = useRouter()
-    const { login } = useAuth()
     const [error, setError] = useState("")
 
     const form = useForm<z.infer<typeof formSchema>>({

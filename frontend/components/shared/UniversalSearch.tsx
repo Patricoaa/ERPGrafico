@@ -19,7 +19,6 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useBranding } from "@/contexts/BrandingProvider"
-import { useAuth } from "@/contexts/AuthContext"
 
 export function UniversalSearch() {
     const [open, setOpen] = useState(false)
@@ -28,18 +27,16 @@ export function UniversalSearch() {
     const [selectedType, setSelectedType] = useState<string | null>(null)
     const debouncedQuery = useDebounce(query, 200)
     const { results, isLoading } = useUniversalSearch(debouncedQuery)
-    const { logo } = useBranding()
-    const { user } = useAuth()
+    const { logo, company } = useBranding()
     const router = useRouter()
     const inputRef = useRef<HTMLInputElement>(null)
 
     const getInitials = () => {
-        const companyName = (user as any)?.tenant_name as string | undefined
-            || (user as any)?.company_name as string | undefined;
+        const companyName = company?.trade_name || company?.name
         if (companyName) {
             return companyName.substring(0, 2).toUpperCase()
         }
-        return "SD"
+        return "ERP"
     }
 
     // keyboard shortcuts
@@ -120,7 +117,7 @@ export function UniversalSearch() {
                 type="button"
                 onClick={() => setOpen(true)}
                 aria-label="Búsqueda universal (Ctrl+K)"
-                className="group relative flex w-10 items-center gap-1.5 rounded-lg border border-border bg-muted/30 px-2 py-1 text-xs text-muted-foreground transition-all hover:bg-muted/50 hover:ring-2 hover:ring-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 sm:w-full sm:max-w-[600px]"
+                className="group relative flex w-10 items-center gap-1.5 rounded-xl border border-border bg-muted/30 px-2 py-1 text-xs text-muted-foreground transition-all hover:bg-muted/50 hover:ring-2 hover:ring-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 sm:w-full sm:max-w-[600px]"
             >
                 <Search className="size-3.5 transition-colors group-hover:text-foreground" aria-hidden />
                 <span className="hidden flex-1 text-left sm:inline">Busqueda global...</span>

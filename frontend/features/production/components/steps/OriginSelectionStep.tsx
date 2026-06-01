@@ -17,9 +17,6 @@ export function OriginSelectionStep({ onChoose, selected = null }: OriginSelecti
   return (
     <div className="space-y-8">
       <div className="text-center">
-        <h2 className="text-2xl font-bold tracking-tight text-foreground">
-          Origen de Fabricación
-        </h2>
         <p className="mt-2 text-muted-foreground max-w-md mx-auto">
           {selected
             ? "Origen ya definido para esta OT"

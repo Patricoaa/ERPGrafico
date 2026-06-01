@@ -9,9 +9,10 @@ import { BillingPhase } from "./phases/BillingPhase"
 import { TreasuryPhase } from "./phases/TreasuryPhase"
 import { saleOrderActions } from '@/features/sales/actions'
 import { purchaseOrderActions } from '@/features/purchasing/actions'
-// IndustrialCard removed here as we are moving to individual Card components per phase
 import { getHubStatuses } from '@/features/orders/utils/status'
 import { Order, Payment } from "../types"
+import { StatusBadge } from "@/components/shared"
+import type { LucideIcon } from "lucide-react"
 
 interface OrderHubData {
     order: Order | null
@@ -27,6 +28,7 @@ interface OrderHubData {
     payments: Payment[]
     logisticsProgress: number
     fetchOrderDetails: () => void
+    globalStatus: { label: string; status: string; icon: LucideIcon }
 }
 
 interface OrderHubIntegratedProps {
@@ -61,7 +63,8 @@ export function OrderHubIntegrated({
         showLogistics,
         invoices,
         billingIsComplete,
-        payments
+        payments,
+        globalStatus
     } = data
 
     const registry = (type === 'purchase' || type === 'obligation') ? purchaseOrderActions : saleOrderActions
@@ -126,6 +129,26 @@ export function OrderHubIntegrated({
         <TooltipProvider delayDuration={150}>
             <div className="flex flex-col w-full min-h-full pb-8">
                 <div className="flex flex-col gap-2.5 w-full">
+                    {/* Contact & Status — metadata, not a HUB phase */}
+                    {(activeDoc.customer_name || activeDoc.supplier_name || globalStatus) && (
+                        <div className="flex items-center justify-between px-1 pb-1">
+                            <span className="text-xs text-muted-foreground font-medium truncate max-w-[200px]">
+                                {typeof activeDoc.customer_name === 'string'
+                                    ? activeDoc.customer_name
+                                    : activeDoc.customer_name?.name || activeDoc.supplier_name}
+                            </span>
+                            {globalStatus && (
+                                <StatusBadge
+                                    status={globalStatus.status === 'success' ? 'SUCCESS' : globalStatus.status === 'active' ? 'IN_PROGRESS' : globalStatus.status === 'cancelled' ? 'CANCELLED' : 'NEUTRAL'}
+                                    label={globalStatus.label}
+                                    icon={globalStatus.icon}
+                                    size="xs"
+                                    className="rounded-md shrink-0"
+                                />
+                            )}
+                        </div>
+                    )}
+
                     {/* 1. Origen */}
                     <OriginPhase
                         isNoteMode={!!isNoteMode}

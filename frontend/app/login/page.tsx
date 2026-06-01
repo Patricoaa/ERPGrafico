@@ -14,43 +14,42 @@ export default function LoginPage() {
     return (
         <GuestGuard>
             <div className="min-h-screen w-full flex items-center justify-center bg-background selection:bg-primary/20 relative overflow-hidden">
-                {/* Subtle dot grid background */}
-                <div className="absolute inset-0 bleed-guides opacity-10 pointer-events-none" />
-
                 <motion.div
                     initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-                    className="w-full max-w-sm relative z-10 px-6"
+                    className="w-full max-w-sm relative z-10 mx-6"
                 >
-                    {/* Logo */}
-                    <div className="mb-8 flex flex-col items-center">
-                        {logo ? (
-                            <img
-                                src={logo}
-                                alt={companyName || "Logo"}
-                                className="h-14 w-auto object-contain mb-3"
-                            />
-                        ) : (
-                            <div className="w-14 h-14 rounded-lg flex items-center justify-center bg-primary text-primary-foreground font-black text-lg mb-3">
-                                {initials}
-                            </div>
-                        )}
-                        {companyName && (
-                            <h1 className="font-heading font-bold text-sm uppercase tracking-widest text-muted-foreground">
-                                {companyName}
-                            </h1>
-                        )}
-                    </div>
+                    <div className="rounded-xl border bg-card shadow-sm p-8 canvas-prepress">
+                        {/* Logo */}
+                        <div className="mb-8 flex flex-col items-center">
+                            {logo ? (
+                                <img
+                                    src={logo}
+                                    alt={companyName || "Logo"}
+                                    className="h-14 w-auto object-contain mb-3"
+                                />
+                            ) : (
+                                <div className="w-14 h-14 rounded-lg flex items-center justify-center bg-primary text-primary-foreground font-black text-lg mb-3">
+                                    {initials}
+                                </div>
+                            )}
+                            {companyName && (
+                                <h1 className="font-heading font-bold text-sm uppercase tracking-widest text-muted-foreground">
+                                    {companyName}
+                                </h1>
+                            )}
+                        </div>
 
-                    {/* Login form */}
-                    <LoginForm />
+                        {/* Login form */}
+                        <LoginForm />
 
-                    {/* Version footer */}
-                    <div className="mt-10 pt-6 border-t border-border/40">
-                        <p className="text-[10px] text-muted-foreground/50 text-center font-mono uppercase tracking-widest">
-                            v{getFrontendVersion()}
-                        </p>
+                        {/* Version footer */}
+                        <div className="mt-10 pt-6 border-t border-border/40">
+                            <p className="text-[10px] text-muted-foreground/50 text-center font-mono uppercase tracking-widest">
+                                v{getFrontendVersion()}
+                            </p>
+                        </div>
                     </div>
                 </motion.div>
             </div>

@@ -1,7 +1,6 @@
 "use client"
 
 import { cn } from "@/lib/utils"
-import { useAuth } from "@/contexts/AuthContext"
 
 import { PermissionGuard } from "@/components/auth/PermissionGuard"
 import {
@@ -25,21 +24,18 @@ const MODULE_ORDER = ["dashboard", "accounting", "billing", "sales", "contacts",
 const mainItems = MODULE_ORDER.map((id) => MODULE_REGISTRY[id]).filter(Boolean)
 
 export function MiniSidebar({ activeCategory, onCategoryChange, collapsed = false }: MiniSidebarProps) {
-    const { user } = useAuth()
-    const { logo } = useBranding()
+    const { logo, company } = useBranding()
 
     const handleCategoryClick = (id: string) => {
         onCategoryChange(id)
     }
 
     const getInitials = () => {
-        // Assume user might have a tenant/company name, fallback to "SD"
-        const companyName = (user as any)?.tenant_name as string | undefined
-            || (user as any)?.company_name as string | undefined;
+        const companyName = company?.trade_name || company?.name
         if (companyName) {
             return companyName.substring(0, 2).toUpperCase()
         }
-        return "SD"
+        return "ERP"
     }
 
     return (
