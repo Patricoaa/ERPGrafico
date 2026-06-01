@@ -1,5 +1,134 @@
 import type { SearchDefinition } from '@/types/search'
 
+export const stockMoveSearchDef: SearchDefinition = {
+  fields: [
+    {
+      key: 'product_name',
+      label: 'Producto',
+      type: 'text',
+      serverParam: 'product_name',
+    },
+    {
+      key: 'move_type',
+      label: 'Tipo',
+      type: 'enum',
+      serverParam: 'move_type',
+      options: [
+        { label: 'Entrada', value: 'IN' },
+        { label: 'Salida', value: 'OUT' },
+        { label: 'Ajuste', value: 'ADJ' },
+      ],
+    },
+    {
+      key: 'date',
+      label: 'Fecha',
+      type: 'daterange',
+      serverParamStart: 'date_from',
+      serverParamEnd: 'date_to',
+    },
+  ],
+}
+
+export const pricingRuleSearchDef: SearchDefinition = {
+  fields: [
+    {
+      key: 'search',
+      label: 'Nombre',
+      type: 'text',
+      serverParam: 'search',
+    },
+    {
+      key: 'active',
+      label: 'Estado',
+      type: 'enum',
+      serverParam: 'active',
+      options: [
+        { label: 'Activo', value: 'true' },
+        { label: 'Inactivo', value: 'false' },
+      ],
+    },
+  ],
+}
+
+export const subscriptionSearchDef: SearchDefinition = {
+  fields: [
+    {
+      key: 'search',
+      label: 'Producto',
+      type: 'text',
+      serverParam: 'search',
+    },
+    {
+      key: 'status',
+      label: 'Estado',
+      type: 'enum',
+      serverParam: 'status',
+      options: [
+        { label: 'Activo', value: 'ACTIVE' },
+        { label: 'Pausado', value: 'PAUSED' },
+        { label: 'Cancelado', value: 'CANCELLED' },
+      ],
+    },
+  ],
+}
+
+export const uomSearchDef: SearchDefinition = {
+  fields: [
+    {
+      key: 'search',
+      label: 'Nombre / Abreviación',
+      type: 'text',
+      serverParam: 'search',
+    },
+  ],
+}
+
+export const attributeSearchDef: SearchDefinition = {
+  fields: [
+    {
+      key: 'search',
+      label: 'Nombre',
+      type: 'text',
+      serverParam: 'search',
+    },
+  ],
+}
+
+export const categorySearchDef: SearchDefinition = {
+  fields: [
+    {
+      key: 'name',
+      label: 'Nombre',
+      type: 'text',
+      serverParam: 'name',
+      clientKey: ['name', 'parent_name'],
+    },
+  ],
+}
+
+export const uomCategorySearchDef: SearchDefinition = {
+  fields: [
+    {
+      key: 'name',
+      label: 'Nombre',
+      type: 'text',
+      serverParam: 'name',
+    },
+  ],
+}
+
+export const warehouseSearchDef: SearchDefinition = {
+  fields: [
+    {
+      key: 'name',
+      label: 'Nombre / Código',
+      type: 'text',
+      serverParam: 'name',
+      clientKey: ['name', 'code', 'address'],
+    },
+  ],
+}
+
 export const productSearchDef: SearchDefinition = {
   fields: [
     {
@@ -22,5 +151,56 @@ export const productSearchDef: SearchDefinition = {
         { label: 'Suscripción', value: 'SUBSCRIPTION' },
       ],
     },
+    {
+      key: 'active',
+      label: 'Estado',
+      type: 'enum',
+      serverParam: 'active',
+      options: [
+        { label: 'Todos', value: 'all' },
+        { label: 'Activo', value: 'true' },
+        { label: 'Archivado', value: 'false' },
+      ],
+    },
+    {
+      key: 'can_be_sold',
+      label: 'Venta',
+      type: 'enum',
+      serverParam: 'can_be_sold',
+      options: [
+        { label: 'Sí', value: 'true' },
+        { label: 'No', value: 'false' },
+      ],
+    },
+    {
+      key: 'can_be_purchased',
+      label: 'Compra',
+      type: 'enum',
+      serverParam: 'can_be_purchased',
+      options: [
+        { label: 'Sí', value: 'true' },
+        { label: 'No', value: 'false' },
+      ],
+    },
   ],
 }
+
+export const stockReportSearchDef: SearchDefinition = {
+  fields: [
+    {
+      key: 'search',
+      label: 'Producto / SKU',
+      type: 'text',
+      serverParam: 'search',
+      clientKey: ['name', 'code', 'internal_code'],
+    },
+    {
+      key: 'category_name',
+      label: 'Categoría',
+      type: 'text',
+      serverParam: 'category_name',
+      clientKey: ['category_name'],
+    },
+  ],
+}
+

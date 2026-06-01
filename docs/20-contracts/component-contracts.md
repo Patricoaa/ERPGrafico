@@ -3,7 +3,7 @@ layer: 20-contracts
 doc: component-contracts
 status: active
 owner: frontend-team
-last_review: 2026-05-06
+last_review: 2026-05-28
 stability: contract-changes-require-ADR
 ---
 
@@ -63,20 +63,43 @@ The positioning relative to a `notched-field` (fieldset + legend) depends on the
 
 ---
 
-## StatusBadge 🟢
+## Chip 🟢
 
-Only authorized component for rendering entity states. No ad-hoc badges allowed.
-> 📄 Para la resolución de íconos y títulos de entidad, ver **[entity-identity.md](./entity-identity.md)**.
+Single authorized component for **non-status, non-entity-ID** informational labels: type tags, category pills, count indicators, feature flags.
+
+> 📄 Contrato completo en **[component-chip.md](./component-chip.md)**.
 
 ```tsx
-<StatusBadge variant="sale-order" status="in_production" />
+<Chip>Almacenable</Chip>
+<Chip size="xs" intent="warning">CREDITO</Chip>
+<Chip size="md" intent="success" icon={ShieldCheck}>BOM ACTIVA</Chip>
+```
+
+| prop | type | required | default | notes |
+|------|------|----------|---------|-------|
+| `size` | `'xs' \| 'sm' \| 'md'` | ❌ | `'sm'` | xs=18px, sm=22px, md=26px |
+| `intent` | `'neutral' \| 'info' \| 'success' \| 'warning' \| 'destructive' \| 'primary'` | ❌ | `'neutral'` | |
+| `icon` | `LucideIcon` | ❌ | — | Same color as text |
+| `className` | `string` | ❌ | — | Layout/position only — never override typography |
+
+Typography invariant: `font-mono font-black uppercase tracking-widest`. Decision boundary: workflows → `StatusBadge`; entity IDs → `EntityBadge`; everything else → `Chip`.
+
+---
+
+## StatusBadge 🟢
+
+Workflow states and record status. Strictly mapped to `STATUS_MAP` in `lib/badge-resolvers.ts`.
+
+```tsx
+<StatusBadge status="IN_PROGRESS" />
+<StatusBadge status="PAID" variant="dot" />
 ```
 
 | prop | type | required | default | notes |
 |------|------|----------|---------|-------|
 | `variant` | `'sale-order' \| 'purchase-order' \| 'work-order' \| 'invoice' \| 'payment' \| 'generic'` | ✅ | — | Maps to state-map entity |
 | `status` | entity-specific union (see [state-map](state-map.md)) | ✅ | — | Must be valid for variant |
-| `size` | `'sm' \| 'md' \| 'lg'` | ❌ | `'md'` | 40px min height `md`+ |
+| `size` | `'sm' \| 'md' \| 'lg'` | ❌ | `'sm'` | sm=h-6/12px (tables), md=h-8/14px (modals), lg=h-10/base (detail) |
 | `className` | `string` | ❌ | — | Merged via `cn()` |
 
 States handled: — (pure presentational, no async).
@@ -87,7 +110,7 @@ States handled: — (pure presentational, no async).
 
 > 📄 Documentación completa en **[component-skeleton.md](./component-skeleton.md)**.
 
-Catálogo: `CardSkeleton` · `TableSkeleton` · `FormSkeleton` · `SkeletonShell` · `PageLayoutSkeleton` · `LoadingFallback`.
+Catálogo: `CardSkeleton` · `TableSkeleton` · `SkeletonShell` · `PageLayoutSkeleton` · `LoadingFallback`.
 Regla clave: usar wrappers estáticos para first-load, `SkeletonShell` para refetching.
 
 ---
@@ -119,6 +142,81 @@ Regla clave: usar wrappers estáticos para first-load, `SkeletonShell` para refe
 
 ---
 
+## DataCell primitives 🟢
+
+> **File**: `frontend/components/shared/DataTableCells.tsx`  
+> **Import**: `import { DataCell, createActionsColumn } from '@/components/shared'`
+
+Namespace de celdas estandarizadas para `DataTable`. Centra contenido y aplica tipografía consistente.
+
+### Clasificación de Textos Estándar
+
+* **`DataCell.Text` (Texto Primario)**: Todo texto que no encaje en las definiciones restantes (identificadores, fechas, números, badges, etc.). Es el contenedor de texto principal por defecto (fuente `13px`, peso mediano).
+* **`DataCell.Secondary` (Texto Secundario)**: Todo dato complementario que se muestre junto a o debajo de un texto primario, entidad, contacto, moneda, estado, metadato, etc., aportando contexto adicional (ej. categorías, notas, descripciones secundarias; fuente `11px`, peso normal, mayúsculas, tracking espaciado).
+
+### Identidad y Enlaces: DataCell.Entity vs DataCell.Link vs DataCell.ContactLink
+
+| Primitivo | Destino / Propósito | Cuándo usar | Requiere |
+|---|---|---|---|
+| **`DataCell.Entity`** | Ficha de la entidad registrada en el ERP (con prefijo e ícono de la entidad). | **Siempre** que se represente un documento de negocio del ERP (OV, OT, OCS, Factura, Producto). | `entityLabel: string` y `data: any` |
+| **`DataCell.Link`** | URL interna/externa genérica (`href`) o callback (`onClick`). | **Solo para enlaces genéricos no registrales** (ej. descargar plantilla, enlace externo de tracking de courier). | `href` o `onClick` |
+| **`DataCell.ContactLink`** | Abre el `ContactDrawer` lateral a nivel global. | Nombre de persona o empresa (Clientes/Proveedores). | `contactId: number` |
+
+```tsx
+// ✅ CORRECTO: Los documentos del ERP se renderizan como Entidades (con su prefijo, ícono y enlace automático)
+<DataCell.Entity entityLabel="sales.saleorder" data={row.original} />
+
+// ✅ CORRECTO: Enlaces genéricos, externos o descargas
+<DataCell.Link href={`/downloads/template.csv`} external>Descargar Plantilla</DataCell.Link>
+
+// ✅ CORRECTO: Contactos (abre el drawer lateral en hover/click)
+<DataCell.ContactLink contactId={order.customer_id}>
+  {order.customer_name}
+</DataCell.ContactLink>
+
+// ❌ INCORRECTO: No usar Link genérico para documentos/entidades del ERP (rompe consistencia de íconos/prefijos)
+<DataCell.Link href={`/sales/orders/${id}`}>{order.code}</DataCell.Link>
+```
+
+### DataCell.NumericFlow
+
+Para cantidades con polaridad visual (+/−): movimientos de stock, horas de producción, variaciones de inventario. **No usar para monedas** — usar `DataCell.Currency showColor` que delega a `MoneyDisplay`.
+
+```tsx
+<DataCell.NumericFlow value={movement.qty} unit="un" />
+// → "+10.00 un" verde  |  "−5.00 un" rojo  |  "0.00" gris
+```
+
+| prop | type | required | default | notes |
+|------|------|----------|---------|-------|
+| `value` | `number \| string \| null \| undefined` | ✅ | — | null / '' → dash |
+| `unit` | `string` | ❌ | — | Sufijo (e.g. `'un'`, `'kg'`) |
+| `showSign` | `boolean` | ❌ | `true` | Prefija `+` en positivos |
+| `className` | `string` | ❌ | — | |
+
+Usa `.toFixed(2)` y tokens `text-success` / `text-destructive` / `text-muted-foreground` de `globals.css`.
+
+### DataCell.Progress
+
+Barra de progreso para métricas de completitud (% de entrega, avance de OT, stock vs. demanda).
+
+```tsx
+<DataCell.Progress value={order.qty_delivered} max={order.qty_ordered}
+  label="Entregado" subLabel="75%" />
+```
+
+| prop | type | required | default | notes |
+|------|------|----------|---------|-------|
+| `value` | `number \| null \| undefined` | ✅ | — | Valor actual |
+| `max` | `number` | ❌ | `100` | Denominador |
+| `label` | `string` | ❌ | — | Texto izquierda sobre la barra |
+| `subLabel` | `string` | ❌ | — | Texto derecha sobre la barra |
+| `className` | `string` | ❌ | — | |
+
+`value >= max` → barra completa en `bg-success` con glow. `value < max` → `bg-primary`. Valor clamped a `[0, 100]%`.
+
+---
+
 ## DataTable & ExpandableTableRow 🟢
 
 > 📄 Documentación completa de arquitectura y vistas en **[component-datatable-views.md](./component-datatable-views.md)**.
@@ -127,9 +225,28 @@ Sistema central de tablas de datos y sus primitivas de vista.
 
 | componente | uso principal | variant / prop clave |
 |---|---|---|
-| `DataTable` | Tabla principal, maneja paginación y skeleton automático | `variant="embedded" | "standalone"` |
+| `DataTable` | Tabla principal CRUD con filtros/paginación/acciones | `variant="embedded" | "standalone"` |
+| `DataTable` (minimal) | Tabla display simple sin toolbar ni paginación | `variant="minimal"` |
 | `EntityCard` | Shell estandarizado para vistas de tarjeta/grilla | `variant="default" | "compact"` |
-| `ExpandableTableRow` | Fila con panel de detalle desplegable (lazy fetch) | `onExpand`, `cellClassName` |
+| `ExpandableTableRow` 🔴 | **Deprecado.** Usar `renderSubComponent` + `createExpandableRowView` | `onExpand`, `cellClassName` |
+
+---
+
+## Row & Card Actions 🟢
+
+> 📄 Contrato completo en **[component-row-actions.md](./component-row-actions.md)**.
+
+Registry cerrado de acciones CRUD (`ROW_ACTIONS` en `@/lib/row-actions`) + renderers unificados para filas y tarjetas. Icono, tooltip y color salen del registry — nunca hardcodear.
+
+| componente | superficie | uso |
+|---|---|---|
+| `createActionsColumn<T>` | Tabla | Columna estandarizada de acciones |
+| `DataCell.Action action="<key>"` | Tabla | Botón icono individual (forma preferida) |
+| `DataCell.ActionMenu items={[…]}` | Tabla | Kebab overflow para 4+ acciones |
+| `CardActions` + `CardActions.Item` / `CardActions.Menu` | Card / Kanban | Mismos primitivos para footers de tarjeta |
+| `useEntityRouteActions()` | Hook | Handlers `openSelected` / `openDetail` / `openHub` |
+
+Orden canónico (siempre): `view → detail → hub → edit → duplicate → pay → deliver → receive → download → print → share → archive → restore → lock/unlock → annul → delete`. `annul` y `delete` siempre al final, en ese orden, ambas detrás de `ActionConfirmModal` (`variant="destructive"`).
 
 ---
 
@@ -338,7 +455,7 @@ States handled: — (pure controlled). Shows count badge when >2 selected; shows
 
 > 📄 Documentación completa en **[component-input.md](./component-input.md)**.
 
-Primitivo único para el par label + campo de texto. Reemplaza el patrón deprecated `FORM_STYLES.label + FORM_STYLES.input`.
+Primitivo único para el par label + campo de texto.
 
 ```tsx
 <LabeledInput label="Nombre" required error={fieldState.error?.message} {...field} />
@@ -481,7 +598,7 @@ Font: always `font-mono font-bold tabular-nums`. Do NOT render currency with raw
 Componente hermano de `MoneyDisplay` exclusivo para cantidades de producción, inventario y medidas físicas (kg, metros, unidades).
 
 ```tsx
-<QuantityDisplay value={150.5} uom="kg" decimals={2} />
+<QuantityDisplay value={150.5} uom="kg"/>
 <QuantityDisplay value={diff} showSign />
 ```
 
@@ -626,6 +743,8 @@ interface FormLineItemColumn {
 ```
 
 Import: `import { FormLineItemsTable } from '@/components/shared'`
+
+> **Diferencia con `DataTable variant="minimal"`:** `FormLineItemsTable` es para **edición** (con inputs, `useFieldArray`, botón "Agregar Línea"). `variant="minimal"` es para **display** (solo lectura). Ambos usan los mismos tokens visuales definidos en `globals.css` (`--table-cell-py`, `--table-cell-px`, etc.).
 
 > Los inputs dentro de las celdas siguen el contrato **[Table Cell Input](./component-table-cell-input.md)**.
 
@@ -842,54 +961,15 @@ Estética de mando unificado con doble redondeo superior y base recta.
 
 ---
 
-## TransactionViewModal 🟢
+## TransactionViewModal — eliminado (ADR-0028) 🔴
 
-Large detail modal for any transaction type. Two-column layout: content (75%) + metadata sidebar (25%).
-
-```tsx
-<TransactionViewModal
-  open={open}
-  onOpenChange={setOpen}
-  type="sale-order"
-  id={orderId}
-  view="all"
-/>
-```
-
-| prop | type | required | default | notes |
-|------|------|----------|---------|-------|
-| `open` | `boolean` | ✅ | — | |
-| `onOpenChange` | `(open: boolean) => void` | ✅ | — | |
-| `type` | `TransactionType` | ✅ | — | See TransactionType union |
-| `id` | `number \| string` | ✅ | — | Entity ID |
-| `view` | `'details' \| 'history' \| 'all'` | ❌ | `'all'` | Which panels to render |
-
-```typescript
-// frontend/types/transactions.ts
-type TransactionType =
-  | 'product'
-  | 'contact'
-  | 'sale_order'
-  | 'purchase_order'
-  | 'invoice'
-  | 'payment'
-  | 'sale_delivery'
-  | 'purchase_receipt'
-  | 'user'
-  | 'company_settings'
-  | 'work_order'
-  | 'journal_entry'
-  | 'stock_move'
-  | 'cash_movement'
-  | 'sale_return'
-  | 'purchase_return'
-  | 'inventory'
-  | 'profit_distribution'
-```
-
-Uses `useTransactionData(type, id)` internally.
-
-Features: print (react-to-print), navigation history between related transactions (`useNavigationHistory`), inline payment editing, delete payment confirmation.
+> **Eliminado.** Reemplazado por el registro `ENTITY_DRAWERS` + el opener `openEntity` (drawer de
+> entidad en modo `view`). Ver [component-entity-drawers.md](./component-entity-drawers.md) y
+> [ADR-0028](../10-architecture/adr/0028-entity-drawer-registry.md).
+>
+> - **Mostrar el detalle de un documento:** `openEntity('<app>.<model>', id)`.
+> - **Drill-down a un documento origen:** `SourceDocumentLink`.
+> - **Editor deep-linkeable desde lista:** `?selected={id}` ([list-modal-edit-pattern.md](./list-modal-edit-pattern.md)).
 
 States handled: loading (dual spinner), error, populated.
 
@@ -925,14 +1005,7 @@ Botón expansible para acciones secundarias.
 
 ## ActionSlideButton 🟢
 
-Botón con animación de deslizamiento para revelar acciones adicionales. Ideal para procesos primarios con alta carga kinética.
-
-| prop | type | required | default | notes |
-|------|------|----------|---------|-------|
-| `children` | `ReactNode` | ✅ | — | Texto del botón |
-| `icon` | `LucideIcon` | ❌ | — | Icono opcional a la izquierda |
-| `variant` | `'primary' \| 'destructive' \| 'success'` | ❌ | `'primary'` | |
-| `loading` | `boolean` | ❌ | `false` | Muestra spinner y deshabilita |
+> 📄 Ver **[component-button.md](./component-button.md#actionslidebutton--premium-kinetic-button)**.
 
 ---
 
@@ -973,7 +1046,8 @@ Componentes de uso estrictamente interno, no consumir directamente en features:
 
 ## Forbidden usage
 
-- Creating a new badge component instead of using `StatusBadge`.
+- Creating a new badge component instead of using `StatusBadge` (for states) or `Chip` (for labels/tags).
+- Inline `<Badge className="text-[8px] ...">` for informational tags — use `<Chip size="xs">`.
 - Passing raw Tailwind color classes to any shared component.
 - Modifying `/components/ui/` (Shadcn base).
 - Calling `.toLocaleString()` for money formatting — use `MoneyDisplay`.

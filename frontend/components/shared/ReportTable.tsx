@@ -9,12 +9,12 @@ import {
     TableHeader,
     TableRow
 } from "@/components/ui/table";
-import { ChevronRight, ChevronDown, Receipt, Info } from "lucide-react";
+import { ChevronRight, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { MoneyDisplay } from "@/components/shared/MoneyDisplay";
+import { EmptyState, MoneyDisplay, SkeletonShell } from '@/components/shared';
 import { Skeleton } from "@/components/ui/skeleton";
-import { EmptyState } from "@/components/shared/EmptyState";
-import { SkeletonShell } from "@/components/shared/SkeletonShell";
+;
+;
 
 export interface ReportNode {
     id: number | string;
@@ -41,7 +41,7 @@ interface ReportTableProps {
     accentColor?: 'primary' | 'success' | 'info' | 'destructive';
 }
 
-const RowIcon = ({ isExpanded, hasChildren, level }: { isExpanded: boolean, hasChildren: boolean, level: number }) => {
+const RowIcon = ({ isExpanded, hasChildren }: { isExpanded: boolean, hasChildren: boolean, level: number }) => {
     if (hasChildren) {
         return isExpanded ? <ChevronDown className="h-4 w-4 text-primary" /> : <ChevronRight className="h-4 w-4 text-primary" />;
     }
@@ -66,7 +66,7 @@ const ReportRow = ({
     return (
         <>
             <TableRow className={cn(
-                "hover:bg-muted/10 transition-colors border-l-2",
+                "table-row-hover border-l-2",
                 level === 0 ? "font-black border-l-primary/40 bg-muted/5 h-12" : "border-l-transparent"
             )}>
                 <TableCell className="py-2.5 px-4">
@@ -84,13 +84,13 @@ const ReportRow = ({
                         
                         <div className="flex flex-col min-w-0">
                             {node.code && (
-                                <span className="font-mono text-[9px] text-muted-foreground tracking-tighter opacity-70 leading-none mb-0.5">
+                                <span className="font-mono text-[10px] text-muted-foreground tracking-tighter opacity-70 leading-none mb-0.5">
                                     {node.code}
                                 </span>
                             )}
                             <span className={cn(
                                 "text-sm tracking-tight truncate", 
-                                level === 0 ? "uppercase font-bold" : "font-medium"
+                                level === 0 ? "uppercase font-black tracking-widest font-heading" : "font-medium"
                             )}>
                                 {node.name}
                             </span>
@@ -199,12 +199,12 @@ export const ReportTable: React.FC<ReportTableProps> = ({
                         accentColor === 'success' ? "border-success/20" : 
                         accentColor === 'info' ? "border-info/20" : "border-destructive/20"
                     )}>
-                        <TableHead className="font-bold text-foreground py-4 px-4 h-12 uppercase tracking-widest text-[9px]">Cuenta / Concepto</TableHead>
-                        <TableHead className="text-right w-[150px] font-bold text-foreground py-4 px-4 h-12 uppercase tracking-widest text-[9px]">{periodLabel || 'Saldo'}</TableHead>
+                        <TableHead className="font-black text-foreground py-4 px-4 h-12 uppercase tracking-widest text-[10px]">Cuenta / Concepto</TableHead>
+                        <TableHead className="text-right w-[150px] font-black text-foreground py-4 px-4 h-12 uppercase tracking-widest text-[10px]">{periodLabel || 'Saldo'}</TableHead>
                         {showComparison && (
                             <>
-                                <TableHead className="text-right w-[150px] font-bold text-muted-foreground py-4 px-4 h-12 uppercase tracking-widest text-[9px]">{compPeriodLabel || 'Anterior'}</TableHead>
-                                <TableHead className="text-right w-[110px] font-bold py-4 px-4 h-12 uppercase tracking-widest text-[9px]">Var.</TableHead>
+                                <TableHead className="text-right w-[150px] font-black text-muted-foreground py-4 px-4 h-12 uppercase tracking-widest text-[10px]">{compPeriodLabel || 'Anterior'}</TableHead>
+                                <TableHead className="text-right w-[110px] font-black py-4 px-4 h-12 uppercase tracking-widest text-[10px]">Var.</TableHead>
                             </>
                         )}
                     </TableRow>

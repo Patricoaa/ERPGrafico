@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import WorkOrder, ProductionConsumption, BillOfMaterials, BillOfMaterialsLine, WorkOrderMaterial, WorkOrderHistory
+from .models import WorkOrder, ProductionConsumption, BillOfMaterials, BillOfMaterialsLine, WorkOrderMaterial, WorkOrderHistory, WorkOrderTemplate
 from core.serializers import AttachmentSerializer
 from inventory.models import Product, UoM, Warehouse
 
@@ -38,6 +38,8 @@ class WorkOrderMaterialSerializer(serializers.ModelSerializer):
     purchase_order_receiving_status = serializers.CharField(source='purchase_line.order.receiving_status', read_only=True)
     purchase_order_id = serializers.IntegerField(source='purchase_line.order.id', read_only=True)
     total_cost = serializers.SerializerMethodField()
+    planned_cost = serializers.SerializerMethodField()
+    actual_cost = serializers.SerializerMethodField()
     
     class Meta:
         model = WorkOrderMaterial
@@ -96,14 +98,32 @@ class WorkOrderMaterialSerializer(serializers.ModelSerializer):
         return float(obj.component.cost_price)
 
     def get_total_cost(self, obj):
-        from decimal import Decimal
+        # Keep total_cost as actual for backward compatibility
+        return self.get_actual_cost(obj)
+
+    def get_planned_cost(self, obj):
         from inventory.services import UoMService
-        
         qty = obj.quantity_planned
         component = obj.component
         
-        # Convert quantity from Material Line UoM to Component Base UoM if they differ
-        # component.cost_price is always per Base UoM
+        if obj.uom and component.uom and obj.uom != component.uom:
+            try:
+                qty = UoMService.convert_quantity(obj.quantity_planned, obj.uom, component.uom)
+            except:
+                pass
+                
+        cost = obj.unit_cost_snapshot
+        if obj.is_outsourced and obj.unit_price > 0:
+            cost = obj.unit_price
+            
+        total = qty * cost
+        return float(total)
+
+    def get_actual_cost(self, obj):
+        from inventory.services import UoMService
+        qty = obj.quantity_planned
+        component = obj.component
+        
         if obj.uom and component.uom and obj.uom != component.uom:
             try:
                 qty = UoMService.convert_quantity(obj.quantity_planned, obj.uom, component.uom)
@@ -116,6 +136,39 @@ class WorkOrderMaterialSerializer(serializers.ModelSerializer):
             
         total = qty * cost
         return float(total)
+
+class WorkOrderInitialMaterialSerializer(serializers.Serializer):
+    component_id = serializers.IntegerField()
+    quantity_planned = serializers.DecimalField(max_digits=12, decimal_places=4)
+    is_outsourced = serializers.BooleanField(default=False)
+    supplier_id = serializers.IntegerField(required=False, allow_null=True)
+    unit_price = serializers.DecimalField(max_digits=12, decimal_places=2, required=False, allow_null=True)
+    uom_id = serializers.IntegerField(required=False, allow_null=True)
+
+    def validate(self, data):
+        try:
+            Product.objects.get(pk=data['component_id'])
+        except Product.DoesNotExist:
+            raise serializers.ValidationError({"component_id": "El componente no existe."})
+
+        if data.get('is_outsourced') and not data.get('supplier_id'):
+            raise serializers.ValidationError("Material tercerizado requiere supplier_id.")
+
+        if data.get('supplier_id'):
+            from contacts.models import Contact
+            try:
+                Contact.objects.get(pk=data['supplier_id'])
+            except Contact.DoesNotExist:
+                raise serializers.ValidationError({"supplier_id": "El proveedor no existe."})
+
+        if data.get('uom_id'):
+            try:
+                UoM.objects.get(pk=data['uom_id'])
+            except UoM.DoesNotExist:
+                raise serializers.ValidationError({"uom_id": "La unidad de medida no existe."})
+
+        return data
+
 
 class WorkOrderSerializer(serializers.ModelSerializer):
     consumptions = ProductionConsumptionSerializer(many=True, read_only=True)
@@ -138,6 +191,9 @@ class WorkOrderSerializer(serializers.ModelSerializer):
     cancellation_limit_stage = serializers.ReadOnlyField()
     display_id = serializers.SerializerMethodField()
     
+    # Alias para compatibilidad con frontend (modelo usa estimated_completion_date)
+    due_date = serializers.DateField(source='estimated_completion_date', read_only=True, allow_null=True)
+
     # Metadata helpers
     requires_prepress = serializers.SerializerMethodField()
     requires_press = serializers.SerializerMethodField()
@@ -145,9 +201,62 @@ class WorkOrderSerializer(serializers.ModelSerializer):
     checkout_files = serializers.SerializerMethodField()
     workflow_tasks = serializers.SerializerMethodField()
     production_discrepancy = serializers.SerializerMethodField()
-    
+    side_effects = serializers.SerializerMethodField()
+
+    # Unified accessors for product/volume that work for both LINKED (sale_line)
+    # and MANUAL (product + stage_data) OTs.
+    product_name = serializers.SerializerMethodField()
+    quantity = serializers.SerializerMethodField()
+    uom_id = serializers.SerializerMethodField()
+    uom_name = serializers.SerializerMethodField()
+
     def get_display_id(self, obj):
         return obj.display_id
+
+    def get_side_effects(self, obj):
+        from .services import WorkOrderService
+        return WorkOrderService.check_side_effects(obj)
+
+    def get_product_name(self, obj):
+        if obj.sale_line and obj.sale_line.product:
+            return obj.sale_line.product.name
+        if obj.product:
+            return obj.product.name
+        return ''
+
+    def get_quantity(self, obj):
+        if obj.sale_line and obj.sale_line.quantity is not None:
+            return float(obj.sale_line.quantity)
+        if obj.stage_data and obj.stage_data.get('quantity') is not None:
+            try:
+                return float(obj.stage_data['quantity'])
+            except (TypeError, ValueError):
+                return None
+        return None
+
+    def get_uom_id(self, obj):
+        if obj.sale_line and obj.sale_line.uom_id:
+            return obj.sale_line.uom_id
+        if obj.stage_data and obj.stage_data.get('uom_id'):
+            try:
+                return int(obj.stage_data['uom_id'])
+            except (TypeError, ValueError):
+                return None
+        return None
+
+    def get_uom_name(self, obj):
+        if obj.sale_line and obj.sale_line.uom:
+            return obj.sale_line.uom.name
+        if obj.stage_data and obj.stage_data.get('uom_name'):
+            return obj.stage_data['uom_name']
+        # Fallback: resolve UoM model from id stored in stage_data
+        uom_id = obj.stage_data.get('uom_id') if obj.stage_data else None
+        if uom_id:
+            try:
+                return UoM.objects.get(pk=int(uom_id)).name
+            except (UoM.DoesNotExist, TypeError, ValueError):
+                return None
+        return None
 
     def get_production_discrepancy(self, obj):
         if not obj.sale_line or obj.actual_quantity_produced is None:
@@ -297,6 +406,7 @@ class WorkOrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = WorkOrder
         fields = '__all__'
+        read_only_fields = ['id', 'number', 'status', 'current_stage']
 
 class BillOfMaterialsLineSerializer(serializers.ModelSerializer):
     component_name = serializers.CharField(source='component.name', read_only=True)
@@ -438,3 +548,12 @@ class BillOfMaterialsSerializer(serializers.ModelSerializer):
             for line_data in lines_data:
                 BillOfMaterialsLine.objects.create(bom=instance, **line_data)
         return instance
+
+
+class WorkOrderTemplateSerializer(serializers.ModelSerializer):
+    customer_name = serializers.CharField(source='customer.name', read_only=True)
+
+    class Meta:
+        model = WorkOrderTemplate
+        fields = ['id', 'name', 'customer', 'customer_name', 'default_data', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'created_at', 'updated_at']

@@ -3,8 +3,7 @@
 import React from "react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Card } from "@/components/ui/card"
-import { TableSkeleton } from "./TableSkeleton"
-import { FormSkeleton } from "./FormSkeleton"
+import { SkeletonShell } from "./SkeletonShell"
 
 /**
  * Skeleton for the Page Header area in the top bar.
@@ -99,7 +98,7 @@ export function PageLayoutSkeleton({
                     {children || (
                         <>
                             {contentType === 'table' && (
-                                <TableSkeleton rows={8} columns={6} />
+                                <SkeletonShell isLoading ariaLabel="Cargando tabla" />
                             )}
                             {contentType === 'card' && (
                                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -115,7 +114,7 @@ export function PageLayoutSkeleton({
                             )}
                             {contentType === 'form' && (
                                 <div className="max-w-2xl mx-auto">
-                                    <FormSkeleton fields={4} cards={1} />
+                                    <SkeletonShell isLoading={true} ariaLabel="Cargando formulario" />
                                 </div>
                             )}
                         </>

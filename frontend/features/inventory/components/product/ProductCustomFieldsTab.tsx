@@ -1,9 +1,9 @@
 import { Button } from "@/components/ui/button"
-import { Plus, Settings2, Trash2 } from "lucide-react"
-import { EmptyState } from "@/components/shared/EmptyState"
+import { Plus, Settings2 } from "lucide-react"
+
 import { UseFormReturn, useFieldArray } from "react-hook-form"
 import { ProductFormValues } from "./schema"
-import { FormTabsContent } from "@/components/shared"
+import { DataCell, EmptyState, FormTabsContent } from '@/components/shared'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table"
 import { CustomFieldTemplate } from "@/types/entities"
@@ -98,15 +98,12 @@ export function ProductCustomFieldsTab({ form, fieldTemplates, onShowTemplateFor
                                         />
                                     </TableCell>
                                     <TableCell className="text-right">
-                                        <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                                            onClick={() => removeCustomField(index)}
-                                        >
-                                            <Trash2 className="h-4 w-4" />
-                                        </Button>
+                                        <DataCell.ActionGroup>
+                                            <DataCell.Action
+                                                action="delete"
+                                                onClick={() => removeCustomField(index)}
+                                            />
+                                        </DataCell.ActionGroup>
                                     </TableCell>
                                 </TableRow>
                             ))

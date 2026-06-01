@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { Building2, AlertCircle } from "lucide-react"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import { AdvancedWorkOrderSelector } from "@/components/selectors/AdvancedWorkOrderSelector"
-import api from "@/lib/api"
+import { purchasingApi } from "../../api/purchasingApi"
 
 export interface Step0_SupplierProps {
     selectedSupplierId: string | null
@@ -29,10 +29,9 @@ export function Step0_Supplier({
                 setLoading(true)
                 try {
                     // Fetch contacts filtered by default vendor flag
-                    const response = await api.get('/contacts/?is_default_vendor=true')
-                    const results = response.data.results || response.data
-                    if (results && results.length > 0) {
-                        const defaultSupplier = results[0]
+                    const suppliers = await purchasingApi.getDefaultSupplier()
+                    if (suppliers && suppliers.length > 0) {
+                        const defaultSupplier = suppliers[0] as { id: number; name: string }
                         setSelectedSupplierId(defaultSupplier.id.toString())
                         setSelectedSupplierName(defaultSupplier.name)
                     }

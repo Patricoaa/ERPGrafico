@@ -4,17 +4,14 @@ import { useState, useEffect } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 
-import { DataTable } from "@/components/ui/data-table"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { DataTableView, DataTableColumnHeader, EntityCard, StatusBadge } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
-import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
-import { StatusBadge } from "@/components/shared/StatusBadge"
+import { DataCell, createActionsColumn } from '@/components/shared'
 import { FileText, Lock } from "lucide-react"
-import api from "@/lib/api"
 import { toast } from "sonner"
-
 import { POSReport } from "@/features/pos/components/POSReport"
 import { SessionCloseModal } from "@/features/pos/components/SessionCloseModal"
+import { fetchPOSSessionSummary } from "@/features/pos/hooks/usePOSSessions"
 
 interface POSSession {
     id: number
@@ -44,12 +41,15 @@ interface POSSessionsViewProps {
 }
 
 import { usePOSSessions } from "@/features/pos/hooks/usePOSSessions"
+import { SmartSearchBar, useSmartSearch } from "@/components/shared"
+import { posSessionSearchDef } from "@/features/pos/searchDef"
 
 export const POSSessionsView = ({ hideHeader = false }: POSSessionsViewProps) => {
     const router = useRouter()
     const pathname = usePathname()
     const searchParams = useSearchParams()
-    const { sessions, isLoading, refetch } = usePOSSessions()
+    const { filters } = useSmartSearch(posSessionSearchDef)
+    const { sessions, isLoading, refetch } = usePOSSessions(filters)
 
     const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<POSSession>({
         endpoint: '/treasury/pos-sessions'
@@ -61,6 +61,18 @@ export const POSSessionsView = ({ hideHeader = false }: POSSessionsViewProps) =>
     const [reportType, setReportType] = useState<"X" | "Z">("X")
     const [closeDialogOpen, setCloseDialogOpen] = useState(false)
 
+    const handleShowReport = async (session: POSSession, type: "X" | "Z") => {
+        try {
+            const data = await fetchPOSSessionSummary<Record<string, unknown>>(session.id)
+            setReportData(data)
+            setReportType(type)
+            setReportDialogOpen(true)
+        } catch (error) {
+            console.error("Error fetching report:", error)
+            toast.error("Error al generar el reporte")
+        }
+    }
+
     useEffect(() => {
         if (selectedFromUrl) {
             setSelectedSession(selectedFromUrl)
@@ -71,23 +83,11 @@ export const POSSessionsView = ({ hideHeader = false }: POSSessionsViewProps) =>
         }
     }, [selectedFromUrl])
 
-    const handleShowReport = async (session: POSSession, type: "X" | "Z") => {
-        try {
-            const response = await api.get(`/treasury/pos-sessions/${session.id}/summary/`)
-            setReportData(response.data)
-            setReportType(type)
-            setReportDialogOpen(true)
-        } catch (error) {
-            console.error("Error fetching report:", error)
-            toast.error("Error al generar el reporte")
-        }
-    }
-
     const handleCloseSuccess = async () => {
         if (!selectedSession) return
         try {
-            const summaryResponse = await api.get(`/treasury/pos-sessions/${selectedSession.id}/summary/`)
-            setReportData(summaryResponse.data)
+            const data = await fetchPOSSessionSummary<Record<string, unknown>>(selectedSession.id)
+            setReportData(data)
             setReportType("Z")
             setReportDialogOpen(true)
             refetch()
@@ -148,11 +148,8 @@ export const POSSessionsView = ({ hideHeader = false }: POSSessionsViewProps) =>
         {
             accessorKey: "status",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" className="justify-center" />,
-            cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <StatusBadge status={row.original.status} />
-                </div>
-            ),
+            cell: ({ row }) =>
+                <DataCell.Status status={row.original.status} />,
         },
         createActionsColumn<POSSession>({
             renderActions: (session) => (
@@ -179,18 +176,37 @@ export const POSSessionsView = ({ hideHeader = false }: POSSessionsViewProps) =>
     ]
 
     return (
-        <div className="flex-1 space-y-4">
-            <div className="mt-4">
-                <DataTable
+        <div className="h-full flex flex-col">
+            <div className="flex-1 min-h-0">
+                <DataTableView
                     columns={columns}
                     data={sessions}
                     variant="embedded"
                     isLoading={isLoading}
-                    globalFilterFields={["user_name", "status_display", "id"]}
-                    searchPlaceholder="Buscar por cajero..."
-                    facetedFilters={[{ column: "status", title: "Estado", options: [{ label: "Abierta", value: "OPEN" }, { label: "Cerrada", value: "CLOSED" }, { label: "Cerrando", value: "CLOSING" }] }]}
-                    useAdvancedFilter={true}
+                    entityLabel="pos.session"
+                    leftAction={<SmartSearchBar searchDef={posSessionSearchDef} placeholder="Buscar sesiones..." className="w-full" />}
                     defaultPageSize={10}
+                    renderCard={(session: POSSession) => (
+                        <EntityCard onClick={() => {
+                            const params = new URLSearchParams(searchParams.toString())
+                            params.set('selected', String(session.id))
+                            router.push(`${pathname}?${params.toString()}`, { scroll: false })
+                        }}>
+                            <EntityCard.Header
+                                title={session.id_display}
+                                subtitle={session.user_name}
+                                trailing={<StatusBadge status={session.status} label={session.status_display} size="sm" />}
+                            />
+                            <EntityCard.Body>
+                                <EntityCard.Field label="Cuenta" value={session.treasury_account_name} />
+                                <EntityCard.Field label="Apertura" value={<DataCell.Date value={session.opened_at} showTime />} />
+                            </EntityCard.Body>
+                            <EntityCard.Footer className="justify-between items-center border-t bg-muted/10 py-2 px-4">
+                                <span className="text-[10px] font-black text-muted-foreground uppercase">Ventas</span>
+                                <DataCell.Currency value={(session.total_cash_sales ?? 0) + (session.total_card_sales ?? 0)} className="font-bold" />
+                            </EntityCard.Footer>
+                        </EntityCard>
+                    )}
                 />
             </div>
 

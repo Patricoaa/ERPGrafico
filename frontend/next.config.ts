@@ -14,7 +14,7 @@ const backendHostname =
 const nextConfig: NextConfig = {
   // standalone solo para Docker/self-hosted — Vercel gestiona el output por su cuenta
   output: process.env.VERCEL ? undefined : "standalone",
-  allowedDevOrigins: ["erp.servidor.click"],
+  allowedDevOrigins: ["192.168.1.95", "192.168.1.195", "localhost", "127.0.0.1"],
   env: {
     NEXT_PUBLIC_APP_VERSION: packageJson.version,
     NEXT_PUBLIC_GIT_HASH: gitHash,
@@ -40,14 +40,37 @@ const nextConfig: NextConfig = {
     ],
   },
   experimental: {
-    // Importa solo los módulos utilizados de estas librerías pesadas
-    // → evita que el compilador procese toda la librería en cada build
-    optimizePackageImports: ["lucide-react", "date-fns", "recharts", "framer-motion"],
   },
   transpilePackages: ["react-day-picker"],
   devIndicators: {
   },
 };
 
-export default nextConfig;
+// Sentry: solo se aplica si SENTRY_DSN + SENTRY_ORG + SENTRY_PROJECT están definidos.
+// Sin esas vars (caso por defecto) el wrap es no-op y no requiere la dependencia.
+async function applySentry(config: NextConfig): Promise<NextConfig> {
+  if (
+    process.env.NODE_ENV === "development" ||
+    !process.env.SENTRY_DSN ||
+    !process.env.SENTRY_ORG ||
+    !process.env.SENTRY_PROJECT
+  ) {
+    return config;
+  }
+  try {
+    const { withSentryConfig } = await import("@sentry/nextjs");
+    return withSentryConfig(config, {
+      org: process.env.SENTRY_ORG,
+      project: process.env.SENTRY_PROJECT,
+      authToken: process.env.SENTRY_AUTH_TOKEN,
+      silent: true,
+      widenClientFileUpload: true,
+      disableLogger: true,
+    });
+  } catch {
+    return config;
+  }
+}
+
+export default applySentry(nextConfig);
 

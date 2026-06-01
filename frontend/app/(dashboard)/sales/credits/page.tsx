@@ -1,16 +1,8 @@
 import { Metadata } from "next"
-import { Suspense, lazy } from "react"
-import { LoadingFallback } from "@/components/shared/LoadingFallback"
-import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
 import { Tabs } from "@/components/ui/tabs"
-
-const CreditPortfolioView = lazy(() =>
-    import("@/features/credits").then(m => ({ default: m.CreditPortfolioView }))
-)
-
-const BlacklistView = lazy(() =>
-    import("@/features/credits").then(m => ({ default: m.BlacklistView }))
-)
+import { redirect } from "next/navigation"
+import { FadeIn, ToolbarCreateButton } from '@/components/shared'
+import { CreditPortfolioView, BlacklistView } from "@/features/credits"
 
 export const metadata: Metadata = {
     title: "Cartera de Créditos | ERPGrafico",
@@ -26,6 +18,10 @@ export default async function CreditsPage({ searchParams }: PageProps) {
     const activeTab = resolvedParams.tab || "portfolio"
     const modalOpen = resolvedParams.modal === "new"
 
+    if (!resolvedParams.tab) {
+        redirect('/sales/credits?tab=portfolio')
+    }
+
     const createAction = activeTab === 'portfolio' ? (
         <ToolbarCreateButton
             label="Asignar Crédito"
@@ -34,10 +30,10 @@ export default async function CreditsPage({ searchParams }: PageProps) {
     ) : null
 
     return (
-        <div className="pt-2">
-            <Tabs value={activeTab} className="space-y-4">
-                <div className="mt-0 outline-none">
-                    <Suspense fallback={<LoadingFallback />}>
+        <div className="pt-2 flex-1 min-h-0 flex flex-col">
+            <Tabs value={activeTab} className="space-y-4 h-full flex flex-col">
+                <div className="mt-0 outline-none flex-1 min-h-0">
+                    <FadeIn key={activeTab}>
                         {activeTab === 'blacklist' ? (
                             <BlacklistView />
                         ) : (
@@ -47,7 +43,7 @@ export default async function CreditsPage({ searchParams }: PageProps) {
                                 createAction={createAction}
                             />
                         )}
-                    </Suspense>
+                    </FadeIn>
                 </div>
             </Tabs>
         </div>

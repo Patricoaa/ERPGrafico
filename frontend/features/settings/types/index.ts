@@ -149,6 +149,7 @@ export type InventorySettingsUpdatePayload = Partial<InventorySettings>
  
  // Combined settings type
  export type AccountingSettings = SalesSettings & BillingSettings & InventorySettings & TreasurySettings & PartnerSettings
+ export type AccountingSettingsUpdatePayload = Partial<AccountingSettings>
 
 // Company Settings
 export interface CompanySettings {

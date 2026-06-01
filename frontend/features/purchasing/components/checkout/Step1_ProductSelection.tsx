@@ -11,14 +11,16 @@ import {
 } from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Plus, Trash2, ShoppingCart } from "lucide-react"
+import {Plus, ShoppingCart} from "lucide-react"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { UoMSelector } from "@/components/selectors/UoMSelector"
-import api from "@/lib/api"
+import { purchasingApi } from "../../api/purchasingApi"
 import { toast } from "sonner"
-import { EmptyState } from "@/components/shared/EmptyState"
+
 import { CheckoutLine } from "../../types"
 import { ProductMinimal, UoM } from "@/types/entities"
+import { formatCurrency } from "@/lib/money"
+import { DataCell, EmptyState, MoneyDisplay } from '@/components/shared'
 
 interface Step1_ProductSelectionProps {
     orderLines: CheckoutLine[]
@@ -48,14 +50,13 @@ export function Step1_ProductSelection({
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [productsRes, uomsRes] = await Promise.all([
-                    api.get('/inventory/products/?can_be_purchased=true'),
-                    api.get('/inventory/uoms/'),
+                const [allProducts, uomsData] = await Promise.all([
+                    purchasingApi.getPurchasableProducts(),
+                    purchasingApi.getUoms(),
                 ])
 
-                const allProducts = productsRes.data.results || productsRes.data
-                setProducts(allProducts)
-                setUoMs(uomsRes.data.results || uomsRes.data)
+                setProducts(allProducts as any)
+                setUoMs(uomsData as any)
             } catch (error) {
                 console.error("Error fetching data:", error)
                 toast.error("Error al cargar productos")
@@ -130,7 +131,6 @@ export function Step1_ProductSelection({
         }
     }, [])
 
-
     return (
         <div className="space-y-4">
             <div className="flex items-center justify-between">
@@ -192,19 +192,19 @@ export function Step1_ProductSelection({
                                                             <div className="flex justify-between">
                                                                 <span className="text-muted-foreground">Neto (sin IVA)</span>
                                                                 <span className="font-bold text-success">
-                                                                    {netResult.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
+                                                                    {formatCurrency(netResult)}
                                                                 </span>
                                                             </div>
                                                             <div className="flex justify-between">
                                                                 <span className="text-muted-foreground">IVA (19%)</span>
                                                                 <span className="font-medium">
-                                                                    {ivaAmount?.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
+                                                                    {formatCurrency(ivaAmount ?? 0)}
                                                                 </span>
                                                             </div>
                                                             <div className="border-t pt-1.5 flex justify-between">
                                                                 <span className="text-muted-foreground">Bruto</span>
                                                                 <span className="font-medium">
-                                                                    {Number(grossInput).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
+                                                                    {formatCurrency(Number(grossInput))}
                                                                 </span>
                                                             </div>
                                                         </div>
@@ -282,18 +282,14 @@ export function Step1_ProductSelection({
                                     />
                                 </TableCell>
                                 <TableCell className="text-right font-medium">
-                                    {((Number(line.quantity || line.qty) || 0) * (Number(line.unit_cost) || 0)).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
+                                    <MoneyDisplay amount={(Number(line.quantity || line.qty) || 0) * (Number(line.unit_cost) || 0)} />
                                 </TableCell>
-                                <TableCell>
-                                    <Button
-                                        type="button"
-                                        variant="ghost"
-                                        size="icon"
+                                <TableCell className="text-center">
+                                    <DataCell.Action
+                                        action="delete"
                                         onClick={() => handleRemoveLine(index)}
                                         disabled={orderLines.length === 1}
-                                    >
-                                        <Trash2 className="h-4 w-4" />
-                                    </Button>
+                                    />
                                 </TableCell>
                             </TableRow>
                         ))}

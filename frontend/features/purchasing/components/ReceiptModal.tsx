@@ -2,10 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { showApiError } from "@/lib/errors"
-import { BaseModal } from "@/components/shared/BaseModal"
-import { Button } from "@/components/ui/button"
-import { LabeledInput, LabeledSelect, PeriodValidationDateInput } from "@/components/shared"
-import { Badge } from "@/components/ui/badge"
+
+import { BaseModal, CancelButton, Chip, DataCell, FormFooter, LabeledInput, LabeledSelect, PeriodValidationDateInput, SubmitButton } from '@/components/shared'
 import {
     Table,
     TableBody,
@@ -14,7 +12,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
-import api from "@/lib/api"
+import { purchasingApi } from "../api/purchasingApi"
 import { toast } from "sonner"
 import { Loader2, Package, AlertTriangle, CheckCircle2 } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -84,24 +82,18 @@ export function ReceiptModal({
         }
     }, [dateString])
 
-    useEffect(() => {
-        if (open && orderId) {
-            fetchData()
-        }
-    }, [open, orderId])
-
     const fetchData = async () => {
         setLoading(true)
         try {
             // Fetch order details
-            const orderResponse = await api.get(`/purchasing/orders/${orderId}/`)
-            setOrder(orderResponse.data)
+            const orderData = await purchasingApi.getOrder(orderId)
+            setOrder(orderData as any)
 
             // Initialize quantities and costs
             const initialQuantities: { [lineId: number]: number } = {}
             const initialCosts: { [lineId: number]: number } = {}
 
-            orderResponse.data.lines.forEach((line: PurchaseOrderLine) => {
+            ;(orderData as any).lines.forEach((line: PurchaseOrderLine) => {
                 initialQuantities[line.id] = Math.ceil(line.quantity_pending)
                 initialCosts[line.id] = Math.ceil(line.unit_cost)
             })
@@ -109,13 +101,13 @@ export function ReceiptModal({
             setReceiptCosts(initialCosts)
 
             // Fetch warehouses
-            const warehousesResponse = await api.get('/inventory/warehouses/')
-            const warehousesList = warehousesResponse.data.results || warehousesResponse.data
+            const warehousesData = await purchasingApi.getWarehouses()
+            const warehousesList = warehousesData as any[]
             setWarehouses(warehousesList)
 
             // Default to order warehouse
-            if (orderResponse.data.warehouse) {
-                setSelectedWarehouse(orderResponse.data.warehouse)
+            if ((orderData as any).warehouse) {
+                setSelectedWarehouse((orderData as any).warehouse)
             } else if (warehousesList.length > 0) {
                 setSelectedWarehouse(warehousesList[0].id)
             }
@@ -126,6 +118,12 @@ export function ReceiptModal({
             setLoading(false)
         }
     }
+
+    useEffect(() => {
+        if (open && orderId) {
+            fetchData()
+        }
+    }, [open, orderId])
 
     const handleQuantityChange = (lineId: number, value: string) => {
         const numValue = Math.ceil(parseFloat(value) || 0)
@@ -179,14 +177,18 @@ export function ReceiptModal({
             }
 
             // Always use partial_receive/return as it's more flexible
-            const endpoint = isRefund ? `/purchasing/orders/${orderId}/partial_return/` : `/purchasing/orders/${orderId}/partial_receive/`
-            await api.post(endpoint, {
+            const payload = {
                 warehouse_id: selectedWarehouse,
                 receipt_date: receiptDate,
                 delivery_reference: deliveryReference,
                 notes: notes,
                 line_data: lineData
-            })
+            }
+            if (isRefund) {
+                await purchasingApi.partialReturn(orderId, payload)
+            } else {
+                await purchasingApi.partialReceive(orderId, payload)
+            }
 
             toast.success(isRefund ? "Devolución registrada correctamente" : "Recepción registrada correctamente")
             onOpenChange(false)
@@ -217,18 +219,24 @@ export function ReceiptModal({
             open={open}
             onOpenChange={onOpenChange}
             size="xl"
-            title={`${isRefund ? "Devolver Productos" : (filterType === 'SERVICE' ? "Confirmar Entrega de Servicios" : "Recibir Orden")} OCS-${order?.number}`}
-            description={`Proveedor: ${order?.supplier_name}`}
+            icon={Package}
+            title={`${isRefund ? "Devolver Productos" : (filterType === 'SERVICE' ? "Confirmar Entrega de Servicios" : "Recibir Orden")} OCS-${order?.number || ""}`}
+            description={`Proveedor: ${order?.supplier_name || ""}`}
             footer={
-                <>
-                    <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>
-                        Cancelar
-                    </Button>
-                    <Button onClick={handleReceive} disabled={loading || submitting || !selectedWarehouse}>
-                        {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        {isRefund ? 'Confirmar Devolución' : (filterType === 'SERVICE' ? 'Confirmar Entrega' : 'Confirmar Recepción')}
-                    </Button>
-                </>
+                <FormFooter
+                    actions={
+                        <>
+                            <CancelButton onClick={() => onOpenChange(false)} disabled={submitting} />
+                            <SubmitButton
+                                onClick={handleReceive}
+                                loading={submitting}
+                                disabled={loading || !selectedWarehouse}
+                            >
+                                {isRefund ? 'Confirmar Devolución' : (filterType === 'SERVICE' ? 'Confirmar Entrega' : 'Confirmar Recepción')}
+                            </SubmitButton>
+                        </>
+                    }
+                />
             }
         >
             {loading ? (
@@ -283,15 +291,15 @@ export function ReceiptModal({
                     {/* Receiving Status */}
                     <div className="flex items-center gap-2">
                         <span className="text-sm text-muted-foreground">Estado de {isRefund ? 'Devolución' : 'Recepción'}:</span>
-                        <Badge variant={
+                        <Chip intent={
                             order?.receiving_status === 'RECEIVED' ? 'success' :
-                                order?.receiving_status === 'PARTIAL' ? 'secondary' :
-                                    'outline'
+                                order?.receiving_status === 'PARTIAL' ? 'info' :
+                                    'neutral'
                         }>
                             {order?.receiving_status === 'RECEIVED' ? (isRefund ? 'Devuelto' : 'Recibido') :
                                 order?.receiving_status === 'PARTIAL' ? 'Parcial' :
                                     'Pendiente'}
-                        </Badge>
+                        </Chip>
                     </div>
 
                     {/* Products Table */}
@@ -320,16 +328,24 @@ export function ReceiptModal({
                                         return (
                                             <TableRow key={line.id}>
                                                 <TableCell>
-                                                    <div>
-                                                        <div className="font-medium">{line.product_name}</div>
-                                                        <div className="text-xs text-muted-foreground">Original: ${line.unit_cost}</div>
+                                                    <div className="flex flex-col gap-0.5 items-start text-left w-full">
+                                                        <DataCell.Text className="justify-start text-left w-full font-medium">
+                                                            {line.product_name}
+                                                        </DataCell.Text>
+                                                        <div className="flex items-center gap-1">
+                                                            <span className="text-[10px] text-muted-foreground">Original:</span>
+                                                            <DataCell.Currency
+                                                                value={line.unit_cost}
+                                                                className="justify-start text-[10px] text-muted-foreground font-normal w-auto"
+                                                            />
+                                                        </div>
                                                     </div>
                                                 </TableCell>
                                                 <TableCell className="text-center">
-                                                    <Badge variant="outline" className="font-normal border-none bg-muted/50">{line.uom_name}</Badge>
+                                                    <DataCell.Chip size="xs" intent="neutral" className="font-normal border-none bg-muted/50">{line.uom_name}</DataCell.Chip>
                                                 </TableCell>
                                                 <TableCell className="text-center">
-                                                    <Badge variant="outline">{line.quantity_pending}</Badge>
+                                                    <DataCell.Chip size="xs" intent="neutral">{line.quantity_pending}</DataCell.Chip>
                                                 </TableCell>
                                                 <TableCell className="text-center">
                                                     <LabeledInput
@@ -354,18 +370,20 @@ export function ReceiptModal({
                                                 </TableCell>
                                                 <TableCell>
                                                     {status && (
-                                                        <div className="flex items-center gap-1 text-xs">
-                                                            {status.type === 'error' && <AlertTriangle className="h-3 w-3 text-destructive" />}
-                                                            {status.type === 'success' && <CheckCircle2 className="h-3 w-3 text-success" />}
-                                                            {status.type === 'warning' && <AlertTriangle className="h-3 w-3 text-warning" />}
-                                                            <span className={
-                                                                status.type === 'error' ? 'text-destructive' :
-                                                                    status.type === 'success' ? 'text-success' :
-                                                                        'text-warning'
-                                                            }>
-                                                                {status.message}
-                                                            </span>
-                                                        </div>
+                                                        <DataCell.Chip
+                                                            intent={
+                                                                status.type === 'error' ? 'destructive' :
+                                                                    status.type === 'success' ? 'success' :
+                                                                        'warning'
+                                                            }
+                                                            size="xs"
+                                                            className="flex items-center gap-1 w-fit"
+                                                        >
+                                                            {status.type === 'error' && <AlertTriangle className="h-3 w-3" />}
+                                                            {status.type === 'success' && <CheckCircle2 className="h-3 w-3" />}
+                                                            {status.type === 'warning' && <AlertTriangle className="h-3 w-3" />}
+                                                            <span>{status.message}</span>
+                                                        </DataCell.Chip>
                                                     )}
                                                 </TableCell>
                                             </TableRow>

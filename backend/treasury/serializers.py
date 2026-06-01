@@ -512,6 +512,7 @@ class BankStatementSerializer(serializers.ModelSerializer):
     class Meta:
         model = BankStatement
         fields = '__all__'
+        read_only_fields = ['id', 'status']
 
 
 class BankStatementListSerializer(serializers.ModelSerializer):

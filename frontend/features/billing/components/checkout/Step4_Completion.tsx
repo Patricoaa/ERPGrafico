@@ -4,10 +4,9 @@ import { showApiError } from "@/lib/errors"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Loader2, CheckCircle2, Wallet, ArrowRight, Printer, FileText } from "lucide-react"
-import api from "@/lib/api"
-import { toast } from "sonner"
+import { billingApi } from "../../api/billingApi"
 import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+import { Chip } from "@/components/shared"
 import { formatPlainDate } from "@/lib/utils"
 
 interface Step4_CompletionProps {
@@ -24,8 +23,8 @@ export function Step4_Completion({
     const handleComplete = async () => {
         try {
             setLoading(true)
-            const res = await api.post(`/billing/note-workflows/${(workflow as any).id}/complete/`)
-            onSuccess(res.data)
+            const result = await billingApi.completeNoteWorkflow((workflow as any).id)
+            onSuccess(result)
         } catch (error: unknown) {
             console.error("Error completing workflow:", error)
             showApiError(error, "Error al finalizar el proceso.")
@@ -54,9 +53,9 @@ export function Step4_Completion({
                             <Wallet className="h-5 w-5 text-primary" />
                             <span className="font-black text-xs uppercase tracking-widest">Resumen de Liquidación</span>
                         </div>
-                        <Badge className="bg-primary text-primary-foreground font-black text-[10px] py-0.5">
+                        <Chip intent="primary" size="sm" className="py-0.5">
                             {invoice.dte_type_display}
-                        </Badge>
+                        </Chip>
                     </div>
 
                     <div className="p-8 space-y-6">
@@ -95,7 +94,7 @@ export function Step4_Completion({
                 <Button
                     onClick={handleComplete}
                     disabled={loading}
-                    className="group w-full py-8 rounded-sm font-black text-lg transition-all hover:scale-[1.01] active:scale-[0.99] shadow-md hover:shadow-primary/30"
+                    className="group w-full py-8 rounded-sm font-black text-lg transition-all hover:scale-[1.01] active:scale-[0.99] shadow-md"
                 >
                     {loading ? (
                         <>

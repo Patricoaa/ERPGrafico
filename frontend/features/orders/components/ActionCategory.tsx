@@ -3,31 +3,36 @@
 import { showApiError, getErrorMessage } from "@/lib/errors"
 import { useState, useEffect, forwardRef, useImperativeHandle, Suspense } from "react"
 import { cn } from "@/lib/utils"
-import { Badge } from "@/components/ui/badge"
+import { ActionConfirmModal, Chip } from '@/components/shared'
 import { ActionButton } from "./ActionButton"
-import { Action, ActionCategory as CategoryType } from "@/types/actions"
+import {ActionCategory as CategoryType} from "@/types/actions"
 import { getActionBadgeCount } from '@/lib/action-utils'
 import dynamic from "next/dynamic"
 import { toast } from "sonner"
-import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
-import { FormSkeleton } from "@/components/shared"
+
+import { SkeletonShell } from "@/components/shared"
 
 // Lazy Loaded Modals to satisfy PERF-01 (Prevent massive bundle on Hub Engine)
 // Lazy Loaded Modals - More robust import pattern to handle default/named exports and prevent load failures
 const DocumentCompletionModal = dynamic(() => import("@/components/shared/DocumentCompletionModal").then(m => m.DocumentCompletionModal))
-const DeliveryModal = dynamic(() => import("@/features/sales").then(m => m.DeliveryModal))
+const DeliveryDrawer = dynamic(() => import("@/features/sales").then(m => m.DeliveryDrawer))
 const ReceiptModal = dynamic(() => import("@/features/purchasing/components/ReceiptModal").then(m => m.ReceiptModal))
 const PaymentHistoryModal = dynamic(() => import("./PaymentHistoryModal").then(m => m.PaymentHistoryModal))
 const PaymentModal = dynamic(() => import("@/features/treasury/components/PaymentModal").then(m => m.PaymentModal))
 const PaymentReferenceModal = dynamic(() => import("@/features/treasury/components/PaymentReferenceModal").then(m => m.PaymentReferenceModal))
 const NoteCheckoutWizard = dynamic(() => import("@/features/billing/components/NoteCheckoutWizard").then(m => m.NoteCheckoutWizard))
 const DocumentListModal = dynamic(() => import("./DocumentListModal").then(m => m.DocumentListModal))
-const TransactionViewModal = dynamic(() => import("@/components/shared/TransactionViewModal").then(m => m.TransactionViewModal))
+import { LazyDrawer } from "@/features/_shared/transaction-drawer"
 const NoteLogisticsModal = dynamic(() => import("./NoteLogisticsModal").then(m => m.NoteLogisticsModal))
-const WorkOrderForm = dynamic(() => import("@/features/production/components/forms/WorkOrderForm").then(m => m.WorkOrderForm))
-import api from "@/lib/api"
+const WorkOrderWizard = dynamic(() => import("@/features/production").then(m => m.WorkOrderWizard))
+import {
+    useAnnulInvoice,
+    useDeleteInvoice,
+    useCreateInvoiceFromOrder,
+    useConfirmInvoice,
+    useRegisterPaymentMovement,
+} from "../hooks/useOrdersMutations"
 
-import { useRouter } from "next/navigation"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { Order, OrderLine } from "../types"
 
@@ -56,45 +61,15 @@ export const ActionCategory = forwardRef(({
     posSessionId = null,
     headless = false
 }: ActionCategoryProps, ref) => {
-    const router = useRouter()
-    const searchParams = import("next/navigation").then(m => {
-        try {
-            return m.useSearchParams()
-        } catch {
-            return null
-        }
-    })
-    
-    // We import statically on top or use the router
-    const { useSearchParams, usePathname } = require("next/navigation")
-    const pathname = usePathname()
-    const currentSearchParams = useSearchParams()
-
-    const transactionId = currentSearchParams.get('transaction')
-    const transactionType = currentSearchParams.get('transactionType')
-
     const [activeModal, setActiveModal] = useState<string | null>(null)
     const [viewConfig, setViewConfig] = useState<{ type: string, id: number | string } | null>(null)
 
-    useEffect(() => {
-        if (transactionId && transactionType && activeModal !== 'transaction-view') {
-            setViewConfig({ type: transactionType, id: transactionId })
-            setActiveModal('transaction-view')
-        }
-    }, [transactionId, transactionType])
-
     const openTransaction = (type: string, id: number | string) => {
-        const params = new URLSearchParams(currentSearchParams.toString())
-        params.set('transaction', String(id))
-        params.set('transactionType', type)
-        router.push(`${pathname}?${params.toString()}`, { scroll: false })
+        setViewConfig({ type, id })
+        setActiveModal('transaction-view')
     }
 
     const closeTransaction = () => {
-        const params = new URLSearchParams(currentSearchParams.toString())
-        params.delete('transaction')
-        params.delete('transactionType')
-        router.replace(`${pathname}?${params.toString()}`, { scroll: false })
         setActiveModal(null)
         setViewConfig(null)
     }
@@ -134,6 +109,12 @@ export const ActionCategory = forwardRef(({
         handleActionClick
     }))
 
+    const annulInvoice = useAnnulInvoice()
+    const deleteInvoice = useDeleteInvoice()
+    const createInvoiceFromOrder = useCreateInvoiceFromOrder()
+    const confirmInvoice = useConfirmInvoice()
+    const registerPaymentMovement = useRegisterPaymentMovement()
+
     // Determine order type helper - supporting both Order and Note models
     const isSale = !!order?.customer_name || !!order?.customer || !!order?.sale_order
     const isPurchase = !!order?.supplier_name || !!order?.supplier || !!order?.purchase_order
@@ -160,7 +141,6 @@ export const ActionCategory = forwardRef(({
             triggerAction(actionId);
             return;
         }
-
 
         switch (actionId) {
             case 'complete-folio':
@@ -230,8 +210,7 @@ export const ActionCategory = forwardRef(({
 
         setIsProcessing(true)
         try {
-            await api.post(`/billing/invoices/${invoice.id}/annul/`, { force })
-            toast.success("Documento anulado correctamente")
+            await annulInvoice.mutateAsync({ id: Number(invoice.id), force })
             onActionSuccess?.()
         } catch (error: unknown) {
             console.error("Error annulling document:", error)
@@ -257,22 +236,14 @@ export const ActionCategory = forwardRef(({
     const handleRegenerateDocument = async () => {
         setIsProcessing(true)
         try {
-            // We need a dummy DTE_TYPE and PAYMENT_METHOD to init the draft, later the user can change it in the completion modal?
-            // Actually, create_from_order requires dte_type and payment_method. 
-            // We'll infer defaults or ask backend to handle a 'DRAFT' init.
-            // Since we want to open the "Complete Folio" modal which ASKS for dte_type, 
-            // maybe we should just create a placeholder draft.
-            // However, our backend create_from_order expects data.
-            // Let's try sending defaults, the user will confirm in the next step.
-
-            const response = await api.post('/billing/invoices/create_from_order/', {
+            const result = await createInvoiceFromOrder.mutateAsync({
                 order_id: order?.id,
                 order_type: isSale ? 'sale' : 'purchase',
-                dte_type: 'FACTURA_ELECTRONICA', // Default, will change in completion
+                dte_type: 'FACTURA_ELECTRONICA',
                 payment_method: 'CREDIT'
             })
 
-            setTempInvoiceId(response.data.id)
+            setTempInvoiceId((result as { id: number }).id)
             setActiveModal('complete-folio')
             onActionSuccess?.()
         } catch (error: unknown) {
@@ -300,8 +271,7 @@ export const ActionCategory = forwardRef(({
             onConfirm: async () => {
                 setIsProcessing(true)
                 try {
-                    await api.delete(`/billing/invoices/${draftInvoice.id}/`)
-                    toast.success("Borrador eliminado correctamente")
+                    await deleteInvoice.mutateAsync(Number(draftInvoice.id))
                     setConfirmModal(prev => ({ ...prev, open: false }))
                     onActionSuccess?.()
                 } catch (error: unknown) {
@@ -334,8 +304,7 @@ export const ActionCategory = forwardRef(({
                 (payload as Record<string, unknown>)[isSale ? 'sale_order' : 'purchase_order'] = order?.id
             }
 
-            await api.post('/treasury/payments/register_movement/', payload)
-            toast.success("Operación de tesorería registrada")
+            await registerPaymentMovement.mutateAsync(payload)
             closeModal()
             onActionSuccess?.()
         } catch (error: unknown) {
@@ -379,9 +348,7 @@ export const ActionCategory = forwardRef(({
                             )}
                             {category.label && <h3 className="font-heading font-extrabold uppercase text-xs tracking-wider">{category.label}</h3>}
                             {categoryBadgeCount > 0 && (
-                                <Badge variant="secondary" className="ml-auto text-[10px] h-5 rounded">
-                                    {categoryBadgeCount}
-                                </Badge>
+                                <Chip.Count value={categoryBadgeCount} size="sm" intent="neutral" className="ml-auto rounded" />
                             )}
                         </div>
                     )}
@@ -408,28 +375,27 @@ export const ActionCategory = forwardRef(({
                 </div>
             )}
 
-            {/* Modals with Suspense to prevent layout unmount on first load */}
-            <Suspense fallback={<FormSkeleton />}>
-                {activeModal === 'complete-folio' && (
-                <DocumentCompletionModal
-                    open={true}
-                    onOpenChange={closeModal}
-                    invoiceId={(tempInvoiceId || resolvedInvoices?.find((inv: any) => inv.status === 'DRAFT' || inv.number === 'Draft' || !inv.number)?.id) as number || 0}
-                    invoiceType={(tempInvoiceId ? "FACTURA_ELECTRONICA" : (resolvedInvoices?.find((inv: any) => inv.status === 'DRAFT' || inv.number === 'Draft' || !inv.number) as any)?.dte_type as string) || "FACTURA_ELECTRONICA"}
-                    contactId={(((order?.customer || order?.supplier) as Record<string, unknown>)?.id as number || (isSale ? (order as any).customer_id : (order as any).supplier_id)) as number || 0}
-                    isPurchase={isPurchase}
-                    onComplete={async (invoiceId, formData) => {
-                        if (!invoiceId) {
-                            toast.error("Error: No se pudo identificar el borrador de la factura.")
-                            throw new Error("Missing invoice ID")
-                        }
-                        await api.post(`/billing/invoices/${invoiceId}/confirm/`, formData, {
-                            headers: { 'Content-Type': 'multipart/form-data' }
-                        })
-                    }}
-                    onSuccess={() => { closeModal(); onActionSuccess?.() }}
-                />
-            )}
+             {/* Modals with Suspense to prevent layout unmount on first load */}
+             <SkeletonShell isLoading={!!activeModal} ariaLabel="Cargando modal de acción">
+                 <Suspense fallback={<div />}>
+                     {activeModal === 'complete-folio' && (
+                     <DocumentCompletionModal
+                         open={true}
+                         onOpenChange={closeModal}
+                         invoiceId={(tempInvoiceId || resolvedInvoices?.find((inv: any) => inv.status === 'DRAFT' || inv.number === 'Draft' || !inv.number)?.id) as number || 0}
+                         invoiceType={(tempInvoiceId ? "FACTURA_ELECTRONICA" : (resolvedInvoices?.find((inv: any) => inv.status === 'DRAFT' || inv.number === 'Draft' || !inv.number) as any)?.dte_type as string) || "FACTURA_ELECTRONICA"}
+                         contactId={(((order?.customer || order?.supplier) as Record<string, unknown>)?.id as number || (isSale ? (order as any).customer_id : (order as any).supplier_id)) as number || 0}
+                         isPurchase={isPurchase}
+                          onComplete={async (invoiceId, formData) => {
+                              if (!invoiceId) {
+                                  toast.error("Error: No se pudo identificar el borrador de la factura.")
+                                  throw new Error("Missing invoice ID")
+                              }
+                              await confirmInvoice.mutateAsync({ id: invoiceId, formData: formData as unknown as Record<string, unknown> })
+                          }}
+                         onSuccess={() => { closeModal(); onActionSuccess?.() }}
+                     />
+                 )}
 
             {(activeModal === 'register-delivery' || activeModal === 'register-reception' || activeModal === 'confirm-service-delivery' || activeModal === 'register-merchandise-return') && (
                 order?.dte_type ? (
@@ -441,11 +407,12 @@ export const ActionCategory = forwardRef(({
                     />
                 ) : (
                     isSale ? (
-                        <DeliveryModal
+                        <DeliveryDrawer
                             open={true}
                             onOpenChange={closeModal}
                             orderId={order?.id}
                             onSuccess={() => { closeModal(); onActionSuccess?.() }}
+                            filterType={activeModal === 'confirm-service-delivery' ? 'SERVICE' : 'ALL'}
                         />
                     ) : (
                         <ReceiptModal
@@ -503,14 +470,13 @@ export const ActionCategory = forwardRef(({
             )}
 
             {activeModal === 'transaction-view' && viewConfig && (
-                <TransactionViewModal
+                <LazyDrawer
+                    type={viewConfig.type}
+                    id={viewConfig.id}
                     open={true}
                     onOpenChange={(open) => !open && closeTransaction()}
-                    type={viewConfig.type as any}
-                    id={viewConfig.id as any}
                 />
             )}
-
             {activeModal === 'view-work-orders' && (
                 <DocumentListModal
                     open={true}
@@ -524,34 +490,46 @@ export const ActionCategory = forwardRef(({
             )}
 
             {activeModal === 'create-work-order' && (
-                <WorkOrderForm
+                <WorkOrderWizard
                     open={true}
                     onOpenChange={closeModal}
-                    initialData={{
-                        sale_order: order?.id?.toString(),
-                        // Find the first manufacturable line that doesn't have an active OT
-                        sale_line: (order.lines || order.items || []).find((l: OrderLine) =>
-                            l.product_type === 'MANUFACTURABLE' &&
-                            l.requires_advanced_manufacturing &&
-                            !((l as any).work_order_summary)
-                        )?.id?.toString()
+                    mode={{
+                        kind: 'create',
+                        defaultOtType: 'LINKED',
+                        initialData: {
+                            sale_order: order?.id?.toString(),
+                            sale_line: (order.lines || order.items || []).find((l: OrderLine) =>
+                                l.product_type === 'MANUFACTURABLE' &&
+                                l.requires_advanced_manufacturing &&
+                                !((l as any).work_order_summary)
+                            )?.id?.toString()
+                        }
                     }}
                     onSuccess={() => {
                         closeModal()
                         onActionSuccess?.()
                     }}
                 />
-            )}
-            <ActionConfirmModal
-                open={confirmModal.open}
-                onOpenChange={(open) => setConfirmModal(prev => ({ ...prev, open }))}
-                title={confirmModal.title}
-                description={confirmModal.description}
-                onConfirm={confirmModal.onConfirm}
-                variant={confirmModal.variant}
-                confirmText={confirmModal.confirmText}
-            />
-            </Suspense>
+             )}
+             {activeModal === 'transaction-view' && viewConfig && (
+                 <LazyDrawer
+                     type={viewConfig.type}
+                     id={viewConfig.id}
+                     open={true}
+                     onOpenChange={(open) => !open && closeTransaction()}
+                 />
+             )}
+             <ActionConfirmModal
+                 open={confirmModal.open}
+                 onOpenChange={(open) => setConfirmModal(prev => ({ ...prev, open }))}
+                 title={confirmModal.title}
+                 description={confirmModal.description}
+                 onConfirm={confirmModal.onConfirm}
+                 variant={confirmModal.variant}
+                 confirmText={confirmModal.confirmText}
+             />
+             </Suspense>
+         </SkeletonShell>
         </>
     )
 })

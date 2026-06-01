@@ -1,6 +1,5 @@
 "use client"
 
-import { useState } from "react"
 import {
     Accordion,
     AccordionContent,
@@ -12,49 +11,46 @@ import {
     CalendarIcon,
     User,
     FileText,
-    MessageSquare,
-    Send,
-    History
 } from "lucide-react"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { CommentSystem } from "@/components/shared/CommentSystem"
+import { CommentSystem } from '@/components/shared'
 import { formatPlainDate, cn } from "@/lib/utils"
 import type { WorkOrder } from "../types"
 
-interface Comment {
-    user: string
-    text: string
-    timestamp: string
-}
+import { useWorkOrderComments } from "../hooks/useWorkOrderComments"
 
 interface WizardRightSidebarProps {
     order: WorkOrder
     viewingStepIndex: number
     productName: string
     stageData: WorkOrder['stage_data']
-    onAddComment: (text: string) => void
-    comments: Comment[]
 }
 
 export function WizardRightSidebar({
     order,
-    viewingStepIndex,
     productName,
     stageData,
-    onAddComment,
-    comments = []
 }: WizardRightSidebarProps) {
+    const { comments, addComment, isAdding } = useWorkOrderComments(order.id)
+    
+    // Map backend comments to the format expected by CommentSystem
+    const mappedComments = comments.map(c => ({
+        user: c.user_name,
+        text: c.text,
+        timestamp: c.created_at,
+        source: c.source_label
+    }))
+
     const techSpecs = [
-        { label: "Pre-Impresión", value: stageData?.prepress_specs || order?.specifications_prepress },
+        { label: "Pre-Impresión", value: stageData?.prepress_specs },
         { label: "Diseño Requerido", value: stageData?.design_needed ? "SÍ" : "NO" },
         { label: "Folio Inicial", value: stageData?.folio_start },
-        { label: "Impresión", value: stageData?.press_specs || order?.specifications_press },
-        { label: "Post-Impresión", value: stageData?.postpress_specs || order?.specifications_postpress },
-        { label: "General", value: order?.specifications }
+        { label: "Impresión", value: stageData?.press_specs },
+        { label: "Post-Impresión", value: stageData?.postpress_specs },
     ].filter(s => s.value)
 
     return (
-        <div className="w-80 border-l bg-muted/5 flex flex-col h-full min-h-0 overflow-hidden hidden lg:flex shrink-0">
+        <div className="w-80 border-l flex flex-col h-full min-h-0 overflow-hidden hidden lg:flex shrink-0">
             <ScrollArea className="flex-1 w-full min-h-0">
                 <Accordion type="multiple" defaultValue={["specs", "info", "comments"]} className="w-full p-4 space-y-4">
                     {/* Technical Specs - Moved to top for operators */}
@@ -173,8 +169,8 @@ export function WizardRightSidebar({
                         </AccordionTrigger>
                         <AccordionContent className="pt-2">
                             <CommentSystem
-                                comments={comments}
-                                onAddComment={onAddComment}
+                                comments={mappedComments}
+                                onAddComment={addComment}
                                 placeholder="Agregar observación interna..."
                                 emptyMessage="No hay observaciones aún"
                                 maxHeight="none"

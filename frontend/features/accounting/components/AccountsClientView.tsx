@@ -4,23 +4,25 @@ import React, { useState, useEffect, useRef } from "react"
 import {
     ColumnDef
 } from "@tanstack/react-table"
-import { DataTable } from "@/components/ui/data-table"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
-import { Book, Trash2, Pencil, Plus } from "lucide-react"
+import { ActionConfirmModal, DataTable, StatusBadge } from '@/components/shared'
+import { DataTableColumnHeader } from '@/components/shared'
+import {Book, Trash2, Pencil} from "lucide-react"
 import { IconButton } from "@/components/shared"
 
-import { AccountForm } from "@/features/finance/components/AccountForm"
-import { LedgerModal } from "@/features/accounting/components/LedgerModal"
+import { AccountDrawer } from "@/features/finance/components/AccountDrawer"
+import { LedgerDrawer } from "@/features/accounting/components/LedgerDrawer"
 import { useAccounts } from "@/features/accounting/hooks/useAccounts"
 import { Account } from "@/features/accounting/types"
-import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
-import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+import { DataCell, createActionsColumn } from '@/components/shared'
+
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { ChevronRight, ChevronDown } from "lucide-react"
 import { buildAccountTree } from "../utils/accountTree"
-import { StatusBadge } from "@/components/shared/StatusBadge"
+
 import { ActivitySidebar } from "@/features/audit/components"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
+import { SmartSearchBar, useSmartSearch } from "@/components/shared"
+import { accountSearchDef } from "../searchDef"
 
 interface AccountsClientViewProps {
     externalOpen?: boolean
@@ -29,7 +31,8 @@ interface AccountsClientViewProps {
 }
 
 export function AccountsClientView({ externalOpen, onExternalOpenChange, createAction }: AccountsClientViewProps) {
-    const { accounts: flatAccounts, isLoading, refetch, deleteAccount } = useAccounts()
+    const { filters } = useSmartSearch(accountSearchDef)
+    const { accounts: flatAccounts, isLoading, refetch, deleteAccount } = useAccounts({ filters })
     const [deleteTarget, setDeleteTarget] = useState<number | null>(null)
     const [isFormOpen, setIsFormOpen] = useState(false)
     const [editingAccount, setEditingAccount] = useState<Account | null>(null)
@@ -58,15 +61,18 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
         endpoint: '/accounting/accounts'
     })
 
-    // Open edit form if ?selected= is present (ADR-0020)
+    // Open edit form if ?selected= is present (ADR-0020).
+    // Depends ONLY on selectedFromUrl — see CategoryList for explanation
+    // of why isFormOpen/editingAccount must NOT be in the dependency array.
     useEffect(() => {
-        if (selectedFromUrl && (!isFormOpen || editingAccount?.id !== selectedFromUrl.id)) {
+        if (selectedFromUrl) {
             setEditingAccount(selectedFromUrl)
             setIsFormOpen(true)
+        } else {
+            setIsFormOpen(false)
+            setEditingAccount(null)
         }
-    }, [selectedFromUrl, isFormOpen, editingAccount])
-
-
+    }, [selectedFromUrl])
 
     const handleCloseModal = () => {
         setIsFormOpen(false)
@@ -109,7 +115,6 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
             setDeleteTarget(null)
         }
     }
-
 
     const columns: ColumnDef<Account>[] = React.useMemo(() => [
         {
@@ -181,7 +186,6 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
                 <div className="flex justify-center w-full">
                     <DataCell.Currency
                         value={parseFloat(row.getValue("debit_total") || "0")}
-                        className="text-muted-foreground font-normal"
                     />
                 </div>
             ),
@@ -195,7 +199,6 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
                 <div className="flex justify-center w-full">
                     <DataCell.Currency
                         value={parseFloat(row.getValue("credit_total") || "0")}
-                        className="text-muted-foreground font-normal"
                     />
                 </div>
             ),
@@ -209,7 +212,6 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
                 <div className="flex justify-center w-full">
                     <DataCell.Currency
                         value={parseFloat(row.getValue("balance") || "0")}
-                        className="font-bold"
                     />
                 </div>
             ),
@@ -218,7 +220,7 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
             renderActions: (account) => (
                 <>
                     {account.is_selectable && (
-                        <LedgerModal
+                        <LedgerDrawer
                             accountId={account.id}
                             accountName={account.name}
                             accountCode={account.code}
@@ -239,7 +241,6 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
                     <DataCell.Action
                         icon={Trash2}
                         title="Eliminar"
-                        className="text-muted-foreground/30 hover:text-destructive"
                         onClick={() => handleDelete(account.id)}
                     />
                 </>
@@ -248,37 +249,23 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
     ], [])
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-4 h-full flex flex-col">
+            <div className="flex-1 min-h-0">
+                <DataTable
+                    columns={columns}
+                    data={accounts}
+                    isLoading={isLoading}
+                    variant="embedded"
+                    defaultPageSize={500}
+                    getSubRows={(row: Account & { children?: unknown[] }) => row.children as (Account & { children?: unknown[] })[] | undefined}
+                    autoExpand={true}
+                    rightAction={null}
+                    createAction={createAction}
+                    leftAction={<SmartSearchBar searchDef={accountSearchDef} placeholder="Buscar por cuenta o código..." className="w-full" />}
+                />
+            </div>
 
-            <DataTable
-                columns={columns}
-                data={accounts}
-                isLoading={isLoading}
-                variant="embedded"
-                globalFilterFields={["code", "name"]}
-                searchPlaceholder="Buscar por código o nombre..."
-                facetedFilters={[
-                    {
-                        column: "account_type",
-                        title: "Tipo",
-                        options: [
-                            { label: "Activo", value: "ASSET" },
-                            { label: "Pasivo", value: "LIABILITY" },
-                            { label: "Patrimonio", value: "EQUITY" },
-                            { label: "Ingreso", value: "INCOME" },
-                            { label: "Gasto", value: "EXPENSE" },
-                        ],
-                    },
-                ]}
-                useAdvancedFilter={true}
-                defaultPageSize={500}
-                getSubRows={(row: Account & { children?: unknown[] }) => row.children as (Account & { children?: unknown[] })[] | undefined}
-                autoExpand={true}
-                rightAction={null}
-                createAction={createAction}
-            />
-
-            <AccountForm
+            <AccountDrawer
                 accounts={flatAccounts as any}
                 initialData={editingAccount as any}
                 parentId={formParentId || undefined}
@@ -287,10 +274,9 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
                         <ActivitySidebar entityId={editingAccount.id} entityType="account" />
                     ) : undefined
                 }
-                readonly={editingAccount ? !editingAccount.is_selectable : false}
+                mode="create"
                 onSuccess={() => {
                     refetch()
-                    handleCloseModal()
                 }}
                 open={isFormOpen}
                 onOpenChange={(open) => {

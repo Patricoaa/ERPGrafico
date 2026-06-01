@@ -2,7 +2,7 @@
 
 import { showApiError } from "@/lib/errors"
 import { useState, useEffect } from "react"
-import { BaseModal } from "@/components/shared/BaseModal"
+
 import { Button } from "@/components/ui/button"
 import { Step2_PurchaseDTE } from "./checkout/Step2_PurchaseDTE"
 import { Step3_PurchasePayment } from "./checkout/Step3_PurchasePayment"
@@ -10,7 +10,7 @@ import { Step4_Receipt } from "./checkout/Step4_Receipt"
 import { PurchaseOrderSummaryCard } from "./checkout/PurchaseOrderSummaryCard"
 import { PurchaseProcessSummarySidebar } from "./checkout/PurchaseProcessSummarySidebar"
 import { toast } from "sonner"
-import api from "@/lib/api"
+import { purchasingApi } from "../api/purchasingApi"
 import { PurchaseOrderAPI, CheckoutLine, DTEData, ReceiptData } from "../types"
 import { PaymentData } from "@/features/treasury/components/PaymentMethodCardSelector"
 
@@ -20,6 +20,7 @@ import { Step1_ProductSelection } from "./checkout/Step1_ProductSelection"
 import { Check, ChevronRight, ChevronLeft, Loader2, ShoppingCart } from "lucide-react"
 import { useTreasuryAccounts } from "@/hooks/useTreasuryAccounts"
 import { useServerDate } from "@/hooks/useServerDate"
+import { BaseModal, CancelButton, FormFooter } from '@/components/shared'
 
 interface PurchaseCheckoutWizardProps {
     open: boolean
@@ -50,6 +51,12 @@ export function PurchaseCheckoutWizard({
     const [currentOrderLines, setCurrentOrderLines] = useState<CheckoutLine[]>(orderLines)
     const [currentTotal, setCurrentTotal] = useState(total)
     const { dateString } = useServerDate()
+    
+    const [selectedSupplierId, setSelectedSupplierId] = useState<string | null>(initialSupplierId)
+    const [selectedSupplierName, setSelectedSupplierName] = useState("")
+    const [selectedWorkOrderId, setSelectedWorkOrderId] = useState<string | null>(null)
+    const [selectedWarehouseId, setSelectedWarehouseId] = useState(initialWarehouseId)
+    const [selectedWarehouseName, setSelectedWarehouseName] = useState("")
 
     // Sync internal order if prop changes
     useEffect(() => {
@@ -62,8 +69,7 @@ export function PurchaseCheckoutWizard({
             const fetchOrder = async () => {
                 setLoading(true)
                 try {
-                    const response = await api.get(`/purchasing/orders/${orderId}/`)
-                    const data = response.data
+                    const data = await purchasingApi.getOrder(orderId)
                     setInternalOrder(data)
 
                     const mappedLines = (data.lines || []).map((l: any) => ({
@@ -79,9 +85,9 @@ export function PurchaseCheckoutWizard({
                         product_type: l.product_type
                     }))
                     setCurrentOrderLines(mappedLines)
-                    setCurrentTotal(parseFloat(data.total))
-                    setSelectedSupplierId(data.supplier?.toString() || null)
-                    setSelectedWarehouseId(data.warehouse?.toString() || "")
+                    setCurrentTotal(parseFloat(data.total as string))
+                    setSelectedSupplierId((data.supplier as any)?.toString() || null)
+                    setSelectedWarehouseId((data.warehouse as any)?.toString() || "")
                 } catch (error) {
                     console.error("Error fetching order in wizard:", error)
                     toast.error("Error al cargar la orden")
@@ -132,12 +138,6 @@ export function PurchaseCheckoutWizard({
         setCurrentTotal(newTotal)
     }, [currentOrderLines, dteData.type])
 
-    const [selectedSupplierId, setSelectedSupplierId] = useState<string | null>(initialSupplierId)
-    const [selectedSupplierName, setSelectedSupplierName] = useState("")
-    const [selectedWorkOrderId, setSelectedWorkOrderId] = useState<string | null>(null)
-    const [selectedWarehouseId, setSelectedWarehouseId] = useState(initialWarehouseId)
-    const [selectedWarehouseName, setSelectedWarehouseName] = useState("")
-
     const [paymentData, setPaymentData] = useState<PaymentData>({
         method: null,
         amount: total,
@@ -168,8 +168,8 @@ export function PurchaseCheckoutWizard({
         if (selectedWarehouseId) {
             const fetchWarehouseName = async () => {
                 try {
-                    const response = await api.get(`/inventory/warehouses/${selectedWarehouseId}/`)
-                    setSelectedWarehouseName(response.data.name)
+                    const warehouseData = await purchasingApi.getWarehouse(selectedWarehouseId)
+                    setSelectedWarehouseName((warehouseData as any).name)
                 } catch (error) {
                     console.error("Failed to fetch warehouse name", error)
                 }
@@ -350,7 +350,7 @@ export function PurchaseCheckoutWizard({
                 formData.append('receipt_data', JSON.stringify(receiptPayload))
             }
 
-            await api.post('/purchasing/orders/purchase_checkout/', formData)
+            await purchasingApi.createOrder(formData)
 
             toast.success("Compra procesada correctamente")
             onComplete()
@@ -369,54 +369,53 @@ export function PurchaseCheckoutWizard({
         <BaseModal
             open={open}
             onOpenChange={onOpenChange}
+            variant="wizard"
+            icon={ShoppingCart}
+            title="Procesar Compra"
+            description="Asistente de compra rápida, facturación y recepción de inventario."
             size="full"
             hideScrollArea
             className="h-[90vh]"
             contentClassName="p-0"
-            title={
-                <div className="flex items-center gap-4">
-                    <ShoppingCart className="h-6 w-6 text-muted-foreground" />
-                    <div>
-                        <span className="font-black tracking-tighter uppercase block">Procesar Compra</span>
-                    </div>
-                </div>
-            }
             footer={
-                <div className="w-full flex justify-between">
-                    <Button
-                        variant="outline"
-                        onClick={handleBack}
-                        disabled={step === 1 || loading}
-                        className="h-12 px-6 font-bold"
-                    >
-                        <ChevronLeft className="mr-2 h-4 w-4" />
-                        Atrás
-                    </Button>
-
-                    {step < totalSteps ? (
-                        <Button 
-                            onClick={handleNext} 
-                            className="w-40 h-12 font-bold"
-                            disabled={step === 3 && !dteData.isPending && (!isFolioValid || !isPeriodValid)}
-                        >
-                            Siguiente
-                            <ChevronRight className="ml-2 h-4 w-4" />
-                        </Button>
-                    ) : (
-                        <Button
-                            onClick={handleFinish}
-                            className="w-48 h-12 bg-success hover:bg-success/90 text-white font-bold transition-all shadow-lg shadow-success/20"
-                            disabled={loading}
-                        >
-                            {loading ? (
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            ) : (
-                                <Check className="mr-2 h-4 w-4" />
-                            )}
-                            Finalizar Compra
-                        </Button>
-                    )}
-                </div>
+                <FormFooter
+                    leftActions={
+                        step > 1 ? (
+                            <CancelButton
+                                onClick={handleBack}
+                                disabled={loading}
+                            >
+                                <ChevronLeft className="mr-1.5 h-3.5 w-3.5" />
+                                Atrás
+                            </CancelButton>
+                        ) : undefined
+                    }
+                    actions={
+                        step < totalSteps ? (
+                            <Button 
+                                onClick={handleNext} 
+                                className="w-40"
+                                disabled={step === 3 && !dteData.isPending && (!isFolioValid || !isPeriodValid)}
+                            >
+                                Siguiente
+                                <ChevronRight className="ml-2 h-4 w-4" />
+                            </Button>
+                        ) : (
+                            <Button
+                                onClick={handleFinish}
+                                className="w-48 bg-success hover:bg-success/90 text-white font-bold transition-all shadow-lg shadow-success/20"
+                                disabled={loading}
+                            >
+                                {loading ? (
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                ) : (
+                                    <Check className="mr-2 h-4 w-4" />
+                                )}
+                                Finalizar Compra
+                            </Button>
+                        )
+                    }
+                />
             }
         >
             <div className="flex flex-1 overflow-hidden h-full">

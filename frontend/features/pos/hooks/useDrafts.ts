@@ -4,9 +4,13 @@ import { showApiError } from "@/lib/errors"
 
 import { useState, useEffect, useCallback } from 'react'
 import { usePOS } from '../contexts/POSContext'
+import { useRealtime } from '@/features/realtime'
 import type { CartItem, DraftCart } from '@/types/pos'
-import api from '@/lib/api'
+import { posApi } from '../api/posApi'
 import { toast } from 'sonner'
+
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { POS_KEYS } from './queryKeys'
 
 interface UseDraftsOptions {
     /** Browser session key for lock operations */
@@ -38,12 +42,12 @@ export function useDrafts(options: UseDraftsOptions = {}) {
     const [isLoading, setIsLoading] = useState(false)
 
     // Fetch all drafts
-    const fetchDrafts = useCallback(async () => {
+    const fetchDrafts = async () => {
         if (!currentSession?.id) return
         setIsLoading(true)
         try {
-            const res = await api.get(`/sales/pos-drafts/?pos_session_id=${currentSession.id}`)
-            const list = res.data.results || res.data
+            const data = await posApi.getDrafts({ pos_session_id: currentSession.id })
+            const list = Array.isArray(data) ? data : ((data as { results?: DraftCart[] })?.results ?? [])
             setDrafts(list)
 
             // Sync currentDraftId: if it's set but not in the list, it's stale
@@ -58,7 +62,54 @@ export function useDrafts(options: UseDraftsOptions = {}) {
         } finally {
             setIsLoading(false)
         }
-    }, [currentSession?.id, currentDraftId, setCurrentDraftId, setWizardState])
+    }
+
+    // Mutation hooks for draft operations
+    const queryClient = useQueryClient()
+    const { markLocalMutation } = useRealtime()
+
+    const updateDraftMutation = useMutation({
+        mutationFn: ({ draftId, draftData }: { draftId: number; draftData: Partial<DraftCart> }) =>
+            posApi.updateDraft(draftId, draftData),
+        onSuccess: (data, variables) => {
+            toast.success('Borrador actualizado')
+            // Invalidate draft lists and details
+            queryClient.invalidateQueries({ queryKey: POS_KEYS.drafts.lists() })
+            queryClient.invalidateQueries({ queryKey: POS_KEYS.drafts.detail() })
+            queryClient.invalidateQueries({ queryKey: POS_KEYS.drafts.detailById(variables.draftId) })
+            markLocalMutation()
+        },
+        onError: (error: Error) => {
+            showApiError(error, 'Error al actualizar borrador')
+        }
+    })
+
+    const createDraftMutation = useMutation({
+        mutationFn: (draftData: Partial<DraftCart>) => posApi.createDraft(draftData),
+        onSuccess: (data, variables) => {
+            toast.success('Borrador creado')
+            // Invalidate draft lists
+            queryClient.invalidateQueries({ queryKey: POS_KEYS.drafts.lists() })
+            markLocalMutation()
+        },
+        onError: (error: Error) => {
+            showApiError(error, 'Error al crear borrador')
+        }
+    })
+
+    const deleteDraftMutation = useMutation({
+        mutationFn: (draftId: number) => posApi.deleteDraft(draftId),
+        onSuccess: (data, variables) => {
+            toast.success('Borrador eliminado')
+            // Invalidate draft lists and details
+            queryClient.invalidateQueries({ queryKey: POS_KEYS.drafts.lists() })
+            queryClient.invalidateQueries({ queryKey: POS_KEYS.drafts.detail() })
+            markLocalMutation()
+        },
+        onError: (error: Error) => {
+            showApiError(error, 'Error al eliminar borrador')
+        }
+    })
 
     // Save current cart as draft
     const saveDraft = useCallback(async (name?: string, silent = false, manualWizardState?: Record<string, unknown>) => {
@@ -89,29 +140,18 @@ export function useDrafts(options: UseDraftsOptions = {}) {
             let res;
             if (currentDraftId) {
                 // Update existing
-                try {
-                    res = await api.put(`/sales/pos-drafts/${currentDraftId}/`, draftData)
-                } catch (error) {
-                    const err = error as { response?: { status?: number } }
-                    if (err.response?.status === 404) {
-                        console.warn("Draft not found on server, falling back to new draft")
-                        setCurrentDraftId(null)
-                        // Retry as post
-                        res = await api.post('/sales/pos-drafts/', draftData)
-                        setCurrentDraftId(res.data.id)
-                        if (options.acquireLock) await options.acquireLock(res.data.id)
-                        if (!silent) {
-                            toast.success("Borrador guardado (nuevo)")
-                        }
-                    } else {
-                        throw err
-                    }
+                res = await updateDraftMutation.mutateAsync({
+                    draftId: currentDraftId,
+                    draftData
+                });
+                if (!silent) {
+                    toast.success("Borrador guardado")
                 }
             } else {
                 // Create new
-                res = await api.post('/sales/pos-drafts/', draftData)
-                setCurrentDraftId(res.data.id)
-                if (options.acquireLock) await options.acquireLock(res.data.id)
+                res = await createDraftMutation.mutateAsync(draftData);
+                setCurrentDraftId((res as any).id)
+                if (options.acquireLock) await options.acquireLock((res as any).id)
                 if (!silent) {
                     toast.success("Borrador guardado")
                 }
@@ -121,13 +161,6 @@ export function useDrafts(options: UseDraftsOptions = {}) {
 
             // Notify sync to pick up changes
             options.forceSync?.()
-
-            // Refresh drafts list without full loading indicator
-            api.get(`/sales/pos-drafts/?pos_session_id=${currentSession?.id}`).then(r => {
-                setDrafts(r.data.results || r.data)
-            })
-
-            return res.data
         } catch (error: unknown) {
             console.error("Error saving draft:", error)
             if (!silent) {
@@ -136,7 +169,7 @@ export function useDrafts(options: UseDraftsOptions = {}) {
         } finally {
             setIsSaving(false)
         }
-    }, [items, selectedCustomerId, wizardState, currentSession, currentDraftId, setCurrentDraftId, isLoading, options.browserSessionKey, options.forceSync])
+    }, [items, selectedCustomerId, wizardState, currentSession, currentDraftId, setCurrentDraftId, isLoading, options.browserSessionKey, options.forceSync, updateDraftMutation, createDraftMutation, options.acquireLock])
 
     // Load a draft into cart (with lock acquisition)
     const loadDraft = useCallback(async (draftId: number) => {
@@ -164,14 +197,12 @@ export function useDrafts(options: UseDraftsOptions = {}) {
                 await options.releaseLock(currentDraftId)
             }
 
-            const res = await api.get(`/sales/pos-drafts/${draftId}/?pos_session_id=${currentSession.id}`)
-            const draft = res.data
+            const draft = await posApi.getDraft(draftId) as any
 
             // Reconstruct cart items from draft
             const itemPromises = draft.items.map(async (draftItem: { product_id: number; quantity: number; uom_id: number; unit_price_net: number; unit_price_gross: number; manufacturing_data?: unknown }) => {
                 try {
-                    const productRes = await api.get(`/inventory/products/${draftItem.product_id}/`)
-                    const product = productRes.data
+                    const product = await posApi.getProduct(draftItem.product_id)
 
                     return {
                         ...product,
@@ -228,7 +259,7 @@ export function useDrafts(options: UseDraftsOptions = {}) {
     const deleteDraft = useCallback(async (draftId: number) => {
         if (!currentSession?.id) return
         try {
-            await api.delete(`/sales/pos-drafts/${draftId}/?pos_session_id=${currentSession.id}`)
+            await deleteDraftMutation.mutateAsync(draftId)
             toast.success("Borrador eliminado")
             await fetchDrafts()
             options.forceSync?.()
@@ -236,7 +267,7 @@ export function useDrafts(options: UseDraftsOptions = {}) {
             console.error("Error deleting draft:", error)
             toast.error("Error al eliminar borrador")
         }
-    }, [fetchDrafts, currentSession?.id, options.forceSync])
+    }, [fetchDrafts, currentSession?.id, options.forceSync, deleteDraftMutation])
 
     // Release lock on current draft (used when clearing cart or completing sale)
     const releaseCurrentLock = useCallback(async () => {

@@ -5,6 +5,7 @@ Handles resolutions, percentage calculations based on history, and journal entri
 from django.db import transaction
 from django.core.exceptions import ValidationError
 from django.utils import timezone
+from django.contrib.contenttypes.models import ContentType
 from decimal import Decimal, ROUND_HALF_UP
 
 from contacts.models import Contact
@@ -500,6 +501,8 @@ class ProfitDistributionService:
             description=f"Pago Dividendos - Ejercicio {resolution.fiscal_year} (Acta: {resolution.acta_number})",
             date=timezone.now().date(),
             status=JournalEntry.Status.POSTED,
+            source_content_type=ContentType.objects.get_for_model(ProfitDistributionResolution),
+            source_object_id=resolution.id,
         )
         
         # 1. Credit Treasury Account

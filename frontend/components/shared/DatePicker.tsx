@@ -45,13 +45,26 @@ export function DatePicker({
           {date ? format(date, "PPP", { locale: es }) : <span>{placeholder}</span>}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+      <PopoverContent 
+        className="w-[var(--radix-popover-trigger-width)] min-w-[276px] max-w-[320px] p-0" 
+        align="start"
+        onInteractOutside={(e) => {
+          // Prevent closing when clicking elements that get unmounted during navigation (like month arrows)
+          const target = e.target as HTMLElement;
+          if (target && !document.body.contains(target)) {
+            e.preventDefault();
+          }
+        }}
+      >
         <Calendar
           mode="single"
           selected={date}
           onSelect={onDateChange}
           initialFocus
           locale={es}
+          captionLayout="dropdown"
+          startMonth={new Date(new Date().getFullYear() - 10, 0)}
+          endMonth={new Date(new Date().getFullYear() + 10, 11)}
         />
       </PopoverContent>
     </Popover>

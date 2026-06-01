@@ -1,12 +1,11 @@
 "use client"
 
 import React from "react"
-import { BaseModal } from "@/components/shared/BaseModal"
+import { BaseModal, Chip, CancelButton, SubmitButton, FormFooter } from "@/components/shared"
 import { Button } from "@/components/ui/button"
-import { CancelButton, SubmitButton } from "@/components/shared"
-import { AlertCircle, ExternalLink, Package } from "lucide-react"
+import {AlertCircle, ExternalLink} from "lucide-react"
 import Link from "next/link"
-import { Loader2, RefreshCcw } from "lucide-react"
+import {RefreshCcw} from "lucide-react"
 
 export interface Restriction {
     type: string
@@ -39,29 +38,29 @@ export function ArchivingRestrictionsModal({
             open={open}
             onOpenChange={onOpenChange}
             size="sm"
-            title={
-                <div className="flex items-center gap-2 text-destructive">
-                    <AlertCircle className="h-5 w-5" />
-                    No se puede archivar el producto
-                </div>
-            }
+            icon={<AlertCircle className="h-5 w-5 text-destructive" />}
+            title="No se puede archivar el producto"
             footer={
-                <div className="flex gap-2 w-full justify-end">
-                    <CancelButton onClick={() => onOpenChange(false)} className="flex-1 sm:flex-none">
-                        Cerrar
-                    </CancelButton>
-                    {onRetry && (
-                        <SubmitButton
-                            onClick={onRetry}
-                            loading={isRetrying}
-                            className="flex-1 sm:flex-none"
-                            icon={<RefreshCcw className="h-4 w-4 mr-2" />}
-                            type="button"
-                        >
-                            Reintentar Archivado
-                        </SubmitButton>
-                    )}
-                </div>
+                <FormFooter
+                    actions={
+                        <>
+                            <CancelButton onClick={() => onOpenChange(false)} className="flex-1 sm:flex-none">
+                                Cerrar
+                            </CancelButton>
+                            {onRetry && (
+                                <SubmitButton
+                                    onClick={onRetry}
+                                    loading={isRetrying}
+                                    className="flex-1 sm:flex-none"
+                                    icon={<RefreshCcw className="h-4 w-4 mr-2" />}
+                                    type="button"
+                                >
+                                    Reintentar Archivado
+                                </SubmitButton>
+                            )}
+                        </>
+                    }
+                />
             }
         >
             <div className="space-y-4 py-2">
@@ -77,9 +76,7 @@ export function ArchivingRestrictionsModal({
                         >
                             <div className="space-y-1">
                                 <div className="flex items-center gap-2">
-                                    <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded-[0.25rem] border border-border bg-muted/50 text-muted-foreground whitespace-nowrap">
-                                        {restriction.label}
-                                    </span>
+                                    <Chip size="xs">{restriction.label}</Chip>
                                 </div>
                                 <p className="text-sm text-muted-foreground">
                                     {restriction.description}

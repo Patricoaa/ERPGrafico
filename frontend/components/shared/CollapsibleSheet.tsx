@@ -21,6 +21,9 @@ interface CollapsibleSheetProps {
     pushOffset?: number
     size?: "sm" | "md" | "lg" | "xl" | "full"
     allowOverflow?: boolean
+    variant?: "module" | "global"
+    hideTab?: boolean
+    priority?: number
 }
 
 export function CollapsibleSheet({
@@ -35,12 +38,16 @@ export function CollapsibleSheet({
     forceCollapse = false,
     fullWidth = 500,
     hideOverlay = true,
-    pushOffset = 0,
     size,
-    allowOverflow = false
+    allowOverflow = false,
+    variant = "module",
+    hideTab,
+    priority = 20
 }: CollapsibleSheetProps) {
     const { registerSheet, unregisterSheet, getSheetOffset, isSheetCollapsed, getSheetIndex } = useGlobalModals()
-    const [isMounted, setIsMounted] = useState(false)
+    const [, setIsMounted] = useState(false)
+
+
 
     // Map named sizes to pixel widths
     const sizeMap: Record<string, number> = {
@@ -60,16 +67,18 @@ export function CollapsibleSheet({
 
     useEffect(() => {
         if (open) {
-            registerSheet(sheetId, calculatedWidth, forceCollapse)
+            registerSheet(sheetId, calculatedWidth, priority, forceCollapse)
         } else {
             unregisterSheet(sheetId)
         }
         return () => unregisterSheet(sheetId)
-    }, [open, sheetId, calculatedWidth, forceCollapse, registerSheet, unregisterSheet])
+    }, [open, sheetId, calculatedWidth, priority, forceCollapse, registerSheet, unregisterSheet])
 
     const isCollapsed = isSheetCollapsed(sheetId)
     const offset = getSheetOffset(sheetId)
     const stackIndex = getSheetIndex(sheetId)
+
+
     
     // PERF-07: DOM Pruning Engine
     // Detaches the subtree from CSS layout calculations without unmounting React instances immediately.
@@ -111,9 +120,10 @@ export function CollapsibleSheet({
     if (!isMounted || !shouldMount) return null
 
     return (
-        <Sheet open={true} modal={false}>
+        <Sheet open={open || isCollapsed} modal={false}>
             <SheetContent
             side={side}
+            data-sheet-id={sheetId}
             className={cn(
                 "p-0 flex flex-col shadow-2xl overflow-visible", // Removed transition-all to allow inline style only
                 "top-20 bottom-4 right-4 h-[calc(100vh-6rem)] border border-white/5 rounded-xl",
@@ -130,46 +140,46 @@ export function CollapsibleSheet({
             style={{
                 transform: (!open || isCollapsed) ? `translateX(calc(100% - ${offset}px))` : 'translateX(0)',
                 zIndex: 40 + (!open || isCollapsed ? 0 : 5), // Below action modals (z-50) but above page content
-                // width and right are now handled by the .right-0 Repulsion System in globals.css
-                // This ensures perfect synchronization with the GlobalHubPanel without React latency.
                 // If full size, use 100vw but keep offset for layering if needed
                 maxWidth: size === "full" ? '100vw' : calculatedWidth,
                 width: size === "full" ? '100vw' : calculatedWidth,
-                transition: (!open && !isCollapsed) ? 'none' : 'transform 500ms cubic-bezier(0.16, 1, 0.3, 1), margin-right 500ms cubic-bezier(0.16, 1, 0.3, 1), width 500ms cubic-bezier(0.16, 1, 0.3, 1)'
-            }}
+                '--stack-offset': `${offset}px`
+            } as React.CSSProperties}
         >
             <SheetTitle className="sr-only">{tabLabel}</SheetTitle>
             <SheetDescription className="sr-only">Panel lateral para {tabLabel}</SheetDescription>
 
             {/* Vertical Tab (Solapa) - Only visible when collapsed AND open */}
-            <div
-                onClick={() => isCollapsed && onOpenChange(true)}
-                className={cn(
-                    "absolute top-0 right-full w-[42px] h-[180px] bg-primary/95 backdrop-blur-md rounded-l-lg border-l border-y border-primary/20 shadow-[-15px_0_30px_rgba(0,0,0,0.3)] flex flex-col items-center justify-center cursor-pointer transition-all duration-500 overflow-hidden group",
-                    (isCollapsed && open) ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
-                )}
-                style={{
-                    top: verticalOffset,
-                    marginTop: '-90px', // Replaces translateY(-50%) to avoid webkit nested transform compositing bugs
-                }}
-                role="button"
-                tabIndex={isCollapsed && open ? 0 : -1}
-                onKeyDown={(e) => { if (isCollapsed && open && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); onOpenChange(true) } }}
-                aria-label={`Expandir panel ${tabLabel}`}
-            >
-                <div className="flex flex-col items-center gap-4 py-4 animate-in fade-in slide-in-from-right-4 duration-700">
-                    <Icon className="h-6 w-6 text-primary-foreground/90 group-hover:scale-110 transition-transform" />
-                    <div className="flex flex-col items-center whitespace-nowrap">
-                        <span className="text-[13px] font-black text-primary-foreground [writing-mode:vertical-rl] rotate-180 tracking-widest leading-none">
-                            {tabLabel}
-                        </span>
+            {!(hideTab !== undefined ? hideTab : variant === "global") && (
+                <div
+                    onClick={() => isCollapsed && onOpenChange(true)}
+                    className={cn(
+                        "absolute top-0 right-full w-[42px] h-[180px] bg-primary/95 backdrop-blur-md rounded-l-lg border-l border-y border-primary/20 shadow-[-15px_0_30px_rgba(0,0,0,0.3)] flex flex-col items-center justify-center cursor-pointer transition-all duration-500 overflow-hidden group",
+                        (isCollapsed && open) ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+                    )}
+                    style={{
+                        top: verticalOffset,
+                        marginTop: '-90px', // Replaces translateY(-50%) to avoid webkit nested transform compositing bugs
+                    }}
+                    role="button"
+                    tabIndex={isCollapsed && open ? 0 : -1}
+                    onKeyDown={(e) => { if (isCollapsed && open && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); onOpenChange(true) } }}
+                    aria-label={`Expandir panel ${tabLabel}`}
+                >
+                    <div className="flex flex-col items-center gap-4 py-4 animate-in fade-in slide-in-from-right-4 duration-700">
+                        <Icon className="h-6 w-6 text-primary-foreground/90 group-hover:scale-110 transition-transform" />
+                        <div className="flex flex-col items-center whitespace-nowrap">
+                            <span className="text-[13px] font-black text-primary-foreground [writing-mode:vertical-rl] rotate-180 tracking-widest leading-none">
+                                {tabLabel}
+                            </span>
+                        </div>
                     </div>
                 </div>
-            </div>
+            )}
 
             {/* Standard Wrapper for Content to handle opacity/grayscale */}
             <div className={cn(
-                "flex flex-col h-full bg-background rounded-xl overflow-hidden transition-opacity duration-300",
+                "flex flex-col h-full rounded-xl overflow-hidden transition-opacity duration-300 bg-card",
                 allowOverflow ? "overflow-visible" : "overflow-hidden",
                 ((!open || isCollapsed) && !forceCollapse) ? "opacity-0 pointer-events-none" : "opacity-100",
                 (isHidden && !forceCollapse) && "hidden" // Only prune from DOM after 500ms exit transition finishes

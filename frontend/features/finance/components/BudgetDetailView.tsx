@@ -1,22 +1,14 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
-import api from "@/lib/api"
+import { financeApi } from "../api/financeApi"
 import { Download, ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Progress } from "@/components/ui/progress"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table"
-import { PageHeader, LoadingFallback } from "@/components/shared"
+import { DataTable, PageHeader, LoadingFallback, MoneyDisplay, StatCard, DataCell } from "@/components/shared"
 import { toast } from "sonner"
 import Link from "next/link"
+import type { ColumnDef } from "@tanstack/react-table"
 
 interface BudgetDetailViewProps {
     budgetId: string
@@ -46,24 +38,55 @@ interface Budget {
     end_date: string;
 }
 
+const columns: ColumnDef<BudgetExecutionItem>[] = [
+    {
+        header: "Cuenta",
+        accessorKey: "account_name",
+        cell: ({ row }) => (
+            <div>
+                <div className="font-medium">{row.original.account_name}</div>
+                <div className="text-xs text-muted-foreground">{row.original.account_code}</div>
+            </div>
+        ),
+    },
+    {
+        header: "Presupuesto",
+        accessorKey: "budgeted",
+        cell: ({ row }) => (
+            <DataCell.Currency value={row.original.budgeted} digits={0} />
+        ),
+    },
+    {
+        header: "Real",
+        accessorKey: "actual",
+        cell: ({ row }) => (
+            <DataCell.Currency value={row.original.actual} digits={0} />
+        ),
+        meta: { align: "right" as const },
+    },
+    {
+        header: "Ejecución",
+        id: "percentage",
+        cell: ({ row }) => (
+            <DataCell.Progress value={row.original.percentage} subLabel={`${row.original.percentage.toFixed(0)}%`} />
+        ),
+    },
+]
+
 export function BudgetDetailView({ budgetId }: BudgetDetailViewProps) {
     const [executionData, setExecutionData] = useState<BudgetExecutionData | null>(null)
     const [budget, setBudget] = useState<Budget | null>(null)
     const [loading, setLoading] = useState(true)
 
-    useEffect(() => {
-        loadData()
-    }, [budgetId])
-
     const loadData = async () => {
         setLoading(true)
         try {
-            const [budgetRes, execRes] = await Promise.all([
-                api.get(`/accounting/budgets/${budgetId}/`),
-                api.get(`/accounting/budgets/${budgetId}/execution/`)
+            const [budgetData, execData] = await Promise.all([
+                financeApi.getBudgetDetail(Number(budgetId)),
+                financeApi.getBudgetExecution(Number(budgetId))
             ])
-            setBudget(budgetRes.data)
-            setExecutionData(execRes.data)
+            setBudget(budgetData)
+            setExecutionData(execData)
         } catch (err) {
             console.error(err)
             toast.error("Error al cargar datos del presupuesto")
@@ -72,13 +95,15 @@ export function BudgetDetailView({ budgetId }: BudgetDetailViewProps) {
         }
     }
 
+    useEffect(() => {
+        loadData()
+    }, [budgetId])
+
     const handleExport = async () => {
         if (!budget) return
         try {
-            const res = await api.get(`/accounting/budgets/${budget.id}/export_csv/`, {
-                responseType: 'blob'
-            })
-            const url = window.URL.createObjectURL(new Blob([res.data]))
+            const blob = await financeApi.exportBudgetCsv(budget.id)
+            const url = window.URL.createObjectURL(new Blob([blob]))
             const link = document.createElement('a')
             link.href = url
             link.setAttribute('download', `ejecucion_${budget.name}.csv`)
@@ -123,36 +148,21 @@ export function BudgetDetailView({ budgetId }: BudgetDetailViewProps) {
             />
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Card>
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">Presupuestado</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">
-                            {executionData.summary.total_budgeted.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
-                        </div>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">Ejecutado</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">
-                            {executionData.summary.total_actual.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
-                        </div>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">Desviación</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className={`text-2xl font-bold ${executionData.summary.total_variance < 0 ? 'text-destructive' : 'text-success'}`}>
-                            {executionData.summary.total_variance.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
-                        </div>
-                    </CardContent>
-                </Card>
+                <StatCard
+                    label="Presupuestado"
+                    value={<MoneyDisplay amount={executionData.summary.total_budgeted} digits={0} />}
+                    accent="muted"
+                />
+                <StatCard
+                    label="Ejecutado"
+                    value={<MoneyDisplay amount={executionData.summary.total_actual} digits={0} />}
+                    accent="muted"
+                />
+                <StatCard
+                    label="Desviación"
+                    value={<MoneyDisplay amount={executionData.summary.total_variance} digits={0} showColor />}
+                    accent="muted"
+                />
             </div>
 
             <Card>
@@ -160,38 +170,13 @@ export function BudgetDetailView({ budgetId }: BudgetDetailViewProps) {
                     <CardTitle>Detalle por Cuenta</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Cuenta</TableHead>
-                                <TableHead className="text-right">Presupuesto</TableHead>
-                                <TableHead className="text-right">Real</TableHead>
-                                <TableHead className="text-center w-[200px]">Ejecución</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {executionData.items.map((item, idx: number) => (
-                                <TableRow key={idx}>
-                                    <TableCell>
-                                        <div className="font-medium">{item.account_name}</div>
-                                        <div className="text-xs text-muted-foreground">{item.account_code}</div>
-                                    </TableCell>
-                                    <TableCell className="text-right font-mono">
-                                        {item.budgeted.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
-                                    </TableCell>
-                                    <TableCell className="text-right font-mono">
-                                        {item.actual.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
-                                    </TableCell>
-                                    <TableCell>
-                                        <div className="flex items-center gap-2">
-                                            <Progress value={Math.min(item.percentage, 100)} className="h-2" />
-                                            <span className="text-xs w-10 text-right">{item.percentage.toFixed(0)}%</span>
-                                        </div>
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
+                    <DataTable
+                        columns={columns}
+                        data={executionData.items}
+                        variant="embedded"
+                        hidePagination
+                        emptyState={{ title: "Sin datos", description: "No se encontraron cuentas presupuestarias" }}
+                    />
                 </CardContent>
             </Card>
         </div>

@@ -1,12 +1,9 @@
 "use client"
 
-import { lazy, Suspense } from "react"
-import { TableSkeleton, ToolbarCreateButton } from "@/components/shared"
-import { useRouter, useSearchParams } from "next/navigation"
 
-const ContactsClientView = lazy(() =>
-    import("@/features/contacts").then(m => ({ default: m.ContactsClientView }))
-)
+import { ToolbarCreateButton } from "@/components/shared"
+import { useRouter, useSearchParams } from "next/navigation"
+import { ContactsClientView } from "@/features/contacts"
 
 export default function ContactsPage() {
     const router = useRouter()
@@ -27,10 +24,6 @@ export default function ContactsPage() {
     )
 
     return (
-        <div className="pt-2">
-            <Suspense fallback={<TableSkeleton rows={10} columns={6} />}>
-                <ContactsClientView isNewModalOpen={isNewModalOpen} createAction={createAction} />
-            </Suspense>
-        </div>
+        <ContactsClientView isNewModalOpen={isNewModalOpen} createAction={createAction} />
     )
 }

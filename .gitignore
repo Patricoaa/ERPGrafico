@@ -10,23 +10,38 @@ backend/error_views.txt
 backend/full_error.txt
 backend/traceback.txt
 backend/traceback_utf8.txt
+backend/.pytest_cache/
+backend/.ruff_cache/
+backend/tmp/
 
 # Frontend
 frontend/node_modules/
 frontend/.next/
 frontend/out/
 frontend/build/
+*.tsbuildinfo
+next-env.d.ts
 
 # Environments
+.env
+.env.*
 !.env.example
 
 # IDEs
 .vscode/
 .idea/
+*.swp
+*~
 
 # OS
 .DS_Store
 Thumbs.db
-#claude
+
+# Tools
 .claude/*
 .agents/*
+memory/*
+
+# Scratch
+scratch.tsx
+scratch_rewrite.ts

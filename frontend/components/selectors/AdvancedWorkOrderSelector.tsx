@@ -2,7 +2,7 @@
 import { formatEntityDisplay, getEntityIcon } from "@/lib/entity-registry"
 
 import { useState, useEffect } from "react"
-import { Check, ChevronDown, Search, Loader2, Eye, Calendar, X } from "lucide-react"
+import { Check, ChevronDown, Search, Loader2, Eye, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -10,17 +10,13 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover"
-import api from "@/lib/api"
-import { useDebounce } from "@/hooks/use-debounce"
+import { useDebounce } from "@/hooks/useDebounce"
 import { format } from "date-fns"
-import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
+import { WorkOrderWizard } from "@/features/production"
 import { useWorkOrderSearch } from "@/features/production/hooks/useWorkOrderSearch"
-import { EmptyState } from "@/components/shared/EmptyState"
+import { EmptyState } from '@/components/shared'
 import { WorkOrder } from "@/types/entities"
 // Removed LabeledContainer import as it's now internal
-
-
-
 
 interface AdvancedWorkOrderSelectorProps {
     value?: string | number | null
@@ -229,11 +225,10 @@ export function AdvancedWorkOrderSelector({
             )}
 
             {previewId && (
-                <TransactionViewModal
+                <WorkOrderWizard
+                    mode={{ kind: 'manage', orderId: previewId }}
                     open={previewOpen}
                     onOpenChange={setPreviewOpen}
-                    type="work_order"
-                    id={previewId}
                 />
             )}
         </div>

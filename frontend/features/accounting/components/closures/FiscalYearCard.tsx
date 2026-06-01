@@ -1,7 +1,7 @@
 import React from 'react';
-import { EntityCard } from '@/components/shared/EntityCard';
-import { StatusBadge } from '@/components/shared/StatusBadge';
-import { SubmitButton, IconButton } from '@/components/shared';
+;
+;
+import { EmptyState, EntityCard, IconButton, StatusBadge, SubmitButton } from '@/components/shared';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -12,7 +12,7 @@ import {
 import { FiscalYear, AccountingPeriod } from '../../types';
 import { CalendarRange, Lock, MoreVertical, PlayCircle, Settings2, ShieldAlert } from 'lucide-react';
 import { PeriodGridItem } from './PeriodGridItem';
-import { EmptyState } from '@/components/shared/EmptyState';
+;
 import { formatPlainDate } from '@/lib/utils';
 
 interface FiscalYearCardProps {
@@ -45,26 +45,8 @@ export function FiscalYearCard({
     const status = fiscalYear?.status || 'OPEN';
     const isClosed = status === 'CLOSED';
 
-    const getStatusToken = (s: string) => {
-        switch (s) {
-            case 'OPEN': return 'success';
-            case 'CLOSING': return 'warning';
-            case 'CLOSED': return 'info';
-            default: return 'generic';
-        }
-    };
-
-    const getStatusLabel = (s: string) => {
-        switch (s) {
-            case 'OPEN': return 'Abierto';
-            case 'CLOSING': return 'En Cierre';
-            case 'CLOSED': return 'Cerrado';
-            default: return s;
-        }
-    };
-
     return (
-        <EntityCard className="mb-6 shadow-md border-2 hover:border-border cursor-default">
+        <EntityCard className="mb-6 cursor-default">
             <EntityCard.Header
                 title={
                     <div className="flex items-center gap-3">
@@ -77,7 +59,7 @@ export function FiscalYearCard({
                 subtitle={
                     <div className="flex flex-col gap-1 mt-1">
                         <div className="flex items-center gap-2">
-                            <StatusBadge status={getStatusToken(status)} label={getStatusLabel(status)} />
+                            <StatusBadge status={status} />
                         </div>
                         {isClosed && fiscalYear?.closed_at ? (
                             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">

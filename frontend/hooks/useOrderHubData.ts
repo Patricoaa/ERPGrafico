@@ -1,6 +1,5 @@
 "use client"
 
-import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import api from "@/lib/api"
 import { getNoteHubStatuses, getHubStatuses } from '@/features/orders/utils/status'
@@ -59,7 +58,6 @@ export function useOrderHubData({ orderId, invoiceId, type, enabled = true }: Us
     })
 
     const { order, activeInvoice } = data || { order: null, activeInvoice: null }
-
 
     const activeDoc = activeInvoice || order
     const isNoteMode = activeInvoice && ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(activeInvoice.dte_type)

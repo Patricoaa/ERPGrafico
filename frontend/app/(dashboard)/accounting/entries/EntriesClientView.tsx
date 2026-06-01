@@ -6,23 +6,30 @@ import {
 } from "@tanstack/react-table"
 
 import { toast } from "sonner"
-import { StatusBadge } from "@/components/shared"
-import { JournalEntryForm } from "@/features/accounting/components/JournalEntryForm"
+import { JournalEntryDrawer } from "@/features/accounting"
 import api from "@/lib/api"
-import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
-import { Trash2, CheckCircle, Eye, Pencil } from "lucide-react"
-import { DataTable } from "@/components/ui/data-table"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 
-import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
+import { CheckCircle, RotateCcw } from "lucide-react"
+import { DataTableView, DataTableColumnHeader } from '@/components/shared'
+import { DataCell, createActionsColumn, Chip } from '@/components/shared'
+
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
-
-import { useJournalEntries, type JournalEntry } from "@/features/accounting/hooks/useJournalEntries"
-import { useAccountingAccounts } from "@/features/accounting/hooks/useAccounts" 
+import { useJournalEntries, type JournalEntry } from "@/features/accounting"
+import { useAccountingAccounts } from "@/features/accounting"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
+import { useEntityRouteActions } from "@/hooks/useEntityRouteActions"
+import { SmartSearchBar, useSmartSearch } from "@/components/shared"
+import { journalEntrySearchDef } from "@/features/accounting/searchDef"
+
+interface EntriesPageProps {
+    externalOpen?: boolean
+    onExternalOpenChange?: (open: boolean) => void
+    createAction?: React.ReactNode
+}
 
 export default function EntriesPage({ externalOpen, onExternalOpenChange, createAction }: EntriesPageProps) {
-    const { entries, isLoading, refetch } = useJournalEntries()
+    const { filters } = useSmartSearch(journalEntrySearchDef)
+    const { entries, isLoading, refetch } = useJournalEntries(filters)
     const { accounts } = useAccountingAccounts({ filters: { is_leaf: true } })
     const [viewingTransaction, setViewingTransaction] = useState<{ type: 'journal_entry', id: number | string } | null>(null)
     const [isFormOpen, setIsFormOpen] = useState(false)
@@ -35,36 +42,29 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
     const pathname = usePathname()
     const searchParams = useSearchParams()
 
-    const { entity: selectedFromUrl, clearSelection: clearUrlSelected } = useSelectedEntity<JournalEntry>({
+    const { entity: selectedFromUrl } = useSelectedEntity<JournalEntry>({
         endpoint: '/accounting/entries'
     })
+    const { detailId, openSelected, openDetail, clearActions } = useEntityRouteActions()
 
-    // T-107: un solo efecto que ramifica por mode — evita flash visual cuando ambos
-    // efectos disparaban en el mismo render al recibir ?selected=42&mode=edit (ADR-0020)
+    // ?selected=<id> → abre el form de edición
     useEffect(() => {
         if (!selectedFromUrl) return
-        if (searchParams.get('mode') === 'edit') {
-            // Modo edición: abre el form directamente, cierra el viewer si estaba abierto
-            setEditingEntry(selectedFromUrl)
-            setIsFormOpen(true)
-            setViewingTransaction(null)
-        } else {
-            // Modo detalle: abre el viewer de transacción
-            setViewingTransaction({ type: 'journal_entry', id: selectedFromUrl.id })
-        }
-    }, [selectedFromUrl, searchParams])
-    const clearSelection = () => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.delete('selected')
-        params.delete('mode')
-        const query = params.toString()
-        router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
-    }
+        setEditingEntry(selectedFromUrl)
+        setIsFormOpen(true)
+        setViewingTransaction(null)
+    }, [selectedFromUrl])
 
-    const handleCloseModal = () => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.delete("modal")
-        router.push(`${pathname}?${params.toString()}`)
+    // ?detail=<id> → abre el visor de transacción (read-only)
+    useEffect(() => {
+        if (!detailId) return
+        setViewingTransaction({ type: 'journal_entry', id: Number(detailId) })
+        setIsFormOpen(false)
+        setEditingEntry(null)
+    }, [detailId])
+
+    const clearSelection = () => {
+        clearActions()
     }
 
     // Initialize/Cleanup mount guard
@@ -90,13 +90,17 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
         if (!open) {
             setEditingEntry(null)
             onExternalOpenChange?.(false)
-            clearSelection()
+            // Clean all action params + modal so URL doesn't stay ?modal=new forever
+            const params = new URLSearchParams(searchParams.toString())
+            let changed = false
+            for (const p of ['selected', 'detail', 'hub', 'modal'] as const) {
+                if (params.has(p)) { params.delete(p); changed = true }
+            }
+            if (changed) {
+                const query = params.toString()
+                router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
+            }
         }
-    }
-
-    const handleEditEntry = (entry: JournalEntry) => {
-        setEditingEntry(entry)
-        setIsFormOpen(true)
     }
 
     const handlePost = async (id: number) => {
@@ -122,17 +126,25 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
         }
     }
 
+    const handleReverse = async (id: number) => {
+        if (!confirm("¿Está seguro de reversar este asiento? Se creará un asiento de reversión.")) return
+        try {
+            await api.post(`/accounting/entries/${id}/reverse_entry/`)
+            toast.success("Asiento de reversión creado exitosamente")
+            refetch()
+        } catch (error) {
+            console.error("Error reversing entry:", error)
+            toast.error("Error al reversar el asiento")
+        }
+    }
+
     const columns: ColumnDef<JournalEntry>[] = useMemo(() => [
         {
-            accessorKey: "number",
+            accessorKey: "display_id",
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Folio" className="justify-center" />
             ),
-            cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <DataCell.DocumentId type="JOURNAL_ENTRY" number={row.getValue("number")} />
-                </div>
-            ),
+            cell: ({ row }) => <DataCell.Code>{row.getValue("display_id")}</DataCell.Code>,
         },
         {
             accessorKey: "date",
@@ -151,92 +163,81 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
                 <DataTableColumnHeader column={column} title="Descripción" className="justify-center" />
             ),
             cell: ({ row }) => (
-                <DataCell.Text className="text-center">
+                <DataCell.Text>
                     <span className="truncate max-w-[300px]">{row.getValue("description")}</span>
                 </DataCell.Text>
             )
         },
         {
-            accessorKey: "state",
+            accessorKey: "status",
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Estado" className="justify-center" />
             ),
-            cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <StatusBadge status={row.getValue("state")} />
-                </div>
+            cell: ({ row }) =>
+                <DataCell.Status status={row.getValue("status")} />,
+        },
+        {
+            id: "origin",
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Origen" className="justify-center" />
             ),
+            cell: ({ row }) => {
+                const entry = row.original
+                if (entry.is_manual) return <Chip size="sm" intent="neutral">Manual</Chip>
+                if (entry.reversal_of) return <Chip size="sm" intent="warning">Reversión</Chip>
+                return <Chip size="sm" intent="info">Automático</Chip>
+            },
+            enableSorting: false,
         },
         createActionsColumn<JournalEntry>({
             renderActions: (entry) => (
                 <>
-                    <DataCell.Action
-                        icon={Eye}
-                        title="Ver Detalle"
-                        onClick={() => {
-                            const params = new URLSearchParams(searchParams.toString())
-                            params.set('selected', String(entry.id))
-                            router.push(`${pathname}?${params.toString()}`, { scroll: false })
-                        }}
-                    />
-                    {entry.state === 'DRAFT' && (
-                        <>
-                            <DataCell.Action
-                                icon={Pencil}
-                                title="Editar"
-                                onClick={() => {
-                                    const params = new URLSearchParams(searchParams.toString())
-                                    params.set('selected', String(entry.id))
-                                    params.set('mode', 'edit') // Add a mode param to distinguish
-                                    router.push(`${pathname}?${params.toString()}`, { scroll: false })
-                                }}
-                            />
-                            <DataCell.Action
-                                icon={CheckCircle}
-                                title="Publicar"
-                                className="text-muted-foreground hover:text-success"
-                                onClick={() => handlePost(entry.id)}
-                            />
-                        </>
+                    {entry.status === 'DRAFT' ? (
+                        <DataCell.Action action="edit" onClick={() => openSelected(entry.id)} />
+                    ) : (
+                        <DataCell.Action action="detail" onClick={() => openDetail(entry.id)} />
                     )}
-                    <DataCell.Action
-                        icon={Trash2}
-                        title="Eliminar"
-                        className="text-muted-foreground hover:text-destructive"
-                        onClick={() => handleDelete(entry.id)}
-                    />
+                    {entry.status === 'DRAFT' && (
+                        <DataCell.Action
+                            icon={CheckCircle}
+                            title="Publicar"
+                            onClick={() => handlePost(entry.id)}
+                        />
+                    )}
+                    {entry.status === 'DRAFT' && (
+                        <DataCell.Action
+                            action="delete"
+                            onClick={() => handleDelete(entry.id)}
+                        />
+                    )}
+                    {(entry.status === 'POSTED' || entry.status === 'CLOSED') && entry.is_manual && (
+                        <DataCell.Action
+                            icon={RotateCcw}
+                            title="Reversar"
+                            onClick={() => handleReverse(entry.id)}
+                        />
+                    )}
                 </>
             )
         }),
-    ], [accounts])
+    ], [openSelected, openDetail, handlePost, handleDelete, handleReverse])
 
 
     return (
-        <div className="space-y-4">
-            <div className="pt-2">
-                <DataTable
+        <div className="h-full flex flex-col">
+            <div className="pt-2 flex-1 min-h-0">
+                <DataTableView
                     columns={columns}
                     data={entries}
                     isLoading={isLoading}
+                    entityLabel="accounting.journalentry"
                     variant="embedded"
-                    filterColumn="description"
-                    searchPlaceholder="Buscar por descripción..."
-                    facetedFilters={[
-                        {
-                            column: "state",
-                            title: "Estado",
-                            options: [
-                                { label: "Borrador", value: "DRAFT" },
-                                { label: "Publicado", value: "POSTED" },
-                            ],
-                        },
-                    ]}
-                    useAdvancedFilter={true}
+                    leftAction={<SmartSearchBar searchDef={journalEntrySearchDef} placeholder="Buscar asientos..." className="w-full" />}
                     defaultPageSize={20}
                     createAction={createAction}
                 />
 
-                <JournalEntryForm
+                <JournalEntryDrawer
                     accounts={accounts as any}
                     initialData={editingEntry as unknown as import('@/types/forms').JournalEntryInitialData | undefined}
                     onSuccess={() => {
@@ -248,7 +249,9 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
                 />
 
                 {viewingTransaction && (
-                    <TransactionViewModal
+                    <JournalEntryDrawer
+                        journalEntryId={Number(viewingTransaction.id)}
+                        mode="view"
                         open={!!viewingTransaction}
                         onOpenChange={(open) => {
                             if (!open) {
@@ -256,8 +259,6 @@ export default function EntriesPage({ externalOpen, onExternalOpenChange, create
                                 clearSelection()
                             }
                         }}
-                        type={viewingTransaction.type}
-                        id={viewingTransaction.id}
                     />
                 )}
             </div>

@@ -2,17 +2,16 @@
 
 import { showApiError } from "@/lib/errors"
 import React, { useState, useEffect, useMemo } from "react"
-import { GenericWizard, WizardStep } from "@/components/shared/GenericWizard"
+import { LabeledInput, LabeledSelect, PeriodValidationDateInput, GenericWizard, WizardStep, DataCell } from "@/components/shared"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
-import { LabeledInput, LabeledSelect, PeriodValidationDateInput } from "@/components/shared"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
 import { ProfitDistribution, ProfitDistributionLine } from "@/features/contacts/types/partner"
 import { accountingApi } from "@/features/accounting/api/accountingApi"
 import { FiscalYear } from "@/features/accounting/types"
 import { toast } from "sonner"
-import { formatCurrency } from "@/lib/utils"
-import { 
+
+import {
     PieChart,
     Calculator,
     CheckCircle2,
@@ -20,10 +19,10 @@ import {
     CalendarCheck2
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { 
-    Alert, 
-    AlertTitle, 
-    AlertDescription 
+import {
+    Alert,
+    AlertTitle,
+    AlertDescription
 } from "@/components/ui/alert"
 
 interface ModalProps {
@@ -36,7 +35,7 @@ interface ModalProps {
 export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialResolution }: ModalProps) {
     const [loading, setLoading] = useState(false)
     const [fiscalYears, setFiscalYears] = useState<FiscalYear[]>([])
-    
+
     // Step 1 Form
     const [formData, setFormData] = useState({
         fiscal_year_id: "",
@@ -77,7 +76,7 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
                 try {
                     const data = await accountingApi.getFiscalYears({ status: 'CLOSED' })
                     setFiscalYears(data)
-                    
+
                     const params = new URLSearchParams(window.location.search)
                     const yearParam = params.get('yearId')
                     if (yearParam) {
@@ -110,7 +109,7 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
                 notes: initialResolution.notes || ""
             })
             setLines(initialResolution.lines || [])
-            
+
             const dests: Record<number, DestinationAllocation[]> = {}
             initialResolution.lines?.forEach((l) => {
                 dests[l.id] = (l.destinations || []).map(d => ({
@@ -119,7 +118,7 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
                 }))
                 // if it's loss, auto assign
                 if (initialResolution.is_loss && dests[l.id].length === 0) {
-                     dests[l.id] = [{ destination: 'LOSS', amount: Math.abs(parseFloat(l.net_amount)) }]
+                    dests[l.id] = [{ destination: 'LOSS', amount: Math.abs(parseFloat(l.net_amount)) }]
                 }
             })
             setLineDestinations(dests)
@@ -156,10 +155,10 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
             } else {
                 res = await partnersApi.createProfitDistribution(payload)
             }
-            
+
             setDraftResolution(res)
             setLines(res.lines || [])
-            
+
             const dests: Record<number, DestinationAllocation[]> = {}
             res.lines?.forEach((l) => {
                 dests[l.id] = (l.destinations || []).map(d => ({
@@ -167,11 +166,11 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
                     amount: parseFloat(d.amount as unknown as string)
                 }))
                 if (res.is_loss && dests[l.id].length === 0) {
-                     dests[l.id] = [{ destination: 'LOSS', amount: Math.abs(parseFloat(l.net_amount)) }]
+                    dests[l.id] = [{ destination: 'LOSS', amount: Math.abs(parseFloat(l.net_amount)) }]
                 }
             })
             setLineDestinations(dests)
-            
+
             return true
         } catch (error: unknown) {
             showApiError(error, "Error al procesar distribución")
@@ -201,7 +200,7 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
                 line_id: parseInt(id),
                 destinations: lineDestinations[parseInt(id)].filter(d => d.amount > 0)
             }))
-            
+
             if (draftResolution) {
                 await partnersApi.updateProfitDistributionLines(draftResolution.id, updates)
             }
@@ -333,7 +332,7 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
                     <div className="grid grid-cols-2 gap-4">
                         <Card className="rounded-none border-dashed bg-card/50 shadow-sm p-4 bg-muted/20">
                             <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest mb-1">Monto a Distribuir</p>
-                            <p className="text-xl font-mono font-bold text-primary">{formatCurrency(draftResolution?.net_result || 0)}</p>
+                            <DataCell.Currency value={draftResolution?.net_result || 0} className="justify-start text-xl font-bold text-primary" />
                         </Card>
                         <Card className="rounded-none border-dashed bg-card/50 shadow-sm p-4 bg-muted/20">
                             <p className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest mb-1">Ejercicio</p>
@@ -350,10 +349,10 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
                                     <th className="px-3 py-3 text-right">Info Montos</th>
                                     {draftResolution?.is_profit ? (
                                         <>
-                                        <th className="px-2 py-3 w-[120px]">Dividendos ($)</th>
-                                        <th className="px-2 py-3 w-[120px]">Reinversión ($)</th>
-                                        <th className="px-2 py-3 w-[120px]">Retenido ($)</th>
-                                        <th className="px-3 py-3 w-[90px] text-right">Diferencia</th>
+                                            <th className="px-2 py-3 w-[120px]">Dividendos ($)</th>
+                                            <th className="px-2 py-3 w-[120px]">Reinversión ($)</th>
+                                            <th className="px-2 py-3 w-[120px]">Retenido ($)</th>
+                                            <th className="px-3 py-3 w-[90px] text-right">Diferencia</th>
                                         </>
                                     ) : (
                                         <th className="px-3 py-3">Absorción (Pérdida)</th>
@@ -365,9 +364,9 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
                                     const net = parseFloat(line.net_amount);
                                     const isCompensated = net <= 0 && draftResolution?.is_profit;
                                     const dests = lineDestinations[line.id] || [];
-                                    
+
                                     const getAmount = (type: string) => dests.find(d => d.destination === type)?.amount || 0;
-                                    
+
                                     const handleAmountChange = (type: string, val: string) => {
                                         const numVal = val === '' ? 0 : parseFloat(val);
                                         setLineDestinations(prev => {
@@ -381,16 +380,28 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
 
                                     const sumAllocated = dests.reduce((sum, d) => sum + d.amount, 0);
                                     const remaining = Math.abs(net) - sumAllocated;
-                                    
+
                                     return (
                                         <tr key={line.id} className="hover:bg-muted/30">
-                                            <td className="px-3 py-2 font-black">{line.partner_name}</td>
-                                            <td className="px-3 py-2 text-right font-bold text-muted-foreground">{line.percentage_at_date}%</td>
+                                            <td className="px-3 py-2">
+                                                <DataCell.Text className="justify-start text-left font-black">{line.partner_name}</DataCell.Text>
+                                            </td>
                                             <td className="px-3 py-2 text-right">
-                                                <div className="flex flex-col text-[10px]">
-                                                    <span className="text-success">Bruto: {formatCurrency(line.gross_amount)}</span>
-                                                    <span className="text-destructive">Retiros: {parseFloat(line.provisional_withdrawals_offset) > 0 ? `-${formatCurrency(line.provisional_withdrawals_offset)}` : '0'}</span>
-                                                    <span className="font-bold text-primary text-[11px]">Neto: {formatCurrency(line.net_amount)}</span>
+                                                <span className="font-bold text-muted-foreground">{line.percentage_at_date}%</span>
+                                            </td>
+                                            <td className="px-3 py-2 text-right">
+                                                <div className="flex flex-col text-[10px] items-end">
+                                                    <span className="text-success flex items-center gap-1">
+                                                        Bruto: <DataCell.Currency value={line.gross_amount} className="w-auto p-0 inline-flex font-mono text-[10px] text-success" />
+                                                    </span>
+                                                    <span className="text-destructive flex items-center gap-1">
+                                                        Retiros: {parseFloat(line.provisional_withdrawals_offset) > 0 ? (
+                                                            <DataCell.Currency value={-parseFloat(line.provisional_withdrawals_offset)} className="w-auto p-0 inline-flex font-mono text-[10px] text-destructive" />
+                                                        ) : '0'}
+                                                    </span>
+                                                    <span className="font-bold text-primary text-[11px] flex items-center gap-1">
+                                                        Neto: <DataCell.Currency value={line.net_amount} className="w-auto p-0 inline-flex font-mono text-[11px] font-bold text-primary" />
+                                                    </span>
                                                 </div>
                                             </td>
                                             {isCompensated ? (
@@ -399,43 +410,45 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
                                                 </td>
                                             ) : draftResolution?.is_profit ? (
                                                 <>
-                                                <td className="px-2 py-2">
-                                                    <Input 
-                                                        type="number"
-                                                        className="h-8 text-[11px] font-mono text-right"
-                                                        value={getAmount('DIVIDEND') || ''}
-                                                        onChange={(e) => handleAmountChange('DIVIDEND', e.target.value)}
-                                                        placeholder="0"
-                                                    />
-                                                </td>
-                                                <td className="px-2 py-2">
-                                                    <Input 
-                                                        type="number"
-                                                        className="h-8 text-[11px] font-mono text-right"
-                                                        value={getAmount('REINVEST') || ''}
-                                                        onChange={(e) => handleAmountChange('REINVEST', e.target.value)}
-                                                        placeholder="0"
-                                                    />
-                                                </td>
-                                                <td className="px-2 py-2">
-                                                    <Input 
-                                                        type="number"
-                                                        className="h-8 text-[11px] font-mono text-right"
-                                                        value={getAmount('RETAINED') || ''}
-                                                        onChange={(e) => handleAmountChange('RETAINED', e.target.value)}
-                                                        placeholder="0"
-                                                    />
-                                                </td>
-                                                <td className="px-3 py-2 text-right font-mono text-[11px]">
-                                                    <span className={Math.abs(remaining) <= 0.01 ? "text-success" : remaining < 0 ? "text-destructive" : "text-muted-foreground"}>
-                                                        {remaining > 0 ? '+' : ''}{formatCurrency(remaining)}
-                                                    </span>
-                                                </td>
+                                                    <td className="px-2 py-2">
+                                                        <Input
+                                                            type="number"
+                                                            className="h-8 text-[11px] font-mono text-right"
+                                                            value={getAmount('DIVIDEND') || ''}
+                                                            onChange={(e) => handleAmountChange('DIVIDEND', e.target.value)}
+                                                            placeholder="0"
+                                                        />
+                                                    </td>
+                                                    <td className="px-2 py-2">
+                                                        <Input
+                                                            type="number"
+                                                            className="h-8 text-[11px] font-mono text-right"
+                                                            value={getAmount('REINVEST') || ''}
+                                                            onChange={(e) => handleAmountChange('REINVEST', e.target.value)}
+                                                            placeholder="0"
+                                                        />
+                                                    </td>
+                                                    <td className="px-2 py-2">
+                                                        <Input
+                                                            type="number"
+                                                            className="h-8 text-[11px] font-mono text-right"
+                                                            value={getAmount('RETAINED') || ''}
+                                                            onChange={(e) => handleAmountChange('RETAINED', e.target.value)}
+                                                            placeholder="0"
+                                                        />
+                                                    </td>
+                                                    <td className="px-3 py-2 text-right">
+                                                        <div className={cn("font-mono text-[11px] flex items-center justify-end gap-0.5", Math.abs(remaining) <= 0.01 ? "text-success" : remaining < 0 ? "text-destructive" : "text-muted-foreground")}>
+                                                            {remaining > 0 ? '+' : ''}
+                                                            <DataCell.Currency value={remaining} className="w-auto p-0 inline-flex font-mono text-[11px] text-current" />
+                                                        </div>
+                                                    </td>
                                                 </>
                                             ) : (
                                                 <td className="px-3 py-2 text-[10px] font-bold text-muted-foreground">
                                                     <div className="flex items-center gap-2">
-                                                        <span>Monto Automático a Absorber: {formatCurrency(Math.abs(parseFloat(line.net_amount)))}</span>
+                                                        <span>Monto Automático a Absorber: </span>
+                                                        <DataCell.Currency value={Math.abs(parseFloat(line.net_amount))} className="w-auto p-0 inline-flex text-muted-foreground" />
                                                     </div>
                                                 </td>
                                             )}
@@ -463,7 +476,7 @@ export function CreateDistributionFlow({ open, onOpenChange, onSuccess, initialR
                             </p>
                         </div>
                     </div>
-                    
+
                     <div className="grid gap-3 bg-muted/40 p-5 rounded-sm border">
                         <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">Impactos Contables Automatizados</p>
                         {[

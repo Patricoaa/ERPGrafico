@@ -1,4 +1,12 @@
-# ADR 0017: Omitir Feature Flags en el Refactor Arquitectónico (Big-Bang)
+---
+id: 0017
+title: Omitir Feature Flags en el Refactor Arquitectónico (Big-Bang)
+status: Accepted
+date: 2026-05-08
+author: architecture-team
+---
+
+# 0017 — Omitir Feature Flags en el Refactor Arquitectónico (Big-Bang)
 
 ## Contexto
 El documento de estrategia de migración (`40-migration-and-rollback.md`) prescribía originalmente el uso de 7 feature flags (ej: `arch_core`, `arch_billing`, `arch_inventory`) para mitigar el riesgo de la refactorización profunda usando un enfoque de Canary Release. 

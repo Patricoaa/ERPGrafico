@@ -4,10 +4,9 @@ import { useState } from "react"
 import { PhaseCard } from "./PhaseCard"
 import { Package, Ban } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { formatDocumentId } from '@/features/orders/utils/status'
-import api from "@/lib/api"
-import { toast } from "sonner"
-import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+import { formatEntity } from '@/features/orders/utils/status'
+import { useAnnulLogistics } from "../../hooks/useOrdersMutations"
+import { ActionConfirmModal } from '@/components/shared'
 import { saleOrderActions } from '@/features/sales/actions'
 import { purchaseOrderActions } from '@/features/purchasing/actions'
 import { Order, OrderLine, PhaseDocument } from "../../types"
@@ -48,9 +47,9 @@ export function LogisticsPhase({
     isOpen,
     onOpenChange,
 }: LogisticsPhaseProps) {
-    const registry = (activeDoc?.document_type === 'PURCHASE_ORDER' || activeDoc?.document_type === 'SERVICE_OBLIGATION') 
-        ? purchaseOrderActions 
-        : saleOrderActions
+    const registry = isSale ? saleOrderActions : purchaseOrderActions
+
+    const annulLogistics = useAnnulLogistics()
 
     const [confirmModal, setConfirmModal] = useState<{
         open: boolean,
@@ -77,14 +76,7 @@ export function LogisticsPhase({
             confirmText: `Anular ${label}`,
             onConfirm: async () => {
                 try {
-                    let endpoint = ''
-                    if (docType === 'sale_delivery') endpoint = `/sales/deliveries/${id}/annul/`
-                    else if (docType === 'purchase_receipt') endpoint = `/purchasing/receipts/${id}/annul/`
-                    else if (docType === 'sale_return') endpoint = `/sales/returns/${id}/annul/`
-                    else if (docType === 'purchase_return') endpoint = `/purchasing/returns/${id}/annul/`
-
-                    await api.post(endpoint)
-                    toast.success(`${label} anulado correctamente`)
+                    await annulLogistics.mutateAsync({ id, docType })
                     setConfirmModal(prev => ({ ...prev, open: false }))
                     onActionSuccess?.()
                 } catch (error: unknown) {
@@ -103,7 +95,7 @@ export function LogisticsPhase({
         if (Array.isArray(activeDoc.related_returns) && activeDoc.related_returns.length > 0) {
             docs.push(...activeDoc.related_returns.map((doc: any) => ({
                 type: doc.type as string,
-                number: formatDocumentId('DEV', doc.number || doc.id, doc.display_id),
+                number: formatEntity('DEV', doc.number || doc.id, doc.display_id),
                 icon: Package,
                 id: doc.id,
                 docType: doc.docType as string,
@@ -124,7 +116,7 @@ export function LogisticsPhase({
         if (specificDocs && specificDocs.length > 0) {
             docs.push(...specificDocs.map((doc: Record<string, unknown>) => ({
                 type: isSale ? 'Despacho' : 'Recepción',
-                number: formatDocumentId(isSale ? 'DES' : 'REC', (doc.number as string) || (doc.id as number), doc.display_id as string),
+                number: formatEntity(isSale ? 'DES' : 'REC', (doc.number as string) || (doc.id as number), doc.display_id as string),
                 icon: Package,
                 id: doc.id as number,
                 docType: (doc.docType as string) || (isSale ? 'sale_delivery' : 'inventory'),
@@ -144,7 +136,7 @@ export function LogisticsPhase({
         if (docs.length === 0 && (activeDoc.related_stock_moves?.length || 0) > 0) {
             docs.push(...(activeDoc.related_stock_moves || []).map((m: Record<string, unknown>) => ({
                 type: (m.move_type_display as string) || 'Movimiento',
-                number: formatDocumentId('MOV', m.id as number, m.display_id as string),
+                number: formatEntity('MOV', m.id as number, m.display_id as string),
                 icon: Package,
                 id: m.id as number,
                 docType: 'inventory',
@@ -155,8 +147,6 @@ export function LogisticsPhase({
 
         return docs
     })()
-
-
 
     const showLogistics = (activeDoc.lines || activeDoc.items || []).length > 0 && !(activeDoc.lines || activeDoc.items || []).every((l: OrderLine) => l.product_type === 'SUBSCRIPTION')
 
@@ -228,7 +218,7 @@ export function LogisticsPhase({
                         )
                     })}
                     {(activeDoc?.lines || activeDoc?.items || []).length > 3 && (
-                        <div className="text-[8px] text-muted-foreground/40 italic flex justify-center py-1 border-t border-white/5 mt-1 uppercase tracking-tighter font-bold">
+                        <div className="text-[9px] text-muted-foreground/40 italic flex justify-center py-1 border-t border-white/5 mt-1 uppercase tracking-tighter font-bold">
                             + {(activeDoc?.lines || activeDoc?.items || []).length - 3} ítems adicionales en proceso
                         </div>
                     )}

@@ -1,11 +1,11 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import api from "@/lib/api"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { TableSkeleton } from "@/components/shared/TableSkeleton"
-import { EmptyState } from "@/components/shared/EmptyState"
-import { formatPlainDate, cn } from "@/lib/utils"
+import { financeApi } from "../../api/financeApi"
+import { DataCell, DataTable, EmptyState, SkeletonShell } from '@/components/shared'
+
+import {formatPlainDate} from "@/lib/utils"
+import type { ColumnDef } from "@tanstack/react-table"
 
 interface SimulationResult {
     line: {
@@ -34,8 +34,8 @@ export function SimulationResults({ rule }: { rule: Record<string, unknown> }) {
                     ...(rule as any),
                     treasury_account_id: (rule as any).treasury_account?.id
                 }
-                const response = await api.post('/treasury/reconciliation-rules/simulate/', payload)
-                setResults(response.data.results)
+                const response = await financeApi.simulateRule(payload)
+                setResults((response as any).results)
             } catch (error) {
                 console.error("Simulation error", error)
             } finally {
@@ -45,51 +45,70 @@ export function SimulationResults({ rule }: { rule: Record<string, unknown> }) {
         simulate()
     }, [rule])
 
-    if (loading) return <TableSkeleton rows={5} columns={3} className="p-8" />
+    if (loading) return <SkeletonShell isLoading ariaLabel="Cargando..." />
 
     if (results.length === 0) {
         return <EmptyState context="search" variant="compact" title="Sin coincidencias" description="Ninguna línea reciente coincide con esta configuración." />
     }
 
+    const columns: ColumnDef<SimulationResult>[] = [
+        {
+            header: "Línea Banco",
+            cell: ({ row }) => (
+                <div className="flex flex-col items-start justify-start text-left w-full gap-0.5">
+                    <DataCell.Text className="text-left justify-start font-black text-foreground/80">
+                        {row.original.line.description}
+                    </DataCell.Text>
+                    <div className="text-[10px] font-mono text-muted-foreground mt-0.5">
+                        {formatPlainDate(row.original.line.date)} •{" "}
+                        <span className="font-bold text-foreground/60">
+                            {Number(row.original.line.amount).toLocaleString("es-CL", { style: "currency", currency: "CLP", maximumFractionDigits: 0 })}
+                        </span>
+                    </div>
+                </div>
+            ),
+        },
+        {
+            header: "Coincidencia Sistema",
+            cell: ({ row }) => (
+                <div className="flex flex-col items-start justify-start text-left w-full gap-0.5">
+                    <DataCell.Text className="text-left justify-start font-black text-foreground/80">
+                        {row.original.payment.partner || 'Concepto General'}
+                    </DataCell.Text>
+                    <div className="text-[10px] font-mono text-muted-foreground mt-0.5">
+                        Ref: <span className="font-bold">{row.original.payment.reference || 'N/A'}</span> •{" "}
+                        <span className="font-bold">
+                            {Number(row.original.payment.amount).toLocaleString("es-CL", { style: "currency", currency: "CLP", maximumFractionDigits: 0 })}
+                        </span>
+                    </div>
+                </div>
+            ),
+        },
+        {
+            header: "Score",
+            cell: ({ row }) => {
+                const score = Math.round(row.original.score)
+                const intent = score >= 90 ? "success" : score >= 70 ? "warning" : "neutral"
+                return (
+                    <div className="flex justify-end w-full">
+                        <DataCell.Chip intent={intent} size="xs" className="w-fit font-mono font-black">
+                            {score}%
+                        </DataCell.Chip>
+                    </div>
+                )
+            },
+            meta: { align: "right" as const },
+        },
+    ]
+
     return (
-        <div className="max-h-[400px] overflow-auto border rounded-sm border-border/40">
-            <Table>
-                <TableHeader className="bg-muted/30">
-                    <TableRow className="hover:bg-transparent">
-                        <TableHead className="text-xs font-black uppercase py-3">Línea Banco</TableHead>
-                        <TableHead className="text-xs font-black uppercase py-3">Coincidencia Sistema</TableHead>
-                        <TableHead className="text-right text-xs font-black uppercase py-3">Score</TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {results.map((res, i) => (
-                        <TableRow key={i} className="group transition-colors">
-                            <TableCell className="py-3">
-                                <div className="text-xs font-black uppercase text-foreground/80">{res.line.description}</div>
-                                <div className="text-[10px] font-mono text-muted-foreground mt-1"> {/* intentional: badge density */}
-                                    {formatPlainDate(res.line.date)} • <span className="font-bold text-foreground/60">${res.line.amount}</span>
-                                </div>
-                            </TableCell>
-                            <TableCell className="py-3">
-                                <div className="text-xs font-black uppercase text-foreground/80">{res.payment.partner || 'Concepto General'}</div>
-                                <div className="text-[10px] font-mono text-muted-foreground mt-1"> {/* intentional: badge density */}
-                                    Ref: <span className="font-bold">{res.payment.reference || 'N/A'}</span> • <span className="font-bold">${res.payment.amount}</span>
-                                </div>
-                            </TableCell>
-                            <TableCell className="text-right py-3">
-                                <div className={cn(
-                                    "inline-flex items-center justify-center h-7 px-2 font-mono font-black text-[12px] rounded-sm border",
-                                    res.score >= 90 ? "bg-success/10 text-success border-success/20" :
-                                    res.score >= 70 ? "bg-warning/10 text-warning border-warning/20" :
-                                    "bg-muted/50 text-muted-foreground border-border/40"
-                                )}>
-                                    {Math.round(res.score)}%
-                                </div>
-                            </TableCell>
-                        </TableRow>
-                    ))}
-                </TableBody>
-            </Table>
+        <div className="border rounded-sm border-border/40">
+            <DataTable
+                columns={columns}
+                data={results}
+                variant="embedded"
+                hidePagination
+            />
         </div>
     )
 }

@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useCallback, useState } from "react"
+import React, {useEffect, useCallback} from "react"
 import { useForm, UseFormReturn, Path } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 
@@ -79,7 +79,7 @@ export const InventorySettingsView: React.FC<InventorySettingsViewProps> = ({ ac
                 <form className="mt-6 space-y-6">
                     {activeTab === "accounts" && (
                         <div className="space-y-6 m-0 p-0 border-0 outline-none mt-4">
-                            <Card>
+                            <Card variant="transparent">
                                 <CardHeader>
                                     <CardTitle className="text-lg text-primary">Cuentas por Tipo de Producto</CardTitle>
                                     <CardDescription>Cuentas de inventario según el tipo de producto</CardDescription>
@@ -91,7 +91,7 @@ export const InventorySettingsView: React.FC<InventorySettingsViewProps> = ({ ac
                                 </CardContent>
                             </Card>
 
-                            <Card>
+                            <Card variant="transparent">
                                 <CardHeader>
                                     <CardTitle className="text-lg text-primary">Cuentas Puente</CardTitle>
                                     <CardDescription>Cuentas intermedias para movimientos de stock</CardDescription>
@@ -108,7 +108,7 @@ export const InventorySettingsView: React.FC<InventorySettingsViewProps> = ({ ac
 
                     {activeTab === "adjustments" && (
                         <div className="space-y-6 m-0 p-0 border-0 outline-none mt-4">
-                            <Card>
+                            <Card variant="transparent">
                                 <CardHeader>
                                     <CardTitle className="text-lg text-primary">Cuentas de Ajuste</CardTitle>
                                     <CardDescription>Cuentas para diferencias de inventario</CardDescription>
@@ -122,7 +122,7 @@ export const InventorySettingsView: React.FC<InventorySettingsViewProps> = ({ ac
                                 </CardContent>
                             </Card>
 
-                            <Card>
+                            <Card variant="transparent">
                                 <CardHeader>
                                     <CardTitle className="text-lg text-primary">Método de Valoración</CardTitle>
                                     <CardDescription>Determine cómo el sistema calcula el costo de sus existencias</CardDescription>
@@ -150,7 +150,7 @@ export const InventorySettingsView: React.FC<InventorySettingsViewProps> = ({ ac
 
                     {activeTab === "cogs" && (
                         <div className="space-y-6 m-0 p-0 border-0 outline-none mt-4">
-                            <Card>
+                            <Card variant="transparent">
                                 <CardHeader>
                                     <CardTitle className="text-lg text-primary">Costo de Ventas (COGS)</CardTitle>
                                     <CardDescription>Cuentas de gasto para el costo de productos vendidos</CardDescription>
@@ -167,7 +167,6 @@ export const InventorySettingsView: React.FC<InventorySettingsViewProps> = ({ ac
         </div>
     )
 }
-
 
 export default InventorySettingsView
 

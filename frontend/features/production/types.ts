@@ -1,5 +1,13 @@
 import { LucideIcon } from "lucide-react"
 import type { WorkOrderStageData } from './schemas'
+import type { StageId } from './constants/stages'
+export type { StageId }
+
+import type { WorkOrderInitialData } from '@/types/forms'
+
+export type WizardMode =
+    | { kind: 'create'; defaultOtType?: 'LINKED' | 'NONE'; defaultProductId?: string; initialData?: WorkOrderInitialData }
+    | { kind: 'manage'; orderId: number; targetStage?: StageId | 'BASIC_INFO' }
 
 export interface WorkOrderMaterial {
     id: number
@@ -12,6 +20,8 @@ export interface WorkOrderMaterial {
     uom_name: string
     uom_category?: number
     total_cost: number
+    planned_cost?: number
+    actual_cost?: number
     source: "MANUAL" | "BOM"
     is_outsourced: boolean
     is_available?: boolean
@@ -54,6 +64,7 @@ export interface WorkOrderStage {
     label: string
     icon: LucideIcon
     alwaysShow: boolean
+    isCreationStep?: boolean
 }
 
 export interface ProductionComment {
@@ -77,16 +88,17 @@ export interface WorkOrder {
     is_manual: boolean
     description?: string
     product_description?: string
-    specifications?: string
-    specifications_prepress?: string
-    specifications_press?: string
-    specifications_postpress?: string
     prepress_archive?: string
     start_date?: string
     sale_order_delivery_date?: string
     sale_customer_name?: string
     sale_customer_rut?: string
     sale_order_date?: string
+    sale_order_number?: string | null
+    // Unified accessors from serializer (works for both LINKED and MANUAL).
+    quantity?: number | null
+    uom_id?: number | null
+    uom_name?: string | null
     due_date?: string
     outsourcing_status?: "none" | "partial" | "full"
     warehouse_name?: string
@@ -127,6 +139,7 @@ export interface WorkOrder {
         sold: number
         delta: number
     } | null
+    side_effects?: WorkOrderSideEffects
 }
 
 export interface BOMLine {
@@ -157,6 +170,9 @@ export interface BOM {
     yield_quantity: number
     yield_uom?: number
     yield_uom_name?: string
+    estimated_prepress_min?: number
+    estimated_press_min?: number
+    estimated_postpress_min?: number
     lines: BOMLine[]
     notes?: string
     updated_at?: string
@@ -201,4 +217,25 @@ export interface ProductMinimal {
 export interface ProductVariantMinimal extends ProductMinimal {
     parent_template?: number | string
     technical_description?: string
+}
+
+// ── Wizard navigation governance ──────────────────────────────────────────────
+
+export type WizardStepMode = 'view' | 'edit-in-place' | 'rewind'
+
+export interface StepCapabilities {
+    canView: boolean
+    canEdit: boolean
+    canRewind: boolean
+    rewindBlockedReason?: string
+    editBlockedReason?: string
+}
+
+// Provided by backend serializer (Phase 4); used by governance to avoid
+// re-deriving from client-visible order data.
+export interface WorkOrderSideEffects {
+    has_confirmed_pos: boolean
+    has_stock_movements: boolean
+    completed_tasks_count: number
+    manually_edited_materials_count: number
 }

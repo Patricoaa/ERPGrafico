@@ -1,11 +1,6 @@
-import { lazy, Suspense } from "react"
-import { LoadingFallback } from "@/components/shared/LoadingFallback"
-import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
-import Link from "next/link"
-import { Receipt, Store } from "lucide-react"
-import { Button } from "@/components/ui/button"
-
-const SalesTerminalsView = lazy(() => import("@/features/sales").then(m => ({ default: m.SalesTerminalsView })))
+import { redirect } from "next/navigation"
+import { ToolbarCreateButton } from '@/components/shared'
+import { SalesTerminalsView } from "@/features/sales"
 
 interface PageProps {
     searchParams: Promise<{
@@ -18,6 +13,10 @@ export default async function TerminalsPage({ searchParams }: PageProps) {
     const params = await searchParams
     const activeTab = params.tab || "pos-terminals"
     const modal = params.modal
+
+    if (!params.tab) {
+        redirect('/sales/terminals?tab=pos-terminals')
+    }
 
     const getCreateAction = () => {
         switch (activeTab) {
@@ -35,14 +34,10 @@ export default async function TerminalsPage({ searchParams }: PageProps) {
     }
 
     return (
-        <div className="pt-2">
-            <Suspense fallback={<LoadingFallback message="Cargando terminales..." />}>
-                <SalesTerminalsView
-                    activeTab={activeTab}
-                    modal={modal}
-                    createAction={getCreateAction()}
-                />
-            </Suspense>
-        </div>
+        <SalesTerminalsView
+            activeTab={activeTab}
+            modal={modal}
+            createAction={getCreateAction()}
+        />
     )
 }

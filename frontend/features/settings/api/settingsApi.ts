@@ -11,8 +11,30 @@ import type {
     CompanySettingsUpdatePayload,
     PartnerSettings,
     PartnerSettingsUpdatePayload,
-    SystemStatus
+    SystemStatus,
 } from '../types'
+import type { TreasuryAccount, PosTerminal, Warehouse, UoM, Group, ProductMinimal } from './types'
+
+/**
+ * Resolves a media URL from the backend.
+ * If the path is relative (starts with /media/), it prepends the backend host.
+ * If the path is already absolute, it returns it as-is.
+ */
+export function resolveMediaUrl(path: string | null | undefined): string | null {
+  if (!path) return null
+  if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('data:')) {
+    return path
+  }
+
+  // Derive backend host from baseURL (stripping /api/ if present)
+  const rawBaseURL = process.env.NEXT_PUBLIC_API_URL || ''
+  const backendHost = rawBaseURL.replace(/\/api\/?$/, '')
+
+  // Ensure the path starts with a slash
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`
+
+  return `${backendHost}${normalizedPath}`
+}
 
 /**
  * Centralized API service for accounting settings operations
@@ -210,6 +232,76 @@ export const settingsApi = {
       */
      getSystemStatus: async (): Promise<SystemStatus> => {
          const { data } = await api.get<SystemStatus>('/core/status/')
+         return data
+     },
+
+     // ========== Groups ==========
+
+     getGroups: async (): Promise<Group[]> => {
+         const { data } = await api.get<Group[]>('/core/groups/')
+         return data
+     },
+
+     deleteGroup: async (id: number): Promise<void> => {
+         await api.delete(`/core/groups/${id}/`)
+     },
+
+     // ========== Treasury Accounts ==========
+
+     getTreasuryAccounts: async (): Promise<TreasuryAccount[]> => {
+         const { data } = await api.get<TreasuryAccount[]>('/treasury/accounts/')
+         return data
+     },
+
+     // ========== POS Terminals ==========
+
+     getPosTerminals: async (): Promise<PosTerminal[]> => {
+         const { data } = await api.get<PosTerminal[]>('/treasury/pos-terminals/')
+         return data
+     },
+
+     createPosTerminal: async (payload: Record<string, unknown>): Promise<PosTerminal> => {
+         const { data } = await api.post<PosTerminal>('/treasury/pos-terminals/', payload)
+         return data
+     },
+
+     updatePosTerminal: async (id: number, payload: Record<string, unknown>): Promise<PosTerminal> => {
+         const { data } = await api.patch<PosTerminal>(`/treasury/pos-terminals/${id}/`, payload)
+         return data
+     },
+
+     // ========== Warehouses ==========
+
+     getWarehouses: async (): Promise<Warehouse[]> => {
+         const { data } = await api.get<Warehouse[]>('/inventory/warehouses/')
+         return data
+     },
+
+     // ========== Products ==========
+
+     getProduct: async (id: number | string): Promise<ProductMinimal> => {
+         const { data } = await api.get<ProductMinimal>(`/inventory/products/${id}/`)
+         return data
+     },
+
+     // ========== UoMs ==========
+
+     getUoms: async (params?: Record<string, string>): Promise<UoM[]> => {
+         const { data } = await api.get<UoM[]>('/inventory/uoms/', { params })
+         return data
+     },
+
+     // ========== Inventory Moves ==========
+
+     createInventoryAdjustment: async (payload: Record<string, unknown>): Promise<unknown> => {
+         const { data } = await api.post('/inventory/moves/adjust/', payload)
+         return data
+     },
+
+     // ========== IFRS Chart of Accounts ==========
+
+     populateIfrsChart: async (): Promise<{ message: string }> => {
+         const { data } = await api.post<{ message: string }>('/accounting/accounts/populate_ifrs/')
          return data
      },
  }

@@ -3,7 +3,7 @@ layer: 20-contracts
 doc: list-modal-edit-pattern
 status: active
 owner: frontend-team
-last_review: 2026-05-09
+last_review: 2026-05-28
 stability: contract-changes-require-ADR
 preconditions:
   - module-layout-navigation.md
@@ -42,7 +42,7 @@ La URL con `?selected` es **deep-linkeable y shareable**. El comportamiento obse
 ### 2.1 La lista
 
 1. Lee `searchParams.get('selected')` al montar.
-2. Llama a `useSelectedEntity(endpoint)` (ver §2.3) para fetchear la entidad y obtener `entity`, `isLoading`, `error`, `clearSelection`.
+2. Llama a `useSelectedEntity(endpoint)` (ver §2.3) para fetchear la entidad y obtener `entity`, `isLoading`, `clearSelection`. (Los errores 404/403 los maneja el propio hook vía toast — no expone un `error`.)
 3. Monta el modal de edición existente con `initialData={entity}` cuando `entity !== null`.
 4. La acción "Editar" de cada fila hace `router.push(\`?selected=\${id}\`)` (no abre modal vía estado local).
 5. La acción "Crear" sigue abriendo el modal vía estado local — no usa `selected`.

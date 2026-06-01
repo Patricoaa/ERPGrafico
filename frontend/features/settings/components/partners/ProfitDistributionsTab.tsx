@@ -1,35 +1,24 @@
 "use client"
+import { formatCurrency } from "@/lib/money"
 
 import React, { useEffect, useState, useMemo, useRef } from "react"
-import { DataTable } from "@/components/ui/data-table"
+
 import { ColumnDef } from "@tanstack/react-table"
-import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+import {ActionConfirmModal, Chip, DataCell, DataTable, StatusBadge, createActionsColumn} from '@/components/shared'
+
 import { partnersApi } from "@/features/contacts/api/partnersApi"
-import { ProfitDistribution, ProfitDistributionLine } from "@/features/contacts/types/partner"
-import { formatCurrency, formatPlainDate, cn } from "@/lib/utils"
+import {ProfitDistribution} from "@/features/contacts/types/partner"
+import { formatPlainDate, cn } from "@/lib/utils"
 import {
     Calendar,
-    ChevronRight,
-    Plus,
     Wallet,
-    Eye,
     Wand2,
     Play
 } from "lucide-react"
 import { toast } from "sonner"
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import { CreateDistributionFlow } from "./CreateDistributionFlow"
-import { MassPaymentModal } from "./MassPaymentModal"
-import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
+import { MassPaymentModal } from "./MassPaymentWizard"
+import { ProfitDistributionDrawer } from "@/features/settings/components/ProfitDistributionDrawer"
 
 interface ProfitDistributionsTabProps {
     /** Whether the new-distribution flow should open on mount (driven by URL ?modal=new-distribution) */
@@ -49,6 +38,7 @@ export function ProfitDistributionsTab({ initialFlowOpen = false, onModalClose, 
         selectedResolution: undefined as ProfitDistribution | undefined,
         viewingDist: undefined as ProfitDistribution | undefined
     })
+    const [confirmExecute, setConfirmExecute] = useState<ProfitDistribution | null>(null)
 
     const isMounted = useRef(false)
 
@@ -91,8 +81,8 @@ export function ProfitDistributionsTab({ initialFlowOpen = false, onModalClose, 
     }, [initialFlowOpen])
 
     const closeFlow = () => {
-        setState(prev => ({ 
-            ...prev, 
+        setState(prev => ({
+            ...prev,
             isFlowOpen: false
         }))
         // Notify parent to clear the URL modal param
@@ -100,18 +90,20 @@ export function ProfitDistributionsTab({ initialFlowOpen = false, onModalClose, 
         fetchDistributions()
     }
 
-    const handleExecute = async (resolution: ProfitDistribution) => {
-        if (!confirm(`¿Está seguro de ejecutar la resolución del año ${resolution.fiscal_year}? Esto generará los asientos contables finales y las transacciones de los socios.`)) return
+    const handleExecute = (resolution: ProfitDistribution) => setConfirmExecute(resolution)
 
+    const onConfirmExecute = async () => {
+        if (!confirmExecute) return
         setState(prev => ({ ...prev, loading: true }))
         try {
-            await partnersApi.executeProfitDistribution(resolution.id)
+            await partnersApi.executeProfitDistribution(confirmExecute.id)
             toast.success("Distribución ejecutada exitosamente.")
             fetchDistributions()
         } catch (error: unknown) {
             console.error(error)
             const detail = (error as any).response?.data?.detail || (error as Error).message || "Error al ejecutar la resolución"
             toast.error(detail)
+            throw error
         } finally {
             setState(prev => ({ ...prev, loading: false }))
         }
@@ -158,9 +150,10 @@ export function ProfitDistributionsTab({ initialFlowOpen = false, onModalClose, 
                 const status = row.getValue("status") as string
                 return (
                     <div className="flex justify-center">
-                        <Badge className={`text-[9px] font-black uppercase border-2 ${getStatusColor(status)}`} variant="outline">
-                            {getStatusText(status)}
-                        </Badge>
+                        <StatusBadge
+                            status={status === 'PAID' ? 'SUCCESS' : status === 'CANCELLED' ? 'DESTRUCTIVE' : 'NEUTRAL'}
+                            label={getStatusText(status)}
+                        />
                     </div>
                 )
             }
@@ -182,19 +175,19 @@ export function ProfitDistributionsTab({ initialFlowOpen = false, onModalClose, 
                 return (
                     <div className="flex flex-wrap justify-center gap-1.5">
                         {totals.dividends > 0 && (
-                            <Badge variant="secondary" className="bg-success/5 text-success border-success/20 text-[9px] font-bold">
+                            <Chip intent="success" size="xs">
                                 DIV: {formatCurrency(totals.dividends)}
-                            </Badge>
+                            </Chip>
                         )}
                         {totals.reinvest > 0 && (
-                            <Badge variant="secondary" className="bg-info/5 text-info border-info/20 text-[9px] font-bold">
+                            <Chip intent="info" size="xs">
                                 REINV: {formatCurrency(totals.reinvest)}
-                            </Badge>
+                            </Chip>
                         )}
                         {totals.retained > 0 && (
-                            <Badge variant="secondary" className="bg-warning/5 text-warning border-warning/20 text-[9px] font-bold">
+                            <Chip intent="warning" size="xs">
                                 RET: {formatCurrency(totals.retained)}
-                            </Badge>
+                            </Chip>
                         )}
                     </div>
                 )
@@ -240,12 +233,12 @@ export function ProfitDistributionsTab({ initialFlowOpen = false, onModalClose, 
         createActionsColumn<ProfitDistribution>({
             renderActions: (dist) => {
                 if (dist.status === 'CANCELLED') return (
-                    <DataCell.Action icon={Eye} title="Ver Detalle" onClick={() => setState(prev => ({ ...prev, viewingDist: dist }))} />
+                    <DataCell.Action action="detail" onClick={() => setState(prev => ({ ...prev, viewingDist: dist }))} />
                 )
 
                 return (
                     <>
-                        <DataCell.Action icon={Eye} title="Ver Detalle" onClick={() => setState(prev => ({ ...prev, viewingDist: dist }))} />
+                        <DataCell.Action action="detail" onClick={() => setState(prev => ({ ...prev, viewingDist: dist }))} />
 
                         {dist.status === 'DRAFT' && (
                             <DataCell.Action icon={Wand2} title="Retomar Proceso" className="text-success" onClick={() => {
@@ -256,7 +249,7 @@ export function ProfitDistributionsTab({ initialFlowOpen = false, onModalClose, 
                         {dist.status === 'APPROVED' && (
                             <DataCell.Action icon={Play} title="Ejecutar Contablemente" className="text-primary" onClick={() => handleExecute(dist)} />
                         )}
-                        
+
                         {dist.status === 'EXECUTED' && (dist.lines?.some((l) => l.destination === 'DIVIDEND')) && (
                             <DataCell.Action icon={Wallet} title="Pagar Dividendos" className="text-primary" onClick={() => {
                                 setState(prev => ({ ...prev, selectedResolution: dist, isMassPaymentOpen: true }))
@@ -269,16 +262,18 @@ export function ProfitDistributionsTab({ initialFlowOpen = false, onModalClose, 
     ], [])
 
     return (
-        <div className="space-y-6">
-            <DataTable
-                columns={columns}
-                data={state.distributions}
-                isLoading={state.loading}
-                variant="embedded"
-                searchPlaceholder="Buscar por año o resolución..."
-                filterColumn="fiscal_year"
-                createAction={createAction}
-            />
+        <div className="space-y-6 h-full flex flex-col">
+            <div className="flex-1 min-h-0">
+                <DataTable
+                    columns={columns}
+                    data={state.distributions}
+                    isLoading={state.loading}
+                    variant="embedded"
+                    searchPlaceholder="Buscar por año o resolución..."
+                    filterColumn="fiscal_year"
+                    createAction={createAction}
+                />
+            </div>
 
             {/* Modal Flows */}
             {state.isFlowOpen && (
@@ -299,15 +294,23 @@ export function ProfitDistributionsTab({ initialFlowOpen = false, onModalClose, 
                 />
             )}
 
-
             {state.viewingDist && (
-                <TransactionViewModal
+                <ProfitDistributionDrawer
+                    id={state.viewingDist.id}
                     open={!!state.viewingDist}
                     onOpenChange={() => setState(prev => ({ ...prev, viewingDist: undefined }))}
-                    type="profit_distribution"
-                    id={state.viewingDist.id}
                 />
             )}
+
+            <ActionConfirmModal
+                open={!!confirmExecute}
+                onOpenChange={(open) => { if (!open) setConfirmExecute(null) }}
+                onConfirm={onConfirmExecute}
+                title="Ejecutar Distribución"
+                description={confirmExecute ? `¿Está seguro de ejecutar la resolución del año ${confirmExecute.fiscal_year}? Esto generará los asientos contables finales y las transacciones de los socios.` : ""}
+                variant="warning"
+                confirmText="Ejecutar"
+            />
         </div>
     )
 }

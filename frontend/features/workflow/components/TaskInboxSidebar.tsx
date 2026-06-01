@@ -1,9 +1,8 @@
 "use client"
 
 import { Inbox } from "lucide-react"
-import { SheetCloseButton } from "@/components/shared"
+import { CollapsibleSheet, PanelHeader } from "@/components/shared"
 import { TaskInbox } from "@/features/workflow/components/TaskInbox"
-import { cn } from "@/lib/utils"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 
 interface TaskInboxSidebarProps {
@@ -15,31 +14,32 @@ export function TaskInboxSidebar({ isOpen, onClose }: TaskInboxSidebarProps) {
     const { isHubEffectivelyOpen } = useHubPanel()
 
     return (
-        <aside
-            className={cn(
-                "fixed top-20 h-[calc(100vh-6rem)] w-[320px] bg-sidebar dark border border-white/5 flex flex-col will-change-transform overflow-hidden z-50 shadow-2xl rounded-lg",
-                "transition-all duration-500 ease-[var(--ease-premium)]",
-                // Horizontal position: always fixed on the right
-                "right-4",
-                // Vertical slide-in: move off-screen to the right when closed
-                isOpen ? "translate-x-0 opacity-100" : "translate-x-[120%] opacity-0 pointer-events-none"
-            )}
-        >
-            {/* Header */}
-            <div className="flex items-center justify-between px-4 pt-1 pb-4 border-b border-white/5 bg-sidebar backdrop-blur-md">
-                <div className="flex items-center gap-3">
-                    <Inbox className="h-5 w-5 text-muted-foreground" />
-                    <h2 className="text-lg font-bold tracking-tight text-white">Bandeja de Entrada</h2>
+            <CollapsibleSheet
+                sheetId="task-inbox-sidebar"
+                open={isOpen}
+                onOpenChange={(open) => !open && onClose()}
+                tabLabel="Bandeja de Entrada"
+                tabIcon={Inbox}
+                variant="global"
+                fullWidth={320}
+                priority={0}
+            >
+                {/* Header */}
+                <div className="border-b shrink-0">
+                    <PanelHeader
+                        title="Bandeja de Entrada"
+                        description="Gestión de aprobaciones y tareas"
+                        icon={Inbox}
+                        onClose={onClose}
+                        closeTooltip="Cerrar bandeja"
+                    />
                 </div>
-                <SheetCloseButton onClick={onClose} />
 
-            </div>
-
-            {/* Task Inbox Content */}
-            <div className="flex-1 overflow-y-auto p-4">
-                {isOpen && <TaskInbox />}
-            </div>
-        </aside>
+                {/* Task Inbox Content */}
+                <div className="flex-1 overflow-y-auto p-4 canvas-prepress">
+                    {isOpen && <TaskInbox />}
+                </div>
+            </CollapsibleSheet>
     )
 }
 

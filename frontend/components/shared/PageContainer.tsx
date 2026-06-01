@@ -9,6 +9,13 @@ interface PageContainerProps {
    * @default true
    */
   animate?: boolean
+  /**
+   * Whether the container should provide its own vertical scrollbar.
+   * Useful when the main layout has overflow-hidden (e.g. for datatables)
+   * but this specific page needs a standard document flow scroll.
+   * @default false
+   */
+  scrollable?: boolean
 }
 
 /**
@@ -19,12 +26,14 @@ interface PageContainerProps {
 export function PageContainer({
   children,
   className,
-  animate = true
+  animate = true,
+  scrollable = false
 }: PageContainerProps) {
   return (
     <div
       className={cn(
-        "flex-1 space-y-6 p-8 pt-6",
+        "flex-1 min-h-0 space-y-6 p-8 pt-6",
+        scrollable && "overflow-y-auto h-full",
         animate && "animate-in fade-in duration-500",
         className
       )}

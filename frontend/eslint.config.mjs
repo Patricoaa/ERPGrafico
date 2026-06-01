@@ -5,6 +5,9 @@ import { defineConfig, globalIgnores } from "eslint/config";
 import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";
 import boundaries from "eslint-plugin-boundaries";
+import fsdNoApiInComponent from "./eslint-rules/fsd-no-api-in-component.mjs";
+import paginationNoEnvelopeDiscard from "./eslint-rules/pagination-no-envelope-discard.mjs";
+import paginationDatatableNeedsRowcount from "./eslint-rules/pagination-datatable-needs-rowcount.mjs";
 
 const eslintConfig = defineConfig([...nextVitals, ...nextTs, globalIgnores([
   ".next/**",
@@ -122,7 +125,48 @@ const eslintConfig = defineConfig([...nextVitals, ...nextTs, globalIgnores([
       }],
     }],
   },
-}, // UI component data fetching and formatting restrictions
+}, // FSD invariant #5 — components must not import @/lib/api directly.
+// Lives in a custom rule (not no-restricted-imports) because flat-config does
+// not merge no-restricted-imports across blocks: layering a second block here
+// would clobber the tanstack restriction below. Severity is `warn` during the
+// FSD data-layer migration (docs/50-audit/fsddata/fsd-data-layer-refactor-plan.md);
+// bump to `error` when the global violation count reaches 0.
+{
+  files: ["features/*/components/**/*.ts", "features/*/components/**/*.tsx"],
+  plugins: {
+    fsd: { rules: { "no-api-in-component": fsdNoApiInComponent } },
+  },
+  rules: {
+    "fsd/no-api-in-component": "warn",
+  },
+},
+// Pagination contract — see docs/20-contracts/pagination-contract.md
+// 1. no-envelope-discard: bans `data.results || data` in api/ and hooks/.
+//    Promoted from `warn` to `error` on 2026-05-23 after the global
+//    violation count reached 0 (all 33 + 5 sites migrated). Any new
+//    instance is a regression and blocks the build.
+{
+  files: ["features/*/api/**/*.ts", "features/*/hooks/**/*.ts"],
+  plugins: {
+    pagination: { rules: { "no-envelope-discard": paginationNoEnvelopeDiscard } },
+  },
+  rules: {
+    "pagination/no-envelope-discard": "error",
+  },
+},
+// 2. datatable-needs-rowcount: any <DataTable manualPagination /> without
+//    rowCount produces a wrong "Mostrando X a Y de Z" footer. This is a
+//    visible bug, so `error` from day one (no migration warmup).
+{
+  files: ["features/**/*.tsx", "components/**/*.tsx", "app/**/*.tsx"],
+  plugins: {
+    pagination: { rules: { "datatable-needs-rowcount": paginationDatatableNeedsRowcount } },
+  },
+  rules: {
+    "pagination/datatable-needs-rowcount": "error",
+  },
+},
+// UI component data fetching and formatting restrictions
 {
   files: ["components/**/*.tsx", "features/*/components/**/*.tsx"],
   rules: {
@@ -133,7 +177,7 @@ const eslintConfig = defineConfig([...nextVitals, ...nextTs, globalIgnores([
         message: "React Query hooks must only be used within feature hooks (features/*/hooks/). Do not import them directly in components."
       }]
     }],
-    "no-restricted-syntax": ["warn", 
+    "no-restricted-syntax": ["warn",
       {
         selector: "CallExpression[callee.property.name='toLocaleString']",
         message: "Do not use .toLocaleString() for currency or quantities. Use <MoneyDisplay> or <QuantityDisplay> instead to ensure consistent UI across the app."
@@ -145,6 +189,27 @@ const eslintConfig = defineConfig([...nextVitals, ...nextTs, globalIgnores([
       {
         selector: "JSXElement[openingElement.name.name='Button'] JSXElement[openingElement.name.name='Loader2']",
         message: "Violación de Diseño Industrial: No inyecte Loader2 manualmente en Button. Utilice <SubmitButton loading={...}> o <ActionSlideButton loading={...}>."
+      },
+      {
+        // Row/card action anti-pattern: <Button>...<RegistryIcon/>...</Button>.
+        // Matches when a Button has a child JSX whose name matches a ROW_ACTIONS icon (or known drift alias).
+        // Legit icon buttons (Bell, X, Plus, ChevronLeft, Settings, etc.) are NOT flagged.
+        // Internal renderers (DataCell.Action / IconButton) use a dynamic <Icon> child, so they are not matched.
+        selector: "JSXElement[openingElement.name.name='Button']:has(JSXAttribute[name.name='size'][value.value='icon']) > JSXElement[openingElement.name.name=/^(Pencil|Edit|Edit2|Edit3|SquarePen|Trash|Trash2|Eye|FileText|Copy|Archive|ArchiveRestore|Banknote|DollarSign|Wallet|CreditCard|Truck|PackageCheck|Package|Ban|Lock|Unlock|LayoutDashboard|Share2|Printer|Download)$/]",
+        message: "Row/card action anti-pattern. Use <DataCell.Action action=\"<key>\" /> (table) or <CardActions.Item action=\"<key>\" /> (card/kanban) from @/components/shared. See docs/20-contracts/component-row-actions.md (ROW_ACTIONS registry)."
+      }
+    ]
+  }
+},
+// Row/card action lint extended to top-level app/ pages, which may embed inline actions
+// directly in route components instead of feature components.
+{
+  files: ["app/**/*.tsx"],
+  rules: {
+    "no-restricted-syntax": ["warn",
+      {
+        selector: "JSXElement[openingElement.name.name='Button']:has(JSXAttribute[name.name='size'][value.value='icon']) > JSXElement[openingElement.name.name=/^(Pencil|Edit|Edit2|Edit3|SquarePen|Trash|Trash2|Eye|FileText|Copy|Archive|ArchiveRestore|Banknote|DollarSign|Wallet|CreditCard|Truck|PackageCheck|Package|Ban|Lock|Unlock|LayoutDashboard|Share2|Printer|Download)$/]",
+        message: "Row/card action anti-pattern. Use <DataCell.Action action=\"<key>\" /> or <CardActions.Item action=\"<key>\" /> from @/components/shared. See docs/20-contracts/component-row-actions.md."
       }
     ]
   }

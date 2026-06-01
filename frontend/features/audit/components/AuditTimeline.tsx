@@ -3,11 +3,10 @@
 import React, { useState } from "react";
 import { HistoricalRecord } from "@/types/audit";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
+import { Chip } from "@/components/shared";
 import { cn } from "@/lib/utils";
 import {
     History,
-    User,
     Clock,
     PlusCircle,
     Edit,
@@ -45,29 +44,25 @@ export function AuditTimeline({
                 return {
                     icon: <PlusCircle className="h-4 w-4 text-success" />,
                     label: "Creación",
-                    variant: "outline" as const,
-                    color: "bg-success/10 text-success border-success/20"
+                    intent: "success" as const
                 };
             case '~':
                 return {
                     icon: <Edit className="h-4 w-4 text-info" />,
                     label: "Edición",
-                    variant: "outline" as const,
-                    color: "bg-info/10 text-info border-info/20"
+                    intent: "info" as const
                 };
             case '-':
                 return {
                     icon: <Trash2 className="h-4 w-4 text-destructive" />,
                     label: "Eliminación",
-                    variant: "outline" as const,
-                    color: "bg-destructive/10 text-destructive border-destructive/20"
+                    intent: "destructive" as const
                 };
             default:
                 return {
                     icon: <History className="h-4 w-4 text-muted-foreground" />,
                     label: "Cambio",
-                    variant: "outline" as const,
-                    color: "bg-secondary text-secondary-foreground text-foreground border"
+                    intent: "neutral" as const
                 };
         }
     };
@@ -127,9 +122,9 @@ export function AuditTimeline({
                                             <span className="font-semibold text-sm">
                                                 {info.label} por {item.history_user_username}
                                             </span>
-                                            <Badge variant={info.variant} className={`text-[10px] px-1.5 py-0 h-5 ${info.color}`}>
+                                            <Chip size="xs" intent={info.intent}>
                                                 {info.label.toUpperCase()}
-                                            </Badge>
+                                            </Chip>
                                             <span className="text-xs text-muted-foreground flex items-center gap-1 ml-auto">
                                                 <Clock className="h-3 w-3" />
                                                 {format(new Date(item.history_date), "dd MMM yyyy, HH:mm", { locale: es })}

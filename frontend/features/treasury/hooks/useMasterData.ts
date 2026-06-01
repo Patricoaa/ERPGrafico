@@ -1,64 +1,115 @@
-import { useQuery } from '@tanstack/react-query'
-import api from '@/lib/api'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
+import { treasuryApi } from '../api/treasuryApi'
+import { BANKS_KEYS, PAYMENT_METHODS_KEYS } from './queryKeys'
+import type { Bank, BankCreatePayload, BankUpdatePayload } from '../types'
+import type { PaymentMethod, PaymentMethodCreatePayload, PaymentMethodUpdatePayload } from '../types'
 
-export interface Bank {
-    id: number
-    name: string
-    code: string | null
-    swift_code?: string | null
-    is_active: boolean
-}
-
-import { BANKS_QUERY_KEY, PAYMENT_METHODS_QUERY_KEY } from './queryKeys'
-
-export { BANKS_QUERY_KEY }
+export type { Bank, PaymentMethod }
+export { BANKS_KEYS, PAYMENT_METHODS_KEYS }
 
 export function useBanks() {
-    const { data: banks, isLoading, refetch } = useQuery({
-        queryKey: BANKS_QUERY_KEY,
-        queryFn: async (): Promise<Bank[]> => {
-            const response = await api.get('/treasury/banks/')
-            return response.data
+    const queryClient = useQueryClient()
+
+    const { data: banks, isLoading, refetch } = useQuery<Bank[]>({
+        queryKey: BANKS_KEYS.list(),
+        queryFn: treasuryApi.getBanks,
+        staleTime: 15 * 60 * 1000,
+    })
+
+    const invalidate = () => {
+        queryClient.invalidateQueries({ queryKey: BANKS_KEYS.all })
+    }
+
+    const createMutation = useMutation({
+        mutationFn: (payload: BankCreatePayload) => treasuryApi.createBank(payload),
+        onSuccess: () => {
+            invalidate()
+            toast.success('Banco creado')
         },
-        staleTime: 15 * 60 * 1000, // 15 min — datos casi estáticos
+        onError: () => toast.error('Error al guardar banco'),
+    })
+
+    const updateMutation = useMutation({
+        mutationFn: ({ id, payload }: { id: number; payload: BankUpdatePayload }) =>
+            treasuryApi.updateBank(id, payload),
+        onSuccess: () => {
+            invalidate()
+            toast.success('Banco actualizado')
+        },
+        onError: () => toast.error('Error al guardar banco'),
+    })
+
+    const deleteMutation = useMutation({
+        mutationFn: (id: number) => treasuryApi.deleteBank(id),
+        onSuccess: () => {
+            invalidate()
+            toast.success('Banco eliminado')
+        },
+        onError: () => toast.error('Error al eliminar banco'),
     })
 
     return {
         banks: banks ?? [],
         isLoading,
         refetch,
+        createBank: createMutation.mutateAsync,
+        updateBank: updateMutation.mutateAsync,
+        deleteBank: deleteMutation.mutateAsync,
+        isCreating: createMutation.isPending,
+        isUpdating: updateMutation.isPending,
     }
 }
 
-export interface PaymentMethod {
-    id: number
-    name: string
-    method_type: string
-    method_type_display: string
-    treasury_account: number | { id: number; name?: string }
-    treasury_account_name: string
-    is_active: boolean
-    requires_reference: boolean
-    allow_for_sales: boolean
-    allow_for_purchases: boolean
-    is_terminal_integration?: boolean
-}
-
-export { PAYMENT_METHODS_QUERY_KEY }
-
 export function usePaymentMethods() {
-    const { data: methods, isLoading, refetch } = useQuery({
-        queryKey: PAYMENT_METHODS_QUERY_KEY,
-        queryFn: async (): Promise<PaymentMethod[]> => {
-            const response = await api.get('/treasury/payment-methods/')
-            return response.data
+    const queryClient = useQueryClient()
+
+    const { data: methods, isLoading, refetch } = useQuery<PaymentMethod[]>({
+        queryKey: PAYMENT_METHODS_KEYS.list(),
+        queryFn: treasuryApi.getPaymentMethods,
+        staleTime: 15 * 60 * 1000,
+    })
+
+    const invalidate = () => {
+        queryClient.invalidateQueries({ queryKey: PAYMENT_METHODS_KEYS.all })
+    }
+
+    const createMutation = useMutation({
+        mutationFn: (payload: PaymentMethodCreatePayload) => treasuryApi.createPaymentMethod(payload),
+        onSuccess: () => {
+            invalidate()
+            toast.success('Método creado')
         },
-        staleTime: 15 * 60 * 1000, // 15 min — datos casi estáticos
+        onError: () => toast.error('Error al guardar método'),
+    })
+
+    const updateMutation = useMutation({
+        mutationFn: ({ id, payload }: { id: number; payload: PaymentMethodUpdatePayload }) =>
+            treasuryApi.updatePaymentMethod(id, payload),
+        onSuccess: () => {
+            invalidate()
+            toast.success('Método actualizado')
+        },
+        onError: () => toast.error('Error al guardar método'),
+    })
+
+    const deleteMutation = useMutation({
+        mutationFn: (id: number) => treasuryApi.deletePaymentMethod(id),
+        onSuccess: () => {
+            invalidate()
+            toast.success('Método eliminado')
+        },
+        onError: () => toast.error('Error al eliminar'),
     })
 
     return {
         methods: methods ?? [],
         isLoading,
         refetch,
+        createMethod: createMutation.mutateAsync,
+        updateMethod: updateMutation.mutateAsync,
+        deleteMethod: deleteMutation.mutateAsync,
+        isCreating: createMutation.isPending,
+        isUpdating: updateMutation.isPending,
     }
 }

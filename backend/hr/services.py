@@ -6,6 +6,8 @@ from django.utils.translation import gettext_lazy as _
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import Sum
+from django.contrib.contenttypes.models import ContentType
+from .models import Payroll
 import re
 
 
@@ -308,6 +310,8 @@ def post_payroll(payroll):
         entry = JournalEntry.objects.create(
             description=f"Centralización Remuneraciones {payroll.display_id} - {employee_name} ({period_str})",
             reference=payroll.display_id,
+            source_content_type=ContentType.objects.get_for_model(Payroll),
+            source_object_id=payroll.id,
         )
         
         items = payroll.items.select_related('concept', 'concept__account').all()
@@ -415,6 +419,7 @@ class PayrollPaymentService:
         transaction_number: str | None = None,
         is_pending_registration: bool = False,
         created_by=None,
+        amount: Decimal | None = None,
     ):
         from .models import Payroll, PayrollConcept, PayrollPayment
         from treasury.services import TreasuryService
@@ -446,6 +451,16 @@ class PayrollPaymentService:
         if remaining <= 0:
             raise ValidationError("Las obligaciones de Previred ya están pagadas en su totalidad.")
 
+        payment_amount = amount if amount is not None else remaining
+        
+        if payment_amount <= 0:
+            raise ValidationError("El monto a pagar debe ser mayor a cero.")
+            
+        if payment_amount > remaining:
+            raise ValidationError(
+                f"El monto a pagar ({payment_amount}) excede el saldo pendiente ({remaining})."
+            )
+
         treasury_account = TreasuryAccount.objects.get(pk=treasury_account_id)
         payment_method_obj = (
             PaymentMethod.objects.filter(pk=payment_method_id).first()
@@ -454,7 +469,7 @@ class PayrollPaymentService:
         )
 
         movement = TreasuryService.create_movement(
-            amount=remaining,
+            amount=payment_amount,
             movement_type=TreasuryMovement.Type.OUTBOUND,
             payment_method=payment_method,
             payment_method_new=payment_method_obj,
@@ -473,7 +488,7 @@ class PayrollPaymentService:
         return PayrollPayment.objects.create(
             payroll=payroll,
             payment_type=PayrollPayment.PaymentType.PREVIRED,
-            amount=remaining,
+            amount=payment_amount,
             date=payment_date,
             notes=notes,
             journal_entry=movement.journal_entry,
@@ -492,6 +507,7 @@ class PayrollPaymentService:
         transaction_number: str | None = None,
         is_pending_registration: bool = False,
         created_by=None,
+        amount: Decimal | None = None,
     ):
         from .models import GlobalHRSettings, Payroll, PayrollPayment
         from treasury.services import TreasuryService
@@ -524,6 +540,16 @@ class PayrollPaymentService:
                 "El sueldo líquido ya ha sido pagado en su totalidad (incluyendo anticipos)."
             )
 
+        payment_amount = amount if amount is not None else remaining
+        
+        if payment_amount <= 0:
+            raise ValidationError("El monto a pagar debe ser mayor a cero.")
+            
+        if payment_amount > remaining:
+            raise ValidationError(
+                f"El monto a pagar ({payment_amount}) excede el saldo pendiente ({remaining})."
+            )
+
         treasury_account = TreasuryAccount.objects.get(pk=treasury_account_id)
         payment_method_obj = (
             PaymentMethod.objects.filter(pk=payment_method_id).first()
@@ -532,7 +558,7 @@ class PayrollPaymentService:
         )
 
         movement = TreasuryService.create_movement(
-            amount=remaining,
+            amount=payment_amount,
             movement_type=TreasuryMovement.Type.OUTBOUND,
             payment_method=payment_method,
             payment_method_new=payment_method_obj,
@@ -551,7 +577,7 @@ class PayrollPaymentService:
         return PayrollPayment.objects.create(
             payroll=payroll,
             payment_type=PayrollPayment.PaymentType.SALARIO,
-            amount=remaining,
+            amount=payment_amount,
             date=payment_date,
             notes=notes,
             journal_entry=movement.journal_entry,

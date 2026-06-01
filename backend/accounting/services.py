@@ -2,6 +2,9 @@ from django.db import transaction
 from django.core.exceptions import ValidationError
 from .models import JournalEntry, JournalItem, Account, AccountType, AccountingSettings, Budget, BudgetItem
 
+def balance_affecting_statuses():
+    return JournalEntry.balance_affecting_statuses()
+
 class JournalEntryService:
     @staticmethod
     @transaction.atomic
@@ -30,21 +33,26 @@ class JournalEntryService:
     @transaction.atomic
     def reverse_entry(entry: JournalEntry, description=None):
         """
-        Creates a new Journal Entry that is the exact mirror of the original.
+        Creates a reversal Journal Entry that mirrors the original.
         Debit becomes Credit, Credit becomes Debit.
-        Returns the new reversal entry.
+        The original entry stays unchanged (POSTED/CLOSED) for audit trail.
+        Returns the new reversal entry with status REVERSAL.
         """
-        if entry.status != JournalEntry.State.POSTED:
-            raise ValidationError("Solo se pueden reversar asientos que han sido publicados.")
+        if entry.status not in [JournalEntry.State.POSTED, JournalEntry.State.CLOSED]:
+            raise ValidationError("Solo se pueden reversar asientos publicados o cerrados.")
+
+        if JournalEntry.objects.filter(reversal_of=entry).exists():
+            raise ValidationError("Este asiento ya fue revertido.")
 
         from django.utils import timezone
         
-        # 1. Create reversal entry
+        # 1. Create reversal entry linked to original
         reversal = JournalEntry.objects.create(
             date=timezone.now().date(),
             description=description or f"REVERSO: {entry.description}",
-            reference=f"REV-{entry.number or entry.id}",
-            status=JournalEntry.State.DRAFT
+            status=JournalEntry.State.DRAFT,
+            reversal_of=entry,
+            is_manual=False,
         )
         
         # 2. Mirror items
@@ -58,12 +66,14 @@ class JournalEntryService:
                 credit=item.debit
             )
         
-        # 3. Post reversal
-        JournalEntryService.post_entry(reversal)
+        # 3. Validate
+        if not reversal.items.exists():
+            raise ValidationError("El asiento de reversión debe tener al menos un apunte.")
+        reversal.check_balance()
         
-        # 4. Mark original as CANCELLED to indicate it shouldn't be touched/reversed again
-        entry.status = JournalEntry.State.CANCELLED
-        entry.save()
+        # 4. Set as REVERSAL (affects balances like POSTED/CLOSED)
+        reversal.status = JournalEntry.State.REVERSAL
+        reversal.save()
         
         return reversal
 
@@ -80,10 +90,14 @@ class JournalEntryService:
                 # Handle account (could be ID or Account instance)
                 account_val = item.pop('account', None)
                 if account_val:
-                     if hasattr(account_val, 'id'):
-                         JournalItem.objects.create(entry=entry, account=account_val, **item)
-                     else:
-                         JournalItem.objects.create(entry=entry, account_id=account_val, **item)
+                    # Coerce empty string FK values to None
+                    for fk_field in ('partner',):
+                        if fk_field in item and not item[fk_field]:
+                            item[fk_field] = None
+                    if hasattr(account_val, 'id'):
+                        JournalItem.objects.create(entry=entry, account=account_val, **item)
+                    else:
+                        JournalItem.objects.create(entry=entry, account_id=account_val, **item)
             return entry
 
 class AccountingService:
@@ -735,7 +749,7 @@ class BudgetService:
         # 2. Get all relevant accounts (budgeted OR have actuals in period)
         budgeted_account_ids = budget.items.values_list('account_id', flat=True).distinct()
         actual_account_ids = JournalItem.objects.filter(
-            entry__status='POSTED',
+            entry__status__in=balance_affecting_statuses(),
             entry__date__gte=ytd_start,
             entry__date__lte=ytd_end
         ).values_list('account_id', flat=True).distinct()
@@ -757,7 +771,7 @@ class BudgetService:
         # 3. Pre-fetch Data for performance
         # Monthly Actuals
         m_actuals_qs = JournalItem.objects.filter(
-            entry__status='POSTED',
+            entry__status__in=balance_affecting_statuses(),
             entry__date__gte=month_start,
             entry__date__lte=month_end
         ).values('account_id').annotate(debit=Sum('debit'), credit=Sum('credit'))
@@ -765,7 +779,7 @@ class BudgetService:
 
         # YTD Actuals
         y_actuals_qs = JournalItem.objects.filter(
-            entry__status='POSTED',
+            entry__status__in=balance_affecting_statuses(),
             entry__date__gte=ytd_start,
             entry__date__lte=ytd_end
         ).values('account_id').annotate(debit=Sum('debit'), credit=Sum('credit'))
@@ -904,7 +918,7 @@ class BudgetService:
             budgeted_amount = float(b_item['total_budgeted'])
             
             # Filter actual items for the entire budget period
-            filters = Q(entry__status='POSTED', 
+            filters = Q(entry__status__in=balance_affecting_statuses(), 
                         entry__date__gte=budget.start_date, 
                         entry__date__lte=budget.end_date,
                         account=account)
@@ -985,7 +999,7 @@ class BudgetService:
         
         # Get all posted items for that year
         items_qs = JournalItem.objects.filter(
-            entry__status='POSTED',
+            entry__status__in=balance_affecting_statuses(),
             entry__date__gte=start_prev,
             entry__date__lte=end_prev
         ).annotate(month=ExtractMonth('entry__date'))

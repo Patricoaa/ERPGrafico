@@ -15,7 +15,7 @@ class PurchasingConfig(AppConfig):
 
         try:
             from core.registry import UniversalRegistry, SearchableEntity
-            from purchasing.models import PurchaseOrder
+            from purchasing.models import PurchaseOrder, PurchaseReceipt, PurchaseReturn
             UniversalRegistry.register(SearchableEntity(
                 model=PurchaseOrder,
                 label='purchasing.purchaseorder',
@@ -30,6 +30,36 @@ class PurchasingConfig(AppConfig):
                 list_url='/purchasing/orders',
                 detail_url_pattern='/purchasing/orders/{id}',
                 permission='purchasing.view_purchaseorder',
+            ))
+            UniversalRegistry.register(SearchableEntity(
+                model=PurchaseReturn,
+                label='purchasing.purchasereturn',
+                title_singular='Devolución de Compra',
+                title_plural='Devoluciones de Compra',
+                icon='rotate-3d',
+                search_fields=('id', 'purchase_order__number'),
+                short_display_template='DCC-{id}',
+                display_template='DCC-{id} · {purchase_order.number}',
+                subtitle_template='{purchase_order.supplier.name}',
+                extra_info_template='{status}',
+                list_url='/purchasing/returns',
+                detail_url_pattern='/purchasing/returns/{id}',
+                permission='purchasing.view_purchasereturn',
+            ))
+            UniversalRegistry.register(SearchableEntity(
+                model=PurchaseReceipt,
+                label='purchasing.purchasereceipt',
+                title_singular='Recepción de Compra',
+                title_plural='Recepciones de Compra',
+                icon='file-check',
+                search_fields=('number', 'purchase_order__number', 'purchase_order__supplier__name'),
+                short_display_template='REC-{number}',
+                display_template='REC-{number} · {purchase_order.number}',
+                subtitle_template='{purchase_order.supplier.name}',
+                extra_info_template='{status}',
+                list_url='/purchasing/receipts',
+                detail_url_pattern='/purchasing/receipts/{id}',
+                permission='purchasing.view_purchasereceipt',
             ))
         except Exception:
             pass

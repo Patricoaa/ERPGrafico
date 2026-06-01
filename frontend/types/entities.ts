@@ -99,6 +99,21 @@ export interface Product {
     product_custom_fields?: ProductCustomField[]
     cost_price?: number | string
     copy_bom_from?: number | string
+
+    // Variant price inheritance
+    price_inheritance_mode?: 'INHERIT' | 'OVERRIDE' | 'SURCHARGE'
+    price_surcharge?: number | string | null
+    effective_price_net?: number | string
+
+    // Per-UoM prices
+    uom_prices?: ProductUoMPrice[]
+}
+
+export interface ProductUoMPrice {
+    id?: number
+    uom: number | UoM
+    price_net: number | string
+    price_gross: number | string
 }
 
 export interface ProductBOMLine {
@@ -156,6 +171,7 @@ export interface Contact {
     address?: string | null
     city?: string | null
     contact_type?: ContactType | 'CUSTOMER' | 'SUPPLIER' | 'BOTH' | 'RELATED' | 'OTHER'
+    active_roles?: string[]
     code?: string | null
     is_default_customer?: boolean
     is_default_vendor?: boolean
@@ -197,10 +213,6 @@ export interface WorkOrder {
     created_at: string
     status: string
     product_description?: string
-    specifications?: string
-    specifications_prepress?: string
-    specifications_press?: string
-    specifications_postpress?: string
     prepress_archive?: string
     start_date?: string
     sale_order_delivery_date?: string
@@ -253,6 +265,7 @@ export interface AppUser {
     last_name?: string
     is_active?: boolean
     groups?: AppGroup[]
+    contact?: number
 }
 
 // ─── Group ───────────────────────────────────────────────

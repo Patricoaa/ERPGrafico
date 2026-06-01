@@ -1,5 +1,6 @@
 export interface Invoice {
     id: number
+    display_id?: string
     number: string | null
     date: string
     dte_type: 'FACTURA' | 'BOLETA' | 'NOTA_CREDITO' | 'NOTA_DEBITO' | 'GUIA_DESPACHO' | 'FACTURA_EXENTA' | 'BOLETA_EXENTA'
@@ -40,7 +41,7 @@ export interface Invoice {
         product_name?: string
         description?: string
     }[]
-    items?: any[]
+    items?: Record<string, unknown>[]
     partner?: number
     supplier?: number
 }

@@ -1,22 +1,22 @@
 "use client"
+import { formatCurrency } from "@/lib/money"
 
 import React, { useEffect, useState } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
-import {
-    ColumnDef
-} from "@tanstack/react-table"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
-import { DataTable } from "@/components/ui/data-table"
-import { createActionsColumn, DataCell } from "@/components/ui/data-table-cells"
+import { ColumnDef } from "@tanstack/react-table"
+import { ActionConfirmModal, DataTableColumnHeader, DataTableView, EntityCard, StatusBadge } from '@/components/shared'
+import { createActionsColumn, DataCell } from '@/components/shared'
 import { Pencil, Trash2, Layers } from "lucide-react"
 import api from "@/lib/api"
-import { BOMFormModal } from "@/features/production/components/BOMFormModal"
+import { BOMDrawer } from "@/features/production"
 import { toast } from "sonner"
-import { Badge } from "@/components/ui/badge"
-import { formatCurrency } from "@/lib/utils"
-import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
+import { Chip } from "@/components/shared"
+
+import { ToolbarCreateButton, SmartSearchBar, useSmartSearch } from "@/components/shared"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
-import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+
+import { useAllBOMs } from "@/features/production"
+import { bomSearchDef } from "@/features/production/searchDef"
 
 import type { BOM } from "@/features/production/types"
 
@@ -29,15 +29,15 @@ interface BOMListItem extends BOM {
 }
 
 export default function BOMsPage() {
-    const [boms, setBoms] = useState<BOMListItem[]>([])
-    const [loading, setLoading] = useState(true)
     const [isFormOpen, setIsFormOpen] = useState(false)
     const [editingBom, setEditingBom] = useState<BOMListItem | null>(null)
     const searchParams = useSearchParams()
     const router = useRouter()
     const isNewModalOpen = searchParams.get("modal") === "new"
 
-    // Modal state sync with URL
+    const { filters } = useSmartSearch(bomSearchDef)
+    const { boms, isLoading: loading, refetch: refetchBoms } = useAllBOMs(filters)
+
     useEffect(() => {
         if (isNewModalOpen) {
             setIsFormOpen(true)
@@ -57,25 +57,12 @@ export default function BOMsPage() {
         }
     }
 
-    const fetchBoms = async () => {
-        setLoading(true)
-        try {
-            const response = await api.get('/production/boms/')
-            setBoms(response.data.results || response.data)
-        } catch (error) {
-            console.error("Error fetching BOMs:", error)
-            toast.error("Error al cargar las Listas de Materiales")
-        } finally {
-            setLoading(false)
-        }
-    }
-
     const deleteConfirm = useConfirmAction<number>(async (id) => {
         try {
             await api.delete(`/production/boms/${id}/`)
             toast.success("Lista de Materiales eliminada correctamente")
-            fetchBoms()
-        } catch (error) {
+            refetchBoms()
+        } catch {
             toast.error("Error al eliminar Lista de Materiales")
         }
     })
@@ -87,19 +74,12 @@ export default function BOMsPage() {
             const response = await api.get(`/production/boms/${id}/`)
             setEditingBom(response.data)
             setIsFormOpen(true)
-        } catch (error) {
+        } catch {
             toast.error("Error al cargar detalles de la Lista de Materiales")
         }
     }
 
-    useEffect(() => {
-        fetchBoms()
-    }, [])
-
-
-
-
-    const columns: import("@tanstack/react-table").ColumnDef<BOMListItem>[] = [
+    const columns: ColumnDef<BOMListItem>[] = [
         {
             accessorKey: "product_name",
             header: ({ column }) => (
@@ -112,19 +92,20 @@ export default function BOMsPage() {
                         <span className="font-medium text-xs leading-tight text-center">{bom.product_name}</span>
                         <div className="flex flex-wrap justify-center gap-1">
                             {bom.product_internal_code && (
-                                <Badge variant="outline" className="text-[10px] h-4 px-1 font-normal opacity-80 uppercase text-center">
+                                <Chip size="xs" intent="neutral" className="font-normal opacity-80 text-center">
                                     {bom.product_internal_code}
-                                </Badge>
+                                </Chip>
                             )}
                             {bom.product_code && bom.product_code !== bom.product_internal_code && (
-                                <Badge variant="secondary" className="text-[10px] h-4 px-1 font-normal opacity-80 uppercase text-center">
+                                <Chip size="xs" intent="neutral" className="font-normal opacity-80 text-center">
                                     {bom.product_code}
-                                </Badge>
+                                </Chip>
                             )}
                         </div>
                     </div>
                 );
             },
+            meta: { title: "Producto" },
         },
         {
             accessorKey: "name",
@@ -132,6 +113,7 @@ export default function BOMsPage() {
                 <DataTableColumnHeader column={column} title="Nombre / Versión" className="justify-center" />
             ),
             cell: ({ row }) => <div className="text-center">{row.getValue("name")}</div>,
+            meta: { title: "Nombre / Versión" },
         },
         {
             accessorKey: "lines_count",
@@ -140,12 +122,13 @@ export default function BOMsPage() {
             ),
             cell: ({ row }) => (
                 <div className="flex justify-center">
-                    <Badge variant="secondary" className="gap-1">
+                    <Chip size="sm" intent="neutral" className="gap-1">
                         <Layers className="h-3 w-3" />
                         {row.getValue("lines_count") || 0}
-                    </Badge>
+                    </Chip>
                 </div>
             ),
+            meta: { title: "Componentes" },
         },
         {
             accessorKey: "total_cost",
@@ -158,6 +141,7 @@ export default function BOMsPage() {
                     {formatCurrency(amount)}
                 </div>
             },
+            meta: { title: "Costo Total" },
         },
         {
             accessorKey: "active",
@@ -172,6 +156,7 @@ export default function BOMsPage() {
                     />
                 </div>
             ),
+            meta: { title: "Estado" },
         },
         createActionsColumn<BOMListItem>({
             renderActions: (bom) => (
@@ -193,36 +178,40 @@ export default function BOMsPage() {
     ]
 
     return (
-        <div className="space-y-4">
+        <div className="pt-2 flex-1 min-h-0 flex flex-col">
 
-            <div className="pt-4">
-                <DataTable
+            <div className="flex-1 min-h-0">
+                <DataTableView
                     columns={columns}
-                    data={boms}
+                    data={boms as unknown as BOMListItem[]}
                     isLoading={loading}
+                    entityLabel="production.bom"
                     variant="embedded"
                     defaultPageSize={20}
-                    filterColumn="product_name"
-                    searchPlaceholder="Buscar por producto..."
-                    facetedFilters={[
-                        {
-                            column: "active",
-                            title: "Estado",
-                            options: [
-                                { label: "Activa", value: "true" },
-                                { label: "Inactiva", value: "false" },
-                            ],
-                        },
-                    ]}
-                    useAdvancedFilter={true}
+                    leftAction={<SmartSearchBar searchDef={bomSearchDef} placeholder="Buscar por producto..." className="w-full" />}
                     createAction={<ToolbarCreateButton label="Nueva Lista" href="/production/boms?modal=new" />}
+                    renderCard={(bom: BOMListItem) => (
+                        <EntityCard onClick={() => handleEdit(bom.id!)}>
+                            <EntityCard.Header
+                                title={bom.name}
+                                subtitle={bom.product_name}
+                                trailing={<StatusBadge status={bom.active ? 'active' : 'inactive'} size="sm" />}
+                            />
+                            <EntityCard.Body>
+                                {bom.product_internal_code && (
+                                    <EntityCard.Field label="Código" value={<DataCell.Code>{bom.product_internal_code}</DataCell.Code>} />
+                                )}
+                                <EntityCard.Field label="Componentes" value={<DataCell.Number value={bom.lines_count} />} />
+                            </EntityCard.Body>
+                        </EntityCard>
+                    )}
                 />
             </div>
 
-            <BOMFormModal
+            <BOMDrawer
                 open={isFormOpen}
                 onOpenChange={handleFormClose}
-                onSuccess={fetchBoms}
+                onSuccess={refetchBoms}
                 bomToEdit={editingBom || undefined}
                 product={editingBom ? {
                     id: editingBom.product,

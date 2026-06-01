@@ -2,34 +2,29 @@
 
 import React, { useState, useEffect, useCallback } from "react"
 import { toast } from "sonner"
-import { AdvanceFormModal } from "@/features/hr"
-import { getAdvances, createAdvance, updateAdvance, deleteAdvance, getEmployees, getPayrolls } from '@/features/hr/api/hrApi'
+import { AdvanceDrawer } from "@/features/hr"
+import { createAdvance, deleteAdvance, getEmployees, getPayrolls } from "@/features/hr"
 import { PaymentModal } from "@/features/treasury"
 import type { SalaryAdvance, Employee, Payroll } from "@/types/hr"
-
-
-import {
-    Plus, Pencil, Trash2
-} from "lucide-react"
-
-import { DataTable } from "@/components/ui/data-table"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
-import { createActionsColumn, DataCell } from "@/components/ui/data-table-cells"
-import { StatusBadge } from "@/components/shared/StatusBadge"
+import { Pencil, Trash2 } from "lucide-react"
+import { DataTableView, DataTableColumnHeader } from '@/components/shared'
+import { createActionsColumn, DataCell } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
 import { useSearchParams } from "next/navigation"
 
-import { ToolbarCreateButton } from "@/components/shared"
+import { ToolbarCreateButton, SmartSearchBar, useSmartSearch } from "@/components/shared"
+import { useSalaryAdvances } from "@/features/hr"
+import { salaryAdvanceSearchDef } from "@/features/hr/searchDef"
 
 // Advance schemas and types moved to features/hr/components/AdvanceFormDialog
 
 export default function AdvancesPage() {
     const createAction = <ToolbarCreateButton label="Nuevo Anticipo" href="/hr/advances?modal=new" />
     const searchParams = useSearchParams()
-    const [advances, setAdvances] = useState<SalaryAdvance[]>([])
+    const { filters } = useSmartSearch(salaryAdvanceSearchDef)
+    const { advances, isLoading: loading, refetch: refetchAdvances } = useSalaryAdvances(filters)
     const [employees, setEmployees] = useState<Employee[]>([])
     const [payrolls, setPayrolls] = useState<Payroll[]>([])
-    const [loading, setLoading] = useState(true)
 
     // Dialog state synchronized with URL or local edit
     const isNewModalOpen = searchParams.get("modal") === "new"
@@ -50,30 +45,23 @@ export default function AdvancesPage() {
         }
     }
 
-    const fetchAll = useCallback(async () => {
+    const fetchDropdownData = useCallback(async () => {
         try {
-            const [adv, emps, pays] = await Promise.all([
-                getAdvances(),
-                getEmployees(),
-                getPayrolls() // Fetch all payrolls to support drafts
-            ])
-            setAdvances(adv)
+            const [emps, pays] = await Promise.all([getEmployees(), getPayrolls()])
             setEmployees(emps)
             setPayrolls(pays)
         } catch {
-            toast.error("Error al cargar anticipos")
-        } finally {
-            setLoading(false)
+            toast.error("Error al cargar datos")
         }
     }, [])
 
-    useEffect(() => { fetchAll() }, [fetchAll])
+    useEffect(() => { fetchDropdownData() }, [fetchDropdownData])
 
     const handleDelete = async (id: number) => {
         try {
             await deleteAdvance(id)
             toast.success("Anticipo eliminado")
-            fetchAll()
+            refetchAdvances()
         } catch {
             toast.error("Error al eliminar anticipo")
         }
@@ -111,14 +99,11 @@ export default function AdvancesPage() {
         {
             accessorKey: "is_discounted",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" className="justify-center" />,
-            cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <StatusBadge
-                        status={row.original.is_discounted ? "DISCOUNTED" : "PENDING"}
-                        label={row.original.is_discounted ? "Descontado" : "Pendiente"}
-                    />
-                </div>
-            )
+            cell: ({ row }) =>
+                <DataCell.Status
+                    status={row.original.is_discounted ? "DISCOUNTED" : "PENDING"}
+                    label={row.original.is_discounted ? "Descontado" : "Pendiente"}
+                />,
         },
         {
             accessorKey: "payroll_display_id",
@@ -158,20 +143,21 @@ export default function AdvancesPage() {
     ]
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-4 h-full flex flex-col">
+            <div className="flex-1 min-h-0">
+                <DataTableView
+                    columns={columns}
+                    data={advances}
+                    isLoading={loading}
+                    entityLabel="hr.salaryadvance"
+                    variant="embedded"
+                    leftAction={<SmartSearchBar searchDef={salaryAdvanceSearchDef} placeholder="Buscar anticipos..." className="w-full" />}
+                    defaultPageSize={20}
+                    createAction={createAction}
+                />
+            </div>
 
-            <DataTable
-                columns={columns}
-                data={advances}
-                isLoading={loading}
-                variant="embedded"
-                filterColumn="employee_name"
-                defaultPageSize={20}
-                useAdvancedFilter={true}
-                createAction={createAction}
-            />
-
-            <AdvanceFormModal
+            <AdvanceDrawer
                 open={dialogOpen}
                 onOpenChange={(o) => { setDialogOpen(o); if (!o) setEditingAdvance(null) }}
                 advance={editingAdvance}
@@ -179,7 +165,7 @@ export default function AdvancesPage() {
                 payrolls={payrolls}
                 onSaved={(data) => {
                     if (editingAdvance) {
-                        fetchAll()
+                        refetchAdvances()
                         setDialogOpen(false)
                         setEditingAdvance(null)
                     } else {
@@ -207,7 +193,7 @@ export default function AdvancesPage() {
                             date: String(paymentData.documentDate || tempAdvanceData?.date),
                         } as Parameters<typeof createAdvance>[0])
                         toast.success("Anticipo registrado y pago contabilizado")
-                        fetchAll()
+                        refetchAdvances()
                         setPaymentModalOpen(false)
                         setTempAdvanceData(null)
                     } catch (e: unknown) {

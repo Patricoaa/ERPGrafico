@@ -1,4 +1,5 @@
 "use client"
+import { formatPlainDate } from "@/lib/utils";
 
 // Cart Component
 // Shopping cart display with totals and actions
@@ -6,16 +7,16 @@
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { StatusBadge } from '@/components/shared/StatusBadge'
-import { Table, TableBody, TableHead, TableHeader, TableRow, TableCell } from '@/components/ui/table'
-import { ShoppingCart, Zap, Clock, User, FileText, Truck, Calendar, Edit } from 'lucide-react'
+import {Table, TableBody, TableHead, TableHeader, TableRow} from '@/components/ui/table'
+import {ShoppingCart, Zap, Clock, User, FileText, Truck, Calendar} from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { CartItem } from './CartItem'
-import { formatCurrency } from '@/lib/currency'
+import { formatCurrency } from "@/lib/money"
 import { useDeviceContext } from '@/hooks/useDeviceContext'
 import { useTouchMode } from '@/hooks/useTouchMode'
 import type { CartItem as CartItemType, Product, UoM, StockLimits, WizardState } from '@/types/pos'
 import { useSalesSettings } from '@/features/settings'
+import { getDteLabel } from '@/lib/entity-registry'
 
 interface CartProps {
     items: CartItemType[]
@@ -86,17 +87,6 @@ export function Cart({
     const deliveryType = wizardState?.deliveryData?.type
     const deliveryDate = wizardState?.deliveryData?.date
 
-    const getDteLabel = (type: string) => {
-        switch (type) {
-            case 'BOLETA': return 'Boleta'
-            case 'FACTURA': return 'Factura'
-            case 'BOLETA_EXENTA': return 'Boleta Exenta'
-            case 'FACTURA_EXENTA': return 'Factura Exenta'
-            case 'NONE': return 'Sin Documento'
-            default: return type
-        }
-    }
-
     const getDeliveryLabel = (type: string) => {
         switch (type) {
             case 'IMMEDIATE': return 'Inmediata'
@@ -107,7 +97,7 @@ export function Cart({
     }
 
     return (
-        <Card className="flex-1 flex flex-col overflow-hidden border bg-background/50 shadow-sm rounded-md">
+        <Card className="py-2 flex-1 flex flex-col overflow-hidden border bg-background/50 shadow-sm rounded-md">
             <CardContent className="p-0 flex-1 flex flex-col overflow-hidden">
                 {/* Header */}
                 <div className="px-6 pt-4 pb-4 border-b bg-background/50 flex flex-col justify-center rounded-t-md h-[88px] shrink-0 gap-1.5">
@@ -234,7 +224,7 @@ export function Cart({
                                         </span>
                                         <span className="text-[10px] text-muted-foreground flex items-center gap-1 ml-1 font-mono font-medium">
                                             <Calendar className="h-3 w-3" />
-                                            {deliveryDate ? new Date(deliveryDate).toLocaleDateString() : new Date().toLocaleDateString()}
+                                            {deliveryDate ? formatPlainDate(deliveryDate) : formatPlainDate(new Date())}
                                         </span>
                                     </div>
                                 </div>

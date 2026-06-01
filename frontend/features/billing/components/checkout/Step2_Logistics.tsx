@@ -3,8 +3,8 @@
 import { useState, useEffect } from "react"
 import { LabeledInput, LabeledContainer, PeriodValidationDateInput } from "@/components/shared"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Truck, Package, Calendar, Info, AlertTriangle, ShoppingBag } from "lucide-react"
-import api from "@/lib/api"
+import {Truck, Package, Calendar, AlertTriangle, ShoppingBag} from "lucide-react"
+import { billingApi } from "../../api/billingApi"
 import { cn } from "@/lib/utils"
 import { useServerDate } from "@/hooks/useServerDate"
 import {
@@ -31,8 +31,8 @@ function UoMSelector({ line: l, currentUom: cu, onUomChange }: { line: Record<st
     useEffect(() => {
         const fetchAllowed = async () => {
             try {
-                const res = await api.get(`/inventory/uoms/allowed/?product_id=${line.product_id || line.product}&context=sale`)
-                setAllowedUoms(res.data)
+                const uoms = await billingApi.getAllowedUoms(line.product_id || line.product, 'sale')
+                setAllowedUoms(uoms)
             } catch (err) {
                 console.error("Error fetching allowed UoMs", err)
             }
@@ -82,6 +82,26 @@ export function Step2_Logistics({
     );
     const hasRestrictedItems = !isCreditNote && restrictedItems.length > 0;
 
+    const fetchWarehouses = async () => {
+        try {
+            setFetchingWarehouses(true)
+            const list = await billingApi.getWarehouses()
+            setWarehouses(Array.isArray(list) ? list : [])
+
+            if (Array.isArray(list) && list.length > 0 && (!data || !data.warehouse_id)) {
+                setData({
+                    ...(data || { date: dateString || "", notes: "", delivery_type: hasRestrictedItems ? 'SCHEDULED' : 'IMMEDIATE', line_data: [] }),
+                    warehouse_id: (list[0] as Record<string, unknown>).id as string
+                })
+            }
+        } catch (err) {
+            console.error("Error fetching warehouses", err)
+            // toast.error("Error al cargar almacenes")
+        } finally {
+            setFetchingWarehouses(false)
+        }
+    }
+
     // Initialize data if null or missing fields
     useEffect(() => {
         if (!data || !data.delivery_type) {
@@ -96,27 +116,6 @@ export function Step2_Logistics({
         }
         fetchWarehouses()
     }, [])
-
-    const fetchWarehouses = async () => {
-        try {
-            setFetchingWarehouses(true)
-            const res = await api.get('/inventory/warehouses/')
-            const list = res.data.results || res.data
-            setWarehouses(Array.isArray(list) ? list : [])
-
-            if (Array.isArray(list) && list.length > 0 && (!data || !data.warehouse_id)) {
-                setData({
-                    ...(data || { date: dateString || "", notes: "", delivery_type: hasRestrictedItems ? 'SCHEDULED' : 'IMMEDIATE', line_data: [] }),
-                    warehouse_id: list[0].id.toString()
-                })
-            }
-        } catch (err) {
-            console.error("Error fetching warehouses", err)
-            // toast.error("Error al cargar almacenes")
-        } finally {
-            setFetchingWarehouses(false)
-        }
-    }
 
     const formData = (data || {
         warehouse_id: "",

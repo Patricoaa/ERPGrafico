@@ -3,7 +3,7 @@ layer: 20-contracts
 doc: api-contracts
 status: active
 owner: backend-team
-last_review: 2026-04-23
+last_review: 2026-05-28
 stability: contract-changes-require-ADR
 ---
 
@@ -16,7 +16,7 @@ Backend REST surface under `/api/`. Every endpoint has request schema, response 
 - Base URL: `/api/[app]/`
 - Auth: JWT `Authorization: Bearer <access>` on all except `/api/token/*`.
 - Content-Type: `application/json` (except uploads).
-- Pagination: DRF cursor — `?cursor=…&page_size=N` (max 100). Response: `{ next, previous, results }`.
+- Pagination: DRF page-number — `?page=N&page_size=M` (default `page_size=50`, max `200`). Response: `{ count, next, previous, results }`. Contrato cruzado backend↔hook↔DataTable: [pagination-contract.md](./pagination-contract.md). _Nota 2026-05-23: el contrato actualmente aplica solo a `inventory/*` y `treasury/*` (las únicas apps con `pagination_class` declarado). El resto devuelve `T[]` plano hasta que se active `DEFAULT_PAGINATION_CLASS` global — ver [pagination-contract.md §1.3 + §5 paso 5](./pagination-contract.md#13-configuración-django-must)._
 - Filtering: `django_filter` query params.
 - Ordering: `?ordering=field,-other`.
 - Errors: DRF standard — `{ detail }` or `{ field: [msg] }`.
@@ -70,7 +70,7 @@ GET    /api/sales/orders/                list, paginated
 POST   /api/sales/orders/                create
 GET    /api/sales/orders/{id}/           detail
 PATCH  /api/sales/orders/{id}/           partial update
-DELETE /api/sales/orders/{id}/           soft-delete
+DELETE /api/sales/orders/{id}/           transactional doc — annul via status=CANCELLED, not hard-delete (deletion-policy.md)
 POST   /api/sales/orders/{id}/transition/  body: {to_state, comment?}
 ```
 
@@ -78,11 +78,11 @@ Request schema (create) — mirrored by frontend Zod `SaleOrderCreateSchema`:
 
 ```json
 {
-  "customer_id": "uuid",
+  "customer_id": "number (id)",
   "items": [
-    {"sku": "string", "qty": "int>0", "unit_price_cents": "int>=0"}
+    {"product_id": "number", "quantity": "decimal>0", "unit_price": "decimal>=0"}
   ],
-  "delivery_date": "ISO-8601",
+  "delivery_date": "YYYY-MM-DD",
   "notes": "string?"
 }
 ```
@@ -91,12 +91,14 @@ Response schema (detail):
 
 ```json
 {
-  "id": "uuid",
-  "folio": "string",
-  "status": "draft|confirmed|in_production|…",
-  "customer": { "id": "uuid", "name": "string" },
+  "id": "number",
+  "number": "int (business identifier — rendered as NV-{number} via ENTITY_REGISTRY)",
+  "status": "DRAFT|CONFIRMED|PAYMENT_PENDING|INVOICED|PAID|CANCELLED",
+  "customer": { "id": "number", "name": "string" },
   "items": [ /* line items with computed totals */ ],
-  "totals": { "subtotal_cents": "int", "tax_cents": "int", "total_cents": "int" },
+  "total_net": "decimal",
+  "total_tax": "decimal",
+  "total": "decimal",
   "created_at": "ISO-8601",
   "updated_at": "ISO-8601"
 }

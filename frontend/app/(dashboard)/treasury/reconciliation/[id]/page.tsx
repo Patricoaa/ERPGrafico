@@ -1,4 +1,6 @@
 "use client"
+import { formatCurrency } from "@/lib/money"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 
 import { showApiError } from "@/lib/errors"
 import { useState, useEffect, use } from "react"
@@ -9,30 +11,20 @@ import {
     Calendar, Banknote, TrendingUp, TrendingDown,
     Undo2, Info, AlertCircle, ExternalLink, Activity
 } from "lucide-react"
-import { TableSkeleton } from "@/components/shared/TableSkeleton"
-import { PageHeader } from "@/components/shared/PageHeader"
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+import { ActionConfirmModal, PageHeader, SkeletonShell } from '@/components/shared'
+
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import api from "@/lib/api"
-import { formatCurrency } from "@/lib/utils"
-import { DataTable } from "@/components/ui/data-table"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+
+import { DataTable } from '@/components/shared'
+import { DataTableColumnHeader } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
 
-import { createActionsColumn, DataCell } from "@/components/ui/data-table-cells"
+import { createActionsColumn, DataCell } from '@/components/shared'
 import { Progress } from "@/components/ui/progress"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
-import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+
 import { toast } from "sonner"
 
 interface BankStatementLine {
@@ -79,13 +71,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
 
     const [statement, setStatement] = useState<BankStatement | null>(null)
     const [loading, setLoading] = useState(true)
-    const [confirming, setConfirming] = useState(false)
     const [unmatchDialog, setUnmatchDialog] = useState<{ open: boolean, lineId: number | null }>({ open: false, lineId: null })
-    const [paymentModal, setPaymentModal] = useState<{ open: boolean, id: number | null }>({ open: false, id: null })
-
-    useEffect(() => {
-        fetchStatement()
-    }, [id])
 
     const fetchStatement = async () => {
         try {
@@ -98,6 +84,10 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
             setLoading(false)
         }
     }
+
+    useEffect(() => {
+        fetchStatement()
+    }, [id])
 
     const handleUnmatch = async () => {
         if (!unmatchDialog.lineId) return
@@ -127,8 +117,6 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
         }
     })
 
-    const handleConfirmStatement = () => confirmAction.requestConfirm()
-
     const columns: ColumnDef<BankStatementLine>[] = [
         {
             accessorKey: "line_number",
@@ -151,7 +139,12 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
             ),
             cell: ({ row }) => (
                 <div className="flex flex-col max-w-[200px]">
-                    <span className="font-medium text-xs truncate" title={row.getValue("description")}>{row.getValue("description")}</span>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <span className="font-medium text-xs truncate">{row.getValue("description")}</span>
+                        </TooltipTrigger>
+                        <TooltipContent side="top">{row.getValue("description")}</TooltipContent>
+                    </Tooltip>
                     {row.original.reference && (
                         <span className="text-[10px] text-muted-foreground truncate"> {/* intentional: badge density */} {row.original.reference}</span>
                     )}
@@ -166,7 +159,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
             cell: ({ row }) => {
                 const val = parseFloat(row.getValue("debit"))
                 return val > 0 ? (
-                    <DataCell.Currency value={val} className="text-expense font-black" />
+                    <DataCell.Currency value={val} />
                 ) : (
                     <span className="text-muted-foreground/30 ml-4">-</span>
                 )
@@ -180,7 +173,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
             cell: ({ row }) => {
                 const val = parseFloat(row.getValue("credit"))
                 return val > 0 ? (
-                    <DataCell.Currency value={val} className="text-income font-black" />
+                    <DataCell.Currency value={val} />
                 ) : (
                     <span className="text-muted-foreground/30 ml-4">-</span>
                 )
@@ -191,7 +184,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Saldo" />
             ),
-            cell: ({ row }) => <DataCell.Currency value={row.getValue("balance")} className="font-mono text-xs" />,
+            cell: ({ row }) => <DataCell.Currency value={row.getValue("balance")} />,
         },
         {
             accessorKey: "reconciliation_state",
@@ -245,14 +238,14 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
     ]
 
     if (loading) return (
-        <div className="flex-1 p-8 pt-6">
-            <TableSkeleton rows={12} columns={5} />
+        <div className="flex-1">
+            <SkeletonShell isLoading ariaLabel="Cargando..." />
         </div>
     )
 
     if (!statement) {
         return (
-            <div className="flex-1 p-8 pt-6">
+            <div className="flex-1">
                 <Card className="max-w-md mx-auto mt-12">
                     <CardHeader>
                         <CardTitle className="text-destructive flex items-center gap-2">
@@ -270,7 +263,6 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
             </div>
         )
     }
-
 
     // --- RENDER SUMMARY VIEW ---
     const totalDebits = statement.lines.reduce((acc, line) => acc + parseFloat(line.debit), 0)
@@ -466,20 +458,15 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
                 </div>
             </div>
 
-            <AlertDialog open={unmatchDialog.open} onOpenChange={(open) => !open && setUnmatchDialog(prev => ({ ...prev, open: false }))}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>¿Deshacer reconciliación?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            Esta acción desvinculará la línea del pago y la devolverá al estado &quot;No Reconciliado&quot;.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleUnmatch} className="bg-destructive hover:bg-destructive">Confirmar</AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
+            <ActionConfirmModal
+                open={unmatchDialog.open}
+                onOpenChange={(open) => !open && setUnmatchDialog(prev => ({ ...prev, open: false }))}
+                onConfirm={handleUnmatch}
+                title="¿Deshacer reconciliación?"
+                description='Esta acción desvinculará la línea del pago y la devolverá al estado "No Reconciliado".'
+                variant="destructive"
+                confirmText="Confirmar"
+            />
 
             <ActionConfirmModal
                 open={confirmAction.isOpen}

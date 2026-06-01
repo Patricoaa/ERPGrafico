@@ -1,16 +1,16 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { toast } from "sonner"
-import api from "@/lib/api"
-import { Button } from "@/components/ui/button"
-import { DataTable } from "@/components/ui/data-table"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { useGroups } from "../hooks"
+import { ActionConfirmModal, DataTable } from '@/components/shared'
+import { DataTableColumnHeader } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
-import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
-import { Plus, Edit, Trash2, Loader2, Users } from "lucide-react"
-import { GroupForm } from "@/features/users/components/GroupForm"
-import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+import { DataCell, createActionsColumn } from '@/components/shared'
+import { Users } from "lucide-react"
+import { GroupDrawer } from "@/features/users/components/GroupDrawer"
+
+import { SmartSearchBar, useClientSearch } from "@/components/shared"
+import { groupSearchDef } from "@/features/settings/searchDef"
 
 interface GroupManagementProps {
     externalOpen?: boolean
@@ -19,25 +19,10 @@ interface GroupManagementProps {
 }
 
 export function GroupManagement({ externalOpen, onExternalOpenChange, createAction }: GroupManagementProps) {
-    const [loading, setLoading] = useState(true)
-    const [groups, setGroups] = useState<any[]>([])
+    const { groups, loading, fetchGroups, deleteGroup } = useGroups()
+    const { filterFn } = useClientSearch<Record<string, unknown>>(groupSearchDef)
     const [deleteId, setDeleteId] = useState<number | null>(null)
     const [showCreateModal, setShowCreateModal] = useState(false)
-
-    const fetchGroups = async () => {
-        try {
-            const res = await api.get('/core/groups/')
-            setGroups(res.data.results || res.data)
-        } catch (error) {
-            toast.error("Error al cargar grupos")
-        } finally {
-            setLoading(false)
-        }
-    }
-
-    useEffect(() => {
-        fetchGroups()
-    }, [])
 
     useEffect(() => {
         if (externalOpen) {
@@ -47,18 +32,11 @@ export function GroupManagement({ externalOpen, onExternalOpenChange, createActi
 
     const handleDelete = async () => {
         if (!deleteId) return
-        try {
-            await api.delete(`/core/groups/${deleteId}/`)
-            toast.success("Grupo eliminado correctamente")
-            fetchGroups()
-        } catch (error) {
-            toast.error("Error al eliminar grupo")
-        } finally {
-            setDeleteId(null)
-        }
+        const success = await deleteGroup(deleteId)
+        if (success) setDeleteId(null)
     }
 
-    const columns: ColumnDef<any>[] = [
+    const columns: ColumnDef<Record<string, unknown>>[] = [
         {
             accessorKey: "name",
             header: ({ column }) => (
@@ -76,21 +54,19 @@ export function GroupManagement({ externalOpen, onExternalOpenChange, createActi
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Miembros" />
             ),
-            cell: ({ row }) => <div className="pl-4 text-xs">{row.getValue("user_count")}</div>,
+            cell: ({ row }) => <DataCell.Number value={row.getValue("user_count")} />,
         },
-        createActionsColumn<any>({
+        createActionsColumn<Record<string, unknown>>({
             renderActions: (group) => (
                 <>
-                    <GroupForm
-                        initialData={group}
+                    <GroupDrawer
+                        initialData={group as { id: number; name: string }}
                         onSuccess={fetchGroups}
-                        trigger={<DataCell.Action icon={Edit} title="Editar" />}
+                        trigger={<DataCell.Action action="edit" />}
                     />
-                    <DataCell.Action 
-                        icon={Trash2} 
-                        title="Eliminar" 
-                        className="text-destructive hover:text-destructive" 
-                        onClick={() => setDeleteId(group.id)} 
+                    <DataCell.Action
+                        action="delete"
+                        onClick={() => setDeleteId(group.id as number)}
                     />
                 </>
             )
@@ -98,19 +74,19 @@ export function GroupManagement({ externalOpen, onExternalOpenChange, createActi
     ]
 
     return (
-        <div className="space-y-4">
-            <DataTable
-                columns={columns}
-                data={groups}
-                isLoading={loading}
-                variant="embedded"
-                filterColumn="name"
-                searchPlaceholder="Buscar grupo..."
-                useAdvancedFilter={true}
-                createAction={createAction}
-            />
+        <div className="space-y-4 h-full flex flex-col">
+            <div className="flex-1 min-h-0">
+                <DataTable
+                    columns={columns}
+                    data={filterFn(groups as unknown as Record<string, unknown>[])}
+                    isLoading={loading}
+                    variant="embedded"
+                    leftAction={<SmartSearchBar searchDef={groupSearchDef} placeholder="Buscar grupo..." className="w-full" />}
+                    createAction={createAction}
+                />
+            </div>
 
-            <GroupForm
+            <GroupDrawer
                 open={showCreateModal}
                 onOpenChange={(open) => {
                     setShowCreateModal(open)

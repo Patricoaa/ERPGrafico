@@ -2,14 +2,15 @@
 
 import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { DataTable } from "@/components/ui/data-table"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { DataTable, DataCell, SkeletonShell } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
-import { TableSkeleton } from "@/components/shared"
+import { JournalEntryDrawer } from "@/features/accounting"
+import { useJournalEntry } from "@/features/accounting"
+import type { JournalEntryInitialData } from "@/types/forms"
 
 export default function AccountLedgerPage() {
     const params = useParams()
@@ -19,6 +20,20 @@ export default function AccountLedgerPage() {
     const [account, setAccount] = useState<{ id: number, code: string, name: string } | null>(null)
     const [movements, setMovements] = useState<Record<string, unknown>[]>([])
     const [loading, setLoading] = useState(true)
+    const [selectedEntryId, setSelectedEntryId] = useState<number | null>(null)
+    const { data: selectedEntryData } = useJournalEntry(selectedEntryId ?? undefined)
+
+    const fetchLedger = async () => {
+        try {
+            const res = await api.get(`/accounting/accounts/${accountId}/ledger/`)
+            setAccount(res.data.account)
+            setMovements(res.data.movements)
+        } catch {
+            toast.error("Error al cargar el libro mayor")
+        } finally {
+            setLoading(false)
+        }
+    }
 
     useEffect(() => {
         if (accountId) {
@@ -26,24 +41,11 @@ export default function AccountLedgerPage() {
         }
     }, [accountId])
 
-    const fetchLedger = async () => {
-        try {
-            const res = await api.get(`/accounting/accounts/${accountId}/ledger/`)
-            setAccount(res.data.account)
-            setMovements(res.data.movements)
-        } catch (error) {
-            toast.error("Error al cargar el libro mayor")
-        } finally {
-            setLoading(false)
-        }
-    }
-
     const columns: ColumnDef<Record<string, unknown>>[] = [
         {
             accessorKey: "date",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Fecha" />
-            ),
+            header: "Fecha",
+            cell: ({ row }) => <DataCell.Date value={row.getValue("date") as string} />,
         },
         {
             id: "reference",
@@ -52,13 +54,13 @@ export default function AccountLedgerPage() {
                 const mov = row.original as { reference?: string, entry_id?: number, source_document?: { url: string, type: string, name: string } }
                 return (
                     <div className="flex flex-col">
-                        <a href={`/accounting/entries`} className="text-primary hover:underline text-sm font-medium">
+                        <DataCell.Link onClick={() => setSelectedEntryId(mov.entry_id as number)}>
                             {mov.reference || `Asiento ${mov.entry_id}`}
-                        </a>
+                        </DataCell.Link>
                         {mov.source_document && (
-                            <a href={mov.source_document.url} className="text-[10px] text-muted-foreground hover:text-primary underline uppercase font-bold">
+                            <DataCell.Link href={mov.source_document.url} external>
                                 {mov.source_document.type}: {mov.source_document.name}
-                            </a>
+                            </DataCell.Link>
                         )}
                     </div>
                 )
@@ -66,58 +68,48 @@ export default function AccountLedgerPage() {
         },
         {
             accessorKey: "description",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Descripción" />
-            ),
-            cell: ({ row }) => <div className="max-w-md truncate">{row.getValue("description")}</div>,
+            header: "Descripción",
+            cell: ({ row }) => <DataCell.Text className="max-w-md truncate">{row.getValue("description") as string}</DataCell.Text>,
         },
         {
             accessorKey: "partner",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Tercero" />
-            ),
-            cell: ({ row }) => <div className="text-sm text-muted-foreground">{row.getValue("partner")}</div>,
+            header: "Tercero",
+            cell: ({ row }) => <DataCell.Secondary>{row.getValue("partner") as string}</DataCell.Secondary>,
         },
         {
             accessorKey: "debit",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Debe" />
-            ),
+            header: "Debe",
             cell: ({ row }) => {
-                const debit = parseFloat(row.getValue("debit"));
-                return <div className="text-right font-mono">{debit > 0 ? `$${debit.toLocaleString()}` : '-'}</div>
+                const debit = parseFloat(row.getValue("debit") as string);
+                return debit > 0 ? <DataCell.Currency value={debit} /> : <DataCell.Currency value={null} />;
             },
         },
         {
             accessorKey: "credit",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Haber" />
-            ),
+            header: "Haber",
             cell: ({ row }) => {
-                const credit = parseFloat(row.getValue("credit"));
-                return <div className="text-right font-mono">{credit > 0 ? `$${credit.toLocaleString()}` : '-'}</div>
+                const credit = parseFloat(row.getValue("credit") as string);
+                return credit > 0 ? <DataCell.Currency value={credit} /> : <DataCell.Currency value={null} />;
             },
         },
         {
             accessorKey: "balance",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Saldo" />
-            ),
-            cell: ({ row }) => <div className="text-right font-mono font-bold">${parseFloat(row.getValue("balance")).toLocaleString()}</div>,
+            header: "Saldo",
+            cell: ({ row }) => <DataCell.Currency value={parseFloat(row.getValue("balance") as string)} />,
         },
     ]
 
     if (loading) {
-        return <div className="p-6"><TableSkeleton rows={10} columns={7} /></div>
+        return <div><SkeletonShell isLoading ariaLabel="Cargando..." /></div>
     }
 
     if (!account) {
-        return <div className="p-6">Cuenta no encontrada</div>
+        return <div>Cuenta no encontrada</div>
     }
 
     return (
-        <div className="p-6 space-y-6">
-            <div className="flex items-center gap-4">
+        <div className="space-y-6 h-full flex flex-col">
+            <div className="flex items-center gap-4 shrink-0">
                 <Button variant="ghost" size="icon" onClick={() => router.back()}>
                     <ArrowLeft className="h-4 w-4" />
                 </Button>
@@ -129,14 +121,23 @@ export default function AccountLedgerPage() {
                 </div>
             </div>
 
-            <DataTable
-                columns={columns}
-                data={movements}
-                variant="embedded"
+            <div className="flex-1 min-h-0">
+                <DataTable
+                    columns={columns}
+                    data={movements}
+                    variant="embedded"
                 useAdvancedFilter={true}
                 globalFilterFields={["date", "description", "partner"]}
                 searchPlaceholder="Buscar por fecha, descripción o tercero..."
                 defaultPageSize={50}
+            />
+            </div>
+
+            <JournalEntryDrawer
+                open={selectedEntryId !== null}
+                onOpenChange={(open) => { if (!open) setSelectedEntryId(null) }}
+                initialData={selectedEntryData as unknown as JournalEntryInitialData}
+                onSuccess={() => { fetchLedger(); setSelectedEntryId(null) }}
             />
         </div>
     )

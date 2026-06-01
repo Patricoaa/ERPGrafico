@@ -3,10 +3,11 @@ import { getErrorMessage } from "@/lib/errors"
 import { useState } from "react"
 import { PhaseCard } from "./PhaseCard"
 import { FileText, Trash2, X } from "lucide-react"
-import { formatDocumentId } from '@/features/orders/utils/status'
-import api from "@/lib/api"
+import { formatEntity } from '@/features/orders/utils/status'
+import { getDtePrefix, getDteLabel } from '@/lib/entity-registry'
 import { toast } from "sonner"
-import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+import { useAnnulInvoice, useDeleteInvoice } from "../../hooks/useOrdersMutations"
+import { ActionConfirmModal } from '@/components/shared'
 import { saleOrderActions } from '@/features/sales/actions'
 import { purchaseOrderActions } from '@/features/purchasing/actions'
 import { Order, PhaseDocument } from "../../types"
@@ -22,6 +23,7 @@ interface BillingPhaseProps {
     onActionSuccess?: () => void
     openDetails: (docType: string, id: number | string) => void
     posSessionId?: number | null
+    isSale?: boolean
     // Accordion props
     collapsible?: boolean
     isOpen?: boolean
@@ -41,13 +43,15 @@ export function BillingPhase({
     onActionSuccess,
     openDetails,
     posSessionId = null,
+    isSale = false,
     collapsible,
     isOpen,
     onOpenChange,
 }: BillingPhaseProps) {
-    const registry = (activeDoc?.document_type as string === 'PURCHASE_ORDER' || activeDoc?.document_type as string === 'SERVICE_OBLIGATION') 
-        ? purchaseOrderActions 
-        : saleOrderActions
+    const registry = isSale ? saleOrderActions : purchaseOrderActions
+    const annulInvoice = useAnnulInvoice()
+    const deleteInvoice = useDeleteInvoice()
+
     const [confirmModal, setConfirmModal] = useState<{
         open: boolean,
         title: string,
@@ -76,8 +80,7 @@ export function BillingPhase({
         }
 
         try {
-            await api.delete(`/billing/invoices/${id}/`)
-            toast.success("Borrador eliminado correctamente")
+            await deleteInvoice.mutateAsync(id)
             setConfirmModal(prev => ({ ...prev, open: false }))
             onActionSuccess?.()
         } catch (error: unknown) {
@@ -88,8 +91,7 @@ export function BillingPhase({
 
     const handleAnnulDocument = async (id: number, force: boolean = false) => {
         try {
-            await api.post(`/billing/invoices/${id}/annul/`, { force })
-            toast.success("Documento anulado correctamente")
+            await annulInvoice.mutateAsync({ id, force })
             setConfirmModal(prev => ({ ...prev, open: false }))
             onActionSuccess?.()
         } catch (error: unknown) {
@@ -118,8 +120,8 @@ export function BillingPhase({
                 documents={[
                     ...(isNoteMode ? [{
                         type: activeDoc.dte_type_display || 'Nota',
-                        number: activeDoc.display_id || formatDocumentId(
-                            activeDoc.dte_type === 'NOTA_CREDITO' ? 'NC' : 'ND',
+                        number: activeDoc.display_id || formatEntity(
+                            getDtePrefix(activeDoc.dte_type),
                             activeDoc.number || '---',
                             activeDoc.display_id
                         ),
@@ -135,10 +137,8 @@ export function BillingPhase({
                         .filter((inv: Order) => !isNoteMode || inv.id !== activeDoc.id)
                         .map((inv: Order) => ({
                             type: inv.dte_type_display || 'Documento',
-                            number: inv.display_id || formatDocumentId(
-                                inv.dte_type === 'BOLETA' ? 'BOL' :
-                                    inv.dte_type === 'FACTURA_EXENTA' ? 'FE' :
-                                        inv.dte_type === 'BOLETA_EXENTA' ? 'BE' : 'FACT',
+                            number: inv.display_id || formatEntity(
+                                getDtePrefix(inv.dte_type),
                                 inv.number || '---',
                                 inv.display_id
                             ),
@@ -163,7 +163,7 @@ export function BillingPhase({
                             ]
                         })),
                     ...(!isNoteMode ? (activeDoc.related_documents?.notes || []).map((note: Record<string, unknown>) => ({
-                        type: (note.type_display as string) || (note.dte_type === 'NOTA_CREDITO' ? 'Nota de Crédito' : 'Nota de Débito'),
+                        type: (note.type_display as string) || getDteLabel(note.dte_type as string),
                         number: (note.display_id as string) || (note.number as string),
                         icon: FileText,
                         color: 'text-primary',

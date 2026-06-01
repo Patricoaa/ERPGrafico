@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils import timezone
+from django.contrib.contenttypes.models import ContentType
 from decimal import Decimal
 
 class SequenceService:
@@ -8,15 +9,25 @@ class SequenceService:
     Example: NV-000001, OC-000001, etc.
     """
     @staticmethod
-    def get_next_number(model_class, field_name='number', padding=6, filter_kwargs=None):
+    def get_next_number(model_class, field_name='number', padding=6, filter_kwargs=None, year_prefix=False):
         """
         Calculates the next numeric value for a given model and field.
         """
         queryset = model_class.objects.all()
+        
+        current_year = None
+        if year_prefix:
+            current_year = timezone.now().year
+            if filter_kwargs is None:
+                filter_kwargs = {}
+            filter_kwargs['created_at__year'] = current_year
+
         if filter_kwargs:
             queryset = queryset.filter(**filter_kwargs)
             
         last_instance = queryset.order_by('id').last()
+        seq_str = '1'.zfill(padding)
+        
         if last_instance:
             curr_number = getattr(last_instance, field_name)
             # Try to extract numbers from common patterns (e.g., BOL-123 -> 123)
@@ -27,12 +38,14 @@ class SequenceService:
                 if nums:
                     try:
                         next_val = int(nums[-1]) + 1
-                        return str(next_val).zfill(padding)
+                        seq_str = str(next_val).zfill(padding)
                     except (ValueError, IndexError) as e:
                         import logging
                         logging.getLogger(__name__).warning(f"Error extracting sequence number: {e}")
         
-        return '1'.zfill(padding)
+        if year_prefix:
+            return f"{current_year}-{seq_str}"
+        return seq_str
 
     @staticmethod
     def format_number(prefix, number):
@@ -79,7 +92,9 @@ class BaseNoteService:
             date=doc_date,
             description=description,
             reference=f"NOTE-{invoice.id}",
-            status=JournalEntry.State.DRAFT
+            status=JournalEntry.State.DRAFT,
+            source_content_type=ContentType.objects.get_for_model(invoice._meta.model),
+            source_object_id=invoice.id,
         )
         
         return invoice, entry
@@ -90,7 +105,7 @@ class ActionLoggingService:
         """
         Creates an ActionLog entry.
         """
-        from .models import ActionLog
+        from core.models import ActionLog
         
         ip_address = None
         if request:

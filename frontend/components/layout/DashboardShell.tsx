@@ -10,12 +10,11 @@ import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { useGlobalModals } from "@/components/providers/GlobalModalProvider"
 import { UserActions } from "@/components/layout/UserActions"
 import { useHeader } from "@/components/providers/HeaderProvider"
-import { motion, AnimatePresence } from "framer-motion"
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion"
 import { Skeleton } from "@/components/ui/skeleton"
-import { PageHeaderSkeleton, UniversalSearch } from "@/components/shared"
+import { HeaderNavDropdowns, PageHeaderSkeleton, UniversalSearch } from '@/components/shared'
 import { Loader2 } from "lucide-react"
-import { DynamicIcon } from "@/components/ui/dynamic-icon"
-import { HeaderNavDropdowns } from "@/components/shared/HeaderNavDropdowns"
+import { DynamicIcon } from '@/components/shared'
 
 // Lazy load: solo se compila al abrir el inbox, no en la carga inicial de cada página
 const TaskInboxSidebar = dynamic(
@@ -26,18 +25,16 @@ const TaskInboxSidebar = dynamic(
 function DashboardShellInner({ children }: { children: React.ReactNode }) {
     const router = useRouter()
     const pathname = usePathname()
+    const shouldReduceMotion = useReducedMotion()
 
     const activeCategory = pathname.split('/')[1] || "dashboard"
     const [isInboxOpen, setIsInboxOpen] = useState(false)
 
     const { config } = useHeader()
-    const { isHubOpen, hubConfig, closeHub, isHubTemporarilyHidden, isDocked, isHubEffectivelyOpen } = useHubPanel()
-    const { isSubModalActive } = useGlobalModals()
-
+    const { isHubEffectivelyOpen } = useHubPanel()
+    const { totalSheetsWidth } = useGlobalModals()
 
     // Sync global data attributes for repelling fixed UI elements (like Sheets)
-    const [featurePanelWidth, setFeaturePanelWidth] = useState(0)
-
     useEffect(() => {
         if (isInboxOpen) {
             document.body.setAttribute('data-inbox-open', 'true')
@@ -50,14 +47,6 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
         } else {
             document.body.removeAttribute('data-hub-open')
         }
-
-        // Feature-specific side panels
-        const observer = new MutationObserver(() => {
-            const width = parseInt(document.body.getAttribute('data-side-panel-width') || "0")
-            setFeaturePanelWidth(width)
-        })
-        observer.observe(document.body, { attributes: true, attributeFilter: ['data-side-panel-width'] })
-        return () => observer.disconnect()
     }, [isInboxOpen, isHubEffectivelyOpen])
 
     const handleInboxToggle = () => {
@@ -66,19 +55,17 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
 
     const categoryToUrl: Record<string, string> = {
         "dashboard": "/",
-        "accounting": "/accounting",
+        "accounting": "/accounting/ledger",
         "contacts": "/contacts",
-        "sales": "/sales",
-        "billing": "/billing",
-        "inventory": "/inventory",
-        "production": "/production",
-        "treasury": "/treasury",
-        "purchasing": "/purchasing",
-        "finances": "/finances",
-        "tax": "/tax",
-        "hr": "/hr",
+        "sales": "/sales/orders?tab=orders",
+        "billing": "/billing/sales?view=card",
+        "inventory": "/inventory/products?tab=products",
+        "production": "/production/orders",
+        "treasury": "/treasury/movements",
+        "purchasing": "/purchasing/orders?tab=orders",
+        "finances": "/finances/statements?tab=bs",
+        "hr": "/hr/employees",
     }
-
 
     return (
         <div className="relative h-screen bg-background overflow-hidden font-sans">
@@ -95,8 +82,8 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
             {/* ── TOP BAR ────────────────────────────────────────────── */}
             <div className="absolute top-0 left-14 right-0 h-16 flex items-center bg-background z-30 px-6">
 
-                {/* Center: page title & meta — takes remaining space */}
-                <div className="flex-1 flex items-center gap-4 min-w-0 pointer-events-none">
+                {/* Left: page title & meta — shrinks to content */}
+                <div className="flex-none flex items-center gap-4 min-w-0 pointer-events-none">
                     <AnimatePresence mode="wait">
                         {config ? (
                             <motion.div
@@ -172,13 +159,13 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                     </AnimatePresence>
                 </div>
 
-                {/* Center-right: Universal Search */}
-                <div className="shrink-0 mr-3">
+                {/* Center: Universal Search — takes all available space and centers the search bar */}
+                <div className="flex-1 flex items-center justify-center px-8">
                     <UniversalSearch />
                 </div>
 
                 {/* Right: UserActions */}
-                <div className="shrink-0">
+                <div className="flex-none">
                     <UserActions isInboxOpen={isInboxOpen} onInboxToggle={handleInboxToggle} />
                 </div>
             </div>
@@ -186,27 +173,32 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
             <div
                 className="h-full flex flex-col min-w-0 relative transition-[margin-right] duration-500 ease-[var(--ease-premium)] pt-20 pl-[4.5rem] pr-4 pb-4"
                 style={{
-                    marginRight: `calc(${(isInboxOpen ? 320 : 0) + (isHubEffectivelyOpen ? 360 : 0) + featurePanelWidth}px + ${((isInboxOpen ? 1 : 0) + (isHubEffectivelyOpen ? 1 : 0) + (featurePanelWidth ? 1 : 0)) * 16}px)`
+                    marginRight: `${totalSheetsWidth}px`
                 }}
             >
-                {/* Railway-style Main Canvas */}
                 <main
                     id="main-content"
-                    className="flex-1 overflow-y-auto custom-scrollbar dot-grid bg-card border border-border/10 rounded-xl"
+                    className="flex-1 flex flex-col overflow-hidden relative canvas-prepress bg-card border border-border/10 rounded-xl shadow-2xl"
                 >
-                    <div className="w-full min-h-full p-6 lg:p-8">
+                    <motion.div
+                        initial={shouldReduceMotion ? { opacity: 0 } : { y: 8, opacity: 0 }}
+                        animate={shouldReduceMotion ? { opacity: 1 } : { y: 0, opacity: 1 }}
+                        transition={{
+                            duration: 0.35,
+                            ease: [0.16, 1, 0.3, 1]
+                        }}
+                        className="w-full flex-1 flex flex-col min-h-0"
+                    >
                         {children}
-                    </div>
+                    </motion.div>
                 </main>
             </div>
 
-            {/* Task Inbox Sidebar (Right) - Fixed position */}
-            <div className="fixed right-0 top-0 h-screen z-40">
-                <TaskInboxSidebar
-                    isOpen={isInboxOpen}
-                    onClose={() => setIsInboxOpen(false)}
-                />
-            </div>
+            {/* Task Inbox Sidebar (Right) */}
+            <TaskInboxSidebar
+                isOpen={isInboxOpen}
+                onClose={() => setIsInboxOpen(false)}
+            />
 
             <Toaster />
         </div>

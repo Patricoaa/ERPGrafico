@@ -9,9 +9,8 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover"
-import { useQuery } from "@tanstack/react-query"
-import api from "@/lib/api"
-import { EmptyState } from "@/components/shared/EmptyState"
+import { useWarehouses } from "@/features/inventory/hooks/useWarehouses"
+import { EmptyState } from '@/components/shared'
 import { Warehouse } from "@/types/entities"
 
 interface WarehouseSelectorProps {
@@ -40,13 +39,7 @@ export function WarehouseSelector({
     const [open, setOpen] = useState(false)
     const [searchTerm, setSearchTerm] = useState("")
 
-    const { data: warehouses = [], isLoading } = useQuery({
-        queryKey: ['warehouses'],
-        queryFn: async (): Promise<Warehouse[]> => {
-            const response = await api.get('/inventory/warehouses/')
-            return response.data.results || response.data
-        },
-    })
+    const { warehouses, isLoading } = useWarehouses()
 
     const selectedWarehouse = useMemo(() => {
         if (!value) return null

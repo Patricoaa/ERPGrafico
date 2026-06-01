@@ -1,7 +1,38 @@
 import json
+import threading
 from django.utils.deprecation import MiddlewareMixin
 from .services import ActionLoggingService
 from .models import ActionLog
+
+_current_user = threading.local()
+
+
+def get_current_user_id():
+    """Return the user_id of the request handling this thread, or None."""
+    return getattr(_current_user, "id", None)
+
+
+class CurrentUserMiddleware(MiddlewareMixin):
+    """
+    Stores the authenticated user id in a thread-local so model signals
+    (post_save / post_delete) can read it without depending on the request.
+
+    Reads as None for anonymous requests and for non-request contexts
+    (Celery tasks, management commands) — entity-bus signals interpret
+    that as "no actor" and broadcast to everyone without filtering.
+    """
+
+    def process_request(self, request):
+        user = getattr(request, "user", None)
+        _current_user.id = user.id if user and user.is_authenticated else None
+
+    def process_response(self, request, response):
+        _current_user.id = None
+        return response
+
+    def process_exception(self, request, exception):
+        _current_user.id = None
+        return None
 
 class AuditMiddleware(MiddlewareMixin):
     """

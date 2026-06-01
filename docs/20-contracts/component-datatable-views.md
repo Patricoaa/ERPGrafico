@@ -4,10 +4,11 @@ doc: component-datatable-views
 status: active
 owner: frontend-team
 created: 2026-05-12
-last_review: 2026-05-12
+last_review: 2026-05-14
 depends_on:
   - component-contracts.md
   - component-skeleton.md
+  - entity-identity.md
 ---
 
 # Contrato: DataTable — Sistema de Vistas e Interacciones
@@ -18,22 +19,39 @@ Este documento describe las reglas de arquitectura para el ecosistema `DataTable
 
 ## 1. Prop `variant` — Modo de renderizado
 
-El `DataTable` opera en dos modos excluyentes:
+El `DataTable` opera en tres modos excluyentes:
 
 | Valor | Cuándo usar |
 |---|---|
 | `"standalone"` | Tabla autónoma en página propia (ejm: `/inventory/products`). Incluye borde contenedor, header visible, padding externo. |
-| `"embedded"` | Tabla incrustada dentro de un card, modal o panel (ejm: líneas de una orden, historial en `ContactModal`). Sin borde externo; comparte el espacio visual con el contenedor padre. |
+| `"embedded"` | Tabla incrustada dentro de un card, modal o panel (ejm: líneas de una orden, historial en `ContactDrawer`). Sin borde externo; comparte el espacio visual con el contenedor padre. |
+| `"minimal"` | Tabla display-readonly dentro de tabs o paneles de detalle (ejm: variantes de producto, pricing, checkout steps). Sin toolbar, sin paginación. Usa el mismo motor TanStack pero con la mínima UI. |
 
 **Regla:** Siempre declarar `variant` explícitamente. La prop `cardMode` está deprecada y no debe usarse en código nuevo.
 
 ```tsx
 // ✅ Correcto
 <DataTable variant="embedded" ... />
+<DataTable variant="minimal" columns={columns} data={data} />
 
 // ❌ Deprecado
 <DataTable cardMode={true} ... />
 ```
+
+### 1.1 `variant="minimal"` — Comportamiento específico
+
+| Aspecto | Comportamiento |
+|---|---|
+| Toolbar | No se renderiza (aunque se pasen props de toolbar) |
+| Paginación | Oculta por defecto (`hidePagination` default `true`) |
+| Bulk actions | No se renderizan |
+| Row selection | No visible (pero el motor TanStack puede tenerla internamente si se usa `onRowClick`) |
+| Borde | Opcional vía `noBorder` (default: con borde) |
+| Sticky header | No aplica (tabla fluida) |
+| Loading state | Muestra skeleton sin toolbar ni paginación |
+| Empty state | Mismo `EmptyState` que las otras variantes |
+
+Las props `columns`, `data`, `isLoading`, `emptyState`, `noBorder`, `onRowClick`, `renderFooter`, `renderRow` funcionan igual que en los otros modos.
 
 ---
 
@@ -49,6 +67,23 @@ const { data, isLoading } = useMyData()
 Cuando `isLoading` es `true`, el DataTable sustituye el body de la tabla por `SharedTableSkeleton` (filas shimmer). El toolbar, encabezados y paginación permanecen visibles para evitar CLS.
 
 > **Excepción:** Si la tabla usa `renderCustomView`, el skeleton automático **no aplica** dentro de la vista custom. Ver sección 4 (`renderLoadingView`).
+
+---
+
+## 2.5 Paginación — ver contrato dedicado
+
+`DataTable` opera en dos modos de paginación:
+
+| Modo | Cuándo | Props requeridas |
+|---|---|---|
+| **Cliente** (default) | El hook devuelve `T[]` y el dataset cabe entero en memoria (selector, sub-recurso, singleton). | Ninguna; TanStack pagina las filas locales. |
+| **Manual (server-side)** | El hook devuelve `Page<T>` (endpoint paginado por DRF). | `manualPagination`, `pageCount`, `rowCount`, `pagination`, `onPaginationChange` — **las 5 son obligatorias**. |
+
+**Regla núcleo:** si el hook devuelve `Page<T>`, el DataTable MUST estar en modo manual completo. Mezclar (hook paginado + DataTable cliente) trunca datos silenciosamente — es el bug histórico que motivó este contrato.
+
+La prop `rowCount` (total absoluto del backend, no length de `data`) es la fuente de verdad del footer "Mostrando X a Y de Z registros". Sin ella, el footer cuenta filas locales (= page_size) y miente.
+
+Tipo canónico de `Page<T>`, helper `toPage`, anti-patrones, decision tree y checklist completo en [pagination-contract.md](./pagination-contract.md).
 
 ---
 
@@ -127,15 +162,36 @@ const handleViewChange = (v: string) => {
 
 **Regla:** Nunca usar `useState` local para la vista activa. El estado efímero provoca que la vista se pierda al navegar atrás.
 
+### Hook `useViewMode` — Patrón preferido
+
+El hook `useViewMode` encapsula toda la lógica de URL sync y genera `viewOptions` automáticamente desde el `ENTITY_REGISTRY`:
+
+```tsx
+import { useViewMode } from "@/hooks/useViewMode"
+
+const { currentView, handleViewChange, viewOptions, isCustomView } = useViewMode('sales.saleorder')
+
+<DataTable
+  currentView={currentView}
+  onViewChange={handleViewChange}
+  viewOptions={viewOptions}
+  renderCustomView={isCustomView ? createDomainCardView('sales.saleorder', { ... }) : undefined}
+  renderLoadingView={isCustomView ? createCardLoadingView('single-column') : undefined}
+  ...
+/>
+```
+
+**Regla:** Todo componente nuevo que use multi-vista **debe** usar `useViewMode`. El patrón manual `useState + useEffect` está deprecado.
+
 ---
 
 ## 6. Primitivas de card — Cuándo usar cada una
 
-### `EntityCard` — Shell estándar (preferido)
+### `EntityCard` — Shell estándar (primitiva visual)
 Primitiva genérica del design system. Usar cuando:
 - Se necesita una tarjeta en una vista de grilla densa (ProductList en modo grid)
 - La tarjeta no requiere lógica de dominio específica (hub, status complejo)
-- Se construye un módulo nuevo
+- Se construye un módulo nuevo de master data o settings
 
 ```tsx
 import { EntityCard } from "@/components/shared/EntityCard"
@@ -152,57 +208,89 @@ import { EntityCard } from "@/components/shared/EntityCard"
 </EntityCard>
 ```
 
-### `OrderCard` — Card de dominio para Órdenes
-Usa `EntityCard` como shell. Renderiza lógica de hub (selección, de-énfasis), `OrderHubStatus`, `PurchaseOrderHubStatus`, `NoteHubStatus`, y líneas de producto. Usar en:
-- `SalesOrdersView` (Ventas)
-- `PurchasingOrdersClientView` (Compras)
-- `ContactModal` → InsightsTable y CreditLedgerTable
+### `DomainCard` — Card inteligente para documentos transaccionales
+Usa `EntityCard` como shell interno. Renderiza automáticamente:
+- Icono, nombre de partner, y display ID desde `ENTITY_REGISTRY`
+- `DomainHubStatus` (workflow badges)
+- Montos totales y pendientes
+- Líneas de producto
 
-### `InvoiceCard` — Card de dominio para Facturas
-Usa `EntityCard` como shell. Renderiza `InvoiceHubStatus`, vínculos a documentos relacionados (notas/ajustes), y monto pendiente. Usar en:
-- `SalesInvoicesClientView`
-- `PurchaseInvoicesClientView`
-
-### ❌ Inline JSX en `renderCustomView` — Prohibido
-No construir tarjetas con JSX inline dentro de `renderCustomView`. Todo card debe ser una composición de `EntityCard` o un componente de dominio derivado de él.
+Usar exclusivamente para entidades con `viewPolicy.cardComponent: 'domain'`:
+- Órdenes de Venta (`sales.saleorder`)
+- Órdenes de Compra (`purchasing.purchaseorder`)
+- Facturas/DTEs (`billing.invoice`)
 
 ```tsx
-// ❌ Prohibido: JSX inline complejo dentro de renderCustomView
-renderCustomView={(table) => (
-  <div className="grid gap-3">
-    {rows.map(row => (
-      <div className="flex p-4 border rounded-lg ...">
-        <h4>...</h4>
-        ...muchas líneas de JSX...
-      </div>
-    ))}
-  </div>
-)}
+import { DomainCard } from "@/components/shared"
 
-// ✅ Correcto: composición con EntityCard o componente de dominio
-renderCustomView={(table) => (
-  <div className="grid gap-3">
-    {rows.map(row => <MyDomainCard key={row.id} item={row.original} />)}
-  </div>
-)}
+<DomainCard label="sales.saleorder" data={order} isSelected={...} isHubOpen={...} />
+```
+
+### ❌ `OrderCard`, `InvoiceCard` — Eliminados
+Estos componentes legados fueron reemplazados por `DomainCard` y eliminados del codebase. No deben recrearse.
+
+### ❌ Inline JSX en `renderCustomView` — Prohibido
+No construir tarjetas con JSX inline dentro de `renderCustomView`. Todo card debe ser una composición de `EntityCard`, `DomainCard`, o un componente de dominio derivado de ellos.
+
+---
+
+## 6.1. View Helpers — Factories para `renderCustomView`
+
+Para reducir boilerplate, existen factories en `lib/view-helpers.ts`:
+
+### `createDomainCardView(label, options)`
+Para entidades con `cardComponent: 'domain'`. Genera un `renderCustomView` completo con empty state y DomainCard:
+
+```tsx
+import { createDomainCardView, createCardLoadingView } from "@/lib/view-helpers"
+
+renderCustomView={isCustomView ? createDomainCardView('sales.saleorder', {
+  onRowClick: (data) => toggleSelection(data),
+  isSelected: (data) => hubConfig?.orderId === data.id,
+  isHubOpen,
+}) : undefined}
+renderLoadingView={isCustomView ? createCardLoadingView('single-column') : undefined}
+```
+
+### `createEntityCardView(label, options)`
+Para entidades con `cardComponent: 'entity'` o `'entity-compact'`. El consumidor proporciona un `renderCard` callback:
+
+```tsx
+renderCustomView={isCustomView ? createEntityCardView('inventory.product', {
+  gridLayout: 'multi-column',
+  renderCard: (product) => (
+    <EntityCard key={product.id} variant="compact" onClick={...}>
+      <EntityCard.Header title={product.name} />
+    </EntityCard>
+  ),
+}) : undefined}
+```
+
+### `createCardLoadingView(layout, count)`
+Genera un `renderLoadingView` con EntityCard.Skeleton en la geometría correcta:
+
+```tsx
+renderLoadingView={isCustomView ? createCardLoadingView('multi-column', 15) : undefined}
 ```
 
 ---
 
-## 7. Vista default — Definida por módulo
+## 7. Vista default — `viewPolicy` en ENTITY_REGISTRY
 
-Cada página define su vista default en código. No existe una configuración global de vista por usuario.
+Cada entidad define su política de vistas en `ENTITY_REGISTRY.viewPolicy`. El hook `useViewMode` lee esta metadata automáticamente.
 
-| Módulo | Vista default |
-|---|---|
-| `SalesOrdersView` | `"card"` |
-| `PurchasingOrdersClientView` | `"card"` |
-| `SalesInvoicesClientView` | `"card"` |
-| `PurchaseInvoicesClientView` | `"card"` |
-| `ProductList` | `"table"` |
-| `production/orders` | `"list"` |
-| `TaxDeclarationsView` | siempre card (sin selector) |
-| `PortfolioTable`, `BlacklistView` | siempre tabla expandible (sin selector) |
+| Entidad | Vistas | Default | Card Component |
+|---|---|---|---|
+| `sales.saleorder` | list, card | card | `domain` |
+| `purchasing.purchaseorder` | list, card | card | `domain` |
+| `billing.invoice` | list, card | card | `domain` |
+| `production.workorder` | list, kanban | list | `custom` |
+| `inventory.product` | list, grid | list | `entity-compact` |
+| `contacts.contact` | list, card | list | `entity` |
+| `hr.employee` | list, card | list | `entity` |
+| Demás entidades | list (solo) | list | — |
+
+**Regla:** Si una entidad no tiene `viewPolicy`, se asume vista `list` única (sin selector). Entidades de tipo Settings y Analíticas no deben tener multi-vista.
 
 ---
 
@@ -222,52 +310,55 @@ Reemplazar mecánicamente:
 
 ---
 
-## 9. Variante `ExpandableTableRow` — Filas con detalle inline
+## 9. Filas expandibles — `renderSubComponent` vs `ExpandableTableRow` (deprecado)
 
-Algunos módulos requieren mostrar detalle contextual de una fila **dentro de la misma tabla**, sin abrir un modal ni navegar. Para eso existe la primitiva `ExpandableTableRow`.
+DataTable soporta filas expandibles de dos formas:
+
+### 9.1 `renderSubComponent` — Camino preferido (nuevos desarrollos)
+
+DataTable nativo ya incluye un slot `renderSubComponent` que renderiza un panel debajo de la fila cuando se expande (vía chevron en la columna o `onRowClick`). Desde la Fase 1 de centralización, incluye animación framer-motion (`AnimatePresence` + `motion.tr`).
+
+```tsx
+<DataTable
+    columns={columns}
+    data={data}
+    renderSubComponent={createExpandableRowView({
+        lazyLoad: (row) => fetchDetail(row.id),
+        renderDetail: (row, detail) => <DetailPanel data={detail} />,
+    })}
+/>
+```
+
+Ver helper `createExpandableRowView` en `@/lib/view-helpers`.
 
 **Cuándo usar:**
-- La entidad tiene datos de detalle que el usuario necesita con frecuencia pero no justifican una página propia
-- El volumen de datos es alto y abrir un modal por cada fila sería costoso
-- El contenido expandible incluye listas secundarias (historial de documentos, ledger de créditos)
+- Nuevos desarrollos que requieran detalle inline
+- El detalle se carga bajo demanda (lazy fetch)
+- Se quiere mantener la tabla como DataTable estándar sin custom views
 
-**Cuándo NO usar:**
-- Si el detalle requiere edición → usar modal (`BaseModal`)
-- Si el detalle es la vista principal de la entidad → usar navegación a página de detalle
-- Si la tabla tiene vista alternativa (`card`/`grid`) — `ExpandableTableRow` es solo para vista `list`
+### 9.2 `ExpandableTableRow` — 🔴 Deprecado
 
-**Implementaciones canónicas:**
-- `ExpandableContactRow` en `PortfolioTable` (créditos vigentes)
-- `ExpandableBlacklistRow` en `BlacklistView` (incobrables/bloqueados)
+> **DEPRECADO:** Usa `renderSubComponent` de DataTable o el helper `createExpandableRowView()` para nuevos consumidores.
+> `ExpandableTableRow` se eliminará en una versión futura.
 
-**API:**
+Existente en:
+- `ExpandableContactRow` en `PortfolioTable` (créditos vigentes) — pendiente de migración
+- `ExpandableBlacklistRow` en `BlacklistView` (incobrables/bloqueados) — pendiente de migración
+
+API (solo referencia, no usar en código nuevo):
 
 ```tsx
 import { ExpandableTableRow } from "@/components/shared"
 
 <ExpandableTableRow
-    row={row}                          // Row<TData> de TanStack
-    onExpand={(isExpanding) => {...}}  // Lazy fetch en primera apertura
-    cellClassName="py-3 px-4"          // Clase para cada TableCell de datos
-    panelClassName="px-8 py-4 bg-background" // Clase para el div wrapper del panel
+    row={row}
+    onExpand={(isExpanding) => {...}}
+    cellClassName="py-3 px-4"
+    panelClassName="px-8 py-4 bg-background"
 >
-    {/* Contenido del panel expandido — renderizado SOLO cuando está abierto */}
     {loadingDetail ? <TableSkeleton rows={2} /> : <MyDetailPanel data={detail} />}
 </ExpandableTableRow>
 ```
-
-La primitiva gestiona internamente:
-- Estado `expanded` (uncontrolled)
-- Renderizado del chevron (Cell adicional al final de la fila)
-- `AnimatePresence` + `motion.div` con `height: 0 → auto`
-- `data-state="selected"` en el `TableRow` principal
-
-El consumidor gestiona:
-- Fetch lazy de datos de detalle mediante `onExpand(isExpanding: boolean)`
-- Estado local del detalle (`useState<MyDetail[] | null>(null)`)
-- Contenido del panel (dominio específico)
-
-**Regla:** La columna de chevron es **invisible en la definición de columnas** de TanStack. `ExpandableTableRow` la agrega automáticamente. El `colSpan` del panel se calcula como `getVisibleCells().length + 1`. Si se usa `renderCustomView` con `ExpandableTableRow`, añadir una columna vacía `<th />` al header manual para que el layout sea consistente.
 
 ---
 
@@ -280,7 +371,11 @@ Cada PR que toque `DataTable` o sus consumidores debe verificar:
 - [ ] `isLoading` pasado si el componente hace fetch asíncrono
 - [ ] Si hay `viewOptions` con algo distinto de `"list"`: `renderCustomView` presente para esa opción
 - [ ] Si hay `renderCustomView` y `isLoading`: `renderLoadingView` presente
-- [ ] Persistencia de vista usa URL param (`?view=`) con `{ scroll: false }`, no `useState`
-- [ ] Default de vista definido en código (evitar `'kanban'` hardcoded salvo decisión documentada)
-- [ ] Card views usan `EntityCard` o un wrapper de dominio sobre él — **no inline JSX**
-- [ ] Expandable rows usan `ExpandableTableRow` — **no** `AnimatePresence`/`motion.div` inline
+- [ ] Multi-vista usa `useViewMode(entityLabel)` — no `useState` manual para la vista
+- [ ] `viewOptions` generados desde registry (`getViewOptions`) — no arrays hardcodeados
+- [ ] `renderCustomView` usa `createDomainCardView` / `createEntityCardView` cuando aplique — no inline JSX
+- [ ] Default de vista definido en `ENTITY_REGISTRY.viewPolicy.defaultView`
+- [ ] Card views usan `EntityCard` o `DomainCard` — **no inline JSX**
+- [ ] `variant="minimal"` usado en tablas display dentro de tabs de producto/config (no en listados CRUD)
+- [ ] `variant="minimal"` no recibe props de toolbar, paginación ni bulk actions
+- [ ] Expandable rows nuevos usan `renderSubComponent` o `createExpandableRowView` — **no** `ExpandableTableRow`

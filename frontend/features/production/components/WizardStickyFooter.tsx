@@ -2,42 +2,42 @@
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { AlertTriangle, Loader2, Check, ArrowRight, Eye } from "lucide-react"
+import { AlertTriangle, Loader2, Check, ArrowRight, Eye, X } from "lucide-react"
 import { cn } from "@/lib/utils"
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+import { ActionConfirmModal } from "@/components/shared"
 
-import type { WorkOrder, WorkOrderTask, WorkOrderStage } from "../types"
+import type { WorkOrder, WorkOrderTask, WorkOrderStage, WizardStepMode } from "../types"
 
 interface WizardStickyFooterProps {
-    isViewingCurrentStage: boolean
-    onClose: () => void
-    pendingTasks: WorkOrderTask[]
-    canApproveAll: boolean
-    transitioning: boolean
-    order: WorkOrder | null
-    stages: WorkOrderStage[]
-    viewingStepIndex: number
-    actualStepIndex: number
-    onBackToCurrent: () => void
-    onTransition: (stageId: string) => void
-    onBack?: () => void
-    isMaterialApprovalIncomplete: boolean
-    hasMaterials: boolean
-    isRectificationStep?: boolean
-    onRectifyAndFinish?: () => void
+  isViewingCurrentStage: boolean
+  stepMode: WizardStepMode
+  onCancelEdit: () => void
+  onClose: () => void
+  pendingTasks: WorkOrderTask[]
+  canApproveAll: boolean
+  transitioning: boolean
+  order: WorkOrder | null
+  stages: WorkOrderStage[]
+  viewingStepIndex: number
+  actualStepIndex: number
+  onBackToCurrent: () => void
+  onTransition: (stageId: string) => void
+  onBack?: () => void
+  isMaterialApprovalIncomplete: boolean
+  hasMaterials: boolean
+  isRectificationStep?: boolean
+  onRectifyAndFinish?: () => void
+  isBasicInfoStep?: boolean
+  isCreating?: boolean
+  isBasicInfoEditable?: boolean
+  chosenOtType?: 'LINKED' | 'NONE' | null
+  onStepChange?: (index: number) => void
 }
 
 export function WizardStickyFooter({
     isViewingCurrentStage,
+    stepMode,
+    onCancelEdit,
     onClose,
     pendingTasks,
     canApproveAll,
@@ -52,8 +52,18 @@ export function WizardStickyFooter({
     isMaterialApprovalIncomplete,
     hasMaterials,
     isRectificationStep = false,
-    onRectifyAndFinish
+    onRectifyAndFinish,
+    isBasicInfoStep = false,
+    isCreating = false,
+    isBasicInfoEditable = false,
+    chosenOtType = null,
+    onStepChange,
 }: WizardStickyFooterProps) {
+    const currentStageId = stages[viewingStepIndex]?.id
+    const isOriginSelectionStep = currentStageId === 'ORIGIN_SELECTION'
+    const isSaleOrderProductStep = currentStageId === 'SALE_ORDER_PRODUCT'
+    const isProductSelectionStep = currentStageId === 'PRODUCT_SELECTION'
+    const isMfgConfigStep = currentStageId === 'MFG_CONFIG'
     const [showAlert, setShowAlert] = useState(false)
     const [alertConfig, setAlertConfig] = useState<{
         title: string
@@ -83,17 +93,26 @@ export function WizardStickyFooter({
             })
             setShowAlert(true)
         } else {
-            const warningMsg = !hasMaterials && stages[viewingStepIndex].id === 'MATERIAL_ASSIGNMENT'
+            const currentStageId = stages[viewingStepIndex].id
+            const warningMsg = !hasMaterials && currentStageId === 'MATERIAL_ASSIGNMENT'
                 ? "⚠️ No has asignado materiales a esta Orden de Trabajo.\n\n"
                 : ""
 
+            // Special copy when leaving MATERIAL_APPROVAL: marks the DRAFT → IN_PROGRESS transition
+            const isMaterialApprovalAdvance = currentStageId === 'MATERIAL_APPROVAL'
+            const advanceDescription = isMaterialApprovalAdvance
+                ? `${warningMsg}Esta acción activa la producción y cambia el estado de Borrador a En Proceso. A partir de aquí todas las modificaciones quedarán auditadas y no podrás editar los datos de configuración inicial.`
+                : `${warningMsg}Una vez que avances a la siguiente etapa, no podrás volver atrás para modificar la etapa actual. Asegúrate de haber completado todos los pasos necesarios.`
+
             // For intermediate stages, skip alert if it's an implicit approval
-            if (!warningMsg && isImplicitlyApproving) {
+            if (!warningMsg && isImplicitlyApproving && !isMaterialApprovalAdvance) {
                  onTransition(nextStage.id)
             } else {
                 setAlertConfig({
-                    title: `Avanzar a "${nextStage.label}"`,
-                    description: `${warningMsg}Una vez que avances a la siguiente etapa, no podrás volver atrás para modificar la etapa actual. Asegúrate de haber completado todos los pasos necesarios.`,
+                    title: isMaterialApprovalAdvance
+                        ? `Activar producción · Avanzar a "${nextStage.label}"`
+                        : `Avanzar a "${nextStage.label}"`,
+                    description: advanceDescription,
                     onConfirm: () => {
                         onTransition(nextStage.id)
                         setShowAlert(false)
@@ -104,10 +123,276 @@ export function WizardStickyFooter({
         }
     }
 
-    return (
-        <>
-            <div className="sticky bottom-0 border-t bg-background py-3 px-6 flex items-center justify-between z-10">
-                {isViewingCurrentStage ? (
+  return (
+    <>
+      <div className="sticky bottom-0 border-t py-3 px-6 flex items-center justify-between z-10">
+        {/* ── Origen de Fabricación ──────────────────────────────── */}
+        {isOriginSelectionStep ? (
+          <>
+            <Button variant="outline" size="sm" onClick={onClose}>
+              Cerrar
+            </Button>
+            <Button
+              disabled={!chosenOtType}
+              onClick={() => onStepChange?.(1)}
+              className="gap-2"
+            >
+              Siguiente
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+          </>
+        ) : isSaleOrderProductStep ? (
+          <>
+            <Button variant="outline" size="sm" onClick={onClose}>
+              Cerrar
+            </Button>
+            <div className="flex items-center gap-2">
+              {isCreating ? (
+                <>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onStepChange?.(viewingStepIndex - 1)}
+                    className="text-muted-foreground hover:text-foreground mr-2"
+                  >
+                    Anterior
+                  </Button>
+                  <Button
+                    type="submit"
+                    form="wizard-basic-form"
+                    disabled={transitioning}
+                    aria-label="Seleccionar producto"
+                  >
+                    {transitioning ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Procesando...
+                      </>
+                    ) : (
+                      <>
+                        Seleccionar Producto
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </>
+                    )}
+                  </Button>
+                </>
+              ) : isBasicInfoEditable ? (
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={onBackToCurrent}
+                    className="gap-1.5"
+                  >
+                    <Eye className="h-4 w-4" />
+                    Ir a etapa actual
+                  </Button>
+                  <Button
+                    type="submit"
+                    form="wizard-basic-form"
+                    disabled={transitioning}
+                    aria-label="Guardar cambios de información básica"
+                  >
+                    {transitioning ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Guardando...
+                      </>
+                    ) : (
+                      <>
+                        Guardar cambios<Check className="ml-2 h-4 w-4" />
+                      </>
+                    )}
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onBackToCurrent}
+                  className="gap-1.5"
+                >
+                  <Eye className="h-4 w-4" />
+                  Ir a etapa actual
+                </Button>
+              )}
+            </div>
+          </>
+        ) : isProductSelectionStep ? (
+          <>
+            <Button variant="outline" size="sm" onClick={onClose}>
+              Cerrar
+            </Button>
+            <div className="flex items-center gap-2">
+              {isCreating ? (
+                <>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onStepChange?.(viewingStepIndex - 1)}
+                    className="text-muted-foreground hover:text-foreground mr-2"
+                  >
+                    Anterior
+                  </Button>
+                  <Button
+                    type="submit"
+                    form="wizard-basic-form"
+                    disabled={transitioning}
+                    aria-label="Seleccionar producto"
+                  >
+                    {transitioning ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Procesando...
+                      </>
+                    ) : (
+                      <>
+                        Seleccionar Producto
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </>
+                    )}
+                  </Button>
+                </>
+              ) : isBasicInfoEditable ? (
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={onBackToCurrent}
+                    className="gap-1.5"
+                  >
+                    <Eye className="h-4 w-4" />
+                    Ir a etapa actual
+                  </Button>
+                  <Button
+                    type="submit"
+                    form="wizard-basic-form"
+                    disabled={transitioning}
+                    aria-label="Guardar cambios de información básica"
+                  >
+                    {transitioning ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Guardando...
+                      </>
+                    ) : (
+                      <>
+                        Guardar cambios<Check className="ml-2 h-4 w-4" />
+                      </>
+                    )}
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onBackToCurrent}
+                  className="gap-1.5"
+                >
+                  <Eye className="h-4 w-4" />
+                  Ir a etapa actual
+                </Button>
+              )}
+            </div>
+          </>
+        ) : isMfgConfigStep ? (
+          <>
+            <Button variant="outline" size="sm" onClick={onClose}>
+              Cerrar
+            </Button>
+            <div className="flex items-center gap-2">
+              {isCreating ? (
+                <>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onStepChange?.(viewingStepIndex - 1)}
+                    className="text-muted-foreground hover:text-foreground mr-2"
+                  >
+                    Anterior
+                  </Button>
+                    <Button
+                        type="submit"
+                        form="wizard-basic-form"
+                        disabled={!chosenOtType || transitioning}
+                        aria-label="Seleccionar producto"
+                    >
+                        {transitioning ? (
+                            <>
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                                Procesando...
+                            </>
+                        ) : (
+                            <>
+                                Seleccionar Producto
+                                <ArrowRight className="ml-2 h-4 w-4" />
+                            </>
+                        )}
+                    </Button>
+                </>
+              ) : isBasicInfoEditable ? (
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={onBackToCurrent}
+                    className="gap-1.5"
+                  >
+                    <Eye className="h-4 w-4" />
+                    Ir a etapa actual
+                  </Button>
+                  <Button
+                    type="submit"
+                    form="wizard-basic-form"
+                    disabled={transitioning}
+                    aria-label="Guardar cambios de información básica"
+                  >
+                    {transitioning ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Guardando...
+                      </>
+                    ) : (
+                      <>
+                        Guardar cambios<Check className="ml-2 h-4 w-4" />
+                      </>
+                    )}
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onBackToCurrent}
+                  className="gap-1.5"
+                >
+                  <Eye className="h-4 w-4" />
+                  Ir a etapa actual
+                </Button>
+              )}
+            </div>
+          </>
+        ) : stepMode === 'edit-in-place' ? (
+          /* ── Edit-in-place footer ──────────────────────────────── */
+          <>
+            <Button variant="outline" size="sm" onClick={onCancelEdit} className="gap-1.5">
+              <X className="h-4 w-4" />
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              form="wizard-edit-form"
+              disabled={transitioning}
+              className="gap-1.5"
+            >
+              {transitioning ? (
+                <><Loader2 className="h-4 w-4 animate-spin" />Guardando...</>
+              ) : (
+                <><Check className="h-4 w-4" />Guardar cambios</>
+              )}
+            </Button>
+          </>
+        ) : isViewingCurrentStage ? (
                     <>
                         <div className="flex items-center gap-2">
                             <Button
@@ -214,25 +499,14 @@ export function WizardStickyFooter({
                 )}
             </div>
 
-            <AlertDialog open={showAlert} onOpenChange={setShowAlert}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle className="flex items-center gap-2">
-                            <AlertTriangle className="h-5 w-5 text-warning" />
-                            {alertConfig?.title}
-                        </AlertDialogTitle>
-                        <AlertDialogDescription>
-                            {alertConfig?.description}
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction onClick={alertConfig?.onConfirm}>
-                            Continuar
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
+            <ActionConfirmModal
+                open={showAlert}
+                onOpenChange={setShowAlert}
+                title={alertConfig?.title ?? ''}
+                description={alertConfig?.description}
+                onConfirm={alertConfig?.onConfirm || (() => {})}
+                confirmText="Continuar"
+            />
         </>
     )
 }

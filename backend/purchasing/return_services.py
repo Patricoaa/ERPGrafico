@@ -1,6 +1,7 @@
 from django.db import transaction
 from django.core.exceptions import ValidationError
 from django.utils import timezone
+from django.contrib.contenttypes.models import ContentType
 from .models import PurchaseOrder, PurchaseReturn, PurchaseReturnLine
 from accounting.models import JournalEntry, JournalItem, Account, AccountType
 from accounting.services import JournalEntryService
@@ -192,7 +193,9 @@ class PurchaseReturnService:
                         'date': return_doc.date,
                         'description': f"Devolución Física OCS-{return_doc.purchase_order.number} ({return_doc.display_id})",
                         'reference': return_doc.display_id,
-                        'status': JournalEntry.State.DRAFT
+                        'status': JournalEntry.State.DRAFT,
+                        'source_content_type': ContentType.objects.get_for_model(PurchaseReturn),
+                        'source_object_id': return_doc.id,
                     },
                     [] # Items added below
                 )

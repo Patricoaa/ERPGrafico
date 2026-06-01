@@ -2,13 +2,13 @@
 
 import { showApiError } from "@/lib/errors"
 import { useState, useEffect } from "react"
-import { BaseModal } from "@/components/shared/BaseModal"
+
 import { useServerDate } from "@/hooks/useServerDate"
 import { ChevronRight, ChevronLeft, Loader2, FileText, CheckCircle2, ShieldAlert } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import api from "@/lib/api"
+import { billingApi } from "../api/billingApi"
 import { toast } from "sonner"
-import { ActionSlideButton } from "@/components/shared/ActionSlideButton"
+
 // Sub-components
 import { Step1_Items } from "@/features/billing/components/checkout/Step1_Items"
 import { Step2_Logistics } from "@/features/billing/components/checkout/Step2_Logistics"
@@ -17,8 +17,7 @@ import { Step4_Payment } from "@/features/billing/components/checkout/Step4_Paym
 import { Step2_ManufacturingDetails } from "@/features/sales/components/checkout/Step2_ManufacturingDetails"
 import { NoteProcessSidebar } from "@/features/billing/components/checkout/NoteProcessSidebar"
 import { NoteItemsSummary } from "@/features/billing/components/checkout/NoteItemsSummary"
-import { FormSkeleton } from "@/components/shared"
-
+import { ActionSlideButton, BaseModal, Chip, SkeletonShell } from '@/components/shared'
 
 interface NoteCheckoutWizardProps {
     open: boolean
@@ -32,7 +31,6 @@ interface NoteCheckoutWizardProps {
 export function NoteCheckoutWizard({
     open,
     onOpenChange,
-    orderId,
     invoiceId,
     initialType,
     onSuccess
@@ -82,16 +80,6 @@ export function NoteCheckoutWizard({
 
     const isExempt = originalInvoice?.dte_type === 'FACTURA_EXENTA' || originalInvoice?.dte_type === 'BOLETA_EXENTA'
 
-
-    // Reset state on open
-    useEffect(() => {
-        if (open) {
-            initWizard()
-        } else {
-            // Optional: reset state on close
-        }
-    }, [open])
-
     const initWizard = async () => {
         try {
             setInitializing(true)
@@ -112,11 +100,11 @@ export function NoteCheckoutWizard({
                 is_pending: false
             })
 
-            const invRes = await api.get(`/billing/invoices/${invoiceId}/`)
-            setOriginalInvoice(invRes.data)
+            const invoiceData = await billingApi.getInvoice(invoiceId)
+            setOriginalInvoice(invoiceData as any)
 
             // Initial Payment Amount default
-            setPaymentData((p: Record<string, unknown>) => ({ ...p, amount: invRes.data.total })) // Correct logic will happen when items are selected
+            setPaymentData((p: Record<string, unknown>) => ({ ...p, amount: invoiceData.total }))
 
         } catch (error: unknown) {
             console.error("Error initializing note wizard:", error)
@@ -126,6 +114,15 @@ export function NoteCheckoutWizard({
             setInitializing(false)
         }
     }
+
+    // Reset state on open
+    useEffect(() => {
+        if (open) {
+            initWizard()
+        } else {
+            // Optional: reset state on close
+        }
+    }, [open])
 
     // Sync date when server date arrives
     useEffect(() => {
@@ -138,7 +135,6 @@ export function NoteCheckoutWizard({
     useEffect(() => {
         setPaymentData((prev: Record<string, unknown>) => ({ ...prev, amount: total }))
     }, [total])
-
 
     const handleNext = async () => {
         // Validations per step
@@ -238,11 +234,10 @@ export function NoteCheckoutWizard({
                 let cleanMfgData = null
                 if (i.manufacturing_data) {
                     const mfgData = i.manufacturing_data as any
-                    const { design_files, approval_file, ...rest } = mfgData
+                    const { design_files, ...rest } = mfgData
                     cleanMfgData = {
                         ...rest,
                         design_filenames: (design_files || []).map((f: File) => f.name),
-                        approval_filename: approval_file ? approval_file.name : null
                     }
                 }
 
@@ -265,9 +260,6 @@ export function NoteCheckoutWizard({
                         mfgData.design_files.forEach((file: File, fileIdx: number) => {
                             formData.append(`line_${itemIdx}_design_${fileIdx}`, file)
                         })
-                    }
-                    if (mfgData.approval_file) {
-                        formData.append(`line_${itemIdx}_approval`, mfgData.approval_file)
                     }
                 }
             })
@@ -296,7 +288,7 @@ export function NoteCheckoutWizard({
                 formData.append('payment_data', JSON.stringify(paymentData))
             }
 
-            await api.post('/billing/note-workflows/checkout/', formData)
+            await billingApi.noteWorkflowCheckout(formData)
 
             toast.success("Nota generada exitosamente.")
             onSuccess?.()
@@ -311,13 +303,15 @@ export function NoteCheckoutWizard({
     }
 
     const renderStep = () => {
-        if (initializing) {
-            return (
-                <div className="h-[400px]">
-                    <FormSkeleton fields={4} />
-                </div>
-            )
-        }
+         if (initializing) {
+             return (
+                 <div className="h-[400px]">
+                     <SkeletonShell isLoading={true} ariaLabel="Cargando wizard de nota">
+                         <div className="p-6" />
+                     </SkeletonShell>
+                 </div>
+             )
+         }
 
         switch (step) {
             case 1:
@@ -413,9 +407,7 @@ export function NoteCheckoutWizard({
                             {title}
                         </span>
                         {isExempt && (
-                            <span className="px-1.5 py-0.5 bg-success/10 text-success text-[10px] font-black uppercase rounded shadow-sm border border-success/20">
-                                Documento Exento
-                            </span>
+                            <Chip intent="success">Documento Exento</Chip>
                         )}
                     </div>
                     {originalInvoice && (

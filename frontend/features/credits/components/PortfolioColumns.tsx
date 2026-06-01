@@ -1,15 +1,12 @@
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
-import { DataCell } from "@/components/ui/data-table-cells"
-import { StatusBadge, EntityBadge } from "@/components/shared"
+import { DataTableColumnHeader } from '@/components/shared'
+import { DataCell } from '@/components/shared'
+import { EntityBadge } from "@/components/shared"
 import { CreditContact, CreditHistoryEntry } from "@/features/credits/api/creditsApi"
 import { cn } from "@/lib/utils"
 import { AlertCircle } from "lucide-react"
-
-const fmt = (v: string | number | undefined) =>
-    Number(v || 0).toLocaleString("es-CL", { style: "currency", currency: "CLP", maximumFractionDigits: 0 })
 
 export const getPortfolioColumns = (onEdit: (c: CreditContact) => void): ColumnDef<CreditContact>[] => [
     {
@@ -83,7 +80,11 @@ export const getPortfolioColumns = (onEdit: (c: CreditContact) => void): ColumnD
             const val = Number(aging.overdue_30) + Number(aging.overdue_60) + Number(aging.overdue_90) + Number(aging.overdue_90plus)
             return (
                 <div className="flex justify-center w-full">
-                    <div className={cn("text-center text-[12px] font-mono", val > 0 ? "text-destructive font-black" : "")}>{val > 0 ? fmt(val) : <span className="text-muted-foreground/30">—</span>}</div>
+                    {val > 0 ? (
+                        <DataCell.Currency value={val} className="text-destructive font-black" />
+                    ) : (
+                        <span className="text-muted-foreground/30">—</span>
+                    )}
                 </div>
             )
         },
@@ -115,9 +116,7 @@ export const getPortfolioColumns = (onEdit: (c: CreditContact) => void): ColumnD
                         totalDebt > 0 ? "Activo" : "Al día";
 
             return (
-                <div className="flex justify-center w-full">
-                    <StatusBadge variant="default" status={statusKey} label={label} />
-                </div>
+                <DataCell.Status status={statusKey} label={label} />
             )
         },
     },
@@ -167,13 +166,10 @@ export const historyColumns: ColumnDef<CreditHistoryEntry>[] = [
         accessorKey: "credit_assignment_origin",
         header: ({ column }) => <DataTableColumnHeader column={column} title="Origen" className="justify-center" />,
         cell: ({ row }) => (
-            <div className="flex justify-center w-full">
-                <StatusBadge
-                    variant="default"
-                    status={`ORIGIN_${row.original.credit_assignment_origin}`}
-                    label={row.original.credit_assignment_origin_display}
-                />
-            </div>
+            <DataCell.Status
+                status={`ORIGIN_${row.original.credit_assignment_origin}`}
+                label={row.original.credit_assignment_origin_display}
+            />
         )
     },
 ]

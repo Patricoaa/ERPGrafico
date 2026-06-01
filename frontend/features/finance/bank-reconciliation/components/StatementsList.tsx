@@ -7,12 +7,11 @@ import { useStatementsQuery } from "../hooks/useReconciliationQueries"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import type { BankStatement } from "../types"
 import { StatementImportModal } from "@/features/treasury"
-import { DataTable } from "@/components/ui/data-table"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { DataTable, StatusBadge } from '@/components/shared'
+import { DataTableColumnHeader } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
-import { createActionsColumn, DataCell } from "@/components/ui/data-table-cells"
+import { createActionsColumn, DataCell } from '@/components/shared'
 import { Progress } from "@/components/ui/progress"
-import { StatusBadge } from "@/components/shared/StatusBadge"
 
 interface StatementsListProps {
     externalOpen?: boolean
@@ -178,36 +177,38 @@ export function StatementsList({ externalOpen = false, createAction }: Statement
     ]
 
     return (
-        <>
-            <DataTable
-                columns={columns}
-                data={statements}
-                variant="embedded"
-                isLoading={isLoading}
-                globalFilterFields={["treasury_account_name", "display_id"]}
-                searchPlaceholder="Buscar por ID..."
-                facetedFilters={[
-                    {
-                        column: "state",
-                        title: "Estado",
-                        options: [
-                            { label: "Borrador", value: "DRAFT" },
-                            { label: "Confirmado", value: "CONFIRMED" },
-                            { label: "Anulado", value: "CANCELLED" },
-                        ]
-                    }
-                ]}
-                initialColumnFilters={initialFilters}
-                useAdvancedFilter={true}
-                defaultPageSize={10}
-                createAction={createAction}
-            />
+        <div className="h-full flex flex-col">
+            <div className="flex-1 min-h-0">
+                <DataTable
+                    columns={columns}
+                    data={statements}
+                    variant="embedded"
+                    isLoading={isLoading}
+                    globalFilterFields={["treasury_account_name", "display_id"]}
+                    searchPlaceholder="Buscar por ID..."
+                    facetedFilters={[
+                        {
+                            column: "state",
+                            title: "Estado",
+                            options: [
+                                { label: "Borrador", value: "DRAFT" },
+                                { label: "Confirmado", value: "CONFIRMED" },
+                                { label: "Anulado", value: "CANCELLED" },
+                            ]
+                        }
+                    ]}
+                    initialColumnFilters={initialFilters}
+                    useAdvancedFilter={true}
+                    defaultPageSize={10}
+                    createAction={createAction}
+                />
+            </div>
 
             <StatementImportModal
                 open={importModalOpen}
                 onOpenChange={handleModalChange}
                 onSuccess={handleImportSuccess}
             />
-        </>
+        </div>
     )
 }

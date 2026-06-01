@@ -10,12 +10,12 @@ import {
     TableRow
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
-import { MoneyDisplay } from "@/components/shared/MoneyDisplay";
-import { AlertCircle, CheckCircle2, Info, ArrowUpRight, ShieldCheck, List, Landmark } from "lucide-react";
-import { BaseModal } from "@/components/shared/BaseModal";
-import { Badge } from "@/components/ui/badge";
+;
+import {AlertCircle, CheckCircle2, Info} from "lucide-react";
+;
+import { BaseModal, Chip, MoneyDisplay, ReportNode, ReportTable } from '@/components/shared';
 import { Button } from "@/components/ui/button";
-import { ReportTable, ReportNode } from "@/components/shared/ReportTable";
+;
 
 interface CulpritAccount {
     code: string;
@@ -30,7 +30,7 @@ interface CashFlowItem {
     amount_comp?: number;
 }
 
-interface CashFlowData {
+export interface CashFlowData {
     // Activities
     operating: CashFlowItem[];
     total_operating: number;
@@ -61,8 +61,6 @@ interface CashFlowTableProps {
     periodLabel?: string;
     compPeriodLabel?: string;
 }
-
-
 
 const SectionHeader = ({ title, showComparison, icon: Icon }: { title: string, showComparison?: boolean, icon?: React.ElementType }) => (
     <TableRow className="bg-muted/30 font-bold border-t-2 first:border-t-0">
@@ -217,9 +215,9 @@ export const CashFlowTable: React.FC<CashFlowTableProps> = ({ data, embedded, sh
                 {!embedded && (
                     <div className="p-4 border-b bg-muted/30 flex justify-between items-center">
                         <h3 className="font-bold uppercase tracking-widest text-sm text-muted-foreground">Estado de Flujo de Efectivo (M. Indirecto)</h3>
-                        <Badge variant={data.is_balanced ? "outline" : "destructive"} className="text-[10px]">
+                        <Chip size="xs" intent={data.is_balanced ? "neutral" : "destructive"}>
                             {data.is_balanced ? "CONCILIADO" : "PENDIENTE AUDITORÍA"}
-                        </Badge>
+                        </Chip>
                     </div>
                 )}
                 {tableContent}
@@ -229,6 +227,7 @@ export const CashFlowTable: React.FC<CashFlowTableProps> = ({ data, embedded, sh
             <BaseModal
                 open={auditModalOpen}
                 onOpenChange={setAuditModalOpen}
+                icon={AlertCircle}
                 title="Auditoría de Integridad del Flujo"
                 description="Listado de cuentas contables con movimientos en el periodo que NO están mapeadas a una categoría de flujo de caja."
             >
@@ -245,8 +244,8 @@ export const CashFlowTable: React.FC<CashFlowTableProps> = ({ data, embedded, sh
                         <Table>
                             <TableHeader>
                                 <TableRow className="bg-muted/30">
-                                    <TableHead className="text-[10px] font-bold uppercase">Cuenta</TableHead>
-                                    <TableHead className="text-right text-[10px] font-bold uppercase">Variación</TableHead>
+                                    <TableHead className="text-[10px] font-black uppercase">Cuenta</TableHead>
+                                    <TableHead className="text-right text-[10px] font-black uppercase">Variación</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>

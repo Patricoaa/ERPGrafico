@@ -2,6 +2,11 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Agent compatibility
+
+These rules and conventions apply to any LLM agent used in this repository (Claude, Codex/Cursor, or others).
+If style differences exist across agents, this document's invariants and playbooks always take precedence.
+
 ## Primary entry point for agentic work
 
 **Start here:** [docs/README.md](docs/README.md) — layered documentation with explicit task routing. Match the user's intent to a playbook in the routing table, read the playbook's preconditions, then execute.
@@ -35,9 +40,21 @@ Task routing — common intents:
 | N+1 query / selector / prefetch | [add-selector.md](docs/30-playbooks/add-selector.md) |
 | Settings panel / config section | [add-settings-panel.md](docs/30-playbooks/add-settings-panel.md) |
 | Which component to use / component decision | [component-decision-tree.md](docs/20-contracts/component-decision-tree.md) |
+| Badge / chip / pill for a label or tag | [component-chip.md](docs/20-contracts/component-chip.md) |
 | Module layout / navigation tabs / dynamic header | [module-layout-navigation.md](docs/20-contracts/module-layout-navigation.md) |
 | TypeScript error / `any` escape hatch | [resolve-type-errors.md](docs/30-playbooks/resolve-type-errors.md) |
 | Loading state / skeleton / refetch CLS / loading.tsx | [component-skeleton.md](docs/20-contracts/component-skeleton.md) |
+| Deletion / annul / archive / soft-delete / hard delete | [deletion-policy.md](docs/20-contracts/deletion-policy.md) |
+| Realtime (WebSocket / SSE / Django Channels / push) | [realtime-channels.md](docs/20-contracts/realtime-channels.md) |
+| Idempotency-Key for write endpoints / double-click safety | [idempotency.md](docs/20-contracts/idempotency.md) |
+| Export PDF / Excel / CSV (WeasyPrint / openpyxl) | [export-formats.md](docs/20-contracts/export-formats.md) |
+| Bulk import (CSV / XLSX) / preview + commit | [import-csv-xlsx.md](docs/20-contracts/import-csv-xlsx.md) |
+| Implement new realtime channel (WS or SSE) | [add-realtime-channel.md](docs/30-playbooks/add-realtime-channel.md) |
+| Implement new export PDF/Excel/CSV | [add-export-pdf-excel.md](docs/30-playbooks/add-export-pdf-excel.md) |
+| Implement new bulk import | [add-bulk-import.md](docs/30-playbooks/add-bulk-import.md) |
+| Postgres backup / restore / disaster recovery | [backup-and-restore-postgres.md](docs/30-playbooks/backup-and-restore-postgres.md) + [disaster-recovery-pyme.md](docs/30-playbooks/disaster-recovery-pyme.md) |
+| Feature aggregator pattern (no root barrel, no own backend) | [frontend-fsd.md#aggregator-pattern](docs/10-architecture/frontend-fsd.md#aggregator-pattern-read-only-feature-without-root-barrel) |
+| Entity drawer / `openEntity` / source-document drill-down / drawer registry / drawer modes | [component-entity-drawers.md](docs/20-contracts/component-entity-drawers.md) |
 
 Full routing table in [docs/README.md](docs/README.md).
 
@@ -52,15 +69,44 @@ Before writing any code, verify:
 
 ## Global invariants (violate = PR rejected)
 
+> Headline list. The **authoritative** rules live in [GOVERNANCE.md](docs/90-governance/GOVERNANCE.md); the same 12 appear in [docs/README.md](docs/README.md). Keep all three in sync.
+
 1. **Zero `any`** in TypeScript — use Zod-derived types or `unknown` + type guard. See [zero-any-policy.md](docs/90-governance/zero-any-policy.md).
 2. **No raw Tailwind colors** (`bg-red-500`, `text-blue-600`) — semantic tokens only (`bg-primary`, `text-muted-foreground`).
 3. **No cross-feature internal imports** — import from feature barrel `index.ts` only.
-4. **No `useQuery`/`useMutation` directly in components** — wrap in a feature hook under `features/*/hooks/`.
-5. **No direct `@/lib/api` in components or pages** — only importable from `features/*/api/`, `features/*/hooks/`, and `/hooks/`.
+4. **No direct `@/lib/api` in components or pages** — only importable from `features/*/api/`, `features/*/hooks/`, and `/hooks/`.
+5. **No `useQuery`/`useMutation` directly in components** — wrap in a feature hook under `features/*/hooks/`.
 6. **Shared components imported via barrel only** — `import { X } from '@/components/shared'`, never the file path directly.
 7. **`StatusBadge` is the only authorized status renderer.**
-8. **All forms** use `react-hook-form` + `zodResolver` with schema in `components/forms/schema.ts`.
-9. **Views ≤ 20 lines** per Django action — business logic goes in `services.py`.
+8. **All shared components handle `loading` / `empty` / `error`.**
+9. **All forms** use `react-hook-form` + `zodResolver` with schema in `schema.ts`.
+10. **Views ≤ 20 lines** per Django action — business logic goes in `services.py`.
+11. **Component suffix matches surface** — `Drawer`/`Modal`/`Sheet`/`Wizard`/`Form`…; `FormModal`/`FormDrawer` prohibited. See [naming-conventions.md](docs/90-governance/naming-conventions.md).
+12. **Changing a contract (layer 20), public API, or a global invariant requires an ADR.**
+
+## Rule precedence
+
+If a conflict appears, apply this priority order:
+
+1. Global invariants (PR reject rules)
+2. Task-specific playbook (`docs/30-playbooks`)
+3. Component/API/state contracts (`docs/20-contracts`)
+4. Architecture and style conventions
+
+## Definition of done (minimum)
+
+Before considering a task complete:
+
+- Frontend: `npm run type-check` and `npm run lint` pass with no errors
+- Tests: run at least the test scope affected by the change
+- Global invariants remain respected (zero `any`, allowed imports, hooks policy, etc.)
+- If contracts changed, update relevant documentation/contracts
+
+## Planning vs execution
+
+- Plan mode: define approach, scope, risks, and files to touch; no code changes
+- Execution mode: implement following the selected playbook and validate the minimum DoD
+- If the task is ambiguous or has major trade-offs, plan first
 
 ## Stack (short)
 

@@ -1,17 +1,12 @@
 "use client"
 
-import { Suspense, lazy } from "react"
+import { lazy, Suspense } from "react"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
-import { TableSkeleton } from "@/components/shared"
 import { useRouter } from "next/navigation"
-import { SaleOrder } from "@/features/sales/types"
+import { SaleOrder, SalesOrdersView } from "@/features/sales"
 
-// Reutilizamos la vista de órdenes como lista base
-const SalesOrdersView = lazy(() =>
-    import("@/features/sales/components/SalesOrdersView").then(m => ({ default: m.SalesOrdersView }))
-)
-const DeliveryModal = lazy(() =>
-    import("@/features/sales/components/DeliveryModal").then(m => ({ default: m.default }))
+const DeliveryDrawer = lazy(() =>
+    import("@/features/sales").then(m => ({ default: m.DeliveryDrawer }))
 )
 
 export default function SalesDeliveriesPage() {
@@ -23,21 +18,19 @@ export default function SalesDeliveriesPage() {
     })
 
     return (
-        <div className="w-full pt-2 h-full">
-            <Suspense fallback={<TableSkeleton rows={10} columns={6} />}>
-                <SalesOrdersView 
-                    viewMode="orders" 
-                    // Cuando hagan clic en la fila de la orden en vez del hub, podemos 
-                    // forzarlos a abrir deliveries? El click por defecto en SalesOrdersView abre el HubPanel.
-                    // Podemos dejarlo como está, o pasar un onRowClick (pero SalesOrdersView no expone onRowClick para overriding fácil).
-                    // Para despachar, la gente usará universal search -> /sales/deliveries?selected=123
-                />
-            </Suspense>
+        <div className="pt-2 flex-1 min-h-0 flex flex-col">
+            <SalesOrdersView 
+                viewMode="orders" 
+                // Cuando hagan clic en la fila de la orden en vez del hub, podemos 
+                // forzarlos a abrir deliveries? El click por defecto en SalesOrdersView abre el HubPanel.
+                // Podemos dejarlo como está, o pasar un onRowClick (pero SalesOrdersView no expone onRowClick para overriding fácil).
+                // Para despachar, la gente usará universal search -> /sales/deliveries?selected=123
+            />
 
-            {/* 2. Montar el modal existente (DeliveryModal) controlado por ?selected */}
+            {/* 2. Montar el modal existente (DeliveryDrawer) controlado por ?selected */}
             <Suspense fallback={null}>
                 {(selectedOrder || isLoading) && (
-                    <DeliveryModal
+                    <DeliveryDrawer
                         open={!!selectedOrder || isLoading}
                         onOpenChange={(open) => {
                             if (!open) clearSelection()

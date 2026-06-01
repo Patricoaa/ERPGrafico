@@ -1,11 +1,17 @@
+---
+layer: 20-contracts
+doc: component-button
+status: active
+owner: frontend-team
+last_review: 2026-05-21
+stability: contract-changes-require-ADR
+---
+
 # Button
 
-El sistema de botones de ERPGrafico es una **jerarquía de 3 capas**. Pertenecen al nivel **Atomic Elements** de la jerarquía de radios (`rounded-sm`). Elegir la capa correcta es obligatorio; crear un botón ad-hoc con estilos en línea está **prohibido**.
-
-**Layer**: 20-contracts
-**Owner**: frontend-team
+El sistema de botones de ERPGrafico es una **jerarquía de 3 capas**. Pertenecen al nivel **Atomic Elements** de la jerarquía de radios (`rounded-sm`), con la excepción documentada de los botones de toolbar como `ToolbarCreateButton` que usan `rounded-md` para alinearse visualmente con los inputs de filtros compactos. Elegir la capa correcta es obligatorio; crear un botón ad-hoc con estilos en línea está **prohibido**.
 **Status**: active
-**Last review**: 2026-04-23
+**Last review**: 2026-05-17
 
 ---
 
@@ -118,6 +124,25 @@ Estos wrappers son la **forma correcta** de manejar acciones semánticas de ERP.
 </IconButton>
 ```
 
+### `ActionSlideButton` — Premium Kinetic Button
+
+Botón con animación de deslizamiento para revelar acciones adicionales. Ideal para procesos primarios con alta carga kinética.
+
+```tsx
+import { ActionSlideButton } from "@/components/shared"
+
+<ActionSlideButton variant="success" loading={isCompleting}>
+  Completar
+</ActionSlideButton>
+```
+
+| prop | tipo | requerido | default | notas |
+|------|------|-----------|---------|-------|
+| `children` | `ReactNode` | ✅ | — | Texto del botón |
+| `icon` | `LucideIcon` | ❌ | — | Icono opcional a la izquierda |
+| `variant` | `'primary' \| 'destructive' \| 'success'` | ❌ | `'primary'` | Define la combinación cromática del borde y hover |
+| `loading` | `boolean` | ❌ | `false` | Muestra spinner y deshabilita el botón |
+
 ---
 
 ## 4. Capa 3 — `ToolbarCreateButton` (`@/components/shared`)
@@ -158,16 +183,20 @@ Para el botón **"+ Nueva entidad"** en toolbars de listas.
 
 ## 6. Uso en modales — footer estándar
 
-El footer de todos los modales que usan `BaseModal` debe seguir este patrón:
+El footer de todos los modales que usan `BaseModal` debe usar **obligatoriamente** `FormFooter` (importado de `@/components/shared`) para garantizar consistencia y la correcta alineación y distribución de las acciones (nunca usar un `<div>` raw):
 
 ```tsx
 footer={
-  <div className="flex justify-end gap-2">
-    <CancelButton onClick={() => onOpenChange(false)} />
-    <SubmitButton loading={isPending} form="my-form-id">
-      Guardar
-    </SubmitButton>
-  </div>
+  <FormFooter
+    actions={
+      <>
+        <CancelButton onClick={() => onOpenChange(false)} />
+        <SubmitButton loading={isPending} form="my-form-id">
+          Guardar
+        </SubmitButton>
+      </>
+    }
+  />
 }
 ```
 

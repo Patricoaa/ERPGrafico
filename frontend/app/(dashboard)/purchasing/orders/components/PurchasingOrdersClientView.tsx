@@ -1,37 +1,27 @@
 "use client"
 
-import { showApiError, getErrorMessage } from "@/lib/errors"
-import React, { useEffect, useState, useRef } from "react"
+import {showApiError, getErrorMessage} from "@/lib/errors"
+import React, { useEffect, useState } from "react"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
-import { DataTable } from "@/components/ui/data-table"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { ActionConfirmModal, DataTableView, DocumentCompletionModal } from '@/components/shared'
+import { DataTableColumnHeader } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
-import { DataCell } from "@/components/ui/data-table-cells"
+import { DataCell } from '@/components/shared'
 import { Button } from "@/components/ui/button"
-import { List, LayoutDashboard, Plus, ArrowRight, ArrowLeft, Filter, Monitor } from "lucide-react"
+import { ArrowRight, ArrowLeft } from "lucide-react"
 import api from "@/lib/api"
-import { PurchaseOrderForm } from "@/features/purchasing/components/PurchaseOrderForm"
+import { PurchaseOrderModal } from "@/features/purchasing"
 import { toast } from "sonner"
-import { DocumentRegistrationModal } from "@/features/purchasing/components/DocumentRegistrationModal"
-import { DocumentCompletionModal } from "@/components/shared/DocumentCompletionModal"
-import { PurchaseCheckoutWizard } from "@/features/purchasing/components/PurchaseCheckoutWizard"
+import { DocumentRegistrationModal, PurchaseCheckoutWizard } from "@/features/purchasing"
+
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
-import { DateRangeFilter } from "@/components/shared/DateRangeFilter"
-import { isWithinInterval, parseISO, startOfDay, endOfDay, format } from "date-fns"
-import { PurchaseOrderHubStatus } from "@/features/orders/components/PurchaseOrderHubStatus"
-import { getPurchaseHubStatuses } from '@/features/purchasing/utils/status'
-import { NoteHubStatus } from "@/features/orders/components/NoteHubStatus"
-import { OrderCard } from "@/features/orders/components/OrderCard"
+import { DomainHubStatus } from "@/components/shared"
+import { getHubStatuses } from "@/lib/workflow-status"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
-import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { LoadingFallback } from "@/components/shared/LoadingFallback"
-import { EmptyState } from "@/components/shared/EmptyState"
-import { EntityCard } from "@/components/shared/EntityCard"
+import { Tabs } from "@/components/ui/tabs"
 
-
-import type { Order } from "@/features/orders/types"
+import type { Order } from "@/features/orders"
 
 interface PurchaseOrder extends Order {
     supplier_name: string
@@ -47,22 +37,19 @@ interface PurchaseOrder extends Order {
     } | null
 }
 
-const statusMap: Record<string, { label: string, variant: "default" | "secondary" | "destructive" | "outline" | "success" | "info" }> = {
-    'DRAFT': { label: 'Borrador', variant: 'outline' },
-    'CONFIRMED': { label: 'Confirmado', variant: 'info' },
-}
-
 interface PurchasingOrdersClientViewProps {
     viewMode: 'orders' | 'notes'
     externalOpenCheckout?: boolean
     createAction?: React.ReactNode
 }
 
-import { usePurchasingOrders, usePurchasingNotes } from "@/features/purchasing/hooks/usePurchasing"
+import { usePurchasingOrders, usePurchasingNotes, purchaseOrderSearchDef } from "@/features/purchasing"
+import { SmartSearchBar, useSmartSearch } from "@/components/shared"
 
 export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, createAction }: PurchasingOrdersClientViewProps) {
-    const { orders, isLoading: isLoadingOrders, refetch: fetchOrders, deleteOrder } = usePurchasingOrders()
-    const { notes, isLoading: isLoadingNotes, refetch: fetchNotes } = usePurchasingNotes()
+    const { filters } = useSmartSearch(purchaseOrderSearchDef)
+    const { orders, isLoading: isLoadingOrders, refetch: fetchOrders, deleteOrder } = usePurchasingOrders(filters)
+    const { notes, isLoading: isLoadingNotes } = usePurchasingNotes()
 
     const searchParams = useSearchParams()
     const router = useRouter()
@@ -73,39 +60,10 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
     const [completingInvoice, setCompletingInvoice] = useState<{ id: number, type: string } | null>(null)
     const [checkoutOpen, setCheckoutOpen] = useState(false)
     const [folioModalOpen, setFolioModalOpen] = useState(false)
-    const [selectedInvoice, setSelectedInvoice] = useState<{ id: number, type: string } | null>(null)
+    const [selectedInvoice] = useState<{ id: number, type: string } | null>(null)
+
+    const { hubConfig, isHubOpen } = useHubPanel()
     const [checkoutOrderId, setCheckoutOrderId] = useState<number | null>(null)
-    const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date } | undefined>()
-    const [currentView, setCurrentView] = React.useState<'card' | 'list'>(
-        (searchParams.get('view') as 'card' | 'list') ?? 'card'
-    )
-
-    const handleViewChange = (v: string) => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.set('view', v)
-        router.push(`${pathname}?${params.toString()}`, { scroll: false })
-        setCurrentView(v as 'card' | 'list')
-    }
-
-    useEffect(() => {
-        const viewParam = searchParams.get('view')
-        if (!viewParam) {
-            const params = new URLSearchParams(searchParams.toString())
-            params.set('view', 'card')
-            router.replace(`${pathname}?${params.toString()}`, { scroll: false })
-            setCurrentView('card')
-        } else if (viewParam !== currentView) {
-            setCurrentView(viewParam as 'card' | 'list')
-        }
-    }, [searchParams, pathname, router, currentView])
-
-    const viewOptions = [
-        { label: "Lista", value: "list", icon: List },
-        { label: "Tarjeta", value: "card", icon: LayoutDashboard }
-
-    ]
-
-    const { openHub, closeHub, hubConfig, isHubOpen } = useHubPanel()
 
     const toggleSelection = (id: number) => {
         const isSelected = viewMode === "orders" ? hubConfig?.orderId === id : hubConfig?.invoiceId === id
@@ -123,19 +81,12 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
 
     useEffect(() => {
         if (externalOpenCheckout) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setCheckoutOpen(true)
         }
     }, [externalOpenCheckout])
 
-    const filteredOrders = orders.filter((order: any) => {
-        if (!dateRange || !dateRange.from) return true
-
-        const orderDate = parseISO(order.date)
-        const start = startOfDay(dateRange.from)
-        const end = dateRange.to ? endOfDay(dateRange.to) : endOfDay(dateRange.from)
-
-        return isWithinInterval(orderDate, { start, end })
-    })
+    const filteredOrders = orders
 
     const deleteConfirm = useConfirmAction<number>(async (id) => {
         try {
@@ -145,8 +96,6 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
             showApiError(error, "Error al eliminar la orden de compra.")
         }
     })
-
-    const handleDelete = (id: number) => deleteConfirm.requestConfirm(id)
 
     const forceAnnulConfirm = useConfirmAction<number>(async (id) => {
         try {
@@ -176,52 +125,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
         }
     })
 
-    const handleAnnul = (id: number) => annulConfirm.requestConfirm(id)
-
-    const handleEdit = async (order: PurchaseOrder) => {
-        try {
-            const response = await api.get(`/purchasing/orders/${order.id}/`)
-            setEditingOrder(response.data)
-        } catch (error) {
-            console.error("Error fetching order details:", error)
-            toast.error("Error al cargar los detalles de la orden de compra.")
-        }
-    }
-
-    const handleConfirm = async (id: number) => {
-        try {
-            await api.post(`/purchasing/orders/${id}/confirm/`)
-            toast.success("Orden de Compra confirmada.")
-            fetchOrders()
-        } catch (error) {
-            toast.error("Error al confirmar.")
-        }
-    }
-
-    const handleInvoice = async (order: PurchaseOrder) => {
-        setInvoicingOrder(order)
-    }
-
-    const handleDeleteInvoice = async (invoiceId: number) => {
-        try {
-            await api.delete(`/billing/invoices/${invoiceId}/`)
-            toast.success("Documento eliminado correctamente")
-            fetchOrders()
-        } catch (error: unknown) {
-            console.error("Error deleting invoice:", error)
-            showApiError(error, "Error al eliminar el documento")
-        }
-    }
-
-    const filteredNotes = notes.filter((note: any) => {
-        if (!dateRange || !dateRange.from) return true
-        const noteDate = parseISO(note.date || new Date().toISOString())
-        const start = startOfDay(dateRange.from)
-        const end = dateRange.to ? endOfDay(dateRange.to) : endOfDay(dateRange.from)
-        return isWithinInterval(noteDate, { start, end })
-    })
-
-    const noteColumns: ColumnDef<Order>[] = [
+    const forceAnnulConfirm: ColumnDef<Order>[] = [
         {
             accessorKey: "dte_type_display",
             header: ({ column }) => (
@@ -239,11 +143,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Folio" />
             ),
-            cell: ({ row }) => (
-                <div className="flex flex-col items-center">
-                    <DataCell.DocumentId type={row.original.dte_type as any} number={row.getValue("number")} />
-                </div>
-            ),
+            cell: ({ row }) => <DataCell.Code>{row.original.display_id ?? row.original.number}</DataCell.Code>,
             meta: { title: "Folio" },
         },
         {
@@ -279,7 +179,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
             ),
             cell: ({ row }) => (
                 <div className="flex justify-center">
-                    <NoteHubStatus note={row.original} />
+                    <DomainHubStatus label="billing.invoice" data={row.original} />
                 </div>
             ),
             meta: { title: "Estado" },
@@ -325,11 +225,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Folio" />
             ),
-            cell: ({ row }) => (
-                <div className="flex flex-col items-center">
-                    <DataCell.DocumentId type="purchase_order" number={row.getValue("number")} />
-                </div>
-            ),
+            cell: ({ row }) => <DataCell.Code>{row.original.display_id ?? row.original.number}</DataCell.Code>,
             meta: { title: "Folio" },
         },
         {
@@ -369,14 +265,14 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Estados" />
             ),
-            cell: ({ row }) => <PurchaseOrderHubStatus order={row.original} />,
+            cell: ({ row }) => <DomainHubStatus label="purchasing.purchaseorder" data={row.original} />,
             meta: { title: "Estado" },
         },
 
         // Hidden columns for filtering only - these provide data for faceted filters
         {
             id: "reception_status",
-            accessorFn: (row) => getPurchaseHubStatuses(row).reception,
+            accessorFn: (row) => getHubStatuses(row as any).logistics, // use generic getHubStatuses from lib
             header: () => null,
             cell: () => null,
             enableSorting: false,
@@ -387,7 +283,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
         },
         {
             id: "billing_status",
-            accessorFn: (row) => getPurchaseHubStatuses(row).billing,
+            accessorFn: (row) => getHubStatuses(row as any).billing,
             header: () => null,
             cell: () => null,
             enableSorting: false,
@@ -398,7 +294,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
         },
         {
             id: "treasury_status",
-            accessorFn: (row) => getPurchaseHubStatuses(row).treasury,
+            accessorFn: (row) => getHubStatuses(row as any).treasury,
             header: () => null,
             cell: () => null,
             enableSorting: false,
@@ -435,9 +331,9 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
     ]
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 h-full flex flex-col">
             {editingOrder && (
-                <PurchaseOrderForm
+                <PurchaseOrderModal
                     initialData={editingOrder as unknown as any}
                     open={!!editingOrder}
                     onOpenChange={(open) => {
@@ -447,121 +343,25 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                 />
             )}
 
-            <Tabs value={viewMode} className="w-full">
-                <DataTable
-                    columns={(viewMode === 'orders' ? columns : noteColumns) as any}
-                    data={(viewMode === 'orders' ? filteredOrders : filteredNotes) as any}
-                    onRowClick={(row: any) => toggleSelection(row.id)}
-                    variant="embedded"
-                    isLoading={viewMode === 'orders' ? isLoadingOrders : isLoadingNotes}
-                    currentView={currentView}
-                    onViewChange={handleViewChange}
-                    viewOptions={viewOptions}
-                    filterColumn={viewMode === 'orders' ? "supplier_name" : "number"}
-                    searchPlaceholder={viewMode === 'orders' ? "Buscar por proveedor..." : "Buscar por folio..."}
-                    facetedFilters={[
-                        {
-                            column: "status",
-                            title: "Origen",
-                            options: viewMode === 'orders' ? [
-                                { label: "Borrador", value: "DRAFT" },
-                                { label: "Confirmado", value: "CONFIRMED" },
-                            ] : [
-                                { label: "Borrador", value: "DRAFT" },
-                                { label: "Publicado", value: "POSTED" },
-                                { label: "Pagado", value: "PAID" },
-                                { label: "Anulado", value: "CANCELLED" },
-                            ],
-                        },
-                        ...(viewMode === 'orders' ? [
-                            {
-                                column: "reception_status",
-                                title: "Recepción",
-                                options: [
-                                    { label: "En Proceso", value: "active" },
-                                    { label: "Completado", value: "success" },
-                                    { label: "Pendiente", value: "neutral" },
-                                ]
-                            },
-                            {
-                                column: "billing_status",
-                                title: "Facturación",
-                                options: [
-                                    { label: "En Proceso", value: "active" },
-                                    { label: "Completado", value: "success" },
-                                    { label: "Pendiente", value: "neutral" },
-                                ]
-                            },
-                            {
-                                column: "treasury_status",
-                                title: "Tesorería",
-                                options: [
-                                    { label: "En Proceso", value: "active" },
-                                    { label: "Completado", value: "success" },
-                                    { label: "Pendiente", value: "neutral" },
-                                ]
-                            }
-                        ] : [])
-                    ]}
-                    useAdvancedFilter={true}
-                    showToolbarSort={true}
-                    onReset={() => setDateRange(undefined)}
-                    globalFilterFields={["number"]}
-                    isCustomFiltered={!!dateRange}
-                    customFilterCount={dateRange ? 1 : 0}
-                    customFilters={
-                        <DateRangeFilter
-                            onDateChange={setDateRange}
-                            label={viewMode === 'orders' ? "Fecha de Orden" : "Fecha de Emisión"}
-                            className="bg-transparent border-none w-full"
-                        />
-                    }
-                    renderCustomView={currentView === 'card' ? (table) => {
-                        const rows = table.getRowModel().rows
-                        if (rows.length === 0) {
-                            return (
-                                <EmptyState
-                                    context="inventory"
-                                    title={viewMode === 'orders' ? "Sin Órdenes de Compra" : "Sin Notas Registradas"}
-                                    description={viewMode === 'orders'
-                                        ? "No se han encontrado órdenes de compra en este periodo."
-                                        : "No hay notas de crédito ni débito asociadas a tus compras."
-                                    }
-
-                                    className="py-24"
-                                />
-                            )
+            <Tabs value={viewMode} className="w-full h-full flex flex-col">
+                <div className="flex-1 min-h-0">
+                    <DataTableView
+                        entityLabel={viewMode === 'orders' ? 'purchasing.purchaseorder' : 'billing.invoice'}
+                        columns={(viewMode === 'orders' ? columns : noteColumns) as any}
+                        data={(viewMode === 'orders' ? filteredOrders : filteredNotes) as any}
+                        onRowClick={(row: any) => toggleSelection(row.id)}
+                        variant="embedded"
+                        isLoading={viewMode === 'orders' ? isLoadingOrders : isLoadingNotes}
+                        leftAction={<SmartSearchBar searchDef={purchaseOrderSearchDef} placeholder="Buscar por proveedor..." className="w-full" />}
+                        showToolbarSort={true}
+                        createAction={createAction}
+                        isSelected={(data: any) => viewMode === 'orders'
+                            ? hubConfig?.orderId === data.id
+                            : hubConfig?.invoiceId === data.id
                         }
-                        return (
-                            <div className="grid gap-3 pt-2">
-                                {rows.map((row: import("@tanstack/react-table").Row<any>) => {
-                                    const item = row.original
-                                    const isSelected = viewMode === 'orders'
-                                        ? hubConfig?.orderId === item.id
-                                        : hubConfig?.invoiceId === item.id
-
-                                    return (
-                                        <OrderCard
-                                            key={item.id}
-                                            item={item}
-                                            isSelected={isSelected}
-                                            type={viewMode === 'orders' ? 'purchase' : 'note'}
-                                            onClick={() => toggleSelection(item.id)}
-                                        />
-                                    )
-                                })}
-                            </div>
-                        )
-                    } : undefined}
-                    renderLoadingView={currentView === 'card' ? () => (
-                        <div className="grid gap-3 pt-2">
-                            {Array.from({ length: 8 }).map((_, i) => (
-                                <EntityCard.Skeleton key={i} />
-                            ))}
-                        </div>
-                    ) : undefined}
-                    createAction={createAction}
-                />
+                        isHubOpen={isHubOpen}
+                    />
+                </div>
             </Tabs>
 
             {
@@ -584,7 +384,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                         onOpenChange={(open) => !open && setCompletingInvoice(null)}
                         invoiceId={completingInvoice.id}
                         invoiceType={completingInvoice.type}
-                        contactId={invoicingOrder?.supplier || orders.find((o: PurchaseOrder) => o.related_documents?.invoices?.some((i: Record<string, unknown>) => i.id === completingInvoice.id))?.supplier || undefined}
+                        contactId={invoicingOrder?.supplier || ((orders as unknown as PurchaseOrder[]).find((o) => o.related_documents?.invoices?.some((i: Record<string, unknown>) => i.id === completingInvoice.id))?.supplier ?? undefined)}
                         isPurchase={true}
                         onComplete={async (invoiceId, formData) => {
                             await api.post(`/billing/invoices/${invoiceId}/confirm/`, formData, {
@@ -620,7 +420,7 @@ export function PurchasingOrdersClientView({ viewMode, externalOpenCheckout, cre
                         onOpenChange={setFolioModalOpen}
                         invoiceId={selectedInvoice.id}
                         invoiceType={selectedInvoice.type}
-                        contactId={invoicingOrder?.supplier || orders.find((o: PurchaseOrder) => o.related_documents?.invoices?.some((i: Record<string, unknown>) => i.id === selectedInvoice.id))?.supplier || undefined}
+                        contactId={invoicingOrder?.supplier || ((orders as unknown as PurchaseOrder[]).find((o) => o.related_documents?.invoices?.some((i: Record<string, unknown>) => i.id === selectedInvoice.id))?.supplier ?? undefined)}
                         isPurchase={true}
                         onComplete={async (invoiceId, formData) => {
                             await api.post(`/billing/invoices/${invoiceId}/confirm/`, formData, {

@@ -3,13 +3,15 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { usePOS } from '../contexts/POSContext'
-import api from '@/lib/api'
+import { posApi } from '../api/posApi'
 import type { Product, StockLimits } from '@/types/pos'
 import { toast } from 'sonner'
 import * as BOMResolver from '@/features/pos/utils/bom-resolver'
+import { useRealtime } from '@/features/realtime'
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { inventoryApi } from '@/features/inventory/api/inventoryApi'
+import { POS_KEYS } from './queryKeys'
 
 const EMPTY_ARRAY: Product[] = []
 
@@ -25,6 +27,7 @@ export function useProducts() {
         updateComponentCache,
         setLoading
     } = usePOS()
+    const { markLocalMutation } = useRealtime()
 
     const [searchTerm, setSearchTerm] = useState("")
     const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null)
@@ -58,8 +61,8 @@ export function useProducts() {
     const { data: uoms = [], isLoading: loadingUoms } = useQuery({
         queryKey: ['uoms'],
         queryFn: async () => {
-            const res = await api.get('/inventory/uoms/', { params: { active: true, page_size: 500 } })
-            return res.data.results || res.data
+            const data = await posApi.getUoms({ active: true, page_size: 500 })
+            return Array.isArray(data) ? data : ((data as { results?: unknown[] })?.results ?? [])
         },
         staleTime: 1000 * 60 * 60,
     })
@@ -72,8 +75,6 @@ export function useProducts() {
             return () => clearTimeout(timer)
         }
     }, [loadingProducts, loadingCategories, loadingUoms, setLoading])
-
-
 
     // Filtered products based on search and category
     const filteredProducts = useMemo(() => {
@@ -114,7 +115,7 @@ export function useProducts() {
             if (!silent) {
                 toast.success("Productos actualizados")
             }
-        } catch (error) {
+        } catch {
             if (!silent) {
                 toast.error("Error al actualizar productos")
             }
@@ -123,23 +124,26 @@ export function useProducts() {
         }
     }, [queryClient, setLoading])
 
-    const toggleFavorite = useCallback(async (productId: number) => {
-        try {
-            const res = await api.post(`/inventory/products/${productId}/toggle_favorite/`)
-            const isFavorite = res.data.is_favorite
-
-            // Update cache directly for immediate UI response
-            queryClient.setQueryData(['products', { active: true, can_be_sold: true }], (old: Product[] | undefined) => {
-                if (!old) return old
-                return old.map((p: Product) => p.id === productId ? { ...p, is_favorite: isFavorite } : p)
-            })
-
+    const toggleFavoriteMutation = useMutation({
+        mutationFn: posApi.toggleFavorite,
+        onSuccess: (data, variables) => {
+            const isFavorite = (data as any).is_favorite
             toast.success(isFavorite ? "Añadido a favoritos" : "Eliminado de favoritos")
-        } catch (error) {
+            
+            // Standard FSD invalidation
+            queryClient.invalidateQueries({ queryKey: POS_KEYS.products.lists() })
+            queryClient.invalidateQueries({ queryKey: POS_KEYS.products.details() })
+            
+            // Realtime integration
+            markLocalMutation()
+        },
+        onError: (error: Error) => {
             console.error("Error toggling favorite:", error)
             toast.error("Error al actualizar favorito")
         }
-    }, [queryClient])
+    })
+    
+    const toggleFavorite = toggleFavoriteMutation.mutateAsync
 
     return {
         products,

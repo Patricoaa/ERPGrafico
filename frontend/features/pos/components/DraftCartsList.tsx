@@ -1,16 +1,16 @@
 "use client"
+import { formatCurrency } from "@/lib/money"
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { BaseModal } from "@/components/shared/BaseModal"
+
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { StatusBadge } from "@/components/shared/StatusBadge"
-import { Separator } from "@/components/ui/separator"
+
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip"
-import { formatCurrency } from "@/lib/utils"
+
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
-import api from "@/lib/api"
+import { posApi } from "../api/posApi"
 import {
     Archive,
     Trash2,
@@ -23,17 +23,7 @@ import {
     Lock,
     Wallet,
 } from "lucide-react"
-import { CardSkeleton } from "@/components/shared"
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+import {ActionConfirmModal, BaseModal, CardSkeleton} from '@/components/shared'
 import type { SyncDraft } from '@/features/pos/hooks/useDraftSync'
 
 export interface DraftCart {
@@ -111,8 +101,8 @@ export function DraftCartsList({
         }
         setLoading(true)
         try {
-            const response = await api.get(`/sales/pos-drafts/?pos_session_id=${posSessionId}`)
-            const data = response.data.results || response.data
+            const draftsData = await posApi.getDrafts({ pos_session_id: posSessionId })
+            const data = (draftsData as any).results || draftsData
             const newDrafts = Array.isArray(data) ? data : []
             setDrafts(newDrafts)
             setPrevDraftIds(new Set(newDrafts.map((d: DraftCart) => d.id)))
@@ -135,7 +125,7 @@ export function DraftCartsList({
         if (!open || !syncDrafts) return
         const syncIds = new Set(syncDrafts.map(d => d.id))
         const localIds = new Set(drafts.map(d => d.id))
-        
+
         // Check if there are differences
         let hasDiff = syncIds.size !== localIds.size
         if (!hasDiff) {
@@ -143,7 +133,7 @@ export function DraftCartsList({
                 if (!localIds.has(id)) { hasDiff = true; break }
             }
         }
-        
+
         if (hasDiff) {
             requestAnimationFrame(() => fetchDrafts())
         }
@@ -161,18 +151,18 @@ export function DraftCartsList({
                 return
             }
         }
-        
+
         try {
             await onLoadDraft(draft)
             setOpen(false)
-        } catch (error) {
+        } catch {
             // Already handled in useDrafts
         }
     }
 
     const handleDeleteDraft = async (draftId: number, draftName: string) => {
         if (!posSessionId) return
-        
+
         // Prevent deleting locked drafts
         if (getLockInfo) {
             const lock = getLockInfo(draftId)
@@ -181,10 +171,10 @@ export function DraftCartsList({
                 return
             }
         }
-        
+
         setDeletingId(draftId)
         try {
-            await api.delete(`/sales/pos-drafts/${draftId}/?pos_session_id=${posSessionId}`)
+            await posApi.deleteDraft(draftId)
             toast.success(`Borrador "${draftName}" eliminado`)
             await fetchDrafts()
             onDraftDeleted?.()
@@ -203,9 +193,16 @@ export function DraftCartsList({
         }
     }
 
+    const [now, setNow] = useState(() => Date.now())
+
+    useEffect(() => {
+        const interval = setInterval(() => setNow(Date.now()), 60000)
+        return () => clearInterval(interval)
+    }, [])
+
     const formatRelative = (dateString: string) => {
         try {
-            const diff = Date.now() - new Date(dateString).getTime()
+            const diff = now - new Date(dateString).getTime()
             const mins = Math.floor(diff / 60000)
             if (mins < 1) return "Ahora"
             if (mins < 60) return `Hace ${mins}m`
@@ -262,189 +259,183 @@ export function DraftCartsList({
                         </div>
                     ) : (
                         <TooltipProvider delayDuration={200}>
-                        <ScrollArea className="max-h-[65vh]">
-                            {/* Column headers */}
-                            <div className="grid grid-cols-[2rem_1fr_auto_auto_auto] gap-x-3 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground border-b">
-                                <span className="text-center">#</span>
-                                <span>Nombre / Cliente</span>
-                                <span className="text-center">Ítems</span>
-                                <span className="text-right">Total</span>
-                                <span />
-                            </div>
+                            <ScrollArea className="max-h-[65vh]">
+                                {/* Column headers */}
+                                <div className="grid grid-cols-[2rem_1fr_auto_auto_auto] gap-x-3 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground border-b">
+                                    <span className="text-center">#</span>
+                                    <span>Nombre / Cliente</span>
+                                    <span className="text-center">Ítems</span>
+                                    <span className="text-right">Total</span>
+                                    <span />
+                                </div>
 
-                            <div className="divide-y divide-border/60">
-                                {drafts.map((draft) => {
-                                    const lockInfo = getLockInfo?.(draft.id)
-                                    const lockedByOther = lockInfo?.isLocked && !lockInfo?.isOwnLock
-                                    
-                                    return (
-                                    <div
-                                        key={draft.id}
-                                        className={cn(
-                                            "grid grid-cols-[2rem_1fr_auto_auto_auto] gap-x-3 items-center px-3 py-2.5 hover:bg-muted/40 transition-all group animate-in fade-in duration-300",
-                                            lockedByOther && "bg-destructive/[0.03] hover:bg-destructive/[0.06]"
-                                        )}
-                                    >
-                                        {/* ID */}
-                                        <span className={cn(
-                                            "text-center text-[11px] font-mono font-bold",
-                                            lockedByOther ? "text-destructive/60" : "text-primary/70"
-                                        )}>
-                                            {draft.id}
-                                        </span>
+                                <div className="divide-y divide-border/60">
+                                    {drafts.map((draft) => {
+                                        const lockInfo = getLockInfo?.(draft.id)
+                                        const lockedByOther = lockInfo?.isLocked && !lockInfo?.isOwnLock
 
-                                        {/* Name + meta */}
-                                        <div className="min-w-0">
-                                            <div className="flex items-center gap-1.5 flex-wrap">
-                                                <span className="text-sm font-medium truncate leading-tight">
-                                                    {draft.name || `Borrador #${draft.id}`}
+                                        return (
+                                            <div
+                                                key={draft.id}
+                                                className={cn(
+                                                    "grid grid-cols-[2rem_1fr_auto_auto_auto] gap-x-3 items-center px-3 py-2.5 hover:bg-muted/40 transition-all group animate-in fade-in duration-300",
+                                                    lockedByOther && "bg-destructive/[0.03] hover:bg-destructive/[0.06]"
+                                                )}
+                                            >
+                                                {/* ID */}
+                                                <span className={cn(
+                                                    "text-center text-[11px] font-mono font-bold",
+                                                    lockedByOther ? "text-destructive/60" : "text-primary/70"
+                                                )}>
+                                                    {draft.id}
                                                 </span>
-                                                {/* Lock indicator */}
-                                                {lockedByOther && (
-                                                    <Tooltip>
-                                                        <TooltipTrigger asChild>
-                                                            <span className="h-4 px-1.5 text-[9px] font-bold uppercase rounded border bg-destructive/10 text-destructive border-destructive/30 gap-1 flex items-center shrink-0 cursor-help">
+
+                                                {/* Name + meta */}
+                                                <div className="min-w-0">
+                                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                                        <span className="text-sm font-medium truncate leading-tight">
+                                                            {draft.name || `Borrador #${draft.id}`}
+                                                        </span>
+                                                        {/* Lock indicator */}
+                                                        {lockedByOther && (
+                                                            <Tooltip>
+                                                                <TooltipTrigger asChild>
+                                                                    <span className="h-4 px-1.5 text-[9px] font-bold uppercase rounded border bg-destructive/10 text-destructive border-destructive/30 gap-1 flex items-center shrink-0 cursor-help">
+                                                                        <Lock className="h-2.5 w-2.5" />
+                                                                        {lockInfo?.lockedByName || 'En uso'}
+                                                                    </span>
+                                                                </TooltipTrigger>
+                                                                <TooltipContent side="top" className="max-w-[200px] text-xs">
+                                                                    Este borrador está siendo editado por <strong>{lockInfo?.lockedByName}</strong>.
+                                                                    No se puede cargar hasta que termine.
+                                                                </TooltipContent>
+                                                            </Tooltip>
+                                                        )}
+                                                        {lockInfo?.isOwnLock && (
+                                                            <span className="h-4 px-1.5 text-[9px] font-bold uppercase rounded border bg-primary/10 text-primary border-primary/30 gap-1 flex items-center shrink-0">
                                                                 <Lock className="h-2.5 w-2.5" />
-                                                                {lockInfo?.lockedByName || 'En uso'}
+                                                                Tú
                                                             </span>
-                                                        </TooltipTrigger>
-                                                        <TooltipContent side="top" className="max-w-[200px] text-xs">
-                                                            Este borrador está siendo editado por <strong>{lockInfo?.lockedByName}</strong>. 
-                                                            No se puede cargar hasta que termine.
-                                                        </TooltipContent>
-                                                    </Tooltip>
-                                                )}
-                                                {lockInfo?.isOwnLock && (
-                                                    <span className="h-4 px-1.5 text-[9px] font-bold uppercase rounded border bg-primary/10 text-primary border-primary/30 gap-1 flex items-center shrink-0">
-                                                        <Lock className="h-2.5 w-2.5" />
-                                                        Tú
-                                                    </span>
-                                                )}
-                                                {draft.wizard_state?.isWaitingPayment && !lockedByOther && (
-                                                    <span className="h-4 px-1.5 text-[9px] font-bold uppercase rounded border bg-warning/10 text-warning border-warning/20 gap-1 flex items-center shrink-0 shadow-sm">
-                                                        <Wallet className="h-2.5 w-2.5" />
-                                                        Por Pagar
-                                                    </span>
-                                                )}
-                                                {draft.wizard_state?.step && !draft.wizard_state?.isWaitingPayment && !lockedByOther && (
-                                                    <span className="h-4 px-1.5 text-[9px] font-bold uppercase rounded border bg-warning/10 text-warning border-warning/20 gap-1 flex items-center shrink-0">
-                                                        <ClipboardCheck className="h-2.5 w-2.5" />
-                                                        P{draft.wizard_state.step}
-                                                    </span>
-                                                )}
-                                                {draft.wizard_state?.isWaitingApproval && (
-                                                    <span className="h-4 px-1.5 text-[9px] font-bold uppercase rounded border bg-primary/10 text-primary border-primary/20 gap-1 flex items-center shrink-0">
-                                                        <Loader2 className="h-2.5 w-2.5 animate-spin" />
-                                                        Auth
-                                                    </span>
-                                                )}
-                                                {draft.wizard_state?.isApproved && (
-                                                    <span className="h-4 px-1.5 text-[9px] font-bold uppercase rounded border bg-success/10 text-success border-success/20 gap-1 flex items-center shrink-0">
-                                                        <ClipboardCheck className="h-2.5 w-2.5" />
-                                                        OK
-                                                    </span>
-                                                )}
+                                                        )}
+                                                        {draft.wizard_state?.isWaitingPayment && !lockedByOther && (
+                                                            <span className="h-4 px-1.5 text-[9px] font-bold uppercase rounded border bg-warning/10 text-warning border-warning/20 gap-1 flex items-center shrink-0 shadow-sm">
+                                                                <Wallet className="h-2.5 w-2.5" />
+                                                                Por Pagar
+                                                            </span>
+                                                        )}
+                                                        {draft.wizard_state?.step && !draft.wizard_state?.isWaitingPayment && !lockedByOther && (
+                                                            <span className="h-4 px-1.5 text-[9px] font-bold uppercase rounded border bg-warning/10 text-warning border-warning/20 gap-1 flex items-center shrink-0">
+                                                                <ClipboardCheck className="h-2.5 w-2.5" />
+                                                                P{draft.wizard_state.step}
+                                                            </span>
+                                                        )}
+                                                        {draft.wizard_state?.isWaitingApproval && (
+                                                            <span className="h-4 px-1.5 text-[9px] font-bold uppercase rounded border bg-primary/10 text-primary border-primary/20 gap-1 flex items-center shrink-0">
+                                                                <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                                                                Auth
+                                                            </span>
+                                                        )}
+                                                        {draft.wizard_state?.isApproved && (
+                                                            <span className="h-4 px-1.5 text-[9px] font-bold uppercase rounded border bg-success/10 text-success border-success/20 gap-1 flex items-center shrink-0">
+                                                                <ClipboardCheck className="h-2.5 w-2.5" />
+                                                                OK
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <div className="flex items-center gap-2 mt-0.5 text-[10px] text-muted-foreground">
+                                                        {draft.customer_name && (
+                                                            <span className="flex items-center gap-0.5 truncate max-w-[140px]">
+                                                                <User className="h-2.5 w-2.5 shrink-0" />
+                                                                {draft.customer_name}
+                                                            </span>
+                                                        )}
+                                                        <span className="shrink-0">{formatRelative(draft.updated_at)}</span>
+                                                    </div>
+                                                </div>
+
+                                                {/* Item count */}
+                                                <span className="flex items-center gap-0.5 text-[11px] text-muted-foreground justify-center">
+                                                    <ShoppingCart className="h-3 w-3" />
+                                                    {draft.item_count}
+                                                </span>
+
+                                                {/* Total */}
+                                                <span className="text-sm font-semibold text-right tabular-nums">
+                                                    {formatCurrency(draft.total_gross)}
+                                                </span>
+
+                                                {/* Actions */}
+                                                <div className="flex items-center gap-1 justify-end">
+                                                    <Button
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        className={cn(
+                                                            "h-7 w-7 p-0 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive hover:bg-destructive/10",
+                                                            lockedByOther && "!opacity-0 pointer-events-none"
+                                                        )}
+                                                        disabled={deletingId === draft.id || !!lockedByOther}
+                                                        onClick={() => {
+                                                            setConfirmDeleteId(draft.id)
+                                                            setConfirmDeleteName(draft.name)
+                                                        }}
+                                                    >
+                                                        {deletingId === draft.id
+                                                            ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                                            : <Trash2 className="h-3.5 w-3.5" />}
+                                                    </Button>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        className={cn(
+                                                            "h-7 px-2 text-[11px] font-medium gap-0.5",
+                                                            lockedByOther
+                                                                ? "text-muted-foreground cursor-not-allowed"
+                                                                : "hover:bg-primary/10 hover:text-primary"
+                                                        )}
+                                                        disabled={!!lockedByOther}
+                                                        onClick={() => handleLoadDraft(draft)}
+                                                    >
+                                                        {lockedByOther ? (
+                                                            <>
+                                                                <Lock className="h-3 w-3" />
+                                                                En uso
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                Cargar
+                                                                <ChevronRight className="h-3 w-3" />
+                                                            </>
+                                                        )}
+                                                    </Button>
+                                                </div>
                                             </div>
-                                            <div className="flex items-center gap-2 mt-0.5 text-[10px] text-muted-foreground">
-                                                {draft.customer_name && (
-                                                    <span className="flex items-center gap-0.5 truncate max-w-[140px]">
-                                                        <User className="h-2.5 w-2.5 shrink-0" />
-                                                        {draft.customer_name}
-                                                    </span>
-                                                )}
-                                                <span className="shrink-0">{formatRelative(draft.updated_at)}</span>
-                                            </div>
-                                        </div>
-
-                                        {/* Item count */}
-                                        <span className="flex items-center gap-0.5 text-[11px] text-muted-foreground justify-center">
-                                            <ShoppingCart className="h-3 w-3" />
-                                            {draft.item_count}
-                                        </span>
-
-                                        {/* Total */}
-                                        <span className="text-sm font-semibold text-right tabular-nums">
-                                            {formatCurrency(draft.total_gross)}
-                                        </span>
-
-                                        {/* Actions */}
-                                        <div className="flex items-center gap-1 justify-end">
-                                            <Button
-                                                size="sm"
-                                                variant="ghost"
-                                                className={cn(
-                                                    "h-7 w-7 p-0 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive hover:bg-destructive/10",
-                                                    lockedByOther && "!opacity-0 pointer-events-none"
-                                                )}
-                                                disabled={deletingId === draft.id || !!lockedByOther}
-                                                onClick={() => {
-                                                    setConfirmDeleteId(draft.id)
-                                                    setConfirmDeleteName(draft.name)
-                                                }}
-                                            >
-                                                {deletingId === draft.id
-                                                    ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                                    : <Trash2 className="h-3.5 w-3.5" />}
-                                            </Button>
-                                            <Button
-                                                size="sm"
-                                                variant="ghost"
-                                                className={cn(
-                                                    "h-7 px-2 text-[11px] font-medium gap-0.5",
-                                                    lockedByOther 
-                                                        ? "text-muted-foreground cursor-not-allowed" 
-                                                        : "hover:bg-primary/10 hover:text-primary"
-                                                )}
-                                                disabled={!!lockedByOther}
-                                                onClick={() => handleLoadDraft(draft)}
-                                            >
-                                                {lockedByOther ? (
-                                                    <>
-                                                        <Lock className="h-3 w-3" />
-                                                        En uso
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        Cargar
-                                                        <ChevronRight className="h-3 w-3" />
-                                                    </>
-                                                )}
-                                            </Button>
-                                        </div>
-                                    </div>
-                                    )
-                                })}
-                            </div>
-                        </ScrollArea>
+                                        )
+                                    })}
+                                </div>
+                            </ScrollArea>
                         </TooltipProvider>
                     )}
                 </div>
             </BaseModal>
 
-            <AlertDialog open={!!confirmDeleteId} onOpenChange={(o) => !o && setConfirmDeleteId(null)}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>¿Eliminar borrador?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            Se eliminará permanentemente <strong>&quot;{confirmDeleteName}&quot;</strong>. Esta acción no se puede deshacer.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction
-                            onClick={() => {
-                                if (confirmDeleteId) {
-                                    handleDeleteDraft(confirmDeleteId, confirmDeleteName)
-                                    setConfirmDeleteId(null)
-                                }
-                            }}
-                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                        >
-                            Eliminar
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
+            <ActionConfirmModal
+                open={!!confirmDeleteId}
+                onOpenChange={(o) => !o && setConfirmDeleteId(null)}
+                onConfirm={() => {
+                    if (confirmDeleteId) {
+                        handleDeleteDraft(confirmDeleteId, confirmDeleteName)
+                        setConfirmDeleteId(null)
+                    }
+                }}
+                title="¿Eliminar borrador?"
+                description={
+                    <p className="text-sm leading-relaxed">
+                        Se eliminará permanentemente <strong>&quot;{confirmDeleteName}&quot;</strong>. Esta acción no se puede deshacer.
+                    </p>
+                }
+                variant="destructive"
+                confirmText="Eliminar"
+            />
         </>
     )
 }

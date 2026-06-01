@@ -1,35 +1,31 @@
 "use client"
 
-
 import * as React from "react"
+import { formatCurrency } from "@/lib/money"
 import dynamic from "next/dynamic"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
-import { useState, useEffect, useMemo, useCallback, useRef } from "react"
-import { motion, AnimatePresence } from "framer-motion"
+import {useState, useEffect, useMemo, useCallback} from "react"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
-import { BaseModal } from "@/components/shared/BaseModal"
-import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+
 import { ExclusionModal } from "./ExclusionModal"
 import { SplitAllocationDialog } from "./SplitAllocationDialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useReconciledLinesQuery } from "../hooks/useReconciliationQueries"
 
-import { LabeledSelect, LabeledInput, TableSkeleton, ActionDock } from "@/components/shared"
-import { PeriodValidationDateInput } from "@/components/shared/PeriodValidationDateInput"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { ActionConfirmModal, ActionDock, BaseModal, CancelButton, Chip, CollapsibleSheet, FormFooter, LabeledInput, LabeledSelect, PeriodValidationDateInput, SkeletonShell, SmartSearchBar, useSmartSearch } from '@/components/shared'
+import { reconciliationSearchDef } from "../searchDef"
+
 import { isZeroTolerance, safeDifference, safeSum, safeParseFloat } from "@/lib/math"
 import {
     Ban, CheckCircle2, ChevronRight, ChevronLeft, FileText,
-    Loader2, Search, Sparkles, X, Wand2, SplitSquareHorizontal, Calculator, RotateCcw, Brain, Plus
+    Loader2, Sparkles, X, Wand2, SplitSquareHorizontal, Calculator, RotateCcw, Brain, Plus
 } from "lucide-react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
-import api from "@/lib/api"
+import { financeApi } from "../../api/financeApi"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
-import { cn, formatCurrency } from "@/lib/utils"
+import { cn } from "@/lib/utils"
 import {
     DndContext,
     DragEndEvent,
@@ -55,31 +51,26 @@ import {
     useExcludeMutation,
     useBulkExcludeMutation,
     useCreateAndMatchMutation,
-    useCreateMovementMutation,
     useUnmatchMutation,
-    useRestoreMutation
+    useRestoreMutation,
+    useCreateMovementMutation
 } from "../hooks/useReconciliationMutations"
 
 import { MovementWizard, type MovementData } from "@/features/treasury/components/MovementWizard"
 import { AutoMatchProgressModal } from "./AutoMatchProgressModal"
 import { ReconciliationIntelligence } from "./ReconciliationIntelligence"
 
-
-import { DataTable } from "@/components/ui/data-table"
-const TransactionViewModal = dynamic(() =>
-    import("@/components/shared/TransactionViewModal").then(module => ({ default: module.TransactionViewModal })),
-    { ssr: false, loading: () => <Loader2 className="h-6 w-6 animate-spin" /> }
-)
+import { DataTable } from '@/components/shared'
+import { LazyDrawer } from "@/features/_shared/transaction-drawer"
 import { ColumnDef, RowSelectionState, PaginationState, Updater } from "@tanstack/react-table"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
-import { createActionsColumn, DataCell } from "@/components/ui/data-table-cells"
+import { DataTableColumnHeader } from '@/components/shared'
+import { createActionsColumn, DataCell } from '@/components/shared'
 
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
 
 // Types moved to types.ts or correctly imported
 import type {
-    BankStatement,
     BankStatementLine,
     ReconciliationSystemItem,
     QueryPaginationParams
@@ -164,35 +155,41 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
     const [bankParams, setBankParams] = useState<QueryPaginationParams>({ page: 1, pageSize: 50 })
     const [systemParams, setSystemParams] = useState<QueryPaginationParams>({ page: 1, pageSize: 50 })
 
+    const { filters } = useSmartSearch(reconciliationSearchDef)
+
+    // Synchronize smart search filters to query parameters
+    useEffect(() => {
+        setBankParams(prev => ({
+            ...prev,
+            page: 1,
+            search: filters.search || "",
+            type: filters.type || "",
+            date_from: filters.date_from || "",
+            date_to: filters.date_to || "",
+        }))
+        setSystemParams(prev => ({
+            ...prev,
+            page: 1,
+            search: filters.search || "",
+            type: filters.type || "",
+            date_from: filters.date_from || "",
+            date_to: filters.date_to || "",
+        }))
+    }, [filters])
+
     const router = useRouter()
     const pathname = usePathname()
     const searchParams = useSearchParams()
 
-    const transactionId = searchParams.get('transaction')
-    const transactionType = searchParams.get('transactionType')
-
     const [selectedMovement, setSelectedMovement] = useState<{ id: number | string, type: any } | null>(null)
     const [detailsOpen, setDetailsOpen] = useState(false)
 
-    useEffect(() => {
-        if (transactionId && transactionType && !detailsOpen) {
-            setSelectedMovement({ id: transactionId, type: transactionType })
-            setDetailsOpen(true)
-        }
-    }, [transactionId, transactionType, detailsOpen])
-
     const openTransactionDetail = (id: number | string, type: any) => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.set('transaction', String(id))
-        params.set('transactionType', String(type))
-        router.push(`${pathname}?${params.toString()}`, { scroll: false })
+        setSelectedMovement({ id, type })
+        setDetailsOpen(true)
     }
 
     const clearTransactionDetail = () => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.delete('transaction')
-        params.delete('transactionType')
-        router.replace(`${pathname}?${params.toString()}`, { scroll: false })
         setSelectedMovement(null)
         setDetailsOpen(false)
     }
@@ -261,6 +258,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
     })
     const [isCreateMovementOpen, setIsCreateMovementOpen] = useState(false)
     const createAndMatchMutation = useCreateAndMatchMutation(statementId, treasuryAccountId)
+    const createMovementMutation = useCreateMovementMutation(treasuryAccountId)
 
     // S4.8: Async auto-match progress state
     const [autoMatchProgressOpen, setAutoMatchProgressOpen] = useState(false)
@@ -283,31 +281,6 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
             setSidebarOpen(false)
         }
     }, [selectedLines.length, selectedPayments.length])
-
-    // Sync Intelligence Panel state with global DashboardShell
-    useEffect(() => {
-        if (intelOpen) {
-            document.body.setAttribute('data-side-panel-width', '400')
-        } else {
-            document.body.removeAttribute('data-side-panel-width')
-        }
-        return () => document.body.removeAttribute('data-side-panel-width')
-    }, [intelOpen])
-
-    // Track other panels to calculate correct 'right' position
-    const [globalPanelStates, setGlobalPanelStates] = useState({ hub: false, inbox: false })
-    useEffect(() => {
-        const updateStates = () => {
-            setGlobalPanelStates({
-                hub: document.body.hasAttribute('data-hub-open'),
-                inbox: document.body.hasAttribute('data-inbox-open')
-            })
-        }
-        updateStates()
-        const observer = new MutationObserver(updateStates)
-        observer.observe(document.body, { attributes: true, attributeFilter: ['data-hub-open', 'data-inbox-open'] })
-        return () => observer.disconnect()
-    }, [])
 
     // ─── Selection Handlers ───────────────────────────────────────────────────
 
@@ -355,8 +328,8 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                 const localDate = new Date(defaultDate.getTime() + defaultDate.getTimezoneOffset() * 60000)
                 setDiffDialog({ open: true, lineId, paymentId, amount: diffAmount.toString(), accountingDate: localDate })
                 try {
-                    const res = await api.get(`/treasury/statement-lines/${lineId}/suggested_difference/`)
-                    setDiffType(res.data.suggestion)
+                    const diffData = await financeApi.getSuggestedDifference(lineId)
+                    setDiffType((diffData as any).suggestion)
                 } catch { /* ignore */ }
                 return
             }
@@ -384,7 +357,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
             // Note: Optimistic update handles UI so we just complete if it was the last one
             if (unreconciledLines.length === 1) onComplete()
             setSelectedLines([])
-        } catch (error: unknown) {
+        } catch {
             // Handled in mutation
         }
     }
@@ -429,7 +402,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
             setSelectedLines([])
             setDiffDialog(prev => ({ ...prev, open: false }))
             setDiffNotes("")
-        } catch (error: unknown) {
+        } catch {
             // Handled in mutation
         }
     }
@@ -545,9 +518,9 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                             {row.original.description}
                         </span>
                         {row.original.reconciliation_status === 'EXCLUDED' && (
-                            <Badge variant="outline" className="w-fit text-[8px] font-black uppercase py-0 px-1.5 border-destructive/30 text-destructive bg-destructive/5">
+                            <Chip size="xs" intent="destructive">
                                 Excluido
-                            </Badge>
+                            </Chip>
                         )}
                         {row.original.reference && (
                             <span className="text-[10px] font-mono text-muted-foreground truncate opacity-70"> REF: {row.original.reference}</span>
@@ -568,12 +541,9 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
             cell: ({ row }) => {
                 const isCredit = parseFloat(row.original.credit) > parseFloat(row.original.debit)
                 return (
-                    <Badge variant="outline" className={cn(
-                        "text-[9px] font-black uppercase tracking-wider",
-                        isCredit ? "text-success border-success/20 bg-success/5" : "text-destructive border-destructive/20 bg-destructive/5"
-                    )}>
+                    <DataCell.Chip intent={isCredit ? "success" : "destructive"}>
                         {isCredit ? "Abono" : "Cargo"}
-                    </Badge>
+                    </DataCell.Chip>
                 )
             },
             size: 70,
@@ -666,9 +636,9 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                             {row.original.contact_name}
                         </span>
                         {row.original.terminal_batch_id && (
-                            <Badge variant="secondary" className="w-fit text-[10px] h-4 px-1.5 font-black uppercase bg-info/10 text-info">
+                            <Chip size="xs" intent="info" className="w-fit">
                                 Liquidación Terminal: {row.original.terminal_batch_display}
-                            </Badge>
+                            </Chip>
                         )}
                         {isSuggested && (
                             <div className="flex items-center gap-1 mt-0.5">
@@ -694,12 +664,9 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                 if (item.movement_type === 'ADJUSTMENT') label = "Ajuste"
 
                 return (
-                    <Badge variant="outline" className={cn(
-                        "text-[9px] font-black uppercase tracking-wider",
-                        isDeposit ? "text-success border-success/20 bg-success/5" : "text-destructive border-destructive/20 bg-destructive/5"
-                    )}>
+                    <DataCell.Chip intent={isDeposit ? "success" : "destructive"}>
                         {label}
-                    </Badge>
+                    </DataCell.Chip>
                 )
             },
             size: 90,
@@ -745,201 +712,135 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
 
     // ─── Render ───────────────────────────────────────────────────────────────
 
-    if (loading) return <TableSkeleton rows={10} columns={4} className="py-6" />
+    if (loading) return <SkeletonShell isLoading ariaLabel="Cargando..." />
 
     return (
         <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-            <Tabs defaultValue="unreconciled" className="space-y-4 w-full">
-                {/* ─── Sticky Command Bar ─── */}
-                {/* Top Tools Bar */}
-                <div className="flex items-center justify-between bg-card border shadow-sm rounded-lg px-4 py-3">
-                    {/* Left: Navigation */}
-                    <div className="flex items-center gap-4 shrink-0">
-                        <TabsList className="bg-muted/30 p-0.5 rounded-md border border-border/40 h-7 gap-0.5 overflow-hidden items-center">
+            <Tabs defaultValue="unreconciled" className="h-full flex flex-col w-full min-h-0">
+                {/* ─── Unified Workbench Toolbar ─── */}
+                <div className="flex items-center justify-between gap-4 w-full mb-3 h-9">
+                    {/* Left: Smart Search Bar (Unified Filtering for Both Tables) */}
+                    <div className="flex-1 min-w-0 h-9">
+                        <SmartSearchBar
+                            searchDef={reconciliationSearchDef}
+                            placeholder="Buscar movimientos y pagos por descripción, monto, tipo (type:IN/OUT) o rango de fechas..."
+                            className="w-full"
+                        />
+                    </div>
+
+                    {/* Right: Actions & Navigation Group */}
+                    <div className="flex items-center gap-3 shrink-0 h-9">
+                        {/* Navigation Tabs List */}
+                        <TabsList className="bg-muted/30 p-0.5 rounded-md border border-border/40 h-9 gap-0.5 overflow-hidden items-center">
                             <TabsTrigger
                                 value="unreconciled"
-                                className="text-[9px] font-black uppercase tracking-wider px-2.5 h-5 py-0 flex items-center justify-center rounded-sm data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary transition-all"
+                                className="text-[10px] font-black uppercase tracking-wider px-3 h-7 py-0 flex items-center justify-center rounded-sm data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary transition-all"
                             >
                                 Pendientes
                             </TabsTrigger>
                             <TabsTrigger
                                 value="reconciled"
-                                className="text-[9px] font-black uppercase tracking-wider px-2.5 h-5 py-0 flex items-center justify-center rounded-sm data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary transition-all"
+                                className="text-[10px] font-black uppercase tracking-wider px-3 h-7 py-0 flex items-center justify-center rounded-sm data-[state=active]:bg-background data-[state=active]:shadow-sm data-[state=active]:text-primary transition-all"
                             >
                                 Conciliados
                             </TabsTrigger>
                         </TabsList>
-                    </div>
 
-                    {/* Center: Filters (Flat Layout) */}
-                    <div className="flex-1 flex items-center justify-center gap-3">
-                        <div className="relative">
-                            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
-                            <Input
-                                type="text"
-                                placeholder="Buscar..."
-                                className="h-7 w-32 pl-7 pr-6 rounded-md text-[10px] font-medium"
-                                value={bankParams.search || ""}
-                                onChange={(e) => {
-                                    const val = e.target.value
-                                    setBankParams(prev => ({ ...prev, search: val, page: 1 }))
-                                    setSystemParams(prev => ({ ...prev, search: val, page: 1 }))
-                                }}
-                            />
-                            {(bankParams.search || bankParams.date_from || bankParams.amount_min) && (
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 text-muted-foreground hover:bg-muted"
-                                    onClick={() => {
-                                        setBankParams({ page: 1, pageSize: 50 })
-                                        setSystemParams({ page: 1, pageSize: 50 })
-                                    }}
-                                >
-                                    <X className="h-3 w-3" />
-                                </Button>
-                            )}
-                        </div>
-
-                        <div className="flex items-center gap-3">
-                            <div className="flex items-center gap-1.5">
-                                <span className="text-[8px] font-bold uppercase text-muted-foreground/50 tracking-tighter">Desde</span>
-                                <Input
-                                    type="date"
-                                    className="h-7 w-28 px-1 text-[10px] font-medium"
-                                    value={bankParams.date_from || ""}
-                                    onChange={(e) => {
-                                        const val = e.target.value
-                                        setBankParams(prev => ({ ...prev, date_from: val, page: 1 }))
-                                        setSystemParams(prev => ({ ...prev, date_from: val, page: 1 }))
-                                    }}
-                                />
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                                <span className="text-[8px] font-bold uppercase text-muted-foreground/50 tracking-tighter">Hasta</span>
-                                <Input
-                                    type="date"
-                                    className="h-7 w-28 px-1 text-[10px] font-medium"
-                                    value={bankParams.date_to || ""}
-                                    onChange={(e) => {
-                                        const val = e.target.value
-                                        setBankParams(prev => ({ ...prev, date_to: val, page: 1 }))
-                                        setSystemParams(prev => ({ ...prev, date_to: val, page: 1 }))
-                                    }}
-                                />
-                            </div>
-                        </div>
-
-                        <Select
-                            value={bankParams.type || "all"}
-                            onValueChange={(val) => {
-                                const realVal = val === "all" ? "" : val
-                                setBankParams(prev => ({ ...prev, type: realVal, page: 1 }))
-                                setSystemParams(prev => ({ ...prev, type: realVal, page: 1 }))
-                            }}
-                        >
-                            <SelectTrigger className="h-7 w-[150px] text-[10px] font-medium">
-                                <SelectValue placeholder="Movimientos" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">Todos los Movimientos</SelectItem>
-                                <SelectItem value="IN">Abonos / Ingresos</SelectItem>
-                                <SelectItem value="OUT">Cargos / Egresos</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    {/* Right: Actions */}
-                    <div className="flex items-center gap-2 shrink-0">
                         <Button
                             onClick={() => setActionDialog({ open: true, type: 'automatch' })}
                             disabled={autoMatching}
                             variant="outline"
-                            size="sm"
-                            className="h-7 text-[9px] font-black uppercase tracking-widest bg-success/5 hover:bg-success/10 text-success border-success/20 hover:border-success/30 group transition-all px-3"
+                            className="h-9 text-[10px] font-black uppercase tracking-widest bg-success/5 hover:bg-success/10 text-success border-success/20 hover:border-success/30 group transition-all px-4"
                         >
-                            {autoMatching ? <Loader2 className="mr-1.5 h-3 w-3 animate-spin" /> : <Wand2 className="mr-1.5 h-3 w-3 group-hover:rotate-12 transition-transform" />}
+                            {autoMatching ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Wand2 className="mr-1.5 h-3.5 w-3.5 group-hover:rotate-12 transition-transform" />}
                             Auto-Match
                         </Button>
                         <Button
-                            onClick={() => setIntelOpen(true)}
+                            onClick={() => setIntelOpen(prev => !prev)}
                             variant="outline"
-                            size="sm"
                             className={cn(
-                                "h-7 w-7 p-0 rounded-md border-primary/20 hover:border-primary/40 transition-all",
+                                "h-9 w-9 p-0 rounded-md border-primary/20 hover:border-primary/45 transition-all flex items-center justify-center",
                                 intelOpen && "bg-primary text-primary-foreground border-primary"
                             )}
                             title="Configurar Inteligencia"
                         >
-                            <Brain className="h-3.5 w-3.5" />
+                            <Brain className="h-4 w-4" />
                         </Button>
                     </div>
                 </div>
 
-
-
-
-                <TabsContent value="unreconciled">
-                    <div className="flex gap-6 relative min-h-[600px] items-start pb-24">
+                <TabsContent value="unreconciled" className="flex-1 min-h-0 flex flex-col mt-0 data-[state=inactive]:hidden">
+                    <div className="flex-1 min-h-0 flex gap-6 relative items-start pb-24">
                         {/* Tables Container */}
-                        <div className="flex-1 transition-all duration-500 ease-[var(--ease-premium)] min-w-0">
+                        <div className="flex-1 h-full min-h-0 transition-all duration-500 ease-[var(--ease-premium)] min-w-0">
                             {/* ─── Grid with Section Headers ─── */}
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 h-full min-h-0">
                                 {/* Left: Bank */}
-                                <div className="space-y-2">
+                                <div className="h-full flex flex-col min-h-0 space-y-2">
                                     <div className="flex items-center justify-between px-1">
                                         <div className="flex items-center gap-2">
                                             <div className="h-2 w-2 rounded-full bg-info" />
                                             <span className="text-xs font-bold uppercase tracking-wider text-foreground/70">Cartola Bancaria</span>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-6 w-6 text-primary hover:bg-primary/0 rounded-full"
+
+                                            >
+
+                                            </Button>
                                         </div>
                                         <span className="text-[10px] font-mono text-muted-foreground">{bankData?.count || 0} pendientes</span>
                                     </div>
-                                    <DataTable
-                                        columns={bankColumns}
-                                        data={unreconciledLines}
-                                        variant="embedded"
-                                        searchPlaceholder="Buscar movimiento..."
-                                        rowSelection={bankRowSelection}
-                                        onRowSelectionChange={handleLineSelectionChange}
-                                        skeletonRows={10}
-                                        pageSizeOptions={[50, 100]}
-                                        defaultPageSize={50}
-                                        renderRow={(row, children) => {
-                                            const line = row.original as BankStatementLine
-                                            const isSuggested = lineSuggestions.some((s: any) => s.line_data?.id === line.id)
-                                            const isExcluded = line.reconciliation_status === 'EXCLUDED' || (line as any).reconciliation_state === 'EXCLUDED'
+                                    <div className="flex-1 min-h-0">
+                                        <DataTable
+                                            columns={bankColumns}
+                                            data={unreconciledLines}
+                                            variant="embedded"
+                                            searchPlaceholder="Buscar movimiento..."
+                                            rowSelection={bankRowSelection}
+                                            onRowSelectionChange={handleLineSelectionChange}
+                                            skeletonRows={10}
+                                            pageSizeOptions={[50, 100]}
+                                            defaultPageSize={50}
+                                            renderRow={(row, children) => {
+                                                const line = row.original as BankStatementLine
+                                                const isSuggested = lineSuggestions.some((s: any) => s.line_data?.id === line.id)
+                                                const isExcluded = line.reconciliation_status === 'EXCLUDED' || (line as any).reconciliation_state === 'EXCLUDED'
 
-                                            if (!React.isValidElement(children)) return children as any
+                                                if (!React.isValidElement(children)) return children as any
 
-                                            return (
-                                                <DroppableBankLine id={line.id}>
-                                                    {React.cloneElement(children as React.ReactElement<any>, {
-                                                        className: cn(
-                                                            (children.props as any).className,
-                                                            "group transition-all duration-300",
-                                                            isSuggested && "[&_td]:!bg-warning/[0.08] [&_td]:!border-y [&_td]:!border-warning/40 shadow-[inset_0_0_20px_rgba(245,158,11,0.05)]",
-                                                            isExcluded && "opacity-40 grayscale-[0.5] [&_td]:!bg-muted/30"
-                                                        )
-                                                    })}
-                                                </DroppableBankLine>
-                                            )
-                                        }}
-                                        onPaginationChange={(updater: Updater<PaginationState>) => {
-                                            if (typeof updater === 'function') {
-                                                const newState = updater({ pageIndex: (bankParams.page || 1) - 1, pageSize: bankParams.pageSize || 50 })
-                                                setBankParams(p => ({ ...p, page: newState.pageIndex + 1, pageSize: newState.pageSize }))
-                                            } else {
-                                                setBankParams(p => ({ ...p, page: updater.pageIndex + 1, pageSize: updater.pageSize }))
-                                            }
-                                        }}
-                                        manualPagination
-                                        pageCount={Math.ceil((bankData?.count || 0) / (bankParams.pageSize || 50))}
-                                        pagination={{ pageIndex: (bankParams.page || 1) - 1, pageSize: bankParams.pageSize || 50 }}
-                                    />
+                                                return (
+                                                    <DroppableBankLine id={line.id}>
+                                                        {React.cloneElement(children as React.ReactElement<any>, {
+                                                            className: cn(
+                                                                (children.props as any).className,
+                                                                "group transition-all duration-300",
+                                                                isSuggested && "[&_td]:!bg-warning/[0.08] [&_td]:!border-y [&_td]:!border-warning/40 shadow-[inset_0_0_20px_rgba(245,158,11,0.05)]",
+                                                                isExcluded && "opacity-40 grayscale-[0.5] [&_td]:!bg-muted/30"
+                                                            )
+                                                        })}
+                                                    </DroppableBankLine>
+                                                )
+                                            }}
+                                            onPaginationChange={(updater: Updater<PaginationState>) => {
+                                                if (typeof updater === 'function') {
+                                                    const newState = updater({ pageIndex: (bankParams.page || 1) - 1, pageSize: bankParams.pageSize || 50 })
+                                                    setBankParams(p => ({ ...p, page: newState.pageIndex + 1, pageSize: newState.pageSize }))
+                                                } else {
+                                                    setBankParams(p => ({ ...p, page: updater.pageIndex + 1, pageSize: updater.pageSize }))
+                                                }
+                                            }}
+                                            manualPagination
+                                            pageCount={Math.ceil((bankData?.count || 0) / (bankParams.pageSize || 50))}
+                                            rowCount={bankData?.count || 0}
+                                            pagination={{ pageIndex: (bankParams.page || 1) - 1, pageSize: bankParams.pageSize || 50 }}
+                                        />
+                                    </div>
                                 </div>
 
                                 {/* Right: Treasury (Renamed from System) */}
-                                <div className="space-y-2">
+                                <div className="h-full flex flex-col min-h-0 space-y-2">
                                     <div className="flex items-center justify-between px-1">
                                         <div className="flex items-center gap-2">
                                             <div className="h-2 w-2 rounded-full bg-primary" />
@@ -956,57 +857,60 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                         </div>
                                         <span className="text-[10px] font-mono text-muted-foreground">{systemData?.count || 0} disponibles</span>
                                     </div>
-                                    <DataTable
-                                        columns={paymentColumns}
-                                        data={unreconciledPayments}
-                                        variant="embedded"
-                                        searchPlaceholder="Buscar pago..."
-                                        rowSelection={systemRowSelection}
-                                        onRowSelectionChange={handlePaymentSelectionChange}
-                                        skeletonRows={10}
-                                        pageSizeOptions={[50, 100]}
-                                        defaultPageSize={50}
-                                        renderRow={(row, children) => {
-                                            const item = row.original as ReconciliationSystemItem
-                                            const isSuggested = suggestions.some((s: any) => {
-                                                if (s.is_batch) {
-                                                    return s.batch_data?.id === item.terminal_batch_id
-                                                }
-                                                return s.payment_data?.id === item.id
-                                            })
-                                            if (!React.isValidElement(children)) return children as any
+                                    <div className="flex-1 min-h-0">
+                                        <DataTable
+                                            columns={paymentColumns}
+                                            data={unreconciledPayments}
+                                            variant="embedded"
+                                            searchPlaceholder="Buscar pago..."
+                                            rowSelection={systemRowSelection}
+                                            onRowSelectionChange={handlePaymentSelectionChange}
+                                            skeletonRows={10}
+                                            pageSizeOptions={[50, 100]}
+                                            defaultPageSize={50}
+                                            renderRow={(row, children) => {
+                                                const item = row.original as ReconciliationSystemItem
+                                                const isSuggested = suggestions.some((s: any) => {
+                                                    if (s.is_batch) {
+                                                        return s.batch_data?.id === item.terminal_batch_id
+                                                    }
+                                                    return s.payment_data?.id === item.id
+                                                })
+                                                if (!React.isValidElement(children)) return children as any
 
-                                            return (
-                                                <DraggablePayment id={item.id}>
-                                                    {React.cloneElement(children as React.ReactElement<any>, {
-                                                        className: cn(
-                                                            (children.props as any).className,
-                                                            "group transition-all duration-300",
-                                                            isSuggested && "[&_td]:!bg-warning/[0.12] [&_td]:!border-y [&_td]:!border-warning/50 shadow-[inset_0_0_20px_rgba(245,158,11,0.08)]"
-                                                        )
-                                                    })}
-                                                </DraggablePayment>
-                                            )
-                                        }}
-                                        onPaginationChange={(updater: Updater<PaginationState>) => {
-                                            if (typeof updater === 'function') {
-                                                const newState = updater({ pageIndex: (systemParams.page || 1) - 1, pageSize: systemParams.pageSize || 50 })
-                                                setSystemParams(p => ({ ...p, page: newState.pageIndex + 1, pageSize: newState.pageSize }))
-                                            } else {
-                                                setSystemParams(p => ({ ...p, page: updater.pageIndex + 1, pageSize: updater.pageSize }))
-                                            }
-                                        }}
-                                        manualPagination
-                                        pageCount={Math.ceil((systemData?.count || 0) / (systemParams.pageSize || 50))}
-                                        pagination={{ pageIndex: (systemParams.page || 1) - 1, pageSize: systemParams.pageSize || 50 }}
-                                    />
+                                                return (
+                                                    <DraggablePayment id={item.id}>
+                                                        {React.cloneElement(children as React.ReactElement<any>, {
+                                                            className: cn(
+                                                                (children.props as any).className,
+                                                                "group transition-all duration-300",
+                                                                isSuggested && "[&_td]:!bg-warning/[0.12] [&_td]:!border-y [&_td]:!border-warning/50 shadow-[inset_0_0_20px_rgba(245,158,11,0.08)]"
+                                                            )
+                                                        })}
+                                                    </DraggablePayment>
+                                                )
+                                            }}
+                                            onPaginationChange={(updater: Updater<PaginationState>) => {
+                                                if (typeof updater === 'function') {
+                                                    const newState = updater({ pageIndex: (systemParams.page || 1) - 1, pageSize: systemParams.pageSize || 50 })
+                                                    setSystemParams(p => ({ ...p, page: newState.pageIndex + 1, pageSize: newState.pageSize }))
+                                                } else {
+                                                    setSystemParams(p => ({ ...p, page: updater.pageIndex + 1, pageSize: updater.pageSize }))
+                                                }
+                                            }}
+                                            manualPagination
+                                            pageCount={Math.ceil((systemData?.count || 0) / (systemParams.pageSize || 50))}
+                                            rowCount={systemData?.count || 0}
+                                            pagination={{ pageIndex: (systemParams.page || 1) - 1, pageSize: systemParams.pageSize || 50 }}
+                                        />
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </TabsContent>
 
-                <TabsContent value="reconciled">
+                <TabsContent value="reconciled" className="flex-1 min-h-0 overflow-y-auto mt-0 data-[state=inactive]:hidden custom-scrollbar">
                     <div className="grid grid-cols-1 gap-4 pb-24">
                         {reconciledGroups.map((groupItem) => {
                             const { group, lines } = groupItem;
@@ -1187,7 +1091,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                             if ((bankData?.count || 0) === affectedCount) {
                                 onComplete()
                             }
-                        } catch (error) {
+                        } catch {
                             // Handled in mutation
                         } finally {
                             setActionDialog({ open: false, type: null })
@@ -1216,9 +1120,9 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                     <Label className="text-xs font-black uppercase tracking-wider text-muted-foreground">
                                         Umbral de Confianza
                                     </Label>
-                                    <Badge variant="outline" className="font-mono font-bold text-primary bg-primary/5 border-primary/20">
+                                    <Chip size="sm" intent="primary" className="font-mono">
                                         {confidenceThreshold}%
-                                    </Badge>
+                                    </Chip>
                                 </div>
                                 <input
                                     type="range"
@@ -1243,6 +1147,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                 <BaseModal
                     open={diffDialog.open}
                     onOpenChange={(open) => !open && setDiffDialog(prev => ({ ...prev, open: false }))}
+                    icon={Calculator}
                     title="Confirmar Conciliación con Ajuste"
                     description={
                         <div className="space-y-4">
@@ -1257,15 +1162,20 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                         </div>
                     }
                     footer={
-                        <div className="flex justify-end gap-2 w-full">
-                            <Button variant="outline" onClick={() => setDiffDialog(prev => ({ ...prev, open: false }))}>Cancelar</Button>
-                            <Button
-                                disabled={!diffDateValid || matching}
-                                onClick={() => diffDialog.isGroup ? handleGroupMatch(true) : handleMatch(diffDialog.lineId, diffDialog.paymentId, false, true)}
-                            >
-                                Confirmar con Ajuste
-                            </Button>
-                        </div>
+                        <FormFooter
+                            actions={
+                                <>
+                                    <CancelButton onClick={() => setDiffDialog(prev => ({ ...prev, open: false }))} />
+                                    <Button
+                                        disabled={!diffDateValid || matching}
+                                        onClick={() => diffDialog.isGroup ? handleGroupMatch(true) : handleMatch(diffDialog.lineId, diffDialog.paymentId, false, true)}
+                                        className=""
+                                    >
+                                        Confirmar con Ajuste
+                                    </Button>
+                                </>
+                            }
+                        />
                     }
                 >
                     <div className="space-y-4 py-4">
@@ -1348,7 +1258,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                 <ActionDock isVisible={selectedLines.length > 0 || selectedPayments.length > 0}>
                     {/* Suggestions Section */}
                     {selectedLines.length === 1 && selectedPayments.length === 0 && suggestions.length > 0 ? (
-                        <ActionDock.Section className="mr-6 flex items-center gap-4 border-r pr-6 border-border/40">
+                        <ActionDock.Section className="mr-6 flex items-center gap-4 border-r px-4 border-border/40">
                             <div className="flex flex-col items-start gap-1">
                                 <div className="flex items-center gap-1.5">
                                     <Sparkles className="h-3 w-3 text-warning animate-pulse" />
@@ -1390,7 +1300,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                             </div>
                         </ActionDock.Section>
                     ) : selectedPayments.length === 1 && selectedLines.length === 0 && lineSuggestions.length > 0 ? (
-                        <ActionDock.Section className="mr-6 flex items-center gap-4 border-r pr-6 border-border/40">
+                        <ActionDock.Section className="mr-6 flex items-center gap-4 border-r px-4 border-border/40">
                             <div className="flex flex-col items-start gap-1">
                                 <div className="flex items-center gap-1.5">
                                     <Sparkles className="h-3 w-3 text-warning animate-pulse" />
@@ -1430,7 +1340,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                             label={
                                 <div className="flex items-center gap-2">
                                     <span>Banco</span>
-                                    <span className="text-[8px] bg-info/20 text-info px-1 rounded-sm font-bold">{selectedLines.length}</span>
+                                    <Chip size="xs" intent="info">{selectedLines.length}</Chip>
                                 </div>
                             }
                             value={formatCurrency(safeSum(selectedLines.map(l => Math.abs(safeDifference(safeParseFloat(l.credit), safeParseFloat(l.debit))))))}
@@ -1440,7 +1350,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                             label={
                                 <div className="flex items-center gap-2">
                                     <span>Tesorería</span>
-                                    <span className="text-[8px] bg-foreground/10 text-muted-foreground px-1 rounded-sm font-bold">{selectedPayments.length}</span>
+                                    <Chip size="xs">{selectedPayments.length}</Chip>
                                 </div>
                             }
                             value={formatCurrency(safeSum(selectedPayments.map(p => safeParseFloat(p.amount))))}
@@ -1519,63 +1429,52 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                 />
 
                 {selectedMovement && (
-                    <TransactionViewModal
+                    <LazyDrawer
+                        type={selectedMovement.type}
+                        id={Number(selectedMovement.id)}
                         open={detailsOpen}
                         onOpenChange={(open) => {
                             if (!open) {
                                 clearTransactionDetail()
                             }
                         }}
-                        type={selectedMovement.type}
-                        id={selectedMovement.id}
-                        view="all"
                     />
                 )}
 
-                {/* Intelligence Panel (Fixed/Global Pattern) */}
-                <AnimatePresence>
-                    {intelOpen && (
-                        <motion.div
-                            initial={{ x: "120%", opacity: 0 }}
-                            animate={{ x: 0, opacity: 1 }}
-                            exit={{ x: "120%", opacity: 0 }}
-                            transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                            className={cn(
-                                "fixed top-20 h-[calc(100vh-6rem)] w-[400px] z-[55] border border-white/5 bg-sidebar dark flex flex-col pointer-events-auto rounded-lg shadow-2xl overflow-hidden transition-all duration-500 ease-[var(--ease-premium)]",
-                                globalPanelStates.inbox && globalPanelStates.hub
-                                    ? "right-[calc(320px+360px+3rem)]"
-                                    : globalPanelStates.hub
-                                        ? "right-[calc(360px+2rem)]"
-                                        : globalPanelStates.inbox
-                                            ? "right-[calc(320px+2rem)]"
-                                            : "right-4"
-                            )}
-                        >
-                            <div className="p-4 border-b bg-muted/30 flex justify-between items-center shrink-0">
-                                <div className="flex items-center gap-2">
-                                    <div className="bg-primary/10 p-1.5 rounded-sm">
-                                        <Brain className="h-4 w-4 text-primary" />
-                                    </div>
-                                    <div className="flex flex-col">
-                                        <h2 className="text-xs font-bold uppercase tracking-wider text-foreground/90 leading-tight">Inteligencia</h2>
-                                        <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-tighter">Configuración de Matching</span>
-                                    </div>
+                {/* Intelligence Panel (DRY CollapsibleSheet Pattern) */}
+                <CollapsibleSheet
+                    sheetId="reconciliation-intel"
+                    open={intelOpen}
+                    onOpenChange={setIntelOpen}
+                    tabLabel="Inteligencia"
+                    tabIcon={Brain}
+                    fullWidth={400}
+                >
+                    <div className="flex flex-col h-full bg-background rounded-xl overflow-hidden text-foreground">
+                        <div className="p-4 border-b bg-muted/30 flex justify-between items-center shrink-0">
+                            <div className="flex items-center gap-2">
+                                <div className="bg-primary/10 p-1.5 rounded-sm">
+                                    <Brain className="h-4 w-4 text-primary" />
                                 </div>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-7 w-7 rounded-full hover:bg-destructive/10 hover:text-destructive transition-colors"
-                                    onClick={() => setIntelOpen(false)}
-                                >
-                                    <X className="h-4 w-4" />
-                                </Button>
+                                <div className="flex flex-col">
+                                    <h2 className="text-xs font-bold uppercase tracking-wider text-foreground/90 leading-tight">Inteligencia</h2>
+                                    <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-tighter">Configuración de Matching</span>
+                                </div>
                             </div>
-                            <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
-                                <ReconciliationIntelligence />
-                            </div>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 rounded-full hover:bg-destructive/10 hover:text-destructive transition-colors"
+                                onClick={() => setIntelOpen(false)}
+                            >
+                                <X className="h-4 w-4" />
+                            </Button>
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-4 custom-scrollbar canvas-prepress">
+                            <ReconciliationIntelligence />
+                        </div>
+                    </div>
+                </CollapsibleSheet>
             </Tabs>
         </DndContext>
     )

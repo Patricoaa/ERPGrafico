@@ -1,28 +1,22 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import {
-    Sheet,
-    SheetHeader,
-    SheetTitle,
-    SheetDescription,
-} from '@/components/ui/sheet'
-import { CollapsibleSheet } from '@/components/shared/CollapsibleSheet'
+import { CollapsibleSheet, PanelHeader } from '@/components/shared'
 import { Zap } from 'lucide-react'
 import { formatEntityDisplay } from '@/lib/entity-registry'
-import { Badge } from '@/components/ui/badge'
+import { Chip } from '@/components/shared'
 import { Separator } from '@/components/ui/separator'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Skeleton, CardSkeleton } from '@/components/shared'
+import { Skeleton, CardSkeleton, StatusBadge, EmptyState, } from '@/components/shared'
 import { Progress } from '@/components/ui/progress'
-import { SheetCloseButton } from '@/components/shared/SheetCloseButton'
-import api from '@/lib/api'
 import { toast } from 'sonner'
 import { ActionCategory } from './ActionCategory'
-import { filterAvailableActions, getStatusVariant, getStatusLabel } from '@/lib/action-utils'
+import { filterAvailableActions } from '@/lib/action-utils'
 import { formatPlainDate } from '@/lib/utils'
+import { formatCurrency } from '@/lib/money'
 import { purchaseOrderActions } from '@/features/purchasing/actions'
 import { saleOrderActions } from '@/features/sales/actions'
+import { ordersApi } from '../hooks/useOrdersMutations'
 import type { UserPermissions } from '@/types/actions'
 import { Order } from '../types'
 
@@ -49,21 +43,13 @@ export function OrderActionPanel({
         ? purchaseOrderActions
         : saleOrderActions
 
-    useEffect(() => {
-        if (open && orderId) {
-            fetchOrderDetails()
-            fetchUserPermissions()
-        }
-    }, [open, orderId])
-
     const fetchOrderDetails = async () => {
         setLoading(true)
         try {
-            const endpoint = orderType === 'purchase'
-                ? `/purchasing/orders/${orderId}/`
-                : `/sales/orders/${orderId}/`
-            const res = await api.get(endpoint)
-            setOrder(res.data)
+            const data = orderType === 'purchase'
+                ? await ordersApi.getPurchaseOrder(orderId)
+                : await ordersApi.getSaleOrder(orderId)
+            setOrder(data as Order)
         } catch (error) {
             console.error('Error fetching order:', error)
             toast.error('Error al cargar los detalles de la orden')
@@ -74,17 +60,23 @@ export function OrderActionPanel({
 
     const fetchUserPermissions = async () => {
         try {
-            const res = await api.get('/auth/user/')
+            const data = await ordersApi.getCurrentUser()
             setUserPermissions({
-                permissions: res.data.permissions || [],
-                isSuperuser: res.data.is_superuser || false
+                permissions: (data as { permissions?: string[] }).permissions || [],
+                isSuperuser: (data as { is_superuser?: boolean }).is_superuser || false
             })
         } catch (error) {
             console.error('Error fetching user permissions:', error)
-            // Fallback: assume no permissions
             setUserPermissions({ permissions: [], isSuperuser: false })
         }
     }
+
+    useEffect(() => {
+        if (open && orderId) {
+            fetchOrderDetails()
+            fetchUserPermissions()
+        }
+    }, [open, orderId])
 
     const filteredActions = order && userPermissions
         ? filterAvailableActions(actionRegistry, order, userPermissions)
@@ -110,18 +102,18 @@ export function OrderActionPanel({
     const paymentProgress = getPaymentProgress()
 
     return (
-            <CollapsibleSheet
-                sheetId={`ACTION_PANEL_${orderId}`}
-                open={open}
-                onOpenChange={onOpenChange}
-                tabLabel="Acciones"
-                tabIcon={Zap}
-                size="md"
-            >
-                <div className="flex flex-col h-full">
-                <SheetHeader className="px-6 pt-6 pb-4">
-                    <SheetTitle className="text-xl">
-                        {loading ? (
+        <CollapsibleSheet
+            sheetId={`ACTION_PANEL_${orderId}`}
+            open={open}
+            onOpenChange={onOpenChange}
+            tabLabel="Acciones"
+            tabIcon={Zap}
+            size="md"
+        >
+            <div className="flex flex-col h-full">
+                <div className="shrink-0 px-6 pt-6 pb-4 border-b">
+                    <PanelHeader
+                        title={loading ? (
                             <div className="flex items-center gap-2">
                                 <Skeleton className="h-7 w-32 font-mono" />
                                 <Skeleton className="h-6 w-20 rounded-full" />
@@ -131,14 +123,10 @@ export function OrderActionPanel({
                                 <span className="font-mono">
                                     {formatEntityDisplay(orderType === 'purchase' ? 'purchasing.purchaseorder' : 'sales.saleorder', order)}
                                 </span>
-                                <Badge variant={getStatusVariant(order?.status || "")}>
-                                    {getStatusLabel(order?.status || "")}
-                                </Badge>
+                                <StatusBadge status={order?.status || ""} />
                             </div>
                         )}
-                    </SheetTitle>
-                    <SheetDescription>
-                        {loading ? (
+                        description={loading ? (
                             <div className="flex flex-col gap-2">
                                 <Skeleton className="h-5 w-48" />
                                 <Skeleton className="h-3 w-32" />
@@ -153,17 +141,12 @@ export function OrderActionPanel({
                                 </span>
                             </div>
                         )}
-                    </SheetDescription>
-                </SheetHeader>
+                        onClose={() => onOpenChange(false)}
+                        closeTooltip="Cerrar panel de acciones"
+                    />
+                </div>
 
-                <SheetCloseButton 
-                    onClick={() => onOpenChange(false)}
-                    className="absolute top-4 right-4 z-[60]"
-                />
-
-                <Separator />
-
-                <ScrollArea className="flex-1 px-6">
+                <ScrollArea className="flex-1 px-6 canvas-prepress">
                     {loading ? (
                         <div className="py-6">
                             <CardSkeleton count={3} variant="list" />
@@ -181,7 +164,7 @@ export function OrderActionPanel({
                                     <div className="space-y-1">
                                         <span className="text-xs text-muted-foreground">Total</span>
                                         <div className="text-lg font-bold">
-                                            ${Number(order?.total || 0).toLocaleString('es-CL')}
+                                            {formatCurrency(order?.total || 0)}
                                         </div>
                                     </div>
 
@@ -190,20 +173,13 @@ export function OrderActionPanel({
                                         <span className="text-xs text-muted-foreground">
                                             {orderType === 'purchase' ? 'Recepción' : 'Despacho'}
                                         </span>
-                                        <Badge
-                                            variant={getStatusVariant(
+                                        <StatusBadge
+                                            status={
                                                 orderType === 'purchase'
                                                     ? (order?.receiving_status || "")
                                                     : (order?.delivery_status || "")
-                                            )}
-                                            className="text-xs"
-                                        >
-                                            {getStatusLabel(
-                                                orderType === 'purchase'
-                                                    ? (order?.receiving_status || "")
-                                                    : (order?.delivery_status || "")
-                                            )}
-                                        </Badge>
+                                            }
+                                        />
                                     </div>
                                 </div>
 
@@ -218,11 +194,11 @@ export function OrderActionPanel({
                                     <Progress value={paymentProgress.percentage} className="h-2" />
                                     <div className="flex justify-between text-xs">
                                         <span className="text-muted-foreground">
-                                            Pagado: ${paymentProgress.paid.toLocaleString('es-CL')}
+                                            Pagado: {formatCurrency(paymentProgress.paid)}
                                         </span>
                                         {paymentProgress.pending > 0 && (
                                             <span className="text-warning font-medium">
-                                                Pendiente: ${paymentProgress.pending.toLocaleString('es-CL')}
+                                                Pendiente: {formatCurrency(paymentProgress.pending)}
                                             </span>
                                         )}
                                     </div>
@@ -233,9 +209,7 @@ export function OrderActionPanel({
                                     <div className="pt-2 border-t border-border/50">
                                         <div className="flex items-center justify-between text-xs">
                                             <span className="text-muted-foreground">Documentos</span>
-                                            <Badge variant="outline" className="text-xs">
-                                                {(order?.related_documents?.invoices || order?.invoices)?.length}
-                                            </Badge>
+                                            <Chip.Count value={(order?.related_documents?.invoices || order?.invoices)?.length || 0} hideOnZero={false} intent="neutral" />
                                         </div>
                                     </div>
                                 )}
@@ -259,19 +233,18 @@ export function OrderActionPanel({
                                     />
                                 ))}
 
-                                {Object.keys(filteredActions).length === 0 && (
-                                    <div className="text-center py-12 text-muted-foreground">
-                                        <p className="text-sm">No hay acciones disponibles para esta orden</p>
-                                        <p className="text-xs mt-1">
-                                            Verifica el estado de la orden o tus permisos
-                                        </p>
-                                    </div>
-                                )}
+                                 {Object.keys(filteredActions).length === 0 && (
+                                     <EmptyState 
+                                         context="generic" 
+                                         title="Sin acciones disponibles" 
+                                         description="Verifica el estado de la orden o tus permisos"
+                                     />
+                                 )}
                             </div>
                         </div>
                     )}
                 </ScrollArea>
-                </div>
-            </CollapsibleSheet>
+            </div>
+        </CollapsibleSheet>
     )
 }

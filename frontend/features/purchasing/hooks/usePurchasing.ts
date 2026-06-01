@@ -1,29 +1,25 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import api from '@/lib/api'
 import { toast } from 'sonner'
-import { Invoice } from '@/features/billing/types'
+import type { FilterState } from '@/components/shared'
 
+import { purchasingApi } from '../api/purchasingApi'
 import { PURCHASING_KEYS } from './queryKeys'
 
 export { PURCHASING_KEYS }
 
-export function usePurchasingOrders() {
+export function usePurchasingOrders(filters?: FilterState) {
     const queryClient = useQueryClient()
 
     const { data: orders, isLoading, refetch } = useQuery({
-        queryKey: PURCHASING_KEYS.orders(),
-        queryFn: async () => {
-            const res = await api.get('/purchasing/orders/')
-            return res.data.results || res.data
-        },
-        staleTime: 2 * 60 * 1000, // 2 min
+        queryKey: [...PURCHASING_KEYS.orders(), filters],
+        queryFn: () => purchasingApi.getOrders(filters),
+        staleTime: 2 * 60 * 1000,
     })
 
     const deleteMutation = useMutation({
-        mutationFn: (id: number) => api.delete(`/purchasing/orders/${id}/`),
+        mutationFn: (id: number) => purchasingApi.deleteOrder(id),
         onSuccess: () => {
-            // Narrow: only orders list is stale on delete, not notes
-            queryClient.invalidateQueries({ queryKey: PURCHASING_KEYS.orders() })
+            queryClient.invalidateQueries({ queryKey: PURCHASING_KEYS.lists() })
             toast.success('Orden de Compra eliminada')
         },
     })
@@ -39,16 +35,37 @@ export function usePurchasingOrders() {
 export function usePurchasingNotes() {
     const { data: notes, isLoading, refetch } = useQuery({
         queryKey: PURCHASING_KEYS.notes(),
-        queryFn: async () => {
-            const response = await api.get('/billing/invoices/', {
-                params: {
-                    dte_type__in: 'NOTA_CREDITO,NOTA_DEBITO',
-                    purchase_order__isnull: false
-                }
-            })
-            return (response.data.results || response.data) as Invoice[]
-        },
+        queryFn: () => purchasingApi.getNotes(),
     })
 
     return { notes: notes ?? [], isLoading, refetch }
+}
+
+export function usePurchasingOrder(id: number) {
+    const { data: order, isLoading } = useQuery({
+        queryKey: PURCHASING_KEYS.detail(id),
+        queryFn: () => purchasingApi.getOrder(id),
+    })
+
+    return { order, isLoading }
+}
+
+export function usePurchaseReceipt(id: number | null, enabled = true) {
+    const { data: receipt, isLoading } = useQuery({
+        queryKey: [...PURCHASING_KEYS.all, 'receipt', id],
+        queryFn: () => purchasingApi.getReceipt(id!),
+        enabled: !!id && enabled,
+    })
+
+    return { receipt, isLoading }
+}
+
+export function usePurchaseReturn(id: number | null, enabled = true) {
+    const { data: returnData, isLoading } = useQuery({
+        queryKey: [...PURCHASING_KEYS.all, 'return', id],
+        queryFn: () => purchasingApi.getReturn(id!),
+        enabled: !!id && enabled,
+    })
+
+    return { returnData, isLoading }
 }

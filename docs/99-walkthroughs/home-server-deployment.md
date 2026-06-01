@@ -1,3 +1,12 @@
+---
+layer: 99-walkthroughs
+doc: home-server-deployment
+status: active
+owner: core-team
+last_review: 2026-05-21
+kind: point-in-time-narrative
+---
+
 # Walkthrough: Despliegue de Home Server Dev Lab
 
 Este documento resume la implementación exitosa del entorno de desarrollo remoto para ERPGrafico, eliminando la dependencia de recursos locales (Laptop) y servicios de pago/lentos en la nube (Vercel/Railway).

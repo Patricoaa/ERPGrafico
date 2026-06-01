@@ -4,6 +4,7 @@ import { showApiError } from '@/lib/errors'
 import { accountingApi } from '../api/accountingApi'
 import { LEDGER_QUERY_KEY } from './useLedger'
 import { ACCOUNTS_QUERY_KEY } from './useAccounts'
+import type { FilterState } from '@/components/shared'
 
 import { JOURNAL_ENTRIES_QUERY_KEY } from './queryKeys'
 
@@ -12,26 +13,59 @@ export { JOURNAL_ENTRIES_QUERY_KEY }
 export interface JournalEntry {
     id: number
     number: string
+    display_id: string
     date: string
     description: string
-    reference: string
-    state: string
+    status: string
+    is_manual: boolean
+    reversal_of?: {
+        id: number
+        display_id: string
+    } | null
+    items?: Array<{
+        id: number
+        account: number
+        account_code: string
+        account_name: string
+        partner: number | null
+        label: string
+        debit: number
+        credit: number
+    }>
     source_documents?: {
         type: string
-        id: number | string
+        id: number
         name: string
-        url: string
+        url?: string
+        content_type_id?: number
+        object_id?: number
+        display?: string
     }[]
 }
 
-export function useJournalEntries() {
-    const { data: entries, isLoading, refetch } = useQuery({
-        queryKey: JOURNAL_ENTRIES_QUERY_KEY,
+export function useJournalEntry(id: string | number | undefined) {
+    return useQuery({
+        queryKey: [...JOURNAL_ENTRIES_QUERY_KEY, 'detail', id],
         queryFn: async () => {
-            const data = await accountingApi.getEntries()
-            return data.results || data
+            const data = await accountingApi.getEntry(id!)
+            return data
         },
-        staleTime: 2 * 60 * 1000, // 2 min
+        enabled: !!id,
+    })
+}
+
+export function useJournalEntries(filters?: FilterState) {
+    const { data: entries, isLoading, refetch } = useQuery({
+        queryKey: [...JOURNAL_ENTRIES_QUERY_KEY, filters],
+        queryFn: async () => {
+            const params: Record<string, unknown> = {}
+            if (filters?.status) params['status'] = filters.status
+            if (filters?.search) params['search'] = filters.search
+            if (filters?.date_from) params['date_after'] = filters.date_from
+            if (filters?.date_to) params['date_before'] = filters.date_to
+            return await accountingApi.getEntries(params)
+        },
+        staleTime: 2 * 60 * 1000,
     })
 
     return {

@@ -2,16 +2,14 @@
 
 import React, { useState, useEffect, useMemo } from 'react'
 import { Button } from "@/components/ui/button"
-import { Banknote, LogOut, ArrowRightLeft, Loader2, AlertTriangle, Info, ShieldAlert, CheckCircle2 } from "lucide-react"
-import { cn, formatCurrency } from "@/lib/utils"
-import { Numpad } from "@/components/ui/numpad"
+import { Banknote, LogOut, ArrowRightLeft, AlertTriangle, Info, ShieldAlert, CheckCircle2 } from "lucide-react"
+import { cn } from "@/lib/utils"
+import { Numpad, LabeledInput, MoneyDisplay, GenericWizard, WizardStep } from "@/components/shared"
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
-import api from "@/lib/api"
-import { LabeledInput } from "@/components/shared"
+import { treasuryApi } from "../api/treasuryApi"
 import { validateAccountingPeriod } from '@/features/accounting/actions'
 import { toast } from 'sonner'
-import { GenericWizard, WizardStep } from '@/components/shared/GenericWizard'
 
 export interface MovementData {
     impact: 'IN' | 'OUT' | 'TRANSFER';
@@ -71,13 +69,12 @@ export function MovementWizard({
     initialContactName,
     onComplete,
     onCancel,
-    initialAccountName,
     fixedMoveType,
     variant = 'standard'
 }: MovementWizardProps) {
     // Current Step index for GenericWizard
     const [stepIndex, setStepIndex] = useState(0)
-    
+
     // Core state
     const [impact, setImpact] = useState<'IN' | 'OUT' | 'TRANSFER'>(() => {
         if (fixedMoveType === 'TRANSFER') return 'TRANSFER'
@@ -85,7 +82,7 @@ export function MovementWizard({
         if (fixedMoveType && MOVEMENT_TYPES.OUT.find(t => t.value === fixedMoveType)) return 'OUT'
         return 'IN'
     })
-    
+
     const [moveType, setMoveType] = useState(fixedMoveType || 'TIP')
 
     // Partner context
@@ -325,7 +322,7 @@ export function MovementWizard({
                 component: (
                     <div className="space-y-4 pt-2">
                         <div className="grid gap-2 max-h-[340px] overflow-y-auto pr-1">
-                            {impact !== 'TRANSFER' && MOVEMENT_TYPES[impact as 'IN' | 'OUT'].map((t) => (
+                            {MOVEMENT_TYPES[impact as 'IN' | 'OUT'].map((t) => (
                                 <Button
                                     key={t.value}
                                     variant={moveType === t.value ? "default" : "outline"}
@@ -381,7 +378,7 @@ export function MovementWizard({
                                                 <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
                                                 <div>
                                                     <span className="font-bold block">Aporte supera el capital suscrito</span>
-                                                    <span>Excede los {formatCurrency(partnerCapitalInfo.subscribed)} suscritos.</span>
+                                                    <span>Excede los <MoneyDisplay amount={partnerCapitalInfo.subscribed} /> suscritos.</span>
                                                 </div>
                                             </div>
                                         )
@@ -389,14 +386,14 @@ export function MovementWizard({
                                         return (
                                             <div className="flex items-start gap-2 p-3 bg-info/10 border border-info/20 rounded-md text-xs text-info">
                                                 <Info className="h-4 w-4 shrink-0 mt-0.5" />
-                                                <span>Capital ya enterado ({formatCurrency(partnerCapitalInfo.subscribed)}). Generará excedente.</span>
+                                                <span>Capital ya enterado (<MoneyDisplay amount={partnerCapitalInfo.subscribed} />). Generará excedente.</span>
                                             </div>
                                         )
                                     }
                                     return (
                                         <div className="flex items-center gap-2 p-2.5 bg-success/10 border border-success/20 rounded-md text-xs text-success">
                                             <Info className="h-3.5 w-3.5" />
-                                            <span>Pendiente de entero: <strong>{formatCurrency(partnerCapitalInfo.pending)}</strong></span>
+                                            <span>Pendiente de entero: <strong><MoneyDisplay amount={partnerCapitalInfo.pending} /></strong></span>
                                         </div>
                                     )
                                 })()}
@@ -406,7 +403,7 @@ export function MovementWizard({
                         <div className="p-4 rounded-md border border-input bg-transparent">
                             <div className="text-right mb-4 pr-2">
                                 <div className="text-5xl font-black text-primary font-mono tracking-tighter">
-                                    {formatCurrency(parseFloat(amount) || 0)}
+                                    <MoneyDisplay amount={parseFloat(amount) || 0} />
                                 </div>
                             </div>
                             <Numpad
@@ -418,13 +415,13 @@ export function MovementWizard({
                             />
                         </div>
                         <LabeledInput
-                             label="Observaciones (Opcional)"
-                             as="textarea"
-                             rows={3}
-                             placeholder="Notas adicionales del movimiento..."
-                             value={notes}
-                             onChange={(e) => setNotes(e.target.value)}
-                             containerClassName="mt-2"
+                            label="Observaciones (Opcional)"
+                            as="textarea"
+                            rows={3}
+                            placeholder="Notas adicionales del movimiento..."
+                            value={notes}
+                            onChange={(e) => setNotes(e.target.value)}
+                            containerClassName="mt-2"
                         />
                     </div>
                 ),
@@ -437,7 +434,7 @@ export function MovementWizard({
                     const amountNum = parseFloat(amount) || 0
                     const isOutbound = impact === 'OUT' || (impact === 'TRANSFER' && transferDirection === 'OUT')
                     const hasInsufficientFunds = isOutbound && maxOutboundAmount !== undefined && amountNum > maxOutboundAmount
-                    
+
                     return (
                         <div className="space-y-6 pt-2">
                             <div className="text-center">
@@ -449,9 +446,9 @@ export function MovementWizard({
                                     <span className="text-muted-foreground font-medium">Operación:</span>
                                     <span className={cn(
                                         "font-black uppercase tracking-[0.15em] px-3 py-1 rounded-sm border text-[10px]",
-                                        impact === "IN" ? "bg-success/10 text-success border-success/30" : 
-                                        impact === "OUT" ? "bg-warning/10 text-warning border-warning/30" : 
-                                        "bg-info/10 text-info border-info/30"
+                                        impact === "IN" ? "bg-success/10 text-success border-success/30" :
+                                            impact === "OUT" ? "bg-warning/10 text-warning border-warning/30" :
+                                                "bg-info/10 text-info border-info/30"
                                     )}>
                                         {impact === 'IN' ? 'Ingreso' : impact === 'OUT' ? 'Salida' : 'Traspaso'}
                                     </span>
@@ -492,19 +489,19 @@ export function MovementWizard({
                                 )}
                                 <div className="p-4 flex justify-between items-center py-4">
                                     <span className="text-muted-foreground font-bold">MONTO TOTAL:</span>
-                                    <span className="text-2xl font-black text-primary">{formatCurrency(amountNum)}</span>
+                                    <span className="text-2xl font-black text-primary"><MoneyDisplay amount={amountNum} /></span>
                                 </div>
                             </div>
 
                             {hasInsufficientFunds && (
                                 <div className="p-3 bg-destructive/10 border-2 border-destructive/20 text-destructive rounded-md text-center text-sm font-bold">
-                                    FONDOS INSUFICIENTES (Máx: {formatCurrency(maxOutboundAmount)})
+                                    FONDOS INSUFICIENTES (Máx: <MoneyDisplay amount={maxOutboundAmount} />)
                                 </div>
                             )}
                         </div>
                     )
                 })(),
-                isValid: !submitting && !( (impact === 'OUT' || (impact === 'TRANSFER' && transferDirection === 'OUT')) && maxOutboundAmount !== undefined && parseFloat(amount) > maxOutboundAmount)
+                isValid: !submitting && !((impact === 'OUT' || (impact === 'TRANSFER' && transferDirection === 'OUT')) && maxOutboundAmount !== undefined && parseFloat(amount) > maxOutboundAmount)
             }
         ]
         return list.filter((s): s is WizardStep => s !== null)
@@ -525,10 +522,9 @@ export function MovementWizard({
 
     useEffect(() => {
         if (contactId && moveType === 'CAPITAL_CONTRIBUTION') {
-            api.get(`/contacts/${contactId}/`).then(res => {
-                const p = res.data
-                const subscribed = parseFloat(p.partner_total_contributions) || 0
-                const balance = parseFloat(p.partner_balance) || 0
+            treasuryApi.getContact(contactId).then(p => {
+                const subscribed = parseFloat(p.partner_total_contributions ?? '0') || 0
+                const balance = parseFloat(p.partner_balance ?? '0') || 0
                 const pending = Math.max(0, subscribed - balance)
                 requestAnimationFrame(() => setPartnerCapitalInfo({ subscribed, balance, pending }))
             }).catch(() => requestAnimationFrame(() => setPartnerCapitalInfo(null)))

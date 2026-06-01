@@ -110,6 +110,15 @@ export function useSelectedEntity<T = unknown>({
                 throw err
             }
         },
+        // Always fetch fresh when a panel opens — overrides the 5-min global
+        // staleTime so edits in another tab/user are visible immediately on reopen.
+        staleTime: 0,
+        // Evict from cache immediately when selectedId becomes null (panel closes).
+        // This prevents stale data from being served on the next open of the same id.
+        // IMPORTANT: do NOT add placeholderData here — it would surface the old
+        // cached value before the fresh fetch completes, causing the form to open
+        // with data from before the last save.
+        gcTime: 0,
         // Only run when there is an id to fetch
         enabled: !!selectedId,
         // Don't retry on 404/403 — they are definitive answers
@@ -118,8 +127,6 @@ export function useSelectedEntity<T = unknown>({
             if (status === 404 || status === 403) return false
             return failureCount < 2
         },
-        // Keep previous data visible until new fetch completes (avoids modal flash)
-        placeholderData: (prev) => prev ?? null,
     })
 
     return {

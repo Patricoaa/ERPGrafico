@@ -7,8 +7,8 @@ import { usePathname } from "next/navigation"
 import { ShoppingBag, ShoppingCart, Printer, Home, Inbox, Calculator, Users } from "lucide-react"
 
 // Lazy load: solo se descarga y compila cuando el usuario abre la calculadora
-const CostCalculatorModal = dynamic(
-    () => import("@/components/tools/CostCalculatorModal").then(m => ({ default: m.CostCalculatorModal })),
+const CostCalculatorDrawer = dynamic(
+    () => import("@/components/tools/CostCalculatorDrawer").then(m => ({ default: m.CostCalculatorDrawer })),
     { ssr: false }
 )
 import { cn } from "@/lib/utils"
@@ -113,7 +113,7 @@ export function QuickActionsMenu({ isInboxOpen, onInboxToggle }: QuickActionsMen
                                             className={cn(
                                                 "relative flex items-center justify-center h-12 w-12 rounded-sm transition-all duration-300 group hover:scale-110 active:scale-95",
                                                 isActive
-                                                    ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
+                                                    ? "bg-primary text-primary-foreground "
                                                     : "text-sidebar-foreground/40 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                                             )}
                                         >
@@ -123,7 +123,7 @@ export function QuickActionsMenu({ isInboxOpen, onInboxToggle }: QuickActionsMen
                                             )}
                                         </Link>
                                     </TooltipTrigger>
-                                    <TooltipContent side="top" className="bg-foreground text-background font-medium">
+                                    <TooltipContent side="top">
                                         {action.title}
                                     </TooltipContent>
                                 </Tooltip>
@@ -140,7 +140,7 @@ export function QuickActionsMenu({ isInboxOpen, onInboxToggle }: QuickActionsMen
                                 className={cn(
                                     "relative flex items-center justify-center h-12 w-12 rounded-sm transition-all duration-300 group hover:scale-110 active:scale-95",
                                     isInboxOpen
-                                        ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
+                                        ? "bg-primary text-primary-foreground "
                                         : "text-sidebar-foreground/40 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                                 )}
                             >
@@ -155,7 +155,7 @@ export function QuickActionsMenu({ isInboxOpen, onInboxToggle }: QuickActionsMen
                                 )}
                             </button>
                         </TooltipTrigger>
-                        <TooltipContent side="top" className="bg-foreground text-background font-medium">
+                        <TooltipContent side="top">
                             Bandeja de Entrada {pendingCount > 0 && `(${pendingCount})`}
                         </TooltipContent>
                     </Tooltip>
@@ -168,7 +168,7 @@ export function QuickActionsMenu({ isInboxOpen, onInboxToggle }: QuickActionsMen
                                 className={cn(
                                     "relative flex items-center justify-center h-12 w-12 rounded-sm transition-all duration-300 group hover:scale-110 active:scale-95",
                                     isCalculatorOpen
-                                        ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
+                                        ? "bg-primary text-primary-foreground "
                                         : "text-sidebar-foreground/40 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                                 )}
                             >
@@ -178,12 +178,12 @@ export function QuickActionsMenu({ isInboxOpen, onInboxToggle }: QuickActionsMen
                                 )}
                             </button>
                         </TooltipTrigger>
-                        <TooltipContent side="top" className="bg-foreground text-background font-medium">
+                        <TooltipContent side="top">
                             Calculadora de Costos
                         </TooltipContent>
                     </Tooltip>
 
-                    <CostCalculatorModal open={isCalculatorOpen} onOpenChange={setIsCalculatorOpen} />
+                    <CostCalculatorDrawer open={isCalculatorOpen} onOpenChange={setIsCalculatorOpen} />
                 </TooltipProvider>
             </div>
         </div>

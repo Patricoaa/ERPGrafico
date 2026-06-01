@@ -1,8 +1,8 @@
 import React from "react"
 import { Metadata } from "next"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
-import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
-import { StatementsList, ReconciliationDashboard, ReconciliationIntelligence } from "@/features/finance/bank-reconciliation/components"
+import { ToolbarCreateButton, FadeIn } from "@/components/shared"
+import { StatementsList, ReconciliationDashboard, ReconciliationIntelligence } from "@/features/finance"
 
 export const metadata: Metadata = {
     title: "Conciliación Bancaria | ERPGrafico",
@@ -27,16 +27,22 @@ export default async function ReconciliationPage({ searchParams }: PageProps) {
     )
 
     return (
-        <div className="pt-2">
-            <Tabs value={activeTab} className="space-y-4">
-                <TabsContent value="statements" className="mt-0 outline-none">
-                    <StatementsList externalOpen={modalOpen} createAction={statementsCreateAction} />
+        <div className="pt-2 flex-1 min-h-0 flex flex-col">
+            <Tabs value={activeTab} className="space-y-4 h-full flex flex-col">
+                <TabsContent value="statements" className="mt-0 outline-none flex-1 min-h-0">
+                    <FadeIn>
+                        <StatementsList externalOpen={modalOpen} createAction={statementsCreateAction} />
+                    </FadeIn>
                 </TabsContent>
                 <TabsContent value="dashboard" className="mt-0 outline-none">
-                    <ReconciliationDashboard />
+                    <FadeIn>
+                        <ReconciliationDashboard />
+                    </FadeIn>
                 </TabsContent>
                 <TabsContent value="intelligence" className="mt-0 outline-none">
-                    <ReconciliationIntelligence externalOpen={resolvedParams.modal === "new-rule"} />
+                    <FadeIn>
+                        <ReconciliationIntelligence externalOpen={resolvedParams.modal === "new-rule"} />
+                    </FadeIn>
                 </TabsContent>
             </Tabs>
         </div>

@@ -1,5 +1,4 @@
-import { Suspense } from "react"
-import { TableSkeleton, ToolbarCreateButton } from "@/components/shared"
+import { ToolbarCreateButton } from "@/components/shared"
 import EntriesClientView from "./EntriesClientView"
 
 interface PageProps {
@@ -17,10 +16,6 @@ export default async function EntriesPage({ searchParams }: PageProps) {
     )
 
     return (
-        <div className="pt-2">
-            <Suspense fallback={<TableSkeleton rows={10} columns={6} />}>
-                <EntriesClientView externalOpen={modal === 'new'} createAction={createAction} />
-            </Suspense>
-        </div>
+        <EntriesClientView externalOpen={modal === 'new'} createAction={createAction} />
     )
 }

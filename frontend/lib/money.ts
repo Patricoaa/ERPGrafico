@@ -17,3 +17,5 @@ export function formatMoney(
     ...options,
   }).format(n)
 }
+
+export const formatCurrency = formatMoney;

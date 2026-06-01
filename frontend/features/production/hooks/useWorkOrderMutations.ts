@@ -18,6 +18,7 @@ export interface TransitionPayload {
 
 export interface RectifyPayload {
   materialAdjustments?: { material_id: number; actual_quantity: number }[]
+  outsourcedAdjustments?: { material_id: number; actual_quantity?: number; actual_unit_price?: number }[]
   producedQuantity?: number | string | null
   notes?: string
 }
@@ -42,11 +43,7 @@ export interface UpdateMaterialPayload {
   documentType?: string
 }
 
-export interface AddCommentPayload {
-  text: string
-  authorName: string
-  currentStageData: WorkOrderStageData
-}
+
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
 
@@ -79,8 +76,7 @@ export function useWorkOrderMutations(
       }
       const res = await api.post(
         `/production/orders/${orderId}/transition/`,
-        formData,
-        { headers: { 'Content-Type': 'multipart/form-data' } }
+        formData
       )
       return res.data
     },
@@ -93,9 +89,10 @@ export function useWorkOrderMutations(
 
   // ── rectify ────────────────────────────────────────────────────────────────
   const rectifyMutation = useMutation({
-    mutationFn: async ({ materialAdjustments = [], producedQuantity, notes = '' }: RectifyPayload) => {
+    mutationFn: async ({ materialAdjustments = [], outsourcedAdjustments = [], producedQuantity, notes = '' }: RectifyPayload) => {
       const res = await api.post(`/production/orders/${orderId}/rectify/`, {
         material_adjustments: materialAdjustments,
+        outsourced_adjustments: outsourcedAdjustments,
         produced_quantity: producedQuantity ?? undefined,
         notes,
       })
@@ -196,30 +193,37 @@ export function useWorkOrderMutations(
     onError: (err) => showApiError(err, 'Error al eliminar la orden'),
   })
 
-  // ── addComment ─────────────────────────────────────────────────────────────
-  const addCommentMutation = useMutation({
-    mutationFn: async ({ text, authorName, currentStageData }: AddCommentPayload) => {
-      const newComment = {
-        id: crypto.randomUUID(),
-        user: authorName,
-        text,
-        timestamp: new Date().toISOString(),
-      }
-      const updatedStageData: WorkOrderStageData = {
-        ...currentStageData,
-        comments: [...(currentStageData.comments ?? []), newComment],
-      }
-      const res = await api.patch(`/production/orders/${orderId}/`, {
-        stage_data: updatedStageData,
+  // ── duplicateOrder ─────────────────────────────────────────────────────────
+  const duplicateOrderMutation = useMutation({
+    mutationFn: async () => {
+      const res = await api.post(`/production/orders/${orderId}/duplicate/`)
+      return res.data
+    },
+    onSuccess: () => {
+      toast.success('Orden de Trabajo duplicada exitosamente')
+      invalidate()
+    },
+    onError: (err) => showApiError(err, 'Error al duplicar la orden'),
+  })
+
+  // ── uploadFinalPhoto ───────────────────────────────────────────────────────
+  const uploadFinalPhotoMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData()
+      formData.append('final_photo', file)
+      const res = await api.patch(`/production/orders/${orderId}/`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
       })
       return res.data
     },
     onSuccess: () => {
-      toast.success('Comentario registrado')
+      toast.success('Foto adjuntada correctamente')
       invalidate()
     },
-    onError: () => toast.error('Error al registrar comentario'),
+    onError: (err) => showApiError(err, 'Error al subir la foto'),
   })
+
+
 
   return {
     // mutations
@@ -230,7 +234,9 @@ export function useWorkOrderMutations(
     removeMaterial: removeMaterialMutation.mutateAsync,
     annul: annulMutation.mutateAsync,
     deleteOrder: deleteOrderMutation.mutateAsync,
-    addComment: addCommentMutation.mutateAsync,
+    duplicateOrder: duplicateOrderMutation.mutateAsync,
+
+    uploadFinalPhoto: uploadFinalPhotoMutation.mutateAsync,
 
     // loading states (parallel to the wizard's existing boolean flags)
     isTransitioning: transitionMutation.isPending,
@@ -238,5 +244,7 @@ export function useWorkOrderMutations(
     isAddingMaterial: addMaterialMutation.isPending || updateMaterialMutation.isPending,
     isAnnuling: annulMutation.isPending,
     isDeleting: deleteOrderMutation.isPending,
+    isDuplicating: duplicateOrderMutation.isPending,
+    isUploadingPhoto: uploadFinalPhotoMutation.isPending,
   }
 }

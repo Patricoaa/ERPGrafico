@@ -2,11 +2,11 @@
 
 import { useState, useEffect, useRef } from "react"
 import JsBarcode from "jsbarcode"
-import { BaseModal } from "@/components/shared/BaseModal"
+
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { LabeledContainer } from "@/components/shared/LabeledContainer"
-import { FormFooter } from "@/components/shared"
+
+import { BaseModal, FormFooter, LabeledContainer } from '@/components/shared'
 import { Barcode, Download, Printer, RefreshCw, Check } from "lucide-react"
 import { toast } from "sonner"
 
@@ -149,12 +149,8 @@ export function BarcodeModal({ open, onOpenChange, initialValue = "", onApply }:
             open={open}
             onOpenChange={onOpenChange}
             size="md"
-            title={
-                <div className="flex items-center gap-2">
-                    <Barcode className="h-5 w-5 text-primary" />
-                    Código de Barras
-                </div>
-            }
+            icon={Barcode}
+            title="Código de Barras"
             description="Visualice, genere o descargue el código de barras para este producto."
             footer={
                 <FormFooter

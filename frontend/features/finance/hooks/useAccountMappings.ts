@@ -1,16 +1,12 @@
-import { useState, useCallback, useMemo } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMemo, useCallback } from 'react'
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
 import { accountingApi } from '@/features/accounting/api/accountingApi'
 import { Account } from '@/features/accounting/types'
-import { toast } from 'sonner'
-import { showApiError } from '@/lib/errors'
 
 export type MappingType = 'is' | 'cf' | 'bs'
 
 export function useAccountMappings(mappingType: MappingType) {
     const queryClient = useQueryClient()
-    const [pendingChanges, setPendingChanges] = useState<Map<number, string | null>>(new Map())
-    const [isSaving, setIsSaving] = useState(false)
 
     // Load ALL accounts since filtering happens mostly on the frontend based on mappingType
     const { data: accounts = [], isLoading, error } = useQuery<Account[]>({
@@ -51,55 +47,27 @@ export function useAccountMappings(mappingType: MappingType) {
 
     const fieldName = getFieldForType(mappingType)
 
-    const updateMapping = useCallback((accountId: number, value: string | null) => {
-        setPendingChanges(prev => {
-            const next = new Map(prev)
-            const originalVal = accounts.find(a => a.id === accountId)?.[fieldName as keyof Account] as string | null
-            if (value === 'none') value = null;
-            
-            if (value === originalVal) {
-                next.delete(accountId)
-            } else {
-                next.set(accountId, value)
-            }
-            return next
-        })
-    }, [accounts, fieldName])
-
-    const saveAll = useCallback(async () => {
-        if (pendingChanges.size === 0) return
-
-        setIsSaving(true)
-        try {
-            const updates = Array.from(pendingChanges.entries()).map(([id, value]) => ({
-                id,
-                field: fieldName,
-                value
-            }))
-
-            await accountingApi.updateAccountMappings(updates)
-            toast.success(`Mapeo guardado (${updates.length} cuentas actualizadas)`)
-            
-            setPendingChanges(new Map())
+    // Mutation for updating account mappings
+    const updateMappingsMutation = useMutation({
+        mutationFn: (updates: { id: number; field: string; value: string | null }[]) =>
+            accountingApi.updateAccountMappings(updates),
+        onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['accounts'] })
-            return true
-        } catch (e) {
-            console.error('Error saving mappings:', e)
-            showApiError(e)
-            return false
-        } finally {
-            setIsSaving(false)
         }
-    }, [pendingChanges, fieldName, queryClient])
+    })
+
+    const saveAll = useCallback(async (updates: { id: number; field: string; value: string | null }[]) => {
+        if (updates.length === 0) return
+        await updateMappingsMutation.mutateAsync(updates)
+    }, [updateMappingsMutation])
 
     return {
         accounts: relevantAccounts,
         isLoading: isLoading || (!accounts.length && !error),
-        isSaving,
-        pendingChanges,
-        updateMapping,
+        fieldName,
         saveAll,
-        hasChanges: pendingChanges.size > 0,
+        isSaving: updateMappingsMutation.isPending,
         originalAccounts: accounts
     }
 }
+

@@ -9,9 +9,9 @@ import {
     TableHeader,
     TableRow
 } from "@/components/ui/table";
-import { ChevronRight, ChevronDown, ShieldCheck, List, Landmark } from "lucide-react";
+import {ChevronRight, ChevronDown} from "lucide-react";
 import { cn } from "@/lib/utils";
-import { MoneyDisplay } from "@/components/shared/MoneyDisplay";
+import { MoneyDisplay, IconButton } from "@/components/shared";
 
 interface AccountNode {
     id: number | string;
@@ -35,11 +35,6 @@ interface FinancialStatementTableProps {
     compPeriodLabel?: string;
 }
 
-const formatCurrency = (val: number | undefined | null) => {
-    if (val === undefined || val === null) return '$0';
-    return val.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' });
-};
-
 const AccountRow = ({ node, level = 0, showComparison }: { node: AccountNode, level?: number, showComparison?: boolean }) => {
     const [expanded, setExpanded] = useState(true);
     const hasChildren = node.children && node.children.length > 0;
@@ -56,13 +51,17 @@ const AccountRow = ({ node, level = 0, showComparison }: { node: AccountNode, le
                 <TableCell className="py-2.5 px-4">
                     <div className="flex items-center" style={{ paddingLeft: `${paddingLeft}px` }}>
                         {hasChildren && (
-                            <button onClick={() => setExpanded(!expanded)} className="mr-2 text-primary hover:scale-110 transition-transform">
-                                {expanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                            </button>
+                            <IconButton
+                                onClick={() => setExpanded(!expanded)}
+                                className="mr-2 text-primary h-6 w-6"
+                                circular
+                            >
+                                {expanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+                            </IconButton>
                         )}
                         {!hasChildren && <div className="w-6 mr-1 flex justify-center"><div className="w-1 h-1 rounded-full bg-muted-foreground/30" /></div>}
                         <span className="mr-3 font-mono text-[10px] text-muted-foreground tabular-nums tracking-tighter opacity-70">{node.code}</span>
-                        <span className={cn("text-sm tracking-tight", level === 0 ? "uppercase font-bold" : "font-medium")}>{node.name}</span>
+                        <span className={cn("text-sm tracking-tight", level === 0 ? "uppercase font-black tracking-widest font-heading" : "font-medium")}>{node.name}</span>
                     </div>
                 </TableCell>
                 <TableCell className="text-right py-2.5 px-4">
@@ -98,12 +97,12 @@ export const FinancialStatementTable: React.FC<FinancialStatementTableProps> = (
         <Table>
             <TableHeader className="bg-muted/50">
                 <TableRow className="border-b-2 border-primary/20">
-                    <TableHead className="font-bold text-primary py-4 px-4 h-12 uppercase tracking-widest text-[10px]">Cuenta / Concepto</TableHead>
-                    <TableHead className="text-right w-[150px] font-bold text-primary py-4 px-4 h-12 uppercase tracking-widest text-[10px]">{periodLabel || 'Saldo'}</TableHead>
+                    <TableHead className="font-black text-primary py-4 px-4 h-12 uppercase tracking-widest text-[10px]">Cuenta / Concepto</TableHead>
+                    <TableHead className="text-right w-[150px] font-black text-primary py-4 px-4 h-12 uppercase tracking-widest text-[10px]">{periodLabel || 'Saldo'}</TableHead>
                     {showComparison && (
                         <>
-                            <TableHead className="text-right w-[150px] font-bold text-muted-foreground py-4 px-4 h-12 uppercase tracking-widest text-[10px]">{compPeriodLabel || 'Anterior'}</TableHead>
-                            <TableHead className="text-right w-[120px] font-bold py-4 px-4 h-12 uppercase tracking-widest text-[10px]">Var.</TableHead>
+                            <TableHead className="text-right w-[150px] font-black text-muted-foreground py-4 px-4 h-12 uppercase tracking-widest text-[10px]">{compPeriodLabel || 'Anterior'}</TableHead>
+                            <TableHead className="text-right w-[120px] font-black py-4 px-4 h-12 uppercase tracking-widest text-[10px]">Var.</TableHead>
                         </>
                     )}
                 </TableRow>

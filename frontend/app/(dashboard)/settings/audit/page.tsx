@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { DataTable } from "@/components/ui/data-table";
+import { DataTable } from '@/components/shared';
 import { Card, CardContent } from "@/components/ui/card";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -17,10 +17,10 @@ import {
     Minus,
     RefreshCw
 } from "lucide-react";
-import { Skeleton } from "@/components/shared";
+import { Skeleton, Chip } from "@/components/shared";
 import api from "@/lib/api";
-import { DataCell } from "@/components/ui/data-table-cells";
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
+import { DataCell } from '@/components/shared';
+import { DataTableColumnHeader } from '@/components/shared';
 import { ColumnDef } from "@tanstack/react-table";
 
 interface GlobalAuditLog {
@@ -79,16 +79,16 @@ export default function AuditHubPage() {
         {
             accessorKey: "date",
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Fecha y Hora" />
+                <DataTableColumnHeader column={column} title="Fecha y Hora" className="justify-center" />
             ),
             cell: ({ row }) => {
                 const date = new Date(row.original.date);
                 return (
                     <div className="flex flex-col">
-                        <DataCell.Text className="text-xs font-semibold">
+                        <DataCell.Text>
                             {format(date, "dd/MM/yyyy", { locale: es })}
                         </DataCell.Text>
-                        <DataCell.Secondary className="text-[10px]">
+                        <DataCell.Secondary>
                             {format(date, "HH:mm:ss")}
                         </DataCell.Secondary>
                     </div>
@@ -98,30 +98,30 @@ export default function AuditHubPage() {
         {
             accessorKey: "user_name",
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Usuario" />
+                <DataTableColumnHeader column={column} title="Usuario" className="justify-center" />
             ),
             cell: ({ row }) => (
-                <DataCell.Badge variant="outline" className="bg-muted font-normal">
-                    {row.original.user_name || "Sistema"}
-                </DataCell.Badge>
+                <div className="flex justify-center w-full">
+                    <Chip size="xs">{row.original.user_name || "Sistema"}</Chip>
+                </div>
             )
         },
         {
             accessorKey: "entity_label",
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Entidad" />
+                <DataTableColumnHeader column={column} title="Entidad" className="justify-center" />
             ),
             cell: ({ row }) => (
-                <DataCell.Badge variant="secondary" className="font-normal capitalize">
-                    {row.original.entity_label || "Sistema"}
-                </DataCell.Badge>
+                <div className="flex justify-center w-full">
+                    <Chip size="xs">{row.original.entity_label || "Sistema"}</Chip>
+                </div>
             )
         },
         {
             accessorKey: "action_type_label", // Virtual key for filtering
             id: "action_type_label",
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Acción" />
+                <DataTableColumnHeader column={column} title="Acción" className="justify-center" />
             ),
             cell: ({ row }) => {
                 const hType = row.original.history_type;
@@ -133,22 +133,20 @@ export default function AuditHubPage() {
                             hType === '-' ? 'Eliminación' : 'Cambio'
                 );
 
-                let variant: "outline" | "success" | "destructive" | "info" | "warning" | "secondary" | "default" = "outline";
+                let intent: "neutral" | "success" | "destructive" | "info" | "warning" = "neutral";
                 if (source === 'action_log') {
-                    if (row.original.action_type === 'LOGIN') variant = "success";
-                    if (row.original.action_type === 'SECURITY') variant = "destructive";
+                    if (row.original.action_type === 'LOGIN') intent = "success";
+                    if (row.original.action_type === 'SECURITY') intent = "destructive";
                 } else {
-                    if (hType === '+') variant = "info";
-                    if (hType === '~') variant = "warning";
-                    if (hType === '-') variant = "destructive";
+                    if (hType === '+') intent = "info";
+                    if (hType === '~') intent = "warning";
+                    if (hType === '-') intent = "destructive";
                 }
 
                 return (
                     <div className="flex items-center gap-2">
-                        <DataCell.Icon icon={icon} className="h-6 w-6" />
-                        <DataCell.Badge variant={variant} className="font-semibold uppercase text-[9px]">
-                            {label}
-                        </DataCell.Badge>
+                        <DataCell.Icon icon={icon} />
+                        <Chip size="xs" intent={intent}>{label}</Chip>
                     </div>
                 );
             }
@@ -156,10 +154,10 @@ export default function AuditHubPage() {
         {
             accessorKey: "description",
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Descripción" />
+                <DataTableColumnHeader column={column} title="Descripción" className="justify-center" />
             ),
             cell: ({ row }) => (
-                <DataCell.Text className="text-xs text-muted-foreground truncate max-w-[500px]">
+                <DataCell.Text>
                     {row.original.description}
                 </DataCell.Text>
             )
@@ -171,12 +169,11 @@ export default function AuditHubPage() {
             cell: ({ row }) => {
                 const source = row.original.source;
                 const label = source === 'action_log' ? 'Sistema' : 'Datos';
-                const variant = source === 'action_log' ? 'default' : 'secondary';
 
                 return (
-                    <DataCell.Badge variant={variant} className="font-normal">
-                        {label}
-                    </DataCell.Badge>
+                    <div className="flex justify-center w-full">
+                        <Chip size="xs">{label}</Chip>
+                    </div>
                 );
             }
         }
@@ -224,19 +221,21 @@ export default function AuditHubPage() {
     ];
 
     return (
-        <div className="pt-4 space-y-8">
-            <DataTable
-                columns={columns}
-                data={logs}
-                isLoading={loading}
-                variant="embedded"
-                globalFilterFields={["entity_type", "action", "change_summary", "entity_label"]}
-                searchPlaceholder="Buscar en la bitácora..."
-                useAdvancedFilter={true}
-                facetedFilters={facetedFilters}
-                hiddenColumns={["source"]}
-                defaultPageSize={50}
-            />
+        <div className="pt-4 space-y-8 h-full flex flex-col">
+            <div className="flex-1 min-h-0">
+                <DataTable
+                    columns={columns}
+                    data={logs}
+                    isLoading={loading}
+                    variant="embedded"
+                    globalFilterFields={["entity_type", "action", "change_summary", "entity_label"]}
+                    searchPlaceholder="Buscar en la bitácora..."
+                    useAdvancedFilter={true}
+                    facetedFilters={facetedFilters}
+                    hiddenColumns={["source"]}
+                    defaultPageSize={50}
+                />
+            </div>
 
             <div
                 className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-8"

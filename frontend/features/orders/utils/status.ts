@@ -76,7 +76,7 @@ export const getHubStatuses = (order: OrderBase) => {
     const totalOTProgress = totalOTs > 0
         ? activeOTs.reduce((sum, ot) => sum + (ot.production_progress || 0), 0) / totalOTs
         : 0
-    
+
     let prodStatus = 'neutral' // default / pending
     if (!showProduction) prodStatus = 'not_applicable'
     else if (totalOTs > 0 && totalOTProgress === 100) prodStatus = 'success'
@@ -240,8 +240,8 @@ export const getInvoiceHubStatuses = (invoice: InvoiceBase) => {
             }, 0)
             logisticsProgress = Math.min(100, Math.round((totalProcessed / totalOrdered) * 100))
         } else if ((invoice.related_stock_moves?.length ?? 0) > 0) {
-             const anyCompleted = invoice.related_stock_moves!.some((m) => m.state === 'done')
-             if (anyCompleted) logisticsProgress = 100
+            const anyCompleted = invoice.related_stock_moves!.some((m) => m.state === 'done')
+            if (anyCompleted) logisticsProgress = 100
         }
 
         if (logisticsProgress === 100) logStatus = 'success'
@@ -281,14 +281,14 @@ export const getInvoiceHubStatuses = (invoice: InvoiceBase) => {
 
 
 // Helper to prevent duplicate prefixes (e.g. OCS-OCS-123)
-export const formatDocumentId = (prefix: string, number: string | number, displayId?: string) => {
+export const formatEntity = (prefix: string, number: string | number, displayId?: string) => {
     if (displayId) return displayId
-    
+
     // Standardize prefixes to match registry
     let standardPrefix = prefix
     if (prefix === 'OC') standardPrefix = 'OCS'
     if (prefix === 'FACT') standardPrefix = 'FAC'
-    
+
     const numStr = String(number || '')
     const cleanPrefix = standardPrefix.replace('-', '')
 

@@ -1,6 +1,6 @@
 "use client"
 
-import { FileText, User, CreditCard, ShoppingBag, CheckCircle2, Paintbrush } from "lucide-react"
+import {User, CreditCard, ShoppingBag, CheckCircle2, Paintbrush} from "lucide-react"
 import { cn, formatPlainDate } from "@/lib/utils"
 import { MoneyDisplay } from "@/components/shared"
 

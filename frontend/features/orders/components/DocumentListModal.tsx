@@ -1,18 +1,10 @@
+
 "use client"
 
-import { BaseModal } from "@/components/shared/BaseModal"
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
-import { FileText, Package, Truck, ClipboardList, Download, ExternalLink, Hash } from "lucide-react"
-import { formatCurrency, formatPlainDate } from "@/lib/utils"
+import { BaseModal, DataCell, DataTable } from '@/components/shared'
+import { FileText, Package, Truck, ClipboardList, ExternalLink } from "lucide-react"
 import { formatEntityDisplay } from "@/lib/entity-registry"
+import type { ColumnDef } from "@tanstack/react-table"
 
 interface DocumentItem {
     id: number | string
@@ -40,6 +32,86 @@ interface DocumentListModalProps {
     onItemClick?: (type: 'invoice' | 'inventory' | 'work_order', id: number | string) => void
 }
 
+const typeIdMap: Record<string, 'invoice' | 'inventory' | 'work_order'> = {
+    invoices: 'invoice',
+    receipts: 'inventory',
+    deliveries: 'inventory',
+    work_orders: 'work_order'
+}
+
+const config = {
+    invoices: {
+        title: 'Documentos Tributarios',
+        icon: FileText,
+    },
+    receipts: {
+        title: 'Recepciones de Mercadería',
+        icon: Package,
+    },
+    deliveries: {
+        title: 'Guías de Despacho',
+        icon: Truck,
+    },
+    work_orders: {
+        title: 'Órdenes de Trabajo (OT)',
+        icon: ClipboardList,
+    }
+}
+
+function InvoiceColumns(onItemClick?: (type: 'invoice' | 'inventory' | 'work_order', id: number | string) => void): ColumnDef<DocumentItem>[] {
+    return [
+        { header: "Folio", accessorKey: "number", cell: ({ row }) => <DataCell.Code>{row.original.number || 'Borrador'}</DataCell.Code> },
+        { header: "Tipo", cell: ({ row }) => <DataCell.Text>{row.original.type_display || 'Factura'}</DataCell.Text> },
+        { header: "Fecha", cell: ({ row }) => <DataCell.Date value={row.original.date || row.original.created_at} /> },
+        { header: "Monto", cell: ({ row }) => <DataCell.Currency value={row.original.total} /> },
+        { header: "Estado", cell: ({ row }) => <DataCell.Status status={row.original.status_display || row.original.status || ""} /> },
+        { header: "", cell: ({ row }) => <ActionsCell item={row.original} onClick={onItemClick} /> },
+    ]
+}
+
+function WorkOrderColumns(onItemClick?: (type: 'invoice' | 'inventory' | 'work_order', id: number | string) => void): ColumnDef<DocumentItem>[] {
+    return [
+        { header: "N° OT", cell: ({ row }) => <DataCell.Code>{formatEntityDisplay('production.workorder', row.original)}</DataCell.Code> },
+        { header: "Producto", cell: ({ row }) => <DataCell.Text>{row.original.product_name}</DataCell.Text> },
+        { header: "Cantidad", cell: ({ row }) => <DataCell.Number value={row.original.quantity!} suffix={row.original.unit} /> },
+        { header: "Vencimiento", cell: ({ row }) => <DataCell.Date value={row.original.due_date} /> },
+        { header: "Estado", cell: ({ row }) => <DataCell.Status status={row.original.status_display || row.original.status || ""} /> },
+        { header: "", cell: ({ row }) => <ActionsCell item={row.original} onClick={onItemClick} /> },
+    ]
+}
+
+function StockMoveColumns(onItemClick?: (type: 'invoice' | 'inventory' | 'work_order', id: number | string) => void): ColumnDef<DocumentItem>[] {
+    return [
+        { header: "N°", cell: ({ row }) => <DataCell.Code>{formatEntityDisplay('inventory.stockmove', row.original)}</DataCell.Code> },
+        { header: "Folio Guía", cell: ({ row }) => <DataCell.Code>{row.original.reference || '--'}</DataCell.Code> },
+        { header: "Fecha", cell: ({ row }) => <DataCell.Date value={row.original.date} /> },
+        { header: "Ítems", cell: ({ row }) => <DataCell.Number value={row.original.items_count || 0} suffix="ítems" /> },
+        { header: "Estado", cell: () => <DataCell.Status status="COMPLETED" /> },
+        { header: "", cell: ({ row }) => <ActionsCell item={row.original} onClick={onItemClick} /> },
+    ]
+}
+
+function ActionsCell({ item, onClick }: { item: DocumentItem; onClick?: (type: 'invoice' | 'inventory' | 'work_order', id: number | string) => void }) {
+    return (
+        <div className="flex gap-1">
+            {item.pdf_url && (
+                <DataCell.Action
+                    action="download"
+                    onClick={() => window.open(item.pdf_url!, '_blank', 'noopener,noreferrer')}
+                />
+            )}
+            <ExternalLink
+                className="h-4 w-4 text-muted-foreground hover:text-primary transition-colors cursor-pointer"
+                onClick={(e) => {
+                    e.stopPropagation()
+                    const targetType = typeIdMap[item.pdf_url ? 'invoices' : 'receipts'] as 'invoice' | 'inventory' | 'work_order'
+                    onClick?.(targetType, item.id)
+                }}
+            />
+        </div>
+    )
+}
+
 export function DocumentListModal({
     open,
     onOpenChange,
@@ -47,31 +119,14 @@ export function DocumentListModal({
     data = [],
     onItemClick
 }: DocumentListModalProps) {
-    const config = {
-        invoices: {
-            title: 'Documentos Tributarios',
-            icon: FileText,
-            headers: ['Folio', 'Tipo', 'Fecha', 'Monto', 'Estado']
-        },
-        receipts: {
-            title: 'Recepciones de Mercadería',
-            icon: Package,
-            headers: ['N° Recepción', 'Folio Guía', 'Fecha', 'Ítems', 'Estado']
-        },
-        deliveries: {
-            title: 'Guías de Despacho',
-            icon: Truck,
-            headers: ['N° Guía', 'Transporte', 'Fecha', 'Ítems', 'Estado']
-        },
-        work_orders: {
-            title: 'Órdenes de Trabajo (OT)',
-            icon: ClipboardList,
-            headers: ['N° OT', 'Producto', 'Cantidad', 'Vencimiento', 'Estado']
-        }
-    }
-
     const current = config[type]
     const Icon = current.icon
+
+    const columns = type === 'invoices'
+        ? InvoiceColumns(onItemClick)
+        : type === 'work_orders'
+            ? WorkOrderColumns(onItemClick)
+            : StockMoveColumns(onItemClick)
 
     return (
         <BaseModal
@@ -85,102 +140,20 @@ export function DocumentListModal({
                 </div>
             }
         >
-            <div className="flex-1 overflow-y-auto py-4">
-                {data.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-20 text-muted-foreground bg-muted/20 rounded-lg border-2 border-dashed">
-                        <Icon className="h-16 w-16 mb-4 opacity-10" />
-                        <p className="font-medium">No se han encontrado registros en esta categoría.</p>
-                    </div>
-                ) : (
-                    <div className="rounded-lg border shadow-sm overflow-hidden">
-                        <Table>
-                            <TableHeader className="bg-muted/50">
-                                <TableRow>
-                                    {current.headers.map((h, i) => (
-                                        <TableHead key={i} className="text-[11px] font-black uppercase tracking-wider">
-                                            {h}
-                                        </TableHead>
-                                    ))}
-                                    <TableHead className="w-[50px]"></TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {data.map((item, idx) => {
-                                    const typeIdMap: Record<string, 'invoice' | 'inventory' | 'work_order'> = {
-                                        invoices: 'invoice',
-                                        receipts: 'inventory',
-                                        deliveries: 'inventory',
-                                        work_orders: 'work_order'
-                                    }
-                                    return (
-                                        <TableRow
-                                            key={idx}
-                                            className="hover:bg-muted/30 transition-colors cursor-pointer"
-                                            onClick={() => onItemClick?.(typeIdMap[type], item.id)}
-                                        >
-                                            {/* Specialized columns based on type */}
-                                            {type === 'invoices' && (
-                                                <>
-                                                    <TableCell className="font-bold">{item.number || 'Borrador'}</TableCell>
-                                                    <TableCell className="text-xs">{item.type_display || 'Factura'}</TableCell>
-                                                    <TableCell className="text-xs">{formatPlainDate(item.date || item.created_at)}</TableCell>
-                                                    <TableCell className="font-bold text-primary">{formatCurrency(item.total)}</TableCell>
-                                                    <TableCell>
-                                                        <Badge variant={item.status === 'PAID' ? 'success' : 'outline'} className="text-[9px]">
-                                                            {item.status_display || item.status}
-                                                        </Badge>
-                                                    </TableCell>
-                                                </>
-                                            )}
-
-                                            {type === 'work_orders' && (
-                                                <>
-                                                    <TableCell className="font-bold">
-                                                        {formatEntityDisplay('production.workorder', item)}
-                                                    </TableCell>
-                                                    <TableCell className="text-xs truncate max-w-[200px]">{item.product_name}</TableCell>
-                                                    <TableCell className="font-bold">{item.quantity} {item.unit}</TableCell>
-                                                    <TableCell className="text-xs">{formatPlainDate(item.due_date)}</TableCell>
-                                                    <TableCell>
-                                                        <Badge variant="outline" className="text-[9px] uppercase font-bold">
-                                                            {item.status_display || item.status}
-                                                        </Badge>
-                                                    </TableCell>
-                                                </>
-                                            )}
-
-                                            {/* Receipts & Deliveries (StockMoves) */}
-                                            {(type === 'receipts' || type === 'deliveries') && (
-                                                <>
-                                                    <TableCell className="font-bold">
-                                                        {formatEntityDisplay('inventory.stockmove', item)}
-                                                    </TableCell>
-                                                    <TableCell className="text-xs font-mono">{item.reference || '--'}</TableCell>
-                                                    <TableCell className="text-xs">{formatPlainDate(item.date)}</TableCell>
-                                                    <TableCell className="text-xs">{item.items_count || 0} ítems</TableCell>
-                                                    <TableCell>
-                                                        <Badge variant="success" className="text-[9px]">COMPLETADO</Badge>
-                                                    </TableCell>
-                                                </>
-                                            )}
-
-                                            <TableCell>
-                                                <div className="flex gap-1">
-                                                    {item.pdf_url && (
-                                                        <a href={item.pdf_url} target="_blank" rel="noopener noreferrer">
-                                                            <Download className="h-4 w-4 text-muted-foreground hover:text-primary transition-colors cursor-pointer" />
-                                                        </a>
-                                                    )}
-                                                    <ExternalLink className="h-4 w-4 text-muted-foreground hover:text-primary transition-colors cursor-pointer" />
-                                                </div>
-                                            </TableCell>
-                                        </TableRow>
-                                    )
-                                })}
-                            </TableBody>
-                        </Table>
-                    </div>
-                )}
+            <div className="flex-1 py-4">
+                <DataTable
+                    columns={columns}
+                    data={data}
+                    variant="embedded"
+                    hidePagination
+                    onRowClick={(row) => onItemClick?.(typeIdMap[type], row.id)}
+                    emptyState={{
+                        icon: Icon,
+                        title: "No se han encontrado registros en esta categoría.",
+                        description: "Los documentos de este tipo aparecerán aquí cuando estén disponibles.",
+                        context: "search",
+                    }}
+                />
             </div>
         </BaseModal>
     )

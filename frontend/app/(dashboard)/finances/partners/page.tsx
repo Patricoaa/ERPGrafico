@@ -1,31 +1,21 @@
 "use client"
 
-import { lazy, Suspense, useState, useMemo, useEffect, useRef, useCallback } from "react"
+import { useState, useMemo, useEffect, useRef, useCallback } from "react"
 import { toast } from "sonner"
-import { LoadingFallback } from "@/components/shared/LoadingFallback"
-import { PageHeader } from "@/components/shared/PageHeader"
-import { ToolbarCreateButton } from "@/components/shared/ToolbarCreateButton"
-import { PageContainer } from "@/components/shared"
+import { PageHeader, ToolbarCreateButton } from '@/components/shared'
+
 import { useSearchParams, useRouter } from "next/navigation"
-import { PartnerAccountingTab } from "@/features/settings"
+import { PartnerAccountingTab, PartnersSettingsView } from "@/features/settings"
 import Link from "next/link"
 import { BarChart3 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { FINANCES_TABS } from "../FinancesHeader"
-
-// Lazy load the PartnersSettingsView component
-const PartnersSettingsView = lazy(() =>
-    import("@/features/settings").then(module => ({
-        default: module.PartnersSettingsView
-    }))
-)
 
 export default function PartnersPage() {
     const searchParams = useSearchParams()
     const router = useRouter()
     const activeTab = searchParams.get("tab") || "composition"
     const isNewDistributionModal = searchParams.get("modal") === "new-distribution"
-    const isMobilizeModal = searchParams.get("modal") === "mobilize-earnings"
     const isAddPartnerModal = searchParams.get("modal") === "add-partner"
     const isStatsModal = searchParams.get("modal") === "stats"
     const [saving, setSaving] = useState(false)
@@ -121,7 +111,7 @@ export default function PartnersPage() {
     ) : null
 
     return (
-        <PageContainer>
+        <div className="pt-2 flex-1 min-h-0 flex flex-col">
             <PageHeader
                 title={headerConfig.title}
                 description={headerConfig.description}
@@ -138,26 +128,24 @@ export default function PartnersPage() {
                 )}
             </PageHeader>
 
-            <div className="pt-4">
-                <Suspense fallback={<LoadingFallback message="Cargando configuración de socios..." />}>
-                    {(activeTab === 'composition' || activeTab === 'distributions') && (
-                        <PartnersSettingsView
-                            activeTab={activeTab}
-                            onSavingChange={setSaving}
-                            initialFlowOpen={isNewDistributionModal}
-                            initialAddPartnerOpen={isAddPartnerModal}
-                            initialStatsOpen={isStatsModal}
-                            onModalClose={handleModalClose}
-                            createAction={createAction}
-                        />
-                    )}
-                    {activeTab === 'config' && (
-                        <div className="p-1">
-                            <PartnerAccountingTab onSavingChange={setConfigSaving} />
-                        </div>
-                    )}
-                </Suspense>
+            <div className="pt-4 flex-1 min-h-0 flex flex-col">
+                {(activeTab === 'composition' || activeTab === 'distributions') && (
+                    <PartnersSettingsView
+                        activeTab={activeTab}
+                        onSavingChange={setSaving}
+                        initialFlowOpen={isNewDistributionModal}
+                        initialAddPartnerOpen={isAddPartnerModal}
+                        initialStatsOpen={isStatsModal}
+                        onModalClose={handleModalClose}
+                        createAction={createAction}
+                    />
+                )}
+                {activeTab === 'config' && (
+                    <div className="p-1">
+                        <PartnerAccountingTab onSavingChange={setConfigSaving} />
+                    </div>
+                )}
             </div>
-        </PageContainer>
+        </div>
     )
 }

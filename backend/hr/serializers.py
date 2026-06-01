@@ -295,6 +295,31 @@ class PayrollDetailSerializer(serializers.ModelSerializer):
             'total_haberes', 'total_descuentos', 'net_salary', 
             'journal_entry', 'previred_journal_entry'
         ]
+        validators = []
+
+    def validate(self, data):
+        employee = data.get('employee')
+        period_year = data.get('period_year')
+        period_month = data.get('period_month')
+        
+        if self.instance:
+            if not employee:
+                employee = self.instance.employee
+            if not period_year:
+                period_year = self.instance.period_year
+            if not period_month:
+                period_month = self.instance.period_month
+                
+        queryset = Payroll.objects.filter(employee=employee, period_year=period_year, period_month=period_month)
+        if self.instance:
+            queryset = queryset.exclude(pk=self.instance.pk)
+            
+        if queryset.exists():
+            raise serializers.ValidationError({
+                "detail": f"Ya existe una liquidación para el empleado {employee.contact.name} en el período {period_month}/{period_year}."
+            })
+            
+        return data
 
 
 class PayrollPaymentSerializer(serializers.ModelSerializer):

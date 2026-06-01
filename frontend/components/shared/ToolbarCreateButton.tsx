@@ -4,7 +4,7 @@ import * as React from "react"
 import Link from "next/link"
 import { Plus, LucideIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { DynamicIcon } from "@/components/ui/dynamic-icon"
+import { DynamicIcon } from '@/components/shared'
 import { cn } from "@/lib/utils"
 
 interface ToolbarCreateButtonProps extends Omit<React.ComponentProps<typeof Button>, "children"> {
@@ -31,7 +31,7 @@ export function ToolbarCreateButton({
     const button = (
         <Button
             className={cn(
-                "h-9 px-4 rounded-md text-[10px] font-bold uppercase tracking-widest shadow-sm",
+                "h-9 px-4 rounded-md text-[10px] font-black uppercase tracking-widest shadow-sm",
                 "bg-primary text-primary-foreground hover:bg-primary/90",
                 className
             )}

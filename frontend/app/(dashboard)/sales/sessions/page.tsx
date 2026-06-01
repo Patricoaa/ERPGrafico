@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 
 export default function POSSessionsPage() {
     return (
-        <div className="pt-2">
+        <div className="pt-2 flex-1 min-h-0 flex flex-col">
             <POSSessionsView hideHeader />
         </div>
     )

@@ -17,8 +17,8 @@ export const salesApi = {
         if (filters?.date_before) params.append('date_before', filters.date_before)
         if (filters?.pos_session) params.append('pos_session', String(filters.pos_session))
 
-        const { data } = await api.get<{ results: SaleOrder[] }>('/sales/orders/', { params })
-        return data.results || data
+        const { data } = await api.get<SaleOrder[]>('/sales/orders/', { params })
+        return data
     },
 
     /**
@@ -53,9 +53,38 @@ export const salesApi = {
     },
 
     /**
+     * Despacha (cierra logística) una orden de venta completa.
+     */
+    dispatchOrder: async (orderId: number, payload: { warehouse_id: number, delivery_date: string }): Promise<void> => {
+        await api.post(`/sales/orders/${orderId}/dispatch/`, payload)
+    },
+
+    /**
+     * Despacho parcial — entrega solo las cantidades especificadas en
+     * `line_quantities` (lineId → qty). El resto queda pendiente.
+     */
+    dispatchOrderPartial: async (
+        orderId: number,
+        payload: { warehouse_id: number, delivery_date: string, line_quantities: Record<string, number> },
+    ): Promise<void> => {
+        await api.post(`/sales/orders/${orderId}/partial_dispatch/`, payload)
+    },
+
+    /**
+     * Register a note (credit/debit) directly on a sale order.
+     * El backend acepta FormData porque el adjunto del documento es obligatorio.
+     */
+    registerNoteOnOrder: async (orderId: number, payload: FormData): Promise<SaleOrder> => {
+        const { data } = await api.post<SaleOrder>(`/sales/orders/${orderId}/register_note/`, payload, {
+            headers: { 'Content-Type': 'multipart/form-data' as const },
+        })
+        return data
+    },
+
+    /**
      * Fetch sales notes (credit/debit notes associated with orders)
      */
-    getSalesNotes: async (filters?: { date_after?: string, date_before?: string }): Promise<SaleNote[]> => {
+    getSalesNotes: async (filters?: { date_after?: string, date_before?: string, customer_name?: string }): Promise<SaleNote[]> => {
         const params = new URLSearchParams()
         params.append('dte_type__in', 'NOTA_CREDITO,NOTA_DEBITO')
         params.append('sale_order__isnull', 'true') // Actually false in logic: sale_order__isnull=false means it HAS a sale order. In Django filter: sale_order__isnull=false. 
@@ -79,7 +108,7 @@ export const salesApi = {
         */
         // I will replicate this.
 
-        const { data } = await api.get<{ results: Invoice[] }>('/billing/invoices/', {
+        const { data } = await api.get<Invoice[]>('/billing/invoices/', {
             params: {
                 dte_type__in: 'NOTA_CREDITO,NOTA_DEBITO',
                 sale_order__isnull: false,
@@ -87,7 +116,7 @@ export const salesApi = {
             }
         })
 
-        const results = data.results || data
+        const results = data
         // Client-side filtering was also done in original code:
         /*
              const salesNotes = results.filter((inv: Invoice) =>

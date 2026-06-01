@@ -1,47 +1,44 @@
 "use client"
 
 import { FormField } from "@/components/ui/form"
-import { LabeledInput, LabeledSwitch, FormSection, LabeledContainer } from "@/components/shared"
-import { Scale, DollarSign, Zap, Info } from "lucide-react"
+import { LabeledInput, LabeledSwitch, FormSection, LabeledSelect } from "@/components/shared"
+import { DollarSign, Zap } from "lucide-react"
 import { UseFormReturn } from "react-hook-form"
 import { ProductFormValues } from "./schema"
 import { PricingUtils } from "../../utils/pricing"
 import { cn } from "@/lib/utils"
 import { UoM } from "@/types/entities"
-import { Badge } from "@/components/ui/badge"
-import { UoMSelector } from "@/components/selectors"
 
 interface ProductPricingSectionProps {
     form: UseFormReturn<ProductFormValues>
-    initialData?: any
+    initialData?: unknown
     canBeSold: boolean
     uoms: UoM[]
 }
 
-export function ProductPricingSection({ form, initialData, canBeSold, uoms }: ProductPricingSectionProps) {
+export function ProductPricingSection({ form, canBeSold, uoms }: ProductPricingSectionProps) {
     const isDynamicPricing = form.watch("is_dynamic_pricing")
     const productType = form.watch("product_type")
-    const stockUomId = form.watch("uom")
-    
-    const stockUom = uoms.find(u => u.id.toString() === stockUomId?.toString())
-    const uomName = stockUom?.name || "unidad"
+    const allowedSaleUomStrings = form.watch("allowed_sale_uoms") || []
+    const allowedSaleUomIds = allowedSaleUomStrings.map(Number).filter(Boolean)
 
-    // Sync Net -> Gross
+    // Generar opciones para el selector basadas en las UoM permitidas
+    const allowedSaleUomsOptions = uoms
+        .filter(u => allowedSaleUomIds.includes(u.id))
+        .map(u => ({ value: String(u.id), label: u.name }))
+
     const handleNetChange = (value: string) => {
         const net = parseFloat(value) || 0
-        const gross = PricingUtils.netToGross(net)
-        form.setValue("sale_price_gross", gross, { shouldDirty: true, shouldValidate: true })
+        form.setValue("sale_price_gross", PricingUtils.netToGross(net), { shouldDirty: true, shouldValidate: true })
     }
 
-    // Sync Gross -> Net
     const handleGrossChange = (value: string) => {
         const gross = parseFloat(value) || 0
-        const net = PricingUtils.grossToNet(gross)
-        form.setValue("sale_price", net, { shouldDirty: true, shouldValidate: true })
+        form.setValue("sale_price", PricingUtils.grossToNet(gross), { shouldDirty: true, shouldValidate: true })
     }
 
-    const salePrice = form.watch("sale_price") || 0
-    const salePriceGross = form.watch("sale_price_gross") || 0
+    const salePrice = Number(form.watch("sale_price")) || 0
+    const salePriceGross = Number(form.watch("sale_price_gross")) || 0
     const taxAmount = salePriceGross - salePrice
 
     return (
@@ -49,35 +46,39 @@ export function ProductPricingSection({ form, initialData, canBeSold, uoms }: Pr
             "space-y-4 animate-in fade-in duration-300",
             (!canBeSold || productType === 'SUBSCRIPTION') && "hidden"
         )}>
-            <FormSection 
-                title="Precios y Comercialización" 
-                icon={Scale} 
-            />
-            
-            <div className="grid grid-cols-4 gap-4 items-start">
-                {/* Dynamic Pricing Toggle */}
-                <div className="col-span-4">
-                    <FormField<ProductFormValues>
-                        control={form.control}
-                        name="is_dynamic_pricing"
-                        render={({ field }) => (
-                            <LabeledSwitch
-                                label="Precio Dinámico / Variable"
-                                description="Permite definir el precio al momento de la venta (ideal para servicios o productos a medida)"
-                                checked={field.value}
-                                onCheckedChange={(val) => {
-                                    form.setValue("is_dynamic_pricing", val, { shouldDirty: true, shouldValidate: false })
-                                }}
-                                icon={<Zap className="h-4 w-4" />}
-                                color="warning"
-                            />
-                        )}
-                    />
+            <FormSection title="Precio de Venta" icon={DollarSign} />
+
+            <div className="space-y-4">
+                <FormField<ProductFormValues>
+                    control={form.control}
+                    name="is_dynamic_pricing"
+                    render={({ field }) => (
+                        <LabeledSwitch
+                            label="Precio Dinámico"
+                            description="Permite definir el precio al momento de la venta (ideal para servicios o productos a medida)"
+                            checked={field.value}
+                            onCheckedChange={(val) => {
+                                form.setValue("is_dynamic_pricing", val, { shouldDirty: true, shouldValidate: false })
+                            }}
+                            icon={<Zap className="h-4 w-4" />}
+                            color="warning"
+                        />
+                    )}
+                />
+
+                <div className={cn("p-6 border-2 border-dashed rounded-xl flex flex-col items-center justify-center text-center", !isDynamicPricing && "hidden")}>
+                    <div className="h-10 w-10 rounded-full bg-warning/10 flex items-center justify-center mb-3">
+                        <Zap className="h-5 w-5 text-warning" />
+                    </div>
+                    <h4 className="text-sm font-bold text-foreground">Modo de Precio Abierto</h4>
+                    <p className="text-xs text-muted-foreground mt-1 max-w-[350px]">
+                        El precio se solicitará al operador durante el proceso de facturación o venta. Las reglas de precios y descuentos por volumen están deshabilitadas.
+                    </p>
                 </div>
 
-                <div className={cn("col-span-4 grid grid-cols-4 gap-4", isDynamicPricing && "hidden")}>
-                    {/* Net Price */}
-                    <div className="col-span-1">
+                {/* Base price row */}
+                <div className={cn(isDynamicPricing && "hidden")}>
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 rounded-lg items-end">
                         <FormField<ProductFormValues>
                             control={form.control}
                             name="sale_price"
@@ -86,10 +87,8 @@ export function ProductPricingSection({ form, initialData, canBeSold, uoms }: Pr
                                     label="Precio Neto"
                                     type="number"
                                     placeholder="0"
-                                    required
                                     error={fieldState.error?.message}
-                                    icon={<DollarSign className="h-3.5 w-3.5 text-muted-foreground" />}
-                                    className="font-black text-sm h-[1.5rem]"
+                                    className="h-9 font-black text-right"
                                     {...field}
                                     onChange={(e) => {
                                         field.onChange(e)
@@ -98,21 +97,14 @@ export function ProductPricingSection({ form, initialData, canBeSold, uoms }: Pr
                                 />
                             )}
                         />
-                    </div>
 
-                    {/* Tax (IVA) - Styled as read-only input */}
-                    <div className="col-span-1">
                         <LabeledInput
-                            label="Impuesto (19%)"
+                            label="IVA (19%)"
                             value={PricingUtils.formatCurrency(taxAmount)}
                             readOnly
-                            icon={<Badge variant="outline" className="h-4 px-1 text-[8px] font-black border-blue-500/20 text-blue-600">IVA</Badge>}
-                            className="font-black text-sm h-[1.5rem] bg-blue-500/5 border-blue-500/20 text-blue-600/80 cursor-default"
+                            className="h-9 text-right bg-info/5 border-info/20 text-info/80 cursor-default font-bold"
                         />
-                    </div>
 
-                    {/* Gross Price */}
-                    <div className="col-span-1">
                         <FormField<ProductFormValues>
                             control={form.control}
                             name="sale_price_gross"
@@ -122,8 +114,7 @@ export function ProductPricingSection({ form, initialData, canBeSold, uoms }: Pr
                                     type="number"
                                     placeholder="0"
                                     error={fieldState.error?.message}
-                                    icon={<DollarSign className="h-3.5 w-3.5 text-primary/60" />}
-                                    className="font-black text-sm h-[1.5rem] bg-primary/5 border-primary/20"
+                                    className="h-9 font-black text-right bg-primary/5 border-primary/20"
                                     {...field}
                                     onChange={(e) => {
                                         field.onChange(e)
@@ -132,44 +123,22 @@ export function ProductPricingSection({ form, initialData, canBeSold, uoms }: Pr
                                 />
                             )}
                         />
-                    </div>
 
-                    {/* Sale Unit */}
-                    <div className="col-span-1">
                         <FormField<ProductFormValues>
                             control={form.control}
                             name="sale_uom"
                             render={({ field, fieldState }) => (
-                                <UoMSelector
-                                    label="Unidad Venta"
-                                    variant="standalone"
-                                    required
-                                    value={field.value || ""}
-                                    onChange={field.onChange}
-                                    uoms={uoms}
-                                    product={{ uom: stockUomId } as any}
-                                    context="sale"
-                                    error={fieldState.error?.message}
+                                <LabeledSelect
+                                    label="Unidad Base de Venta"
+                                    placeholder={allowedSaleUomsOptions.length === 0 ? "Configure en Logística" : "Seleccione UoM..."}
+                                    options={allowedSaleUomsOptions}
+                                    value={field.value ? String(field.value) : ""}
+                                    onChange={(val) => field.onChange(val ? Number(val) : null)}
+                                    disabled={allowedSaleUomsOptions.length === 0}
                                 />
                             )}
                         />
                     </div>
-                </div>
-
-                <div className={cn("col-span-4 p-6 border-2 border-dashed rounded-xl bg-muted/5 flex flex-col items-center justify-center text-center", !isDynamicPricing && "hidden")}>
-                    <div className="h-10 w-10 rounded-full bg-yellow-500/10 flex items-center justify-center mb-3">
-                        <Zap className="h-5 w-5 text-yellow-600" />
-                    </div>
-                    <h4 className="text-sm font-bold text-foreground">Modo de Precio Abierto</h4>
-                    <p className="text-xs text-muted-foreground mt-1 max-w-[300px]">
-                        El precio se solicitará al operador durante el proceso de facturación o venta.
-                    </p>
-                </div>
-
-                {/* Helper info */}
-                <div className="col-span-4 flex items-center gap-2 p-3 rounded-lg bg-blue-500/5 border border-blue-500/10 text-[10px] text-blue-600/80 font-medium">
-                    <Info className="h-3.5 w-3.5 shrink-0" />
-                    <span>Los precios se redondean automáticamente a la unidad más cercana (CLP). El IVA se calcula sobre el valor neto ingresado.</span>
                 </div>
             </div>
         </div>

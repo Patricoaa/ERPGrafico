@@ -9,13 +9,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Form, FormField } from "@/components/ui/form"
 import { Button } from "@/components/ui/button"
 import {
-    Loader2,
     Trash2,
     Settings2,
     AlertCircle
 } from "lucide-react"
-import { BaseModal } from "@/components/shared/BaseModal"
-import { AutoSaveStatusBadge, FormSkeleton, LabeledInput, LabeledSelect, ToolbarCreateButton } from "@/components/shared"
+
+import { ActionConfirmModal, ActionSlideButton, AutoSaveStatusBadge, BaseModal, Chip, FadeIn, LabeledInput, LabeledSelect, SkeletonShell, ToolbarCreateButton } from '@/components/shared'
 import { useAutoSaveForm } from "@/hooks/useAutoSaveForm"
 import { useUnsavedChangesGuard } from "@/hooks/useUnsavedChangesGuard"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
@@ -35,15 +34,14 @@ import type {
     AFP,
     PayrollConcept
 } from "@/types/hr"
-import { Badge } from "@/components/ui/badge"
+
 import { FormulaBuilder } from "@/features/hr/components/FormulaBuilder"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
-import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
-import { DataTable } from "@/components/ui/data-table"
+
+import { DataTable } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
-import { cn } from "@/lib/utils"
-import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
-import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
+;
+import { DataCell, createActionsColumn } from '@/components/shared'
 
 import { globalSettingsSchema, conceptSchema, afpSchema, type GlobalHRFormValues, type ConceptFormValues, type AFPFormValues } from "./HRSettingsView.schema"
 
@@ -141,9 +139,7 @@ export function HRSettingsView({ activeTab = "global" }: { activeTab?: string })
                 <div className="flex items-center gap-2 py-1">
                     <span className="font-black text-[12px] tracking-tight uppercase leading-none">{row.getValue("name")}</span>
                     {row.original.is_system && (
-                        <Badge variant="secondary" className="text-[8px] font-black h-4 px-1 rounded-sm bg-primary/10 text-primary border-primary/20">
-                            SYSTEM
-                        </Badge>
+                        <Chip size="xs" intent="primary">SYSTEM</Chip>
                     )}
                 </div>
             )
@@ -155,12 +151,9 @@ export function HRSettingsView({ activeTab = "global" }: { activeTab?: string })
                 const category = row.original.category
                 const isHaber = category.includes('HABER')
                 return (
-                    <Badge variant="outline" className={cn(
-                        "text-[9px] font-black uppercase h-5 shadow-sm rounded-sm",
-                        isHaber ? "bg-success/10 text-success border-success/20" : "bg-destructive/10 text-destructive border-destructive/20"
-                    )}>
+                    <Chip size="xs" intent={isHaber ? "success" : "destructive"} className="h-5 shadow-sm rounded-sm">
                         {row.getValue("category_display")}
-                    </Badge>
+                    </Chip>
                 )
             }
         },
@@ -199,185 +192,189 @@ export function HRSettingsView({ activeTab = "global" }: { activeTab?: string })
         })
     ]
 
-    if (loading) return <FormSkeleton hasTabs tabs={3} fields={4} />
+    if (loading) return <SkeletonShell isLoading={loading} ariaLabel="Cargando configuración de RRHH" />
 
     return (
         <div className="max-w-6xl mx-auto space-y-6">
-            {/* --- Tab: Global --- */}
-            {activeTab === "global" && (
-                <div className="space-y-6 m-0 p-0 border-0 outline-none mt-6">
-                    <div className="flex justify-end">
-                        <AutoSaveStatusBadge
-                            status={globalStatus}
-                            invalidReason={globalInvalidReason}
-                            lastSavedAt={globalLastSavedAt}
-                            onRetry={globalRetry}
-                        />
-                    </div>
-                    <Form {...globalForm}>
-                        <div className="grid gap-6">
-                            <Card className="rounded-md border-2">
-                                <CardHeader className="pb-4">
-                                    <CardTitle className="text-sm font-black uppercase text-primary tracking-widest">Indicadores Económicos</CardTitle>
-                                    <CardDescription className="text-[10px] uppercase font-bold">Valores oficiales para el cálculo mensual</CardDescription>
-                                </CardHeader>
-                                <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                    <FormField
-                                        control={globalForm.control}
-                                        name="uf_current_value"
-                                        render={({ field, fieldState }) => (
-                                            <LabeledInput
-                                                label="Valor UF Actual ($)"
-                                                type="number"
-                                                step="0.01"
-                                                className="font-mono"
-                                                error={fieldState.error?.message}
-                                                {...field}
-                                            />
-                                        )}
-                                    />
-                                    <FormField
-                                        control={globalForm.control}
-                                        name="min_wage_value"
-                                        render={({ field, fieldState }) => (
-                                            <LabeledInput
-                                                label="Sueldo Mínimo ($)"
-                                                type="number"
-                                                className="font-mono"
-                                                error={fieldState.error?.message}
-                                                {...field}
-                                            />
-                                        )}
-                                    />
-                                    <FormField
-                                        control={globalForm.control}
-                                        name="utm_current_value"
-                                        render={({ field, fieldState }) => (
-                                            <LabeledInput
-                                                label="Valor UTM Actual ($)"
-                                                type="number"
-                                                step="0.01"
-                                                className="font-mono"
-                                                error={fieldState.error?.message}
-                                                {...field}
-                                            />
-                                        )}
-                                    />
-                                </CardContent>
-                            </Card>
-
-                            <Card className="rounded-md border-2">
-                                <CardHeader className="pb-4">
-                                    <CardTitle className="text-sm font-black uppercase text-primary tracking-widest flex items-center gap-2">
-                                        <AlertCircle className="h-4 w-4 opacity-50" />
-                                        Cuentas Consolidadas
-                                    </CardTitle>
-                                    <CardDescription className="text-[10px] uppercase font-bold">Cuentas contables de cierre de nómina centralizado</CardDescription>
-                                </CardHeader>
-                                <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                    <FormField
-                                        control={globalForm.control}
-                                        name="account_remuneraciones_por_pagar"
-                                        render={({ field }) => (
-                                            <AccountSelector
-                                                label="Remuneraciones por Pagar (Líquido)"
-                                                value={field.value}
-                                                onChange={field.onChange}
-                                                accountType="LIABILITY"
-                                            />
-                                        )}
-                                    />
-                                    <FormField
-                                        control={globalForm.control}
-                                        name="account_previred_por_pagar"
-                                        render={({ field }) => (
-                                            <AccountSelector
-                                                label="Obligaciones Previred (Pasivo)"
-                                                value={field.value}
-                                                onChange={field.onChange}
-                                                accountType="LIABILITY"
-                                            />
-                                        )}
-                                    />
-                                    <FormField
-                                        control={globalForm.control}
-                                        name="account_anticipos"
-                                        render={({ field }) => (
-                                            <AccountSelector
-                                                label="Anticipos de Remuneraciones (Activo)"
-                                                value={field.value}
-                                                onChange={field.onChange}
-                                                accountType="ASSET"
-                                            />
-                                        )}
-                                    />
-                                </CardContent>
-                            </Card>
+            <FadeIn key={activeTab}>
+                {/* --- Tab: Global --- */}
+                {activeTab === "global" && (
+                    <div className="space-y-6 m-0 p-0 border-0 outline-none mt-6">
+                        <div className="flex justify-end">
+                            <AutoSaveStatusBadge
+                                status={globalStatus}
+                                invalidReason={globalInvalidReason}
+                                lastSavedAt={globalLastSavedAt}
+                                onRetry={globalRetry}
+                            />
                         </div>
-                    </Form>
-                </div>
-            )}
+                        <Form {...globalForm}>
+                            <div className="grid gap-6">
+                                <Card variant="transparent" className="border-2">
+                                    <CardHeader className="pb-4">
+                                        <CardTitle className="text-sm font-black uppercase text-primary tracking-widest">Indicadores Económicos</CardTitle>
+                                        <CardDescription className="text-[10px] uppercase font-bold">Valores oficiales para el cálculo mensual</CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                        <FormField
+                                            control={globalForm.control}
+                                            name="uf_current_value"
+                                            render={({ field, fieldState }) => (
+                                                <LabeledInput
+                                                    label="Valor UF Actual ($)"
+                                                    type="number"
+                                                    step="0.01"
+                                                    className="font-mono"
+                                                    error={fieldState.error?.message}
+                                                    {...field}
+                                                />
+                                            )}
+                                        />
+                                        <FormField
+                                            control={globalForm.control}
+                                            name="min_wage_value"
+                                            render={({ field, fieldState }) => (
+                                                <LabeledInput
+                                                    label="Sueldo Mínimo ($)"
+                                                    type="number"
+                                                    className="font-mono"
+                                                    error={fieldState.error?.message}
+                                                    {...field}
+                                                />
+                                            )}
+                                        />
+                                        <FormField
+                                            control={globalForm.control}
+                                            name="utm_current_value"
+                                            render={({ field, fieldState }) => (
+                                                <LabeledInput
+                                                    label="Valor UTM Actual ($)"
+                                                    type="number"
+                                                    step="0.01"
+                                                    className="font-mono"
+                                                    error={fieldState.error?.message}
+                                                    {...field}
+                                                />
+                                            )}
+                                        />
+                                    </CardContent>
+                                </Card>
 
-            {/* --- Tab: Conceptos --- */}
-            {activeTab === "concepts" && (
-                <div className="space-y-6 m-0 p-0 border-0 outline-none mt-6">
-                    <div className="flex justify-between items-center px-1">
-                        <div>
-                            <h3 className="text-sm font-black uppercase text-primary tracking-widest">Conceptos de Nómina</h3>
-                            <p className="text-[10px] uppercase font-bold text-muted-foreground">Gestión de haberes, descuentos y aportes</p>
-                        </div>
-                        <ConceptDialog onSaved={fetchData} />
+                                <Card variant="transparent" className="border-2">
+                                    <CardHeader className="pb-4">
+                                        <CardTitle className="text-sm font-black uppercase text-primary tracking-widest flex items-center gap-2">
+                                            <AlertCircle className="h-4 w-4 opacity-50" />
+                                            Cuentas Consolidadas
+                                        </CardTitle>
+                                        <CardDescription className="text-[10px] uppercase font-bold">Cuentas contables de cierre de nómina centralizado</CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                        <FormField
+                                            control={globalForm.control}
+                                            name="account_remuneraciones_por_pagar"
+                                            render={({ field }) => (
+                                                <AccountSelector
+                                                    label="Remuneraciones por Pagar (Líquido)"
+                                                    value={field.value}
+                                                    onChange={field.onChange}
+                                                    accountType="LIABILITY"
+                                                />
+                                            )}
+                                        />
+                                        <FormField
+                                            control={globalForm.control}
+                                            name="account_previred_por_pagar"
+                                            render={({ field }) => (
+                                                <AccountSelector
+                                                    label="Obligaciones Previred (Pasivo)"
+                                                    value={field.value}
+                                                    onChange={field.onChange}
+                                                    accountType="LIABILITY"
+                                                />
+                                            )}
+                                        />
+                                        <FormField
+                                            control={globalForm.control}
+                                            name="account_anticipos"
+                                            render={({ field }) => (
+                                                <AccountSelector
+                                                    label="Anticipos de Remuneraciones (Activo)"
+                                                    value={field.value}
+                                                    onChange={field.onChange}
+                                                    accountType="ASSET"
+                                                />
+                                            )}
+                                        />
+                                    </CardContent>
+                                </Card>
+                            </div>
+                        </Form>
                     </div>
+                )}
 
-                    <DataTable
-                        columns={conceptColumns}
-                        data={concepts}
-                        filterColumn="name"
-                        searchPlaceholder="Buscar concepto..."
-                        isLoading={loading}
-                        variant="embedded"
-                    />
-                </div>
-            )}
-
-            {/* --- Tab: Previsión --- */}
-            {activeTab === "previsional" && (
-                <div className="space-y-6 m-0 p-0 border-0 outline-none mt-6">
-                    <div className="flex justify-between items-center px-1">
-                        <div>
-                            <h3 className="text-sm font-black uppercase text-primary tracking-widest">Instituciones Previsionales (AFP)</h3>
-                            <p className="text-[10px] uppercase font-bold text-muted-foreground">Gestión de comisiones para cálculo individual</p>
+                {/* --- Tab: Conceptos --- */}
+                {activeTab === "concepts" && (
+                    <div className="space-y-6 m-0 p-0 border-0 outline-none mt-6">
+                        <div className="flex justify-between items-center px-1">
+                            <div>
+                                <h3 className="text-sm font-black uppercase text-primary tracking-widest">Conceptos de Nómina</h3>
+                                <p className="text-[10px] uppercase font-bold text-muted-foreground">Gestión de haberes, descuentos y aportes</p>
+                            </div>
+                            <ConceptDialog onSaved={fetchData} />
                         </div>
-                        <AFPDialog onSaved={fetchData} />
-                    </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {afps.map((afp) => (
-                            <Card key={afp.id} className="relative overflow-hidden group hover:border-primary/50 transition-all rounded-md border-2">
-                                <div className="absolute top-0 right-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <AFPDialog afp={afp} onSaved={fetchData} />
-                                </div>
-                                <CardHeader className="pb-2">
-                                    <CardTitle className="text-xs font-black uppercase tracking-tight">{afp.name}</CardTitle>
-                                    <CardDescription className="text-2xl font-black text-primary font-heading">
-                                        {afp.percentage}%
-                                    </CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="text-[9px] uppercase text-muted-foreground font-black mb-1 opacity-60">Pasivo de Pago</div>
-                                    <div className="text-[10px] truncate font-mono bg-primary/5 p-1.5 rounded-sm border border-primary/10 inline-block max-w-full text-primary font-bold">
-                                        {afp.account ? "CENTRALIZADA" : "SIN CUENTA"}
+                        <div className="flex-1 min-h-0">
+                            <DataTable
+                                columns={conceptColumns}
+                                data={concepts}
+                                filterColumn="name"
+                                searchPlaceholder="Buscar concepto..."
+                                isLoading={loading}
+                                variant="embedded"
+                            />
+                        </div>
+                    </div>
+                )}
+
+                {/* --- Tab: Previsión --- */}
+                {activeTab === "previsional" && (
+                    <div className="space-y-6 m-0 p-0 border-0 outline-none mt-6">
+                        <div className="flex justify-between items-center px-1">
+                            <div>
+                                <h3 className="text-sm font-black uppercase text-primary tracking-widest">Instituciones Previsionales (AFP)</h3>
+                                <p className="text-[10px] uppercase font-bold text-muted-foreground">Gestión de comisiones para cálculo individual</p>
+                            </div>
+                            <AFPDialog onSaved={fetchData} />
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {afps.map((afp) => (
+                                <Card key={afp.id} variant="transparent" className="relative overflow-hidden group hover:border-primary/50 transition-all border-2">
+                                    <div className="absolute top-0 right-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <AFPDialog afp={afp} onSaved={fetchData} />
                                     </div>
-                                    <Button variant="ghost" size="sm" className="mt-4 w-full text-[9px] font-black uppercase text-destructive hover:bg-destructive/10 rounded-sm"
-                                        onClick={() => afpDeleteConfirm.requestConfirm(afp.id)}>
-                                        Eliminar Institución
-                                    </Button>
-                                </CardContent>
-                            </Card>
-                        ))}
+                                    <CardHeader className="pb-2">
+                                        <CardTitle className="text-xs font-black uppercase tracking-tight">{afp.name}</CardTitle>
+                                        <CardDescription className="text-2xl font-black text-primary font-heading">
+                                            {afp.percentage}%
+                                        </CardDescription>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="text-[9px] uppercase text-muted-foreground font-black mb-1 opacity-60">Pasivo de Pago</div>
+                                        <div className="text-[10px] truncate font-mono bg-primary/5 p-1.5 rounded-sm border border-primary/10 inline-block max-w-full text-primary font-bold">
+                                            {afp.account ? "CENTRALIZADA" : "SIN CUENTA"}
+                                        </div>
+                                        <Button variant="ghost" size="sm" className="mt-4 w-full text-[9px] font-black uppercase text-destructive hover:bg-destructive/10 rounded-sm"
+                                            onClick={() => afpDeleteConfirm.requestConfirm(afp.id)}>
+                                            Eliminar Institución
+                                        </Button>
+                                    </CardContent>
+                                </Card>
+                            ))}
+                        </div>
                     </div>
-                </div>
-            )}
+                )}
+            </FadeIn>
 
             <ActionConfirmModal
                 open={conceptDeleteConfirm.isOpen}
@@ -399,7 +396,6 @@ export function HRSettingsView({ activeTab = "global" }: { activeTab?: string })
         </div>
     )
 }
-
 
 // --- DIALOGS ---
 
@@ -559,7 +555,7 @@ function ConceptDialog({ concept, onSaved }: { concept?: PayrollConcept, onSaved
                                     <div className="bg-primary/5 p-3 rounded-md border border-dashed border-primary/20 space-y-3">
                                         <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-primary">
                                             Constructor de Fórmula
-                                            <Badge variant="outline" className="text-[8px] bg-background">ADVANCED</Badge>
+                                            <Chip size="xs">ADVANCED</Chip>
                                         </span>
                                         <LabeledInput
                                             label="Expresión"

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, forwardRef, useImperativeHandle } from "react"
+import {useState, forwardRef, useImperativeHandle} from "react"
 import { cn } from "@/lib/utils"
 
 export interface ScannerFeedbackHandle {

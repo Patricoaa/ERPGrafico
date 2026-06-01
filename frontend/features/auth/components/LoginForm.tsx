@@ -6,16 +6,16 @@ import { z } from "zod"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { motion } from "framer-motion"
-import { Loader2, ArrowRight } from "lucide-react"
+import {ArrowRight} from "lucide-react"
 
-import api from "@/lib/api"
-import { SubmitButton } from "@/components/shared/ActionButtons"
+import { useAuthLogin } from '../hooks/useAuthLogin'
+
 import {
     Form,
     FormField,
 } from "@/components/ui/form"
 import { useAuth } from "@/contexts/AuthContext"
-import { LabeledInput } from "@/components/shared"
+import { LabeledInput, SubmitButton } from '@/components/shared'
 
 const formSchema = z.object({
     username: z.string().min(2, {
@@ -39,21 +39,12 @@ export function LoginForm() {
         },
     })
 
+    const { mutateAsync: loginMutation, isPending: isLoggingIn } = useAuthLogin()
+
     async function onSubmit(values: z.infer<typeof formSchema>) {
         setError("")
         try {
-            const response = await api.post('token/', values)
-
-            if (response.status === 200) {
-                const data = response.data as { access: string; refresh?: string }
-                await login(data.access)
-                if (data.refresh) {
-                    localStorage.setItem('refresh_token', data.refresh)
-                }
-                router.push('/')
-            } else {
-                setError("Credenciales inválidas")
-            }
+            await loginMutation(values)
         } catch (err: any) {
             if (err.response?.status === 401) {
                 setError("Usuario o contraseña incorrectos")

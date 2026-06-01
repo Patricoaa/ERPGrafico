@@ -1,5 +1,26 @@
 import api from "@/lib/api"
 
+/**
+ * Resolves a media URL from the backend.
+ * If the path is relative (starts with /media/), it prepends the backend host.
+ * If the path is already absolute, it returns it as-is.
+ */
+export function resolveMediaUrl(path: string | null | undefined): string | null {
+  if (!path) return null
+  if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('data:')) {
+    return path
+  }
+
+  // Derive backend host from baseURL (stripping /api/ if present)
+  const rawBaseURL = process.env.NEXT_PUBLIC_API_URL || ''
+  const backendHost = rawBaseURL.replace(/\/api\/?$/, '')
+
+  // Ensure the path starts with a slash
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`
+
+  return `${backendHost}${normalizedPath}`
+}
+
 // ─── Sub-types ────────────────────────────────────────────
 
 /** Minimal user data embedded in task responses */
@@ -127,17 +148,27 @@ export const getTasks = async (params: TaskQueryParams = {}) => {
     return response.data
 }
 
+/**
+ * Fetch del detalle de una task. Imperativo, usado en polls de estado
+ * (p.ej. wizard de venta esperando aprobación de crédito).
+ */
+export const getTask = async <T = Task>(taskId: number | string): Promise<T> => {
+    const response = await api.get<T>(`workflow/tasks/${taskId}/`)
+    return response.data
+}
+
 export const completeTask = async (id: number, notes?: string, attachments?: File[]) => {
     const formData = new FormData()
     if (notes) formData.append('notes', notes)
     if (attachments) {
         attachments.forEach(file => formData.append('attachments', file))
     }
-    const response = await api.post(`workflow/tasks/${id}/complete/`, formData, {
-        headers: {
-            'Content-Type': 'multipart/form-data'
-        }
-    })
+    const response = await api.post(`workflow/tasks/${id}/complete/`, formData)
+    return response.data
+}
+
+export const updateTask = async (id: number, payload: Record<string, unknown>) => {
+    const response = await api.patch(`/workflow/tasks/${id}/`, payload)
     return response.data
 }
 
@@ -162,6 +193,22 @@ export const markAllNotificationsRead = async () => {
     return response.data
 }
 
+// Notification Rules
+export const getNotificationRules = async () => {
+    const response = await api.get('workflow/notification-rules/')
+    return response.data
+}
+
+export const updateNotificationRule = async (id: number, data: NotificationRulePayload) => {
+    const response = await api.patch(`workflow/notification-rules/${id}/`, data)
+    return response.data
+}
+
+export const createNotificationRule = async (data: NotificationRulePayload) => {
+    const response = await api.post(`workflow/notification-rules/`, data)
+    return response.data
+}
+
 // Rules (Admin)
 export const getAssignmentRules = async () => {
     const response = await api.get('workflow/assignment-rules/')
@@ -175,5 +222,11 @@ export const updateAssignmentRule = async (id: number, data: AssignmentRulePaylo
 
 export const createAssignmentRule = async (data: AssignmentRulePayload) => {
     const response = await api.post(`workflow/assignment-rules/`, data)
+    return response.data
+}
+
+// Workflow Settings
+export const updateWorkflowSettings = async (data: Record<string, unknown>) => {
+    const response = await api.patch("/workflow/settings/current/", data)
     return response.data
 }

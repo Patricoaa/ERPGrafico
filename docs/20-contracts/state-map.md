@@ -3,7 +3,7 @@ layer: 20-contracts
 doc: state-map
 status: active
 owner: core-team
-last_review: 2026-04-21
+last_review: 2026-05-27
 stability: contract-changes-require-ADR
 ---
 
@@ -13,96 +13,305 @@ Single source of truth for every entity state. `StatusBadge` variants must match
 
 ## Conventions
 
-- State identifiers: `snake_case` in backend + API + frontend unions.
-- Every state maps to a semantic color token (`text-*-foreground` + `bg-*-muted`).
+- State identifiers: `UPPER_CASE` in backend TextChoices, `UPPER_CASE` in API responses.
+- Every state maps to a semantic color intent via `STATUS_MAP` in `frontend/lib/badge-resolvers.ts`.
 - No raw Tailwind color — always token.
 
 ## SaleOrder
 
-| State | Token | Transitions allowed to |
-|-------|-------|-----------------------|
-| `draft` | `neutral` | `confirmed`, `cancelled` |
-| `confirmed` | `info` | `in_production`, `cancelled` |
-| `in_production` | `primary` | `ready_to_ship`, `cancelled` |
-| `ready_to_ship` | `accent` | `shipped`, `cancelled` |
-| `shipped` | `success` | `delivered` |
-| `delivered` | `success` | `invoiced`, `returned` |
-| `invoiced` | `success` | `closed` |
-| `returned` | `warning` | `closed` |
-| `closed` | `muted` | — |
-| `cancelled` | `destructive` | — |
+| Status | DeliveryStatus | Intent | Transitions allowed to |
+|--------|---------------|--------|------------------------|
+| `DRAFT` | — | `info` | `CONFIRMED`, `CANCELLED` |
+| `CONFIRMED` | — | `warning` | `PAYMENT_PENDING`, `INVOICED`, `PAID`, `CANCELLED` |
+| `PAYMENT_PENDING` | — | `warning` | `INVOICED`, `PAID`, `CANCELLED` |
+| `INVOICED` | — | `info` | `PAID`, `CANCELLED` |
+| `PAID` | — | `success` | — |
+| `CANCELLED` | — | `destructive` | — |
+
+**DeliveryStatus** (independent tracking):
+
+| Value | Intent | Meaning |
+|-------|--------|---------|
+| `PENDING` | `warning` | Sin despachos confirmados |
+| `PARTIAL` | `warning` | Despachos parciales |
+| `DELIVERED` | `success` | Todas las líneas despachadas |
+
+**Edit restrictions:** Solo editable en `DRAFT`. Campos inmutables: `number`, `status`, `total_net`, `total_tax`, `total`, `journal_entry`.
 
 ## PurchaseOrder
 
-| State | Token | Next |
-|-------|-------|------|
-| `draft` | `neutral` | `sent`, `cancelled` |
-| `sent` | `info` | `received_partial`, `received_full`, `cancelled` |
-| `received_partial` | `warning` | `received_full`, `cancelled` |
-| `received_full` | `success` | `reconciled`, `disputed` |
-| `reconciled` | `success` | `closed` |
-| `disputed` | `destructive` | `reconciled`, `cancelled` |
-| `closed` | `muted` | — |
-| `cancelled` | `destructive` | — |
+| Status | ReceivingStatus | Intent | Transitions allowed to |
+|--------|----------------|--------|------------------------|
+| `DRAFT` | — | `info` | `CONFIRMED`, `CANCELLED` |
+| `CONFIRMED` | — | `warning` | `RECEIVED`, `INVOICED`, `PAID`, `CANCELLED` |
+| `RECEIVED` | — | `success` | `INVOICED`, `PAID`, `CANCELLED` |
+| `INVOICED` | — | `info` | `PAID`, `CANCELLED` |
+| `PAID` | — | `success` | — |
+| `CANCELLED` | — | `destructive` | — |
+
+**ReceivingStatus** (independent tracking):
+
+| Value | Intent | Meaning |
+|-------|--------|---------|
+| `PENDING` | `warning` | Sin recepciones |
+| `PARTIAL` | `warning` | Recepciones parciales |
+| `RECEIVED` | `success` | Todas las líneas recibidas |
+
+**Edit restrictions:** Solo editable en `DRAFT`. Campos inmutables: `id`, `number`, `status`, `receiving_status`, `total_net`, `total_tax`, `total`.
 
 ## WorkOrder
 
-| State | Token | Next |
-|-------|-------|------|
-| `queued` | `neutral` | `in_progress`, `cancelled` |
-| `in_progress` | `primary` | `paused`, `completed`, `failed` |
-| `paused` | `warning` | `in_progress`, `cancelled` |
-| `completed` | `success` | `qa_passed`, `qa_failed` |
-| `qa_passed` | `success` | `closed` |
-| `qa_failed` | `destructive` | `in_progress` (rework) |
-| `failed` | `destructive` | — |
-| `closed` | `muted` | — |
-| `cancelled` | `destructive` | — |
+### Status (top-level)
+
+| Status | Intent | Transitions allowed to |
+|--------|--------|------------------------|
+| `DRAFT` | `info` | `IN_PROGRESS`, `CANCELLED` |
+| `IN_PROGRESS` | `warning` | `FINISHED`, `CANCELLED` |
+| `FINISHED` | `success` | — (terminal) |
+| `CANCELLED` | `destructive` | — (terminal) |
+
+### Stage (multi-stage pipeline)
+
+| Stage | Intent | Next stages |
+|-------|--------|-------------|
+| `MATERIAL_ASSIGNMENT` | `info` | `MATERIAL_APPROVAL`, `CANCELLED` |
+| `MATERIAL_APPROVAL` | `warning` | `OUTSOURCING_ASSIGNMENT`, `PREPRESS`, `CANCELLED` |
+| `OUTSOURCING_ASSIGNMENT` | `info` | `PREPRESS`, `CANCELLED` |
+| `PREPRESS` | `primary` | `PRESS`, `CANCELLED` |
+| `PRESS` | `primary` | `POSTPRESS`, `CANCELLED` |
+| `POSTPRESS` | `primary` | `OUTSOURCING_VERIFICATION`, `RECTIFICATION`, `CANCELLED` |
+| `OUTSOURCING_VERIFICATION` | `info` | `RECTIFICATION`, `CANCELLED` |
+| `RECTIFICATION` | `warning` | `FINISHED`, `CANCELLED` |
+| `FINISHED` | `success` | — (terminal) |
+| `CANCELLED` | `destructive` | — (terminal) |
+
+**Stage rules:**
+- Forward transitions governed by allowlist per stage.
+- Backward moves to non-terminal stages permitted (resets approval tasks).
+- Terminal stages (`FINISHED`, `CANCELLED`) cannot transition out.
+- PREPRESS/PRESS/POSTPRESS only allowed if product enables them.
+- Cancellation limit: typically PRESS (if available) or earlier.
+
+**Edit restrictions:** Terminal stages (`FINISHED`, `CANCELLED`) block all edits. Identity fields (`product`, `sale_order`, `sale_line`) immutable post-creation. Campos inmutables: `id`, `number`, `status`, `current_stage`.
 
 ## Invoice
 
-| State | Token | Next |
-|-------|-------|------|
-| `draft` | `neutral` | `issued`, `cancelled` |
-| `issued` | `info` | `paid_partial`, `paid`, `overdue`, `cancelled` |
-| `paid_partial` | `warning` | `paid`, `overdue` |
-| `overdue` | `destructive` | `paid_partial`, `paid` |
-| `paid` | `success` | — |
-| `cancelled` | `destructive` | — |
+| DTEType | Status | Intent | Transitions allowed to |
+|---------|--------|--------|------------------------|
+| Any | `DRAFT` | `info` | `POSTED`, `CANCELLED` |
+| Any | `POSTED` | `success` | `PAID`, `CANCELLED` |
+| Any | `PAID` | `success` | — |
+| Any | `CANCELLED` | `destructive` | — |
 
-## Payment
+**DTEType** (document type, not status):
+`FACTURA`, `FACTURA_EXENTA`, `BOLETA`, `BOLETA_EXENTA`, `PURCHASE_INV`, `NOTA_CREDITO`, `NOTA_DEBITO`, `COMPROBANTE_PAGO`
 
-| State | Token |
-|-------|-------|
-| `pending` | `neutral` |
-| `confirmed` | `success` |
-| `rejected` | `destructive` |
-| `reversed` | `warning` |
+**Edit restrictions:** Solo editable en `DRAFT`. Campos inmutables: `id`, `number`, `status`, `total_net`, `total_tax`, `total`, `journal_entry`, `tax_period_closed`.
 
-## Reconciliation (bank)
+**Annul rules:** If folio assigned → requires Nota de Crédito. If confirmed deliveries/receipts exist → blocks. If posted payments exist → blocks (unless `force=True` cascades).
 
-| State | Token |
-|-------|-------|
-| `unmatched` | `warning` |
-| `matched` | `success` |
-| `disputed` | `destructive` |
-| `ignored` | `muted` |
+## JournalEntry
+
+| Status | Intent | Transitions allowed to |
+|--------|--------|------------------------|
+| `DRAFT` | `info` | `POSTED`, `CANCELLED` |
+| `POSTED` | `success` | `CLOSED` (period closed), — (creates `REVERSAL` linked via `reversal_of`, original unchanged) |
+| `CLOSED` | `warning` | `POSTED` (period reopened), — (creates `REVERSAL` linked via `reversal_of`, original unchanged) |
+| `REVERSAL` | `primary` | — |
+| `CANCELLED` | `destructive` | — |
+
+**Balance-affecting statuses:** `POSTED`, `CLOSED`, `REVERSAL` — these filter into ledger, budget, and account balance calculations.
+
+**Reversal flow:** When reversing a `POSTED` or `CLOSED` entry, a new `REVERSAL` entry is created with mirrored items. The original entry **remains unchanged** for audit trail. Double reversal is prevented by checking `reversal_of` FK existence.
+
+**Edit restrictions:** Solo editable en `DRAFT`. Campos inmutables: `id`, `number`, `status`, `reversal_of`.
+
+## SaleDelivery
+
+| Status | Intent | Transitions allowed to |
+|--------|--------|------------------------|
+| `DRAFT` | `info` | `CONFIRMED`, `CANCELLED` |
+| `CONFIRMED` | `warning` | `CANCELLED` |
+| `CANCELLED` | `destructive` | — |
+
+**Edit restrictions:** Campos inmutables: `id`, `number`, `status`.
+
+## SaleReturn
+
+| Status | Intent | Transitions allowed to |
+|--------|--------|------------------------|
+| `DRAFT` | `info` | `CONFIRMED`, `CANCELLED` |
+| `CONFIRMED` | `warning` | `CANCELLED` |
+| `CANCELLED` | `destructive` | — |
+
+**Edit restrictions:** Campos inmutables: `id`, `number`, `status`.
+
+## PurchaseReceipt
+
+| Status | Intent | Transitions allowed to |
+|--------|--------|------------------------|
+| `DRAFT` | `info` | `CONFIRMED`, `CANCELLED` |
+| `CONFIRMED` | `warning` | `CANCELLED` |
+| `CANCELLED` | `destructive` | — |
+
+**Edit restrictions:** Campos inmutables: `id`, `number`, `status`.
+
+## PurchaseReturn
+
+| Status | Intent | Transitions allowed to |
+|--------|--------|------------------------|
+| `DRAFT` | `info` | `CONFIRMED`, `CANCELLED` |
+| `CONFIRMED` | `warning` | `CANCELLED` |
+| `CANCELLED` | `destructive` | — |
+
+**Edit restrictions:** Campos inmutables: `id`, `number`, `status`.
+
+## Payroll
+
+| Status | Intent | Transitions allowed to |
+|--------|--------|------------------------|
+| `DRAFT` | `info` | `POSTED` |
+| `POSTED` | `success` | — |
+
+**Edit restrictions:** Campos inmutables: `id`, `number`, `display_id`, `status`, `total_haberes`, `total_descuentos`, `net_salary`, `journal_entry`.
+
+## BankStatement
+
+| Status | Intent | Transitions allowed to |
+|--------|--------|------------------------|
+| `DRAFT` | `info` | `CONFIRMED`, `CANCELLED` |
+| `CONFIRMED` | `success` | `CANCELLED` |
+| `CANCELLED` | `destructive` | — |
+
+**Edit restrictions:** Campos inmutables: `id`, `status`. Lines locked when CONFIRMED.
+
+## BankStatementLine
+
+| ReconciliationStatus | Intent | Transitions allowed to |
+|---------------------|--------|------------------------|
+| `UNRECONCILED` | `warning` | `MATCHED`, `EXCLUDED` |
+| `MATCHED` | `info` | `RECONCILED`, `UNRECONCILED` |
+| `RECONCILED` | `success` | — |
+| `DISPUTED` | `destructive` | `MATCHED`, `EXCLUDED` |
+| `EXCLUDED` | `neutral` | `UNRECONCILED` |
+
+## TreasuryMovement
+
+No explicit status field. Edit restrictions based on journal_entry status:
+- If `journal_entry.status == 'POSTED'` → deletion blocked (must annul via service).
+- Created in any AccountingPeriod; blocked if period is closed.
+
+## POSSession
+
+| Status | Intent | Transitions allowed to |
+|--------|--------|------------------------|
+| `OPEN` | `success` | `CLOSED` |
+| `CLOSED` | `info` | — |
+
+## TerminalBatch
+
+| Status | Intent | Transitions allowed to |
+|--------|--------|------------------------|
+| `PENDING` | `info` | `SETTLED` |
+| `SETTLED` | `warning` | `RECONCILED`, `INVOICED` |
+| `RECONCILED` | `success` | — |
+| `INVOICED` | `success` | — |
+
+**Edit restrictions:** Campos inmutables: `settlement_journal_entry`, `bank_statement_line`, `supplier_invoice`.
+
+## Subscription
+
+| Status | Intent | Transitions allowed to |
+|--------|--------|------------------------|
+| `ACTIVE` | `success` | `PAUSED`, `CANCELLED`, `EXPIRED` |
+| `PAUSED` | `warning` | `ACTIVE`, `CANCELLED` |
+| `CANCELLED` | `destructive` | — |
+| `EXPIRED` | `neutral` | — |
+
+## Task (Workflow)
+
+| Status | Intent | Transitions allowed to |
+|--------|--------|------------------------|
+| `PENDING` | `info` | `IN_PROGRESS`, `COMPLETED`, `REJECTED`, `CANCELLED` |
+| `IN_PROGRESS` | `warning` | `COMPLETED`, `REJECTED`, `CANCELLED` |
+| `COMPLETED` | `success` | — |
+| `REJECTED` | `destructive` | `PENDING` (reassign) |
+| `CANCELLED` | `destructive` | — |
+
+## TaxPeriod / AccountingPeriod
+
+| Status | Intent | Transitions allowed to |
+|--------|--------|------------------------|
+| `OPEN` | `success` | `UNDER_REVIEW`, `CLOSED` |
+| `UNDER_REVIEW` | `warning` | `CLOSED`, `OPEN` (reopen) |
+| `CLOSED` | `info` | `OPEN` (reopen, requires permission) |
+
+**Permissions:** `can_close_accounting_period`, `can_reopen_accounting_period`.
+
+## FiscalYear
+
+| Status | Intent | Transitions allowed to |
+|--------|--------|------------------------|
+| `OPEN` | `success` | `CLOSING`, `CLOSED` |
+| `CLOSING` | `warning` | `CLOSED` |
+| `CLOSED` | `info` | — |
+
+**Edit restrictions:** Campos inmutables: `status`, `closing_entry`, `opening_entry`, `net_result`, `closed_at`, `closed_by`.
+
+## Employee
+
+| Status | Intent |
+|--------|--------|
+| `ACTIVE` | `primary` |
+| `INACTIVE` | `neutral` |
+
+## NoteWorkflow (Billing Note Creation)
+
+| Stage | Intent | Next |
+|-------|--------|------|
+| `DRAFT` | `info` | `INVOICE_SELECTED` |
+| `INVOICE_SELECTED` | `info` | `ITEMS_SELECTED` |
+| `ITEMS_SELECTED` | `warning` | `LOGISTICS_PENDING` |
+| `LOGISTICS_PENDING` | `warning` | `LOGISTICS_COMPLETED` |
+| `LOGISTICS_COMPLETED` | `info` | `REGISTRATION_PENDING` |
+| `REGISTRATION_PENDING` | `warning` | `PAYMENT_PENDING` |
+| `PAYMENT_PENDING` | `warning` | `COMPLETED` |
+| `COMPLETED` | `success` | — |
+| `CANCELLED` | `destructive` | — |
+
+## Entities without status (Master/Config)
+
+These entities do not have lifecycle states. They use `is_active` (archive pattern) or are immutable configuration:
+
+| Entity | Pattern | Notes |
+|--------|---------|-------|
+| Product | Archive (`active`) | `is_active=False` for archived products |
+| Contact | Archive (`is_active`) | Roles are dynamic, not states |
+| Account | Archive (`is_active`) | Leaf accounts only |
+| UoM / UoMCategory | Archive | — |
+| Warehouse | Archive | — |
+| ProductCategory | Archive | — |
+| PricingRule | Date-based | `valid_from` / `valid_to` |
+| Budget / BudgetItem | None | Planning entities |
+| PayrollConcept | None | Config formulas |
+| AFP | None | Reference table |
+| Notification | Read flag | `read` boolean |
+| TaskAssignmentRule | None | Routing config |
+| Comment | Append-only | Never modified nor deleted |
 
 ## Workflow transition invariants
 
-- Transitions forbidden outside table above are rejected with HTTP 409.
+- Transitions forbidden outside table above are rejected with HTTP 400.
 - Every transition emits a `workflow.Transition` row (audit).
-- Some transitions require permission (e.g. `qa_passed` requires role `qa`).
+- Some transitions require permission (e.g. fiscal year close requires `can_close_fiscal_year`).
 
 ## Frontend enforcement
 
 ```ts
-// features/sales/types/state.ts
-export const SALE_ORDER_STATES = [
-  'draft','confirmed','in_production','ready_to_ship','shipped',
-  'delivered','invoiced','returned','closed','cancelled'
-] as const
-export type SaleOrderState = typeof SALE_ORDER_STATES[number]
+// Entity states are defined in:
+// - frontend/lib/badge-resolvers.ts (STATUS_MAP)
+// - frontend/lib/entity-registry.ts (ENTITY_REGISTRY)
+//
+// Backend mirror: enums in each app's models.py TextChoices.
+// If diverged → bug. Test: test_state_map_consistency.
 ```
-
-Backend mirror: enum in `sales/models.py` `SaleOrder.Status` TextChoices. If diverged → bug. Test coverage required.

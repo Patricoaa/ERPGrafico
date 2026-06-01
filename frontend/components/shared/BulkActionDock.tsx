@@ -67,7 +67,7 @@ export function BulkActionDock({
 }: BulkActionDockProps) {
     return (
         <ActionDock isVisible={selectedCount > 0} className={className}>
-            <div className="flex items-center gap-2 pr-6 border-r border-border/40">
+            <div className="flex items-center gap-2 border-r border-border/40">
                 <div className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
                 <span className="text-[10px] font-black uppercase tracking-widest text-foreground whitespace-nowrap">
                     {selectionLabel(selectedCount)}

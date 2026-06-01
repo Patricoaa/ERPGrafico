@@ -6,6 +6,7 @@ import { AuthProvider } from "@/contexts/AuthContext"
 import { GlobalModalProvider } from "@/components/providers/GlobalModalProvider"
 import { HubPanelProvider } from "@/components/providers/HubPanelProvider"
 import { HeaderProvider } from "@/components/providers/HeaderProvider"
+import { RealtimeProvider } from "@/features/realtime"
 import Providers from "./providers"
 
 const syne = Syne({
@@ -30,7 +31,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" className="dark" style={{ colorScheme: 'dark' }}>
+    <html lang="es" suppressHydrationWarning>
       <body
         className={`${syne.variable} ${onest.variable} font-sans antialiased bg-background text-foreground`}
       >
@@ -39,14 +40,18 @@ export default function RootLayout({
         </a>
         <Providers>
           <AuthProvider>
-            <HeaderProvider>
-              <HubPanelProvider>
-                <GlobalModalProvider>
-                  {children}
-                  <GlobalHubPanel />
-                </GlobalModalProvider>
-              </HubPanelProvider>
-            </HeaderProvider>
+            <RealtimeProvider>
+              <HeaderProvider>
+                <HubPanelProvider>
+                  <GlobalModalProvider>
+                    {children}
+                    <GlobalHubPanel />
+                    {/* Target portal container for module sheets to avoid containing blocks inside the transitioning container */}
+                    <div id="module-sheets-portal-container" />
+                  </GlobalModalProvider>
+                </HubPanelProvider>
+              </HeaderProvider>
+            </RealtimeProvider>
           </AuthProvider>
         </Providers>
       </body>

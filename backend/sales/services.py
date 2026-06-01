@@ -1,6 +1,7 @@
 from django.db import transaction
 from django.core.exceptions import ValidationError
 from django.utils import timezone
+from django.contrib.contenttypes.models import ContentType
 from .models import SaleOrder, SaleDelivery, SaleDeliveryLine
 from accounting.models import JournalEntry, JournalItem, Account, AccountType
 from accounting.services import JournalEntryService, AccountingMapper
@@ -481,8 +482,10 @@ class SalesService:
                     {
                         'date': delivery.delivery_date,
                         'description': description,
-                        'reference': reference,
-                        'status': JournalEntry.State.DRAFT
+                        'status': JournalEntry.State.DRAFT,
+                        'is_manual': False,
+                        'source_content_type': ContentType.objects.get_for_model(delivery),
+                        'source_object_id': delivery.id,
                     },
                     items
                 )

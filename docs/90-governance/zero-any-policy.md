@@ -3,7 +3,7 @@ layer: 90-governance
 doc: zero-any-policy
 status: active
 owner: frontend-team
-last_review: 2026-04-21
+last_review: 2026-05-28
 ---
 
 # Zero `any` Policy
@@ -33,7 +33,7 @@ last_review: 2026-04-21
 
 ```ts
 function isOrder(x: unknown): x is Order {
-  return typeof x === 'object' && x !== null && 'id' in x && 'folio' in x
+  return typeof x === 'object' && x !== null && 'id' in x && 'number' in x
 }
 
 const parsed: unknown = JSON.parse(raw)
@@ -44,7 +44,7 @@ if (!isOrder(parsed)) throw new Error('invalid shape')
 ### Zod parse
 
 ```ts
-const OrderSchema = z.object({ id: z.string().uuid(), folio: z.string() })
+const OrderSchema = z.object({ id: z.number(), number: z.number() })
 type Order = z.infer<typeof OrderSchema>
 const order = OrderSchema.parse(payload)
 ```

@@ -1,4 +1,4 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import {useQuery} from '@tanstack/react-query'
 import api from '@/lib/api'
 import type { Product } from '@/types/entities'
 
@@ -56,8 +56,8 @@ export function useProductSearch(params: ProductSearchParams = {}, enabled: bool
                 }
             }
 
-            const res = await api.get(`/inventory/products/?${q.toString()}`, { signal })
-            const results = (res.data.results || res.data) as Product[]
+            const res = await api.get<Product[]>(`/inventory/products/?${q.toString()}`, { signal })
+            const results = res.data
             
             return await resolveVariants(results, limit)
         },

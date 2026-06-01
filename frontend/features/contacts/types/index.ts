@@ -6,6 +6,7 @@ export interface Contact {
     name: string
     tax_id: string | null
     contact_type: 'CUSTOMER' | 'SUPPLIER' | 'BOTH' | 'RELATED' | 'OTHER'
+    active_roles?: string[]
     email: string | null
     phone: string | null
     address: string | null
@@ -46,6 +47,7 @@ export interface ContactPayload {
     credit_enabled?: boolean
     credit_limit?: number | null
     credit_days?: number | null
+    roles?: string[]
 }
 
 export interface InsightsData {

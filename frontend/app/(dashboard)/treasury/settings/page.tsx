@@ -1,7 +1,4 @@
-import { Suspense, lazy } from "react"
-import { TableSkeleton } from "@/components/shared"
-
-const TreasurySettingsView = lazy(() => import("@/features/settings").then(m => ({ default: m.TreasurySettingsView })))
+import { TreasurySettingsView } from "@/features/settings"
 
 interface PageProps {
     searchParams: Promise<{ tab?: string }>
@@ -12,10 +9,6 @@ export default async function TreasurySettingsPage({ searchParams }: PageProps) 
     const activeTab = tab || "conciliation"
 
     return (
-        <div className="pt-2">
-            <Suspense fallback={<TableSkeleton rows={10} columns={6} />}>
-                <TreasurySettingsView activeTab={activeTab} />
-            </Suspense>
-        </div>
+        <TreasurySettingsView activeTab={activeTab} />
     )
 }

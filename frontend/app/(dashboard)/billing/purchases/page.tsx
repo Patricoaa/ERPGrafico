@@ -1,32 +1,29 @@
 "use client"
 
 import { showApiError, getErrorMessage } from "@/lib/errors"
-import { EmptyState } from "@/components/shared/EmptyState"
 import { useState, useEffect } from "react"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { ColumnDef } from "@tanstack/react-table"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Eye, FileBadge, Banknote, Package, Trash2, History, FileEdit, X, MoreVertical } from "lucide-react"
+import { ActionConfirmModal, Chip, DocumentCompletionModal, MoneyDisplay } from '@/components/shared'
+import { FileBadge, History, FileEdit, MoreVertical } from "lucide-react"
 import api from "@/lib/api"
-import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
+
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { toast } from "sonner"
-import { TransactionViewModal } from "@/components/shared/TransactionViewModal"
-import { PaymentModal } from "@/features/treasury/components/PaymentModal"
-import { ReceiptModal } from "@/features/purchasing/components/ReceiptModal"
-import { PurchaseNoteModal } from "@/features/purchasing/components/PurchaseNoteModal"
-import { DocumentCompletionModal } from "@/components/shared/DocumentCompletionModal"
+import { LazyDrawer } from "@/features/_shared"
+import { PaymentModal } from "@/features/treasury"
+import { ReceiptModal, PurchaseNoteModal } from "@/features/purchasing"
+
 import { Progress } from "@/components/ui/progress"
-import { DataTable } from "@/components/ui/data-table"
-import { DataCell } from "@/components/ui/data-table-cells"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { DataTableView, DataCell, DataTableColumnHeader } from '@/components/shared'
 import { formatPlainDate } from "@/lib/utils"
-import { TableSkeleton } from "@/components/shared"
-import { PageContainer } from "@/components/shared"
-import { InvoiceCard } from "@/features/billing/components/InvoiceCard"
+import { useSmartSearch, SmartSearchBar, StatusBadge } from "@/components/shared"
+import { getDtePrefix } from "@/lib/entity-registry"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
-import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+
+import { usePurchaseInvoices, purchaseInvoiceSearchDef } from "@/features/billing"
 
 interface PurchaseDocument {
     id: number
@@ -54,13 +51,6 @@ interface PurchaseDocument {
     }
 }
 
-const statusMap: Record<string, { label: string, variant: "default" | "secondary" | "destructive" | "outline" | "success" | "info" | "warning" }> = {
-    'DRAFT': { label: 'Folio Pendiente', variant: 'warning' },
-    'POSTED': { label: 'Publicado', variant: 'info' },
-    'PAID': { label: 'Pagado', variant: 'success' },
-    'CANCELLED': { label: 'Anulado', variant: 'destructive' },
-}
-
 interface PurchasePaymentData {
     amount: string | number
     paymentMethod: string
@@ -74,8 +64,12 @@ interface PurchasePaymentData {
 }
 
 export default function PurchaseInvoicesPage() {
-    const [documents, setDocuments] = useState<PurchaseDocument[]>([])
-    const [loading, setLoading] = useState(true)
+    const { filters, clearAll } = useSmartSearch(purchaseInvoiceSearchDef)
+
+    // Data Fetching (TanStack Query)
+    const { invoices, isLoading: isDataLoading, refetch } = usePurchaseInvoices({
+        filters
+    })
 
     const [payingDoc, setPayingDoc] = useState<PurchaseDocument | null>(null)
     const [receivingDoc, setReceivingDoc] = useState<PurchaseDocument | null>(null)
@@ -90,29 +84,15 @@ export default function PurchaseInvoicesPage() {
     const selectedId = searchParams.get('selected')
     const [hubEverOpened, setHubEverOpened] = useState(false)
 
-    // TransactionViewModal — URL sync (ADR-0020)
-    const transactionId = searchParams.get('transaction')
-    const transactionType = searchParams.get('transactionType')
-    const transactionView = (searchParams.get('transactionView') ?? 'details') as 'details' | 'history' | 'all'
-    const viewingTransaction = transactionId && transactionType
-        ? { type: transactionType, id: transactionId, view: transactionView }
-        : null
+    // Transaction detail state (local only, ?selected= is reserved for Hub Panel)
+    const [viewingTransaction, setViewingTransaction] = useState<{ type: string; id: string } | null>(null)
 
-    const openTransaction = (id: number | string, type: string, view: 'details' | 'history' | 'all' = 'details') => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.set('transaction', String(id))
-        params.set('transactionType', type)
-        params.set('transactionView', view)
-        router.push(`${pathname}?${params.toString()}`, { scroll: false })
+    const openTransaction = (id: number | string, type: string) => {
+        setViewingTransaction({ type, id: String(id) })
     }
 
     const closeTransaction = () => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.delete('transaction')
-        params.delete('transactionType')
-        params.delete('transactionView')
-        const query = params.toString()
-        router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
+        setViewingTransaction(null)
     }
 
     // Open Hub if ?selected= is present (ADR-0020)
@@ -121,6 +101,7 @@ export default function PurchaseInvoicesPage() {
     }, [selectedId, openHub])
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         if (isHubOpen && selectedId) setHubEverOpened(true)
     }, [isHubOpen, selectedId])
 
@@ -129,43 +110,17 @@ export default function PurchaseInvoicesPage() {
             const params = new URLSearchParams(searchParams.toString())
             params.delete('selected')
             const query = params.toString()
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setHubEverOpened(false)
             router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
         }
     }, [isHubOpen, hubEverOpened, selectedId, pathname, searchParams, router])
 
-    useEffect(() => {
-        fetchDocuments()
-    }, [])
-
-    const fetchDocuments = async () => {
-        try {
-            const res = await api.get('/billing/invoices/')
-            const results = res.data.results || res.data
-            // Filter only purchases (those with purchase_order OR explicitly purchase DTE types if PO missing for some reason)
-            // Ideally backend filters, but frontend filter for strict "Purchase" context:
-            // Includes: FACTURA_COMPRA (custom type?), or standard Invoices linked to PO, or NC/ND linked to PO.
-            // Let's stick to "linked to purchase_order" or "DTE Type is specifically Purchase-related" check.
-            // Include: Invoices with PO OR Invoices with Service Obligation
-            const filtered = results.filter((i: PurchaseDocument) =>
-                i.purchase_order ||
-                i.service_obligation ||
-                i.dte_type === 'PURCHASE_INV'
-            )
-            setDocuments(filtered)
-        } catch (error) {
-            console.error(error)
-            toast.error("Error al cargar documentos")
-        } finally {
-            setLoading(false)
-        }
-    }
-
     const deleteConfirm = useConfirmAction<number>(async (id) => {
         try {
             await api.delete(`/billing/invoices/${id}/`)
             toast.success("Documento eliminado correctamente")
-            fetchDocuments()
+            refetch()
         } catch (error: unknown) {
             console.error("Error deleting document:", error)
             showApiError(error, "No se pudo eliminar el documento")
@@ -178,7 +133,7 @@ export default function PurchaseInvoicesPage() {
         try {
             await api.post(`/billing/invoices/${id}/annul/`, { force: true })
             toast.success("Documento anulado correctamente.")
-            fetchDocuments()
+            refetch()
         } catch (error: unknown) {
             toast.error(getErrorMessage(error) || "Error al anular el documento.")
         }
@@ -188,7 +143,7 @@ export default function PurchaseInvoicesPage() {
         try {
             await api.post(`/billing/invoices/${id}/annul/`, { force: false })
             toast.success("Documento anulado correctamente.")
-            fetchDocuments()
+            refetch()
         } catch (error: unknown) {
             console.error("Error annulling invoice:", error)
             const errorMessage = getErrorMessage(error) || ""
@@ -216,7 +171,8 @@ export default function PurchaseInvoicesPage() {
             if (isCreditNote) paymentType = 'INBOUND' // Receiving money back (Devolución)
 
             formData.append('payment_type', paymentType)
-            formData.append('reference', `${payingDoc.dte_type === 'NOTA_CREDITO' ? 'NC' : payingDoc.dte_type === 'NOTA_DEBITO' ? 'ND' : 'PAGO'}-${payingDoc.number}`)
+            const prefix = ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(payingDoc.dte_type) ? getDtePrefix(payingDoc.dte_type) : 'PAGO';
+            formData.append('reference', `${prefix}-${payingDoc.number}`)
             formData.append('purchase_order', payingDoc.purchase_order ? payingDoc.purchase_order.toString() : '')
             formData.append('invoice', payingDoc.id.toString())
             formData.append('payment_method', data.paymentMethod)
@@ -232,7 +188,7 @@ export default function PurchaseInvoicesPage() {
             await api.post('/treasury/payments/', formData)
             toast.success("Operación registrada correctamente")
             setPayingDoc(null)
-            fetchDocuments()
+            refetch()
         } catch (error: unknown) {
             console.error("Error registering payment:", error)
             showApiError(error, "Error al registrar la operación")
@@ -246,7 +202,7 @@ export default function PurchaseInvoicesPage() {
                 <DataTableColumnHeader column={column} title="Folio" />
             ),
             cell: ({ row }) => (
-                <DataCell.DocumentId type={row.original.dte_type} number={row.getValue("number")} />
+                <DataCell.Entity entityLabel="billing.invoice" data={row.original} />
             ),
         },
         {
@@ -266,15 +222,16 @@ export default function PurchaseInvoicesPage() {
             cell: ({ row }) => {
                 const doc = row.original
                 return (
-                    <div className="flex items-center gap-2" title={doc.dte_type_display}>
+                    <div className="flex items-center gap-2">
                         <FileBadge className={`h-4 w-4 ${doc.dte_type === 'NOTA_CREDITO' ? 'text-primary' : doc.dte_type === 'NOTA_DEBITO' ? 'text-warning' : 'text-muted-foreground'}`} />
-                        <span className="text-xs font-bold uppercase hidden md:inline-block">
-                            {doc.dte_type === 'NOTA_CREDITO' ? 'NC' :
-                                doc.dte_type === 'NOTA_DEBITO' ? 'ND' :
-                                    doc.dte_type === 'BOLETA' ? 'BOL' :
-                                        doc.dte_type === 'FACTURA_EXENTA' ? 'FE' :
-                                            doc.dte_type === 'BOLETA_EXENTA' ? 'BE' : 'FAC'}
-                        </span>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <span className="text-xs font-bold uppercase hidden md:inline-block">
+                                    {getDtePrefix(doc.dte_type)}
+                                </span>
+                            </TooltipTrigger>
+                            <TooltipContent side="top">{doc.dte_type_display}</TooltipContent>
+                        </Tooltip>
                     </div>
                 )
             },
@@ -321,23 +278,24 @@ export default function PurchaseInvoicesPage() {
             header: "Estado",
             cell: ({ row }) => {
                 const doc = row.original
-                const badgeStyle = statusMap[doc.status] || { label: doc.status, variant: 'secondary' }
                 return (
-                    <div className="flex flex-col gap-1">
+                    <div className="flex flex-col gap-1 items-start">
                         {doc.status !== 'POSTED' && (
-                            <Badge variant={badgeStyle.variant} className="text-[8px] h-4 px-1 uppercase whitespace-nowrap">
-                                {badgeStyle.label}
-                            </Badge>
+                            <StatusBadge
+                                status={doc.status}
+                                label={doc.status === 'DRAFT' ? 'Folio Pendiente' : undefined}
+                                size="xs"
+                            />
                         )}
                         {/* Additional Status Badges */}
                         <div className="flex flex-wrap gap-1">
                             {(doc.pending_amount ?? 0) <= 0 && doc.status !== 'DRAFT' && doc.status !== 'PAID' && (
-                                <Badge variant="success" className="text-[8px] h-4 px-1 uppercase whitespace-nowrap">Pagado</Badge>
+                                <StatusBadge status="PAID" size="xs" />
                             )}
                             {doc.po_receiving_status === 'RECEIVED' && (
-                                <Badge variant="outline" className="text-[8px] h-4 px-1 uppercase border-warning text-warning font-bold whitespace-nowrap">
+                                <Chip size="xs" intent="warning" className="border-warning text-warning">
                                     {doc.dte_type === 'NOTA_CREDITO' ? 'Devuelto' : 'Recibido'}
-                                </Badge>
+                                </Chip>
                             )}
                         </div>
                     </div>
@@ -362,7 +320,7 @@ export default function PurchaseInvoicesPage() {
                                     orderId: doc.purchase_order!,
                                     invoiceId: ['NOTA_CREDITO', 'NOTA_DEBITO'].includes(doc.dte_type) ? doc.id : null,
                                     type: 'purchase',
-                                    onActionSuccess: fetchDocuments
+                                    onActionSuccess: refetch
                                 })}
                                 title="Gestionar Orden"
                                 className="h-8 px-3"
@@ -371,106 +329,39 @@ export default function PurchaseInvoicesPage() {
                                 Gestionar
                             </Button>
                         ) : (
-                            <>
+                            (() => {
+                                const canPay = (doc.pending_amount ?? 0) > 0 && ['POSTED'].includes(doc.status)
+                                const canReceive = (doc.purchase_order || isNote) && doc.po_receiving_status !== 'RECEIVED'
+                                const canCompleteFolio = doc.status === 'DRAFT'
+                                const canCreateNote = !isNote && doc.number && doc.status !== 'DRAFT'
+                                const hasPayments = (doc.related_documents?.payments?.length ?? 0) > 0 || (doc.serialized_payments?.length ?? 0) > 0
+                                const canDelete = doc.status === 'DRAFT'
+                                const canAnnul = doc.status !== 'DRAFT' && doc.status !== 'CANCELLED'
 
-                                {/* View Details */}
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => openTransaction(doc.id, 'invoice', 'details')}
-                                    title="Ver Detalle"
-                                >
-                                    <Eye className="h-4 w-4" />
-                                </Button>
+                                const overflow = [
+                                    ...(canCompleteFolio ? [{ icon: FileEdit, label: 'Completar Folio', onClick: () => setCompletingDoc(doc) }] : []),
+                                    ...(canReceive ? [{ action: 'receive' as const, label: doc.dte_type === 'NOTA_CREDITO' ? 'Devolución Mercadería' : 'Recibir Mercadería', onClick: () => setReceivingDoc(doc) }] : []),
+                                    ...(canCreateNote ? [{ icon: FileBadge, label: 'Registrar Nota Crédito/Débito', onClick: () => setNotingDoc(doc) }] : []),
+                                    ...(hasPayments ? [{ icon: History, label: 'Historial de Pagos', onClick: () => openTransaction(doc.id, 'invoice') }] : []),
+                                    ...((canAnnul || canDelete) ? [{ separator: true } as const] : []),
+                                    ...(canDelete ? [{ action: 'delete' as const, onClick: () => handleDelete(doc.id) }] : []),
+                                    ...(canAnnul ? [{ action: 'annul' as const, onClick: () => handleAnnul(doc.id) }] : []),
+                                ]
 
-                                {/* Finalize Folio (Draft only) */}
-                                {doc.status === 'DRAFT' && (
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="text-warning"
-                                        onClick={() => setCompletingDoc(doc)}
-                                        title="Completar Folio"
-                                    >
-                                        <FileEdit className="h-4 w-4" />
-                                    </Button>
-                                )}
-
-                                {/* Receive/Send Merchandise */}
-                                {(doc.purchase_order || isNote) && doc.po_receiving_status !== 'RECEIVED' && (
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="text-warning"
-                                        onClick={() => setReceivingDoc(doc)}
-                                        title={doc.dte_type === 'NOTA_CREDITO' ? "Devolución Mercadería" : "Recibir Mercadería"}
-                                    >
-                                        <Package className="h-4 w-4" />
-                                    </Button>
-                                )}
-
-
-                                {/* Credit/Debit Note (Only for primary documents with folio) */}
-                                {!isNote && doc.number && doc.status !== 'DRAFT' && (
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="text-warning"
-                                        onClick={() => setNotingDoc(doc)}
-                                        title="Registrar Nota Crédito/Débito"
-                                    >
-                                        <FileBadge className="h-4 w-4" />
-                                    </Button>
-                                )}
-
-                                {/* Register Payment / Refund */}
-                                {(doc.pending_amount ?? 0) > 0 && ['POSTED'].includes(doc.status) && (
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="text-success"
-                                        onClick={() => setPayingDoc(doc)}
-                                        title={doc.dte_type === 'NOTA_CREDITO' ? "Registrar Devolución Dinero" : "Registrar Pago"}
-                                    >
-                                        <Banknote className="h-4 w-4" />
-                                    </Button>
-                                )}
-
-                                {/* Payment History */}
-                                {((doc.related_documents?.payments?.length ?? 0) > 0 || (doc.serialized_payments?.length ?? 0) > 0) && (
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="text-success"
-                                        onClick={() => openTransaction(doc.id, 'invoice', 'history')}
-                                        title="Historial de Pagos"
-                                    >
-                                        <History className="h-4 w-4" />
-                                    </Button>
-                                )}
-
-                                {doc.status === 'DRAFT' ? (
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="text-destructive"
-                                        onClick={() => handleDelete(doc.id)}
-                                        title="Eliminar"
-                                    >
-                                        <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                ) : doc.status !== 'CANCELLED' ? (
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="text-destructive hover:text-destructive"
-                                        onClick={() => handleAnnul(doc.id)}
-                                        title="Anular Documento"
-                                    >
-                                        <X className="h-4 w-4" />
-                                    </Button>
-                                ) : null}
-                            </>
+                                return (
+                                    <>
+                                        <DataCell.Action action="detail" title="Ver Detalle" onClick={() => openTransaction(doc.id, 'invoice')} />
+                                        {canPay && (
+                                            <DataCell.Action
+                                                action="pay"
+                                                title={doc.dte_type === 'NOTA_CREDITO' ? 'Registrar Devolución Dinero' : 'Registrar Pago'}
+                                                onClick={() => setPayingDoc(doc)}
+                                            />
+                                        )}
+                                        {overflow.length > 0 && <DataCell.ActionMenu items={overflow} />}
+                                    </>
+                                )
+                            })()
                         )}
                     </div>
                 )
@@ -479,81 +370,55 @@ export default function PurchaseInvoicesPage() {
     ]
 
     return (
-        <PageContainer>
-            {loading ? (
-                <div className="rounded-xl border shadow-sm overflow-hidden bg-card p-4">
-                    <TableSkeleton rows={5} columns={8} />
-                </div>
-            ) : (
-                <div className="">
-                    <DataTable
-                        columns={columns}
-                        data={documents}
-                        variant="embedded"
-                        isLoading={loading}
-                        filterColumn="partner_name"
-                        searchPlaceholder="Buscar por proveedor..."
-                        facetedFilters={[
-                            {
-                                column: "status",
-                                title: "Estado",
-                                options: [
-                                    { label: "Folio Pendiente", value: "DRAFT" },
-                                    { label: "Publicado", value: "POSTED" },
-                                    { label: "Pagado", value: "PAID" },
-                                    { label: "Anulado", value: "CANCELLED" },
-                                ],
-                            },
-                        ]}
-                        useAdvancedFilter={true}
-                        defaultPageSize={20}
-                        renderCustomView={(table) => {
-                            const rows = table.getRowModel().rows
-                            if (rows.length === 0) {
-                                return (
-                                    <EmptyState
-                                        context="inventory"
-                                        variant="full"
-                                        title="No se encontraron documentos"
-                                        className="bg-muted/30 rounded-lg border-2 border-dashed"
-                                    />
-                                )
-                            }
-                            return (
-                                <div className="grid gap-3 pt-2">
-                                    {rows.map((row: { original: PurchaseDocument }) => {
-                                        const doc: PurchaseDocument = row.original
-                                        return (
-                                            <InvoiceCard
-                                                key={doc.id}
-                                                item={doc as any}
-                                                type="purchase_invoice"
-                                                onClick={() => {
-                                                    openHub({
-                                                        orderId: doc.purchase_order || null,
-                                                        invoiceId: doc.id,
-                                                        type: 'purchase',
-                                                        onActionSuccess: fetchDocuments
-                                                    })
-                                                }}
-                                            />
-                                        )
-                                    })}
-                                </div>
-                            )
-                        }}
-                    />
-                </div>
-            )}
+        <div className="flex-1 min-h-0 flex flex-col">
+            <div className="flex-1 min-h-0">
+                <DataTableView
+                    columns={columns}
+                    data={invoices as PurchaseDocument[]}
+                    variant="embedded"
+                    isLoading={isDataLoading}
+                    entityLabel="billing.invoice"
+                    leftAction={
+                        <SmartSearchBar
+                            searchDef={purchaseInvoiceSearchDef}
+                            placeholder="Buscar por proveedor, folio o fecha..."
+                        />
+                    }
+                    onReset={clearAll}
+                    isHubOpen={isHubOpen}
+                    isSelected={(doc: PurchaseDocument) => selectedId === String(doc.id)}
+                    onRowClick={(doc: PurchaseDocument) => {
+                        openHub({
+                            orderId: doc.purchase_order || null,
+                            invoiceId: doc.id,
+                            type: 'purchase',
+                            onActionSuccess: refetch,
+                        })
+                    }}
+                    facetedFilters={[
+                        {
+                            column: "status",
+                            title: "Estado",
+                            options: [
+                                { label: "Folio Pendiente", value: "DRAFT" },
+                                { label: "Publicado", value: "POSTED" },
+                                { label: "Pagado", value: "PAID" },
+                                { label: "Anulado", value: "CANCELLED" },
+                            ],
+                        },
+                    ]}
+                    useAdvancedFilter={true}
+                    defaultPageSize={20}
+                />
+            </div>
 
             {
                 viewingTransaction && (
-                    <TransactionViewModal
+                    <LazyDrawer
+                        type={viewingTransaction.type}
+                        id={Number(viewingTransaction.id)}
                         open={!!viewingTransaction}
                         onOpenChange={(open: boolean) => !open && closeTransaction()}
-                        type={viewingTransaction.type as any}
-                        id={viewingTransaction.id}
-                        view={viewingTransaction.view}
                     />
                 )
             }
@@ -584,12 +449,11 @@ export default function PurchaseInvoicesPage() {
                         open={!!receivingDoc}
                         onOpenChange={(open: boolean) => !open && setReceivingDoc(null)}
                         orderId={receivingDoc.purchase_order}
-                        onSuccess={fetchDocuments}
+                        onSuccess={refetch}
                         isRefund={receivingDoc.dte_type === 'NOTA_CREDITO'}
                     />
                 )
             }
-
 
             {
                 notingDoc && (
@@ -599,7 +463,7 @@ export default function PurchaseInvoicesPage() {
                         orderId={notingDoc.purchase_order}
                         orderNumber={notingDoc.purchase_order_number || notingDoc.purchase_order?.toString()}
                         invoiceId={notingDoc.id}
-                        onSuccess={fetchDocuments}
+                        onSuccess={refetch}
                     />
                 )
             }
@@ -616,7 +480,7 @@ export default function PurchaseInvoicesPage() {
                                 headers: { 'Content-Type': 'multipart/form-data' }
                             })
                         }}
-                        onSuccess={fetchDocuments}
+                        onSuccess={refetch}
                     />
                 )
             }
@@ -647,8 +511,7 @@ export default function PurchaseInvoicesPage() {
                 description="Este documento tiene pagos asociados. ¿Desea anular también todos los pagos vinculados automáticamente?"
                 variant="destructive"
             />
-        </PageContainer>
+        </div>
     )
 }
-
 

@@ -1,6 +1,12 @@
 // POS Type Definitions
 // Centralized TypeScript types for the POS system
 
+/**
+ * Full POS product shape.
+ * Structurally satisfies BaseProduct from @/features/inventory/types —
+ * pass Product wherever BaseProduct is expected (duck-typing compatible).
+ * Do NOT import BaseProduct here to avoid circular dependency risk.
+ */
 export interface Product {
     id: number
     code: string

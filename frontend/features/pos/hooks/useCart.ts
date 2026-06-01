@@ -9,8 +9,7 @@ import * as CartUtils from '@/features/pos/utils/cart-utils'
 import * as Validation from '@/features/pos/utils/validation'
 import * as StockCalculator from '@/features/pos/utils/stock-calculator'
 import * as BOMResolver from '@/features/pos/utils/bom-resolver'
-import { PricingUtils } from '@/features/inventory/utils/pricing'
-import api from '@/lib/api'
+import { posApi } from '../api/posApi'
 
 export function useCart() {
     const {
@@ -69,16 +68,14 @@ export function useCart() {
         uomId: number
     ): Promise<{ net: number, gross: number }> => {
         try {
-            const params = new URLSearchParams({
+            const data = await posApi.getEffectiveSalePrice({
                 product_id: product.id.toString(),
                 quantity: quantity.toString(),
                 uom_id: uomId.toString()
             })
-
-            const res = await api.get(`/sales/pricing/effective-sale-price/?${params.toString()}`)
             return {
-                net: parseFloat(res.data.price_net),
-                gross: parseFloat(res.data.price_gross)
+                net: parseFloat((data as any).price_net),
+                gross: parseFloat((data as any).price_gross)
             }
         } catch (error) {
             console.error("Error fetching price:", error)

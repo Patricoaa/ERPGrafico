@@ -1,6 +1,7 @@
 from django.db import transaction
 from django.core.exceptions import ValidationError
 from django.utils import timezone
+from django.contrib.contenttypes.models import ContentType
 from decimal import Decimal
 from typing import List, Dict, Optional
 
@@ -690,7 +691,9 @@ class NoteCheckoutService:
             date=invoice.date,
             description=f"{invoice.get_dte_type_display()} {invoice.number}",
             reference=f"WORKFLOW-{workflow.id}",
-            status=JournalEntry.State.DRAFT
+            status=JournalEntry.State.DRAFT,
+            source_content_type=ContentType.objects.get_for_model(Invoice),
+            source_object_id=invoice.id,
         )
         
         invoice.journal_entry = entry

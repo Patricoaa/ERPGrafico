@@ -21,7 +21,7 @@ export function PurchasingHeader() {
 
     const navigation = {
         moduleName: "Compras",
-        moduleHref: "/purchasing",
+        moduleHref: "/purchasing/orders",
         tabs,
         activeValue,
         subActiveValue,

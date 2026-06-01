@@ -2,24 +2,22 @@
 
 import React from "react"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
-import { Separator } from "@/components/ui/separator"
-import { Badge } from "@/components/ui/badge"
+
 import { Button } from "@/components/ui/button"
 import {
     Table, TableBody, TableCell, TableHead, TableHeader, TableRow
 } from "@/components/ui/table"
 import {
-    Loader2, Trash2, Pencil, Sparkles, AlertCircle, DollarSign, Clock, CheckCircle2, Plus, History
+    Loader2, Sparkles, AlertCircle, DollarSign, Clock, CheckCircle2, Plus, History
 } from "lucide-react"
-import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
 
-import { cn } from "@/lib/utils"
+import { cn, formatPlainDate } from "@/lib/utils"
 import type { Payroll, PayrollItem } from "@/types/hr"
-import { DataCell } from "@/components/ui/data-table-cells"
+import { ActionConfirmModal, DataCell, MoneyDisplay, StatusBadge } from '@/components/shared'
 import { formatEntityDisplay } from "@/lib/entity-registry"
 
 import { useConfirmAction } from "@/hooks/useConfirmAction"
-import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+
 import { FormSection } from "@/components/shared"
 
 const LABEL_STYLE = "text-[10px] font-black uppercase text-muted-foreground tracking-widest"
@@ -62,24 +60,12 @@ function ItemRow({ item, type, isReadOnly, onEdit, onDeleteRequest }: {
                 {type === 'DESCUENTO' && <DataCell.Currency value={item.amount} className="text-[11px] font-black text-expense" />}
             </TableCell>
             {!isReadOnly && (
-                <TableCell className="w-[80px] p-0 pr-6 text-right">
-                    <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 rounded-sm text-muted-foreground hover:text-primary hover:bg-primary/5"
-                            onClick={() => onEdit?.(item)}
-                        >
-                            <Pencil className="h-3 w-3" />
-                        </Button>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 rounded-sm text-muted-foreground hover:text-expense hover:bg-expense/10"
-                            onClick={() => onDeleteRequest?.(item)}
-                        >
-                            <Trash2 className="h-3 w-3" />
-                        </Button>
+                <TableCell className="w-[80px] p-0 text-right">
+                    <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                        <DataCell.ActionGroup className="justify-end">
+                            <DataCell.Action action="edit" onClick={() => onEdit?.(item)} />
+                            <DataCell.Action action="delete" onClick={() => onDeleteRequest?.(item)} />
+                        </DataCell.ActionGroup>
                     </div>
                 </TableCell>
             )}
@@ -210,14 +196,12 @@ export function PayrollCard({
 
                     {!isReadOnly && (
                         <div className="hidden sm:flex flex-col items-end gap-3 shrink-0">
-                            <Badge variant="outline" className={cn(
-                                "px-4 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-sm shadow-sm border-none ring-1 ring-inset",
-                                isPosted
-                                    ? "bg-success/10 text-success ring-success/20"
-                                    : "bg-warning/10 text-warning ring-warning/20"
-                            )}>
-                                {payroll.status_display}
-                            </Badge>
+                            <StatusBadge
+                                status={payroll.status || (isPosted ? 'POSTED' : 'DRAFT')}
+                                label={payroll.status_display}
+                                size="md"
+                                className="px-4 py-1.5 shadow-sm rounded-sm"
+                            />
                         </div>
                     )}
                 </div>
@@ -245,7 +229,6 @@ export function PayrollCard({
                     </div>
                 </div>
             </CardHeader>
-
 
             <CardContent className="px-10 py-8">
                 {/* 2. CONSOLIDATED DETAIL TABLE */}
@@ -295,7 +278,6 @@ export function PayrollCard({
                         </TableBody>
                     </Table>
                 </div>
-
 
                 {!isReadOnly && onAddItem && (
                     <div className="mt-4 flex justify-end">
@@ -369,7 +351,7 @@ export function PayrollCard({
                                                     </span>
                                                 </div>
                                                 <span className="text-[9px] text-muted-foreground font-bold uppercase tracking-tighter mt-1 opacity-60">
-                                                    {new Date(p.date).toLocaleDateString('es-CL', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                                    {formatPlainDate(p.date)}
                                                 </span>
                                             </div>
                                             <MoneyDisplay amount={p.amount} className="text-xs font-black text-foreground tabular-nums" />
@@ -415,7 +397,7 @@ export function PayrollCard({
                         Documento Oficial de Remuneraciones
                     </p>
                     <p className="text-[9px] text-muted-foreground/30 font-medium italic">
-                        Generado por el Módulo de RRHH • {new Date().toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric' })}
+                        Generado por el Módulo de RRHH • {formatPlainDate(new Date().toISOString().split('T')[0])}
                     </p>
                 </div>
 
@@ -423,7 +405,7 @@ export function PayrollCard({
 
             <ActionConfirmModal
                 open={itemDeleteConfirm.isOpen}
-                onOpenChange={(open) => { 
+                onOpenChange={(open) => {
                     if (!open) {
                         itemDeleteConfirm.cancel()
                         setItemToDelete(null)

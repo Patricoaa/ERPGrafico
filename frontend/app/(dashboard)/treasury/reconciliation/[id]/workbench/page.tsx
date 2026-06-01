@@ -3,17 +3,16 @@
 import { use } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, Loader2, CheckCircle2 } from "lucide-react"
-import { useStatementQuery } from "@/features/finance/bank-reconciliation/hooks/useReconciliationQueries"
+import { Loader2, CheckCircle2 } from "lucide-react"
+import { useStatementQuery } from "@/features/finance"
 import { ReconciliationPanel } from "@/features/treasury"
-import { DataCell } from "@/components/ui/data-table-cells"
+import { ActionConfirmModal, PageHeader } from '@/components/shared'
 import { useConfirmAction } from "@/hooks/useConfirmAction"
-import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
+
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { showApiError } from "@/lib/errors"
-import { TableSkeleton } from "@/components/shared"
-import { PageHeader } from "@/components/shared/PageHeader"
+import { SkeletonShell } from "@/components/shared"
 
 export default function WorkbenchPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params)
@@ -35,15 +34,15 @@ export default function WorkbenchPage({ params }: { params: Promise<{ id: string
 
     if (isLoading) {
         return (
-            <div className="flex-1 p-8 pt-6">
-                <TableSkeleton rows={12} columns={5} />
+            <div className="flex-1">
+                <SkeletonShell isLoading ariaLabel="Cargando..." />
             </div>
         )
     }
 
     if (!statement) {
         return (
-            <div className="flex-1 p-8 flex items-center justify-center">
+            <div className="flex-1 flex items-center justify-center min-h-[200px]">
                 <p className="text-muted-foreground">No se encontró la cartola.</p>
             </div>
         )
@@ -108,7 +107,7 @@ export default function WorkbenchPage({ params }: { params: Promise<{ id: string
                 titleActions={
                     statement.reconciliation_progress === 100 && statement.state !== 'CONFIRMED' && (
                         <Button
-                            onClick={confirmAction.requestConfirm}
+                            onClick={() => confirmAction.requestConfirm()}
                             disabled={confirmAction.isConfirming}
                             className="bg-success hover:bg-success/90 shadow-sm px-5 font-bold text-sm"
                         >
@@ -124,7 +123,7 @@ export default function WorkbenchPage({ params }: { params: Promise<{ id: string
 
             <ReconciliationPanel
                 statementId={statement.id}
-                treasuryAccountId={statement.treasury_account}
+                treasuryAccountId={(statement as any).treasury_account || (statement as any).treasury_account_id || 0}
                 onComplete={() => refetch()}
             />
 

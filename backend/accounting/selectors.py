@@ -1,7 +1,11 @@
 from django.db.models import Q, QuerySet, Sum, FilteredRelation, Count
 
 
-from .models import Account, AccountType
+from .models import Account, AccountType, JournalEntry
+
+
+def balance_affecting_statuses():
+    return JournalEntry.balance_affecting_statuses()
 
 
 def list_accounts(*, params: dict) -> QuerySet:
@@ -12,18 +16,29 @@ def list_accounts(*, params: dict) -> QuerySet:
     queryset = queryset.annotate(
         annotated_debit_total=Sum(
             'journal_items__debit',
-            filter=Q(journal_items__entry__status='POSTED')
+            filter=Q(journal_items__entry__status__in=balance_affecting_statuses())
         ),
         annotated_credit_total=Sum(
             'journal_items__credit',
-            filter=Q(journal_items__entry__status='POSTED')
+            filter=Q(journal_items__entry__status__in=balance_affecting_statuses())
         ),
         annotated_children_count=Count('children'),
+        annotated_posted_items_count=Count(
+            'journal_items',
+            filter=Q(journal_items__entry__status__in=balance_affecting_statuses()),
+            distinct=True,
+        ),
     )
 
     if params.get("is_leaf", "").lower() == "true":
         queryset = queryset.filter(children__isnull=True)
-    
+
+    if search := params.get("search"):
+        queryset = queryset.filter(Q(name__icontains=search) | Q(code__icontains=search))
+
+    if account_type := params.get("account_type"):
+        queryset = queryset.filter(account_type=account_type)
+
     return queryset
 
 
@@ -51,7 +66,7 @@ def get_account_ledger(*, account: Account, start_date: str | None, end_date: st
     Computes the libro mayor for an account.
     Returns opening_balance, period_debit, period_credit, closing_balance, movements list.
     """
-    base_items = account.journal_items.filter(entry__status="POSTED").select_related("entry")
+    base_items = account.journal_items.filter(entry__status__in=balance_affecting_statuses()).select_related("entry")
 
     opening_balance = 0
     if start_date:

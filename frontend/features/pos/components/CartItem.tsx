@@ -3,20 +3,18 @@
 // CartItem Component
 // Individual cart item row with inline editing
 
-import { useState } from 'react'
 import { memo } from 'react'
-import { Trash2 } from 'lucide-react'
 import { TableRow, TableCell } from '@/components/ui/table'
 import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
+import { Chip, DataCell } from "@/components/shared"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { UoMSelector } from '@/components/selectors'
 import { cn } from '@/lib/utils'
-import { formatCurrency } from '@/lib/currency'
-import { PricingUtils } from '@/features/inventory/utils/pricing'
-import { useDeviceContext, MIN_TOUCH_TARGET } from '@/hooks/useDeviceContext'
+import { formatCurrency } from "@/lib/money"
+import {useDeviceContext} from '@/hooks/useDeviceContext'
 import { useTouchMode } from '@/hooks/useTouchMode'
 import type { CartItem as CartItemType, Product, UoM } from '@/types/pos'
+import type { UoM as EntityUoM } from '@/types/entities'
 
 interface CartItemProps {
     item: CartItemType
@@ -51,13 +49,16 @@ function CartItemComponent({
     const { isTouchMode } = useTouchMode()
     const itemUom = uoms.find(u => u.id === item.uom)
 
-    const productForSelector = originalProduct
-        ? originalProduct
-        : (itemUom ? { id: 0, name: item.name, uom: itemUom.id, category: itemUom.category } : null)
-    const categoryIdFallback = !originalProduct && itemUom ? itemUom.category : undefined
-    const hasMultipleUoms = productForSelector
-        ? (originalProduct?.allowed_sale_uoms?.length ?? 0) > 0 || uoms.filter(u => u.category === itemUom?.category).length > 1
-        : false
+    const allowedUomIds = originalProduct?.allowed_sale_uoms
+    const filteredUoms: UoM[] = allowedUomIds?.length
+        ? uoms.filter(u => allowedUomIds.includes(u.id))
+        : uoms.filter(u => u.category === itemUom?.category)
+
+    const availableUoms: EntityUoM[] = filteredUoms.map(u => ({
+        id: u.id, name: u.name, category: u.category, ratio: Number(u.ratio)
+    }))
+
+    const hasMultipleUoms = availableUoms.length > 1
 
     const handleUomChange = async (newUomId: string) => {
         const newUom = uoms.find(u => u.id.toString() === newUomId)
@@ -85,9 +86,14 @@ function CartItemComponent({
             {/* Product Name */}
             <TableCell className="py-2 align-top">
                 <div className="flex flex-col gap-0.5">
-                    <span className="font-bold text-xs truncate max-w-[150px]" title={item.name}>
-                        {item.name}
-                    </span>
+<Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <span className="font-bold text-xs truncate max-w-[150px]">
+                                                                {item.name}
+                                                            </span>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent side="top">{item.name}</TooltipContent>
+                                                    </Tooltip>
                     <div className="flex flex-wrap gap-1">
                         {item.internal_code && (
                             <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded border border-muted-foreground/20 bg-muted/30 text-muted-foreground opacity-70">
@@ -119,15 +125,16 @@ function CartItemComponent({
                         min="0.01"
                     />
                     {maxQty !== undefined && maxQty !== Infinity && (
-                        <Badge
-                            variant="secondary"
+                        <Chip
+                            size="xs"
+                            intent={isOverLimit ? "destructive" : "neutral"}
                             className={cn(
-                                "text-[8px] px-1 h-3.5 bg-muted text-muted-foreground hover:bg-muted font-normal border-0 whitespace-nowrap",
-                                isOverLimit && "text-destructive bg-destructive/10"
+                                "text-[8px] px-1 h-3.5 border-0 whitespace-nowrap",
+                                !isOverLimit && "bg-muted hover:bg-muted"
                             )}
                         >
                             MAX: {maxQty}
-                        </Badge>
+                        </Chip>
                     )}
                 </div>
             </TableCell>
@@ -135,14 +142,13 @@ function CartItemComponent({
             {/* UoM */}
             <TableCell className="py-2 align-top">
                 <div className="flex justify-center">
-                    {hasMultipleUoms && productForSelector ? (
+                    {hasMultipleUoms ? (
                         <UoMSelector
-                            product={(originalProduct ?? null) as any}
-                            categoryId={categoryIdFallback}
-                            context="sale"
+                            product={null}
+                            context="stock"
                             value={item.uom?.toString() ?? ''}
                             onChange={handleUomChange}
-                            uoms={uoms as any}
+                            uoms={availableUoms}
                             variant="inline"
                             className="h-6 text-[10px]"
                         />
@@ -218,21 +224,13 @@ function CartItemComponent({
             {/* Actions */}
             <TableCell className="py-2 align-top">
                 {posMode === 'SHOPPING' && (
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        className={cn(
-                            "opacity-0 group-hover:opacity-100 transition-opacity",
-                            // Touch-friendly sizing
-                            isTouchPOS ? "h-10 w-10" : "h-6 w-6"
-                        )}
-                        onClick={() => onRemove(item.cartItemId)}
-                    >
-                        <Trash2 className={cn(
-                            "text-destructive",
-                            isTouchPOS ? "h-5 w-5" : "h-3 w-3"
-                        )} />
-                    </Button>
+                    <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                        <DataCell.Action
+                            action="delete"
+                            compact={!isTouchPOS}
+                            onClick={() => onRemove(item.cartItemId)}
+                        />
+                    </div>
                 )}
             </TableCell>
         </TableRow>

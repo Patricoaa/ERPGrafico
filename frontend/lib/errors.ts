@@ -58,7 +58,18 @@ export function getErrorMessage(error: unknown): string {
     // Axios-like errors (most common in this codebase)
     if (isAxiosLikeError(error)) {
         const data = error.response?.data
+        console.log("DEBUG getErrorMessage data:", data)
         if (data) {
+            // Handle custom error shape from core.api.exceptions
+            if (typeof data.error === "object" && data.error !== null) {
+                const errObj = data.error as Record<string, unknown>;
+                if (typeof errObj.message === "string") return errObj.message;
+                if (Array.isArray(errObj.message) && errObj.message.length > 0) {
+                    const firstMsg = errObj.message[0];
+                    if (typeof firstMsg === "string") return firstMsg;
+                }
+            }
+
             // DRF standard fields
             if (typeof data.error === "string") return data.error
             if (typeof data.detail === "string") return data.detail

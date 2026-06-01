@@ -1,7 +1,7 @@
 "use client"
+import { formatCurrency } from "@/lib/money";
 
-import { showApiError } from "@/lib/errors"
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import {
@@ -12,7 +12,6 @@ import {
     Package,
     History as HistoryIcon
 } from "lucide-react"
-import api from "@/lib/api"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { toast } from "sonner"
@@ -20,17 +19,19 @@ import { DeclarationWizard } from "@/features/tax/components/DeclarationWizard"
 import { F29PaymentModal } from "@/features/tax/components/F29PaymentModal"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { useServerDate } from "@/hooks/useServerDate"
-import { DataTable } from "@/components/ui/data-table"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { DataTableColumnHeader, DataTableView, EntityCard, StatusBadge } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
-import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
+import { DataCell, createActionsColumn } from '@/components/shared'
 import { cn } from "@/lib/utils"
-import { StatusBadge } from "@/components/shared/StatusBadge"
+
 import { TaxPeriod, TaxDeclaration, TaxPaymentData } from "../types"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
-import { Row } from "@tanstack/react-table"
-import { CardSkeleton, TableSkeleton } from "@/components/shared"
-import { EntityCard } from "@/components/shared/EntityCard"
+import { type Row, type Table } from "@tanstack/react-table"
+import { CardSkeleton, SmartSearchBar, useClientSearch } from "@/components/shared"
+import { taxPeriodSearchDef } from "@/features/tax/searchDef"
+
+import { useTaxPeriods, useLazyTaxDeclarations } from "../hooks/useTaxQueries"
+import { useCreateTaxPayment } from "../hooks/useTaxMutations"
 
 interface TaxDeclarationsViewProps {
     externalOpen?: boolean
@@ -42,16 +43,20 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange, create
     const searchParams = useSearchParams()
     const router = useRouter()
     const pathname = usePathname()
-    const [periods, setPeriods] = useState<TaxPeriod[]>([])
-    const [isLoading, setIsLoading] = useState(true)
     const [isWizardOpen, setIsWizardOpen] = useState(false)
     const [isPaymentOpen, setIsPaymentOpen] = useState(false)
     const [selectedPeriodId, setSelectedPeriodId] = useState<number | undefined>(undefined)
     const [selectedDeclaration, setSelectedDeclaration] = useState<TaxDeclaration | null>(null)
-
     const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<TaxPeriod>({
         endpoint: '/tax/periods'
     })
+
+    const { data: periodsData, isLoading: isLoadingPeriods, refetch: refetchPeriods } = useTaxPeriods()
+    const { fetchDeclarations } = useLazyTaxDeclarations()
+    const createPaymentMutation = useCreateTaxPayment()
+
+    const periods = ((periodsData as { results?: TaxPeriod[] })?.results || (periodsData as TaxPeriod[]) || []) as TaxPeriod[]
+    const isLoading = isLoadingPeriods
 
     const handleCloseModal = () => {
         setIsWizardOpen(false)
@@ -59,7 +64,7 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange, create
         setSelectedPeriodId(undefined)
         setSelectedDeclaration(null)
         onExternalOpenChange?.(false)
-        
+
         const params = new URLSearchParams(searchParams.toString())
         params.delete("selected")
         params.delete("action")
@@ -75,65 +80,15 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange, create
         }
     }
 
-    const fetchPeriods = async () => {
-        setIsLoading(true)
-        try {
-            const response = await api.get<{ results?: TaxPeriod[] } | TaxPeriod[]>("/tax/periods/?page_size=100")
-            const fetchedPeriods = (response.data as { results?: TaxPeriod[] }).results || (response.data as TaxPeriod[])
-            setPeriods(fetchedPeriods)
-            
-            // The effect above will handle the modal opening based on selectedFromUrl
-        } catch (error) {
-            console.error("Error fetching tax periods:", error)
-            toast.error("Error al cargar los períodos tributarios")
-        } finally {
-            setIsLoading(false)
-        }
-    }
-
-    useEffect(() => {
-        fetchPeriods()
-    }, [])
-
     useEffect(() => {
         if (externalOpen) {
             setIsWizardOpen(true)
         }
     }, [externalOpen])
 
-    // State watchers for URL params without re-fetching
-    useEffect(() => {
-        if (selectedFromUrl) {
-            const action = searchParams.get('action')
-            if (action === 'pay') {
-                if (!isPaymentOpen && selectedDeclaration?.tax_period_year !== selectedFromUrl.year) {
-                    openPaymentModal(selectedFromUrl)
-                }
-            } else {
-                if (!isWizardOpen && selectedPeriodId !== selectedFromUrl.id) {
-                    openWizardModal(selectedFromUrl)
-                }
-            }
-        }
-    }, [selectedFromUrl, searchParams])
-
-    const handleOpenWizard = (period: TaxPeriod) => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.set('selected', String(period.id))
-        params.delete('action')
-        router.push(`${pathname}?${params.toString()}`, { scroll: false })
-    }
-
     const openWizardModal = (period: TaxPeriod) => {
         setSelectedPeriodId(period.id)
         setIsWizardOpen(true)
-    }
-
-    const handleOpenPayment = (period: TaxPeriod) => {
-        const params = new URLSearchParams(searchParams.toString())
-        params.set('selected', String(period.id))
-        params.set('action', 'pay')
-        router.push(`${pathname}?${params.toString()}`, { scroll: false })
     }
 
     const openPaymentModal = async (period: TaxPeriod) => {
@@ -161,8 +116,7 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange, create
             setIsPaymentOpen(true)
         } else {
             try {
-                const resp = await api.get<{ results?: TaxDeclaration[] } | TaxDeclaration[]>(`/tax/declarations/?tax_period__year=${period.year}&tax_period__month=${period.month}`)
-                const declarations = (resp.data as { results?: TaxDeclaration[] }).results || (resp.data as TaxDeclaration[])
+                const declarations = await fetchDeclarations({ tax_period__year: period.year, tax_period__month: period.month })
                 if (declarations.length > 0) {
                     setSelectedDeclaration({
                         ...declarations[0],
@@ -172,10 +126,40 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange, create
                 } else {
                     toast.error("No se encontró una declaración válida para pagar")
                 }
-            } catch (error) {
+            } catch {
                 toast.error("Error al buscar la declaración")
             }
         }
+    }
+
+    // State watchers for URL params without re-fetching
+    useEffect(() => {
+        if (selectedFromUrl) {
+            const action = searchParams.get('action')
+            if (action === 'pay') {
+                if (!isPaymentOpen && selectedDeclaration?.tax_period_year !== selectedFromUrl.year) {
+                    openPaymentModal(selectedFromUrl)
+                }
+            } else {
+                if (!isWizardOpen && selectedPeriodId !== selectedFromUrl.id) {
+                    openWizardModal(selectedFromUrl)
+                }
+            }
+        }
+    }, [selectedFromUrl, searchParams])
+
+    const handleOpenWizard = (period: TaxPeriod) => {
+        const params = new URLSearchParams(searchParams.toString())
+        params.set('selected', String(period.id))
+        params.delete('action')
+        router.push(`${pathname}?${params.toString()}`, { scroll: false })
+    }
+
+    const handleOpenPayment = (period: TaxPeriod) => {
+        const params = new URLSearchParams(searchParams.toString())
+        params.set('selected', String(period.id))
+        params.set('action', 'pay')
+        router.push(`${pathname}?${params.toString()}`, { scroll: false })
     }
 
     const { serverDate, dateString } = useServerDate()
@@ -183,7 +167,7 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange, create
     const handlePaymentConfirm = async (data: TaxPaymentData) => {
         if (!selectedDeclaration) return
         try {
-            await api.post("/tax/payments/", {
+            await createPaymentMutation.mutateAsync({
                 declaration: selectedDeclaration.id,
                 payment_date: data.documentDate || dateString || "",
                 amount: data.amount,
@@ -194,13 +178,14 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange, create
             })
 
             toast.success("Pago de impuestos registrado correctamente")
-            fetchPeriods()
             setIsPaymentOpen(false)
-        } catch (error: unknown) {
-            console.error("Error saving payment:", error)
-            showApiError(error, "Error al registrar el pago")
+        } catch {
+            // Error handled by mutation's onError
         }
     }
+
+    const { filterFn } = useClientSearch<TaxPeriod>(taxPeriodSearchDef)
+    const filteredPeriods = filterFn(periods)
 
     const latestPeriod = periods.length > 0 ? periods[0] : null
     const currentPeriodDisplay = latestPeriod
@@ -248,7 +233,7 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange, create
                 const amount = row.getValue("vat_to_pay") as number
                 return (
                     <div className="flex justify-center w-full font-mono">
-                        {new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(amount)}
+                        {formatCurrency(amount)}
                     </div>
                 )
             }
@@ -283,18 +268,18 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange, create
                 return (
                     <>
                         {showPaymentButton && (
-                            <DataCell.Action 
-                                icon={isFullyPaid ? HistoryIcon : DollarSign} 
-                                title={isFullyPaid ? "Ver Pagos" : "Pagar"} 
+                            <DataCell.Action
+                                icon={isFullyPaid ? HistoryIcon : DollarSign}
+                                title={isFullyPaid ? "Ver Pagos" : "Pagar"}
                                 onClick={(e) => { e.stopPropagation(); handleOpenPayment(period); }}
                                 className={isFullyPaid ? "text-success" : "text-success"}
                             />
                         )}
                         {canOpenChecklist && (
-                            <DataCell.Action 
-                                icon={ArrowRight} 
-                                title="Iniciar declaración/cierre F29" 
-                                onClick={(e) => { e.stopPropagation(); handleOpenWizard(period); }} 
+                            <DataCell.Action
+                                icon={ArrowRight}
+                                title="Iniciar declaración/cierre F29"
+                                onClick={(e) => { e.stopPropagation(); handleOpenWizard(period); }}
                             />
                         )}
                     </>
@@ -304,8 +289,8 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange, create
     ]
 
     return (
-        <div className="space-y-6 pt-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="h-full flex flex-col">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 shrink-0">
                 {isLoading ? (
                     <CardSkeleton count={3} variant="grid" />
                 ) : (
@@ -336,7 +321,7 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange, create
                             <CardHeader className="pb-2">
                                 <CardTitle className="text-sm font-medium text-muted-foreground">IVA por Pagar (Estimado)</CardTitle>
                                 <CardDescription className="text-2xl font-bold text-foreground">
-                                    {new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(currentVatToPay)}
+                                    {formatCurrency(currentVatToPay)}
                                 </CardDescription>
                             </CardHeader>
                             <CardContent>
@@ -363,125 +348,115 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange, create
                 )}
             </div>
 
-            <DataTable
-                columns={columns}
-                data={periods}
-                isLoading={isLoading}
-                variant="embedded"
-                filterColumn="period_display"
-                searchPlaceholder="Buscar período..."
-                useAdvancedFilter={true}
-                showToolbarSort={true}
-                createAction={createAction}
-                facetedFilters={[
-                    {
-                        column: "status",
-                        title: "Estado",
-                        options: [
-                            { label: "Abierto", value: "OPEN" },
-                            { label: "Cerrado", value: "CLOSED" },
-                            { label: "En Revisión", value: "UNDER_REVIEW" },
-                        ]
-                    }
-                ]}
-                renderLoadingView={() => (
-                    <div className="grid gap-3 pt-2">
-                        {Array.from({ length: 6 }).map((_, i) => (
-                            <EntityCard.Skeleton key={i} variant="compact" />
-                        ))}
-                    </div>
-                )}
-                renderCustomView={(table) => {
-                    const rows = table.getRowModel().rows
-                    
-                    if (rows.length === 0) {
-                        return (
-                            <div className="flex flex-col items-center justify-center py-12 bg-muted/30 rounded-md border-2 border-dashed">
-                                <Package className="h-12 w-12 text-muted-foreground mb-4 opacity-20" />
-                                <p className="text-muted-foreground font-medium">No se encontraron períodos</p>
-                            </div>
-                        )
-                    }
-                    return (
+            <div className="flex-1 min-h-0">
+                <DataTableView
+                    columns={columns}
+                    data={filteredPeriods}
+                    isLoading={isLoading}
+                    entityLabel="tax.taxperiod"
+                    variant="embedded"
+                    leftAction={<SmartSearchBar searchDef={taxPeriodSearchDef} placeholder="Buscar período..." className="w-full" />}
+                    showToolbarSort={true}
+                    createAction={createAction}
+                    renderLoadingView={useCallback(() => (
                         <div className="grid gap-3 pt-2">
-                            {rows.map((row: Row<TaxPeriod>) => {
-                                const period = row.original
-                                const summary = period.declaration_summary
-                                const isFullyPaid = summary?.is_fully_paid
-                                const showPaymentButton = !!summary || period.status === 'CLOSED'
-                                const canOpenChecklist = period.status === 'OPEN'
+                            {Array.from({ length: 6 }).map((_, i) => (
+                                <EntityCard.Skeleton key={i} variant="compact" />
+                            ))}
+                        </div>
+                    ), [])}
+                    renderCustomView={useCallback((table: Table<TaxPeriod>) => {
+                        const rows = table.getRowModel().rows
 
-                                return (
-                                    <EntityCard
-                                        key={period.id}
-                                        variant="compact"
-                                        className={cn(
-                                            "flex flex-row items-center justify-between",
-                                            canOpenChecklist ? "hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 cursor-pointer" : "cursor-default"
-                                        )}
-                                        onClick={() => canOpenChecklist ? handleOpenWizard(period) : null}
-                                    >
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-sm bg-primary/5 flex flex-col items-center justify-center border border-primary/10 shrink-0">
-                                                <span className="text-[9px] font-bold text-primary/60">{period.year}</span>
-                                                <span className="text-xs font-bold text-primary">{period.month_display?.substring(0, 3).toUpperCase() || ''}</span>
-                                            </div>
-                                            <div className="flex flex-col">
-                                                <span className="text-sm font-semibold">{period.month_display} {period.year}</span>
-                                                <div className="flex items-center gap-2 mt-0.5">
-                                                    <StatusBadge status={period.status} size="sm" />
-                                                    {summary && (
-                                                        <span className="text-[10px] text-muted-foreground font-medium">
-                                                            {new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(summary.vat_to_pay)}
-                                                        </span>
-                                                    )}
+                        if (rows.length === 0) {
+                            return (
+                                <div className="flex flex-col items-center justify-center py-12 bg-muted/30 rounded-md border-2 border-dashed">
+                                    <Package className="h-12 w-12 text-muted-foreground mb-4 opacity-20" />
+                                    <p className="text-muted-foreground font-medium">No se encontraron períodos</p>
+                                </div>
+                            )
+                        }
+                        return (
+                            <div className="grid gap-3 pt-2">
+                                {rows.map((row: Row<TaxPeriod>) => {
+                                    const period = row.original
+                                    const summary = period.declaration_summary
+                                    const isFullyPaid = summary?.is_fully_paid
+                                    const showPaymentButton = !!summary || period.status === 'CLOSED'
+                                    const canOpenChecklist = period.status === 'OPEN'
+
+                                    return (
+                                        <EntityCard
+                                            key={period.id}
+                                            variant="compact"
+                                            className={cn(
+                                                "flex flex-row items-center justify-between",
+                                                canOpenChecklist ? "cursor-pointer" : "cursor-default"
+                                            )}
+                                            onClick={() => canOpenChecklist ? handleOpenWizard(period) : null}
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 rounded-sm bg-primary/5 flex flex-col items-center justify-center border border-primary/10 shrink-0">
+                                                    <span className="text-[9px] font-bold text-primary/60">{period.year}</span>
+                                                    <span className="text-xs font-bold text-primary">{period.month_display?.substring(0, 3).toUpperCase() || ''}</span>
+                                                </div>
+                                                <div className="flex flex-col">
+                                                    <span className="text-sm font-semibold">{period.month_display} {period.year}</span>
+                                                    <div className="flex items-center gap-2 mt-0.5">
+                                                        <StatusBadge status={period.status} size="sm" />
+                                                        {summary && (
+                                                            <span className="text-[10px] text-muted-foreground font-medium">
+                                                                {formatCurrency(summary.vat_to_pay)}
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                        
-                                        <div className="flex items-center gap-2">
-                                            {showPaymentButton && (
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className={cn("h-8 w-8 rounded-sm", isFullyPaid ? "text-success hover:bg-success/10 hover:text-success" : "text-success hover:bg-success/10")}
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handleOpenPayment(period);
-                                                    }}
-                                                    title={isFullyPaid ? "Ver Pagos" : "Pagar"}
-                                                >
-                                                    {isFullyPaid ? <HistoryIcon className="h-4 w-4" /> : <DollarSign className="h-4 w-4" />}
-                                                </Button>
-                                            )}
-                                            {canOpenChecklist && (
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="h-8 w-8 rounded-sm group-hover:translate-x-1 transition-transform"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handleOpenWizard(period);
-                                                    }}
-                                                    title="Iniciar declaración/cierre F29"
-                                                >
-                                                    <ArrowRight className="h-4 w-4 text-primary" />
-                                                </Button>
-                                            )}
-                                        </div>
-                                    </EntityCard>
-                                )
-                            })}
-                        </div>
-                    )
-                }}
-            />
+
+                                            <div className="flex items-center gap-2">
+                                                {showPaymentButton && (
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className={cn("h-8 w-8 rounded-sm", isFullyPaid ? "text-success hover:bg-success/10 hover:text-success" : "text-success hover:bg-success/10")}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleOpenPayment(period);
+                                                        }}
+                                                        title={isFullyPaid ? "Ver Pagos" : "Pagar"}
+                                                    >
+                                                        {isFullyPaid ? <HistoryIcon className="h-4 w-4" /> : <DollarSign className="h-4 w-4" />}
+                                                    </Button>
+                                                )}
+                                                {canOpenChecklist && (
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-8 w-8 rounded-sm"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleOpenWizard(period);
+                                                        }}
+                                                        title="Iniciar declaración/cierre F29"
+                                                    >
+                                                        <ArrowRight className="h-4 w-4 text-primary" />
+                                                    </Button>
+                                                )}
+                                            </div>
+                                        </EntityCard>
+                                    )
+                                })}
+                            </div>
+                        )
+                    }, [handleOpenWizard, handleOpenPayment])}
+                />
+            </div>
             <DeclarationWizard
                 isOpen={isWizardOpen || !!externalOpen}
                 onOpenChange={handleWizardOpenChange}
                 periodId={selectedPeriodId}
                 onSuccess={() => {
-                    fetchPeriods()
+                    refetchPeriods()
                     setIsWizardOpen(false)
                     setSelectedPeriodId(undefined)
                 }}

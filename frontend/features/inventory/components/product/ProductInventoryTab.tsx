@@ -1,12 +1,10 @@
 "use client"
 import { useMemo } from "react"
 import { FormField } from "@/components/ui/form"
-import { Switch } from "@/components/ui/switch"
-import { Package, Warehouse, ChevronDown, Search, Check, Truck, AlertCircle } from "lucide-react"
+import {Package, Warehouse} from "lucide-react"
 import { UseFormReturn } from "react-hook-form"
 import { ProductFormValues } from "./schema"
-import { Button } from "@/components/ui/button"
-import { LabeledContainer, FormTabsContent, FormSection, LabeledSwitch } from "@/components/shared"
+import {FormSection, LabeledSwitch, MultiSelectTagInput} from "@/components/shared"
 import { UoMSelector, WarehouseSelector, AdvancedContactSelector } from "@/components/selectors"
 import { cn } from "@/lib/utils"
 import { Product, UoM } from "@/types/entities"
@@ -25,11 +23,16 @@ export function ProductInventoryTab({ form, initialData, warehouses = [], uoms =
     const trackInventory = form.watch("track_inventory")
     const canBeSold = form.watch("can_be_sold")
     const stockUomId = form.watch("uom")
+    const mfgAutoFinalize = form.watch("mfg_auto_finalize")
+    const requiresAdvancedmfg = form.watch("requires_advanced_manufacturing")
 
     const purchaseUomProduct = useMemo(() => ({ uom: stockUomId } as any), [stockUomId])
 
+    const isSimpleMfg = productType === 'MANUFACTURABLE' && !mfgAutoFinalize && !requiresAdvancedmfg
+    const isAdvancedMfg = productType === 'MANUFACTURABLE' && requiresAdvancedmfg
+
     // Determine if switch is disabled based on requirements
-    const isSwitchDisabled = productType === 'STORABLE' || productType === 'CONSUMABLE' || productType === 'SERVICE'
+    const isSwitchDisabled = productType === 'STORABLE' || productType === 'CONSUMABLE' || productType === 'SERVICE' || mfgAutoFinalize || isSimpleMfg || isAdvancedMfg
 
     return (
         <div className="space-y-10 animate-in fade-in duration-500">
@@ -85,65 +88,26 @@ export function ProductInventoryTab({ form, initialData, warehouses = [], uoms =
                                     render={({ field, fieldState }) => {
                                         const stockUom = uoms.find(u => u.id.toString() === stockUomId?.toString());
                                         const stockCategoryId = stockUom?.category;
-                                        const selectedIds = field.value || [];
                                         const sortedUoms = [...uoms].sort((a, b) => a.name.localeCompare(b.name));
 
-                                        return (
-                                            <LabeledContainer
-                                                label="Unidades de Venta Permitidas"
-                                                error={fieldState.error?.message}
-                                            >
-                                                <div className="flex flex-col gap-3 p-3 w-full">
-                                                    <div className="flex flex-wrap gap-2 items-center w-full">
-                                                        {!stockCategoryId ? (
-                                                            <div className="w-full flex items-center gap-2 text-[10px] text-muted-foreground italic">
-                                                                <AlertCircle className="h-3 w-3" />
-                                                                Defina primero la Unidad de Stock.
-                                                            </div>
-                                                        ) : (
-                                                            <>
-                                                                {sortedUoms
-                                                                    .filter(u => u.category === stockCategoryId)
-                                                                    .map((u: UoM) => {
-                                                                        const isSelected = selectedIds.includes(u.id.toString());
-                                                                        const isBaseUom = u.id.toString() === stockUomId?.toString();
+                                        const options = stockCategoryId
+                                            ? sortedUoms.filter(u => u.category === stockCategoryId).map(u => ({
+                                                label: u.id.toString() === stockUomId?.toString() ? `${u.name} (BASE)` : u.name,
+                                                value: u.id.toString()
+                                            }))
+                                            : [];
 
-                                                                        return (
-                                                                            <button
-                                                                                key={u.id}
-                                                                                type="button"
-                                                                                className={cn(
-                                                                                    "px-3 py-1.5 rounded-lg text-[10px] transition-all border-2",
-                                                                                    isSelected
-                                                                                        ? "bg-primary/10 border-primary/40 text-primary font-black shadow-sm"
-                                                                                        : "bg-background border-primary/5 hover:border-primary/20 text-muted-foreground/60 font-black uppercase tracking-tight",
-                                                                                    isBaseUom && "ring-2 ring-primary ring-offset-2"
-                                                                                )}
-                                                                                onClick={() => {
-                                                                                    if (isSelected) {
-                                                                                        if (isBaseUom) return;
-                                                                                        const newList = selectedIds.filter((id: string) => id !== u.id.toString());
-                                                                                        field.onChange(newList);
-                                                                                    } else {
-                                                                                        const newList = [...selectedIds, u.id.toString()];
-                                                                                        field.onChange(newList);
-                                                                                    }
-                                                                                }}
-                                                                            >
-                                                                                {u.name}
-                                                                                {isBaseUom && <span className="ml-1 opacity-50">(BASE)</span>}
-                                                                            </button>
-                                                                        );
-                                                                    })
-                                                                }
-                                                            </>
-                                                        )}
-                                                    </div>
-                                                    <p className="text-[9px] text-muted-foreground/60 leading-relaxed italic">
-                                                        * Solo unidades de la misma categoría para conversiones precisas.
-                                                    </p>
-                                                </div>
-                                            </LabeledContainer>
+                                        return (
+                                            <MultiSelectTagInput
+                                                label="Unidades de Venta Permitidas"
+                                                options={options}
+                                                value={field.value || []}
+                                                onChange={field.onChange}
+                                                error={fieldState.error?.message}
+                                                disabled={!stockCategoryId}
+                                                placeholder={stockCategoryId ? "Seleccionar unidades..." : "Defina primero la Unidad de Stock"}
+                                                hint="* Solo unidades de la misma categoría para conversiones precisas."
+                                            />
                                         );
                                     }}
                                 />
@@ -162,7 +126,7 @@ export function ProductInventoryTab({ form, initialData, warehouses = [], uoms =
                             <div className="space-y-6">
                                 <LabeledSwitch
                                     label="Seguimiento de Inventario"
-                                    description="Habilita el control de existencias y movimientos para este producto."
+                                    description={mfgAutoFinalize ? "Desactivado: Los productos de fabricación express no requieren seguimiento." : isAdvancedMfg ? "Desactivado: Los productos de fabricación avanzada no requieren seguimiento." : isSimpleMfg ? "Requerido: Los productos de fabricación simple siempre controlan stock." : "Habilita el control de existencias y movimientos para este producto."}
                                     checked={field.value}
                                     onCheckedChange={(val) => {
                                         requestAnimationFrame(() => {
@@ -206,18 +170,18 @@ export function ProductInventoryTab({ form, initialData, warehouses = [], uoms =
                                     />
 
                                     {initialData && (
-                                        <div className="grid grid-cols-3 gap-1 p-1 rounded-2xl bg-muted/20 border shadow-inner overflow-hidden">
-                                            <div className="flex flex-col items-center bg-background/60 py-3 rounded-xl border border-dashed">
+                                        <div className="grid grid-cols-3 gap-1 shadow-inner overflow-hidden">
+                                            <div className="flex flex-col items-center bg-background/10 py-3 rounded-xl border border">
                                                 <span className="text-[9px] font-black uppercase tracking-tight text-muted-foreground mb-1">A Mano</span>
                                                 <span className="text-lg font-mono font-black">{initialData.current_stock || 0}</span>
                                             </div>
-                                            <div className="flex flex-col items-center bg-background/60 py-3 rounded-xl border border-dashed">
-                                                <span className="text-[9px] font-black uppercase tracking-tight text-amber-600/80 mb-1">Reservado</span>
-                                                <span className="text-lg font-mono font-black text-amber-600">{initialData.qty_reserved || 0}</span>
+                                            <div className="flex flex-col items-center bg-warning/5 py-3 rounded-xl border border-warning/20">
+                                                <span className="text-[9px] font-black uppercase tracking-tight text-warning/80 mb-1">Reservado</span>
+                                                <span className="text-lg font-mono font-black text-warning">{initialData.qty_reserved || 0}</span>
                                             </div>
-                                            <div className="flex flex-col items-center bg-emerald-500/5 py-3 rounded-xl border border-emerald-500/20">
-                                                <span className="text-[9px] font-black uppercase tracking-tight text-emerald-600 mb-1">Disponible</span>
-                                                <span className="text-lg font-mono font-black text-emerald-600">{initialData.qty_available || 0}</span>
+                                            <div className="flex flex-col items-center bg-success/5 py-3 rounded-xl border border-success/20">
+                                                <span className="text-[9px] font-black uppercase tracking-tight text-success mb-1">Disponible</span>
+                                                <span className="text-lg font-mono font-black text-success">{initialData.qty_available || 0}</span>
                                             </div>
                                         </div>
                                     )}

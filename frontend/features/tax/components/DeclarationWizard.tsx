@@ -1,30 +1,23 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
-import { GenericWizard, WizardStep } from "@/components/shared/GenericWizard"
-import { BaseModal } from "@/components/shared/BaseModal"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { LabeledInput, FormSection } from "@/components/shared"
+
+import { BaseModal, FormSection, GenericWizard, LabeledInput, MoneyDisplay, WizardStep } from '@/components/shared'
 import {
     Calculator,
-    FileText,
     CheckCircle2,
-    Info,
     ArrowUpRight,
     ArrowDownLeft,
     HandCoins,
     History,
-    ArrowRight,
-    Package,
     AlertCircle,
-    ExternalLink
 } from "lucide-react"
-import api from "@/lib/api"
 import { toast } from "sonner"
+import { useTaxCalculation, useCreateDeclaration, useRegisterDeclaration, useClosePeriod } from "../hooks/useTaxMutations"
 import { cn } from "@/lib/utils"
 import { useServerDate } from "@/hooks/useServerDate"
-import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
+
 import { TaxPeriod, TaxCalculationData } from "../types"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -62,6 +55,32 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
         tax_rate: 19,
         notes: ""
     })
+    const calcMutation = useTaxCalculation()
+    const createDeclarationMutation = useCreateDeclaration()
+    const registerDeclarationMutation = useRegisterDeclaration()
+    const closePeriodMutation = useClosePeriod()
+
+    // Helper for direct calculation that uses params instead of state (since state might not have updated yet)
+    const calculateDataForPeriod = async (y: number, m: number) => {
+        setIsLoading(true)
+        try {
+            const data = await calcMutation.mutateAsync({ year: y, month: m })
+            setCalcData(data)
+            if (data.tax_period_id) setTaxPeriodId(data.tax_period_id)
+            if (data.tax_rate) {
+                setManualFields(prev => ({
+                    ...prev,
+                    tax_rate: data.tax_rate,
+                    vat_credit_carryforward: data.vat_credit_carryforward || 0
+                }))
+            }
+            return true
+        } catch {
+            return false
+        } finally {
+            setIsLoading(false)
+        }
+    }
 
     // Reset and initialize state when modal opens
     useEffect(() => {
@@ -101,33 +120,6 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
         initializeWizard()
     }, [isOpen, periodId, existingPeriods, serverDate, currentYear, currentMonth])
 
-    // Helper for direct calculation that uses params instead of state (since state might not have updated yet)
-    const calculateDataForPeriod = async (y: number, m: number) => {
-        setIsLoading(true)
-        try {
-            const response = await api.post("/tax/declarations/calculate/", {
-                year: y,
-                month: m
-            })
-            setCalcData(response.data)
-            if (response.data.tax_period_id) setTaxPeriodId(response.data.tax_period_id)
-            if (response.data.tax_rate) {
-                setManualFields(prev => ({
-                    ...prev,
-                    tax_rate: response.data.tax_rate,
-                    vat_credit_carryforward: response.data.vat_credit_carryforward || 0
-                }))
-            }
-            return true
-        } catch (error) {
-            console.error("Error calculating tax data:", error)
-            toast.error("Error al calcular datos tributarios")
-            return false
-        } finally {
-            setIsLoading(false)
-        }
-    }
-
     const isPeriodDisabled = (y: number, m: number) => {
         const targetDate = new Date(y, m - 1)
         const currentDate = serverDate || new Date()
@@ -149,16 +141,17 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
     const handleSaveAndClose = async () => {
         setIsLoading(true)
         try {
-            const createResponse = await api.post("/tax/declarations/", {
+            const declarationData = await createDeclarationMutation.mutateAsync({
                 tax_period_year: period.year,
                 tax_period_month: period.month,
                 ...manualFields
             })
-            const declarationId = createResponse.data.id
-            const currentTaxPeriodId = createResponse.data.tax_period || taxPeriodId
+            const declarationId = declarationData.id
+            const currentTaxPeriodId = declarationData.tax_period || taxPeriodId
             try {
-                await api.post(`/tax/declarations/${declarationId}/register/`, {
-                    declaration_date: dateString || ""
+                await registerDeclarationMutation.mutateAsync({
+                    id: declarationId,
+                    data: { declaration_date: dateString || "" }
                 })
             } catch (regError: unknown) {
                 const isAlreadyRegistered =
@@ -166,7 +159,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                     (regError as { response?: { data?: { error?: string } } })?.response?.data?.error?.includes("ya ha sido registrada")
                 if (!isAlreadyRegistered) throw regError
             }
-            if (currentTaxPeriodId) await api.post(`/tax/periods/${currentTaxPeriodId}/close/`)
+            if (currentTaxPeriodId) await closePeriodMutation.mutateAsync(currentTaxPeriodId)
             toast.success("Ciclo tributario finalizado exitosamente")
             setIsClosed(true)
             onSuccess();

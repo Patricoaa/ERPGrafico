@@ -1,13 +1,11 @@
 "use client"
 
 import { useState } from "react"
-import { BaseModal } from "@/components/shared/BaseModal"
+
 import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
-import { LabeledInput } from "@/components/shared"
+import { BaseModal, LabeledInput } from '@/components/shared'
 import { Hash, Landmark, CreditCard } from "lucide-react"
-import api from "@/lib/api"
-import { toast } from "sonner"
+import { usePaymentReference } from "@/features/treasury/hooks/usePayments"
 
 import { formatPlainDate } from "@/lib/utils"
 import { EmptyState, MoneyDisplay, CancelButton, SubmitButton, FormSection } from "@/components/shared"
@@ -50,25 +48,23 @@ export function PaymentReferenceModal({
         pendingPayments.length > 0 ? pendingPayments[0].id : null
     )
     const [transactionNumber, setTransactionNumber] = useState("")
-    const [loading, setLoading] = useState(false)
+    const { updatePayment, isUpdating } = usePaymentReference()
 
     const handleSave = async () => {
         if (!selectedPaymentId || !transactionNumber) return
 
-        setLoading(true)
         try {
-            await api.patch(`/treasury/payments/${selectedPaymentId}/`, {
-                transaction_number: transactionNumber,
-                is_pending_registration: false
+            await updatePayment({
+                id: selectedPaymentId,
+                payload: {
+                    transaction_number: transactionNumber,
+                    is_pending_registration: false,
+                }
             })
-            toast.success("N° de operación registrado correctamente")
             onSuccess()
             onOpenChange(false)
         } catch (error) {
             console.error("Error updating payment reference:", error)
-            toast.error("Error al registrar el número de operación")
-        } finally {
-            setLoading(false)
         }
     }
 
@@ -92,7 +88,7 @@ export function PaymentReferenceModal({
                         className="flex-[2] bg-income hover:bg-income/90 h-12 text-lg font-bold"
                         onClick={handleSave}
                         disabled={!selectedPaymentId || !transactionNumber}
-                        loading={loading}
+                        loading={isUpdating}
                         icon={null}
                     >
                         Guardar Registro

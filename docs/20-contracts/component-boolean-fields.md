@@ -1,3 +1,12 @@
+---
+layer: 20-contracts
+doc: component-boolean-fields
+status: active
+owner: frontend-team
+last_review: 2026-05-21
+stability: stable
+---
+
 # Boolean Fields: Switches & Checkboxes
 
 This contract defines how binary selection controls must be implemented to maintain visual consistency.

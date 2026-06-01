@@ -2,7 +2,7 @@
 
 import React from "react"
 import { Employee } from "@/types/hr"
-import { PayrollDetailSheet } from "@/features/hr/components/payrolls/PayrollDetailSheet"
+import { PayrollDetailDrawer } from "@/features/hr"
 
 interface EmployeePayrollPreviewProps {
     payrollId: number | null
@@ -13,7 +13,7 @@ interface EmployeePayrollPreviewProps {
 
 export function EmployeePayrollPreview({ payrollId, open, onOpenChange, employee }: EmployeePayrollPreviewProps) {
     return (
-        <PayrollDetailSheet 
+        <PayrollDetailDrawer 
             payrollId={payrollId}
             open={open}
             onOpenChange={onOpenChange}

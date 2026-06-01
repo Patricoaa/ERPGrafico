@@ -1,12 +1,11 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { LabeledContainer, LabeledInput, PeriodValidationDateInput } from "@/components/shared"
+import { LabeledInput, PeriodValidationDateInput } from "@/components/shared"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
-import { Truck, Package, Calendar, Info, AlertTriangle, ShoppingBag } from "lucide-react"
+import {Truck, Package, Calendar, Info, AlertTriangle} from "lucide-react"
 import { cn } from "@/lib/utils"
-import api from "@/lib/api"
+import { useAllowedUoMs } from "@/features/inventory/hooks/useUoMs"
 import {
     Select,
     SelectContent,
@@ -26,19 +25,7 @@ import {
 import { CheckoutDeliveryData, SaleOrderLine } from "../../types"
 
 function UoMSelector({ line, currentUom, onUomChange }: { line: SaleOrderLine, currentUom: string | number | null, onUomChange: (uomId: number) => void }) {
-    const [allowedUoms, setAllowedUoms] = useState<{id: number, name: string}[]>([])
-
-    useEffect(() => {
-        const fetchAllowed = async () => {
-            try {
-                const res = await api.get(`/inventory/uoms/allowed/?product_id=${line.product || line.id}&context=sale`)
-                setAllowedUoms(res.data)
-            } catch (err) {
-                console.error("Error fetching allowed UoMs", err)
-            }
-        }
-        fetchAllowed()
-    }, [line.id, line.product])
+    const { data: allowedUoms = [] } = useAllowedUoMs((line.product || line.id) ?? null, 'sale')
 
     if (allowedUoms.length <= 1) return <span>{line.uom_name || line.uom}</span>
 
@@ -65,37 +52,54 @@ interface Step3_DeliveryProps {
 }
 
 export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: Step3_DeliveryProps) {
-    // Basic analysis of items
-    const hasFabricable = orderLines.some(line => line.product_type === 'MANUFACTURABLE' || line.has_bom);
+    const isOnlyService = orderLines.every(line => line.product_type === 'SERVICE')
+    const hasPhysical = orderLines.some(line => line.product_type !== 'SERVICE')
 
-    // Check for "Manufacturable" products (Simple or Advanced) - they MUST be produced first
-    // We restrict immediate dispatch for ALL manufacturable items as per business logic
-    const itemsRequiringWorkflow = orderLines.filter(line =>
-        (line.product_type === 'MANUFACTURABLE' || line.has_bom) &&
-        !line.track_inventory // If it tracks inventory, maybe we allow selling stock? 
-        // Re-reading requirements: "Advanced or Simple ... should be prevented from immediate dispatch"
-        // Usually SIMPLE manufacturable might not track inventory? 
-        // Let's stick to the plan: Restrict ALL manufacturable.
-        // Actually, if track_inventory is true, it might mean we have stock. 
-        // But the user said: "frente a una entrega parcial las lineas de productos que sean de fabricaicion avanzada o simple debería impedirse su despacho inmediato, ya que necesitan de su fabricación."
-        // This implies even if we track it, we want to force production? Or maybe they don't track stock?
-        // Let's assume if it is MANUFACTURABLE, it needs to be made.
-    );
-    // Actually, let's look at the original code:
-    // const itemsRequiringWorkflow = orderLines.filter(line =>
-    //    (line.product_type === 'MANUFACTURABLE' || line.has_bom) &&
-    //    line.requires_advanced_manufacturing &&
-    //    !line.track_inventory
-    // );
+    // Determine mode
+    const isServiceMode = isOnlyService
+    const isMixedMode = !isOnlyService && hasPhysical && orderLines.some(line => line.product_type === 'SERVICE')
+    const isPhysicalMode = !isOnlyService && !orderLines.some(line => line.product_type === 'SERVICE')
 
-    // Proposal: Change to catch ALL manufacturable items that are NOT service/consumable/storable-only.
-    // Ideally, if it is 'MANUFACTURABLE', it goes to this list.
+    // Physical-only items for the table (exclude services in mixed mode)
+    const physicalLines = isMixedMode
+        ? orderLines.filter(line => line.product_type !== 'SERVICE')
+        : orderLines
+
+    if (isServiceMode) {
+        return (
+            <div className="space-y-6">
+                <div className="flex items-start gap-3 p-4 bg-primary/5 border border-primary/20 rounded-lg">
+                    <Calendar className="h-5 w-5 shrink-0 mt-0.5 text-primary" />
+                    <div className="space-y-1">
+                        <p className="text-xs font-bold uppercase tracking-wider">Cumplimiento de Servicios</p>
+                        <p className="text-xs text-muted-foreground">
+                            Esta orden contiene solo servicios. Seleccione la fecha compromiso de cumplimiento.
+                        </p>
+                    </div>
+                </div>
+
+                <PeriodValidationDateInput
+                    date={deliveryData.date ? new Date(deliveryData.date + 'T12:00:00') : undefined}
+                    onDateChange={(d) => {
+                        if (!d) {
+                            setDeliveryData({ ...deliveryData, date: "" })
+                            return
+                        }
+                        setDeliveryData({ ...deliveryData, date: d.toISOString().split('T')[0] })
+                    }}
+                    label="Fecha de Cumplimiento"
+                    validationType="accounting"
+                />
+            </div>
+        )
+    }
+
+    // For mixed/physical modes, compute manufacturing restrictions
     const strictManufacturableItems = orderLines.filter(line => {
         const isManufacturable = line.product_type === 'MANUFACTURABLE' || line.has_bom;
         if (!isManufacturable) return false;
         if (line.mfg_auto_finalize) return false;
 
-        // EXCEPTION: Simple manufacturable products with sufficient availability (stock + fab) can be dispatched immediately
         const isSimple = !line.requires_advanced_manufacturing;
         const lineQty = line.qty || line.quantity || 0;
         const totalAvailability = (line.qty_available || 0) + (line.manufacturable_quantity || 0);
@@ -108,112 +112,109 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
 
     const hasRestrictedItems = strictManufacturableItems.length > 0;
 
-    // If restricted items exist and type is IMMEDIATE, switch to SCHEDULED automatically
     if (hasRestrictedItems && deliveryData.type === 'IMMEDIATE') {
         setTimeout(() => {
             setDeliveryData({ ...deliveryData, type: 'SCHEDULED' });
         }, 0);
     }
 
-    const isOnlyService = orderLines.every(line => line.product_type === 'SERVICE');
-
-    if (isOnlyService) {
-        return (
-            <div className="flex flex-col items-center justify-center py-10 text-center space-y-4">
-                <Info className="h-10 w-10" />
-                <div className="space-y-1">
-                    <h3 className="text-lg font-bold">Venta de Servicios</h3>
-                    <p className="text-sm text-muted-foreground max-w-[300px]">
-                        Esta orden solo contiene servicios, por lo que no requiere despacho físico.
-                    </p>
-                </div>
-            </div>
-        );
-    }
+    const title = isMixedMode ? "Logística / Cumplimiento" : "Logística"
 
     return (
         <div className="space-y-6">
-
-                {hasRestrictedItems && (
-                    <div className="flex items-start gap-3 p-4 bg-destructive/5 border border-destructive/20 rounded-lg text-destructive-foreground">
-                        <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5 text-destructive" />
-                        <div className="space-y-1">
-                            <p className="text-xs font-bold uppercase tracking-wider">Producción Requerida</p>
-                            <p className="text-xs font-medium">Hay {strictManufacturableItems.length} productos que requieren fabricación. El despacho inmediato está deshabilitado para estos ítems.</p>
-                        </div>
+            {hasRestrictedItems && (
+                <div className="flex items-start gap-3 p-4 bg-destructive/5 border border-destructive/20 rounded-lg text-destructive-foreground">
+                    <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5 text-destructive" />
+                    <div className="space-y-1">
+                        <p className="text-xs font-bold uppercase tracking-wider">Producción Requerida</p>
+                        <p className="text-xs font-medium">Hay {strictManufacturableItems.length} productos que requieren fabricación. El despacho inmediato está deshabilitado para estos ítems.</p>
                     </div>
-                )}
+                </div>
+            )}
 
-                {/* Note: Removed the secondary orange warning as it is now redundant with the red one above covering all cases */}
+            {isMixedMode && (
+                <div className="flex items-start gap-3 p-4 bg-info/5 border border-info/20 rounded-lg">
+                    <Info className="h-5 w-5 shrink-0 mt-0.5 text-info" />
+                    <div className="space-y-1">
+                        <p className="text-xs font-bold uppercase tracking-wider">Servicios incluidos</p>
+                        <p className="text-xs text-muted-foreground">
+                            Los servicios se cumplen según la fecha programada. Solo los productos físicos aparecen en el detalle de despacho.
+                        </p>
+                    </div>
+                </div>
+            )}
 
-                <RadioGroup
-                    value={deliveryData.type}
-                    onValueChange={(val) => setDeliveryData((prev: CheckoutDeliveryData) => ({ ...prev, type: val as any }))}
-                    className="grid gap-4"
+            <RadioGroup
+                value={deliveryData.type}
+                onValueChange={(val) => setDeliveryData((prev: CheckoutDeliveryData) => ({ ...prev, type: val as any }))}
+                className="grid gap-4"
+            >
+                <Label
+                    htmlFor="del-immediate"
+                    className={cn(
+                        "flex items-center gap-4 rounded-lg border-2 border-muted bg-popover p-4 hover:bg-accent cursor-pointer transition-all",
+                        deliveryData.type === 'IMMEDIATE' && "border-primary bg-primary/5",
+                        hasRestrictedItems && "opacity-50 pointer-events-none grayscale"
+                    )}
                 >
+                    <RadioGroupItem value="IMMEDIATE" id="del-immediate" className="sr-only" disabled={hasRestrictedItems} />
+                    <div className={cn(
+                        "p-2 rounded-lg bg-background border transition-colors",
+                        deliveryData.type === 'IMMEDIATE' ? 'text-primary border-primary/30' : 'text-muted-foreground'
+                    )}>
+                        <Package className="h-5 w-5" />
+                    </div>
+                    <div className="flex-1">
+                        <span className="text-sm font-bold block">{isMixedMode ? "Despacho y Cumplimiento Inmediato" : "Despacho Inmediato"}</span>
+                        <span className="text-[10px] text-muted-foreground">Rebajar stock y entregar ahora mismo.</span>
+                    </div>
+                </Label>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <Label
-                        htmlFor="del-immediate"
+                        htmlFor="del-scheduled"
                         className={cn(
                             "flex items-center gap-4 rounded-lg border-2 border-muted bg-popover p-4 hover:bg-accent cursor-pointer transition-all",
-                            deliveryData.type === 'IMMEDIATE' && "border-primary bg-primary/5",
-                            hasRestrictedItems && "opacity-50 pointer-events-none grayscale"
+                            deliveryData.type === 'SCHEDULED' && "border-primary bg-primary/5"
                         )}
                     >
-                        <RadioGroupItem value="IMMEDIATE" id="del-immediate" className="sr-only" disabled={hasRestrictedItems} />
+                        <RadioGroupItem value="SCHEDULED" id="del-scheduled" className="sr-only" />
                         <div className={cn(
                             "p-2 rounded-lg bg-background border transition-colors",
-                            deliveryData.type === 'IMMEDIATE' ? 'text-primary border-primary/30' : 'text-muted-foreground'
+                            deliveryData.type === 'SCHEDULED' ? 'text-primary border-primary/30' : 'text-muted-foreground'
                         )}>
-                            <Package className="h-5 w-5" />
+                            <Calendar className="h-5 w-5" />
                         </div>
                         <div className="flex-1">
-                            <span className="text-sm font-bold block">Despacho Inmediata</span>
-                            <span className="text-[10px] text-muted-foreground">Rebajar stock y entregar ahora mismo.</span>
+                            <span className="text-sm font-bold block leading-tight">
+                                {isMixedMode ? "Programar Entrega y Cumplimiento" : "Programar Entrega"}
+                            </span>
+                            <span className="text-[10px] text-muted-foreground">Reservar para fecha futura.</span>
                         </div>
                     </Label>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <Label
-                            htmlFor="del-scheduled"
-                            className={cn(
-                                "flex items-center gap-4 rounded-lg border-2 border-muted bg-popover p-4 hover:bg-accent cursor-pointer transition-all",
-                                deliveryData.type === 'SCHEDULED' && "border-primary bg-primary/5"
-                            )}
-                        >
-                            <RadioGroupItem value="SCHEDULED" id="del-scheduled" className="sr-only" />
-                            <div className={cn(
-                                "p-2 rounded-lg bg-background border transition-colors",
-                                deliveryData.type === 'SCHEDULED' ? 'text-primary border-primary/30' : 'text-muted-foreground'
-                            )}>
-                                <Calendar className="h-5 w-5" />
-                            </div>
-                            <div className="flex-1">
-                                <span className="text-sm font-bold block leading-tight">Programar Entrega</span>
-                                <span className="text-[10px] text-muted-foreground">Reservar para fecha futura.</span>
-                            </div>
-                        </Label>
+                    <Label
+                        htmlFor="del-partial"
+                        className={cn(
+                            "flex items-center gap-4 rounded-lg border-2 border-muted bg-popover p-4 hover:bg-accent cursor-pointer transition-all",
+                            deliveryData.type === 'PARTIAL' && "border-primary bg-primary/5"
+                        )}
+                    >
+                        <RadioGroupItem value="PARTIAL" id="del-partial" className="sr-only" />
+                        <div className={cn(
+                            "p-2 rounded-lg bg-background border transition-colors",
+                            deliveryData.type === 'PARTIAL' ? 'text-primary border-primary/30' : 'text-muted-foreground'
+                        )}>
+                            <Truck className="h-5 w-5" />
+                        </div>
+                        <div className="flex-1">
+                            <span className="text-sm font-bold block leading-tight">Despacho Parcial</span>
+                            <span className="text-[10px] text-muted-foreground">Entregar disponibles hoy.</span>
+                        </div>
+                    </Label>
+                </div>
+            </RadioGroup>
 
-                        <Label
-                            htmlFor="del-partial"
-                            className={cn(
-                                "flex items-center gap-4 rounded-lg border-2 border-muted bg-popover p-4 hover:bg-accent cursor-pointer transition-all",
-                                deliveryData.type === 'PARTIAL' && "border-primary bg-primary/5"
-                            )}
-                        >
-                            <RadioGroupItem value="PARTIAL" id="del-partial" className="sr-only" />
-                            <div className={cn(
-                                "p-2 rounded-lg bg-background border transition-colors",
-                                deliveryData.type === 'PARTIAL' ? 'text-primary border-primary/30' : 'text-muted-foreground'
-                            )}>
-                                <Truck className="h-5 w-5" />
-                            </div>
-                            <div className="flex-1">
-                                <span className="text-sm font-bold block leading-tight">Despacho Parcial</span>
-                                <span className="text-[10px] text-muted-foreground">Entregar disponibles hoy.</span>
-                            </div>
-                        </Label>
-                    </div>
-                </RadioGroup>
             <div className="space-y-4 animate-in fade-in duration-300">
                 {deliveryData.type === 'PARTIAL' && (
                     <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
@@ -221,6 +222,7 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                             <p className="text-sm font-semibold">Cantidades para Despacho Inmediato</p>
                             <p className="text-xs text-muted-foreground">
                                 Especifique las cantidades que entregará ahora. El resto quedará programado.
+                                {isMixedMode && " Los servicios se cumplen en su totalidad según la fecha."}
                             </p>
                         </div>
                         <div className="rounded-md border">
@@ -234,7 +236,7 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {orderLines.map((line, idx) => {
+                                    {physicalLines.map((line, idx) => {
                                         const isSimpleManufacturableWithAvailability = (line.product_type === 'MANUFACTURABLE' || line.has_bom) &&
                                             !line.requires_advanced_manufacturing &&
                                             ((line.qty_available || 0) + (line.manufacturable_quantity || 0)) >= (line.qty || line.quantity || 0);
@@ -336,17 +338,6 @@ export function Step3_Delivery({ deliveryData, setDeliveryData, orderLines }: St
                             validationType="accounting"
                         />
                 )}
-
-                <LabeledContainer label="Notas de Despacho / Observaciones">
-                    <Textarea
-                        id="del-notes"
-                        placeholder="Dirección, horario preferido, indicaciones especiales..."
-                        rows={3}
-                        className="border-none shadow-none focus-visible:ring-0 bg-transparent"
-                        value={deliveryData.notes}
-                        onChange={(e) => setDeliveryData({ ...deliveryData, notes: e.target.value })}
-                    />
-                </LabeledContainer>
             </div>
         </div>
     )

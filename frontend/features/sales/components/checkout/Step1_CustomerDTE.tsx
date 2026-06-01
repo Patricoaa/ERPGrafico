@@ -4,7 +4,6 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
 import {
-    User,
     FileText,
     Receipt,
     AlertCircle,
@@ -15,13 +14,10 @@ import { cn } from "@/lib/utils"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useBillingSettingsQuery } from "@/features/settings"
 import { useServerDate } from "@/hooks/useServerDate"
-import { DocumentAttachmentDropzone } from "@/components/shared/DocumentAttachmentDropzone"
-import { FolioValidationInput } from "@/components/shared/FolioValidationInput"
-import { PeriodValidationDateInput } from "@/components/shared/PeriodValidationDateInput"
+
 import { Button } from "@/components/ui/button"
-import { Separator } from "@/components/ui/separator"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
-import { LabeledContainer, FormSection, LabeledSwitch } from "@/components/shared"
+import { DocumentAttachmentDropzone, FolioValidationInput, FormSection, LabeledContainer, LabeledSwitch, PeriodValidationDateInput } from '@/components/shared'
 import { formatEntityDisplay } from "@/lib/entity-registry"
 
 import { CheckoutDTEData, PendingDebt } from "../../types"
@@ -160,8 +156,6 @@ export function Step1_CustomerDTE({
                     placeholder="Buscar por Nombre, RUT o Email..."
                 />
             </div>
-
-
 
             {/* ── DTE Document Section ────────────────────────── */}
             <div className="space-y-4">

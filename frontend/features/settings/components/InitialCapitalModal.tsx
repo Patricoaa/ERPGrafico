@@ -2,19 +2,16 @@
 
 import { showApiError } from "@/lib/errors"
 import React, { useState, useEffect } from "react"
-import { BaseModal } from "@/components/shared/BaseModal"
-import { Button } from "@/components/ui/button"
-import { CancelButton, SubmitButton, IconButton } from "@/components/shared"
+
+import { BaseModal, CancelButton, DataCell, EmptyState, IconButton, LabeledContainer, SubmitButton } from '@/components/shared'
 import { Input } from "@/components/ui/input"
-import { LabeledContainer } from "@/components/shared/LabeledContainer"
+
 import { toast } from "sonner"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
-import { Trash2, Plus, Users, Calculator, Info } from "lucide-react"
-import { formatCurrency } from "@/lib/utils"
-import { EmptyState } from "@/components/shared/EmptyState"
+import {Trash2, Users, Info} from "lucide-react"
+
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import type { Partner } from "@/features/contacts/types/partner"
 
 interface InitialCapitalModalProps {
     open: boolean
@@ -40,7 +37,7 @@ export function InitialCapitalModal({ open, onOpenChange, onSuccess }: InitialCa
 
     const handleAddPartner = (contactId: string | null, contact?: any) => {
         if (!contactId) return
-        
+
         const id = parseInt(contactId)
         if (entries.some(e => e.contact_id === id)) {
             toast.error("Este socio ya ha sido agregado a la lista.")
@@ -113,103 +110,103 @@ export function InitialCapitalModal({ open, onOpenChange, onSuccess }: InitialCa
             }
         >
             <div className="space-y-6">
-                    <Alert variant="default" className="bg-primary/10/50 border-primary/20">
-                        <Info className="h-4 w-4 text-primary" />
-                        <AlertTitle className="text-primary text-xs font-bold uppercase tracking-wider">Aviso Contable</AlertTitle>
-                        <AlertDescription className="text-primary text-xs">
-                            Esta acción generará un asiento de **Suscripción de Capital**, debitando la cuenta de **Capital por Cobrar Socios** (Activo) y acreditando la cuenta de **Capital Social** (Patrimonio), manteniendo la trazabilidad individual por socio.
-                            Los aportes físicos de bienes se deben registrar posteriormente.
-                        </AlertDescription>
-                    </Alert>
+                <Alert variant="default" className="bg-primary/10/50 border-primary/20">
+                    <Info className="h-4 w-4 text-primary" />
+                    <AlertTitle className="text-primary text-xs font-bold uppercase tracking-wider">Aviso Contable</AlertTitle>
+                    <AlertDescription className="text-primary text-xs">
+                        Esta acción generará un asiento de **Suscripción de Capital**, debitando la cuenta de **Capital por Cobrar Socios** (Activo) y acreditando la cuenta de **Capital Social** (Patrimonio), manteniendo la trazabilidad individual por socio.
+                        Los aportes físicos de bienes se deben registrar posteriormente.
+                    </AlertDescription>
+                </Alert>
 
-                    <div className="space-y-4">
-                        <LabeledContainer label="Agregar Socio">
-                            <AdvancedContactSelector
-                                value={null}
-                                onChange={(val) => {}}
-                                onSelectContact={(contact) => handleAddPartner(contact.id.toString(), contact)}
-                                placeholder="Buscar contacto por nombre o RUT..."
-                                className="border-0 focus-visible:ring-0 h-9"
-                            />
-                        </LabeledContainer>
+                <div className="space-y-4">
+                    <LabeledContainer label="Agregar Socio">
+                        <AdvancedContactSelector
+                            value={null}
+                            onChange={(val) => { }}
+                            onSelectContact={(contact) => handleAddPartner(contact.id.toString(), contact)}
+                            placeholder="Buscar contacto por nombre o RUT..."
+                            className="border-0 focus-visible:ring-0 h-9"
+                        />
+                    </LabeledContainer>
 
-                        <div className="border rounded-lg overflow-hidden">
-                            <table className="w-full text-sm">
-                                <thead className="bg-muted/50 border-b">
+                    <div className="border rounded-lg overflow-hidden">
+                        <table className="w-full text-sm">
+                            <thead className="bg-muted/50 border-b">
+                                <tr>
+                                    <th className="p-3 text-left font-semibold text-muted-foreground">Socio</th>
+                                    <th className="p-3 text-right font-semibold text-muted-foreground w-1/3">Monto Aportado</th>
+                                    <th className="p-3 text-center font-semibold text-muted-foreground w-20">Participación</th>
+                                    <th className="p-3 text-center font-semibold text-muted-foreground w-12"></th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y">
+                                {entries.length === 0 ? (
                                     <tr>
-                                        <th className="p-3 text-left font-semibold text-muted-foreground">Socio</th>
-                                        <th className="p-3 text-right font-semibold text-muted-foreground w-1/3">Monto Aportado</th>
-                                        <th className="p-3 text-center font-semibold text-muted-foreground w-20">Participación</th>
-                                        <th className="p-3 text-center font-semibold text-muted-foreground w-12"></th>
+                                        <td colSpan={4} className="p-0">
+                                            <EmptyState context="users" variant="compact" description="No hay socios agregados. Use el buscador superior." />
+                                        </td>
                                     </tr>
-                                </thead>
-                                <tbody className="divide-y">
-                                    {entries.length === 0 ? (
-                                        <tr>
-                                            <td colSpan={4} className="p-0">
-                                                <EmptyState context="users" variant="compact" description="No hay socios agregados. Use el buscador superior." />
-                                            </td>
-                                        </tr>
-                                    ) : (
-                                        entries.map((entry, index) => {
-                                            const percentage = totalCapital > 0 ? (entry.amount / totalCapital) * 100 : 0
-                                            return (
-                                                <tr key={entry.contact_id} className="hover:bg-muted/20 transition-colors">
-                                                    <td className="p-3 font-medium">
-                                                        <div className="flex items-center gap-2">
-                                                            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary">
-                                                                #{index + 1}
-                                                            </div>
-                                                            {entry.name}
+                                ) : (
+                                    entries.map((entry, index) => {
+                                        const percentage = totalCapital > 0 ? (entry.amount / totalCapital) * 100 : 0
+                                        return (
+                                            <tr key={entry.contact_id} className="hover:bg-muted/20 transition-colors">
+                                                <td className="p-3">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary shrink-0">
+                                                            #{index + 1}
                                                         </div>
-                                                    </td>
-                                                    <td className="p-3">
-                                                        <div className="relative">
-                                                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-mono">$</span>
-                                                            <Input
-                                                                type="number"
-                                                                value={entry.amount || ""}
-                                                                onChange={(e) => handleUpdateAmount(index, e.target.value)}
-                                                                className="pl-7 text-right font-mono"
-                                                                placeholder="0"
-                                                            />
-                                                        </div>
-                                                    </td>
-                                                    <td className="p-3 text-center">
-                                                        <span className="inline-flex items-center px-2 py-1 rounded-md bg-primary/10 text-primary font-bold text-xs">
-                                                            {percentage.toFixed(2)}%
-                                                        </span>
-                                                    </td>
-                                                    <td className="p-3 text-center">
-                                                        <IconButton
-                                                            variant="ghost"
-                                                            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-                                                            onClick={() => handleRemovePartner(index)}
-                                                        >
-                                                            <Trash2 className="h-4 w-4" />
-                                                        </IconButton>
-                                                    </td>
-                                                </tr>
-                                            )
-                                        })
-                                    )}
-                                </tbody>
-                                {entries.length > 0 && (
-                                    <tfoot className="bg-muted/30 font-bold border-t">
-                                        <tr>
-                                            <td className="p-4 text-right">TOTAL CAPITAL SUSCRITO</td>
-                                            <td className="p-4 text-right text-lg text-primary font-mono">
-                                                {formatCurrency(totalCapital)}
-                                            </td>
-                                            <td className="p-4 text-center">100%</td>
-                                            <td></td>
-                                        </tr>
-                                    </tfoot>
+                                                        <DataCell.Text className="justify-start text-left font-medium">{entry.name}</DataCell.Text>
+                                                    </div>
+                                                </td>
+                                                <td className="p-3">
+                                                    <div className="relative">
+                                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-mono">$</span>
+                                                        <Input
+                                                            type="number"
+                                                            value={entry.amount || ""}
+                                                            onChange={(e) => handleUpdateAmount(index, e.target.value)}
+                                                            className="pl-7 text-right font-mono"
+                                                            placeholder="0"
+                                                        />
+                                                    </div>
+                                                </td>
+                                                <td className="p-3 text-center">
+                                                    <DataCell.Chip size="sm" intent="primary" className="font-bold">
+                                                        {percentage.toFixed(2)}%
+                                                    </DataCell.Chip>
+                                                </td>
+                                                <td className="p-3 text-center">
+                                                    <IconButton
+                                                        variant="ghost"
+                                                        className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                                                        onClick={() => handleRemovePartner(index)}
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </IconButton>
+                                                </td>
+                                            </tr>
+                                        )
+                                    })
                                 )}
-                            </table>
-                        </div>
+                            </tbody>
+                            {entries.length > 0 && (
+                                <tfoot className="bg-muted/30 font-bold border-t">
+                                    <tr>
+                                        <td className="p-4 text-right">TOTAL CAPITAL SUSCRITO</td>
+                                        <td className="p-4 text-right">
+                                            <DataCell.Currency value={totalCapital} className="justify-end text-lg font-bold text-primary" />
+                                        </td>
+                                        <td className="p-4 text-center">100%</td>
+                                        <td></td>
+                                    </tr>
+                                </tfoot>
+                            )}
+                        </table>
                     </div>
                 </div>
+            </div>
         </BaseModal>
     )
 }

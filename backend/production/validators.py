@@ -6,7 +6,7 @@ _PHASE_KEYS = frozenset({
     'internal_notes', 'product_description',
     'contact_id', 'contact_name', 'contact_tax_id',
     'folio_enabled', 'folio_start',
-    'design_attachments', 'design_approved', 'approval_attachment',
+    'design_attachments', 'approval_attachment',
     'prepress_specs', 'press_specs', 'postpress_specs',
     'design_needed', 'print_type', 'comments',
 })
@@ -16,7 +16,7 @@ _ROOT_ONLY_KEYS = frozenset({
     'prepress', 'press', 'postpress',
 })
 
-_BOOL_FIELDS = {'folio_enabled', 'design_approved', 'design_needed'}
+_BOOL_FIELDS = {'folio_enabled', 'design_needed'}
 _STR_FIELDS = {
     'internal_notes', 'product_description', 'contact_name', 'contact_tax_id',
     'folio_start', 'approval_attachment', 'print_type',

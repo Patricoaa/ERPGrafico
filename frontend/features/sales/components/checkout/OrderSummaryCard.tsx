@@ -2,7 +2,9 @@
 
 import { Separator } from "@/components/ui/separator"
 import { ShoppingBag } from "lucide-react"
-import { formatCurrency } from "@/lib/currency"
+import { formatCurrency } from "@/lib/money"
+import { Chip } from "@/components/shared"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { PricingUtils } from '@/features/inventory/utils/pricing'
 
 import { SaleOrderLine } from "../../types"
@@ -45,19 +47,20 @@ export function OrderSummaryCard({
                             {orderLines.map((line, idx) => (
                                 <div key={idx} className="flex justify-between items-start gap-4 animate-in fade-in duration-500">
                                     <div className="space-y-1.5 flex-1 min-w-0">
-                                        <p className="font-bold text-[13px] leading-tight text-foreground/90 truncate mr-2" title={line.product_name || line.description}>
-                                            {line.product_name || line.description}
-                                        </p>
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <p className="font-bold text-[13px] leading-tight text-foreground/90 truncate mr-2">
+                                                    {line.product_name || line.description}
+                                                </p>
+                                            </TooltipTrigger>
+                                            <TooltipContent side="top">{line.product_name || line.description}</TooltipContent>
+                                        </Tooltip>
                                         <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
                                             {line.internal_code && (
-                                                <span className="text-[8px] font-mono border px-1 rounded opacity-70 uppercase border-muted-foreground/20 text-muted-foreground">
-                                                    {line.internal_code}
-                                                </span>
+                                                <Chip size="xs">{line.internal_code}</Chip>
                                             )}
                                             {line.code && line.code !== line.internal_code && (
-                                                <span className="text-[8px] font-mono bg-muted px-1 rounded opacity-70 uppercase text-muted-foreground">
-                                                    {line.code}
-                                                </span>
+                                                <Chip size="xs">{line.code}</Chip>
                                             )}
                                         </div>
                                         <div className="flex items-center gap-2 mt-1">
@@ -65,9 +68,9 @@ export function OrderSummaryCard({
                                                 {line.qty || line.quantity} {line.uom_name || 'un'}
                                             </span>
                                             {line.product_type === 'MANUFACTURABLE' && (
-                                                <span className="text-[8px] font-black uppercase text-warning border border-warning/30 bg-warning/5 px-1 py-0.5 rounded leading-none">
+                                                <Chip size="xs" intent="warning">
                                                     Fab
-                                                </span>
+                                                </Chip>
                                             )}
                                         </div>
                                     </div>

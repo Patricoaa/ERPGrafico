@@ -1,39 +1,72 @@
 "use client"
 
-import React, { useState, useEffect, useCallback } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import React, { useState, useEffect } from "react"
+import { useRouter, useSearchParams, usePathname } from "next/navigation"
+import Link from "next/link"
 import { toast } from "sonner"
-import { CreatePayrollModal, PayrollDetailSheet } from "@/features/hr"
-import { getPayrolls, deletePayroll, paySalary, payPrevired, createAdvance } from '@/features/hr/api/hrApi'
+import { CreatePayrollDrawer, PayrollDetailDrawer, deletePayroll, paySalary, payPrevired, createAdvance } from '@/features/hr'
 import type { Payroll } from "@/types/hr"
 import { ColumnDef } from "@tanstack/react-table"
-import { DataTable } from "@/components/ui/data-table"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
-import { createActionsColumn, DataCell } from "@/components/ui/data-table-cells"
-import { StatusBadge } from "@/components/shared/StatusBadge"
-import { Eye, Trash2, Coins, CreditCard, Wallet } from "lucide-react"
+import { DataTableView, DataTableColumnHeader } from '@/components/shared'
+import { createActionsColumn, DataCell } from '@/components/shared'
+import { Eye, Trash2, Coins, CreditCard, Wallet, FileText } from "lucide-react"
 import { PaymentModal } from "@/features/treasury"
-
-
-import { ToolbarCreateButton } from "@/components/shared"
+import { Button } from "@/components/ui/button"
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip"
+import { ToolbarCreateButton, SmartSearchBar, useSmartSearch } from "@/components/shared"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
+import { usePayrolls, payrollSearchDef } from "@/features/hr"
 
 // Schema and dialog moved to features/hr/components/CreatePayrollDialog
 
 export default function PayrollsPage() {
-    const createAction = <ToolbarCreateButton label="Generar Liquidaciones" href="/hr/payrolls?modal=new" />
+    const createAction = (
+        <div className="flex items-center gap-2">
+            <ToolbarCreateButton label="Generar Liquidaciones" href="/hr/payrolls?modal=new" />
+            <TooltipProvider delayDuration={0}>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Link href="/hr/payrolls?action=generate_drafts" scroll={false}>
+                            <Button
+                                variant="outline"
+                                size="icon"
+                                className="h-9 w-9 p-0 bg-background hover:bg-muted"
+                            >
+                                <FileText className="h-4 w-4" />
+                            </Button>
+                        </Link>
+                    </TooltipTrigger>
+                    <TooltipContent side="top">
+                        Generar borradores
+                    </TooltipContent>
+                </Tooltip>
+            </TooltipProvider>
+        </div>
+    )
     const router = useRouter()
+    const pathname = usePathname()
     const searchParams = useSearchParams()
-    const [payrolls, setPayrolls] = useState<Payroll[]>([])
-    const [loading, setLoading] = useState(true)
+    const { filters } = useSmartSearch(payrollSearchDef)
+    const { payrolls, isLoading: loading, refetch: fetchPayrolls } = usePayrolls(filters)
 
     const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<Payroll>({
         endpoint: '/hr/payrolls'
     })
 
+    // State for Detail Sheet
+    const [detailSheetOpen, setDetailSheetOpen] = useState(false)
+    const [activePayrollId, setActivePayrollId] = useState<number | null>(null)
+
     useEffect(() => {
         if (selectedFromUrl) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setActivePayrollId(selectedFromUrl.id)
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setDetailSheetOpen(true)
         }
     }, [selectedFromUrl])
@@ -41,18 +74,10 @@ export default function PayrollsPage() {
     const isNewModalOpen = searchParams.get("modal") === "new"
     const [dialogOpen, setDialogOpen] = useState(isNewModalOpen)
 
-    const fetchPayrolls = useCallback(async () => {
-        try {
-            const data = await getPayrolls()
-            setPayrolls(data)
-        } catch {
-            toast.error("Error al cargar liquidaciones")
-        } finally {
-            setLoading(false)
-        }
-    }, [])
-
-    useEffect(() => { fetchPayrolls() }, [fetchPayrolls])
+    useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setDialogOpen(isNewModalOpen)
+    }, [isNewModalOpen])
 
     useEffect(() => {
         const action = searchParams.get("action")
@@ -60,7 +85,7 @@ export default function PayrollsPage() {
             const executeAction = async () => {
                 if (confirm("¿Generar automáticamente liquidaciones borrador para todos los empleados activos este mes?")) {
                     try {
-                        const { triggerDraftPayrolls } = await import('@/features/hr/api/hrApi')
+                        const { triggerDraftPayrolls } = await import('@/features/hr')
                         const res = await triggerDraftPayrolls()
                         toast.success(res.detail)
                         fetchPayrolls()
@@ -96,9 +121,6 @@ export default function PayrollsPage() {
     const [selectedPayroll, setSelectedPayroll] = useState<Payroll | null>(null)
     const [paymentMode, setPaymentMode] = useState<'SALARY' | 'PREVIRED' | 'ADVANCE' | null>(null)
 
-    // State for Detail Sheet
-    const [detailSheetOpen, setDetailSheetOpen] = useState(false)
-    const [activePayrollId, setActivePayrollId] = useState<number | null>(null)
 
     const openDetail = (id: number) => {
         const params = new URLSearchParams(searchParams.toString())
@@ -209,29 +231,20 @@ export default function PayrollsPage() {
         {
             accessorKey: "status",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" className="justify-center" />,
-            cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <StatusBadge status={row.getValue("status") as string} />
-                </div>
-            )
+            cell: ({ row }) =>
+                <DataCell.Status status={row.getValue("status") as string} />
         },
         {
             accessorKey: "remuneration_paid_status",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Remuneración" className="justify-center" />,
-            cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <StatusBadge status={(row.original as Payroll & Record<string, string>).remuneration_paid_status || ""} />
-                </div>
-            )
+            cell: ({ row }) =>
+                <DataCell.Status status={(row.original as Payroll & Record<string, string>).remuneration_paid_status || ""} />
         },
         {
             accessorKey: "previred_paid_status",
             header: ({ column }) => <DataTableColumnHeader column={column} title="Previred" className="justify-center" />,
-            cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <StatusBadge status={(row.original as Payroll & Record<string, string>).previred_paid_status || ""} />
-                </div>
-            )
+            cell: ({ row }) =>
+                <DataCell.Status status={(row.original as Payroll & Record<string, string>).previred_paid_status || ""} />
         },
         createActionsColumn<Payroll>({
             headerLabel: "Acciones",
@@ -307,38 +320,28 @@ export default function PayrollsPage() {
     ]
 
     return (
-        <div className="space-y-4">
-            <CreatePayrollModal
+        <div className="space-y-4 h-full flex flex-col">
+            <CreatePayrollDrawer
                 open={dialogOpen}
                 onOpenChange={handleOpenChange}
                 onSaved={(id) => { handleOpenChange(false); openDetail(id) }}
             />
 
-            <DataTable
+            <div className="flex-1 min-h-0">
+                <DataTableView
                 columns={columns}
                 data={payrolls}
                 isLoading={loading}
+                entityLabel="hr.payroll"
                 variant="embedded"
-                filterColumn="employee"
-                globalFilterFields={["display_id", "employee"]}
-                searchPlaceholder="Buscar liquidación o empleado..."
-                facetedFilters={[
-                    {
-                        column: "status",
-                        title: "Estado",
-                        options: [
-                            { label: "Borrador", value: "DRAFT" },
-                            { label: "Contabilizado", value: "POSTED" },
-                        ],
-                    },
-                ]}
-                useAdvancedFilter={true}
+                leftAction={<SmartSearchBar searchDef={payrollSearchDef} placeholder="Buscar por empleado o período..." className="w-full" />}
                 defaultPageSize={20}
                 onRowClick={(row: Payroll) => openDetail(row.id)}
                 createAction={createAction}
             />
+            </div>
 
-            <PayrollDetailSheet
+            <PayrollDetailDrawer
                 payrollId={activePayrollId}
                 open={detailSheetOpen}
                 onOpenChange={(open) => {

@@ -1,4 +1,5 @@
 "use client"
+import { formatCurrency } from "@/lib/money"
 
 import { showApiError } from "@/lib/errors"
 import React, { useState, useEffect } from "react"
@@ -6,23 +7,19 @@ import {
     Package,
     ArrowDownCircle,
     ArrowUpCircle,
-    Loader2,
     Users,
     Info,
     Warehouse as WarehouseIcon
 } from "lucide-react"
-import { BaseModal } from "@/components/shared/BaseModal"
+
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Button } from "@/components/ui/button"
-import { SubmitButton, CancelButton } from "@/components/shared/ActionButtons"
-import { Label } from "@/components/ui/label"
-import { LabeledInput, LabeledSelect, LabeledContainer } from "@/components/shared"
+
+import { BaseModal, CancelButton, Chip, LabeledContainer, LabeledInput, LabeledSelect, SubmitButton } from '@/components/shared'
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { toast } from "sonner"
-import { formatCurrency } from "@/lib/utils"
-import { Badge } from "@/components/ui/badge"
+
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import api from "@/lib/api"
+import { settingsApi } from "../../hooks"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
 import { cn } from "@/lib/utils"
 import { Partner } from "@/features/contacts/types/partner"
@@ -34,8 +31,6 @@ interface InventoryContributionModalProps {
     onSuccess?: () => void
     preSelectedPartnerId?: number
 }
-
-
 
 interface Warehouse {
     id: number
@@ -75,13 +70,12 @@ export function InventoryContributionModal({
         if (!open) return
         const fetchData = async () => {
             try {
-                const [pData, wRes] = await Promise.all([
+                const [pData, warehouses] = await Promise.all([
                     partnersApi.getPartners(),
-                    api.get<{ results?: Warehouse[] } | Warehouse[]>('/inventory/warehouses/')
+                    settingsApi.getWarehouses()
                 ])
                 setPartners(pData)
-                const wData = 'results' in wRes.data ? wRes.data.results : wRes.data
-                setWarehouses(Array.isArray(wData) ? wData : [])
+                setWarehouses(warehouses)
             } catch {
                 toast.error("Error cargando datos")
             }
@@ -104,20 +98,17 @@ export function InventoryContributionModal({
             setUomId("")
             return
         }
-        api.get<Product>(`/inventory/products/${productId}/`)
-            .then(res => {
-                const data = res.data
-                setProductDetails(data)
-                setUnitCost(data.cost_price?.toString() || "0")
+        settingsApi.getProduct(productId)
+            .then(data => {
+                setProductDetails(data as any)
+                setUnitCost((data as any).cost_price?.toString() || "0")
 
-                if (data.uom_category) {
-                    return api.get<{ results?: UoM[] } | UoM[]>(`/inventory/uoms/?category=${data.uom_category}`)
-                        .then(uomRes => {
-                            const uomData = uomRes.data
-                            const uoms = Array.isArray(uomData) ? uomData : (uomData.results || [])
-                            setProductUoMs(uoms)
-                            const baseId = typeof data.uom === 'object' && data.uom !== null ? (data.uom as any).id : data.uom
-                            const base = uoms.find((u: UoM) => u.id === baseId)
+                if ((data as any).uom_category) {
+                    return settingsApi.getUoms({ category: (data as any).uom_category })
+                        .then(uoms => {
+                            setProductUoMs(uoms as any)
+                            const baseId = typeof (data as any).uom === 'object' && (data as any).uom !== null ? (data as any).uom.id : (data as any).uom
+                            const base = uoms.find((u: { id: number }) => u.id === baseId)
                             if (base) setUomId(base.id.toString())
                         })
                 }
@@ -179,7 +170,7 @@ export function InventoryContributionModal({
             const qty = Number(quantity)
             const finalQty = moveType === 'OUT' ? -qty : qty
 
-            await api.post('/inventory/moves/adjust/', {
+            await settingsApi.createInventoryAdjustment({
                 product_id: productId,
                 warehouse_id: warehouseId,
                 quantity: finalQty,
@@ -297,7 +288,7 @@ export function InventoryContributionModal({
                         options={warehouses.map(w => ({ label: w.name, value: w.id.toString() }))}
                         placeholder="Seleccione almacén"
                     />
-                    <LabeledContainer 
+                    <LabeledContainer
                         label={<div className="flex items-center"><Package className="h-3.5 w-3.5 mr-1 opacity-50" /> Producto</div>}
                     >
                         <ProductSelector
@@ -328,7 +319,7 @@ export function InventoryContributionModal({
                         className="text-right font-mono"
                         placeholder="0"
                     />
-                    
+
                     <LabeledSelect
                         label="Unidad de Medida"
                         value={uomId}
@@ -337,13 +328,13 @@ export function InventoryContributionModal({
                         options={productUoMs.map(u => ({ label: u.name, value: u.id.toString() }))}
                         placeholder="UoM"
                     />
-                    
+
                     <div className="space-y-1.5 bg-muted/20 pb-2 pt-1 border border-transparent rounded-lg px-2 -mx-2 sm:mx-0">
                         <LabeledInput
                             label={
                                 <div className="flex justify-between w-full">
                                     <span>Costo {selectedUoM ? `(${selectedUoM.name})` : ''}</span>
-                                    {isCostEditable && <Badge variant="outline" className="text-[8px] h-4 py-0 leading-tight border-warning/30 text-warning bg-warning/10">Editable</Badge>}
+                                    {isCostEditable && <Chip size="xs" intent="warning">Editable</Chip>}
                                 </div>
                             }
                             type={isCostEditable ? "number" : "text"}

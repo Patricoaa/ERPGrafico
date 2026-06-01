@@ -1,7 +1,4 @@
-/**
- * Centralized pricing utilities with consistent rounding
- * All monetary values in CLP (no decimals)
- */
+import { formatCurrency as canonicalFormatCurrency } from "@/lib/money";
 
 const TAX_RATE = 0.19;
 
@@ -170,7 +167,7 @@ export const PricingUtils = {
      * @returns String formateado (ej: "1.234.567")
      */
     formatAmount: (amount: number): string => {
-        return Math.round(amount).toLocaleString('es-CL');
+        return new Intl.NumberFormat('es-CL', { maximumFractionDigits: 0 }).format(Math.round(amount));
     },
 
     /**
@@ -179,7 +176,7 @@ export const PricingUtils = {
      * @returns String formateado (ej: "$1.234.567")
      */
     formatCurrency: (amount: number): string => {
-        return `$${PricingUtils.formatAmount(amount)}`;
+        return canonicalFormatCurrency(amount);
     },
 
     /**

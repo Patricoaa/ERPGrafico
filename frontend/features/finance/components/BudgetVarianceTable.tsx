@@ -11,10 +11,10 @@ import {
 } from "@/components/ui/table";
 import { ChevronRight, ChevronDown, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { MoneyDisplay } from "@/components/shared/MoneyDisplay"
-import { EmptyState } from "@/components/shared/EmptyState";
+
+;
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { TableSkeleton, SkeletonShell } from "@/components/shared";
+import {DataCell, EmptyState, SkeletonShell} from '@/components/shared';
 
 export interface BudgetVarianceNode {
     id: number;
@@ -65,16 +65,16 @@ const VarianceCell = ({ value, percentage, type }: { value: number, percentage: 
     return (
         <TableCell className="text-right p-2">
             <div className="flex flex-col items-end">
-                <MoneyDisplay
-                    amount={value}
+                <DataCell.Currency
+                    value={value}
                     className={cn(
-                        "font-mono text-xs font-bold",
+                        "justify-end font-mono text-xs font-bold w-auto p-0 inline-flex",
                         value === 0 ? "text-muted-foreground" : (isGood ? "text-emerald-600 dark:text-emerald-400" : "text-destructive")
                     )}
                 />
                 <span className={cn(
                     "text-[10px] opacity-70",
-                    value === 0 ? "" : (isGood ? "text-emerald-600" : "text-destructive")
+                    value === 0 ? "" : (isGood ? "text-success font-bold" : "text-destructive font-bold")
                 )}>
                     {percentage.toFixed(1)}%
                 </span>
@@ -93,7 +93,7 @@ const AccountRow = ({ node, level = 0 }: { node: BudgetVarianceNode, level?: num
             <TableRow className={cn(
                 "group hover:bg-muted/50 transition-colors",
                 level === 0 ? "bg-muted/20 font-bold" : "",
-                node.is_unbudgeted ? "bg-amber-500/5" : ""
+                node.is_unbudgeted ? "bg-warning/5" : ""
             )}>
                 <TableCell className="p-2 min-w-[280px]">
                     <div className="flex items-center" style={{ paddingLeft: `${paddingLeft}px` }}>
@@ -107,14 +107,21 @@ const AccountRow = ({ node, level = 0 }: { node: BudgetVarianceNode, level?: num
                         ) : (
                             <div className="w-7" />
                         )}
-                        <span className="mr-2 text-muted-foreground font-mono text-[10px] w-12 shrink-0">{node.code}</span>
-                        <span className="truncate max-w-[200px]" title={node.name}>{node.name}</span>
+                        <DataCell.Code className="mr-2 text-muted-foreground font-mono text-[10px] w-12 shrink-0 justify-start">{node.code}</DataCell.Code>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <span className="truncate max-w-[200px]">
+                                    <DataCell.Text className="truncate justify-start text-left inline font-inherit p-0 text-inherit">{node.name}</DataCell.Text>
+                                </span>
+                            </TooltipTrigger>
+                            <TooltipContent side="top">{node.name}</TooltipContent>
+                        </Tooltip>
 
                         {node.is_unbudgeted && (
                             <TooltipProvider>
                                 <Tooltip>
                                     <TooltipTrigger asChild>
-                                        <AlertCircle className="ml-2 h-3.5 w-3.5 text-amber-500 shrink-0" />
+                                        <AlertCircle className="ml-2 h-3.5 w-3.5 text-warning shrink-0" />
                                     </TooltipTrigger>
                                     <TooltipContent>Cuenta no presupuestada con movimientos reales</TooltipContent>
                                 </Tooltip>
@@ -125,19 +132,19 @@ const AccountRow = ({ node, level = 0 }: { node: BudgetVarianceNode, level?: num
 
                 {/* Month Columns */}
                 <TableCell className="text-right p-2">
-                    <MoneyDisplay amount={node.month_actual} showColor={false} className="font-mono text-xs" />
+                    <DataCell.Currency value={node.month_actual} className="justify-end font-mono text-xs text-foreground font-inherit" />
                 </TableCell>
                 <TableCell className="text-right p-2">
-                    <MoneyDisplay amount={node.month_budget} showColor={false} className="font-mono text-xs text-muted-foreground/70" />
+                    <DataCell.Currency value={node.month_budget} className="justify-end font-mono text-xs text-muted-foreground/70" />
                 </TableCell>
                 <VarianceCell value={node.month_variance} percentage={node.month_percentage} type={node.type} />
 
                 {/* YTD Columns */}
                 <TableCell className="text-right p-2 bg-muted/10">
-                    <MoneyDisplay amount={node.ytd_actual} showColor={false} className="font-mono text-xs font-semibold" />
+                    <DataCell.Currency value={node.ytd_actual} className="justify-end font-mono text-xs font-semibold" />
                 </TableCell>
                 <TableCell className="text-right p-2 bg-muted/10">
-                    <MoneyDisplay amount={node.ytd_budget} showColor={false} className="font-mono text-xs text-muted-foreground/70" />
+                    <DataCell.Currency value={node.ytd_budget} className="justify-end font-mono text-xs text-muted-foreground/70" />
                 </TableCell>
                 <VarianceCell value={node.ytd_variance} percentage={node.ytd_percentage} type={node.type} />
             </TableRow>
@@ -186,7 +193,7 @@ function BudgetVarianceTableBase({ data, loading }: BudgetVarianceTableProps) {
 }
 
 BudgetVarianceTableBase.Skeleton = function BudgetVarianceTableSkeleton() {
-    return <TableSkeleton rows={8} columns={7} ariaLabel="Cargando variación presupuestal" />
+    return <SkeletonShell isLoading ariaLabel="Cargando variación presupuestal" />
 }
 
 export const BudgetVarianceTable = BudgetVarianceTableBase

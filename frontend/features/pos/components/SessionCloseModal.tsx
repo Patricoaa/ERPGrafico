@@ -1,4 +1,5 @@
 "use client"
+import { formatCurrency } from "@/lib/money"
 
 import { showApiError } from "@/lib/errors"
 import { useState, useEffect } from "react"
@@ -10,19 +11,17 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Loader2, Calculator, Banknote, Vault, AlertTriangle, ArrowRightLeft } from "lucide-react"
+import {Loader2, AlertTriangle} from "lucide-react"
 import { toast } from "sonner"
-import api from "@/lib/api"
-import { Numpad } from "@/components/ui/numpad"
+import { posApi } from "../api/posApi"
+import { BaseModal, Numpad } from '@/components/shared'
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
-import { BaseModal } from "@/components/shared/BaseModal"
+
 import { LabeledContainer } from "@/components/shared"
-import { cn, formatCurrency } from "@/lib/utils"
+import { cn } from "@/lib/utils"
 import { POSReport, type POSReportData } from "./POSReport"
 
 import type { POSSession, POSSessionAudit, AccountingSettings, TreasuryAccount } from "@/types/pos"
-
 
 interface SessionCloseModalProps {
     open: boolean
@@ -86,13 +85,12 @@ export function SessionCloseModal({
     useEffect(() => {
         if (open && session) {
             requestAnimationFrame(() => {
-                api.get('/accounting/settings/current/')
-                    .then(res => requestAnimationFrame(() => setAccountingSettings(res.data)))
+                posApi.getAccountingSettings()
+                    .then(data => requestAnimationFrame(() => setAccountingSettings(data)))
                     .catch(err => console.error("Failed to load accounting settings", err))
-                
-                // Fetch full summary to display advanced data (like category sales) in the modal preview
-                api.get(`/treasury/pos-sessions/${session.id}/summary/`)
-                    .then(res => requestAnimationFrame(() => setFullReportData(res.data)))
+
+                posApi.getSessionSummary(session.id)
+                    .then(data => requestAnimationFrame(() => setFullReportData(data)))
                     .catch(err => console.error("Failed to load sumary", err))
             })
         }
@@ -101,13 +99,13 @@ export function SessionCloseModal({
     // Fetch selected account details when justifyTargetId changes
     useEffect(() => {
         if (justifyTargetId && justifyReason === 'TRANSFER') {
-            api.get(`/treasury/accounts/${justifyTargetId}/`)
-                .then(res => {
+            posApi.getTreasuryAccount(Number(justifyTargetId))
+                .then(data => {
                     requestAnimationFrame(() => {
-                        setSelectedAccount(res.data)
+                        setSelectedAccount(data)
                         // Validate funds for surplus (diff > 0 = money coming IN, source account needs money)
-                        if (diff > 0 && res.data.current_balance !== undefined) {
-                            const available = res.data.current_balance as number
+                        if (diff > 0 && (data as any).current_balance !== undefined) {
+                            const available = (data as any).current_balance as number
                             const needed = Math.abs(diff)
                             setInsufficientFunds(available < needed)
                         } else {
@@ -138,7 +136,7 @@ export function SessionCloseModal({
 
         setSubmitting(true)
         try {
-            const response = await api.post(`/treasury/pos-sessions/${session.id}/close_session/`, {
+            const closeData = await posApi.closeSession(session.id, {
                 actual_cash: parseFloat(actualCash) || 0,
                 withdrawal_amount: parseFloat(withdrawalAmount) || 0,
                 notes: closeNotes,
@@ -147,7 +145,7 @@ export function SessionCloseModal({
                 justify_target_id: justifyTargetId ? Number(justifyTargetId) : null
             })
 
-            const audit = response.data.audit
+            const audit = (closeData as any).audit
             const difference = parseFloat(audit.difference)
 
             if (difference !== 0) {

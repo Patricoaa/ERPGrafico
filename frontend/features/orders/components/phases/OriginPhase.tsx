@@ -2,9 +2,9 @@ import { getErrorMessage } from "@/lib/errors"
 
 import { PhaseCard } from "./PhaseCard"
 import { FileText, Trash2, X, Edit, TrendingUp } from "lucide-react"
-import { formatDocumentId } from '@/features/orders/utils/status'
-import api from "@/lib/api"
+import { formatEntity } from '@/features/orders/utils/status'
 import { toast } from "sonner"
+import { useAnnulOrder, useDeleteOrder } from "../../hooks/useOrdersMutations"
 import { useRouter } from "next/navigation"
 import { saleOrderActions } from '@/features/sales/actions'
 import { purchaseOrderActions } from '@/features/purchasing/actions'
@@ -42,16 +42,16 @@ export function OriginPhase({
     onEdit,
     userPermissions
 }: OriginPhaseProps) {
-    const registry = (activeDoc?.document_type === 'PURCHASE_ORDER' || activeDoc?.document_type === 'SERVICE_OBLIGATION') 
-        ? purchaseOrderActions 
-        : saleOrderActions
-    const router = useRouter()
     const isSale = type === 'sale'
+    const registry = isSale ? saleOrderActions : purchaseOrderActions
+    const router = useRouter()
+    const orderType = type === 'obligation' ? 'purchase' : type
+    const annulOrder = useAnnulOrder(orderType)
+    const deleteOrder = useDeleteOrder(orderType)
 
     const handleAnnulOrder = async (id: number) => {
         try {
-            await api.post(type === 'purchase' ? `/purchasing/orders/${id}/annul/` : `/sales/orders/${id}/annul/`, { force: false })
-            toast.success("Orden anulada correctamente")
+            await annulOrder.mutateAsync(id)
             onActionSuccess?.()
         } catch (error: unknown) {
             const errorMessage = getErrorMessage(error) || "Error al anular orden"
@@ -62,7 +62,7 @@ export function OriginPhase({
     const documents: PhaseDocument[] = isNoteMode ? [
         {
             type: 'Documento Rectificado',
-            number: formatDocumentId('FACT', activeInvoice?.corrected_invoice?.number || '---', activeInvoice?.corrected_invoice?.display_id),
+            number: formatEntity('FACT', activeInvoice?.corrected_invoice?.number || '---', activeInvoice?.corrected_invoice?.display_id),
             icon: FileText,
             id: activeInvoice?.corrected_invoice?.id as number,
             docType: 'invoice',
@@ -70,7 +70,7 @@ export function OriginPhase({
         },
         ...(order ? [{
             type: isSale ? 'Nota de Venta' : 'Orden de compras y servicios',
-            number: formatDocumentId(isSale ? 'NV' : 'OCS', order?.number || order?.id, order?.display_id),
+            number: formatEntity(isSale ? 'NV' : 'OCS', order?.number || order?.id, order?.display_id),
             icon: FileText,
             id: order?.id,
             docType: type === 'obligation' ? 'service_obligation' : (type === 'sale' ? 'sale_order' : 'purchase_order'),
@@ -79,7 +79,7 @@ export function OriginPhase({
     ] : (order ? [
         {
             type: isSale ? 'Nota de Venta' : 'Orden de compras y servicios',
-            number: formatDocumentId(isSale ? 'NV' : 'OCS', order?.number || order?.id, order?.display_id),
+            number: formatEntity(isSale ? 'NV' : 'OCS', order?.number || order?.id, order?.display_id),
             icon: FileText,
             id: order?.id,
             docType: type === 'obligation' ? 'service_obligation' : (type === 'sale' ? 'sale_order' : 'purchase_order'),
@@ -88,7 +88,7 @@ export function OriginPhase({
                     icon: Trash2,
                     title: 'Eliminar Borrador',
                     color: 'text-destructive hover:bg-destructive/10',
-                    onClick: () => api.delete(type === 'purchase' ? `/purchasing/orders/${order?.id}/` : `/sales/orders/${order?.id}/`).then(() => { toast.success("Borrador eliminado"); onActionSuccess?.() })
+                    onClick: () => deleteOrder.mutateAsync(order?.id).then(() => { onActionSuccess?.() })
                 }] : []),
                 ...((order?.status !== 'CANCELLED' && order?.status !== 'DRAFT') ? [{
                     icon: X,
@@ -101,7 +101,7 @@ export function OriginPhase({
     ] : (activeInvoice ? [
         {
             type: activeInvoice?.dte_type_display || 'Factura Directa',
-            number: formatDocumentId('FACT', activeInvoice?.number || '---', activeInvoice?.display_id),
+            number: formatEntity('FACT', activeInvoice?.number || '---', activeInvoice?.display_id),
             icon: FileText,
             id: activeInvoice?.id,
             docType: 'invoice',
@@ -158,7 +158,7 @@ export function OriginPhase({
                 {(activeDoc?.lines || activeDoc?.items || []).length > 3 && (
                     <div className="text-[9px] text-muted-foreground/60 italic pt-1 flex justify-between items-center border-t border-border/10 mt-1">
                         <span>Y {(activeDoc?.lines || activeDoc?.items || []).length - 3} productos más...</span>
-                        <span className="font-bold text-primary/60 text-[8px] uppercase tracking-widest">Total {(activeDoc?.lines || activeDoc?.items || []).length} ítems</span>
+                        <span className="font-bold text-primary/60 text-[9px] uppercase tracking-widest">Total {(activeDoc?.lines || activeDoc?.items || []).length} ítems</span>
                     </div>
                 )}
             </div>

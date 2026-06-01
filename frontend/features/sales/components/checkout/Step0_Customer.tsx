@@ -1,8 +1,7 @@
 "use client"
 
-import { User, Info } from "lucide-react"
+import {User} from "lucide-react"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
-import { LabeledContainer } from "@/components/shared/LabeledContainer"
 
 interface Step0_CustomerProps {
     selectedCustomerId: string | null

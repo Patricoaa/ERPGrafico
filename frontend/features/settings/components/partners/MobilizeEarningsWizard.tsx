@@ -2,13 +2,12 @@
 
 import { showApiError } from "@/lib/errors"
 import React, { useState, useEffect, useMemo } from "react"
-import { GenericWizard, WizardStep } from "@/components/shared/GenericWizard"
+import { LabeledInput, PeriodValidationDateInput, GenericWizard, WizardStep, DataCell } from "@/components/shared"
 import { Input } from "@/components/ui/input"
-import { LabeledInput, PeriodValidationDateInput } from "@/components/shared"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
 import { toast } from "sonner"
-import { formatCurrency } from "@/lib/utils"
-import { ArrowRightLeft, CheckCircle2 } from "lucide-react"
+
+import { ArrowRightLeft } from "lucide-react"
 import { Partner } from "@/features/contacts/types/partner"
 
 interface MobilizeEarningsWizardProps {
@@ -31,13 +30,13 @@ export function MobilizeEarningsWizard({ open, onOpenChange, onSuccess, initialP
                 try {
                     const data = await partnersApi.getPartners()
                     let availablePartners = data.filter((p: Partner) => parseFloat(p.partner_earnings_balance || "0") > 0)
-                    
+
                     if (initialPartnerId) {
                         availablePartners = availablePartners.filter((p: Partner) => p.id === initialPartnerId)
                     }
 
                     setPartners(availablePartners)
-                    
+
                     const initial: Record<number, { dividend: number, reinvest: number }> = {}
                     availablePartners.forEach((p: Partner) => {
                         initial[p.id] = { dividend: 0, reinvest: 0 }
@@ -68,7 +67,7 @@ export function MobilizeEarningsWizard({ open, onOpenChange, onSuccess, initialP
                 description,
                 mobilizations: payload
             })
-            
+
             toast.success("Utilidades movilizadas correctamente.")
             onSuccess()
             onOpenChange(false)
@@ -83,8 +82,13 @@ export function MobilizeEarningsWizard({ open, onOpenChange, onSuccess, initialP
         const totalDividend = Object.values(mobilizations).reduce((s, v) => s + v.dividend, 0)
         const totalReinvest = Object.values(mobilizations).reduce((s, v) => s + v.reinvest, 0)
         const totalMobilized = totalDividend + totalReinvest
-        
-        let hasErrors = false
+
+        const hasErrors = partners.some(partner => {
+            const available = parseFloat(partner.partner_earnings_balance || "0")
+            const divValue = mobilizations[partner.id]?.dividend || 0
+            const reinvValue = mobilizations[partner.id]?.reinvest || 0
+            return (divValue + reinvValue) > available
+        })
 
         return [
             {
@@ -96,7 +100,7 @@ export function MobilizeEarningsWizard({ open, onOpenChange, onSuccess, initialP
                         <div className="flex justify-between items-end mb-4">
                             <div>
                                 <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Total a Movilizar</p>
-                                <p className="text-2xl font-mono font-bold text-primary mt-1">{formatCurrency(totalMobilized)}</p>
+                                <DataCell.Currency value={totalMobilized} className="justify-start text-2xl font-bold text-primary mt-1" />
                             </div>
                         </div>
 
@@ -122,18 +126,17 @@ export function MobilizeEarningsWizard({ open, onOpenChange, onSuccess, initialP
                                             const reinvValue = mobilizations[partner.id]?.reinvest || 0
                                             const totalAssigned = divValue + reinvValue
                                             const isError = totalAssigned > available
-                                            if (isError) hasErrors = true
 
                                             return (
                                                 <tr key={partner.id} className="hover:bg-muted/30 transition-colors">
-                                                    <td className="py-3 px-3 font-medium">
-                                                        {partner.name}
+                                                    <td className="py-3 px-3">
+                                                        <DataCell.Text className="justify-start text-left font-medium">{partner.name}</DataCell.Text>
                                                     </td>
-                                                    <td className="py-3 px-3 text-right font-mono text-muted-foreground">
-                                                        {formatCurrency(available)}
+                                                    <td className="py-3 px-3 text-right">
+                                                        <DataCell.Currency value={available} className="justify-end" />
                                                     </td>
                                                     <td className="py-3 px-3">
-                                                        <Input 
+                                                        <Input
                                                             type="number"
                                                             className={`h-8 font-mono text-right ${isError ? 'border-destructive text-destructive' : ''}`}
                                                             value={divValue || ""}
@@ -148,7 +151,7 @@ export function MobilizeEarningsWizard({ open, onOpenChange, onSuccess, initialP
                                                         />
                                                     </td>
                                                     <td className="py-3 px-3">
-                                                        <Input 
+                                                        <Input
                                                             type="number"
                                                             className={`h-8 font-mono text-right ${isError ? 'border-destructive text-destructive' : ''}`}
                                                             value={reinvValue || ""}
@@ -188,8 +191,8 @@ export function MobilizeEarningsWizard({ open, onOpenChange, onSuccess, initialP
                             <div className="space-y-1">
                                 <h4 className="font-heading font-semibold text-sm">Resumen de Movilización</h4>
                                 <p className="text-xs text-muted-foreground leading-relaxed">
-                                    Se procederá a movilizar utilidades retenidas pasadas. 
-                                    Este proceso generará automáticamente los asientos contables correspondientes 
+                                    Se procederá a movilizar utilidades retenidas pasadas.
+                                    Este proceso generará automáticamente los asientos contables correspondientes
                                     disminuyendo la cuenta de utilidades retenidas y abonando a las cuentas de dividendos por pagar o capital suscrito.
                                 </p>
                             </div>
@@ -198,11 +201,11 @@ export function MobilizeEarningsWizard({ open, onOpenChange, onSuccess, initialP
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-1 border p-3 rounded-lg bg-card">
                                 <p className="text-[10px] uppercase text-muted-foreground font-bold tracking-wider">A Dividendos Pagar</p>
-                                <p className="text-xl font-mono text-foreground font-semibold">{formatCurrency(totalDividend)}</p>
+                                <DataCell.Currency value={totalDividend} className="justify-start text-xl font-semibold text-foreground" />
                             </div>
                             <div className="space-y-1 border p-3 rounded-lg bg-card">
                                 <p className="text-[10px] uppercase text-muted-foreground font-bold tracking-wider">A Re-Inversión</p>
-                                <p className="text-xl font-mono text-muted-foreground font-semibold">{formatCurrency(totalReinvest)}</p>
+                                <DataCell.Currency value={totalReinvest} className="justify-start text-xl font-semibold text-muted-foreground" />
                             </div>
                         </div>
 

@@ -1,30 +1,29 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
-import { DataTable } from "@/components/ui/data-table"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import { DataTable } from '@/components/shared'
+import { DataTableColumnHeader } from '@/components/shared'
 import { Button } from "@/components/ui/button"
 import {
-    Plus, Edit, Trash2, Loader2, CreditCard, Landmark, List, History, Tag, Pencil, Lock
+    Plus, CreditCard, Landmark, Lock
 } from "lucide-react"
-import { StatusBadge } from "@/components/shared/StatusBadge"
-import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
-import { ActivitySidebar } from "@/features/audit/components/ActivitySidebar"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { DataCell, createActionsColumn } from '@/components/shared'
+import { ActivitySidebar } from "@/features/audit/components"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
-import api from "@/lib/api"
-import { toast } from "sonner"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { Form, FormField } from "@/components/ui/form"
 import {
     CancelButton, LabeledInput, LabeledSelect, FormSection, MultiSelectTagInput,
-    BaseModal, FormFooter, FormSplitLayout, ActionSlideButton, ActionConfirmModal
+    BaseModal, FormFooter, FormSplitLayout, ActionSlideButton, ActionConfirmModal,
+    SmartSearchBar, useClientSearch, Chip
 } from "@/components/shared"
+import { bankSearchDef, paymentMethodSearchDef } from "@/features/treasury/searchDef"
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
 import { Column } from "@tanstack/react-table";
-import { useBanks, usePaymentMethods, Bank, PaymentMethod } from "@/features/treasury/hooks/useMasterData"
+import { useBanks, usePaymentMethods } from "@/features/treasury/hooks/useMasterData"
+import type { Bank, PaymentMethod } from "@/features/treasury/types"
 
 // --- Schemas ---
 
@@ -56,17 +55,16 @@ interface BankManagementProps {
 }
 
 export function BankManagement({ externalOpen, onOpenChange, createAction }: BankManagementProps) {
-    const { banks, refetch } = useBanks()
+    const { banks, refetch, deleteBank } = useBanks()
+    const { filterFn: filterBanks } = useClientSearch<Bank>(bankSearchDef)
     const [dialogOpen, setDialogOpen] = useState(false)
     const [selectedBank, setSelectedBank] = useState<Bank | null>(null)
 
     const deleteConfirm = useConfirmAction<number>(async (id) => {
         try {
-            await api.delete(`/treasury/banks/${id}/`)
-            toast.success("Banco eliminado")
-            refetch()
-        } catch (error) {
-            toast.error("Error al eliminar banco")
+            await deleteBank(id)
+        } catch {
+            // Error handled by hook
         }
     })
 
@@ -109,24 +107,15 @@ export function BankManagement({ externalOpen, onOpenChange, createAction }: Ban
         createActionsColumn<Bank>({
             renderActions: (item) => (
                 <>
-                    <DataCell.Action
-                        icon={Pencil}
-                        title="Editar"
-                        onClick={() => openEdit(item)}
-                    />
-                    <DataCell.Action
-                        icon={Trash2}
-                        title="Eliminar"
-                        className="text-destructive hover:text-destructive"
-                        onClick={() => handleDelete(item.id)}
-                    />
+                    <DataCell.Action action="edit" onClick={() => openEdit(item)} />
+                    <DataCell.Action action="delete" onClick={() => handleDelete(item.id)} />
                 </>
             )
         })
     ]
 
     return (
-        <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+        <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300 h-full flex flex-col">
             <div className="flex justify-between items-center bg-muted/30 p-4 rounded-lg border border-primary/10 hidden">
                 <div>
                     <h2 className="text-xl font-bold tracking-tight text-primary flex items-center gap-2">
@@ -136,15 +125,15 @@ export function BankManagement({ externalOpen, onOpenChange, createAction }: Ban
                 </div>
             </div>
 
-            <DataTable
-                columns={columns}
-                data={banks}
-                variant="embedded"
-                searchPlaceholder="Buscar bancos..."
-                filterColumn="name"
-                useAdvancedFilter={true}
-                createAction={createAction}
-            />
+            <div className="flex-1 min-h-0">
+                <DataTable
+                    columns={columns}
+                    data={filterBanks(banks)}
+                    variant="embedded"
+                    leftAction={<SmartSearchBar searchDef={bankSearchDef} placeholder="Buscar banco..." className="w-full" />}
+                    createAction={createAction}
+                />
+            </div>
 
             <BankModal
                 open={dialogOpen || !!externalOpen}
@@ -185,7 +174,8 @@ interface BankModalProps {
 }
 
 function BankModal({ open, onOpenChange, bank, onSuccess }: BankModalProps) {
-    const [loading, setLoading] = useState(false)
+    const { createBank, updateBank, isCreating, isUpdating } = useBanks()
+    const isSaving = isCreating || isUpdating
 
     const form = useForm<BankFormValues>({
         resolver: zodResolver(bankSchema),
@@ -207,20 +197,15 @@ function BankModal({ open, onOpenChange, bank, onSuccess }: BankModalProps) {
     }, [open, bank, form])
 
     const onSubmit = async (data: BankFormValues) => {
-        setLoading(true)
         try {
             if (bank) {
-                await api.patch(`/treasury/banks/${bank.id}/`, data)
-                toast.success("Banco actualizado")
+                await updateBank({ id: bank.id, payload: data })
             } else {
-                await api.post("/treasury/banks/", data)
-                toast.success("Banco creado")
+                await createBank(data)
             }
             onSuccess()
-        } catch (error) {
-            toast.error("Error al guardar banco")
-        } finally {
-            setLoading(false)
+        } catch {
+            // Error handled by hook
         }
     }
 
@@ -246,8 +231,8 @@ function BankModal({ open, onOpenChange, bank, onSuccess }: BankModalProps) {
                             <ActionSlideButton
                                 type="submit"
                                 form="bank-form"
-                                loading={loading}
-                                disabled={loading}
+                                loading={isSaving}
+                                disabled={isSaving}
                                 onClick={form.handleSubmit(onSubmit)}
                             >
                                 {bank ? "Guardar Cambios" : "Crear Banco"}
@@ -337,17 +322,16 @@ interface PaymentMethodManagementProps {
 }
 
 export function PaymentMethodManagement({ externalOpen, onOpenChange, createAction }: PaymentMethodManagementProps) {
-    const { methods, refetch } = usePaymentMethods()
+    const { methods, refetch, deleteMethod } = usePaymentMethods()
+    const { filterFn: filterMethods } = useClientSearch<PaymentMethod>(paymentMethodSearchDef)
     const [dialogOpen, setDialogOpen] = useState(false)
     const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(null)
 
     const deleteConfirm = useConfirmAction<number>(async (id) => {
         try {
-            await api.delete(`/treasury/payment-methods/${id}/`)
-            toast.success("Método eliminado")
-            refetch()
-        } catch (error) {
-            toast.error("Error al eliminar")
+            await deleteMethod(id)
+        } catch {
+            // Error handled by hook
         }
     })
 
@@ -404,23 +388,13 @@ export function PaymentMethodManagement({ externalOpen, onOpenChange, createActi
             header: ({ column }: { column: Column<PaymentMethod, unknown> }) => <DataTableColumnHeader column={column} title="Cuenta de Tesorería" className="justify-center" />,
             cell: ({ row }: { row: { original: PaymentMethod } }) => (
                 <div className="flex flex-col items-center justify-center gap-1.5 w-full">
-                    <DataCell.Secondary className="text-center">{row.original.treasury_account_name}</DataCell.Secondary>
+                    <DataCell.Text className="font-normal">{row.original.treasury_account_name}</DataCell.Text>
                     <div className="flex justify-center gap-1">
                         {row.original.allow_for_sales && (
-                            <DataCell.Badge
-                                variant="outline"
-                                className="text-[10px] px-1 h-3.5 bg-income/5 text-income border-income/10 font-black uppercase tracking-tighter"
-                            >
-                                Ventas
-                            </DataCell.Badge>
+                            <Chip size="xs" intent="success">Ventas</Chip>
                         )}
                         {row.original.allow_for_purchases && (
-                            <DataCell.Badge
-                                variant="outline"
-                                className="text-[10px] px-1 h-3.5 bg-asset/5 text-asset border-asset/10 font-black uppercase tracking-tighter"
-                            >
-                                Compras
-                            </DataCell.Badge>
+                            <Chip size="xs" intent="info">Compras</Chip>
                         )}
                     </div>
                 </div>
@@ -430,24 +404,14 @@ export function PaymentMethodManagement({ externalOpen, onOpenChange, createActi
             renderActions: (item) => (
                 item.is_terminal_integration ? (
                     <DataCell.Action
-                        icon={Lock}
+                        action="lock"
                         title="Gestionado por terminal — modifique el dispositivo"
-                        onClick={() => { }}
                         className="text-muted-foreground cursor-default opacity-50"
                     />
                 ) : (
                     <>
-                        <DataCell.Action
-                            icon={Pencil}
-                            title="Editar"
-                            onClick={() => openEdit(item)}
-                        />
-                        <DataCell.Action
-                            icon={Trash2}
-                            title="Eliminar"
-                            className="text-destructive hover:text-destructive"
-                            onClick={() => handleDelete(item.id)}
-                        />
+                        <DataCell.Action action="edit" onClick={() => openEdit(item)} />
+                        <DataCell.Action action="delete" onClick={() => handleDelete(item.id)} />
                     </>
                 )
             )
@@ -455,7 +419,7 @@ export function PaymentMethodManagement({ externalOpen, onOpenChange, createActi
     ]
 
     return (
-        <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+        <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300 h-full flex flex-col">
             <div className="flex justify-between items-center bg-muted/30 p-4 rounded-lg border border-primary/10 hidden">
                 <div>
                     <h2 className="text-xl font-bold tracking-tight text-primary flex items-center gap-2">
@@ -468,15 +432,15 @@ export function PaymentMethodManagement({ externalOpen, onOpenChange, createActi
                 </Button>
             </div>
 
-            <DataTable
-                columns={columns}
-                data={methods}
-                variant="embedded"
-                searchPlaceholder="Buscar por nombre o cuenta..."
-                filterColumn="name"
-                useAdvancedFilter={true}
-                createAction={createAction}
-            />
+            <div className="flex-1 min-h-0">
+                <DataTable
+                    columns={columns}
+                    data={filterMethods(methods)}
+                    variant="embedded"
+                    leftAction={<SmartSearchBar searchDef={paymentMethodSearchDef} placeholder="Buscar método de pago..." className="w-full" />}
+                    createAction={createAction}
+                />
+            </div>
 
             <PaymentMethodModal
                 open={dialogOpen || !!externalOpen}
@@ -517,10 +481,11 @@ interface PaymentMethodModalProps {
 }
 
 function PaymentMethodModal({ open, onOpenChange, method, onSuccess }: PaymentMethodModalProps) {
-    const [loading, setLoading] = useState(false)
+    const { createMethod, updateMethod, isCreating, isUpdating } = usePaymentMethods()
+    const isSaving = isCreating || isUpdating
 
     const form = useForm<PaymentMethodFormValues>({
-        resolver: zodResolver(paymentMethodSchema),
+        resolver: zodResolver(paymentMethodSchema) as any,
         defaultValues: {
             name: "",
             method_type: "DEBIT_CARD",
@@ -548,20 +513,15 @@ function PaymentMethodModal({ open, onOpenChange, method, onSuccess }: PaymentMe
     }, [open, method, form])
 
     const onSubmit = async (data: PaymentMethodFormValues) => {
-        setLoading(true)
         try {
             if (method) {
-                await api.patch(`/treasury/payment-methods/${method.id}/`, data)
-                toast.success("Método actualizado")
+                await updateMethod({ id: method.id, payload: data as any })
             } else {
-                await api.post("/treasury/payment-methods/", data)
-                toast.success("Método creado")
+                await createMethod(data as any)
             }
             onSuccess()
-        } catch (error) {
-            toast.error("Error al guardar método")
-        } finally {
-            setLoading(false)
+        } catch {
+            // Error handled by hook
         }
     }
 
@@ -587,8 +547,8 @@ function PaymentMethodModal({ open, onOpenChange, method, onSuccess }: PaymentMe
                             <ActionSlideButton
                                 type="submit"
                                 form="method-form"
-                                loading={loading}
-                                disabled={loading}
+                                loading={isSaving}
+                                disabled={isSaving}
                                 onClick={form.handleSubmit(onSubmit)}
                             >
                                 {method ? "Guardar Cambios" : "Crear Método"}

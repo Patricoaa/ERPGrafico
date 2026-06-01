@@ -1,9 +1,15 @@
+---
+layer: 20-contracts
+doc: component-card
+status: active
+owner: frontend-team
+last_review: 2026-05-21
+stability: stable
+---
+
 # Card
 
 El componente `Card` es el contenedor lógico principal utilizado para agrupar información relacionada en vistas de detalle, formularios y dashboards del ERP. Es parte del sistema de diseño (shadcn/ui) y garantiza la uniformidad estructural de las tarjetas.
-
-**Layer**: 20-contracts  
-**Owner**: frontend-team  
 **Status**: active  
 
 ---
@@ -45,21 +51,12 @@ El componente `Card` acepta una propiedad `variant` que modifica su apariencia p
 | Variante | Estilos Principales | Uso Sugerido |
 |----------|---------------------|--------------|
 | `default` | Borde sólido, sombra leve, fondo `bg-card`, esquinas redondeadas estándar (`rounded-md`). | Tarjetas estándar (ej: InvoiceCard, OrderCard, Dashboards). |
-| `dashed` | Bordes punteados, fondo tenue, esquinas redondeadas de énfasis (`rounded-lg`). | Secciones de formularios, sub-bloques visuales o contenido destacable donde se desee menor jerarquía visual que una tarjeta estándar. Reemplaza al antiguo `FORM_STYLES.card`. |
+| `dashed` | Bordes punteados, fondo tenue, esquinas redondeadas de énfasis (`rounded-lg`). | Secciones de formularios, sub-bloques visuales o contenido destacable donde se desee menor jerarquía visual que una tarjeta estándar. |
+| `transparent` | Borde sólido, sin fondo (`bg-transparent`), sin sombra (`shadow-none`), esquinas redondeadas estándar (`rounded-md`). | Vistas de configuración densas (Settings views) o bloques secundarios integrados en layouts complejos. |
 
 ---
 
 ## 3. Anti-Patrones a Evitar 🚫
-
-### ❌ Prohibido el uso de `FORM_STYLES.card`
-**Nunca** utilices utilidades crudas o constantes globales en `div`s genéricos para renderizar tarjetas.
-```tsx
-// MAL
-<div className={FORM_STYLES.card}>...</div>
-
-// BIEN
-<Card variant="dashed" className="p-4">...</Card>
-```
 
 ### ❌ Prohibido anidar Cards
 No coloques un `<Card>` dentro del `<CardContent>` de otro `<Card>`. Si necesitas agrupación secundaria, utiliza `variant="dashed"` de forma aislada o separadores lógicos (`<Separator />`).

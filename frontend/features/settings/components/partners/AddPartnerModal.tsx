@@ -1,26 +1,20 @@
 "use client"
+import { formatCurrency } from "@/lib/money"
+import { cn } from "@/lib/utils"
 
 import { showApiError } from "@/lib/errors"
-import React, { useEffect, useState } from "react"
-import { Button } from "@/components/ui/button"
-import { CancelButton, SubmitButton } from "@/components/shared"
-import { BaseModal } from "@/components/shared/BaseModal"
-import { LabeledInput, LabeledContainer, PeriodValidationDateInput } from "@/components/shared"
+import React, { useEffect, useState, useMemo } from "react"
+import { BaseModal, CancelButton, SubmitButton } from '@/components/shared'
+
+import { DataTable, LabeledInput, LabeledContainer, PeriodValidationDateInput, DataCell } from "@/components/shared"
 import { partnersApi } from "@/features/contacts/api/partnersApi"
 import { Partner } from "@/features/contacts/types/partner"
 import { toast } from "sonner"
-import { Loader2, UserPlus, Info, TrendingDown } from "lucide-react"
+import {UserPlus, Info, TrendingDown} from "lucide-react"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
-import { formatCurrency } from "@/lib/utils"
-import { 
-    Table, 
-    TableBody, 
-    TableCell, 
-    TableHead, 
-    TableHeader, 
-    TableRow 
-} from "@/components/ui/table"
+
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import type { ColumnDef } from "@tanstack/react-table"
 
 interface AddPartnerModalProps {
     open: boolean
@@ -44,8 +38,8 @@ export function AddPartnerModal({ open, onOpenChange, onSuccess }: AddPartnerMod
             partnersApi.getPartners().then(data => {
                 setPartners(data)
                 const total = data.reduce((acc: number, p: Partner) => {
-                    const amount = typeof p.partner_total_contributions === 'string' 
-                        ? parseFloat(p.partner_total_contributions) 
+                    const amount = typeof p.partner_total_contributions === 'string'
+                        ? parseFloat(p.partner_total_contributions)
                         : (p.partner_total_contributions || 0)
                     return acc + amount
                 }, 0)
@@ -152,46 +146,11 @@ export function AddPartnerModal({ open, onOpenChange, onSuccess }: AddPartnerMod
                         </div>
                     </div>
 
-                    <div className="border rounded-lg overflow-hidden bg-card shadow-sm">
-                        <Table>
-                            <TableHeader>
-                                <TableRow className="bg-muted/50">
-                                    <TableHead className="text-[10px] font-bold uppercase">Socio</TableHead>
-                                    <TableHead className="text-[10px] font-bold uppercase text-right">Capital Actual</TableHead>
-                                    <TableHead className="text-[10px] font-bold uppercase text-right">Actual %</TableHead>
-                                    <TableHead className="text-[10px] font-bold uppercase text-right text-primary">Proyectado %</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {partners.map(p => {
-                                    const contributions = typeof p.partner_total_contributions === 'string' 
-                                        ? parseFloat(p.partner_total_contributions) 
-                                        : (p.partner_total_contributions || 0)
-                                    
-                                    const currentPerc = p.partner_equity_percentage
-                                    const projectedPerc = projectedTotal > 0 ? (contributions / projectedTotal * 100).toFixed(2) : '0.00'
-                                    
-                                    return (
-                                        <TableRow key={p.id} className="opacity-70 grayscale-[0.5]">
-                                            <TableCell className="text-xs font-medium">{p.name}</TableCell>
-                                            <TableCell className="text-right text-xs font-mono">{formatCurrencyExcludingSymbol(contributions)}</TableCell>
-                                            <TableCell className="text-right text-xs">{currentPerc}%</TableCell>
-                                            <TableCell className="text-right text-xs font-bold text-primary">{projectedPerc}%</TableCell>
-                                        </TableRow>
-                                    )
-                                })}
-                                {/* Nueva fila */}
-                                {newAmount > 0 && (
-                                    <TableRow className="bg-primary/5 font-bold">
-                                        <TableCell className="text-xs text-primary">NUEVO SOCIO</TableCell>
-                                        <TableCell className="text-right text-xs font-mono text-primary">{formatCurrencyExcludingSymbol(newAmount)}</TableCell>
-                                        <TableCell className="text-right text-xs">-</TableCell>
-                                        <TableCell className="text-right text-xs text-primary">{ (newAmount / projectedTotal * 100).toFixed(2) }%</TableCell>
-                                    </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
-                    </div>
+                    <RowTable
+                        partners={partners}
+                        projectedTotal={projectedTotal}
+                        newAmount={newAmount}
+                    />
                 </div>
 
                 <Alert className="bg-primary/5 border-primary/20">
@@ -205,6 +164,101 @@ export function AddPartnerModal({ open, onOpenChange, onSuccess }: AddPartnerMod
     )
 }
 
+interface ProjectionRow {
+    id: string
+    name: string
+    type: "existing" | "new"
+    capital: number
+    currentPerc: string
+    projectedPerc: string
+}
+
+const projColumns: ColumnDef<ProjectionRow>[] = [
+    {
+        header: "Socio",
+        accessorKey: "name",
+        cell: ({ row }) => (
+            <DataCell.Text className={cn("text-left justify-start text-xs font-semibold", row.original.type === "new" && "text-primary")}>
+                {row.original.name}
+            </DataCell.Text>
+        ),
+    },
+    {
+        header: "Capital Actual",
+        accessorKey: "capital",
+        cell: ({ row }) => (
+            <DataCell.Currency value={row.original.capital} className={cn(row.original.type === "new" && "text-primary font-bold")} />
+        ),
+        meta: { align: "right" as const },
+    },
+    {
+        header: "Actual %",
+        id: "currentPerc",
+        cell: ({ row }) => (
+            <DataCell.Text className="text-right text-xs font-mono">{row.original.currentPerc}</DataCell.Text>
+        ),
+        meta: { align: "right" as const },
+    },
+    {
+        header: "Proyectado %",
+        id: "projectedPerc",
+        cell: ({ row }) => (
+            <DataCell.Text className="text-right text-xs font-bold text-primary font-mono">
+                {row.original.projectedPerc}
+            </DataCell.Text>
+        ),
+        meta: { align: "right" as const },
+    },
+]
+
+function RowTable({ partners, projectedTotal, newAmount }: { partners: Partner[]; projectedTotal: number; newAmount: number }) {
+    const rows: ProjectionRow[] = useMemo(() => {
+        const existing: ProjectionRow[] = partners.map(p => {
+            const contributions = typeof p.partner_total_contributions === "string"
+                ? parseFloat(p.partner_total_contributions)
+                : (p.partner_total_contributions || 0)
+            const projectedPerc = projectedTotal > 0 ? (contributions / projectedTotal * 100).toFixed(2) : "0.00"
+            return {
+                id: `existing-${p.id}`,
+                name: p.name,
+                type: "existing" as const,
+                capital: contributions,
+                currentPerc: `${p.partner_equity_percentage}%`,
+                projectedPerc: `${projectedPerc}%`,
+            }
+        })
+
+        if (newAmount <= 0) return existing
+
+        return [
+            ...existing,
+            {
+                id: "new-partner",
+                name: "NUEVO SOCIO",
+                type: "new" as const,
+                capital: newAmount,
+                currentPerc: "-",
+                projectedPerc: `${(newAmount / projectedTotal * 100).toFixed(2)}%`,
+            },
+        ]
+    }, [partners, projectedTotal, newAmount])
+
+    return (
+        <DataTable
+            columns={projColumns}
+            data={rows}
+            variant="embedded"
+            hidePagination
+            renderRow={(row, children) => {
+                const extra = row.original.type === "new" ? "bg-primary/5 font-bold" : "opacity-70 grayscale-[0.5]"
+                return React.cloneElement(children as React.ReactElement<{ className?: string }>, {
+                    className: `${(children as React.ReactElement<{ className?: string }>).props.className ?? ""} ${extra}`,
+                })
+            }}
+        />
+    )
+}
+
 function formatCurrencyExcludingSymbol(amount: number) {
-    return new Intl.NumberFormat('es-CL', { maximumFractionDigits: 0 }).format(amount)
+    return formatCurrency(amount)
 }

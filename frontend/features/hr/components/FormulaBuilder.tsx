@@ -1,7 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+import { Chip } from "@/components/shared"
 import { 
     Calculator, 
     Variable, 
@@ -76,13 +76,15 @@ export function FormulaBuilder({ value, onChange }: FormulaBuilderProps) {
                             {VARIABLES.map((v) => (
                                 <Tooltip key={v.val}>
                                     <TooltipTrigger asChild>
-                                        <Badge 
-                                            variant="secondary" 
-                                            className="cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors py-1 px-2 font-mono text-[10px]"
-                                            onClick={() => insert(v.val)}
-                                        >
-                                            {v.label}
-                                        </Badge>
+                                        <button type="button" onClick={() => insert(v.val)}>
+                                            <Chip 
+                                                size="xs"
+                                                intent="neutral" 
+                                                className="cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors"
+                                            >
+                                                {v.label}
+                                            </Chip>
+                                        </button>
                                     </TooltipTrigger>
                                     <TooltipContent side="top">
                                         <p className="text-xs">{v.desc}</p>

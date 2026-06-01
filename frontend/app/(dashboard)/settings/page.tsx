@@ -1,8 +1,8 @@
 "use client"
 
 import Link from "next/link"
-import { Building2, ShieldCheck, History, GitBranch, Terminal, UsersRound, Info } from "lucide-react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Building2, ShieldCheck, History, GitBranch, Terminal, Info } from "lucide-react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 const settingsModules = [
     { 

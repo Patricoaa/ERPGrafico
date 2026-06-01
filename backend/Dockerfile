@@ -32,6 +32,8 @@ RUN apt-get update \
     libssl-dev \
     libpq-dev \
     postgresql-client \
+    libpango-1.0-0 \
+    libpangoft2-1.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
 
@@ -88,6 +90,8 @@ RUN apt-get update \
     libssl-dev \
     libpq-dev \
     postgresql-client \
+    libpango-1.0-0 \
+    libpangoft2-1.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .

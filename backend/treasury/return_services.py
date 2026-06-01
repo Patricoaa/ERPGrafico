@@ -1,6 +1,7 @@
 from django.db import transaction
 from django.core.exceptions import ValidationError
 from django.utils import timezone
+from django.contrib.contenttypes.models import ContentType
 from treasury.models import TreasuryMovement
 from accounting.models import JournalEntry, JournalItem, AccountingSettings
 from accounting.services import JournalEntryService
@@ -124,7 +125,9 @@ class TreasuryReturnService:
                 date=return_movement.date,
                 description=f"Devolución Pago Cliente - {payment.contact.name if payment.contact else 'Cliente'}",
                 reference=f"DEV-MOV-{payment.id}",
-                status=JournalEntry.State.DRAFT
+                status=JournalEntry.State.DRAFT,
+                source_content_type=ContentType.objects.get_for_model(TreasuryMovement),
+                source_object_id=return_movement.id,
             )
             
             # Debit: Receivable (Customer owes us again)
@@ -156,7 +159,9 @@ class TreasuryReturnService:
                 date=return_movement.date,
                 description=f"Devolución Pago Proveedor - {payment.contact.name if payment.contact else 'Proveedor'}",
                 reference=f"DEV-MOV-{payment.id}",
-                status=JournalEntry.State.DRAFT
+                status=JournalEntry.State.DRAFT,
+                source_content_type=ContentType.objects.get_for_model(TreasuryMovement),
+                source_object_id=return_movement.id,
             )
             
             # Debit: Cash/Bank (Money comes back)

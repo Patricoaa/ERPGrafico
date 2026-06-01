@@ -17,10 +17,11 @@ import {
     Pie,
     Cell
 } from 'recharts';
-import api, { pollTask } from '@/lib/api';
-import { TrendingUp, TrendingDown, Package, DollarSign, Users, ShoppingCart } from 'lucide-react';
-import { CardSkeleton } from "@/components/shared";
-import { EmptyState } from "@/components/shared/EmptyState";
+import { financeApi } from "../api/financeApi";
+import {TrendingUp, Package, DollarSign, ShoppingCart} from 'lucide-react';
+import { CardSkeleton, EmptyState, MoneyDisplay, StatCard } from '@/components/shared';
+;
+import { formatCurrency } from "@/lib/money";
 import { DateRange } from "react-day-picker";
 import { format } from "date-fns";
 
@@ -72,8 +73,7 @@ export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
                 if (date?.to) params.end_date = format(date.to, 'yyyy-MM-dd');
                 if (date?.from) params.start_date = format(date.from, 'yyyy-MM-dd');
 
-                const res = await api.get('finances/api/bi-analytics/', { params });
-                const finalData = res.data.task_id ? await pollTask(res.data.task_id) : res.data;
+                const finalData = await financeApi.getBIAnalytics(params);
                 setData(finalData);
             } catch (err) {
                 console.error(err);
@@ -93,64 +93,34 @@ export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
         <PageContainer>
             {/* KPI Overview Cards */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <Card className="rounded-none shadow-2xl ring-1 ring-border bg-card border-l-4 border-l-info">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Ventas Totales</CardTitle>
-                        <DollarSign className="h-4 w-4 text-primary" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">
-                            {sales.total_sales.toLocaleString('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 })}
-                        </div>
-                        <div className="flex items-center text-xs text-success mt-1">
-                            <TrendingUp className="h-3 w-3 mr-1" />
-                            +{sales.growth}% vs período anterior
-                        </div>
-                    </CardContent>
-                </Card>
-
-                <Card className="rounded-none shadow-2xl ring-1 ring-border bg-card border-l-4 border-l-success">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Ticket Promedio</CardTitle>
-                        <ShoppingCart className="h-4 w-4 text-success" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">
-                            {sales.average_ticket.toLocaleString('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 })}
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                            {sales.sales_count} ventas realizadas
-                        </p>
-                    </CardContent>
-                </Card>
-
-                <Card className="rounded-none shadow-2xl ring-1 ring-border bg-card border-l-4 border-l-accent">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Valor Inventario</CardTitle>
-                        <Package className="h-4 w-4 text-accent" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">
-                            {inventory.total_value.toLocaleString('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 })}
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                            {inventory.item_count} productos en stock
-                        </p>
-                    </CardContent>
-                </Card>
-
-                <Card className="rounded-none shadow-2xl ring-1 ring-border bg-card border-l-4 border-l-warning">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Rotación Inventario</CardTitle>
-                        <TrendingUp className="h-4 w-4 text-warning" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{inventory.turnover_ratio}x</div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                            {inventory.low_stock_alerts} alertas de stock bajo
-                        </p>
-                    </CardContent>
-                </Card>
+                <StatCard
+                    label="Ventas Totales"
+                    value={<MoneyDisplay amount={sales.total_sales} digits={0} />}
+                    icon={DollarSign}
+                    trend={{ direction: "up", value: `+${sales.growth}% vs período anterior` }}
+                    accent="info"
+                />
+                <StatCard
+                    label="Ticket Promedio"
+                    value={<MoneyDisplay amount={sales.average_ticket} digits={0} />}
+                    icon={ShoppingCart}
+                    subtext={`${sales.sales_count} ventas realizadas`}
+                    accent="success"
+                />
+                <StatCard
+                    label="Valor Inventario"
+                    value={<MoneyDisplay amount={inventory.total_value} digits={0} />}
+                    icon={Package}
+                    subtext={`${inventory.item_count} productos en stock`}
+                    accent="accent"
+                />
+                <StatCard
+                    label="Rotación Inventario"
+                    value={`${inventory.turnover_ratio}x`}
+                    icon={TrendingUp}
+                    subtext={`${inventory.low_stock_alerts} alertas de stock bajo`}
+                    accent="warning"
+                />
             </div>
 
             {/* Sales Trend */}
@@ -165,7 +135,7 @@ export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
                             <CartesianGrid strokeDasharray="3 3" />
                             <XAxis dataKey="month" />
                             <YAxis />
-                            <Tooltip formatter={((value: number | string) => [Number(value || 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' }), 'Ventas']) as any} />
+                            <Tooltip formatter={((value: number | string) => [formatCurrency(value), 'Ventas']) as any} />
                             <Legend />
                             <Line
                                 type="monotone"
@@ -195,7 +165,7 @@ export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
                                 <CartesianGrid strokeDasharray="3 3" />
                                 <XAxis type="number" />
                                 <YAxis dataKey="name" type="category" width={100} />
-                                <Tooltip formatter={((value: number | string) => [Number(value || 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' }), 'Ventas']) as any} />
+                                <Tooltip formatter={((value: number | string) => [formatCurrency(value), 'Ventas']) as any} />
                                 <Bar dataKey="amount" fill={COLORS[1]} />
                             </BarChart>
                         </ResponsiveContainer>
@@ -225,7 +195,7 @@ export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
                                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                     ))}
                                 </Pie>
-                                <Tooltip formatter={((value: number | string) => [Number(value || 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' }), 'Valor']) as any} />
+                                <Tooltip formatter={((value: number | string) => [formatCurrency(value), 'Valor']) as any} />
                                 <Legend />
                             </PieChart>
                         </ResponsiveContainer>
@@ -243,7 +213,7 @@ export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
                         <div className="space-y-2">
                             <div className="flex justify-between items-center">
                                 <span className="text-sm text-muted-foreground">Volumen de Compra:</span>
-                                <span className="font-semibold">{performance.purchase_total.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}</span>
+                                <span className="font-semibold"><MoneyDisplay amount={performance.purchase_total} /></span>
                             </div>
                         </div>
                     </CardContent>
@@ -275,7 +245,7 @@ export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
                         <div className="space-y-2">
                             <div className="flex justify-between items-center">
                                 <span className="text-sm text-muted-foreground">Saldo Pendiente:</span>
-                                <span className="font-semibold text-primary">{performance.ar_total.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}</span>
+                                <span className="font-semibold text-primary"><MoneyDisplay amount={performance.ar_total} /></span>
                             </div>
                         </div>
                     </CardContent>
@@ -289,7 +259,7 @@ export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
                         <div className="space-y-2">
                             <div className="flex justify-between items-center">
                                 <span className="text-sm text-muted-foreground">Saldo Pendiente:</span>
-                                <span className="font-semibold text-destructive">{performance.ap_total.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}</span>
+                                <span className="font-semibold text-destructive"><MoneyDisplay amount={performance.ap_total} /></span>
                             </div>
                         </div>
                     </CardContent>

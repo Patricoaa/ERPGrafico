@@ -1,16 +1,27 @@
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, filters
 from django.http import HttpResponse
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.db.models import Sum, Q
 from .models import Account, JournalEntry, AccountingSettings, Budget, BudgetItem, AccountType, JournalItem, FiscalYear
+from django_filters.rest_framework import DjangoFilterBackend, FilterSet
+import django_filters
+
+class JournalEntryFilterSet(FilterSet):
+    date_after = django_filters.DateFilter(field_name='date', lookup_expr='gte')
+    date_before = django_filters.DateFilter(field_name='date', lookup_expr='lte')
+
+    class Meta:
+        model = JournalEntry
+        fields = ['status', 'date_after', 'date_before']
+
 from .serializers import (
     AccountSerializer, JournalEntrySerializer, AccountingSettingsSerializer,
     BudgetSerializer, BudgetItemSerializer, FiscalYearSerializer, FiscalYearPreviewSerializer
 )
 from .services import JournalEntryService, AccountingService, BudgetService
 from .fiscal_year_service import FiscalYearClosingService
-from .selectors import list_accounts, list_budgetable_accounts, get_account_ledger
+from .selectors import list_accounts, list_budgetable_accounts, get_account_ledger, balance_affecting_statuses
 from django.core.exceptions import ValidationError
 from core.mixins import BulkImportMixin, AuditHistoryMixin as AuditHistory
 
@@ -32,15 +43,22 @@ class AccountingSettingsViewSet(viewsets.ModelViewSet):
             if request.method == 'GET':
                  return Response({"detail": "Settings not found"}, status=status.HTTP_404_NOT_FOUND)
             obj = AccountingSettings.objects.create()
-        
+
         if request.method == 'GET':
             serializer = self.get_serializer(obj)
             return Response(serializer.data)
-        
+
         serializer = self.get_serializer(obj, data=request.data, partial=(request.method == 'PATCH'))
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data)
+
+    @action(detail=False, methods=['get'], url_path='vat', permission_classes=[IsAuthenticated])
+    def vat(self, request):
+        obj = AccountingSettings.get_solo()
+        rate = obj.default_vat_rate if obj else 19
+        rate_float = float(rate)
+        return Response({'rate': rate_float, 'multiplier': round(1 + rate_float / 100, 10)})
 
 class AccountViewSet(BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
     queryset = Account.objects.all()
@@ -62,8 +80,8 @@ class AccountViewSet(BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
     
     def destroy(self, request, *args, **kwargs):
         account = self.get_object()
-        # Check if account has journal items
-        if account.journal_items.filter(entry__status='POSTED').exists():
+        # Check if account has journal items that affect balances
+        if account.journal_items.filter(entry__status__in=balance_affecting_statuses()).exists():
             return Response(
                 {"error": "No se puede eliminar una cuenta con movimientos contables asociados."},
                 status=status.HTTP_400_BAD_REQUEST
@@ -102,13 +120,32 @@ class AccountViewSet(BulkImportMixin, AuditHistory, viewsets.ModelViewSet):
 class JournalEntryViewSet(viewsets.ModelViewSet, AuditHistory):
     queryset = JournalEntry.objects.all()
     serializer_class = JournalEntrySerializer
-    
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    filterset_class = JournalEntryFilterSet
+    search_fields = ['description', 'display_id', 'items__partner__name', 'items__partner__tax_id']
+
     @action(detail=True, methods=['post'])
     def post_entry(self, request, pk=None):
         entry = self.get_object()
         try:
             JournalEntryService.post_entry(entry)
             return Response({'status': 'posted'})
+        except ValidationError as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=['post'])
+    def reverse_entry(self, request, pk=None):
+        entry = self.get_object()
+        if not entry.is_manual:
+            return Response(
+                {'error': 'No se puede revertir un asiento generado automáticamente. Use el proceso de anulación del documento origen.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        try:
+            description = request.data.get('description')
+            reversal = JournalEntryService.reverse_entry(entry, description=description)
+            serializer = self.get_serializer(reversal)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
         except ValidationError as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
             
@@ -125,9 +162,14 @@ class JournalEntryViewSet(viewsets.ModelViewSet, AuditHistory):
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     def update(self, request, *args, **kwargs):
-        # For simplicity, we might re-create items on update or implement a specific update service
-        # This is a basic implementation that wipes items and re-creates them
+        # Only DRAFT entries can be edited; POSTED/CLOSED/REVERSAL/CANCELLED are immutable
         instance = self.get_object()
+        if instance.status != 'DRAFT':
+            return Response(
+                {'error': 'Solo se pueden editar asientos en estado Borrador.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        # This is a basic implementation that wipes items and re-creates them
         data = request.data.copy()
         items_data = data.pop('items', None)
         
@@ -140,11 +182,15 @@ class JournalEntryViewSet(viewsets.ModelViewSet, AuditHistory):
             if items_data is not None:
                 # Replace items
                 instance.items.all().delete()
+                from .models import JournalItem
                 for item in items_data:
-                    # Ensure account ID is passed correctly, might need adjustment depending on frontend payload
-                    # Frontend usually sends 'account' as ID.
-                    from .models import JournalItem
-                    JournalItem.objects.create(entry=instance, **item)
+                    account_val = item.pop('account', None)
+                    if account_val:
+                        # Coerce empty string FK values to None
+                        for fk_field in ('partner',):
+                            if fk_field in item and not item[fk_field]:
+                                item[fk_field] = None
+                        JournalItem.objects.create(entry=instance, account_id=account_val, **item)
             
             return Response(serializer.data)
         except Exception as e:

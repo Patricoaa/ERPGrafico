@@ -1,4 +1,5 @@
 "use client"
+import { formatCurrency } from "@/lib/money"
 
 import React, { useEffect, useState } from "react"
 import {
@@ -6,43 +7,30 @@ import {
     Plus,
     ArrowRightLeft,
     AlertCircle,
-    PieChart,
-    Building2,
-    Info,
-    UserPlus,
-    MoreHorizontal,
-    Wallet,
-    LogOut,
     Banknote,
     History,
-    BarChart3,
-    BookOpen,
-    Layers,
-    Settings2,
-    ArrowDownToLine,
     MoveHorizontal
 } from "lucide-react"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 
 import {
-    DropdownMenu,
-    DropdownMenuContent,
     DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
+
 } from "@/components/ui/dropdown-menu"
-import { CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import {
-    TableRow,
-    TableCell
-} from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
+
+
 import { partnersApi } from "@/features/contacts/api/partnersApi"
 import { Partner, PartnerSummary } from "@/features/contacts/types/partner"
 import { toast } from "sonner"
-import { formatCurrency, cn } from "@/lib/utils"
-import { CardSkeleton, TableSkeleton } from "@/components/shared"
+import { cn } from "@/lib/utils"
+import {
+    CardSkeleton,
+    SkeletonShell,
+        DataTable,
+    DataCell,
+    createActionsColumn,
+    Chip
+} from "@/components/shared"
 import {
     SubscriptionMovementModal,
     EquityTransferModal,
@@ -53,11 +41,9 @@ import { PartnerWithdrawalWizard } from "@/features/settings/components/partners
 import { AddPartnerModal } from "@/features/settings/components/partners/AddPartnerModal"
 import { InitialCapitalModal } from "@/features/settings/components/InitialCapitalModal"
 import { MobilizeEarningsWizard } from "@/features/settings/components/partners/MobilizeEarningsWizard"
-import { PartnerLedgerModal } from "@/features/settings/components/partners/PartnerLedgerModal"
-import { EquityStatsSheet } from "@/features/settings/components/partners/EquityStatsSheet"
-import { DataTable } from "@/components/ui/data-table"
+import { PartnerLedgerDrawer } from "@/features/settings/components/partners/PartnerLedgerDrawer"
+import { EquityStatsDrawer } from "@/features/settings/components/partners/EquityStatsDrawer"
 import { ColumnDef } from "@tanstack/react-table"
-import { DataCell, createActionsColumn } from "@/components/ui/data-table-cells"
 
 export function EquityCompositionTab({
     initialAddPartnerOpen = false,
@@ -77,6 +63,10 @@ export function EquityCompositionTab({
     const [isTransferOpen, setIsTransferOpen] = useState(false)
     const [isInitialSetupOpen, setIsInitialSetupOpen] = useState(false)
     const [isAddPartnerOpen, setIsAddPartnerOpen] = useState(false)
+
+    const router = useRouter()
+    const pathname = usePathname()
+    const searchParams = useSearchParams()
 
     // Custom action modals
     const [isContributionOpen, setIsContributionOpen] = useState(false)
@@ -128,11 +118,27 @@ export function EquityCompositionTab({
         }
     }, [initialStatsOpen])
 
+    useEffect(() => {
+        const ledgerParam = searchParams.get("ledger")
+        if (ledgerParam) {
+            const partnerId = parseInt(ledgerParam, 10)
+            const partner = partners.find(p => p.id === partnerId)
+            
+            setSelectedPartnerId(partnerId)
+            if (partner) {
+                setSelectedPartnerName(partner.name)
+            }
+            setIsLedgerOpen(true)
+        } else {
+            setIsLedgerOpen(false)
+        }
+    }, [searchParams, partners])
+
     if (loading) {
         return (
             <div className="space-y-6">
                 <CardSkeleton count={4} variant="grid" />
-                <TableSkeleton rows={10} columns={9} />
+                <SkeletonShell isLoading ariaLabel="Cargando..." />
             </div>
         )
     }
@@ -150,7 +156,7 @@ export function EquityCompositionTab({
 
                     {Number(row.original.partner_excess_capital) > 0 && (
                         <div className="mt-1.5 p-1.5 bg-warning/10 border border-warning/20 rounded-sm flex items-center gap-2 overflow-hidden ring-1 ring-warning/10">
-                            <div className="flex items-center gap-1.5 text-[8px] text-warning font-black uppercase tracking-tighter">
+                            <div className="flex items-center gap-1.5 text-[9px] text-warning font-black uppercase tracking-tighter">
                                 <AlertCircle className="h-2.5 w-2.5 shrink-0" />
                                 Exceso: +{formatCurrency(row.original.partner_excess_capital)}
                             </div>
@@ -164,9 +170,9 @@ export function EquityCompositionTab({
             header: () => <div className="text-right">Part. %</div>,
             cell: ({ row }) => (
                 <div className="text-right">
-                    <Badge variant="outline" className="font-mono text-[10px] h-5 rounded-sm border-primary/20 bg-primary/5 text-primary font-black">
+                    <Chip size="xs" intent="primary">
                         {row.getValue("partner_equity_percentage")}%
-                    </Badge>
+                    </Chip>
                 </div>
             )
         },
@@ -301,9 +307,9 @@ export function EquityCompositionTab({
                             title="Ver Libro Auxiliar"
                             className="text-primary font-black"
                             onClick={() => {
-                                setSelectedPartnerId(partner.id)
-                                setSelectedPartnerName(partner.name)
-                                setIsLedgerOpen(true)
+                                const params = new URLSearchParams(searchParams.toString())
+                                params.set("ledger", partner.id.toString())
+                                router.push(`${pathname}?${params.toString()}`, { scroll: false })
                             }}
                         />
                     </>
@@ -313,9 +319,9 @@ export function EquityCompositionTab({
     ]
 
     return (
-        <div className="space-y-6">
-            {/* Main Content with DataTable */}
-            <DataTable
+        <div className="space-y-6 h-full flex flex-col">
+            <div className="flex-1 min-h-0">
+                <DataTable
                 columns={columns}
                 data={partners}
                 isLoading={loading}
@@ -352,6 +358,7 @@ export function EquityCompositionTab({
                     </>
                 }
             />
+            </div>
 
 
             {/* Modals remain the same */}
@@ -394,14 +401,20 @@ export function EquityCompositionTab({
                 onSuccess={fetchData}
                 initialPartnerId={selectedPartnerId?.toString()}
             />
-            <PartnerLedgerModal
+            <PartnerLedgerDrawer
                 open={isLedgerOpen}
-                onOpenChange={setIsLedgerOpen}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        const params = new URLSearchParams(searchParams.toString())
+                        params.delete("ledger")
+                        router.push(`${pathname}?${params.toString()}`, { scroll: false })
+                    }
+                }}
                 partnerId={selectedPartnerId}
                 partnerName={selectedPartnerName}
             />
             {summary && (
-                <EquityStatsSheet
+                <EquityStatsDrawer
                     open={isStatsOpen}
                     onOpenChange={(open) => {
                         setIsStatsOpen(open)

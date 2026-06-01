@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
-import { useQuery } from "@tanstack/react-query"
+import { usePayrollDetail } from "@/features/hr/hooks/usePayrolls"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { showApiError } from "@/lib/errors"
@@ -9,38 +9,30 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import {
-    getPayroll, postPayroll, generateProformaPayroll, deletePayroll,
-    createPayrollItem, updatePayrollItem, deletePayrollItem,
-    getPayrollConcepts, payPrevired, paySalary,
-    getPayrollPayments
+    postPayroll, generateProformaPayroll, deletePayroll,
+    createPayrollItem, updatePayrollItem, deletePayrollItem, payPrevired, paySalary,
 } from '@/features/hr/api/hrApi'
-import { getEmployeePayrollPreview } from '@/features/profile/api/profileApi'
 import { PaymentModal } from "@/features/treasury/components/PaymentModal"
-import type { Payroll, PayrollItem, PayrollConcept, PayrollPayment } from "@/types/hr"
+import type { PayrollItem, PayrollConcept, PayrollPayment, SalaryAdvance } from "@/types/hr"
 import { Button } from "@/components/ui/button"
-import { StatusBadge } from "@/components/shared/StatusBadge"
 
-import { BaseModal } from "@/components/shared/BaseModal"
 import {
     Form, FormField
 } from "@/components/ui/form"
-import { LabeledInput, LabeledSelect } from "@/components/shared"
+import { ActionConfirmModal, ActionSlideButton, BaseModal, CancelButton, FormFooter, LabeledInput, LabeledSelect, StatusBadge } from '@/components/shared'
+
 import {
-    AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-    AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger
-} from "@/components/ui/alert-dialog"
-import {
-    Loader2, Trash2, BookOpen,
+    Loader2, BookOpen,
     DollarSign, ShieldCheck, Sparkles,
     CheckCircle2, FileText, ArrowLeft
 } from "lucide-react"
-import { TableSkeleton } from "@/components/shared/TableSkeleton"
+import { DataCell } from "@/components/shared"
+import { SkeletonShell } from "@/components/shared"
 import { PayrollCard } from "@/features/hr/components/PayrollCard"
 import { cn } from "@/lib/utils"
-import { ActionConfirmModal } from "@/components/shared/ActionConfirmModal"
-import { SheetCloseButton } from "@/components/shared/SheetCloseButton"
+
 import { useConfirmAction } from "@/hooks/useConfirmAction"
-import { ActionSlideButton } from "@/components/shared/ActionSlideButton";
+;
 
 const itemSchema = z.object({
     concept: z.string().min(1, "Concepto requerido"),
@@ -50,7 +42,8 @@ const itemSchema = z.object({
 type ItemFormValues = z.infer<typeof itemSchema>
 
 interface EmployeeBasic {
-    contact_detail?: { name?: string } | null
+    id: number
+    contact_detail?: { name?: string; tax_id?: string } | null
     position?: string | null
     department?: string | null
 }
@@ -62,40 +55,33 @@ interface PayrollDetailContentProps {
     isSheet?: boolean
     viewMode?: 'admin' | 'employee'
     employee?: EmployeeBasic
+    onHeaderDataChange?: (data: {
+        title: React.ReactNode | string
+        subtitle: React.ReactNode | string
+        icon?: any
+        headerActions?: React.ReactNode
+    }) => void
 }
 
-export function PayrollDetailContent({ payrollId, onClose, onUpdate, isSheet = false, viewMode = 'admin', employee }: PayrollDetailContentProps) {
+export function PayrollDetailContent({
+    payrollId,
+    onClose,
+    onUpdate,
+    isSheet = false,
+    viewMode = 'admin',
+    employee,
+    onHeaderDataChange
+}: PayrollDetailContentProps) {
     const router = useRouter()
-    
+
     const [posting, setPosting] = useState(false)
     const [generating, setGenerating] = useState(false)
     const [editingItem, setEditingItem] = useState<PayrollItem | null>(null)
     const [previredDialog, setPreviredDialog] = useState(false)
     const [salaryDialog, setSalaryDialog] = useState(false)
+    const [postConfirmOpen, setPostConfirmOpen] = useState(false)
 
-    const { data: payrollData, isLoading: loading, refetch: fetchPayroll } = useQuery({
-        queryKey: ['payroll', payrollId, viewMode],
-        queryFn: async () => {
-            if (viewMode === 'employee') {
-                const pData = await getEmployeePayrollPreview(payrollId)
-                if (employee && pData) {
-                    pData.employee_detail = pData.employee_detail || {
-                        contact_detail: employee.contact_detail,
-                        position: employee.position,
-                        department: employee.department
-                    }
-                }
-                return { payroll: pData, concepts: [] as PayrollConcept[], payments: pData.payments || [] }
-            } else {
-                const [pData, cData, pmtData] = await Promise.all([
-                    getPayroll(payrollId),
-                    getPayrollConcepts(),
-                    getPayrollPayments({ payroll: String(payrollId) })
-                ])
-                return { payroll: pData, concepts: cData, payments: pmtData }
-            }
-        }
-    })
+    const { data: payrollData, isLoading: loading, refetch: fetchPayroll } = usePayrollDetail(payrollId, viewMode, employee)
 
     const payroll = payrollData?.payroll || null
     const concepts = payrollData?.concepts || []
@@ -159,7 +145,111 @@ export function PayrollDetailContent({ payrollId, onClose, onUpdate, isSheet = f
         }
     }
 
-    if (loading) return <TableSkeleton rows={8} columns={5} className="flex-1 p-6" />
+    const isPosted = payroll?.status === 'POSTED'
+    const salaroPaid = payments.some((p: PayrollPayment) => p.payment_type === 'SALARIO')
+    const previredPaid = payments.some((p: PayrollPayment) => p.payment_type === 'PREVIRED')
+
+    const netSalary = parseFloat(payroll?.net_salary || "0")
+    const totalAdvances = payroll?.advances?.reduce((s: number, a: SalaryAdvance) => s + parseFloat(a.amount), 0) || 0
+    const totalSalaryPaid = payments.filter((p: PayrollPayment) => p.payment_type === 'SALARIO').reduce((s: number, p: PayrollPayment) => s + parseFloat(p.amount), 0)
+    const pendingSalary = Math.max(0, netSalary - totalAdvances - totalSalaryPaid)
+
+    const workerLegalDiscounts = payroll?.items?.filter((i: PayrollItem) => i.concept_detail?.category === 'DESCUENTO_LEGAL_TRABAJADOR') || []
+
+    useEffect(() => {
+        if (isSheet && onHeaderDataChange && payroll) {
+            onHeaderDataChange({
+                title: (
+                    <div className="flex items-center gap-2">
+                        <span>{isPosted ? "Liquidación" : "Borrador de Liquidación"}</span>
+                        <StatusBadge
+                            status={isPosted ? "posted" : "draft"}
+                            size="md"
+                        />
+                    </div>
+                ),
+                subtitle: (
+                    <div className="flex items-center gap-3 text-[10px] sm:text-xs font-semibold text-muted-foreground uppercase tracking-widest mt-0.5">
+                        <span className="font-bold text-primary/80">{payroll.display_id}</span>
+                        <span className="opacity-30">|</span>
+                        <span className="hidden sm:inline">{payroll.period_label}</span>
+                        <span className="opacity-30 hidden sm:inline">|</span>
+                        <span>{payroll.employee_name}</span>
+                    </div>
+                ),
+                icon: FileText,
+                headerActions: (
+                    <div className="flex items-center gap-2 sm:gap-3">
+                        {viewMode === 'admin' && !isPosted && (
+                            <>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="rounded-sm text-[10px] sm:text-xs font-bold gap-1.5 border-primary/20 text-primary hover:bg-primary/5 px-2 sm:px-4 h-8 sm:h-9"
+                                    onClick={handleGenerateProforma}
+                                    disabled={generating}
+                                >
+                                    {generating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                                    <span className="hidden sm:inline">Propuesta Inicial</span>
+                                    <span className="sm:hidden">Propuesta</span>
+                                </Button>
+
+                                <Button
+                                    size="sm"
+                                    className="rounded-sm text-[10px] sm:text-xs font-bold gap-1.5 px-2 sm:px-4 h-8 sm:h-9 "
+                                    disabled={posting}
+                                    onClick={() => setPostConfirmOpen(true)}
+                                >
+                                    {posting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <BookOpen className="h-3.5 w-3.5" />}
+                                    Contabilizar
+                                </Button>
+                            </>
+                        )}
+                        {viewMode === 'admin' && isPosted && (
+                            <>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className={cn(
+                                        "rounded-sm text-[10px] sm:text-xs font-bold gap-1.5 px-2 sm:px-4 h-8 sm:h-9 transition-all",
+                                        salaroPaid
+                                            ? "bg-success/10 text-success border-success/20"
+                                            : "bg-warning/10 text-warning border-warning/20 hover:bg-warning/10"
+                                    )}
+                                    onClick={() => !salaroPaid && setSalaryDialog(true)}
+                                    disabled={salaroPaid}
+                                >
+                                    {salaroPaid ? <CheckCircle2 className="h-3.5 w-3.5" /> : <DollarSign className="h-3.5 w-3.5" />}
+                                    {salaroPaid ? "Pagado" : "Pagar Sueldo"}
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className={cn(
+                                        "rounded-sm text-[10px] sm:text-xs font-bold gap-1.5 px-2 sm:px-4 h-8 sm:h-9 transition-all",
+                                        previredPaid
+                                            ? "bg-success/10 text-success border-success/20"
+                                            : "bg-destructive/10 text-destructive border-destructive/20 hover:bg-destructive/20"
+                                    )}
+                                    onClick={() => !previredPaid && setPreviredDialog(true)}
+                                    disabled={previredPaid}
+                                >
+                                    {previredPaid ? <CheckCircle2 className="h-3.5 w-3.5" /> : <ShieldCheck className="h-3.5 w-3.5" />}
+                                    {previredPaid ? "Previred" : "Pagar Previred"}
+                                </Button>
+                            </>
+                        )}
+
+                        {viewMode === 'admin' && !isPosted && (
+                            <DataCell.Action action="delete" onClick={handleDeletePayroll} />
+                        )}
+                    </div>
+                )
+            })
+        }
+    }, [isSheet, payroll, isPosted, generating, posting, salaroPaid, previredPaid, viewMode, onHeaderDataChange])
+
+    if (loading) return <SkeletonShell isLoading ariaLabel="Cargando..." />
 
     if (!payroll) return (
         <div className="flex flex-col items-center justify-center p-24 text-muted-foreground gap-4">
@@ -168,173 +258,129 @@ export function PayrollDetailContent({ payrollId, onClose, onUpdate, isSheet = f
         </div>
     )
 
-    const isPosted = payroll.status === 'POSTED'
-    const salaroPaid = payments.some(p => p.payment_type === 'SALARIO')
-    const previredPaid = payments.some(p => p.payment_type === 'PREVIRED')
-
-    const netSalary = parseFloat(payroll.net_salary || "0")
-    const totalAdvances = payroll.advances?.reduce((s, a) => s + parseFloat(a.amount), 0) || 0
-    const totalSalaryPaid = payments.filter(p => p.payment_type === 'SALARIO').reduce((s, p) => s + parseFloat(p.amount), 0)
-    const pendingSalary = Math.max(0, netSalary - totalAdvances - totalSalaryPaid)
-    
-    const workerLegalDiscounts = payroll.items?.filter(i => i.concept_detail?.category === 'DESCUENTO_LEGAL_TRABAJADOR') || []
-    const employerContributions = payroll.items?.filter(i => i.concept_detail?.category === 'DESCUENTO_LEGAL_EMPLEADOR') || []
-    const totalPreviredRequired = (workerLegalDiscounts.reduce((s, i) => s + parseFloat(i.amount), 0)) + employerContributions.reduce((s, i) => s + parseFloat(i.amount), 0)
-    const totalPreviredPaid = payments.filter(p => p.payment_type === 'PREVIRED').reduce((s, p) => s + parseFloat(p.amount), 0)
-    const pendingPrevired = Math.max(0, totalPreviredRequired - totalPreviredPaid)
-
     return (
         <div className={cn("flex-1 flex flex-col min-h-0", isSheet ? "w-full" : "space-y-6")}>
             {/* Header Section */}
-            <div className={cn(
-                "flex items-center justify-between",
-                isSheet ? "px-6 py-4 border-b bg-background sticky top-0 z-50 rounded-tr-3xl" : "px-0"
-            )}>
-                <div className="flex items-center gap-4">
-                    {!isSheet && (
-                        <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            onClick={() => router.push('/hr/payrolls')} 
+            {!isSheet && (
+                <div className="flex items-center justify-between px-0">
+                    <div className="flex items-center gap-4">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => router.push('/hr/payrolls')}
                             className="rounded-sm h-10 w-10 text-muted-foreground hover:bg-primary/5 hover:text-primary transition-all"
                         >
                             <ArrowLeft className="h-5 w-5" />
                         </Button>
-                    )}
-                    <div className="flex items-center gap-4">
-                        <FileText className="h-6 w-6" />
-                        <div className="flex flex-col">
-                            <div className="flex items-center gap-2">
-                                <h1 className={cn("font-bold tracking-tight text-foreground", isSheet ? "text-xl" : "text-2xl")}>
-                                    {isPosted ? "Liquidación" : "Borrador de Liquidación"}
-                                </h1>
-                                <StatusBadge 
-                                    status={isPosted ? "posted" : "draft"} 
-                                    className="rounded-sm px-2 h-4.5"
-                                />
-                            </div>
-                            <div className="flex items-center gap-3 text-[10px] sm:text-xs font-semibold text-muted-foreground uppercase tracking-widest mt-0.5">
-                                <span className="font-bold text-primary/80">{payroll.display_id}</span>
-                                <span className="opacity-30">|</span>
-                                <span className="hidden sm:inline">{payroll.period_label}</span>
-                                <span className="opacity-30 hidden sm:inline">|</span>
-                                <span>{payroll.employee_name}</span>
+                        <div className="flex items-center gap-4">
+                            <FileText className="h-6 w-6" />
+                            <div className="flex flex-col">
+                                <div className="flex items-center gap-2">
+                                    <h1 className="font-bold tracking-tight text-foreground text-2xl">
+                                        {isPosted ? "Liquidación" : "Borrador de Liquidación"}
+                                    </h1>
+                                    <StatusBadge
+                                        status={isPosted ? "posted" : "draft"}
+                                        size="md"
+                                    />
+                                </div>
+                                <div className="flex items-center gap-3 text-[10px] sm:text-xs font-semibold text-muted-foreground uppercase tracking-widest mt-0.5">
+                                    <span className="font-bold text-primary/80">{payroll.display_id}</span>
+                                    <span className="opacity-30">|</span>
+                                    <span className="hidden sm:inline">{payroll.period_label}</span>
+                                    <span className="opacity-30 hidden sm:inline">|</span>
+                                    <span>{payroll.employee_name}</span>
+                                </div>
                             </div>
                         </div>
                     </div>
+
+                    <div className="flex items-center gap-2 sm:gap-3">
+                        {viewMode === 'admin' && !isPosted && (
+                            <>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="rounded-sm text-[10px] sm:text-xs font-bold gap-1.5 border-primary/20 text-primary hover:bg-primary/5 px-2 sm:px-4 h-8 sm:h-9"
+                                    onClick={handleGenerateProforma}
+                                    disabled={generating}
+                                >
+                                    {generating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                                    <span className="hidden sm:inline">Propuesta Inicial</span>
+                                    <span className="sm:hidden">Propuesta</span>
+                                </Button>
+
+                                <Button
+                                    size="sm"
+                                    className="rounded-sm text-[10px] sm:text-xs font-bold gap-1.5 px-2 sm:px-4 h-8 sm:h-9 "
+                                    disabled={posting}
+                                    onClick={() => setPostConfirmOpen(true)}
+                                >
+                                    {posting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <BookOpen className="h-3.5 w-3.5" />}
+                                    Contabilizar
+                                </Button>
+                            </>
+                        )}
+                        {viewMode === 'admin' && isPosted && (
+                            <>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className={cn(
+                                        "rounded-sm text-[10px] sm:text-xs font-bold gap-1.5 px-2 sm:px-4 h-8 sm:h-9 transition-all",
+                                        salaroPaid
+                                            ? "bg-success/10 text-success border-success/20"
+                                            : "bg-warning/10 text-warning border-warning/20 hover:bg-warning/10"
+                                    )}
+                                    onClick={() => !salaroPaid && setSalaryDialog(true)}
+                                    disabled={salaroPaid}
+                                >
+                                    {salaroPaid ? <CheckCircle2 className="h-3.5 w-3.5" /> : <DollarSign className="h-3.5 w-3.5" />}
+                                    {salaroPaid ? "Pagado" : "Pagar Sueldo"}
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className={cn(
+                                        "rounded-sm text-[10px] sm:text-xs font-bold gap-1.5 px-2 sm:px-4 h-8 sm:h-9 transition-all",
+                                        previredPaid
+                                            ? "bg-success/10 text-success border-success/20"
+                                            : "bg-destructive/10 text-destructive border-destructive/20 hover:bg-destructive/20"
+                                    )}
+                                    onClick={() => !previredPaid && setPreviredDialog(true)}
+                                    disabled={previredPaid}
+                                >
+                                    {previredPaid ? <CheckCircle2 className="h-3.5 w-3.5" /> : <ShieldCheck className="h-3.5 w-3.5" />}
+                                    {previredPaid ? "Previred" : "Pagar Previred"}
+                                </Button>
+                            </>
+                        )}
+
+                        {viewMode === 'admin' && !isPosted && (
+                            <DataCell.Action action="delete" onClick={handleDeletePayroll} />
+                        )}
+                    </div>
                 </div>
-
-                <div className="flex items-center gap-2 sm:gap-3">
-                    {viewMode === 'admin' && !isPosted && (
-                        <>
-                            <Button
-                                variant="outline" 
-                                size="sm"
-                                className="rounded-sm text-[10px] sm:text-xs font-bold gap-1.5 border-primary/20 text-primary hover:bg-primary/5 px-2 sm:px-4 h-8 sm:h-9"
-                                onClick={handleGenerateProforma}
-                                disabled={generating}
-                            >
-                                {generating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
-                                <span className="hidden sm:inline">Propuesta Inicial</span>
-                                <span className="sm:hidden">Propuesta</span>
-                            </Button>
-
-                            <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                    <Button size="sm" className="rounded-sm text-[10px] sm:text-xs font-bold gap-1.5 px-2 sm:px-4 h-8 sm:h-9 shadow-lg shadow-primary/20" disabled={posting}>
-                                        {posting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <BookOpen className="h-3.5 w-3.5" />}
-                                        Contabilizar
-                                    </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent className="rounded-lg border-none shadow-2xl">
-                                    <AlertDialogHeader>
-                                        <AlertDialogTitle className="text-xl font-bold tracking-tight">¿Contabilizar liquidación?</AlertDialogTitle>
-                                        <AlertDialogDescription className="text-sm">
-                                            Se generarán los asientos contables asociados a los haberes y retenciones legales. 
-                                            Esta acción bloqueará la edición de la liquidación.
-                                        </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter className="mt-4 gap-3">
-                                        <AlertDialogCancel className="rounded-sm font-bold text-xs border-primary/10">Cancelar</AlertDialogCancel>
-                                        <AlertDialogAction onClick={handlePost} className="rounded-sm font-bold text-xs bg-primary hover:bg-primary/90">
-                                            Confirmar y Contabilizar
-                                        </AlertDialogAction>
-                                    </AlertDialogFooter>
-                                </AlertDialogContent>
-                            </AlertDialog>
-                        </>
-                    )}
-                    {viewMode === 'admin' && isPosted && (
-                        <>
-                            <Button
-                                variant="outline" 
-                                size="sm"
-                                className={cn(
-                                    "rounded-sm text-[10px] sm:text-xs font-bold gap-1.5 px-2 sm:px-4 h-8 sm:h-9 transition-all",
-                                    salaroPaid
-                                        ? "bg-success/10 text-success border-success/20"
-                                        : "bg-warning/10 text-warning border-warning/20 hover:bg-warning/10"
-                                )}
-                                onClick={() => !salaroPaid && setSalaryDialog(true)}
-                                disabled={salaroPaid}
-                            >
-                                {salaroPaid ? <CheckCircle2 className="h-3.5 w-3.5" /> : <DollarSign className="h-3.5 w-3.5" />}
-                                {salaroPaid ? "Pagado" : "Pagar Sueldo"}
-                            </Button>
-                            <Button
-                                variant="outline" 
-                                size="sm"
-                                className={cn(
-                                    "rounded-sm text-[10px] sm:text-xs font-bold gap-1.5 px-2 sm:px-4 h-8 sm:h-9 transition-all",
-                                    previredPaid
-                                        ? "bg-success/10 text-success border-success/20"
-                                        : "bg-destructive/10 text-destructive border-destructive/20 hover:bg-destructive/20"
-                                )}
-                                onClick={() => !previredPaid && setPreviredDialog(true)}
-                                disabled={previredPaid}
-                            >
-                                {previredPaid ? <CheckCircle2 className="h-3.5 w-3.5" /> : <ShieldCheck className="h-3.5 w-3.5" />}
-                                {previredPaid ? "Previred" : "Pagar Previred"}
-                            </Button>
-                        </>
-                    )}
-                    
-                    {viewMode === 'admin' && !isPosted && (
-                        <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-8 w-8 sm:h-9 sm:w-9 rounded-sm text-destructive hover:bg-destructive/10" 
-                            onClick={handleDeletePayroll}
-                        >
-                            <Trash2 className="h-4 w-4 sm:h-4.5 sm:w-4.5" />
-                        </Button>
-                    )}
-
-                    {isSheet && (
-                        <div className="flex items-center gap-2 ml-4 pr-10">
-                        </div>
-                    )}
-                </div>
-            </div>
+            )}
 
             {/* Custom Close Button for Sheet (Top Right Corner) */}
-            {/* Removed: BaseDrawer already provides a close button */}
+            {/* Removed: Drawer already provides a close button */}
 
             {/* Scroll Area for Content */}
-            <div className={cn("flex-1", isSheet ? "overflow-y-auto custom-scrollbar p-6 bg-muted/30" : "")}>
+            <div className={cn("flex-1", isSheet ? "overflow-y-auto custom-scrollbar p-6" : "")}>
                 <div className={cn(isSheet ? "max-w-4xl mx-auto pb-12" : "")}>
-                    <PayrollCard 
+                    <PayrollCard
                         payroll={payroll}
                         isPosted={isPosted}
                         isSalaryPaid={salaroPaid}
                         isPreviredPaid={previredPaid}
                         payments={payments}
-                        onEditItem={viewMode === 'admin' ? setEditingItem : undefined}
-                        onDeleteItem={viewMode === 'admin' ? handleDeleteItem : undefined}
-                        onAddItem={viewMode === 'admin' ? () => setEditingItem({ payroll: payrollId } as unknown as PayrollItem) : undefined}
-                        isReadOnly={viewMode === 'employee'}
+                        onEditItem={viewMode === 'admin' && !isPosted ? setEditingItem : undefined}
+                        onDeleteItem={viewMode === 'admin' && !isPosted ? handleDeleteItem : undefined}
+                        onAddItem={viewMode === 'admin' && !isPosted ? () => setEditingItem({ payroll: payrollId } as unknown as PayrollItem) : undefined}
+                        isReadOnly={viewMode === 'employee' || isPosted}
                         showEmployerContributions={viewMode === 'admin'}
-                        className={isSheet ? "shadow-2xl shadow-border/20" : ""}
+                        className={isSheet ? "" : ""}
                     />
                 </div>
             </div>
@@ -346,7 +392,7 @@ export function PayrollDetailContent({ payrollId, onClose, onUpdate, isSheet = f
                 title="Registrar Pago de Sueldo"
                 total={pendingSalary}
                 pendingAmount={pendingSalary}
-                isPurchase={true} 
+                isPurchase={true}
                 hideDteFields={true}
                 onConfirm={async (data) => {
                     await paySalary(payrollId, data)
@@ -392,6 +438,16 @@ export function PayrollDetailContent({ payrollId, onClose, onUpdate, isSheet = f
                 description="¿Eliminar esta liquidación? Esta acción no se puede deshacer."
                 variant="destructive"
             />
+
+            <ActionConfirmModal
+                open={postConfirmOpen}
+                onOpenChange={setPostConfirmOpen}
+                onConfirm={handlePost}
+                title="¿Contabilizar liquidación?"
+                description="Se generarán los asientos contables asociados a los haberes y retenciones legales. Esta acción bloqueará la edición de la liquidación."
+                variant="destructive"
+                confirmText="Confirmar y Contabilizar"
+            />
         </div>
     )
 }
@@ -410,13 +466,13 @@ function PayrollItemDialog({ payrollId, item, concepts, onSaved, onEditCleared, 
     })
 
     useEffect(() => {
-        if (item) {
+        if (item && item.id) {
             form.reset({
-                concept: item.concept.toString(),
-                description: item.description,
-                amount: item.amount,
+                concept: item.concept?.toString() || "",
+                description: item.description || "",
+                amount: item.amount || "0",
             })
-        } else if (open) {
+        } else if (open || (item && !item.id)) {
             form.reset({ concept: concepts[0]?.id.toString() || "", description: "", amount: "0" })
         }
     }, [item, open, concepts, form])
@@ -425,7 +481,7 @@ function PayrollItemDialog({ payrollId, item, concepts, onSaved, onEditCleared, 
         setSaving(true)
         try {
             const payload = { ...data, concept: parseInt(data.concept), payroll: payrollId }
-            if (item) {
+            if (item && item.id) {
                 await updatePayrollItem(payrollId, item.id, payload as unknown as Partial<PayrollItem>)
             } else {
                 await createPayrollItem(payrollId, payload as unknown as Partial<PayrollItem>)
@@ -444,45 +500,31 @@ function PayrollItemDialog({ payrollId, item, concepts, onSaved, onEditCleared, 
         <BaseModal
             open={open}
             onOpenChange={(o) => { setOpen(o); if (!o) onEditCleared() }}
-            title={
-                <div className="flex items-center gap-3">
-                    <Sparkles className="h-5 w-5" />
-                    <div className="flex flex-col text-left">
-                        <span className="text-lg font-bold tracking-tight">
-                            {item ? "Editar Línea" : "Nueva Línea"}
-                        </span>
-                        <div className="flex items-center gap-2 text-[10px] font-medium text-muted-foreground uppercase tracking-widest">
-                            Itemización <span className="opacity-30">|</span> Liquidación
-                        </div>
-                    </div>
-                </div>
-            }
+            icon={Sparkles}
+            title={item && item.id ? "Editar Línea" : "Nueva Línea"}
+            description="Itemización • Liquidación de Remuneraciones"
             footer={
-                <div className="flex justify-end gap-3 w-full">
-                    <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => { setOpen(false); onEditCleared(); }}
-                        className="rounded-sm text-xs font-bold border-primary/20 hover:bg-primary/5"
-                    >
-                        Cancelar
-                    </Button>
-                    <ActionSlideButton
-                        form="payroll-item-form"
-                        type="submit"
-                        disabled={saving}
-                        className="rounded-sm text-xs font-bold transition-all shadow-lg shadow-primary/20"
-                    >
-                        {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        {item ? "Actualizar Item" : "Añadir a Liquidación"}
-                    </ActionSlideButton>
-                </div>
+                <FormFooter
+                    actions={
+                        <>
+                            <CancelButton onClick={() => { setOpen(false); onEditCleared(); }} />
+                            <ActionSlideButton
+                                form="payroll-item-form"
+                                type="submit"
+                                disabled={saving}
+                            >
+                                {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                {item && item.id ? "Actualizar Item" : "Añadir a Liquidación"}
+                            </ActionSlideButton>
+                        </>
+                    }
+                />
             }
         >
             <Form {...form}>
-                <form 
+                <form
                     id="payroll-item-form"
-                    onSubmit={form.handleSubmit(onSubmit)} 
+                    onSubmit={form.handleSubmit(onSubmit)}
                     className="space-y-5 text-left py-2"
                 >
                     <FormField control={form.control} name="concept" render={({ field, fieldState }) => (
