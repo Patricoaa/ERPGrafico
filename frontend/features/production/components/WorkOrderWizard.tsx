@@ -8,8 +8,9 @@ import { AlertTriangle, Package, FileText, Plus, CheckCircle2, Keyboard, Printer
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 
-import { ActionConfirmModal, BaseModal, CancelButton, FormFooter, LabeledSelect } from '@/components/shared'
-import { cn } from '@/lib/utils'
+import { ActionConfirmModal, BaseModal, Drawer, CancelButton, FormFooter, LabeledSelect, StatusBadge } from '@/components/shared'
+import { cn, formatPlainDate } from '@/lib/utils'
+import { formatEntityDisplay } from '@/lib/entity-registry'
 import { showApiError } from '@/lib/errors'
 import { useConfirmAction } from '@/hooks/useConfirmAction'
 import { useVatRate } from '@/hooks/useVatRate'
@@ -18,7 +19,6 @@ import { useHubPanel } from '@/components/providers/HubPanelProvider'
 import { useWorkOrderMutations, productionApi } from '../hooks'
 import { completeTask } from '@/features/workflow/api/workflowApi'
 
-import { WizardHeader } from './WizardHeader'
 import { WizardModeBanner } from './WizardModeBanner'
 import { WizardProcessSidebar } from './WizardProcessSidebar'
 import { WizardStickyFooter } from './WizardStickyFooter'
@@ -440,30 +440,126 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
 
   return (
     <>
-      <BaseModal
+      <Drawer
         open={open}
         onOpenChange={onOpenChange}
-        size="2xl"
-        hideScrollArea
-        className="h-[90vh]"
-        contentClassName="h-full"
+        side="bottom"
+        boundary="embedded"
+        defaultSize="100%"
+        resizable={false}
+        contentClassName="p-0 flex flex-col h-full overflow-hidden"
+        icon={Package}
         title={
-          <WizardHeader
+          order
+            ? `Gestión de Orden de Trabajo`
+            : 'Crear Orden de Trabajo'
+        }
+        subtitle={
+          order
+            ? `${formatEntityDisplay('production.workorder', order)} · ${order.sale_customer_name || 'Manual'} · ${formatPlainDate(order.created_at)}`
+            : 'Planificación de Producción • Nueva OT'
+        }
+        description={STAGES[viewingStepIndex]?.label}
+        headerActions={
+          <div className="flex items-center gap-2">
+            {order && (
+              <>
+                <StatusBadge
+                  status={order.status}
+                />
+                {order.status === 'IN_PROGRESS' && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const saleOrderId = typeof order.sale_order === 'object' ? order.sale_order?.id : order.sale_order
+                      const id = saleOrderId ?? order.id
+                      const type = saleOrderId ? 'sale' : 'purchase'
+                      openHub({ orderId: id, type: type as 'sale' | 'purchase', onActionSuccess: fetchOrder })
+                    }}
+                  >
+                    Centro de Comando
+                  </Button>
+                )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => { setTemplateName(''); setIsSaveTemplateOpen(true) }}
+                  title="Guardar como plantilla"
+                  disabled={mutations.isDuplicating}
+                >
+                  Plantilla
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsDuplicateModalOpen(true)}
+                  title="Duplicar"
+                  disabled={mutations.isDuplicating}
+                >
+                  Duplicar
+                </Button>
+                {order.status !== 'FINISHED' && order.status !== 'CANCELLED' && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setIsAnnulModalOpen(true)}
+                    title="Anular"
+                    disabled={mutations.isAnnuling}
+                    className="text-warning hover:text-warning"
+                  >
+                    Anular
+                  </Button>
+                )}
+                {order.status === 'DRAFT' && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setIsDeleteModalOpen(true)}
+                    title="Eliminar"
+                    disabled={mutations.isDeleting}
+                    className="text-destructive hover:text-destructive"
+                  >
+                    Eliminar
+                  </Button>
+                )}
+              </>
+            )}
+          </div>
+        }
+        footer={
+          <WizardStickyFooter
+            isViewingCurrentStage={isViewingCurrentStage}
+            stepMode={stepMode}
+            onCancelEdit={() => navigateToStep(viewingStepIndex, 'view')}
+            onClose={() => onOpenChange(false)}
+            pendingTasks={pendingTasks}
+            canApproveAll={canApproveAll}
             order={order}
-            currentStageLabel={STAGES[viewingStepIndex]?.label}
-            onEdit={() => setViewingStepIndex(0)}
-            onOpenCommandCenter={(id, type) => openHub({ orderId: id, type: type as 'sale' | 'purchase', onActionSuccess: fetchOrder })}
-            onAnnul={() => setIsAnnulModalOpen(true)}
-            onDelete={() => setIsDeleteModalOpen(true)}
-            onDuplicate={() => setIsDuplicateModalOpen(true)}
-            onSaveAsTemplate={() => { setTemplateName(''); setIsSaveTemplateOpen(true) }}
-            isAnnuling={mutations.isAnnuling}
-            isDeleting={mutations.isDeleting}
-            isDuplicating={mutations.isDuplicating}
+            viewingStepIndex={viewingStepIndex}
+            actualStepIndex={actualStepIndex}
+            stages={STAGES}
+            transitioning={loading}
+            onTransition={handleTransition}
+            onBackToCurrent={() => setViewingStepIndex(actualStepIndex)}
+            onBack={() => {
+              const prevStage = STAGES[actualStepIndex - 1]
+              if (prevStage) { setPendingPrevStage(prevStage.id); setIsBackwardModalOpen(true) }
+            }}
+            isMaterialApprovalIncomplete={
+              !!(currentStageId === 'MATERIAL_APPROVAL' && order?.materials?.some((m: WorkOrderMaterial) => !m.is_available))
+            }
+            hasMaterials={orderHasMaterials}
+            isRectificationStep={currentStageId === 'RECTIFICATION'}
+            onRectifyAndFinish={handleRectifyAndFinish}
+            isCreating={isCreating}
+            isBasicInfoEditable={isBasicInfoEditable}
+            chosenOtType={chosenOtType}
+            onStepChange={setViewingStepIndex}
           />
         }
       >
-        <div className="flex flex-1 overflow-hidden h-full min-h-0">
+        <div className="flex h-full min-h-0 overflow-hidden">
           <WizardProcessSidebar
             stages={STAGES}
             viewingStepIndex={viewingStepIndex}
@@ -486,8 +582,7 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
 
           {/* Center content */}
           <div className="flex-1 flex flex-col overflow-hidden relative">
-            <div className="px-6 pt-6 mb-4 flex-shrink-0 space-y-2">
-              <h3 className="text-lg font-semibold">{STAGES[viewingStepIndex]?.label}</h3>
+            <div className="px-6 pt-6 mb-4 flex-shrink-0">
               <WizardModeBanner mode={stepMode} isViewingCurrentStage={isViewingCurrentStage} />
             </div>
 
@@ -693,36 +788,6 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
                 </motion.div>
               </AnimatePresence>
             </div>
-
-            <WizardStickyFooter
-              isViewingCurrentStage={isViewingCurrentStage}
-              stepMode={stepMode}
-              onCancelEdit={() => navigateToStep(viewingStepIndex, 'view')}
-              onClose={() => onOpenChange(false)}
-              pendingTasks={pendingTasks}
-              canApproveAll={canApproveAll}
-              order={order}
-              viewingStepIndex={viewingStepIndex}
-              actualStepIndex={actualStepIndex}
-              stages={STAGES}
-              transitioning={loading}
-              onTransition={handleTransition}
-              onBackToCurrent={() => setViewingStepIndex(actualStepIndex)}
-              onBack={() => {
-                const prevStage = STAGES[actualStepIndex - 1]
-                if (prevStage) { setPendingPrevStage(prevStage.id); setIsBackwardModalOpen(true) }
-              }}
-              isMaterialApprovalIncomplete={
-                !!(currentStageId === 'MATERIAL_APPROVAL' && order?.materials?.some((m: WorkOrderMaterial) => !m.is_available))
-              }
-              hasMaterials={orderHasMaterials}
-              isRectificationStep={currentStageId === 'RECTIFICATION'}
-              onRectifyAndFinish={handleRectifyAndFinish}
-              isCreating={isCreating}
-              isBasicInfoEditable={isBasicInfoEditable}
-              chosenOtType={chosenOtType}
-              onStepChange={setViewingStepIndex}
-            />
           </div>
 
           {order && (
@@ -734,7 +799,7 @@ export function WorkOrderWizard({ mode, open, onOpenChange, onSuccess }: WorkOrd
             />
           )}
         </div>
-      </BaseModal>
+      </Drawer>
 
       {/* PO Preview */}
       <BaseModal

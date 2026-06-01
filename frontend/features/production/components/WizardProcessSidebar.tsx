@@ -31,7 +31,8 @@ export function WizardProcessSidebar({
 }: WizardProcessSidebarProps) {
     return (
         <TooltipProvider delayDuration={300}>
-            <div className="w-64 border-r p-4 space-y-2 hidden md:block overflow-y-auto">
+            <div className="w-64 border-r h-full overflow-y-auto shrink-0 hidden md:flex md:flex-col">
+                <div className="p-4 space-y-2 flex-1">
                 <h3 className="text-xs font-bold uppercase text-muted-foreground mb-4 px-2">
                     Etapas de Producción
                 </h3>
@@ -200,6 +201,7 @@ export function WizardProcessSidebar({
 
                     return rowContent
                 })}
+                </div>
             </div>
         </TooltipProvider>
     )
