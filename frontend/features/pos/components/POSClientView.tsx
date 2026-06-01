@@ -382,7 +382,7 @@ export function POSClientView() {
 
         if (!selectedCustomerId && defaultCustomerId) setSelectedCustomerId(defaultCustomerId)
         const hasMfg = items.some(line => line.product_type === 'MANUFACTURABLE' && line.requires_advanced_manufacturing)
-        const lastStep = 3 + (hasMfg ? 1 : 0)
+        const lastStep = 4 + (hasMfg ? 1 : 0)
         setWizardState({ step: lastStep, isQuickSale: true, dteData: { type: 'BOLETA', number: '', date: new Date().toISOString().split('T')[0], attachment: null, isPending: false }, deliveryData: { type: 'IMMEDIATE', date: null } } as any)
         setTimeout(() => setPosMode('CHECKOUT'), 0)
     }
@@ -392,19 +392,19 @@ export function POSClientView() {
     if (loading) return <POSLayoutSkeleton />
 
     return (
-        <div className="flex-1 p-4 pt-2 flex flex-col gap-2 overflow-hidden animate-in fade-in duration-500">
-            <div className="flex items-center justify-between py-1 px-1 mb-2 relative min-h-[56px] pb-2">
+        <div className="flex-1 p-3 pt-1.5 flex flex-col gap-1.5 overflow-hidden animate-in fade-in duration-500">
+            <div className="flex items-center justify-between py-0.5 px-1 mb-1 relative min-h-[44px]">
                 {/* Left: Terminal & Session Info */}
-                <div className="flex items-center gap-4 flex-1">
-                    <h2 className="text-xl font-bold tracking-tight">
+                <div className="flex items-center gap-3 flex-1">
+                    <h2 className="text-lg font-bold tracking-tight">
                         {currentSession?.terminal_name || "Punto de Venta"}
                     </h2>
                     {currentSession?.status === 'OPEN' && (
-                        <div className="hidden sm:flex items-center gap-2">
-                            <span className="border border-primary/20 bg-primary/5 text-primary tracking-widest px-2 py-1 h-6 flex items-center text-[10px] font-bold uppercase transition-colors rounded-sm">
-                                Sesión #{currentSession.id}
+                        <div className="hidden sm:flex items-center gap-1.5">
+                            <span className="border border-primary/20 bg-primary/5 text-primary tracking-widest px-1.5 py-0.5 h-5 flex items-center text-[9px] font-bold uppercase transition-colors rounded-sm">
+                                #{currentSession.id}
                             </span>
-                            <span className="border border-success/30 bg-success/5 text-success px-2 py-1 h-6 flex items-center text-[10px] font-medium uppercase rounded-sm">
+                            <span className="border border-success/30 bg-success/5 text-success px-1.5 py-0.5 h-5 flex items-center text-[9px] font-medium uppercase rounded-sm">
                                 {user?.first_name} {user?.last_name}
                             </span>
                         </div>
@@ -526,7 +526,7 @@ export function POSClientView() {
                 </div>
             </div>
 
-            <div className="relative grid grid-cols-1 md:grid-cols-12 gap-4 flex-1 min-h-0 overflow-hidden">
+            <div className="relative grid grid-cols-1 md:grid-cols-12 gap-3 flex-1 min-h-0 overflow-hidden">
                 {currentSession !== undefined && currentSession === null && (
                     <div className="absolute inset-0 z-30 bg-background/60 backdrop-blur-[2px] flex items-center justify-center">
                         <Card className="w-full max-w-md shadow-sm border-primary/20 p-8 text-center space-y-4 rounded-md">
@@ -542,12 +542,12 @@ export function POSClientView() {
                     <AnimatePresence mode="wait">
                         {posMode === 'SHOPPING' ? (
                             <motion.div key="shop" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, scale: 0.98 }} className="flex-1 flex flex-col min-h-0">
-                                <Card className="flex-1 flex flex-col overflow-hidden bg-muted/10 border py-2">
-                                    <div className="px-2 pt-2 pb-2 border-b bg-background/50 space-y-3">
+                                <Card className="flex-1 flex flex-col overflow-hidden bg-muted/10 border py-1.5">
+                                    <div className="px-2 pt-1.5 pb-1.5 border-b bg-background/50 space-y-2">
                                         <SearchBar value={searchTerm} onChange={setSearchTerm} onEnter={handleSearchEnter} />
                                         <CategoryFilter categories={categories} selectedCategoryId={selectedCategoryId} onSelectCategory={setSelectedCategoryId} />
                                     </div>
-                                    <div className="flex-1 px-2 pt-2 pb-0"><ProductGrid products={filteredProducts} categories={categories} limits={stockLimits} isProductDisabled={(p) => isPOSProductDisabled(p as unknown as Product)} onProductClick={(p) => handleProductClick(p as unknown as Product)} onToggleFavorite={toggleFavorite} /></div>
+                                    <div className="flex-1 px-1.5 pt-1.5 pb-0"><ProductGrid products={filteredProducts} categories={categories} limits={stockLimits} isProductDisabled={(p) => isPOSProductDisabled(p as unknown as Product)} onProductClick={(p) => handleProductClick(p as unknown as Product)} onToggleFavorite={toggleFavorite} /></div>
                                 </Card>
                             </motion.div>
                         ) : (
@@ -577,6 +577,7 @@ export function POSClientView() {
                                     onStateChange={handleWizardStateChange}
                                     isInline
                                     isSessionHost={user?.id === currentSession?.user}
+                                    touchMode={isTouchMode}
                                 />
                             </motion.div>
                         )}
@@ -633,7 +634,7 @@ export function POSClientView() {
                 footer={
                     <div className="flex flex-col sm:flex-row gap-3 w-full mt-4">
                         <Button
-                            className="flex-1 h-14 rounded-md text-lg font-black uppercase tracking-widest bg-primary hover:bg-primary/90 shadow-sm group"
+                            className="flex-1 h-14 rounded-sm text-lg font-black uppercase tracking-widest bg-primary hover:bg-primary/90 shadow-sm group"
                             onClick={() => {
                                 handlePrint();
                                 setCompletedSaleData(null);
@@ -644,7 +645,7 @@ export function POSClientView() {
                         </Button>
                         <Button
                             variant="outline"
-                            className="flex-1 h-14 border-primary/20 text-primary hover:bg-primary/5 rounded-md text-lg font-bold"
+                            className="flex-1 h-14 border-primary/20 text-primary hover:bg-primary/5 rounded-sm text-lg font-bold"
                             onClick={() => setCompletedSaleData(null)}
                         >
                             Cerrar
@@ -690,7 +691,7 @@ export function POSClientView() {
                 footer={
                     <div className="flex flex-col sm:flex-row gap-3 w-full mt-2">
                         <Button
-                            className="flex-1 h-12 rounded-md text-sm font-bold uppercase tracking-wider bg-warning hover:bg-warning shadow-sm disabled:opacity-50"
+                            className="flex-1 h-12 rounded-sm text-sm font-bold uppercase tracking-wider bg-warning hover:bg-warning shadow-sm disabled:opacity-50"
                             onClick={handleWithdraw}
                             disabled={isWithdrawing || !selectedPartnerId}
                         >
@@ -699,7 +700,7 @@ export function POSClientView() {
                         </Button>
                         <Button
                             variant="outline"
-                            className="flex-1 h-12 border-warning/20 text-warning hover:bg-warning/10 rounded-md text-sm font-bold"
+                            className="flex-1 h-12 border-warning/20 text-warning hover:bg-warning/10 rounded-sm text-sm font-bold"
                             onClick={() => setWithdrawDialogOpen(false)}
                             disabled={isWithdrawing}
                         >

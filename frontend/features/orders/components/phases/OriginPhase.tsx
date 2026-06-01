@@ -146,7 +146,7 @@ export function OriginPhase({
         >
             <div className="flex flex-col gap-1">
                 {(activeDoc?.lines || activeDoc?.items || []).slice(0, 3).map((line: OrderLine, idx: number) => (
-                    <div key={idx} className="flex items-start justify-between text-[10px] gap-2 py-0.5 border-b border-white/5 last:border-0">
+                    <div key={idx} className="flex items-start justify-between text-[10px] gap-2 py-0.5 border-b border-border last:border-0">
                         <span className="text-foreground/70 line-clamp-1 leading-tight flex-1">
                             {line.product_name || line.description}
                         </span>

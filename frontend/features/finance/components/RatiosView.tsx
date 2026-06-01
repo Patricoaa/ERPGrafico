@@ -24,7 +24,8 @@ import { format } from "date-fns";
 import { CardSkeleton, StatCard } from "@/components/shared";
 ;
 
-const COLORS = ['var(--primary)', 'var(--accent)', 'var(--secondary)', 'var(--muted-foreground)', 'var(--warning)', 'var(--destructive)'];
+// Categorical data-viz palette (CMYK process inks). NOT semantic state. See color-system.md §8.
+const COLORS = ['var(--chart-1)', 'var(--chart-2)', 'var(--chart-3)', 'var(--chart-4)', 'var(--chart-5)', 'var(--chart-6)'];
 
 interface RatiosViewProps {
     date?: DateRange;
@@ -248,7 +249,7 @@ export const RatiosView: React.FC<RatiosViewProps> = ({ date, showComparison, co
                                     label={((props: { name: string; percent?: number }) => `${props.name} (${(props.percent ? props.percent * 100 : 0).toFixed(0)}%)`) as any}
                                     innerRadius={60}
                                     outerRadius={90}
-                                    fill="var(--accent)"
+                                    fill="var(--chart-2)"
                                     dataKey="value"
                                 >
                                     {assetsDistribution.map((entry, index) => (

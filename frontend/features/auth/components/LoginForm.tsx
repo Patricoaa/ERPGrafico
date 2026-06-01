@@ -61,18 +61,6 @@ export function LoginForm() {
             transition={{ duration: 0.6, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
             className="w-full max-w-sm relative z-10"
         >
-            {/* Mobile-only brand header */}
-            <div className="lg:hidden mb-10 text-center">
-                <div
-                    className="w-12 h-12 rounded-md flex items-center justify-center text-xl font-black mx-auto mb-4 shadow-md border border-primary/20 bg-primary"
-                >
-                    <span className="text-primary-foreground">ES</span>
-                </div>
-                <h1 className="font-heading font-black text-2xl uppercase tracking-tighter text-foreground">
-                    ERPGrafico
-                </h1>
-            </div>
-
             {/* Form header */}
             <div className="mb-8">
                 <h2 className="font-heading font-black text-2xl uppercase tracking-tighter text-foreground mb-2">
@@ -140,12 +128,6 @@ export function LoginForm() {
                 </form>
             </Form>
 
-            {/* Footer */}
-            <div className="mt-12 pt-6 border-t border-border/40">
-                <p className="text-[10px] text-muted-foreground/50 text-center font-medium uppercase tracking-widest">
-                    ERPGrafico &middot; Sistema de gestión empresarial
-                </p>
-            </div>
         </motion.div>
     )
 }

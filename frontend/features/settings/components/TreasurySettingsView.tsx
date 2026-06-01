@@ -7,7 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { settingsApi } from "../hooks"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Form, FormField } from "@/components/ui/form"
-import { Banknote, ArrowLeftRight, Settings2 } from "lucide-react"
+import { Banknote, ArrowLeftRight, Settings2, Smartphone } from "lucide-react"
 import {AutoSaveStatusBadge, FadeIn} from "@/components/shared"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { useAutoSaveForm } from "@/hooks/useAutoSaveForm"
@@ -37,6 +37,8 @@ const DEFAULT_VALUES: TreasuryFormValues = {
     pos_rounding_adjustment_account: null,
     pos_cashback_error_account: null,
     pos_other_outflow_account: null,
+    terminal_commission_bridge_account: null,
+    terminal_iva_bridge_account: null,
 }
 
 import { useTreasurySettings } from "@/features/settings/hooks/useTreasurySettings"
@@ -147,6 +149,26 @@ export function TreasurySettingsView({ activeTab = "conciliation" }: TreasurySet
                                                 <AccountField form={form} name="pos_cashback_error_account" label="Faltante por Vuelto Incorrecto" accountType="EXPENSE" />
                                                 <AccountField form={form} name="pos_other_outflow_account" label="Egresos Varios de Caja" accountType="EXPENSE" />
                                             </div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </div>
+                        )}
+
+                        {activeTab === "terminals" && (
+                            <div className="m-0 p-0 border-0 outline-none mt-6">
+                                <Card variant="transparent" className="border-2">
+                                    <CardHeader className="pb-4">
+                                        <div className="flex items-center gap-2">
+                                            <Smartphone className="h-4 w-4 text-primary opacity-50" />
+                                            <CardTitle className="text-sm font-black uppercase text-primary tracking-widest">Cuentas Puente de Terminales</CardTitle>
+                                        </div>
+                                        <CardDescription className="text-[10px] uppercase font-bold text-muted-foreground italic">Cuentas para comisiones de terminales de pago sin factura</CardDescription>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                                            <AccountField form={form} name="terminal_commission_bridge_account" label="Puente Comisión Neto" accountType="ASSET" />
+                                            <AccountField form={form} name="terminal_iva_bridge_account" label="Puente IVA Comisión" accountType="ASSET" />
                                         </div>
                                     </CardContent>
                                 </Card>

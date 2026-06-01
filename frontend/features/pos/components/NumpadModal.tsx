@@ -4,6 +4,7 @@ import { formatCurrency } from "@/lib/money"
 
 import React from "react"
 
+import { Button } from "@/components/ui/button"
 import { BaseModal, Numpad } from '@/components/shared'
 
 interface NumpadModalProps {
@@ -38,15 +39,23 @@ export function NumpadModal({
             title={title}
             description={description}
             size="sm"
+            footer={
+                <Button
+                    className="w-full bg-primary hover:bg-primary font-black uppercase tracking-widest text-xs lg:text-base"
+                    onClick={onConfirm}
+                >
+                    CONFIRMAR
+                </Button>
+            }
         >
-            <div className="flex flex-col items-center gap-2 py-4">
+            <div className="flex flex-col items-center gap-2">
                 {(maxValue !== undefined && maxValue !== Infinity) && (
-                    <div className="text-xs font-bold text-warning uppercase tracking-wider mb-1">
+                    <div className="lg:text-xs text-[10px] font-bold text-warning uppercase tracking-wider mb-1">
                         Máximo permitido: {maxValue} unidades
                     </div>
                 )}
                 {netValue !== undefined && (
-                    <div className="text-xs font-bold text-primary uppercase tracking-wider mb-1">
+                    <div className="lg:text-xs text-[10px] font-bold text-primary uppercase tracking-wider mb-1">
                         Valor Neto: {typeof netValue === 'number' ? formatCurrency(netValue) : netValue}
                     </div>
                 )}
@@ -56,8 +65,8 @@ export function NumpadModal({
                     onConfirm={onConfirm}
                     onClose={() => onOpenChange(false)}
                     allowDecimal={allowDecimal}
+                    hideConfirm
                     className="border-none shadow-none p-0 w-full max-w-none"
-                    confirmLabel="CONFIRMAR"
                 />
             </div>
         </BaseModal>

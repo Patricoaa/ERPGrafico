@@ -66,7 +66,7 @@ export function PrepressStep({
                 {order.attachments
                   .filter((a: ProductionAttachment) => a.original_filename !== stageData?.approval_attachment)
                   .map((att: ProductionAttachment) => (
-                    <div key={att.id} className="flex items-center gap-2 p-2 bg-white/50 rounded border border-primary/20 text-xs hover:border-primary/40 transition-colors">
+                    <div key={att.id} className="flex items-center gap-2 p-2 bg-muted/50 rounded border border-primary/20 text-xs hover:border-primary/40 transition-colors">
                       <FileText className="h-3.5 w-3.5 text-primary shrink-0" />
                       <Tooltip>
                         <TooltipTrigger asChild>

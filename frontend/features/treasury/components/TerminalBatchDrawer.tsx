@@ -69,7 +69,7 @@ export function TerminalBatchDrawer({ id, open, onOpenChange, batchId }: Termina
                 </div>
                 <div>
                   <span className="text-xs text-muted-foreground">Neto a Depositar</span>
-                  <p className="font-bold text-lg text-success">{formatCurrency(Number(batch.net_amount))}</p>
+                  <p className="font-bold text-lg text-income">{formatCurrency(Number(batch.net_amount))}</p>
                 </div>
                 <div>
                   <span className="text-xs text-muted-foreground">Proveedor</span>

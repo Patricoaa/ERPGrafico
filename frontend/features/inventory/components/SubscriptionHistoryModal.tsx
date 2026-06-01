@@ -181,7 +181,7 @@ export function SubscriptionHistoryModal({ subscriptionId, open, onOpenChange }:
                                                 </div>
                                             </div>
 
-                                            <div className="h-[400px] w-full bg-white rounded-md border p-6 shadow-sm">
+                                            <div className="h-[400px] w-full bg-card rounded-md border p-6 shadow-sm">
                                                 <ResponsiveContainer width="100%" height="100%">
                                                     <BarChart data={filteredPriceHistory}>
                                                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--muted)" />

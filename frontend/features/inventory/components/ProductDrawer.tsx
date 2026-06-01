@@ -118,7 +118,6 @@ export function ProductDrawer({ sidebar, open, onOpenChange, initialData, onSucc
             mfg_postpress_binding: false,
             mfg_auto_finalize: false,
             boms: [],
-            product_custom_fields: [],
             has_variants: false,
             parent_template: null,
             attribute_values: [],
@@ -327,10 +326,6 @@ export function ProductDrawer({ sidebar, open, onOpenChange, initialData, onSucc
                             notes: l.notes || ""
                         }))
                     })) || [],
-                    product_custom_fields: initialData.product_custom_fields?.map((f: any) => ({
-                        template: f.template,
-                        order: f.order || 0
-                    })) || [],
                     uom_prices: initialData.uom_prices?.map((p: any) => ({
                         id: p.id,
                         uom: typeof p.uom === 'object' ? p.uom.id : Number(p.uom),
@@ -386,7 +381,6 @@ export function ProductDrawer({ sidebar, open, onOpenChange, initialData, onSucc
                     mfg_postpress_binding: false,
                     mfg_auto_finalize: false,
                     boms: [],
-                    product_custom_fields: [],
                     has_variants: false,
                     is_dynamic_pricing: false,
                     parent_template: null,
@@ -515,9 +509,6 @@ export function ProductDrawer({ sidebar, open, onOpenChange, initialData, onSucc
             // BOMs - Always send if present (fixes persistence bug on PUT)
             if (data.boms && data.boms.length > 0) {
                 formData.append('boms', JSON.stringify(data.boms))
-            }
-            if (data.product_custom_fields && data.product_custom_fields.length > 0) {
-                formData.append('product_custom_fields', JSON.stringify(data.product_custom_fields))
             }
             if (data.variant_updates && data.variant_updates.length > 0) {
                 formData.append('variant_updates', JSON.stringify(data.variant_updates))

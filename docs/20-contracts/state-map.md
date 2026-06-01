@@ -77,9 +77,9 @@ Single source of truth for every entity state. `StatusBadge` variants must match
 | `MATERIAL_ASSIGNMENT` | `info` | `MATERIAL_APPROVAL`, `CANCELLED` |
 | `MATERIAL_APPROVAL` | `warning` | `OUTSOURCING_ASSIGNMENT`, `PREPRESS`, `CANCELLED` |
 | `OUTSOURCING_ASSIGNMENT` | `info` | `PREPRESS`, `CANCELLED` |
-| `PREPRESS` | `primary` | `PRESS`, `CANCELLED` |
+| `PREPRESS` | `info` | `PRESS`, `CANCELLED` |
 | `PRESS` | `primary` | `POSTPRESS`, `CANCELLED` |
-| `POSTPRESS` | `primary` | `OUTSOURCING_VERIFICATION`, `RECTIFICATION`, `CANCELLED` |
+| `POSTPRESS` | `warning` | `OUTSOURCING_VERIFICATION`, `RECTIFICATION`, `CANCELLED` |
 | `OUTSOURCING_VERIFICATION` | `info` | `RECTIFICATION`, `CANCELLED` |
 | `RECTIFICATION` | `warning` | `FINISHED`, `CANCELLED` |
 | `FINISHED` | `success` | — (terminal) |

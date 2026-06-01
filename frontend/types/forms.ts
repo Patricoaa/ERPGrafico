@@ -122,7 +122,7 @@ export interface PaymentInitialData {
 
 // ─── Product Form ────────────────────────────────────────
 
-export interface ProductInitialData extends Partial<Omit<Product, 'boms' | 'product_custom_fields'>> {
+export interface ProductInitialData extends Partial<Omit<Product, 'boms'>> {
     boms?: Array<{
         id?: number
         name: string
@@ -135,7 +135,6 @@ export interface ProductInitialData extends Partial<Omit<Product, 'boms' | 'prod
             notes?: string
         }>
     }>
-    product_custom_fields?: Array<{ template: number; order: number }>
     // Subscription fields
     recurrence_period?: "MONTHLY" | "QUARTERLY" | "SEMIANNUAL" | "ANNUAL" | "WEEKLY"
     renewal_notice_days?: number
@@ -306,19 +305,6 @@ export interface GroupInitialData {
     id?: number
     name?: string
     permissions?: number[]
-}
-
-// ─── Custom Field Template Form ──────────────────────────
-
-export interface CustomFieldTemplateInitialData {
-    id?: number
-    name?: string
-    field_type?: string
-    description?: string
-    is_required?: boolean
-    default_value?: string
-    options?: string[]
-    applies_to?: string
 }
 
 // ─── Transaction Number Form ─────────────────────────────

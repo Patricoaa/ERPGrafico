@@ -136,7 +136,7 @@ export function HubSkeleton({ phases = 4 }: { phases?: number } = {}) {
             aria-label="Cargando panel de control"
             className="flex flex-col h-full bg-background/50 backdrop-blur-sm p-4 gap-4 animate-in fade-in duration-500"
         >
-            <div className="flex flex-col items-center justify-center py-12 gap-4 border-b border-white/5">
+            <div className="flex flex-col items-center justify-center py-12 gap-4 border-b border-border">
                 <Skeleton className="h-20 w-20 rounded-full border-2 border-primary/10" />
                 <div className="flex flex-col items-center gap-2">
                     <Skeleton className="h-4 w-32" />

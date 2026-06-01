@@ -94,18 +94,7 @@ function CartItemComponent({
                                                         </TooltipTrigger>
                                                         <TooltipContent side="top">{item.name}</TooltipContent>
                                                     </Tooltip>
-                    <div className="flex flex-wrap gap-1">
-                        {item.internal_code && (
-                            <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded border border-muted-foreground/20 bg-muted/30 text-muted-foreground opacity-70">
-                                {item.internal_code}
-                            </span>
-                        )}
-                        {item.code && item.code !== item.internal_code && (
-                            <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded border border-muted-foreground/20 bg-muted/10 text-muted-foreground opacity-70">
-                                {item.code}
-                            </span>
-                        )}
-                    </div>
+
                 </div>
             </TableCell>
 
@@ -116,7 +105,7 @@ function CartItemComponent({
                         type="number"
                         className={cn(
                             "h-7 w-12 text-center text-xs font-bold bg-background border-none focus-visible:ring-1 focus-visible:ring-primary shadow-none p-0",
-                            isOverLimit && "text-destructive bg-destructive/10 rounded"
+                            isOverLimit && "text-destructive bg-destructive/10 rounded-sm"
                         )}
                         value={item.qty}
                         onChange={(e) => onQuantityChange(item.cartItemId, e.target.value)}
@@ -153,7 +142,7 @@ function CartItemComponent({
                             className="h-6 text-[10px]"
                         />
                     ) : (
-                        <span className="text-[10px] font-medium text-muted-foreground/80 bg-muted/30 px-1.5 py-0.5 rounded leading-none">
+                        <span className="text-[10px] font-medium text-muted-foreground/80 bg-muted/30 px-1.5 py-0.5 rounded-sm leading-none">
                             {item.uom_name}
                         </span>
                     )}

@@ -89,17 +89,17 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
 
     useEffect(() => {
         let cancelled = false
-        ;(async () => {
-            setLoading(true)
-            try {
-                const response = await api.get(`/treasury/statements/${id}/`)
-                if (!cancelled) setStatement(response.data)
-            } catch (error) {
-                if (!cancelled) console.error('Error fetching statement:', error)
-            } finally {
-                if (!cancelled) setLoading(false)
-            }
-        })()
+            ; (async () => {
+                setLoading(true)
+                try {
+                    const response = await api.get(`/treasury/statements/${id}/`)
+                    if (!cancelled) setStatement(response.data)
+                } catch (error) {
+                    if (!cancelled) console.error('Error fetching statement:', error)
+                } finally {
+                    if (!cancelled) setLoading(false)
+                }
+            })()
         return () => { cancelled = true }
     }, [id])
 
@@ -288,7 +288,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
             { value: "movements", label: "Movimientos", iconName: "banknote", href: "/treasury?view=movements" },
             {
                 value: "accounts",
-                label: "Cuentas y Caja",
+                label: "Cuentas de tesoreria",
                 iconName: "landmark",
                 href: "/treasury?view=accounts",
                 subTabs: [

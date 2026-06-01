@@ -196,7 +196,7 @@ export function PaymentMethodSelector({
                                 )}
                             >
                                 <div className={cn(
-                                    "p-3 rounded-full text-white",
+                                    "p-3 rounded-full",
                                     isSelected ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
                                 )}>
                                     <type.icon className="h-6 w-6" />

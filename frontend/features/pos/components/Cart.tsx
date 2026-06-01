@@ -5,6 +5,7 @@ import { formatPlainDate } from "@/lib/utils";
 // Shopping cart display with totals and actions
 
 import { Card, CardContent } from '@/components/ui/card'
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {Table, TableBody, TableHead, TableHeader, TableRow} from '@/components/ui/table'
@@ -100,16 +101,11 @@ export function Cart({
         <Card className="py-2 flex-1 flex flex-col overflow-hidden border bg-background/50 shadow-sm rounded-md">
             <CardContent className="p-0 flex-1 flex flex-col overflow-hidden">
                 {/* Header */}
-                <div className="px-6 pt-4 pb-4 border-b bg-background/50 flex flex-col justify-center rounded-t-md h-[88px] shrink-0 gap-1.5">
+                <div className="px-4 pt-3 pb-2 border-b bg-background/50 flex flex-col justify-center rounded-t-md shrink-0 gap-1">
                     <div className="flex justify-between items-center">
-                        <span className="font-bold text-xl tracking-tight">Resumen de Venta</span>
+                        <span className="font-bold text-lg tracking-tight">Resumen de Venta</span>
                         <div className="flex items-center gap-2">
-                            {currentDraftId && (
-                                <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded border border-primary/20 bg-primary/5 text-primary">
-                                    #{currentDraftId}
-                                </span>
-                            )}
-                            <span className="text-[9px] font-black bg-primary text-primary-foreground px-2 py-0.5 rounded-sm uppercase tracking-tighter">
+                            <span className="text-[8px] font-black bg-primary text-primary-foreground px-1.5 py-0.5 rounded-sm uppercase tracking-tighter">
                                 {items.length} Items
                             </span>
                         </div>
@@ -118,15 +114,15 @@ export function Cart({
                     <div className="flex justify-between items-center">
                         <div className="flex items-center gap-2">
                             {lastSaved && (
-                                <div className="flex items-center text-[10px] text-muted-foreground font-medium gap-1 opacity-80">
-                                    <Clock className="h-3 w-3" />
+                                <div className="flex items-center text-[9px] text-muted-foreground font-medium gap-1 opacity-80">
+                                    <Clock className="h-2.5 w-2.5" />
                                     <span>
                                         {saving ? "Guardando..." : `Sincronizado: ${lastSaved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
                                     </span>
                                 </div>
                             )}
                         </div>
-                        {saving && <div className="h-1 w-12 bg-primary/20 rounded-full overflow-hidden"><div className="h-full bg-primary animate-progress-buffer w-1/3"></div></div>}
+                        {saving && <div className="h-0.5 w-10 bg-primary/20 rounded-full overflow-hidden"><div className="h-full bg-primary animate-progress-buffer w-1/3"></div></div>}
                     </div>
                 </div>
 
@@ -188,48 +184,57 @@ export function Cart({
                 </div>
 
                 {/* Footer with Totals and Actions */}
-                <div className="p-4 bg-muted/20 border-t space-y-4">
-                    {/* Sale Metadata Summary (New Section) */}
-                    {(customerName || dteType || deliveryType) && items.length > 0 && (
-                        <div className="flex flex-col gap-2 p-3 bg-background/50 rounded-md border border-primary/10 animate-in fade-in slide-in-from-bottom-2 duration-500">
-                            <div className="flex items-center justify-between text-[11px]">
-                                <div className="flex items-center gap-1.5 text-muted-foreground uppercase font-bold tracking-tight">
-                                    <User className="h-3 w-3 text-primary" />
-                                    <span>Cliente</span>
-                                </div>
-                                <span className="font-bold text-primary truncate max-w-[180px]">{customerName}</span>
-                            </div>
+                <div className="p-3 bg-muted/20 border-t space-y-3">
+                    {/* Sale Metadata Summary (Collapsible Accordion) */}
+                    {(wizardState?.selectedCustomerName || dteType || deliveryType) && (
+                        <Accordion type="single" collapsible className="border border-border/50 rounded-sm">
+                            <AccordionItem value="details" className="border-0">
+                                <AccordionTrigger className="px-2 py-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground hover:no-underline hover:bg-muted/30 [&[data-state=open]>svg]:-rotate-180 gap-2">
+                                    <span>Detalles de Venta</span>
+                                </AccordionTrigger>
+                                <AccordionContent className="px-2 pb-2 pt-0">
+                                    <div className="flex flex-col gap-1.5">
+                                        <div className="flex items-center justify-between text-[11px]">
+                                            <div className="flex items-center gap-1.5 text-muted-foreground uppercase font-bold tracking-tight">
+                                                <User className="h-3 w-3 text-primary" />
+                                                <span>Cliente</span>
+                                            </div>
+                                            <span className="font-bold text-primary truncate max-w-[180px]">{customerName}</span>
+                                        </div>
 
-                            {dteType && (
-                                <div className="flex items-center justify-between text-[11px] animate-in slide-in-from-left-2">
-                                    <div className="flex items-center gap-1.5 text-muted-foreground uppercase font-bold tracking-tight">
-                                        <FileText className="h-3 w-3 text-primary" />
-                                        <span>Documento</span>
-                                    </div>
-                                    <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border border-primary/20 bg-primary/10 text-primary">
-                                        {getDteLabel(dteType)}
-                                    </span>
-                                </div>
-                            )}
+                                        {dteType && (
+                                            <div className="flex items-center justify-between text-[11px]">
+                                                <div className="flex items-center gap-1.5 text-muted-foreground uppercase font-bold tracking-tight">
+                                                    <FileText className="h-3 w-3 text-primary" />
+                                                    <span>Documento</span>
+                                                </div>
+                                                <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-sm border border-primary/20 bg-primary/10 text-primary">
+                                                    {getDteLabel(dteType)}
+                                                </span>
+                                            </div>
+                                        )}
 
-                            {deliveryType && (
-                                <div className="flex items-center justify-between text-[11px] animate-in slide-in-from-left-4">
-                                    <div className="flex items-center gap-1.5 text-muted-foreground uppercase font-bold tracking-tight">
-                                        <Truck className="h-3 w-3 text-success" />
-                                        <span>Logística</span>
+                                        {deliveryType && (
+                                            <div className="flex items-center justify-between text-[11px]">
+                                                <div className="flex items-center gap-1.5 text-muted-foreground uppercase font-bold tracking-tight">
+                                                    <Truck className="h-3 w-3 text-success" />
+                                                    <span>Logística</span>
+                                                </div>
+                                                <div className="flex items-center gap-1">
+                                                    <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-sm border border-success/20 bg-success/10 text-success">
+                                                        {getDeliveryLabel(deliveryType)}
+                                                    </span>
+                                                    <span className="text-[10px] text-muted-foreground flex items-center gap-1 ml-1 font-mono font-medium">
+                                                        <Calendar className="h-3 w-3" />
+                                                        {deliveryDate ? formatPlainDate(deliveryDate) : formatPlainDate(new Date())}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
-                                    <div className="flex items-center gap-1">
-                                        <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border border-success/20 bg-success/10 text-success">
-                                            {getDeliveryLabel(deliveryType)}
-                                        </span>
-                                        <span className="text-[10px] text-muted-foreground flex items-center gap-1 ml-1 font-mono font-medium">
-                                            <Calendar className="h-3 w-3" />
-                                            {deliveryDate ? formatPlainDate(deliveryDate) : formatPlainDate(new Date())}
-                                        </span>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
+                                </AccordionContent>
+                            </AccordionItem>
+                        </Accordion>
                     )}
 
                     {/* Status Bar removed from here */}
@@ -240,7 +245,7 @@ export function Cart({
                             variant="outline"
                             className={cn(
                                 "w-full font-bold border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-all",
-                                isTouchPOS ? "h-14 text-base" : "h-12 text-sm"
+                                isTouchPOS ? "h-14 text-base" : "h-10 text-sm"
                             )}
                             disabled={loading || items.length === 0 || !canQuickSale.allowed}
                             onClick={onQuickSale}
@@ -255,19 +260,19 @@ export function Cart({
                     )}
 
                     {/* Totals */}
-                    <div className="space-y-1">
-                        <div className="flex justify-between text-sm text-muted-foreground">
+                    <div className="space-y-0.5">
+                        <div className="flex justify-between text-xs text-muted-foreground">
                             <span>Subtotal Neto</span>
                             <span>{formatCurrency(totals.total_net)}</span>
                         </div>
-                        <div className="flex justify-between text-sm text-muted-foreground">
+                        <div className="flex justify-between text-xs text-muted-foreground">
                             <span>IVA (19%)</span>
                             <span>{formatCurrency(totals.total_tax)}</span>
                         </div>
 
                         {/* Line Discounts (Sum of all per-item discounts) */}
                         {(totals.line_discount_total || 0) > 0 && (
-                            <div className="flex justify-between text-sm text-muted-foreground/80 italic">
+                            <div className="flex justify-between text-xs text-muted-foreground/80 italic">
                                 <span>Descuentos por Línea</span>
                                 <span>-{formatCurrency(totals.line_discount_total || 0)}</span>
                             </div>
@@ -275,9 +280,9 @@ export function Cart({
 
                         {/* Global Discount (Editable) */}
                         {(showTotalDiscounts || (totals.global_discount_total || 0) > 0) && (
-                            <div className="flex justify-between items-center py-1">
+                            <div className="flex justify-between items-center py-0.5">
                                 <span className={cn(
-                                    "text-sm font-medium",
+                                    "text-xs font-medium",
                                     (totalDiscountAmount || 0) > 0 ? "text-primary font-bold" : "text-muted-foreground"
                                 )}>
                                     Descuento Global
@@ -286,7 +291,7 @@ export function Cart({
                                     <Input
                                         type="number"
                                         className={cn(
-                                            "h-9 w-24 text-right text-sm bg-background/50 border border-border/50 focus-visible:ring-1 focus-visible:ring-primary shadow-none px-2 rounded-sm",
+                                            "h-7 w-20 text-right text-xs bg-background/50 border border-border/50 focus-visible:ring-1 focus-visible:ring-primary shadow-none px-2 rounded-sm",
                                             (totalDiscountAmount || 0) > 0 && "text-primary font-bold"
                                         )}
                                         value={totalDiscountAmount || ""}
@@ -306,7 +311,7 @@ export function Cart({
                             </div>
                         )}
 
-                        <div className="flex justify-between text-xl font-bold pt-2 border-t">
+                        <div className="flex justify-between text-lg font-bold pt-1.5 border-t">
                             <span>Total</span>
                             <span>{formatCurrency(totals.total_gross)}</span>
                         </div>
@@ -318,7 +323,7 @@ export function Cart({
                             id="confirm-sale-btn"
                             className={cn(
                                 "w-full shadow-lg font-black uppercase tracking-tight",
-                                isTouchPOS ? "h-20 text-2xl" : "h-16 text-xl"
+                                isTouchPOS ? "h-20 text-2xl" : "h-12 text-lg"
                             )}
                             size="lg"
                             disabled={loading || saving || items.length === 0}

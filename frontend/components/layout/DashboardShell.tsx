@@ -17,6 +17,7 @@ import { Loader2, PanelLeft } from "lucide-react"
 import { DynamicIcon } from '@/components/shared'
 import { useDeviceContext } from "@/hooks/useDeviceContext"
 import { Button } from "@/components/ui/button"
+import { getModuleDefaultUrl } from "@/lib/module-registry"
 
 // Lazy load: solo se compila al abrir el inbox, no en la carga inicial de cada página
 const TaskInboxSidebar = dynamic(
@@ -40,7 +41,7 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
         setSidebarOpen(prev => !prev)
     }, [])
 
-    const effectiveSidebarWidth = sidebarOpen ? '3.5rem' : '0rem'
+    const effectiveSidebarWidth = isCramped && !sidebarOpen ? '0rem' : '3.5rem'
 
     const { config } = useHeader()
     const { isHubEffectivelyOpen } = useHubPanel()
@@ -65,32 +66,19 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
         setIsInboxOpen(prev => !prev)
     }
 
-    const categoryToUrl: Record<string, string> = {
-        "dashboard": "/",
-        "accounting": "/accounting/ledger",
-        "contacts": "/contacts",
-        "sales": "/sales/orders?tab=orders",
-        "billing": "/billing/sales?view=card",
-        "inventory": "/inventory/products?tab=products",
-        "production": "/production/orders",
-        "treasury": "/treasury/movements",
-        "purchasing": "/purchasing/orders?tab=orders",
-        "finances": "/finances/statements?tab=bs",
-        "hr": "/hr/employees",
-    }
-
     return (
         <div className="relative h-screen bg-background overflow-hidden font-sans" style={{ '--sidebar-width': effectiveSidebarWidth } as React.CSSProperties}>
             {/* Mini Sidebar - Now Floating & Independent */}
             <MiniSidebar
                 activeCategory={activeCategory}
                 onCategoryChange={(cat: string) => {
-                    if (categoryToUrl[cat]) {
-                        setSidebarOpen(false)
-                        router.push(categoryToUrl[cat])
+                    const url = getModuleDefaultUrl(cat)
+                    if (url) {
+                        if (isCramped) setSidebarOpen(false)
+                        router.push(url)
                     }
                 }}
-                collapsed={!sidebarOpen}
+                collapsed={isCramped ? !sidebarOpen : false}
             />
 
             {/* ── TOP BAR ────────────────────────────────────────────── */}
@@ -174,7 +162,7 @@ function DashboardShellInner({ children }: { children: React.ReactNode }) {
                                 </div>
 
                                 {config.children && (
-                                    <div className="flex items-center gap-2 ml-2 pl-3 border-l border-white/5 shrink-0">
+                                    <div className="flex items-center gap-2 ml-2 pl-3 border-l border-border shrink-0">
                                         {config.children}
                                     </div>
                                 )}

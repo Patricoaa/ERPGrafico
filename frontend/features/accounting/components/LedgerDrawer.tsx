@@ -273,28 +273,28 @@ function LedgerContent({
                         </p>
                     </CardContent>
                 </Card>
-                <Card className="bg-success/5 border-none shadow-none">
+                <Card className="bg-info/5 border-none shadow-none">
                     <CardContent className="pt-6">
                         <div className="flex items-center justify-between">
-                            <p className="text-xs font-medium text-success uppercase">Cargos (Debe)</p>
-                            <ArrowUpRight className="h-4 w-4 text-success" />
+                            <p className="text-xs font-medium text-info uppercase">Cargos (Debe)</p>
+                            <ArrowUpRight className="h-4 w-4 text-info" />
                         </div>
-                        <div className="text-xl font-bold mt-1 text-success">
+                        <div className="text-xl font-bold mt-1 text-info">
                             <MoneyDisplay amount={data?.period_debit} />
                         </div>
-                        <p className="text-[10px] text-success/70 mt-1">Total del periodo</p>
+                        <p className="text-[10px] text-info/70 mt-1">Total del periodo</p>
                     </CardContent>
                 </Card>
-                <Card className="bg-destructive/5 border-none shadow-none">
+                <Card className="bg-warning/5 border-none shadow-none">
                     <CardContent className="pt-6">
                         <div className="flex items-center justify-between">
-                            <p className="text-xs font-medium text-destructive uppercase">Abonos (Haber)</p>
-                            <ArrowDownRight className="h-4 w-4 text-destructive" />
+                            <p className="text-xs font-medium text-warning uppercase">Abonos (Haber)</p>
+                            <ArrowDownRight className="h-4 w-4 text-warning" />
                         </div>
-                        <div className="text-xl font-bold mt-1 text-destructive">
+                        <div className="text-xl font-bold mt-1 text-warning">
                             <MoneyDisplay amount={data?.period_credit} />
                         </div>
-                        <p className="text-[10px] text-destructive/70 mt-1">Total del periodo</p>
+                        <p className="text-[10px] text-warning/70 mt-1">Total del periodo</p>
                     </CardContent>
                 </Card>
                 <Card className="bg-primary/5 border-none shadow-none">

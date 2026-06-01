@@ -132,7 +132,7 @@ export function ProductionPhase({
                             <span>PROGRESO</span>
                             <span className="text-primary">{Math.round(showAnimations ? totalOTProgress : 0)}%</span>
                         </div>
-                        <Progress value={showAnimations ? totalOTProgress : 0} className="h-1 bg-white/5 transition-all duration-1000" />
+                        <Progress value={showAnimations ? totalOTProgress : 0} className="h-1 bg-muted transition-all duration-1000" />
                     </div>
                 ) : (
                     <div className="py-2 text-center text-[9px] text-muted-foreground/30 italic">Sin inicio</div>

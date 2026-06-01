@@ -59,7 +59,7 @@ export function createDomainCardView(
     }
     return React.createElement(
       "div",
-      { className: "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 pt-1 auto-rows-auto" },
+      { className: "grid gap-3 pt-1" },
       rows.map((row) =>
         React.createElement(DomainCard, {
           key: row.original.id,

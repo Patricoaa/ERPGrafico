@@ -96,7 +96,6 @@ export interface Product {
 
     // BOM
     boms?: ProductBOM[]
-    product_custom_fields?: ProductCustomField[]
     cost_price?: number | string
     copy_bom_from?: number | string
 
@@ -129,11 +128,6 @@ export interface ProductBOM {
     name: string
     active: boolean
     lines: ProductBOMLine[]
-}
-
-export interface ProductCustomField {
-    template: number
-    order: number
 }
 
 // ─── Account (Chart of Accounts) ────────────────────────
@@ -360,14 +354,6 @@ export interface PricingRule {
     fixed_price?: number | string
     discount_percentage?: number | string
     active: boolean
-}
-
-// ─── Custom Field Template ────────────────────────────────
-
-export interface CustomFieldTemplate {
-    id: number
-    name: string
-    fields?: any[]
 }
 
 // ─── Product Category ────────────────────────────────

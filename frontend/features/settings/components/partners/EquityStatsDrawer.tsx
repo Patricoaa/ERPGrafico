@@ -22,14 +22,14 @@ import {
     Legend
 } from "recharts"
 
+// Categorical data-viz palette (CMYK process inks). NOT semantic state. See color-system.md §8.
 const COLORS = [
-    'var(--primary)',
-    'var(--success)',
-    'var(--warning)',
-    'var(--info)',
-    'var(--destructive)',
-    'var(--accent)',
-    'var(--neutral)'
+    'var(--chart-1)',
+    'var(--chart-2)',
+    'var(--chart-3)',
+    'var(--chart-4)',
+    'var(--chart-5)',
+    'var(--chart-6)',
 ]
 
 import { Partner, PartnerSummary } from "@/features/contacts/types/partner"
@@ -166,8 +166,8 @@ export function EquityStatsDrawer({ open, onOpenChange, partners, summary }: Equ
                                     wrapperStyle={{ fontSize: '10px', textTransform: 'uppercase', fontWeight: 900, opacity: 0.8 }}
                                     iconType="circle"
                                 />
-                                <Bar dataKey="paid" name="Enterado" stackId="a" fill="hsl(var(--success))" radius={[0, 0, 4, 4]} />
-                                <Bar dataKey="pending" name="Pendiente" stackId="a" fill="hsl(var(--warning))" radius={[4, 4, 0, 0]} />
+                                <Bar dataKey="paid" name="Enterado" stackId="a" fill="var(--color-success)" radius={[0, 0, 4, 4]} />
+                                <Bar dataKey="pending" name="Pendiente" stackId="a" fill="var(--color-warning)" radius={[4, 4, 0, 0]} />
                             </BarChart>
                         </ResponsiveContainer>
                     </div>

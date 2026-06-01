@@ -94,7 +94,7 @@ export function OrderHubPanel({
         return (
             <SkeletonShell isLoading={true} ariaLabel="Cargando panel de mando">
                 <div className="flex-1 h-full">
-                    <div className="flex flex-col items-center justify-center py-12 gap-4 border-b border-white/5">
+                    <div className="flex flex-col items-center justify-center py-12 gap-4 border-b border-border">
                         <div className="h-20 w-20 rounded-full border-2 border-primary/10" />
                         <div className="flex flex-col items-center gap-2">
                             <div className="h-4 w-32" />

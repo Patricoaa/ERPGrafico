@@ -2,6 +2,7 @@
 
 import { usePathname, useSearchParams } from "next/navigation"
 import { PageHeader } from "@/components/shared"
+import { getModuleIconName } from "@/lib/module-registry"
 
 export function PurchasingHeader() {
     const pathname = usePathname()
@@ -14,7 +15,7 @@ export function PurchasingHeader() {
     const subActiveValue = currentSegment === 'settings' ? (searchParams.get('tab') || 'global') : undefined
 
     const tabs = [
-        { value: "orders", label: "Órdenes", iconName: "shopping-cart", href: "/purchasing/orders" },
+        { value: "orders", label: "Órdenes", iconName: "shopping-bag", href: "/purchasing/orders" },
         { value: "notes", label: "Notas Crédito/Débito", iconName: "file-text", href: "/purchasing/notes" },
         { value: "config", label: "Configuración", iconName: "settings", href: "/purchasing/settings" },
     ]
@@ -29,13 +30,8 @@ export function PurchasingHeader() {
 
     const getHeaderConfig = () => {
         if (activeValue === 'config') return { title: "Configuración de Compras", description: "Gestione las cuentas de gastos para diferentes tipos de compras.", iconName: "settings" as const }
-        return {
-            title: activeValue === 'orders' ? "Órdenes de Compra" : "Notas de Crédito y Débito",
-            description: activeValue === 'orders'
-                ? "Gestión integral de órdenes de compra y recepciones"
-                : "Gestión de notas de crédito y débito de proveedores",
-            iconName: (activeValue === 'orders' ? "shopping-cart" : "file-text") as "shopping-cart" | "file-text",
-        }
+        if (activeValue === 'notes') return { title: "Notas de Crédito y Débito", description: "Gestión de notas de crédito y débito de proveedores", iconName: "file-text" as const }
+        return { title: "Órdenes de Compra", description: "Gestión integral de órdenes de compra y recepciones", iconName: getModuleIconName('purchasing') ?? "shopping-bag" }
     }
 
     const config = getHeaderConfig()

@@ -69,7 +69,7 @@ export function WizardRightSidebar({
                                         <Button
                                             variant="outline"
                                             size="sm"
-                                            className="w-full bg-white text-primary border-primary/20 hover:bg-primary/10 hover:text-primary"
+                                            className="w-full bg-card text-primary border-primary/20 hover:bg-primary/10 hover:text-primary"
                                             onClick={() => window.open(order.prepress_archive, '_blank')}
                                         >
                                             Ver Archivo

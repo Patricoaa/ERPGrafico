@@ -293,8 +293,8 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     titlePlural: 'Liquidaciones',
     icon: Receipt,
     shortTemplate: 'LIQ-{id}',
-    listUrl: '/treasury/terminal-batches',
-    detailUrlPattern: '/treasury/terminal-batches/{id}',
+    listUrl: '/treasury/terminal-cobro?tab=batches',
+    detailUrlPattern: '/treasury/terminal-cobro?tab=batches&selected={id}',
     viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', gridLayout: 'single-column' },
   },
   'accounting.fiscalyear': {

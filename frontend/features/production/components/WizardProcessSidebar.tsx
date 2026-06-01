@@ -68,8 +68,8 @@ export function WizardProcessSidebar({
                                 isActive && !isCreationStep && "bg-primary text-primary-foreground shadow-sm",
                                 isPast && !isActive && isCreationStep && "bg-success/5 text-success hover:bg-success/10",
                                 isPast && !isActive && !isCreationStep && "bg-success/10 text-success hover:bg-success/20",
-                                isCurrent && !isActive && isCreationStep && "bg-white/50 border border-accent/20 text-accent-foreground hover:border-accent/50",
-                                isCurrent && !isActive && !isCreationStep && "bg-white border border-primary/20 text-foreground hover:border-primary/50",
+                                isCurrent && !isActive && isCreationStep && "bg-accent/50 border border-accent/20 text-accent-foreground hover:border-accent/50",
+                                isCurrent && !isActive && !isCreationStep && "bg-card border border-primary/20 text-foreground hover:border-primary/50",
                                 isFuture && isCreationStep && "text-success/40 opacity-60",
                                 isFuture && !isCreationStep && "text-muted-foreground/60 opacity-60"
                             )}
@@ -105,8 +105,8 @@ export function WizardProcessSidebar({
                                                 <TooltipTrigger asChild>
                                                     <button
                                                         className={cn(
-                                                            "p-1 rounded hover:bg-black/10 transition-colors",
-                                                            isActive && stepMode === 'view' && "bg-black/10"
+                                                            "p-1 rounded hover:bg-accent transition-colors",
+                                                            isActive && stepMode === 'view' && "bg-accent"
                                                         )}
                                                         onClick={() => onStepClick(index, 'view')}
                                                         aria-label="Ver etapa"
@@ -123,7 +123,7 @@ export function WizardProcessSidebar({
                                                     <button
                                                         disabled={!capabilities.canEdit}
                                                         className={cn(
-                                                            "p-1 rounded hover:bg-black/10 transition-colors",
+                                                            "p-1 rounded hover:bg-accent transition-colors",
                                                             !capabilities.canEdit && "opacity-30 cursor-not-allowed",
                                                             isActive && stepMode === 'edit-in-place' && "bg-info/20"
                                                         )}
@@ -146,7 +146,7 @@ export function WizardProcessSidebar({
                                                     <button
                                                         disabled={!capabilities.canRewind}
                                                         className={cn(
-                                                            "p-1 rounded hover:bg-black/10 transition-colors",
+                                                            "p-1 rounded hover:bg-accent transition-colors",
                                                             !capabilities.canRewind && "opacity-30 cursor-not-allowed",
                                                             isActive && stepMode === 'rewind' && "bg-warning/20"
                                                         )}

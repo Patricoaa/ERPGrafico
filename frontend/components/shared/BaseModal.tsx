@@ -65,7 +65,7 @@ export function BaseModal({
 
     const titleStyles = cn(
         "text-lg font-bold min-w-0 truncate",
-        isTransaction && "tracking-tight text-white"
+        isTransaction && "tracking-tight text-primary-foreground"
     )
 
     const descriptionStyles = cn(
@@ -82,7 +82,7 @@ export function BaseModal({
     const iconElement: React.ReactNode = icon
         ? (typeof icon === "function" || (typeof icon === "object" && "render" in (icon as any)))
             ? React.createElement(icon as React.ComponentType<{ className?: string }>, {
-                className: cn("h-9 w-9 flex-shrink-0", isTransaction ? "text-white" : "text-muted-foreground/80")
+                className: cn("h-9 w-9 flex-shrink-0", isTransaction ? "text-primary-foreground" : "text-muted-foreground/80")
             })
             : icon as React.ReactNode
         : null

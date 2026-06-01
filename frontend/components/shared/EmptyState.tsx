@@ -2,7 +2,6 @@
 import React from "react"
 import { LucideIcon, Inbox, SearchX, Receipt, Package, Users, Database, Monitor, Layers, Landmark, ShoppingCart, Truck } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { IndustryMark } from '@/components/shared'
 
 export type EmptyStateContext = 'search' | 'inventory' | 'finance' | 'users' | 'generic' | 'database' | 'production' | 'pos' | 'bom' | 'treasury' | 'sale' | 'purchase'
 export type EmptyStateVariant = 'full' | 'compact' | 'minimal'
@@ -89,13 +88,6 @@ export function EmptyState({
                 "relative flex items-center justify-center rounded-none border border-border/40 bg-muted/10 mb-6",
                 variant === 'full' ? "h-20 w-20" : "h-14 w-14"
             )}>
-                {/* Decorative corners */}
-                <IndustryMark 
-                    positions={['top-left', 'bottom-right']} 
-                    active 
-                    className="opacity-40" 
-                />
-                
                 <Icon className={cn(
                     "text-muted-foreground/40",
                     variant === 'full' ? "h-10 w-10" : "h-6 w-6"

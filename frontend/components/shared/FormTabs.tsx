@@ -77,7 +77,7 @@ export function FormTabs({
             "hover:bg-muted hover:text-foreground",
             "data-[state=active]:bg-card data-[state=active]:text-primary",
             "data-[state=active]:border-transparent",
-            "data-[state=active]:shadow-[-4px_4px_12px_-4px_rgba(0,0,0,0.10)] z-20",
+            "data-[state=active]:shadow-[-4px_4px_12px_-4px_oklch(0.12_0.02_240_/_0.10)] z-20",
             "data-[state=inactive]:bg-primary-foreground/70 data-[state=inactive]:border-border/40 data-[state=inactive]:text-muted-foreground",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
             "disabled:opacity-20 disabled:pointer-events-none",

@@ -40,6 +40,8 @@ interface PaymentMethodCardSelectorProps {
     compactMode?: boolean
     customerCreditBalance?: number
     allowCreditBalanceAccumulation?: boolean
+    /** Componente renderizado entre los labels de resumen y los métodos de pago */
+    methodTitle?: React.ReactNode
 }
 
 export function PaymentMethodCardSelector({
@@ -51,7 +53,8 @@ export function PaymentMethodCardSelector({
     labels = {},
     compactMode = false,
     customerCreditBalance = 0,
-    allowCreditBalanceAccumulation = false
+    allowCreditBalanceAccumulation = false,
+    methodTitle
 }: PaymentMethodCardSelectorProps) {
     const {
         totalLabel = 'Total',
@@ -266,7 +269,7 @@ export function PaymentMethodCardSelector({
 
             {/* Account Details Form */}
             <div className="space-y-4">
-                <h4 className="text-xs font-black uppercase text-muted-foreground tracking-tighter">Método de Pago</h4>
+                {methodTitle}
                 <RadioGroup
                     value={paymentData.method || ''}
                     onValueChange={handleMethodChange}
@@ -303,8 +306,8 @@ export function PaymentMethodCardSelector({
                                         compactMode ? "p-3" : "p-6"
                                     )}>
                                         {m.id === 'CREDIT_BALANCE' && operation === 'sales' && (
-                                            <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-primary text-white px-3 py-1 rounded-full text-xs font-black shadow-md border-2 border-white animate-in zoom-in duration-300 z-10 whitespace-nowrap">
-                                                <MoneyDisplay amount={customerCreditBalance} inline className="text-white" />
+                                            <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs font-black shadow-md border-2 border-background animate-in zoom-in duration-300 z-10 whitespace-nowrap">
+                                                <MoneyDisplay amount={customerCreditBalance} inline className="text-primary-foreground" />
                                             </div>
                                         )}
                                         <m.icon className={cn(
@@ -386,60 +389,62 @@ export function PaymentMethodCardSelector({
                 title={amountModalTitle || "Monto"}
                 description={amountModalDescription}
                 className="sm:max-w-md"
-                hideScrollArea
+                footer={
+                    <Button
+                        className="w-full bg-primary hover:bg-primary font-black uppercase tracking-widest text-xs lg:text-base"
+                        onClick={handleAmountConfirm}
+                    >
+                        CONFIRMAR
+                    </Button>
+                }
             >
-                <div className="space-y-4 py-4 px-4">
-                    <div className="space-y-4">
-                        <h4 className="text-xs font-black uppercase text-muted-foreground tracking-tighter">Monto</h4>
-                        <div className="flex flex-col items-center gap-4">
-                            <div className="text-4xl font-black tracking-tight text-primary bg-primary/5 px-6 py-2 rounded-lg border-2 border-primary/10 shadow-sm w-full text-center">
-                                <MoneyDisplay amount={tempAmount || 0} inline />
-                            </div>
-
-                            <div className="grid grid-cols-3 gap-2 w-full">
-                                {[50, 100, 500, 1000, 2000, 5000, 10000, 20000].map(val => (
-                                    <Button
-                                        key={val}
-                                        variant="outline"
-                                        size="sm"
-                                        className="text-xs h-10 font-bold"
-                                        onClick={() => {
-                                            const current = parseFloat(tempAmount) || 0;
-                                            let newAmount = current + val;
-
-                                            // For purchases, limit to total
-                                            if (operation === 'purchases' && newAmount > total) {
-                                                newAmount = total;
-                                            }
-
-                                            setTempAmount(newAmount.toString());
-                                        }}
-                                    >
-                                        +{formatMoney(val)}
-                                    </Button>
-                                ))}
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="text-xs h-10 font-bold border-primary text-primary col-span-1"
-                                    onClick={() => setTempAmount(total.toString())}
-                                >
-                                    Exacto
-                                </Button>
-                            </div>
-
-                            <Numpad
-                                value={tempAmount}
-                                onChange={setTempAmount}
-                                onConfirm={handleAmountConfirm}
-                                onClose={() => setIsAmountModalOpen(false)}
-                                allowDecimal={false}
-                                hideDisplay={true}
-                                className="border-none shadow-none p-0 w-full max-w-none"
-                                confirmLabel="CONFIRMAR"
-                            />
-                        </div>
+                <div className="flex flex-col items-center gap-4 overflow-y-auto">
+                    <div className="text-[clamp(1rem,4vw,2.25rem)] font-black tracking-tight text-primary bg-primary/5 px-6 py-2 rounded-lg border-2 border-primary/10 shadow-sm w-full text-center">
+                        <MoneyDisplay amount={tempAmount || 0} inline />
                     </div>
+
+                    <div className="grid grid-cols-3 lg:gap-1.5 gap-1 w-full">
+                        {[50, 100, 500, 1000, 2000, 5000, 10000, 20000].map(val => (
+                            <Button
+                                key={val}
+                                variant="outline"
+                                size="sm"
+                                className="h-9 lg:h-11 text-xs lg:text-sm font-bold"
+                                onClick={() => {
+                                    const current = parseFloat(tempAmount) || 0;
+                                    let newAmount = current + val;
+
+                                    // For purchases, limit to total
+                                    if (operation === 'purchases' && newAmount > total) {
+                                        newAmount = total;
+                                    }
+
+                                    setTempAmount(newAmount.toString());
+                                }}
+                            >
+                                +{formatMoney(val)}
+                            </Button>
+                        ))}
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-9 lg:h-11 text-xs lg:text-sm font-bold border-primary text-primary"
+                            onClick={() => setTempAmount(total.toString())}
+                        >
+                            Exacto
+                        </Button>
+                    </div>
+
+                    <Numpad
+                        value={tempAmount}
+                        onChange={setTempAmount}
+                        onConfirm={handleAmountConfirm}
+                        onClose={() => setIsAmountModalOpen(false)}
+                        allowDecimal={false}
+                        hideDisplay={true}
+                        hideConfirm
+                        className="border-none shadow-none p-0 w-full max-w-none"
+                    />
                 </div>
             </BaseModal>
         </div>

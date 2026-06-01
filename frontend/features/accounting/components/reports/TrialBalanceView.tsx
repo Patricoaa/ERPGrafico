@@ -82,7 +82,7 @@ export function TrialBalanceView() {
                                     <th className="px-4 py-3 text-right text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Débitos</th>
                                     <th className="px-4 py-3 text-right text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Créditos</th>
                                     <th className="px-4 py-3 text-right text-[11px] font-semibold text-muted-foreground uppercase tracking-wider bg-primary/5">Saldo Final</th>
-                                    <th className="px-4 py-3 text-right text-[11px] font-semibold text-muted-foreground uppercase tracking-wider text-success">Deudor</th>
+                                    <th className="px-4 py-3 text-right text-[11px] font-semibold text-muted-foreground uppercase tracking-wider text-info">Deudor</th>
                                     <th className="px-4 py-3 text-right text-[11px] font-semibold text-muted-foreground uppercase tracking-wider text-warning">Acreedor</th>
                                 </tr>
                             </thead>
@@ -108,7 +108,7 @@ export function TrialBalanceView() {
                                             <DataCell.Currency value={acc.closing_balance} showZeroAsDash className="text-right justify-end font-bold" />
                                         </td>
                                         <td className="px-4 py-2.5">
-                                            <DataCell.Currency value={acc.saldo_deudor} showZeroAsDash className="text-right justify-end font-medium text-success" />
+                                            <DataCell.Currency value={acc.saldo_deudor} showZeroAsDash className="text-right justify-end font-medium text-info" />
                                         </td>
                                         <td className="px-4 py-2.5">
                                             <DataCell.Currency value={acc.saldo_acreedor} showZeroAsDash className="text-right justify-end font-medium text-warning" />
@@ -128,7 +128,7 @@ export function TrialBalanceView() {
                                         </td>
                                         <td className="px-4 py-4 bg-primary/10 text-center text-xs font-mono font-bold">—</td>
                                         <td className="px-4 py-4 border-x border-border/20">
-                                            <DataCell.Currency value={data.total_saldo_deudor} className="text-right justify-end font-bold text-success" />
+                                            <DataCell.Currency value={data.total_saldo_deudor} className="text-right justify-end font-bold text-info" />
                                         </td>
                                         <td className="px-4 py-4 border-x border-border/20">
                                             <DataCell.Currency value={data.total_saldo_acreedor} className="text-right justify-end font-bold text-warning" />

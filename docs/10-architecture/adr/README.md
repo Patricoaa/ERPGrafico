@@ -92,5 +92,7 @@ Proposed → (review) → Accepted → (later) → Superseded | Deprecated
 | [0026](0026-entity-bus-realtime-invalidation.md) | Entity-bus WebSocket for realtime query invalidation | Accepted |
 | [0027](0027-basedrawer-crud-forms.md) | BaseDrawer as Primary Surface for Embedded CRUD Forms | Accepted |
 | [0028](0028-entity-drawer-registry.md) | Global entity-drawer registry + dual-mode drawers (replaces TransactionViewModal) | Accepted |
+| [0029](0029-color-system-robustening.md) | Color system robustening — info→blue, neutral accent, fixed L1 / adaptive L2, data-viz palette | Accepted |
+| [0030](0030-datatable-compact-variant.md) | DataTable compact variant (CSS Grid for modals/drawers) | Proposed |
 
 > **Lint:** este índice debe coincidir 1-a-1 con los archivos `NNNN-*.md` presentes en este directorio. Cualquier ADR nuevo o renombramiento exige actualizar también esta tabla.

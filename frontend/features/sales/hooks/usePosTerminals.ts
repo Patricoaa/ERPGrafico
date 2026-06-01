@@ -1,13 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { treasuryApi } from '../api/treasuryApi'
-import { TERMINALS_KEYS } from './queryKeys'
+import { treasuryApi } from '@/features/treasury/api/treasuryApi'
+import { TERMINALS_KEYS } from '@/features/treasury/hooks/queryKeys'
 import { useRealtime } from '@/features/realtime'
-import type { Terminal, TerminalUpdatePayload } from '../types'
+import type { Terminal, TerminalUpdatePayload } from '@/features/treasury/types'
 
 export { TERMINALS_KEYS }
 
-interface UseTerminalsReturn {
+interface UsePosTerminalsReturn {
     terminals: Terminal[]
     refetch: () => Promise<unknown>
     toggleActive: (terminal: Terminal) => Promise<void>
@@ -15,7 +15,7 @@ interface UseTerminalsReturn {
     isLoading: boolean
 }
 
-export function useTerminals(): UseTerminalsReturn {
+export function usePosTerminals(): UsePosTerminalsReturn {
     const queryClient = useQueryClient()
     const { markLocalMutation } = useRealtime()
 
