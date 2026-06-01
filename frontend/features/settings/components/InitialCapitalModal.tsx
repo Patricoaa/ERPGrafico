@@ -32,7 +32,9 @@ export function InitialCapitalModal({ open, onOpenChange, onSuccess }: InitialCa
 
     useEffect(() => {
         const total = entries.reduce((acc, curr) => acc + curr.amount, 0)
-        setTotalCapital(total)
+        requestAnimationFrame(() => {
+            setTotalCapital(total)
+        })
     }, [entries])
 
     const handleAddPartner = (contactId: string | null, contact?: any) => {

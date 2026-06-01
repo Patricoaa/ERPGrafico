@@ -26,7 +26,7 @@ interface CategoryClientViewProps {
 
 export function CategoryClientView({ externalOpen, onExternalOpenChange, createAction }: CategoryClientViewProps) {
     const { categories, isLoading, refetch, deleteCategory } = useCategories()
-    const { filterFn } = useClientSearch<Category>(categorySearchDef)
+    const { filterFn, isFiltered } = useClientSearch<Category>(categorySearchDef)
     const [editingCategory, setEditingCategory] = useState<Category | null>(null)
     const [isCreateOpen, setIsCreateOpen] = useState(false)  // create modal
     const [isFormOpen, setIsFormOpen] = useState(false)       // CategoryForm (edit)
@@ -50,11 +50,15 @@ export function CategoryClientView({ externalOpen, onExternalOpenChange, createA
     // the form. Depending only on selectedFromUrl avoids this race.
     useEffect(() => {
         if (selectedFromUrl) {
-            setEditingCategory(selectedFromUrl)
-            setIsFormOpen(true)
+            requestAnimationFrame(() => {
+                setEditingCategory(selectedFromUrl)
+                setIsFormOpen(true)
+            })
         } else {
-            setIsFormOpen(false)
-            setEditingCategory(null)
+            requestAnimationFrame(() => {
+                setIsFormOpen(false)
+                setEditingCategory(null)
+            })
         }
     }, [selectedFromUrl])
 
@@ -144,7 +148,7 @@ export function CategoryClientView({ externalOpen, onExternalOpenChange, createA
 
     // Sync external trigger (toolbar button) → create modal
     React.useEffect(() => {
-        if (externalOpen) setIsCreateOpen(true)
+        if (externalOpen) requestAnimationFrame(() => setIsCreateOpen(true))
     }, [externalOpen])
 
     return (
@@ -158,6 +162,12 @@ export function CategoryClientView({ externalOpen, onExternalOpenChange, createA
                     variant="embedded"
                     leftAction={<SmartSearchBar searchDef={categorySearchDef} placeholder="Buscar categoría..." className="w-full" />}
                     createAction={createAction}
+                    isFiltered={isFiltered}
+                    emptyState={{
+                        context: "inventory",
+                        title: "Aún no hay categorías",
+                        description: "Crea categorías para organizar y clasificar tu catálogo de productos.",
+                    }}
                     renderCard={(category: Category) => (
                         <EntityCard onClick={() => openSelected(category.id)}>
                             <EntityCard.Header

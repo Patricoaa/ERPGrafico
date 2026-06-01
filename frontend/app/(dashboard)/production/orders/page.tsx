@@ -46,7 +46,7 @@ function WorkOrdersClient() {
         router.push(`${pathname}?${params.toString()}`, { scroll: false })
     }
 
-    const { filters } = useSmartSearch(workOrderSearchDef)
+    const { filters, isFiltered } = useSmartSearch(workOrderSearchDef)
     const { orders, isLoading: loading, refetch: refetchOrders } = useWorkOrders({
         ...(filters as any),
         my_tasks: myTasks
@@ -299,6 +299,12 @@ function WorkOrdersClient() {
                         isLoading={loading}
                         variant="embedded"
                         defaultPageSize={50}
+                        isFiltered={isFiltered || myTasks}
+                        emptyState={{
+                            context: "production",
+                            title: "Aún no hay órdenes de trabajo",
+                            description: "Crea una orden de trabajo para planificar y seguir la fabricación.",
+                        }}
                         leftAction={
                             <SmartSearchBar searchDef={workOrderSearchDef} placeholder="Buscar OTs..." className="w-full" />
                         }

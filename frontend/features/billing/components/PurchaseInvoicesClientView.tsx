@@ -26,7 +26,7 @@ import { Invoice } from "@/features/billing/types"
 import { getDtePrefix } from "@/lib/entity-registry"
 
 export function PurchaseInvoicesClientView() {
-    const { filters } = useSmartSearch(purchaseInvoiceSearchDef)
+    const { filters, isFiltered } = useSmartSearch(purchaseInvoiceSearchDef)
     const { invoices: documents, isLoading, refetch: fetchDocuments } = usePurchaseInvoices({ filters })
     const [payingDoc, setPayingDoc] = useState<any | null>(null)
     const [receivingDoc, setReceivingDoc] = useState<any | null>(null)
@@ -234,6 +234,12 @@ export function PurchaseInvoicesClientView() {
                     defaultPageSize={20}
                     isSelected={(inv: Invoice) => hubConfig?.invoiceId === inv.id}
                     isHubOpen={isHubOpen}
+                    isFiltered={isFiltered}
+                    emptyState={{
+                        context: "purchase",
+                        title: "Aún no hay facturas de compra",
+                        description: "Las facturas de proveedores que registres aparecerán aquí.",
+                    }}
                 />
             </div>
             {payingDoc && <PaymentModal open={!!payingDoc} onOpenChange={(open) => !open && setPayingDoc(null)} onConfirm={handlePayment} isPurchase={true} total={parseFloat(payingDoc.total)} pendingAmount={payingDoc.pending_amount ?? parseFloat(payingDoc.total)} hideDteFields={true} isRefund={payingDoc.dte_type === 'NOTA_CREDITO'} existingInvoice={{ dte_type: payingDoc.dte_type, number: payingDoc.number, document_attachment: null }} />}

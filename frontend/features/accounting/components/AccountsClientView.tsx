@@ -31,7 +31,7 @@ interface AccountsClientViewProps {
 }
 
 export function AccountsClientView({ externalOpen, onExternalOpenChange, createAction }: AccountsClientViewProps) {
-    const { filters } = useSmartSearch(accountSearchDef)
+    const { filters, isFiltered } = useSmartSearch(accountSearchDef)
     const { accounts: flatAccounts, isLoading, refetch, deleteAccount } = useAccounts({ filters })
     const [deleteTarget, setDeleteTarget] = useState<number | null>(null)
     const [isFormOpen, setIsFormOpen] = useState(false)
@@ -65,13 +65,15 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
     // Depends ONLY on selectedFromUrl — see CategoryList for explanation
     // of why isFormOpen/editingAccount must NOT be in the dependency array.
     useEffect(() => {
-        if (selectedFromUrl) {
-            setEditingAccount(selectedFromUrl)
-            setIsFormOpen(true)
-        } else {
-            setIsFormOpen(false)
-            setEditingAccount(null)
-        }
+        requestAnimationFrame(() => {
+            if (selectedFromUrl) {
+                setEditingAccount(selectedFromUrl)
+                setIsFormOpen(true)
+            } else {
+                setIsFormOpen(false)
+                setEditingAccount(null)
+            }
+        })
     }, [selectedFromUrl])
 
     const handleCloseModal = () => {
@@ -97,7 +99,7 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
     // Synchronize external modal trigger
     useEffect(() => {
         if (externalOpen && isMounted.current) {
-            setIsFormOpen(true)
+            requestAnimationFrame(() => setIsFormOpen(true))
         }
     }, [externalOpen])
 
@@ -262,6 +264,12 @@ export function AccountsClientView({ externalOpen, onExternalOpenChange, createA
                     rightAction={null}
                     createAction={createAction}
                     leftAction={<SmartSearchBar searchDef={accountSearchDef} placeholder="Buscar por cuenta o código..." className="w-full" />}
+                    isFiltered={isFiltered}
+                    emptyState={{
+                        context: "finance",
+                        title: "Aún no hay cuentas contables",
+                        description: "El plan de cuentas se crea en la configuración inicial; también puedes agregar cuentas manualmente.",
+                    }}
                 />
             </div>
 

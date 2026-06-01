@@ -30,7 +30,7 @@ The semantic color `X` should match the feature's purpose:
 - `primary` — general features (inventory tracking, BOM, price rules)
 - `success` (green) — activation states (active user, active rule)
 - `warning` (amber) — caution states (indefinite contract, deferred emission)
-- `emerald` / `amber` — sales/purchase toggles (Venta, Compra)
+- `success` / `warning` — sales/purchase toggles (Venta, Compra). Never use `emerald` / `amber` raw — use semantic tokens only.
 
 ---
 

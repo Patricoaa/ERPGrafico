@@ -65,18 +65,20 @@ export function ProfitDistributionsTab({ initialFlowOpen = false, onModalClose, 
 
     useEffect(() => {
         isMounted.current = true
-        fetchDistributions()
+        setTimeout(() => fetchDistributions(), 0)
         return () => { isMounted.current = false }
     }, [fetchDistributions])
 
     // Effect to handle modal opening from URL/props
     useEffect(() => {
         if (initialFlowOpen) {
-            setState(prev => ({
-                ...prev,
-                selectedResolution: undefined,
-                isFlowOpen: initialFlowOpen
-            }))
+            setTimeout(() => {
+                setState(prev => ({
+                    ...prev,
+                    selectedResolution: undefined,
+                    isFlowOpen: initialFlowOpen
+                }))
+            }, 0)
         }
     }, [initialFlowOpen])
 

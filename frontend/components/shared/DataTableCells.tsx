@@ -166,7 +166,7 @@ export const DataCell = {
         const isPositive = numValue > 0;
         const isNegative = numValue < 0;
 
-        const colorClass = isPositive ? "text-success" : isNegative ? "text-destructive" : "text-muted-foreground";
+        const colorClass = isPositive ? "text-income" : isNegative ? "text-expense" : "text-muted-foreground";
         const sign = showSign ? (isPositive ? "+" : "") : "";
 
         return (

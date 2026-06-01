@@ -86,7 +86,7 @@ export function Drawer({
     // Synchronize default size if it changes dynamically
     useEffect(() => {
         if (defaultSize !== undefined) {
-            setSize(defaultSize)
+            requestAnimationFrame(() => setSize(defaultSize))
         }
     }, [defaultSize])
 
@@ -95,15 +95,17 @@ export function Drawer({
     const contentId = `drawer-content-${uniqueId.replace(/:/g, '')}`
 
     useEffect(() => {
-        if (boundary === "screen") {
-            setContainerElement(document.body)
-        } else {
-            setContainerElement(
-                document.getElementById("main-content") ||
-                document.getElementById("module-sheets-portal-container") ||
-                document.body
-            )
-        }
+        requestAnimationFrame(() => {
+            if (boundary === "screen") {
+                setContainerElement(document.body)
+            } else {
+                setContainerElement(
+                    document.getElementById("main-content") ||
+                    document.getElementById("module-sheets-portal-container") ||
+                    document.body
+                )
+            }
+        })
     }, [boundary, open])
 
     // Resizing logic
@@ -201,7 +203,7 @@ export function Drawer({
                     ...(side === "top" ? { left: 0, right: 0, top: 0, width: '100%' } : {})
                 }}
                 className={cn(
-                    "p-0 bg-background flex flex-col",
+                    "p-0 panel-surface flex flex-col",
                     boundary === "embedded" ? "!absolute" : "!fixed",
                     sideStyles[side],
                     className

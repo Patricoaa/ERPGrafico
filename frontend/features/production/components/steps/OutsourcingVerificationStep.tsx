@@ -60,8 +60,8 @@ export function OutsourcingVerificationStep({
                 <div className={cn(
                   'h-3 w-3 rounded-full animate-pulse',
                   isReceived
-                    ? 'bg-success shadow-[0_0_8px_rgba(var(--success-rgb),0.6)] animate-none'
-                    : 'bg-warning shadow-[0_0_8px_rgba(var(--warning-rgb),0.6)]',
+                    ? 'bg-success shadow-[0_0_8px_oklch(var(--success-raw)/0.6)] animate-none'
+                    : 'bg-warning shadow-[0_0_8px_oklch(var(--warning-raw)/0.6)]',
                 )} />
                 <div className="space-y-0.5">
                   <p className="text-sm font-bold">{m.component_name}</p>

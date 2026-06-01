@@ -169,6 +169,7 @@ interface CategoryDrawerProps {
     inline?: boolean
     onLoadingChange?: (loading: boolean) => void
     mode?: DrawerMode
+    sidebar?: React.ReactNode
 }
 
 export function CategoryDrawer({

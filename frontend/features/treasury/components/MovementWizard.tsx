@@ -125,7 +125,7 @@ export function MovementWizard({
                                 variant="outline"
                                 className={cn(
                                     "h-32 flex flex-col items-center justify-center gap-3 border-2 transition-all",
-                                    impact === "IN" ? "border-success bg-success/10" : "hover:border-success/50"
+                                    impact === "IN" ? "border-income bg-income/10" : "hover:border-income/50"
                                 )}
                                 onClick={() => {
                                     setImpact("IN")
@@ -133,7 +133,7 @@ export function MovementWizard({
                                     setStepIndex(1)
                                 }}
                             >
-                                <div className={cn("p-3 rounded-md bg-success/10 text-success", impact === "IN" && "bg-success text-white")}>
+                                <div className={cn("p-3 rounded-md bg-income/10 text-income", impact === "IN" && "bg-income text-income-foreground")}>
                                     <Banknote className="h-6 w-6" />
                                 </div>
                                 <div className="flex flex-col">
@@ -154,7 +154,7 @@ export function MovementWizard({
                                     setStepIndex(1)
                                 }}
                             >
-                                <div className={cn("p-3 rounded-md bg-warning/10 text-warning", impact === "OUT" && "bg-warning text-white")}>
+                                <div className={cn("p-3 rounded-md bg-warning/10 text-warning", impact === "OUT" && "bg-warning text-warning-foreground")}>
                                     <LogOut className="h-6 w-6" />
                                 </div>
                                 <div className="flex flex-col">
@@ -176,7 +176,7 @@ export function MovementWizard({
                                         setStepIndex(1)
                                     }}
                                 >
-                                    <div className={cn("p-3 rounded-md bg-info/10 text-info", impact === "TRANSFER" && "bg-info text-white")}>
+                                    <div className={cn("p-3 rounded-md bg-info/10 text-info", impact === "TRANSFER" && "bg-info text-info-foreground")}>
                                         <ArrowRightLeft className="h-6 w-6" />
                                     </div>
                                     <div className="flex flex-col">
@@ -347,7 +347,7 @@ export function MovementWizard({
                         <div className="flex justify-center">
                             <div className={cn(
                                 "uppercase font-black border rounded-sm px-4 py-1 text-[10px] tracking-[0.15em] text-center min-w-[120px]",
-                                impact === "IN" ? "border-success/40 text-success bg-success/5" :
+                                impact === "IN" ? "border-income/40 text-income bg-income/5" :
                                     impact === "OUT" ? "border-warning/40 text-warning bg-warning/5" :
                                         "border-info/40 text-info bg-info/5"
                             )}>
@@ -446,7 +446,7 @@ export function MovementWizard({
                                     <span className="text-muted-foreground font-medium">Operación:</span>
                                     <span className={cn(
                                         "font-black uppercase tracking-[0.15em] px-3 py-1 rounded-sm border text-[10px]",
-                                        impact === "IN" ? "bg-success/10 text-success border-success/30" :
+                                        impact === "IN" ? "bg-income/10 text-income border-income/30" :
                                             impact === "OUT" ? "bg-warning/10 text-warning border-warning/30" :
                                                 "bg-info/10 text-info border-info/30"
                                     )}>

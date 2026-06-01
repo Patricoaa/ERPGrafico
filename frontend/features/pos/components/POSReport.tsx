@@ -131,7 +131,7 @@ export function POSReport({ data, title, type = "X", onClose }: POSReportProps) 
 
             {/* SECCIÓN A: CONTROL DE EFECTIVO */}
             <div className="space-y-4 mb-6">
-                <div className="flex items-center gap-2 border-b border-black/10 pb-1">
+                <div className="flex items-center gap-2 border-b border-border pb-1">
                     <Calculator className="h-3 w-3 text-foreground" />
                     <h4 className="font-black text-[10px] uppercase tracking-widest text-foreground">Control de Efectivo</h4>
                 </div>
@@ -170,7 +170,7 @@ export function POSReport({ data, title, type = "X", onClose }: POSReportProps) 
 
             {/* SECCIÓN B: DESGLOSE DE PAGOS */}
             <div className="space-y-4 pt-4 border-t-2 border-border/50">
-                <div className="flex items-center gap-2 border-b border-black/10 pb-1">
+                <div className="flex items-center gap-2 border-b border-border pb-1">
                     <CreditCard className="h-3 w-3 text-foreground" />
                     <h4 className="font-black text-[10px] uppercase tracking-widest text-foreground">Desglose de Pagos</h4>
                 </div>

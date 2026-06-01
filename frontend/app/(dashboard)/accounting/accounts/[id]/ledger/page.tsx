@@ -36,9 +36,23 @@ export default function AccountLedgerPage() {
     }
 
     useEffect(() => {
+        let cancelled = false
         if (accountId) {
-            fetchLedger()
+            ;(async () => {
+                try {
+                    const res = await api.get(`/accounting/accounts/${accountId}/ledger/`)
+                    if (!cancelled) {
+                        setAccount(res.data.account)
+                        setMovements(res.data.movements)
+                    }
+                } catch {
+                    if (!cancelled) toast.error("Error al cargar el libro mayor")
+                } finally {
+                    if (!cancelled) setLoading(false)
+                }
+            })()
         }
+        return () => { cancelled = true }
     }, [accountId])
 
     const columns: ColumnDef<Record<string, unknown>>[] = [

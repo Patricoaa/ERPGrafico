@@ -2,7 +2,6 @@
 import React from "react"
 import { LucideIcon, Inbox, SearchX, Receipt, Package, Users, Database, Monitor, Layers, Landmark, ShoppingCart, Truck } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { IndustryMark } from '@/components/shared'
 
 export type EmptyStateContext = 'search' | 'inventory' | 'finance' | 'users' | 'generic' | 'database' | 'production' | 'pos' | 'bom' | 'treasury' | 'sale' | 'purchase'
 export type EmptyStateVariant = 'full' | 'compact' | 'minimal'
@@ -86,16 +85,9 @@ export function EmptyState({
         >
             {/* Precision Icon Container */}
             <div className={cn(
-                "relative flex items-center justify-center rounded-none border border-border/40 bg-muted/10 mb-6",
+                "relative flex items-center justify-center rounded-lg border border-border bg-muted shadow-sm mb-6",
                 variant === 'full' ? "h-20 w-20" : "h-14 w-14"
             )}>
-                {/* Decorative corners */}
-                <IndustryMark 
-                    positions={['top-left', 'bottom-right']} 
-                    active 
-                    className="opacity-40" 
-                />
-                
                 <Icon className={cn(
                     "text-muted-foreground/40",
                     variant === 'full' ? "h-10 w-10" : "h-6 w-6"
@@ -103,17 +95,17 @@ export function EmptyState({
             </div>
 
             {/* Content Section */}
-            <div className="max-w-md space-y-2">
+            <div className="flex max-w-md flex-col items-center space-y-2 text-center">
                 <h3 className={cn(
-                    "font-heading font-black uppercase tracking-tighter text-foreground/90",
+                    "w-full text-center font-heading font-black uppercase tracking-tighter text-foreground/90",
                     variant === 'full' ? "text-lg" : "text-sm"
                 )}>
                     {displayTitle}
                 </h3>
-                
+
                 {description && (
                     <p className={cn(
-                        "text-muted-foreground leading-relaxed mx-auto",
+                        "w-full text-center text-muted-foreground leading-relaxed",
                         variant === 'full' ? "text-sm max-w-[320px]" : "text-[11px] max-w-[240px]"
                     )}>
                         {description}

@@ -2,6 +2,7 @@
 
 import { usePathname, useSearchParams } from "next/navigation"
 import { PageHeader } from "@/components/shared"
+import { getModuleIconName } from "@/lib/module-registry"
 
 export function HRHeader() {
     const pathname = usePathname()
@@ -56,7 +57,7 @@ export function HRHeader() {
             case 'payrolls':
                 return { title: "Liquidaciones y Remuneraciones", description: "Cálculo de haberes, descuentos y generación de pagos.", icon: "file-spreadsheet" }
             default:
-                return { title: "RRHH", description: "", icon: "users-2" }
+                return { title: "RRHH", description: "", icon: getModuleIconName('hr') ?? "user-cog" }
         }
     }
 

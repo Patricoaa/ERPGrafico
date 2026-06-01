@@ -40,7 +40,7 @@ import { SmartSearchBar, useSmartSearch } from "@/components/shared"
 import { attributeSearchDef } from "../searchDef"
 
 export function AttributeManager({ externalOpen, createAction }: AttributeManagerProps) {
-    const { filters } = useSmartSearch(attributeSearchDef)
+    const { filters, isFiltered } = useSmartSearch(attributeSearchDef)
     const {
         attributes,
         isLoading,
@@ -279,12 +279,19 @@ export function AttributeManager({ externalOpen, createAction }: AttributeManage
             <div className="flex-1 min-h-0">
                 <DataTable
                     columns={columns}
-                    data={attributes}
+                    // Safe: Attribute from useAttributes and ProductAttribute are structurally compatible at runtime
+                    data={attributes as unknown as ProductAttribute[]}
                     isLoading={isLoading}
                     variant="embedded"
                     bulkActions={bulkActions}
                     createAction={createAction}
                     leftAction={<SmartSearchBar searchDef={attributeSearchDef} placeholder="Buscar atributo..." className="w-full" />}
+                    isFiltered={isFiltered}
+                    emptyState={{
+                        context: "inventory",
+                        title: "Aún no hay atributos",
+                        description: "Crea atributos (color, talla…) para generar variantes de producto.",
+                    }}
                 />
             </div>
 

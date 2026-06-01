@@ -50,7 +50,7 @@ export function WizardRightSidebar({
     ].filter(s => s.value)
 
     return (
-        <div className="w-80 border-l flex flex-col h-full min-h-0 overflow-hidden hidden lg:flex shrink-0">
+        <div className="w-72 border-l h-full flex flex-col min-h-0 overflow-hidden hidden lg:flex shrink-0">
             <ScrollArea className="flex-1 w-full min-h-0">
                 <Accordion type="multiple" defaultValue={["specs", "info", "comments"]} className="w-full p-4 space-y-4">
                     {/* Technical Specs - Moved to top for operators */}
@@ -69,7 +69,7 @@ export function WizardRightSidebar({
                                         <Button
                                             variant="outline"
                                             size="sm"
-                                            className="w-full bg-white text-primary border-primary/20 hover:bg-primary/10 hover:text-primary"
+                                            className="w-full bg-card text-primary border-primary/20 hover:bg-primary/10 hover:text-primary"
                                             onClick={() => window.open(order.prepress_archive, '_blank')}
                                         >
                                             Ver Archivo

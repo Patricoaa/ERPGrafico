@@ -189,7 +189,7 @@ export function PaymentDrawer({
                     <div className="grid grid-cols-2 gap-4 text-sm">
                         <div>
                             <span className="text-xs text-muted-foreground">Monto</span>
-                            <p className={`font-bold text-lg ${isInbound ? 'text-success' : 'text-destructive'}`}>
+                            <p className={`font-bold text-lg ${isInbound ? 'text-income' : 'text-expense'}`}>
                                 {isInbound ? '+' : '-'}{formatCurrency(amount)}
                             </p>
                         </div>

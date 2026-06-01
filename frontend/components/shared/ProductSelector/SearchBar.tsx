@@ -49,7 +49,7 @@ export function SearchBar({
                 ref={inputRef}
                 placeholder={placeholder}
                 className={cn(
-                    isTouchPOS ? "h-14 text-base pl-10" : "h-12 text-lg pl-10"
+                    isTouchPOS ? "h-14 text-base pl-10" : "h-10 text-base pl-10"
                 )}
                 style={isTouch ? { fontSize: `${MIN_MOBILE_FONT_SIZE}px` } : undefined}
                 value={value}

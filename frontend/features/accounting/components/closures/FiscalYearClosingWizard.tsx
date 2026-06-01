@@ -123,15 +123,15 @@ export function FiscalYearClosingWizard({
             component: preview ? (
                 <div className="space-y-6">
                     <div className="grid grid-cols-2 gap-4">
-                        <Card className="rounded-none border-dashed bg-card/50 shadow-sm p-5 border-t-2 border-t-success bg-success/5">
-                            <p className="text-[10px] font-bold uppercase text-success tracking-widest mb-2">Total Ingresos</p>
-                            <p className="text-2xl font-mono font-black text-success">
+                        <Card className="rounded-none border-dashed bg-card/50 shadow-sm p-5 border-t-2 border-t-income bg-income/5">
+                            <p className="text-[10px] font-bold uppercase text-income tracking-widest mb-2">Total Ingresos</p>
+                            <p className="text-2xl font-mono font-black text-income">
                                 {formatCurrency(parseFloat(preview.income_total || '0'))}
                             </p>
                         </Card>
-                        <Card className="rounded-none border-dashed bg-card/50 shadow-sm p-5 border-t-2 border-t-destructive bg-destructive/5">
-                            <p className="text-[10px] font-bold uppercase text-destructive tracking-widest mb-2">Total Egresos</p>
-                            <p className="text-2xl font-mono font-black text-destructive">
+                        <Card className="rounded-none border-dashed bg-card/50 shadow-sm p-5 border-t-2 border-t-expense bg-expense/5">
+                            <p className="text-[10px] font-bold uppercase text-expense tracking-widest mb-2">Total Egresos</p>
+                            <p className="text-2xl font-mono font-black text-expense">
                                 {formatCurrency(Math.abs(parseFloat(preview.expense_total || '0')))}
                             </p>
                         </Card>

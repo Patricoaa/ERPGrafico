@@ -14,32 +14,32 @@ export function TaskInboxSidebar({ isOpen, onClose }: TaskInboxSidebarProps) {
     const { isHubEffectivelyOpen } = useHubPanel()
 
     return (
-            <CollapsibleSheet
-                sheetId="task-inbox-sidebar"
-                open={isOpen}
-                onOpenChange={(open) => !open && onClose()}
-                tabLabel="Bandeja de Entrada"
-                tabIcon={Inbox}
-                variant="global"
-                fullWidth={320}
-                priority={0}
-            >
-                {/* Header */}
-                <div className="border-b shrink-0">
-                    <PanelHeader
-                        title="Bandeja de Entrada"
-                        description="Gestión de aprobaciones y tareas"
-                        icon={Inbox}
-                        onClose={onClose}
-                        closeTooltip="Cerrar bandeja"
-                    />
-                </div>
+        <CollapsibleSheet
+            sheetId="task-inbox-sidebar"
+            open={isOpen}
+            onOpenChange={(open) => !open && onClose()}
+            tabLabel="Bandeja de Entrada"
+            tabIcon={Inbox}
+            variant="global"
+            fullWidth={320}
+            priority={0}
+        >
+            {/* Header */}
+            <div className="border-b shrink-0 px-6 pt-6 pb-4">
+                <PanelHeader
+                    title="Bandeja de Entrada"
+                    icon={Inbox}
+                    onClose={onClose}
+                    closeTooltip="Cerrar bandeja"
+                    titleClassName="text-md font-black tracking-tight"
+                />
+            </div>
 
-                {/* Task Inbox Content */}
-                <div className="flex-1 overflow-y-auto p-4 canvas-prepress">
-                    {isOpen && <TaskInbox />}
-                </div>
-            </CollapsibleSheet>
+            {/* Task Inbox Content */}
+            <div className="flex-1 overflow-y-auto p-4 ">
+                {isOpen && <TaskInbox />}
+            </div>
+        </CollapsibleSheet>
     )
 }
 

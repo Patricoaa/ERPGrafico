@@ -12,7 +12,7 @@ import { DataTableColumnHeader } from '@/components/shared'
 
 import {Landmark, Lock} from "lucide-react"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
-import { BankManagement, PaymentMethodManagement, TerminalManagement } from "@/features/treasury"
+import { BankManagement, PaymentMethodManagement, TreasuryAccountDrawer } from "@/features/treasury"
 
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 import { DataCell, createActionsColumn, FadeIn } from '@/components/shared'
@@ -30,9 +30,9 @@ interface TreasuryAccountsViewProps {
 }
 
 export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ activeTab, externalOpen, createAction }) => {
-    const { openEntity, closeEntity } = useGlobalModalActions()
-    const { filters } = useSmartSearch(treasuryAccountSearchDef)
-    const { accounts, isLoading, deleteAccount } = useTreasuryAccounts({ filters })
+    const { openEntity } = useGlobalModalActions()
+    const { filters, isFiltered } = useSmartSearch(treasuryAccountSearchDef)
+    const { accounts, isLoading, deleteAccount, refetch } = useTreasuryAccounts({ filters })
     const [isBankModalOpen, setIsBankModalOpen] = useState(false)
     const [isMethodModalOpen, setIsMethodModalOpen] = useState(false)
     const [isLocalAccountModalOpen, setIsLocalAccountModalOpen] = useState(false)
@@ -47,7 +47,7 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
 
     useEffect(() => {
         if (selectedFromUrl) {
-            openEntity('treasury.treasuryaccount', selectedFromUrl.id)
+            openEntity('treasury.treasuryaccount', selectedFromUrl.id, selectedFromUrl)
         }
     }, [selectedFromUrl, openEntity])
 
@@ -64,10 +64,6 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
         }
     }
 
-    const handleAdd = () => {
-        closeEntity()
-    }
-
     const handleEdit = (account: TreasuryAccount) => {
         const params = new URLSearchParams(searchParams.toString())
         params.set('selected', String(account.id))
@@ -78,16 +74,12 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
         switch (activeTab) {
             case "accounts":
                 setIsLocalAccountModalOpen(true)
-                handleAdd()
                 break
             case "banks":
                 setIsBankModalOpen(true)
                 break
             case "methods":
                 setIsMethodModalOpen(true)
-                break
-            case "terminals":
-                // TerminalManagement handles its own modal state via externalOpen
                 break
         }
     }
@@ -225,6 +217,7 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
     ]
 
     return (
+        <>
         <Tabs value={activeTab} className="space-y-4 h-full flex flex-col">
             <TabsContent value="accounts" className="space-y-6 flex-1 min-h-0">
                 <div className="h-full flex flex-col">
@@ -237,7 +230,20 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
                             variant="embedded"
                             createAction={activeTab === "accounts" ? createAction : undefined}
                             leftAction={<SmartSearchBar searchDef={treasuryAccountSearchDef} placeholder="Buscar cuenta..." className="w-full" />}
+                            isFiltered={isFiltered}
+                            emptyState={{
+                                context: "treasury",
+                                title: "Aún no hay cuentas de tesorería",
+                                description: "Crea cuentas de caja o banco para registrar y controlar tus fondos.",
+                            }}
                             renderCustomView={createEntityCardView('treasury.treasuryaccount', {
+                                isFiltered,
+                                emptyState: {
+                                    context: "treasury",
+                                    title: "Aún no hay cuentas de tesorería",
+                                    description: "Crea cuentas de caja o banco para registrar y controlar tus fondos.",
+                                    action: activeTab === "accounts" ? createAction : undefined,
+                                },
                                 renderCard: (acc: TreasuryAccount) => {
                                     const name = acc.account_name
                                     return (
@@ -305,20 +311,29 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
                 </FadeIn>
             </TabsContent>
 
-            <TabsContent value="terminals" className="flex-1 min-h-0">
-                <FadeIn className="h-full">
-                    <TerminalManagement
-                        externalOpen={activeTab === "terminals" && !!externalOpen}
-                        onExternalOpenChange={(open) => {
-                            if (!open) {
-                                handleCloseModal()
-                            }
-                        }}
-                        createAction={activeTab === "terminals" ? createAction : undefined}
-                    />
-                </FadeIn>
-            </TabsContent>
         </Tabs>
+
+        <TreasuryAccountDrawer
+            open={isLocalAccountModalOpen}
+            onOpenChange={(open) => {
+                if (!open) {
+                    setIsLocalAccountModalOpen(false)
+                    if (searchParams.get("modal")) {
+                        const params = new URLSearchParams(searchParams.toString())
+                        params.delete("modal")
+                        router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+                    }
+                }
+            }}
+            onSuccess={() => {
+                setIsLocalAccountModalOpen(false)
+                refetch()
+                const params = new URLSearchParams(searchParams.toString())
+                params.delete("modal")
+                router.replace(`${pathname}?${params.toString()}`, { scroll: false })
+            }}
+        />
+        </>
     )
 }
 

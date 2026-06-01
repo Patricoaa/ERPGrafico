@@ -1,5 +1,6 @@
 export * from './components'
 export { useInvoices, useInvoice, INVOICES_QUERY_KEY } from './hooks/useInvoices'
 export { usePurchaseInvoices, PURCHASE_INVOICES_QUERY_KEY } from './hooks/usePurchaseInvoices'
+export type { Invoice, InvoiceFilters, AnnulInvoicePayload } from './types'
 export { useNoteCheckout } from './hooks/useNoteCheckout'
 export * from './searchDef'

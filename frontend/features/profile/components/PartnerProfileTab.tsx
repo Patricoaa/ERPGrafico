@@ -59,7 +59,7 @@ export function PartnerProfileTab({ contactId }: Props) {
     }
 
     useEffect(() => {
-        fetchData()
+        requestAnimationFrame(() => fetchData())
     }, [contactId])
 
     const handleViewDetails = (movementId: number) => {

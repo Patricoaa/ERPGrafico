@@ -90,7 +90,9 @@ export function HRSettingsView({ activeTab = "global" }: { activeTab?: string })
     }, [globalForm])
 
     useEffect(() => {
-        fetchData()
+        requestAnimationFrame(() => {
+            fetchData()
+        })
     }, [fetchData])
 
     const conceptDeleteConfirm = useConfirmAction<number>(async (id) => {

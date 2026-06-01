@@ -29,8 +29,8 @@ Rules apply to every PR. Violations block merge unless an accepted ADR waives th
 
 ## 3. Visual system
 
-12. No raw Tailwind colors (`bg-red-500`, `text-blue-600`). Semantic tokens only.
-13. Primary color: Electric Violet `oklch(62% 0.244 301)` via `text-primary` / `bg-primary`.
+12. No raw Tailwind colors (`bg-red-500`), no literal hex/rgb in `className`/inline style, no `white`/`black` utilities — semantic tokens only. Enforced by the `tw/no-raw-color` ESLint rule. Full contract: [color-system.md](../20-contracts/color-system.md).
+13. Primary color: Process Cyan `oklch(0.65 0.18 235)` via `text-primary` / `bg-primary`. Layer 1 inks are **fixed** across light/dark; Layer 2 intents carry the dark-mode adaptation. `info` = blue, `accent` = neutral interaction surface, data-viz uses `--chart-1…6` (CMYK inks). Changing a Layer 1/2 value requires an ADR.
 14. `font-sans` (Onest) for body; `font-heading` (Syne) for headings.
 15. Border radius default: `0.5rem`. No `rounded-xl` / `rounded-full` on form components without ADR.
 16. 8pt grid — padding/margin/gap multiples of 8px.

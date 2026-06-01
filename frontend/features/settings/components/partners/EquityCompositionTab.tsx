@@ -73,17 +73,14 @@ export function EquityCompositionTab({
     const [isWithdrawalOpen, setIsWithdrawalOpen] = useState(false)
     const [isDividendOpen, setIsDividendOpen] = useState(false)
     const [isMobilizeOpen, setIsMobilizeOpen] = useState(false)
-    const [isLedgerOpen, setIsLedgerOpen] = useState(false)
     const [isStatsOpen, setIsStatsOpen] = useState(false)
+    const [selectedPartnerId, setSelectedPartnerId] = useState<number | undefined>(undefined)
 
     // Modal pre-filling state
     const [subModalParams, setSubModalParams] = useState({
         partnerId: undefined as string | undefined,
         amount: undefined as string | undefined
     })
-
-    const [selectedPartnerId, setSelectedPartnerId] = useState<number | undefined>(undefined)
-    const [selectedPartnerName, setSelectedPartnerName] = useState<string>("")
 
     const fetchData = async () => {
         setLoading(true)
@@ -103,36 +100,53 @@ export function EquityCompositionTab({
     }
 
     useEffect(() => {
-        fetchData()
+        const initialFetch = async () => {
+            try {
+                const [pData, sData] = await Promise.all([
+                    partnersApi.getPartners(),
+                    partnersApi.getSummary()
+                ])
+                setPartners(pData)
+                setSummary(sData)
+            } catch (error) {
+                console.error(error)
+                toast.error("Error al cargar datos societarios")
+            } finally {
+                setLoading(false)
+            }
+        }
+        initialFetch()
     }, [])
 
     useEffect(() => {
         if (initialAddPartnerOpen) {
-            setIsAddPartnerOpen(true)
+            setTimeout(() => setIsAddPartnerOpen(true), 0)
         }
     }, [initialAddPartnerOpen])
 
     useEffect(() => {
         if (initialStatsOpen) {
-            setIsStatsOpen(true)
+            setTimeout(() => setIsStatsOpen(true), 0)
         }
     }, [initialStatsOpen])
 
-    useEffect(() => {
-        const ledgerParam = searchParams.get("ledger")
+    const ledgerParam = searchParams.get("ledger")
+    const { selectedPartnerName, partnerIdForLedger, isLedgerOpen } = React.useMemo(() => {
         if (ledgerParam) {
-            const partnerId = parseInt(ledgerParam, 10)
-            const partner = partners.find(p => p.id === partnerId)
-            
-            setSelectedPartnerId(partnerId)
-            if (partner) {
-                setSelectedPartnerName(partner.name)
+            const pId = parseInt(ledgerParam, 10)
+            const partner = partners.find(p => p.id === pId)
+            return {
+                partnerIdForLedger: pId,
+                selectedPartnerName: partner?.name || "",
+                isLedgerOpen: true
             }
-            setIsLedgerOpen(true)
-        } else {
-            setIsLedgerOpen(false)
         }
-    }, [searchParams, partners])
+        return {
+            partnerIdForLedger: undefined as number | undefined,
+            selectedPartnerName: "",
+            isLedgerOpen: false
+        }
+    }, [ledgerParam, partners])
 
     if (loading) {
         return (
@@ -410,7 +424,7 @@ export function EquityCompositionTab({
                         router.push(`${pathname}?${params.toString()}`, { scroll: false })
                     }
                 }}
-                partnerId={selectedPartnerId}
+                partnerId={partnerIdForLedger ?? selectedPartnerId}
                 partnerName={selectedPartnerName}
             />
             {summary && (

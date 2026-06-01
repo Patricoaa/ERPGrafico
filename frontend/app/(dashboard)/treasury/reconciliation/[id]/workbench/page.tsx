@@ -17,7 +17,7 @@ import { SkeletonShell } from "@/components/shared"
 export default function WorkbenchPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params)
     const router = useRouter()
-    
+
     const statementId = parseInt(id)
     const { data: statement, isLoading, refetch } = useStatementQuery(statementId)
 
@@ -51,10 +51,10 @@ export default function WorkbenchPage({ params }: { params: Promise<{ id: string
     const navigation = {
         tabs: [
             { value: "movements", label: "Movimientos", iconName: "banknote", href: "/treasury?view=movements" },
-            { 
-                value: "accounts", 
-                label: "Cuentas y Caja", 
-                iconName: "landmark", 
+            {
+                value: "accounts",
+                label: "Cuentas de tesoreria",
+                iconName: "landmark",
                 href: "/treasury?view=accounts",
                 subTabs: [
                     { value: "accounts", label: "Cuentas", href: "/treasury?view=accounts&sub=accounts" },
@@ -62,10 +62,10 @@ export default function WorkbenchPage({ params }: { params: Promise<{ id: string
                     { value: "methods", label: "Métodos", href: "/treasury?view=accounts&sub=methods" },
                 ]
             },
-            { 
-                value: "reconciliation", 
-                label: "Conciliación", 
-                iconName: "history", 
+            {
+                value: "reconciliation",
+                label: "Conciliación",
+                iconName: "history",
                 href: "/treasury?view=reconciliation",
                 subTabs: [
                     { value: "statements", label: "Cartolas", iconName: "file-text", href: "/treasury?view=reconciliation&sub=statements" },
@@ -73,10 +73,10 @@ export default function WorkbenchPage({ params }: { params: Promise<{ id: string
                     { value: "intelligence", label: "Inteligencia", iconName: "brain", href: "/treasury?view=reconciliation&sub=intelligence" },
                 ]
             },
-            { 
-                value: "config", 
-                label: "Config", 
-                iconName: "settings", 
+            {
+                value: "config",
+                label: "Config",
+                iconName: "settings",
                 href: "/treasury?view=config",
                 subTabs: [
                     { value: "conciliation", label: "Conciliación", href: "/treasury?view=config&tab=conciliation", iconName: "arrow-left-right" },

@@ -297,7 +297,7 @@ export function DeclarationWizard({ isOpen, onOpenChange, periodId, onSuccess, e
                                 <AlertDescription className="text-xs text-warning/70 font-medium">Hay pendientes que no se incluyeron. Se recomienda procesarlos.</AlertDescription>
                                 <div className="grid grid-cols-2 gap-4">
                                     {calcData.drafts_summary.invoices.slice(0, 2).map(inv => (
-                                        <div key={inv.id} className="flex items-center justify-between bg-white/50 p-3 rounded-md border border-warning/10">
+                                        <div key={inv.id} className="flex items-center justify-between bg-muted/50 p-3 rounded-md border border-warning/10">
                                             <span className="text-[11px] font-bold">{inv.display_id}</span>
                                             <Button variant="ghost" size="sm" className="h-7 text-[9px] font-black" onClick={() => openHub({ type: inv.type, invoiceId: inv.id })}>Abrir Hub</Button>
                                         </div>

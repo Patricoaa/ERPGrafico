@@ -24,9 +24,11 @@ import { cn } from "@/lib/utils"
 
 import { motion, AnimatePresence } from "framer-motion"
 import { Skeleton } from "@/components/ui/skeleton"
-import { SearchX, LucideIcon } from "lucide-react"
+import { LucideIcon } from "lucide-react"
+import { ScrollArea } from "@/components/ui/scroll-area"
 
-import { BulkActionButtons, BulkActionDock, DataTablePagination, DataTableToolbar, EmptyState, EmptyStateContext, SkeletonShell, type BulkAction } from '@/components/shared'
+import { BulkActionButtons, BulkActionDock, DataTablePagination, DataTableToolbar, EmptyState, SkeletonShell, type BulkAction } from '@/components/shared'
+import { resolveEmptyState, type DataTableEmptyState } from './emptyStateResolver'
 
 export interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[]
@@ -56,8 +58,16 @@ export interface DataTableProps<TData, TValue> {
     rightAction?: React.ReactNode
     showToolbarSort?: boolean
     onRowClick?: (row: TData) => void
-    /** Layout variant. Use 'embedded' when the table lives inside a card/panel (no outer border, compact toolbar). Use 'standalone' for full-page tables with border. Use 'minimal' for simple display tables inside tabs/detail panels (no toolbar, no pagination). */
-    variant?: 'standalone' | 'embedded' | 'minimal'
+    /** Layout variant. Use 'embedded' when the table lives inside a card/panel (no outer border, compact toolbar). Use 'standalone' for full-page tables with border. Use 'minimal' for simple display tables inside tabs/detail panels (no toolbar, no pagination). Use 'compact' for dense CSS Grid tables inside modals/drawers (no toolbar, no pagination, no border). */
+    variant?: 'standalone' | 'embedded' | 'minimal' | 'compact'
+    /** CSS Grid template class for compact variant. Required when variant='compact'. Example: "grid-cols-[2rem_1fr_auto_auto_auto]" */
+    gridTemplate?: string
+    /** Gap between columns in compact variant. Default: "gap-x-3" */
+    gridGap?: string
+    /** Max height for the compact variant ScrollArea. Default: "max-h-[65vh]" */
+    compactMaxHeight?: string
+    /** Render callback for the actions cell in compact variant. Receives the row data and returns a ReactNode. Occupies the last grid track. */
+    renderRowActions?: (row: TData) => React.ReactNode
     isLoading?: boolean
     skeletonRows?: number
     renderSubComponent?: (row: Row<TData>) => React.ReactNode
@@ -91,13 +101,22 @@ export interface DataTableProps<TData, TValue> {
     createAction?: React.ReactNode
     /** Custom actions/buttons rendered inside the main toolbar button group */
     rightButtonGroupAction?: React.ReactNode
-    emptyState?: {
-        title?: string
-        description?: string
-        icon?: LucideIcon
-        action?: React.ReactNode
-        context?: EmptyStateContext
-    }
+    /**
+     * Empty-state copy. Flat fields describe the "no records at all" case
+     * (entity truly empty). The optional `filtered` sub-object overrides the
+     * "active search/filter returned nothing" case; sensible defaults are
+     * applied when omitted. Which one renders is driven by `isFiltered`.
+     */
+    emptyState?: DataTableEmptyState
+    /**
+     * Signals that the current empty result is the product of an active
+     * toolbar search/filter. Drives the empty-state copy:
+     *  - `true`      → "No se encontraron resultados" (filtered)
+     *  - `false`     → entity-specific "sin registros" (no records at all)
+     *  - `undefined` → legacy single empty-state (back-compat, no distinction)
+     * Wire it from `useSmartSearch().isFiltered`.
+     */
+    isFiltered?: boolean
     renderRow?: (row: Row<TData>, children: React.ReactNode) => React.ReactNode
     manualPagination?: boolean
     pageCount?: number
@@ -172,6 +191,7 @@ export function DataTable<TData, TValue>({
     createAction,
     rightButtonGroupAction,
     emptyState: customEmptyState,
+    isFiltered,
     initialColumnFilters = EMPTY_ARRAY,
     renderRow,
     manualPagination,
@@ -181,10 +201,16 @@ export function DataTable<TData, TValue>({
     onPaginationChange,
     rowSelection,
     renderLoadingView,
+    gridTemplate,
+    gridGap = "gap-x-3",
+    compactMaxHeight = "max-h-[65vh]",
+    renderRowActions,
 }: DataTableProps<TData, TValue>) {
     const isEmbedded = variant === 'embedded'
     const isMinimal = variant === 'minimal'
+    const isCompact = variant === 'compact'
     const effectiveSkeletonRows = skeletonRows ?? defaultPageSize
+    const emptyProps = resolveEmptyState(customEmptyState, isFiltered)
 
     const containerRef = React.useRef<HTMLDivElement>(null)
     const [isInModal, setIsInModal] = React.useState(false)
@@ -283,7 +309,7 @@ export function DataTable<TData, TValue>({
         }
     }, [internalRowSelection, onRowSelectionChange])
 
-    const showToolbar = !isMinimal && (filterColumn || globalFilterFields || (facetedFilters && facetedFilters.length > 0) || toolbarAction || rightAction || leftAction || createAction || (viewOptions && viewOptions.length > 0) || showToolbarSort)
+    const showToolbar = !isMinimal && !isCompact && (filterColumn || globalFilterFields || (facetedFilters && facetedFilters.length > 0) || toolbarAction || rightAction || leftAction || createAction || (viewOptions && viewOptions.length > 0) || showToolbarSort)
     const selectedRows = table.getSelectedRowModel().rows
     const selectedItems = React.useMemo(() => selectedRows.map(r => r.original), [selectedRows])
     const clearSelection = React.useCallback(() => table.resetRowSelection(), [table])
@@ -428,14 +454,14 @@ export function DataTable<TData, TValue>({
                                 </TableRow>
                             ))
                         ) : (
-                            <TableRow>
+                            <TableRow className="hover:bg-transparent">
                                 <TableCell colSpan={columns.length} className="h-24 p-0">
                                     <EmptyState
-                                        context={customEmptyState?.context || "search"}
-                                        icon={customEmptyState?.icon || SearchX}
-                                        title={customEmptyState?.title || "No se encontraron resultados"}
-                                        description={customEmptyState?.description || "Intenta ajustar los filtros de búsqueda para encontrar lo que buscas."}
-                                        action={customEmptyState?.action}
+                                        context={emptyProps.context}
+                                        icon={emptyProps.icon}
+                                        title={emptyProps.title}
+                                        description={emptyProps.description}
+                                        action={emptyProps.action}
                                     />
                                 </TableCell>
                             </TableRow>
@@ -447,6 +473,96 @@ export function DataTable<TData, TValue>({
                         </TableFooter>
                     )}
                 </Table>
+            </div>
+        )
+    }
+
+    // ─── Compact Mode (CSS Grid for modals/drawers) ────────────────────────
+    if (isCompact) {
+        const effectiveGridTemplate = gridTemplate ?? ''
+
+        if (process.env.NODE_ENV === 'development' && !gridTemplate) {
+            console.warn('[DataTable] variant="compact" requires a gridTemplate prop. Example: gridTemplate="grid-cols-[2rem_1fr_auto_auto_auto]"')
+        }
+
+        if (isLoading) {
+            return (
+                <div ref={containerRef} className="relative">
+                    <div className={cn("grid", effectiveGridTemplate, gridGap, "px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground border-b")}>
+                        {table.getHeaderGroups()[0]?.headers.map((header) => (
+                            <div key={header.id} className="text-center">
+                                {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                            </div>
+                        ))}
+                        {renderRowActions && <div />}
+                    </div>
+                    <div className="divide-y divide-border/60">
+                        {Array.from({ length: effectiveSkeletonRows }, (_, i) => (
+                            <div key={`skel-${i}`} className={cn("grid", effectiveGridTemplate, gridGap, "items-center px-3 py-2.5")}>
+                                {columns.map((_, j) => (
+                                    <div key={`skel-${i}-${j}`} className="flex justify-center">
+                                        <Skeleton className="h-4 w-16" />
+                                    </div>
+                                ))}
+                                {renderRowActions && <div />}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )
+        }
+
+        return (
+            <div ref={containerRef} className="relative">
+                {table.getRowModel().rows?.length ? (
+                    <ScrollArea className={compactMaxHeight}>
+                        {/* Header */}
+                        <div className={cn("grid", effectiveGridTemplate, gridGap, "px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground border-b sticky top-0 bg-card z-10")} role="row">
+                            {table.getHeaderGroups()[0]?.headers.map((header) => (
+                                <div key={header.id} role="columnheader">
+                                    {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                                </div>
+                            ))}
+                            {renderRowActions && <div role="columnheader" />}
+                        </div>
+                        {/* Body */}
+                        <div className="divide-y divide-border/60" role="rowgroup">
+                            {table.getRowModel().rows.map((row) => (
+                                <div
+                                    key={row.id}
+                                    role="row"
+                                    className={cn(
+                                        "grid",
+                                        effectiveGridTemplate,
+                                        gridGap,
+                                        "items-center px-3 py-2.5 hover:bg-muted/40 transition-all group animate-in fade-in duration-300",
+                                        onRowClick && "cursor-pointer"
+                                    )}
+                                    onClick={() => onRowClick?.(row.original)}
+                                >
+                                    {row.getVisibleCells().map((cell) => (
+                                        <div key={cell.id} role="cell">
+                                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                        </div>
+                                    ))}
+                                    {renderRowActions && (
+                                        <div role="cell" className="flex items-center gap-1 justify-end">
+                                            {renderRowActions(row.original)}
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    </ScrollArea>
+                ) : (
+                    <EmptyState
+                        context={emptyProps.context}
+                        icon={emptyProps.icon}
+                        title={emptyProps.title}
+                        description={emptyProps.description}
+                        action={emptyProps.action}
+                    />
+                )}
             </div>
         )
     }
@@ -516,22 +632,28 @@ export function DataTable<TData, TValue>({
                     </React.Fragment>
                 ))
             ) : (
-                <TableRow>
+                <TableRow className="hover:bg-transparent">
                     <TableCell
                         colSpan={columns.length}
-                        className="h-24 p-0"
+                        className="h-full p-0 align-middle"
                     >
                         <EmptyState
-                            context={customEmptyState?.context || "search"}
-                            title={customEmptyState?.title}
-                            description={customEmptyState?.description || "Intenta ajustar los filtros de búsqueda para encontrar lo que buscas."}
-                            icon={customEmptyState?.icon}
-                            action={customEmptyState?.action}
+                            context={emptyProps.context}
+                            icon={emptyProps.icon}
+                            title={emptyProps.title}
+                            description={emptyProps.description}
+                            action={emptyProps.action}
+                            className="h-full w-full"
                         />
                     </TableCell>
                 </TableRow>
             )
         )
+
+        // When empty, stretch the table to fill the scroll container so the
+        // single empty-state row expands to the full available height/width
+        // of the canvas instead of collapsing to its content.
+        const isTableEmpty = !renderCustomView && table.getRowModel().rows.length === 0
 
         return (
             <div ref={containerRef} className="relative flex flex-col h-full space-y-1 min-h-0">
@@ -573,9 +695,12 @@ export function DataTable<TData, TValue>({
                             {renderCustomView(table)}
                         </div>
                     ) : (
-                        <Table containerClassName={cn(
-                            !isInModal && "flex-1 overflow-y-scroll custom-scrollbar"
-                        )}>
+                        <Table
+                            className={cn(isTableEmpty && "h-full")}
+                            containerClassName={cn(
+                                !isInModal && "flex-1 overflow-y-scroll custom-scrollbar"
+                            )}
+                        >
                             <TableHeader className={cn(!isInModal ? "sticky top-0 bg-card z-10 border-b-2" : "sticky top-0 bg-card z-10 border-b-2")}>
                                 {table.getHeaderGroups().map((headerGroup) => (
                                     <TableRow
@@ -747,11 +872,11 @@ export function DataTable<TData, TValue>({
                                         className="h-24 p-0"
                                     >
                                         <EmptyState
-                                            context={customEmptyState?.context || "search"}
-                                            icon={customEmptyState?.icon || SearchX}
-                                            title={customEmptyState?.title || "No se encontraron resultados"}
-                                            description={customEmptyState?.description || "Intenta ajustar los filtros de búsqueda para encontrar lo que buscas."}
-                                            action={customEmptyState?.action}
+                                            context={emptyProps.context}
+                                            icon={emptyProps.icon}
+                                            title={emptyProps.title}
+                                            description={emptyProps.description}
+                                            action={emptyProps.action}
                                         />
                                     </TableCell>
                                 </TableRow>

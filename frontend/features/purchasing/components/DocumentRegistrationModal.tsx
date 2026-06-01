@@ -38,7 +38,9 @@ export function DocumentRegistrationModal({
     // Sync with server date
     useEffect(() => {
         if (dateString && !issueDate) {
-            setIssueDate(dateString)
+            requestAnimationFrame(() => {
+                setIssueDate(dateString)
+            })
         }
     }, [dateString])
     const [attachment, setAttachment] = useState<File | null>(null)

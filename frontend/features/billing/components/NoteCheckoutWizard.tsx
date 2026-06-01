@@ -117,23 +117,59 @@ export function NoteCheckoutWizard({
 
     // Reset state on open
     useEffect(() => {
-        if (open) {
-            initWizard()
-        } else {
-            // Optional: reset state on close
-        }
+        if (!open) return
+        let cancelled = false
+        ;(async () => {
+            setStep(1)
+            setSelectedItems([])
+            setRegistrationData({
+                warehouse_id: '',
+                document_number: '',
+                document_date: dateString || '',
+                is_pending: false,
+                attachment: null
+            })
+            setPaymentData({
+                method: '',
+                amount: 0,
+                treasury_account_id: '',
+                transaction_number: '',
+                is_pending: false
+            })
+
+            try {
+                const invoiceData = await billingApi.getInvoice(invoiceId)
+                if (!cancelled) {
+                    setOriginalInvoice(invoiceData as any)
+                    setPaymentData((p: Record<string, unknown>) => ({ ...p, amount: invoiceData.total }))
+                }
+            } catch (error: unknown) {
+                if (!cancelled) {
+                    console.error("Error initializing note wizard:", error)
+                    toast.error("Error al cargar datos de la factura original.")
+                    onOpenChange(false)
+                }
+            } finally {
+                if (!cancelled) setInitializing(false)
+            }
+        })()
+        return () => { cancelled = true }
     }, [open])
 
     // Sync date when server date arrives
     useEffect(() => {
         if (dateString && !registrationData.document_date) {
-            setRegistrationData((prev: Record<string, unknown>) => ({ ...prev, document_date: dateString }))
+            requestAnimationFrame(() => {
+                setRegistrationData((prev: Record<string, unknown>) => ({ ...prev, document_date: dateString }))
+            })
         }
     }, [dateString])
 
     // Update payment amount when totals change
     useEffect(() => {
-        setPaymentData((prev: Record<string, unknown>) => ({ ...prev, amount: total }))
+        requestAnimationFrame(() => {
+            setPaymentData((prev: Record<string, unknown>) => ({ ...prev, amount: total }))
+        })
     }, [total])
 
     const handleNext = async () => {

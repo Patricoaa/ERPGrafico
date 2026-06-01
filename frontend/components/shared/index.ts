@@ -49,6 +49,9 @@ export * from './DataManagement';
 export * from './CommentSystem';
 export * from './AttachmentList';
 export * from './DocumentAttachmentDropzone';
+export * from './DocumentCompletionModal';
+export * from './Badge';
+export * from './HeaderNavDropdowns';
 
 // Navigation & Layout
 export * from './EntityHeader';
@@ -99,6 +102,7 @@ export * from './ExpandableTableRow'
 
 // ─── Migrated from components/ui — GOVERNANCE rule 21 compliance ─────────────
 // Table system
+export * from './emptyStateResolver';
 export * from './DataTable';
 export * from './DataTableView';
 export * from './DataTableToolbar';
@@ -112,8 +116,10 @@ export * from './DataTableCells';
 export * from './DynamicIcon'
 export * from './ErrorBoundary'
 export * from './Numpad'
+
 export * from './PrintableReceipt'
 
+export * from './ContactSelector'
 // Product Selector family (PR-1, PR-2, PR-3)
 export { SearchBar, CategoryFilter, ProductGrid, VariantSelectorModal, ProductSelector } from './ProductSelector'
 export type { SearchBarProps, CategoryFilterProps, ProductGridProps, SharedStockLimits, VariantSelectorModalProps, ProductSelectorProps } from './ProductSelector'

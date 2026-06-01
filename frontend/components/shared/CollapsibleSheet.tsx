@@ -45,7 +45,7 @@ export function CollapsibleSheet({
     priority = 20
 }: CollapsibleSheetProps) {
     const { registerSheet, unregisterSheet, getSheetOffset, isSheetCollapsed, getSheetIndex } = useGlobalModals()
-    const [, setIsMounted] = useState(false)
+    const [isMounted, setIsMounted] = useState(false)
 
 
 
@@ -125,8 +125,8 @@ export function CollapsibleSheet({
             side={side}
             data-sheet-id={sheetId}
             className={cn(
-                "p-0 flex flex-col shadow-2xl overflow-visible", // Removed transition-all to allow inline style only
-                "top-20 bottom-4 right-4 h-[calc(100vh-6rem)] border border-white/5 rounded-xl",
+                "p-0 flex flex-col panel-surface overflow-visible", // panel-surface = rounded-xl + border-border/10 + shadow-2xl + bg-card
+                "top-[var(--page-padding-top)] bottom-[var(--page-gap-bottom)] right-4 h-[calc(100vh-var(--page-padding-top)-var(--page-gap-bottom))]",
                 // Disable default Radix/Shadcn animations to avoid conflicting with custom high-performance transforms
                 "data-[state=open]:animate-none data-[state=closed]:animate-none duration-0 sm:duration-500",
                 (!open || isCollapsed) ? "border-primary/10" : "translate-x-0",
@@ -154,7 +154,7 @@ export function CollapsibleSheet({
                 <div
                     onClick={() => isCollapsed && onOpenChange(true)}
                     className={cn(
-                        "absolute top-0 right-full w-[42px] h-[180px] bg-primary/95 backdrop-blur-md rounded-l-lg border-l border-y border-primary/20 shadow-[-15px_0_30px_rgba(0,0,0,0.3)] flex flex-col items-center justify-center cursor-pointer transition-all duration-500 overflow-hidden group",
+                        "absolute top-0 right-full w-[42px] h-[180px] bg-primary/95 backdrop-blur-md rounded-l-lg border-l border-y border-primary/20 shadow-[-15px_0_30px_oklch(0.12_0.02_240_/_0.3)] flex flex-col items-center justify-center cursor-pointer transition-all duration-500 overflow-hidden group",
                         (isCollapsed && open) ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
                     )}
                     style={{

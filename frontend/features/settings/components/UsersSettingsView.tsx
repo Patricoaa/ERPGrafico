@@ -40,8 +40,10 @@ export function UsersSettingsView({ activeTab }: UsersSettingsViewProps) {
 
     useEffect(() => {
         if (selectedFromUrl) {
-            setUserToEdit(selectedFromUrl)
-            setIsUserModalOpen(true)
+            requestAnimationFrame(() => {
+                setUserToEdit(selectedFromUrl)
+                setIsUserModalOpen(true)
+            })
         }
     }, [selectedFromUrl])
 

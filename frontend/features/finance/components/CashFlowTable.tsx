@@ -126,7 +126,7 @@ export const CashFlowTable: React.FC<CashFlowTableProps> = ({ data, embedded, sh
                 data={mapToNodes(data.operating)}
                 totalLabel="Flujo de Efectivo de Actividades de Operación"
                 totalValue={data.total_operating}
-                accentColor="success"
+                accentColor="income"
                 embedded
                 showComparison={showComparison}
                 periodLabel={periodLabel}
@@ -154,7 +154,7 @@ export const CashFlowTable: React.FC<CashFlowTableProps> = ({ data, embedded, sh
                 data={mapToNodes(data.financing)}
                 totalLabel="Flujo de Efectivo de Actividades de Financiamiento"
                 totalValue={data.total_financing}
-                accentColor="destructive"
+                accentColor="expense"
                 embedded
                 showComparison={showComparison}
                 periodLabel={periodLabel}
@@ -211,7 +211,7 @@ export const CashFlowTable: React.FC<CashFlowTableProps> = ({ data, embedded, sh
                 </div>
             )}
 
-            <div className={cn(!embedded && "rounded-md border bg-card shadow-sm overflow-hidden registration-marks", !data.is_balanced && "border-destructive/30")}>
+            <div className={cn(!embedded && "rounded-md border bg-card shadow-sm overflow-hidden", !data.is_balanced && "border-destructive/30")}>
                 {!embedded && (
                     <div className="p-4 border-b bg-muted/30 flex justify-between items-center">
                         <h3 className="font-bold uppercase tracking-widest text-sm text-muted-foreground">Estado de Flujo de Efectivo (M. Indirecto)</h3>

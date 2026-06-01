@@ -19,11 +19,11 @@ export const PrintableLayout = forwardRef<HTMLDivElement, PrintableLayoutProps>(
         `}</style>
         <div className="text-center border-b pb-2 mb-2">
           <p className="font-bold text-sm">{title}</p>
-          <p className="text-[10px] text-gray-500">{displayId}</p>
+          <p className="text-[10px] text-muted-foreground">{displayId}</p>
           {subtitle && <p className="text-[10px]">{subtitle}</p>}
         </div>
         {children}
-        <div className="text-center border-t pt-2 mt-4 text-[9px] text-gray-400">
+        <div className="text-center border-t pt-2 mt-4 text-[9px] text-muted-foreground/60">
           <p>Gracias por su preferencia</p>
           <p>Generado por ERPGrafico</p>
         </div>

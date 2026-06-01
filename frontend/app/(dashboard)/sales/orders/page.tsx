@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Tabs } from "@/components/ui/tabs"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
@@ -27,7 +27,7 @@ export default function SalesOrdersPage() {
     }, [legacyId, viewMode, router])
 
     // 2. Open Hub panel if ?selected= is present (ADR-0020 equivalent for Orders)
-    const [hubEverOpened, setHubEverOpened] = useState(false)
+    const hubEverOpenedRef = useRef(false)
 
     useEffect(() => {
         if (selectedId) {
@@ -37,21 +37,19 @@ export default function SalesOrdersPage() {
 
     // Track when the hub successfully opens
     useEffect(() => {
-        if (isHubOpen && selectedId) {
-            setHubEverOpened(true)
-        }
+        if (isHubOpen && selectedId) hubEverOpenedRef.current = true
     }, [isHubOpen, selectedId])
 
     // 3. Clean up URL when hub closes (only if it was actually opened first)
     useEffect(() => {
-        if (hubEverOpened && !isHubOpen && selectedId) {
+        if (hubEverOpenedRef.current && !isHubOpen && selectedId) {
             const params = new URLSearchParams(searchParams.toString())
             params.delete('selected')
             const query = params.toString()
-            setHubEverOpened(false) // reset
+            hubEverOpenedRef.current = false
             router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
         }
-    }, [isHubOpen, hubEverOpened, selectedId, pathname, searchParams, router])
+    }, [isHubOpen, selectedId, pathname, searchParams, router])
 
     // 4. Ensure URL consistency for default tab
     useEffect(() => {

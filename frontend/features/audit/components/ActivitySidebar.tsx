@@ -174,7 +174,7 @@ export function ActivitySidebar({ entityId, entityType, className = "", title = 
 
                                             {/* Badge de Historial Tipo Swatch Angular */}
                                             <div className={cn(
-                                                "relative z-10 flex h-6 w-6 shrink-0 items-center justify-center rounded-[3px] border shadow-sm transition-all duration-normal ease-premium group-hover:scale-105",
+                                                "relative z-10 flex h-6 w-6 shrink-0 items-center justify-center rounded-sm border shadow-sm transition-all duration-normal ease-premium group-hover:scale-105",
                                                 getIconColor(record.history_type)
                                             )}>
                                                 {getChangeIcon(record.history_type)}

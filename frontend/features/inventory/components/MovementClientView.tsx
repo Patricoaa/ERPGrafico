@@ -43,7 +43,7 @@ import { stockMoveSearchDef } from "@/features/inventory/searchDef"
 import React from "react"
 
 export function MovementClientView({ externalOpen, onExternalOpenChange, createAction }: MovementClientViewProps) {
-    const { filters } = useSmartSearch(stockMoveSearchDef)
+    const { filters, isFiltered } = useSmartSearch(stockMoveSearchDef)
     const [pageState, setPageState] = useState({ pageIndex: 0, pageSize: 50 })
     const { page, moves, totalCount, isLoading, refetch } = useStockMoves({
         ...filters,
@@ -62,7 +62,9 @@ export function MovementClientView({ externalOpen, onExternalOpenChange, createA
     useEffect(() => {
         const selectedId = searchParams.get('selected')
         if (selectedId && !viewingTransaction) {
-            setViewingTransaction({ type: 'inventory', id: selectedId })
+            requestAnimationFrame(() => {
+                setViewingTransaction({ type: 'inventory', id: selectedId })
+            })
         }
     }, [searchParams, viewingTransaction])
 
@@ -186,6 +188,12 @@ export function MovementClientView({ externalOpen, onExternalOpenChange, createA
                     onPaginationChange={setPageState}
                     leftAction={<SmartSearchBar searchDef={stockMoveSearchDef} placeholder="Buscar movimientos..." className="w-full" />}
                     createAction={createAction}
+                    isFiltered={isFiltered}
+                    emptyState={{
+                        context: "inventory",
+                        title: "Aún no hay movimientos de stock",
+                        description: "Los movimientos se registran al recibir, despachar o ajustar inventario.",
+                    }}
                 />
             </div>
 

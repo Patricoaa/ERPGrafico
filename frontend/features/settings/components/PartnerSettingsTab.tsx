@@ -50,7 +50,9 @@ export function PartnerSettingsTab() {
     }
 
     useEffect(() => {
-        fetchData()
+        requestAnimationFrame(() => {
+            fetchData()
+        })
     }, [])
 
     const handleEditPartnerClick = (partner: any) => {

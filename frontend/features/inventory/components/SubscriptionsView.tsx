@@ -52,7 +52,7 @@ interface SubscriptionsViewProps {
 }
 
 export function SubscriptionsView({ hideHeader = false, externalOpen = false, createAction }: SubscriptionsViewProps) {
-    const { filters } = useSmartSearch(subscriptionSearchDef)
+    const { filters, isFiltered } = useSmartSearch(subscriptionSearchDef)
     const { subscriptions, isLoading: loading, refetch: fetchSubscriptions, pauseSubscription, resumeSubscription } = useSubscriptions(filters)
     const { data: stats } = useSubscriptionStats<Stats>()
     const { updateProduct, fetchProductById } = useProducts()
@@ -438,11 +438,17 @@ export function SubscriptionsView({ hideHeader = false, externalOpen = false, cr
                             defaultPageSize={20}
                             bulkActions={bulkActions}
                             createAction={createAction}
+                            isFiltered={isFiltered}
+                            emptyState={{
+                                context: "generic",
+                                title: "Aún no hay suscripciones",
+                                description: "Crea una suscripción para gestionar cobros o pagos recurrentes.",
+                            }}
                             renderCard={(sub: Subscription) => (
                                 <EntityCard key={sub.id}>
                                     <EntityCard.Header
-                                        title={sub.product_name || sub.name}
-                                        subtitle={`${sub.frequency || ''}${sub.amount ? ` - $${sub.amount}` : ''}`}
+                                        title={sub.product_name}
+                                        subtitle={`${sub.recurrence_display || ''}${sub.amount ? ` - $${sub.amount}` : ''}`}
                                         trailing={<StatusBadge status={sub.status} label={sub.status_display || sub.status} size="sm" />}
                                     />
                                     <EntityCard.Body>

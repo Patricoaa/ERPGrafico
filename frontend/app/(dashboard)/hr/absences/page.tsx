@@ -21,7 +21,7 @@ export default function AbsencesPage() {
     const createAction = <ToolbarCreateButton label="Nueva Inasistencia" href="/hr/absences?modal=new" />
     const router = useRouter()
     const searchParams = useSearchParams()
-    const { filters } = useSmartSearch(absenceSearchDef)
+    const { filters, isFiltered } = useSmartSearch(absenceSearchDef)
     const { absences, isLoading: loading, refetch: fetchAbsences } = useAbsences(filters)
     const [employees, setEmployees] = useState<Employee[]>([])
 
@@ -124,6 +124,12 @@ export default function AbsencesPage() {
                     defaultPageSize={20}
                     onRowClick={(row: Absence) => { setEditingAbsence(row); setDialogOpen(true) }}
                     createAction={createAction}
+                    isFiltered={isFiltered}
+                    emptyState={{
+                        context: "users",
+                        title: "Aún no hay inasistencias",
+                        description: "Las ausencias, permisos y licencias que registres aparecerán aquí.",
+                    }}
                     renderCard={(absence: Absence) => (
                         <EntityCard key={absence.id} onClick={() => { setEditingAbsence(absence); setDialogOpen(true) }}>
                             <EntityCard.Header

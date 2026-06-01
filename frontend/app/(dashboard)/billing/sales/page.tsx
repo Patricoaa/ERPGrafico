@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef } from "react"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { SalesInvoicesClientView } from "@/features/billing"
@@ -10,8 +10,7 @@ export default function SalesInvoicesPage() {
     const router = useRouter()
     const pathname = usePathname()
     const { openHub, isHubOpen } = useHubPanel()
-    const [hubEverOpened, setHubEverOpened] = useState(false)
-
+    const hubEverOpenedRef = useRef(false)
     const selectedId = searchParams.get('selected')
 
     // 1. Open Hub panel if ?selected= is present
@@ -23,19 +22,19 @@ export default function SalesInvoicesPage() {
 
     // 2. Track when hub opens
     useEffect(() => {
-        if (isHubOpen && selectedId) setHubEverOpened(true)
+        if (isHubOpen && selectedId) hubEverOpenedRef.current = true
     }, [isHubOpen, selectedId])
 
     // 3. Clean URL when hub closes
     useEffect(() => {
-        if (hubEverOpened && !isHubOpen && selectedId) {
+        if (hubEverOpenedRef.current && !isHubOpen && selectedId) {
             const params = new URLSearchParams(searchParams.toString())
             params.delete('selected')
             const query = params.toString()
-            setHubEverOpened(false)
+            hubEverOpenedRef.current = false
             router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
         }
-    }, [isHubOpen, hubEverOpened, selectedId, pathname, searchParams, router])
+    }, [isHubOpen, selectedId, pathname, searchParams, router])
 
     return (
         <SalesInvoicesClientView />

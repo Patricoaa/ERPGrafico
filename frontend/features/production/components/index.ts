@@ -1,7 +1,6 @@
 export * from './BOMDrawer';
 export * from './BOMManager';
 export * from './MaterialAssignmentTabs';
-export * from './WizardHeader';
 export * from './WizardProcessSidebar';
 export * from './WizardRightSidebar';
 export * from './WizardStickyFooter';

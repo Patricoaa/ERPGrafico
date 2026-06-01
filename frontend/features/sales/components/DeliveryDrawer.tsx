@@ -2,6 +2,9 @@
 
 import { showApiError } from "@/lib/errors"
 import { useState, useEffect } from "react"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import * as z from "zod"
 
 import { ActionSlideButton, CancelButton, Chip, Drawer, FormFooter, FormSection, LabeledInput, LabeledSelect, PeriodValidationDateInput, StatusBadge } from '@/components/shared'
 
@@ -135,13 +138,25 @@ function DeliveryDrawerInner({ open, onOpenChange, orderId, onSuccess, filterTyp
     )
 }
 
+const deliverySchema = z.object({
+    selectedWarehouse: z.number().nullable(),
+    deliveryDate: z.string().min(1, "La fecha de despacho es obligatoria"),
+})
+
+type DeliveryFormValues = z.infer<typeof deliverySchema>
+
 export function DeliveryForm({ orderId, order, warehouses, onSuccess, id = "delivery-form", onLoadingChange, onCancel, filterType = 'ALL' }: DeliveryFormProps) {
     const { dateString } = useServerDate()
     const { dispatchOrder, dispatchOrderPartial } = useSalesOrders()
 
-    const [selectedWarehouse, setSelectedWarehouse] = useState<number | null>(
-        warehouses.length > 0 ? warehouses[0].id : null
-    )
+    const form = useForm<DeliveryFormValues>({
+        resolver: zodResolver(deliverySchema),
+        defaultValues: {
+            selectedWarehouse: warehouses.length > 0 ? warehouses[0].id : null,
+            deliveryDate: "",
+        }
+    })
+
     const [stockLevels, setStockLevels] = useState<StockLevel>({})
     const [deliveryQuantities, setDeliveryQuantities] = useState<{ [lineId: number]: number }>(() => {
         const initial: { [lineId: number]: number } = {}
@@ -150,10 +165,12 @@ export function DeliveryForm({ orderId, order, warehouses, onSuccess, id = "deli
         })
         return initial
     })
-    const [deliveryDate, setDeliveryDate] = useState('')
     const [submitting, setSubmitting] = useState(false)
     const [isPartialDispatch, setIsPartialDispatch] = useState(false)
     const isServiceMode = filterType === 'SERVICE'
+
+    const selectedWarehouse = form.watch("selectedWarehouse")
+    const deliveryDate = form.watch("deliveryDate")
 
     const visibleLines = order.lines.filter((line: SaleOrderLine) => {
         if (filterType === 'SERVICE') return line.product_type === 'SERVICE'
@@ -163,10 +180,12 @@ export function DeliveryForm({ orderId, order, warehouses, onSuccess, id = "deli
 
     // Sync delivery date with server date
     useEffect(() => {
-        if (dateString && !deliveryDate) {
-            setDeliveryDate(dateString)
+        if (dateString && !form.getValues("deliveryDate")) {
+            requestAnimationFrame(() => {
+                form.setValue("deliveryDate", dateString)
+            })
         }
-    }, [dateString])
+    }, [dateString, form])
 
     const fetchStockLevels = async () => {
         if (!selectedWarehouse || !order) return
@@ -195,7 +214,9 @@ export function DeliveryForm({ orderId, order, warehouses, onSuccess, id = "deli
 
     useEffect(() => {
         if (selectedWarehouse && order) {
-            fetchStockLevels()
+            requestAnimationFrame(() => {
+                fetchStockLevels()
+            })
         }
     }, [selectedWarehouse, order])
 
@@ -212,7 +233,7 @@ export function DeliveryForm({ orderId, order, warehouses, onSuccess, id = "deli
         }
     }
 
-    const handleDispatch = async () => {
+    const onSubmit = async (values: DeliveryFormValues) => {
         if (!isServiceMode && !selectedWarehouse) {
             toast.error("Seleccione una bodega")
             return
@@ -354,7 +375,10 @@ export function DeliveryForm({ orderId, order, warehouses, onSuccess, id = "deli
 
     return (
         <div id={id} className="space-y-4">
-            <form id={`${id}-form`} onSubmit={(e) => { e.preventDefault(); if (canSubmit) handleDispatch(); }} className="hidden" />
+            <form id={`${id}-form`} onSubmit={form.handleSubmit(onSubmit)} className="hidden">
+                <input type="hidden" {...form.register("selectedWarehouse")} />
+                <input type="hidden" {...form.register("deliveryDate")} />
+            </form>
             <div className="space-y-4">
                 <FormSection title={isServiceMode ? "Configuración de Entrega de Servicios" : "Configuración de Entrega"} icon={Package} />
                 <div className={isServiceMode ? "grid grid-cols-1 gap-4" : "grid grid-cols-2 gap-4"}>
@@ -362,7 +386,7 @@ export function DeliveryForm({ orderId, order, warehouses, onSuccess, id = "deli
                         <LabeledSelect
                             label="Bodega de Despacho"
                             value={selectedWarehouse?.toString() || ''}
-                            onChange={(val) => setSelectedWarehouse(Number(val))}
+                            onChange={(val) => form.setValue("selectedWarehouse", Number(val))}
                             placeholder="Seleccione bodega"
                             options={warehouses.map((warehouse: any) => ({
                                 value: warehouse.id.toString(),
@@ -376,10 +400,10 @@ export function DeliveryForm({ orderId, order, warehouses, onSuccess, id = "deli
                         date={deliveryDate ? new Date(deliveryDate + 'T12:00:00') : undefined}
                         onDateChange={(d) => {
                             if (!d) {
-                                setDeliveryDate("")
+                                form.setValue("deliveryDate", "")
                                 return
                             }
-                            setDeliveryDate(d.toISOString().split('T')[0])
+                            form.setValue("deliveryDate", d.toISOString().split('T')[0])
                         }}
                         validationType="accounting"
                         required

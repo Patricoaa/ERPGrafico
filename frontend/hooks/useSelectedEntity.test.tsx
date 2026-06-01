@@ -57,7 +57,7 @@ let apiGetMock: ReturnType<typeof vi.fn>
 beforeEach(async () => {
     vi.clearAllMocks()
     mockToString.mockReturnValue('')
-    const { default: api } = await import('@/lib/api') as { default: { get: ReturnType<typeof vi.fn> } }
+    const { default: api } = await import('@/lib/api') as unknown as { default: { get: ReturnType<typeof vi.fn> } }
     apiGetMock = api.get
 })
 

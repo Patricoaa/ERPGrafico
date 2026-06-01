@@ -304,7 +304,7 @@ export function ProductSelector({
                                                             Stock: {product.current_stock || 0}
                                                         </Badge>
                                                         <Badge variant="outline" className={cn("text-[9px] px-1 h-4",
-                                                            (product.qty_available || 0) > 0 ? "border-success text-success" : "border-destructive text-white bg-destructive/10"
+                                                            (product.qty_available || 0) > 0 ? "border-success text-success" : "border-destructive text-destructive bg-destructive/10"
                                                         )}>
                                                             Disp: {product.qty_available || 0}
                                                         </Badge>

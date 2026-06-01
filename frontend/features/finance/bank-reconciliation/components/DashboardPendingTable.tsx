@@ -70,7 +70,7 @@ export function DashboardPendingTable({ data, loading }: DashboardPendingTablePr
                 return (
                     <div className={cn(
                         "text-right font-mono font-black text-[12px]",
-                        isCredit ? "text-success" : "text-destructive"
+                        isCredit ? "text-income" : "text-expense"
                     )}>
                         {isCredit ? '+' : '-'}{formatCurrency(Math.abs(amount))}
                     </div>

@@ -262,10 +262,11 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
       {/* Input row */}
       <div
         className={cn(
-          'flex items-center gap-1.5 h-9 px-3 rounded-md overflow-x-auto scrollbar-hide',
-          'bg-muted/20 border border-border/50 shadow-sm transition-all',
-          'focus-within:bg-background focus-within:border-border',
-          isOpen && 'bg-background border-border rounded-b-none',
+          'flex items-center gap-1.5 h-9 px-2 py-1 rounded-lg overflow-x-auto scrollbar-hide',
+          'bg-muted/30 border border-border transition-all',
+          'hover:bg-muted/50 hover:ring-2 hover:ring-primary/10',
+          'focus-within:bg-muted/50 focus-within:ring-2 focus-within:ring-primary/20',
+          isOpen && 'bg-muted/50 border-border rounded-b-none ring-2 ring-primary/20',
         )}
         onClick={() => {
           inputRef.current?.focus()
@@ -330,7 +331,7 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
           }}
           onKeyDown={handleKeyDown}
           placeholder={hasActiveFilters ? '' : placeholder}
-          className="flex-1 h-9 min-w-[80px] bg-transparent border-none outline-none text-[11px] uppercase font-bold tracking-widest placeholder:text-muted-foreground/40 py-0"
+          className="flex-1 h-7 min-w-[80px] bg-transparent border-none outline-none text-xs text-muted-foreground placeholder:text-muted-foreground/40 py-0"
           role="combobox"
           aria-expanded={isOpen}
           aria-haspopup="listbox"

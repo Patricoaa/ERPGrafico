@@ -4,6 +4,16 @@ import { Drawer, SkeletonShell, StatusBadge } from "@/components/shared"
 import { BookOpen } from "lucide-react"
 import { useBankStatement } from "../hooks/useBankStatement"
 
+interface BankStatementData {
+    id: number
+    display_id: string
+    treasury_account_name: string
+    status: string
+    opening_balance: number
+    closing_balance: number
+    reconciliation_progress: number
+}
+
 interface BankStatementDrawerProps {
     statementId: number | null
     open: boolean
@@ -12,7 +22,7 @@ interface BankStatementDrawerProps {
 }
 
 export function BankStatementDrawer({ statementId, open, onOpenChange }: BankStatementDrawerProps) {
-    const { statement, isLoading } = useBankStatement(statementId, open)
+    const { statement, isLoading } = useBankStatement<BankStatementData>(statementId, open)
 
     return (
         <Drawer

@@ -193,7 +193,7 @@ export function ProductSubscriptionTab({ form, isEditing }: ProductSubscriptionT
                                     <LabeledSwitch
                                         label="Costo Variable"
                                         description="El monto se ajusta según consumo cada periodo."
-                                        checked={field.value}
+                                        checked={field.value ?? false}
                                         onCheckedChange={field.onChange}
                                         icon={<Wallet className={cn("h-4 w-4 transition-colors", field.value ? "text-primary" : "text-muted-foreground/30")} />}
                                         className={cn(field.value ? "bg-primary/5 border-primary/20 shadow-sm" : "border-dashed")}

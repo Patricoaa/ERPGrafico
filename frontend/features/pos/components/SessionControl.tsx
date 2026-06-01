@@ -521,7 +521,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                                         <div className="text-xs opacity-70">{t.location}</div>
                                     </div>
                                     {t.default_treasury_account_balance > 0 && (
-                                        <span className="ml-auto text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border border-muted-foreground/20 bg-muted/30 text-muted-foreground">
+                                        <span className="ml-auto text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-sm border border-muted-foreground/20 bg-muted/30 text-muted-foreground">
                                             Base: {formatCurrency(t.default_treasury_account_balance)}
                                         </span>
                                     )}
@@ -542,7 +542,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                         </div>
 
                         <div className="flex justify-center">
-                            <div className="w-full max-w-sm bg-muted/30 p-4 rounded-lg">
+                            <div className="w-full max-w-sm bg-muted/30 p-4 rounded-md">
                                 <div className="text-right mb-4">
                                     <div className="text-xs font-bold uppercase text-muted-foreground">Monto Ingresado</div>
                                     <div className="text-3xl font-black font-mono tracking-tight text-primary">
@@ -592,7 +592,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                             <p className="text-muted-foreground">{term?.name}</p>
                         </div>
 
-                        <div className="bg-card border rounded-lg p-4 space-y-3 shadow-sm">
+                        <div className="bg-card border rounded-md p-4 space-y-3 shadow-sm">
                             <div className="flex justify-between items-center text-sm">
                                 <span className="text-muted-foreground">Fondo en Sistema:</span>
                                 <span className="font-medium">{formatCurrency(expected)}</span>
@@ -604,7 +604,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                         </div>
 
                         {hasDiff && (
-                            <div className="bg-warning/10 dark:bg-warning/20 border border-warning/20 dark:border-warning rounded-lg p-4 space-y-3">
+                            <div className="bg-warning/10 dark:bg-warning/20 border border-warning/20 dark:border-warning rounded-md p-4 space-y-3">
                                 <div className="flex items-center gap-2 text-warning font-bold">
                                     <AlertTriangle className="h-4 w-4" />
                                     <span>Se detectó una diferencia</span>
@@ -716,7 +716,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
 
                                         {/* Insufficient funds warning */}
                                         {openingInsufficientFunds && openingSelectedAccount && (
-                                            <div className="bg-destructive/10 dark:bg-destructive/20 border border-destructive/20 dark:border-destructive rounded-lg p-3 space-y-1">
+                                            <div className="bg-destructive/10 dark:bg-destructive/20 border border-destructive/20 dark:border-destructive rounded-md p-3 space-y-1">
                                                 <div className="flex items-start gap-2">
                                                     <AlertTriangle className="h-4 w-4 text-destructive dark:text-destructive mt-0.5 flex-shrink-0" />
                                                     <div className="text-sm text-destructive dark:text-destructive/20">
@@ -772,7 +772,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                                     <div className="text-left w-full">
                                         <div className="font-bold flex justify-between">
                                             <span>{session.treasury_account_name}</span>
-                                            <span className="text-[10px] h-5 px-1.5 font-bold uppercase rounded border border-muted-foreground/20 bg-muted/10 text-muted-foreground flex items-center">{session.user_name}</span>
+                                            <span className="text-[10px] h-5 px-1.5 font-bold uppercase rounded-sm border border-muted-foreground/20 bg-muted/10 text-muted-foreground flex items-center">{session.user_name}</span>
                                         </div>
                                         <div className="text-xs opacity-70 mt-1">Abierta: {new Date(session.opened_at).toLocaleTimeString()}</div>
                                     </div>
@@ -824,7 +824,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
 
                     <>
                         <span className={cn(
-                            "gap-1 px-3 py-1.5 flex items-center text-[10px] font-bold uppercase rounded border",
+                            "gap-1 px-3 py-1.5 flex items-center text-[10px] font-bold uppercase rounded-sm border",
                             isSharedSession ? 'bg-primary/10 text-primary border-primary/20' : 'border-success/30 text-success bg-success/5'
                         )}>
                             <div className={cn("h-2 w-2 rounded-full animate-pulse", isSharedSession ? 'bg-primary' : 'bg-success')} />
@@ -848,7 +848,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
 
             {/* Custom Overlay for POS Reports (X and Z) - Simplified as requested */}
             {reportDialogOpen && (
-                <div className="fixed inset-0 z-[100] bg-black/50 flex items-center justify-center p-4 animate-in fade-in duration-200 print:hidden text-foreground">
+                <div className="fixed inset-0 z-[100] bg-overlay/50 flex items-center justify-center p-4 animate-in fade-in duration-200 print:hidden text-foreground">
                     <div className="w-full max-w-sm animate-in zoom-in-95 duration-200">
                         {reportData && (
                             <POSReport

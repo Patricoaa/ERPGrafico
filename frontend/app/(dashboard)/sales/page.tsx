@@ -9,8 +9,8 @@ export default async function SalesPage({ searchParams }: PageProps) {
 
     // Redirect logic for backward compatibility with old ?view= params
     if (view === 'orders') redirect(sub === 'notes' ? '/sales/orders?view=notes' : '/sales/orders')
-    if (view === 'pos') redirect(sub === 'sessions' ? '/sales/sessions' : '/sales/terminals?tab=terminals')
-    if (view === 'hardware') redirect(sub ? `/sales/terminals?tab=${sub}` : '/sales/terminals?tab=batches')
+    if (view === 'pos') redirect(sub === 'sessions' ? '/sales/sessions' : '/sales/pos?tab=cajas')
+    if (view === 'hardware') redirect(sub ? `/treasury/terminal-cobro?tab=${sub}` : '/treasury/terminal-cobro?tab=batches')
     if (view === 'credits') redirect(sub ? `/sales/credits?tab=${sub}` : '/sales/credits')
     if (view === 'config') redirect('/sales/settings')
 
