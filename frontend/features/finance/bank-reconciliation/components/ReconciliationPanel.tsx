@@ -823,7 +823,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                                             className: cn(
                                                                 (children.props as any).className,
                                                                 "group transition-all duration-300",
-                                                                isSuggested && "[&_td]:!bg-warning/[0.08] [&_td]:!border-y [&_td]:!border-warning/40 shadow-[inset_0_0_20px_rgba(245,158,11,0.05)]",
+                                                                isSuggested && "[&_td]:!bg-warning/[0.08] [&_td]:!border-y [&_td]:!border-warning/40 shadow-[inset_0_0_20px_oklch(var(--warning-raw)/0.05)]",
                                                                 isExcluded && "opacity-40 grayscale-[0.5] [&_td]:!bg-muted/30"
                                                             )
                                                         })}
@@ -891,7 +891,7 @@ export function ReconciliationPanel({ statementId, treasuryAccountId, onComplete
                                                             className: cn(
                                                                 (children.props as any).className,
                                                                 "group transition-all duration-300",
-                                                                isSuggested && "[&_td]:!bg-warning/[0.12] [&_td]:!border-y [&_td]:!border-warning/50 shadow-[inset_0_0_20px_rgba(245,158,11,0.08)]"
+                                                                isSuggested && "[&_td]:!bg-warning/[0.12] [&_td]:!border-y [&_td]:!border-warning/50 shadow-[inset_0_0_20px_oklch(var(--warning-raw)/0.08)]"
                                                             )
                                                         })}
                                                     </DraggablePayment>

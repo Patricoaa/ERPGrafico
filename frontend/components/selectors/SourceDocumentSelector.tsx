@@ -32,22 +32,6 @@ interface SourceDocumentSelectorProps {
     allowedLabels?: string[]
 }
 
-const ICON_MAP: Record<string, string> = {
-    "book-open": "BookOpen",
-    "file-badge": "FileBadge",
-    "file-text": "FileText",
-    "landmark": "Landmark",
-    "notebook-pen": "NotebookPen",
-    "package": "Package",
-    "receipt-text": "ReceiptText",
-    "shopping-cart": "ShoppingCart",
-    "truck": "Truck",
-    "user-check": "UserCheck",
-    "users": "Users",
-    "wallet": "Wallet",
-    "wrench": "Wrench",
-}
-
 export function SourceDocumentSelector({
     value,
     onChange,
@@ -100,9 +84,9 @@ export function SourceDocumentSelector({
                             >
                                 {value ? (
                                     <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                                        {value.icon && ICON_MAP[value.icon] && (
-                                            <DynamicIcon name={ICON_MAP[value.icon]} className="h-3.5 w-3.5 shrink-0 text-primary" />
-                                        )}
+                                {value.icon && (
+                                    <DynamicIcon name={value.icon} className="h-3.5 w-3.5 shrink-0 text-primary" />
+                                )}
                                         {hasEntityDrawer(value.label) ? (
                                             <span
                                                 role="button"
@@ -166,9 +150,9 @@ export function SourceDocumentSelector({
                                             >
                                                 <div className="flex items-center gap-3 w-full overflow-hidden">
                                                     <div className="flex-shrink-0 p-2 bg-muted rounded-md">
-                                                        {result.icon && ICON_MAP[result.icon] ? (
-                                                            <DynamicIcon name={ICON_MAP[result.icon]} className="h-4 w-4 text-primary" />
-                                                        ) : null}
+                                                        {result.icon && (
+                                                            <DynamicIcon name={result.icon} className="h-4 w-4 text-primary" />
+                                                        )}
                                                     </div>
                                                     <div className="flex flex-col overflow-hidden flex-1">
                                                         <div className="flex items-center justify-between">

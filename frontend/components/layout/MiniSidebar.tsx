@@ -1,6 +1,5 @@
 "use client"
 
-import { Home, Calculator, ShoppingCart, Package, Printer, Banknote, ShoppingBag, PieChart, Receipt, UserCog, Users } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/contexts/AuthContext"
 
@@ -13,6 +12,7 @@ import {
 } from "@/components/ui/tooltip"
 import { motion } from "framer-motion"
 import { useBranding } from "@/contexts/BrandingProvider"
+import { MODULE_REGISTRY } from "@/lib/module-registry"
 
 interface MiniSidebarProps {
     activeCategory: string | null
@@ -20,19 +20,9 @@ interface MiniSidebarProps {
     collapsed?: boolean
 }
 
-const mainItems = [
-    { id: "dashboard", icon: Home, label: "Inicio", permission: null },
-    { id: "accounting", icon: Calculator, label: "Contabilidad", permission: "accounting.view_dashboard_accounting" },
-    { id: "billing", icon: Receipt, label: "Facturación", permission: "billing.view_dashboard_billing" },
-    { id: "sales", icon: ShoppingCart, label: "Ventas", permission: "sales.view_dashboard_sales" },
-    { id: "contacts", icon: Users, label: "Contactos", permission: null },
-    { id: "inventory", icon: Package, label: "Inventario", permission: "inventory.view_dashboard_inventory" },
-    { id: "production", icon: Printer, label: "Producción", permission: "production.view_dashboard_production" },
-    { id: "treasury", icon: Banknote, label: "Tesorería", permission: "treasury.view_dashboard_treasury" },
-    { id: "purchasing", icon: ShoppingBag, label: "Compras", permission: "purchasing.view_dashboard_purchasing" },
-    { id: "finances", icon: PieChart, label: "Finanzas", permission: "finances.view_dashboard_finances" },
-    { id: "hr", icon: UserCog, label: "RRHH", permission: "hr.view_dashboard_hr" },
-]
+const MODULE_ORDER = ["dashboard", "accounting", "billing", "sales", "contacts", "inventory", "production", "treasury", "purchasing", "finances", "hr"] as const
+
+const mainItems = MODULE_ORDER.map((id) => MODULE_REGISTRY[id]).filter(Boolean)
 
 export function MiniSidebar({ activeCategory, onCategoryChange, collapsed = false }: MiniSidebarProps) {
     const { user } = useAuth()

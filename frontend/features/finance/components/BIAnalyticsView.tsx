@@ -27,7 +27,8 @@ import { format } from "date-fns";
 
 import { PageContainer } from "@/components/shared"
 
-const COLORS = ['var(--primary)', 'var(--accent)', 'var(--secondary)', 'var(--muted-foreground)', 'var(--warning)', 'var(--destructive)'];
+// Categorical data-viz palette (CMYK process inks). NOT semantic state. See color-system.md §8.
+const COLORS = ['var(--chart-1)', 'var(--chart-2)', 'var(--chart-3)', 'var(--chart-4)', 'var(--chart-5)', 'var(--chart-6)'];
 
 interface BIAnalyticsViewProps {
     date?: DateRange;
@@ -259,7 +260,7 @@ export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
                         <div className="space-y-2">
                             <div className="flex justify-between items-center">
                                 <span className="text-sm text-muted-foreground">Saldo Pendiente:</span>
-                                <span className="font-semibold text-destructive"><MoneyDisplay amount={performance.ap_total} /></span>
+                                <span className="font-semibold text-liability"><MoneyDisplay amount={performance.ap_total} /></span>
                             </div>
                         </div>
                     </CardContent>

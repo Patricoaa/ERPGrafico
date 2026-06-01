@@ -74,10 +74,6 @@ export const productSchema = z.object({
             notes: z.string().optional(),
         })).default([]),
     })).default([]),
-    product_custom_fields: z.array(z.object({
-        template: z.preprocess((v) => Number(v), z.number()),
-        order: z.number().default(0)
-    })).default([]),
     uom_prices: z.array(z.object({
         id: z.number().optional(),
         uom: z.preprocess((v) => Number(v), z.number().min(1, "UoM requerida")),

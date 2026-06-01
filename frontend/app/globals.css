@@ -72,6 +72,21 @@
   --pantone-violet: oklch(var(--pantone-violet-raw));
 
   /*
+   * DATA-VIZ — Categorical chart palette
+   * Mapped to the fixed CMYK/spot inks so chart series are maximally distinct
+   * and on-brand for a graphic-industry ERP. These are categorical IDENTIFIERS,
+   * not semantic state — never use a semantic intent (success/warning/
+   * destructive) as a series color. Consume via var(--chart-N) in recharts
+   * fill/stroke props. Charts are an authorized Layer-1 consumer (§8).
+   */
+  --chart-1: var(--cyan);
+  --chart-2: var(--magenta);
+  --chart-3: var(--green);
+  --chart-4: var(--pantone-orange);
+  --chart-5: var(--blue);
+  --chart-6: var(--yellow);
+
+  /*
    * LAYER 2 — SEMANTIC INTENTS
    * Alias to Layer 1. Dark mode adaptation happens here.
    */
@@ -80,15 +95,20 @@
   --primary-foreground-raw: 0.20 0.04 235;
   --primary-foreground: oklch(var(--primary-foreground-raw));
 
-  --accent-raw: var(--yellow-raw);
+  /*
+   * accent = NEUTRAL interaction surface (hover / focus / selected / active).
+   * Aliases `secondary` so it adapts automatically in dark mode and never
+   * collides with `warning` (yellow). For emphasis use `primary`, not accent.
+   */
+  --accent-raw: var(--secondary-raw);
   --accent: oklch(var(--accent-raw));
-  --accent-foreground-raw: 0.15 0.03 95;
+  --accent-foreground-raw: var(--secondary-foreground-raw);
   --accent-foreground: oklch(var(--accent-foreground-raw));
 
   /* SYSTEM STATES (Layer 2 — alias to Layer 1 process colors) */
-  --info-raw: var(--magenta-raw);
+  --info-raw: var(--blue-raw);
   --info: oklch(var(--info-raw));
-  --info-foreground-raw: 0.99 0.01 340;
+  --info-foreground-raw: 0.99 0.01 280;
   --info-foreground: oklch(var(--info-foreground-raw));
 
   --warning-raw: var(--yellow-raw);
@@ -130,7 +150,8 @@
   /* Base Radius (8px) — Industrial Atomic unit */
   --sidebar-width: 4rem; /* 64px - Activity Sidebar width */
   --sidebar-gap: 1rem;   /* 16px - Gap between sidebar and main content */
-  --ring-raw: 0.65 0.25 301;
+  /* Focus ring derives from the brand (Process Cyan), matching --color-sidebar-ring. */
+  --ring-raw: var(--primary-raw);
   --ring: oklch(var(--ring-raw) / 0.4);
 
   /* Sidebar tokens — light mode */
@@ -153,13 +174,25 @@
   --secondary-foreground-raw: 0.95 0.01 240;
   --border-raw: 0.93 0.008 240;
   --input-raw: 0.93 0.008 240;
+  /*
+   * LAYER 2 — DARK ADAPTATION
+   * Layer 1 process inks stay FIXED (no overrides here). Semantic intents shift
+   * lighter for perceptual contrast on the dark background. This is where the
+   * dark-mode adaptation lives (Layer 1 = identity, Layer 2 = contrast).
+   */
+  --primary-raw:     0.72 0.16 235;
+  --info-raw:        0.58 0.20 280;
+  --success-raw:     0.68 0.16 145;
+  --warning-raw:     0.94 0.15 95;
+  --destructive-raw: 0.62 0.22 25;
+
   --primary-foreground-raw: 0.10 0.02 235;
-  --accent-foreground-raw: 0.95 0.01 95;
-  --info-foreground-raw: 0.95 0.01 340;
+  --info-foreground-raw: 0.99 0.01 280;
   --warning-foreground-raw: 0.20 0.04 85;
   --success-foreground-raw: 0.95 0.01 145;
   --destructive-foreground-raw: 0.10 0.02 25;
   --neutral-foreground-raw: 0.20 0.02 240;
+  /* accent + accent-foreground adapt automatically via their alias to secondary. */
   --high-contrast-bg: oklch(0 0 0);
   --high-contrast-fg: oklch(1 0 0);
   --ring-raw: 0.95 0.0 0;
@@ -199,6 +232,12 @@
   --color-border: oklch(var(--border-raw) / 0.15);
   --color-input: oklch(var(--input-raw) / 0.1);
   --color-ring: oklch(var(--ring-raw) / 0.4);
+  /*
+   * OVERLAY — scrim ink for modal backdrops, image darkeners and dropdown veils.
+   * Fixed dark value (does NOT invert): a scrim stays dark in both themes.
+   * Use via bg-overlay/40, bg-overlay/50… instead of raw bg-black/N.
+   */
+  --color-overlay: oklch(0.12 0.02 240);
   --radius-sm: var(--radius);
   /* 8px */
   --radius-md: calc(var(--radius) + 4px);
@@ -1214,4 +1253,17 @@ table [data-notched-field] {
     box-shadow: none !important;
     border-color: transparent !important;
   }
+}
+
+/*
+ * SMART CONTRAST LAYER
+ * The warning background (yellow) has L > 0.85, making it unsuitable for light
+ * foreground colors (muted). When a warning background is active, force
+ * .text-muted-foreground children to inherit the parent's (typically dark)
+ * foreground color for adequate contrast.
+ * (accent is no longer yellow — it is a neutral surface — so it is excluded.)
+ */
+.hover\:bg-warning:hover .text-muted-foreground,
+.bg-warning .text-muted-foreground {
+  color: inherit;
 }

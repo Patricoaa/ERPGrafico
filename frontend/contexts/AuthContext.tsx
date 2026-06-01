@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
+import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from "react";
 import {useRouter} from "next/navigation";
 import axios from "axios";
 import api from "@/lib/api";
@@ -38,6 +38,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const { setTheme } = useTheme();
 
+    // Use a ref to break the dependency chain: next-themes@0.4.x memoizes setTheme
+    // with useCallback(fn, [theme]), causing its reference to change on every theme
+    // transition. Without the ref, fetchUser would re-create -> effect re-runs ->
+    // re-reads stale server theme -> setTheme -> infinite light/dark oscillation.
+    const setThemeRef = useRef(setTheme);
+    useEffect(() => { setThemeRef.current = setTheme; }, [setTheme]);
+
     // Single source of truth for resolving the current session from a stored token.
     // Used both on mount (session restore) and after login. Keeping one path with one
     // endpoint avoids the divergence that previously called a non-existent /core/me/.
@@ -57,7 +64,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
             // Automatically synchronize theme with server-persisted preference
             if (userData.theme) {
-                setTheme(userData.theme);
+                setThemeRef.current(userData.theme);
             }
         } catch (error) {
             console.error("Auth init error:", error);
@@ -75,7 +82,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } finally {
             setIsLoading(false);
         }
-    }, [setTheme]);
+    }, []);
 
     useEffect(() => {
         // Session restore on mount: legitimately syncs React state from

@@ -50,8 +50,8 @@ export const MoneyDisplay: React.FC<MoneyDisplayProps> = ({
             className={cn(
                 "font-bold tabular-nums tracking-tight",
                 inline ? "inline" : "inline-block",
-                (showColor || colored) && isNegative && "text-destructive",
-                (showColor || colored) && isPositive && "text-success",
+                (showColor || colored) && isNegative && "text-expense",
+                (showColor || colored) && isPositive && "text-income",
                 className
             )}
         >

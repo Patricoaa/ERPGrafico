@@ -11,8 +11,6 @@ export const salesSchema = z.object({
     pos_line_discount_group: z.string(),
     pos_global_discount_user: z.number().nullable(),
     pos_global_discount_group: z.string(),
-    terminal_commission_bridge_account: z.string().nullable(),
-    terminal_iva_bridge_account: z.string().nullable(),
     credit_auto_block_days: z.number().nullable(),
     default_uncollectible_expense_account: z.string().nullable(),
 })

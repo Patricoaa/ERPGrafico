@@ -25,7 +25,7 @@ export function FinishedStep({ order, onUploadPhoto, isUploadingPhoto, onPrintCo
       <div className="relative">
         <div className="absolute inset-0 bg-success/20 blur-2xl rounded-full scale-150 animate-pulse" />
         <div className="relative bg-success p-6 rounded-full shadow-lg shadow-success/20">
-          <CheckCircle2 className="h-16 w-16 text-white" />
+          <CheckCircle2 className="h-16 w-16 text-success-foreground" />
         </div>
       </div>
       <div className="space-y-2 max-w-sm">

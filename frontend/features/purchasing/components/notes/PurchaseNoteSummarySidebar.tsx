@@ -147,7 +147,7 @@ export function PurchaseNoteSummarySidebar({
             </div>
 
             {/* Footer / Totals */}
-            <div className="p-6 bg-background border-t mt-auto shadow-[0_-5px_25px_-5px_rgba(0,0,0,0.05)]">
+            <div className="p-6 bg-background border-t mt-auto shadow-[0_-5px_25px_-5px_oklch(0.12_0.02_240_/_0.05)]">
                 <div className="space-y-2 mb-4">
                     <div className="flex justify-between text-xs text-muted-foreground font-medium">
                         <span>Neto</span>

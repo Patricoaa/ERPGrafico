@@ -2,6 +2,7 @@
 
 import { usePathname, useSearchParams } from "next/navigation"
 import { PageHeader } from "@/components/shared"
+import { getModuleIconName } from "@/lib/module-registry"
 
 export function InventoryHeader() {
     const pathname = usePathname()
@@ -97,7 +98,7 @@ export function InventoryHeader() {
             if (subActiveValue === 'pricing-rules') return { title: "Reglas de Precios", description: "Políticas de tarifas, descuentos y márgenes por cliente o volumen.", iconName: "banknote" as const }
             return { title: "Catálogo de Productos", description: "Gestión de bienes físicos, servicios y consumibles.", iconName: "package" as const }
         }
-        return { title: "Inventario", description: "", iconName: "package" as const }
+        return { title: "Inventario", description: "", iconName: getModuleIconName('inventory') ?? "package" }
     }
 
     const config = getHeaderConfig()

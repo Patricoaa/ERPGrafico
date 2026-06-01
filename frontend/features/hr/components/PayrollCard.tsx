@@ -321,7 +321,7 @@ export function PayrollCard({
 
                     <div className="space-y-4">
                         {/* THE LIQUID CARD */}
-                        <div className="p-7 rounded-md bg-primary shadow-xl shadow-primary/20 border-none text-white relative overflow-hidden group">
+                        <div className="p-7 rounded-md bg-primary shadow-xl shadow-primary/20 border-none text-primary-foreground relative overflow-hidden group">
                             <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform">
                                 <DollarSign className="h-20 w-20" />
                             </div>

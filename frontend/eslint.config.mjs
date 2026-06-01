@@ -249,7 +249,9 @@ const eslintConfig = defineConfig([...nextVitals, ...nextTs, globalIgnores([
     tw: { rules: { "no-raw-color": noRawTailwindColors } },
   },
   rules: {
-    "tw/no-raw-color": "warn",
+    // Promoted warn → error on 2026-05-30 (ADR 0029): the regex was repaired and
+    // the violation count reached 0. Any new raw color / literal hex-rgb blocks the build.
+    "tw/no-raw-color": "error",
   },
 }, // Forms must use react-hook-form + zodResolver — GOVERNANCE.md §6 rule 29
 {

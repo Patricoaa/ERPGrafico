@@ -33,13 +33,13 @@ En la terminal de la **PC Local**:
 
 2. **Copiar la llave al servidor remoto**:
    ```bash
-   ssh-copy-id pato@192.168.1.95
+   ssh-copy-id pato@192.168.1.93
    ```
    *(Pedirá la contraseña por última vez).*
 
 3. **Verificar acceso automático**:
    ```bash
-   ssh pato@192.168.1.95 'pwd'
+   ssh pato@192.168.1.93 'pwd'
    ```
    *(Debería imprimir `/home/pato` sin pedir credenciales).*
 
@@ -89,7 +89,7 @@ sync:
 
   erpgrafico-sync:
     alpha: "."
-    beta: "pato@192.168.1.95:/home/pato/ERPGrafico"
+    beta: "pato@192.168.1.93:/home/pato/ERPGrafico"
 ```
 
 ---
@@ -100,7 +100,7 @@ En el servidor remoto, sólo necesitamos un directorio vacío donde Mutagen "ate
 *(Ejecutar desde la PC Local o conectado por SSH)*:
 
 ```bash
-ssh pato@192.168.1.95 'mkdir -p ~/ERPGrafico'
+ssh pato@192.168.1.93 'mkdir -p ~/ERPGrafico'
 ```
 
 ---
@@ -117,7 +117,7 @@ Esto empuja todos los archivos locales permitidos al servidor en segundos.
 ### Levantar los Contenedores
 Ingresar al servidor por SSH y levantar Docker usando los archivos recién sincronizados:
 ```bash
-ssh pato@192.168.1.95
+ssh pato@192.168.1.93
 cd ~/ERPGrafico
 docker compose -f docker-compose.yml up -d
 ```
@@ -140,8 +140,8 @@ Si configuras tu IDE (Antigravity/VS Code) para hacer un túnel SSH (Port Forwar
 
 **Opción B: Acceso Directo por IP de Red Local**
 Si no deseas mantener un túnel abierto, puedes acceder directamente mediante la IP de tu servidor:
-- 👉 **`http://192.168.1.95:3000`**
-*Aviso Importante:* Si usas esta ruta, estás obligado a modificar tu archivo `.env.dev` en el frontend para reflejar la red: `NEXT_PUBLIC_API_URL=http://192.168.1.95/api`. De lo contrario, el navegador intentará buscar el backend localmente en tu PC y las peticiones fallarán.
+- 👉 **`http://192.168.1.93:3000`**
+*Aviso Importante:* Si usas esta ruta, estás obligado a modificar tu archivo `.env.dev` en el frontend para reflejar la red: `NEXT_PUBLIC_API_URL=http://192.168.1.93/api`. De lo contrario, el navegador intentará buscar el backend localmente en tu PC y las peticiones fallarán.
 
 ---
 
@@ -159,7 +159,7 @@ No tienes que ejecutar ningún comando. El flujo es automático:
 
 ### 2. Instalar Nuevas Dependencias (Frontend / Backend)
 Como excluimos `node_modules` y `venv` en el `mutagen.yml`, estas carpetas viven exclusivamente en el servidor. Si necesitas agregar una librería:
-1. Haz SSH al servidor (`ssh pato@192.168.1.95`) y ve a la carpeta del proyecto.
+1. Haz SSH al servidor (`ssh pato@192.168.1.93`) y ve a la carpeta del proyecto.
 2. Ingresa al contenedor respectivo para instalarla. 
    - **Para Frontend (npm):**
      ```bash
@@ -249,4 +249,4 @@ mutagen project start
 ```
 
 **Problema 2**: La interfaz no carga en local.
-**Solución**: Mutagen sólo sincroniza archivos. Para ver el servidor remoto como si fuera local, asegúrate de acceder mediante `http://192.168.1.95` o configurar un Port Forwarding local.
+**Solución**: Mutagen sólo sincroniza archivos. Para ver el servidor remoto como si fuera local, asegúrate de acceder mediante `http://192.168.1.93` o configurar un Port Forwarding local.

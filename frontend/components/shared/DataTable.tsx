@@ -25,6 +25,7 @@ import { cn } from "@/lib/utils"
 import { motion, AnimatePresence } from "framer-motion"
 import { Skeleton } from "@/components/ui/skeleton"
 import { LucideIcon } from "lucide-react"
+import { ScrollArea } from "@/components/ui/scroll-area"
 
 import { BulkActionButtons, BulkActionDock, DataTablePagination, DataTableToolbar, EmptyState, SkeletonShell, type BulkAction } from '@/components/shared'
 import { resolveEmptyState, type DataTableEmptyState } from './emptyStateResolver'
@@ -57,8 +58,16 @@ export interface DataTableProps<TData, TValue> {
     rightAction?: React.ReactNode
     showToolbarSort?: boolean
     onRowClick?: (row: TData) => void
-    /** Layout variant. Use 'embedded' when the table lives inside a card/panel (no outer border, compact toolbar). Use 'standalone' for full-page tables with border. Use 'minimal' for simple display tables inside tabs/detail panels (no toolbar, no pagination). */
-    variant?: 'standalone' | 'embedded' | 'minimal'
+    /** Layout variant. Use 'embedded' when the table lives inside a card/panel (no outer border, compact toolbar). Use 'standalone' for full-page tables with border. Use 'minimal' for simple display tables inside tabs/detail panels (no toolbar, no pagination). Use 'compact' for dense CSS Grid tables inside modals/drawers (no toolbar, no pagination, no border). */
+    variant?: 'standalone' | 'embedded' | 'minimal' | 'compact'
+    /** CSS Grid template class for compact variant. Required when variant='compact'. Example: "grid-cols-[2rem_1fr_auto_auto_auto]" */
+    gridTemplate?: string
+    /** Gap between columns in compact variant. Default: "gap-x-3" */
+    gridGap?: string
+    /** Max height for the compact variant ScrollArea. Default: "max-h-[65vh]" */
+    compactMaxHeight?: string
+    /** Render callback for the actions cell in compact variant. Receives the row data and returns a ReactNode. Occupies the last grid track. */
+    renderRowActions?: (row: TData) => React.ReactNode
     isLoading?: boolean
     skeletonRows?: number
     renderSubComponent?: (row: Row<TData>) => React.ReactNode
@@ -192,9 +201,14 @@ export function DataTable<TData, TValue>({
     onPaginationChange,
     rowSelection,
     renderLoadingView,
+    gridTemplate,
+    gridGap = "gap-x-3",
+    compactMaxHeight = "max-h-[65vh]",
+    renderRowActions,
 }: DataTableProps<TData, TValue>) {
     const isEmbedded = variant === 'embedded'
     const isMinimal = variant === 'minimal'
+    const isCompact = variant === 'compact'
     const effectiveSkeletonRows = skeletonRows ?? defaultPageSize
     const emptyProps = resolveEmptyState(customEmptyState, isFiltered)
 
@@ -295,7 +309,7 @@ export function DataTable<TData, TValue>({
         }
     }, [internalRowSelection, onRowSelectionChange])
 
-    const showToolbar = !isMinimal && (filterColumn || globalFilterFields || (facetedFilters && facetedFilters.length > 0) || toolbarAction || rightAction || leftAction || createAction || (viewOptions && viewOptions.length > 0) || showToolbarSort)
+    const showToolbar = !isMinimal && !isCompact && (filterColumn || globalFilterFields || (facetedFilters && facetedFilters.length > 0) || toolbarAction || rightAction || leftAction || createAction || (viewOptions && viewOptions.length > 0) || showToolbarSort)
     const selectedRows = table.getSelectedRowModel().rows
     const selectedItems = React.useMemo(() => selectedRows.map(r => r.original), [selectedRows])
     const clearSelection = React.useCallback(() => table.resetRowSelection(), [table])
@@ -459,6 +473,96 @@ export function DataTable<TData, TValue>({
                         </TableFooter>
                     )}
                 </Table>
+            </div>
+        )
+    }
+
+    // ─── Compact Mode (CSS Grid for modals/drawers) ────────────────────────
+    if (isCompact) {
+        const effectiveGridTemplate = gridTemplate ?? ''
+
+        if (process.env.NODE_ENV === 'development' && !gridTemplate) {
+            console.warn('[DataTable] variant="compact" requires a gridTemplate prop. Example: gridTemplate="grid-cols-[2rem_1fr_auto_auto_auto]"')
+        }
+
+        if (isLoading) {
+            return (
+                <div ref={containerRef} className="relative">
+                    <div className={cn("grid", effectiveGridTemplate, gridGap, "px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground border-b")}>
+                        {table.getHeaderGroups()[0]?.headers.map((header) => (
+                            <div key={header.id} className="text-center">
+                                {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                            </div>
+                        ))}
+                        {renderRowActions && <div />}
+                    </div>
+                    <div className="divide-y divide-border/60">
+                        {Array.from({ length: effectiveSkeletonRows }, (_, i) => (
+                            <div key={`skel-${i}`} className={cn("grid", effectiveGridTemplate, gridGap, "items-center px-3 py-2.5")}>
+                                {columns.map((_, j) => (
+                                    <div key={`skel-${i}-${j}`} className="flex justify-center">
+                                        <Skeleton className="h-4 w-16" />
+                                    </div>
+                                ))}
+                                {renderRowActions && <div />}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )
+        }
+
+        return (
+            <div ref={containerRef} className="relative">
+                {table.getRowModel().rows?.length ? (
+                    <ScrollArea className={compactMaxHeight}>
+                        {/* Header */}
+                        <div className={cn("grid", effectiveGridTemplate, gridGap, "px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground border-b sticky top-0 bg-card z-10")} role="row">
+                            {table.getHeaderGroups()[0]?.headers.map((header) => (
+                                <div key={header.id} role="columnheader">
+                                    {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                                </div>
+                            ))}
+                            {renderRowActions && <div role="columnheader" />}
+                        </div>
+                        {/* Body */}
+                        <div className="divide-y divide-border/60" role="rowgroup">
+                            {table.getRowModel().rows.map((row) => (
+                                <div
+                                    key={row.id}
+                                    role="row"
+                                    className={cn(
+                                        "grid",
+                                        effectiveGridTemplate,
+                                        gridGap,
+                                        "items-center px-3 py-2.5 hover:bg-muted/40 transition-all group animate-in fade-in duration-300",
+                                        onRowClick && "cursor-pointer"
+                                    )}
+                                    onClick={() => onRowClick?.(row.original)}
+                                >
+                                    {row.getVisibleCells().map((cell) => (
+                                        <div key={cell.id} role="cell">
+                                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                        </div>
+                                    ))}
+                                    {renderRowActions && (
+                                        <div role="cell" className="flex items-center gap-1 justify-end">
+                                            {renderRowActions(row.original)}
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    </ScrollArea>
+                ) : (
+                    <EmptyState
+                        context={emptyProps.context}
+                        icon={emptyProps.icon}
+                        title={emptyProps.title}
+                        description={emptyProps.description}
+                        action={emptyProps.action}
+                    />
+                )}
             </div>
         )
     }

@@ -116,8 +116,10 @@ export * from './DataTableCells';
 export * from './DynamicIcon'
 export * from './ErrorBoundary'
 export * from './Numpad'
+
 export * from './PrintableReceipt'
 
+export * from './ContactSelector'
 // Product Selector family (PR-1, PR-2, PR-3)
 export { SearchBar, CategoryFilter, ProductGrid, VariantSelectorModal, ProductSelector } from './ProductSelector'
 export type { SearchBarProps, CategoryFilterProps, ProductGridProps, SharedStockLimits, VariantSelectorModalProps, ProductSelectorProps } from './ProductSelector'

@@ -14,10 +14,10 @@ interface ColorBarProps {
 }
 
 const CMYK_COLORS = [
-  { name: "cyan", color: "#00aeef", label: "C" },
-  { name: "magenta", color: "#ec008c", label: "M" },
-  { name: "yellow", color: "#fff200", label: "Y" },
-  { name: "black", color: "#231f20", label: "K" },
+  { name: "cyan", color: "var(--color-cyan)", label: "C" },
+  { name: "magenta", color: "var(--color-magenta)", label: "M" },
+  { name: "yellow", color: "var(--color-yellow)", label: "Y" },
+  { name: "black", color: "var(--color-black)", label: "K" },
 ]
 
 const SCALES = [100, 75, 50, 25, 10, 5, 0]

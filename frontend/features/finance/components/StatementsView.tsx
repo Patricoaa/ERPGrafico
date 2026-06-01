@@ -177,24 +177,24 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
 
         return (
             <div className="mb-10 overflow-hidden rounded-lg border shadow-sm">
-                <div className="h-10 w-full flex text-[10px] font-bold text-white uppercase tracking-tighter">
+                <div className="h-10 w-full flex text-[10px] font-bold uppercase tracking-tighter">
                     <div
                         style={{ width: `${aP}%` }}
-                        className="bg-success flex items-center justify-center p-1 transition-all border-r border-white/20 whitespace-nowrap overflow-hidden"
+                        className="bg-asset text-asset-foreground flex items-center justify-center p-1 transition-all border-r border-border whitespace-nowrap overflow-hidden"
                         title={`Activos: ${fmt(a)}`}
                     >
                         Activos: {fmt(a)}
                     </div>
                     <div
                         style={{ width: `${pP}%` }}
-                        className="bg-destructive flex items-center justify-center p-1 transition-all border-r border-white/20 whitespace-nowrap overflow-hidden"
+                        className="bg-liability text-liability-foreground flex items-center justify-center p-1 transition-all border-r border-border whitespace-nowrap overflow-hidden"
                         title={`Pasivos: ${fmt(p)}`}
                     >
                         Pasivos: {fmt(p)}
                     </div>
                     <div
                         style={{ width: `${eP}%` }}
-                        className="bg-primary flex items-center justify-center p-1 transition-all whitespace-nowrap overflow-hidden"
+                        className="bg-primary text-primary-foreground flex items-center justify-center p-1 transition-all whitespace-nowrap overflow-hidden"
                         title={`Patrimonio: ${fmt(e)}`}
                     >
                         Patrimonio: {fmt(e)}
@@ -300,7 +300,7 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
                                                                 compPeriodLabel={compPeriodLabel}
                                                                 periodLabel={periodLabel}
                                                                 showComparison={showComparison}
-                                                                accentColor="success"
+                                                                accentColor="asset"
                                                                 embedded
                                                             />
                                                             <ReportTable
@@ -312,7 +312,7 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
                                                                 compPeriodLabel={compPeriodLabel}
                                                                 periodLabel={periodLabel}
                                                                 showComparison={showComparison}
-                                                                accentColor="destructive"
+                                                                accentColor="liability"
                                                                 embedded
                                                             />
                                                             <ReportTable
@@ -386,7 +386,7 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
                                                             totalValue={section.total}
                                                             totalValueComp={section.total_comp}
                                                             showComparison={showComparison}
-                                                            accentColor={section.name.toLowerCase().includes('ingreso') ? 'success' : section.name.toLowerCase().includes('gasto') || section.name.toLowerCase().includes('costo') ? 'destructive' : 'primary'}
+                                                            accentColor={section.name.toLowerCase().includes('ingreso') ? 'income' : section.name.toLowerCase().includes('gasto') || section.name.toLowerCase().includes('costo') ? 'expense' : 'primary'}
                                                             embedded
                                                         />
                                                     )

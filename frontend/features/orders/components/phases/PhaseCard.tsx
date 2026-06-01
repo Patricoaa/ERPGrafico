@@ -236,8 +236,8 @@ export function PhaseCard({
                                             size="icon"
                                             disabled={disabled}
                                             className={cn(
-                                                "h-7 w-7 rounded transition-all active:scale-90 border border-white/5",
-                                                "bg-transparent hover:bg-white/5",
+                                                "h-7 w-7 rounded transition-all active:scale-90 border border-border",
+                                                "bg-transparent hover:bg-accent",
                                                 (action.id.includes('note')) && "text-warning border-warning/20 hover:bg-warning/10 hover:border-warning/40",
                                                 action.id === 'payment-history' && "text-primary border-primary/20 hover:bg-primary/10 hover:border-primary/40",
                                                 disabled && "pointer-events-none"
@@ -297,7 +297,7 @@ export function PhaseCard({
                             {documents.length > 0 ? (
                                 documents.map((doc: PhaseDocument, i: number) => (
                                     <div key={i} className={cn(
-                                        "flex items-center justify-between border-border/30 hover:bg-white/5 transition-all duration-300 group/doc",
+                                        "flex items-center justify-between border-border/30 hover:bg-accent transition-all duration-300 group/doc",
                                         "rounded-md border-2 min-h-[2.25rem] py-1.5 px-3",
                                         doc.status === 'CANCELLED' && "opacity-50 grayscale contrast-75 cursor-not-allowed",
                                         doc.isWarning && "border-warning/40 hover:bg-warning/5"

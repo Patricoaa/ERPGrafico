@@ -32,4 +32,4 @@ sync:
   # Nombre de la sesión principal
   erpgrafico-sync:
     alpha: "."
-    beta: "pato@192.168.1.95:/home/pato/ERPGrafico"
+    beta: "pato@192.168.1.93:/home/pato/ERPGrafico"

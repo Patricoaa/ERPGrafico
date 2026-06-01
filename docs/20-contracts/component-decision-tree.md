@@ -70,8 +70,9 @@ graph TD
     T[¿Qué tipo de tabla?]
     T -->|CRUD con filtros/paginación/acciones| TA(DataTable variant="standalone" | "embedded")
     T -->|Tabla display simple en tabs/detalle| TB(DataTable variant="minimal")
-    T -->|Líneas editables en formulario| TC(FormLineItemsTable / AccountingLinesTable)
-    T -->|Reporte jerárquico contable| TD(ReportTable)
+    T -->|Lista compacta en modal/drawer| TC(DataTable variant="compact")
+    T -->|Líneas editables en formulario| TD(FormLineItemsTable / AccountingLinesTable)
+    T -->|Reporte jerárquico contable| TE(ReportTable)
 ```
 
 - **`StatusBadge`**: **Obligatorio** para el estado de las entidades (ej. `in_production`, `paid`). Lee `state-map.md`.

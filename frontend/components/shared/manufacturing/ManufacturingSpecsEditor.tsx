@@ -131,7 +131,7 @@ export function ManufacturingSpecsEditor({
   const phaseCardClass = (enabled: boolean) => cn(
     "relative group p-6 rounded-md border transition-all duration-300",
     enabled
-      ? "bg-white shadow-sm border-primary/30 ring-1 ring-primary/5"
+      ? "bg-card shadow-sm border-primary/30 ring-1 ring-primary/5"
       : "bg-muted/30 border-border/40 opacity-60 grayscale-[0.5]",
     disabled && "pointer-events-none"
   )

@@ -53,7 +53,7 @@ export function OrderHeaderDashboard({
         switch (status) {
             case 'success': return 'text-success bg-success/10 border-success/20'
             case 'active': return 'text-primary bg-primary/10 border-primary/20 animate-pulse'
-            case 'neutral': return 'text-muted-foreground bg-muted/10 border-white/5'
+            case 'neutral': return 'text-muted-foreground bg-muted/10 border-border'
             case 'destructive': return 'text-destructive bg-destructive/10 border-destructive/20'
             case 'not_applicable': return 'text-muted-foreground/30 bg-muted/5 border-transparent opacity-50'
             default: return 'text-muted-foreground'
@@ -77,7 +77,7 @@ export function OrderHeaderDashboard({
                 value={formatCurrency(totalAmount)}
                 icon={TrendingUp}
                 accent="primary"
-                className="bg-white/5 border-white/10 backdrop-blur-sm relative overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-br before:from-primary/5 before:to-transparent before:pointer-events-none"
+                className="bg-card/50 border-border backdrop-blur-sm relative overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-br before:from-primary/5 before:to-transparent before:pointer-events-none"
             />
             <StatCard
                 label="Estado Financiero"
@@ -87,23 +87,23 @@ export function OrderHeaderDashboard({
                     </span>
                 }
                 accent="primary"
-                className="bg-white/5 border-white/10 backdrop-blur-sm"
+                className="bg-card/50 border-border backdrop-blur-sm"
             >
                 <div className="mt-3 space-y-1">
                     <div className="flex justify-between text-[11px] font-medium text-foreground/80">
                         <span>Pagado: {formatCurrency(paidAmount)}</span>
                         <span className="text-muted-foreground/50">{Math.round(paymentProgress)}%</span>
                     </div>
-                    <Progress value={paymentProgress} className={cn("h-1.5 bg-white/5", pendingAmount <= 0 && "bg-success/20 [&>*]:bg-success")} />
+                    <Progress value={paymentProgress} className={cn("h-1.5 bg-muted", pendingAmount <= 0 && "bg-success/20 [&>*]:bg-success")} />
                 </div>
             </StatCard>
 
             {/* Visual Stepper / Timeline */}
-            <Card className="lg:col-span-2 bg-white/5 border-white/10 backdrop-blur-sm flex flex-col justify-center">
+            <Card className="lg:col-span-2 bg-card/50 border-border backdrop-blur-sm flex flex-col justify-center">
                 <CardContent className="p-4 py-3">
                     <div className="flex items-center justify-between relative">
                         {/* Connecting Line */}
-                        <div className="absolute top-1/2 left-0 w-full h-0.5 bg-white/5 -z-0 -translate-y-1/2 rounded-full hidden sm:block" />
+                        <div className="absolute top-1/2 left-0 w-full h-0.5 bg-border -z-0 -translate-y-1/2 rounded-full hidden sm:block" />
 
                         {steps.map((step, index) => {
                             const isLast = index === steps.length - 1

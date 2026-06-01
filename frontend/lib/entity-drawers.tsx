@@ -85,8 +85,8 @@ const UserDrawer = dynamic(
     { ssr: false, loading: () => skeleton("usuario") }
 )
 
-const TerminalDrawer = dynamic(
-    () => import("@/features/treasury").then((m) => m.TerminalDrawer),
+const PosTerminalDrawer = dynamic(
+    () => import("@/features/sales").then((m) => m.PosTerminalDrawer),
     { ssr: false, loading: () => skeleton("caja") }
 )
 
@@ -218,8 +218,14 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
     ),
 
     // ── Treasury ──────────────────────────────────────────────────────────────
-    "treasury.treasuryaccount": ({ id, open, onOpenChange }) => (
-        <TreasuryAccountDrawer mode="view" open={open} onOpenChange={onOpenChange} accountId={id} />
+    "treasury.treasuryaccount": ({ id, open, onOpenChange, data, onSuccess }) => (
+        <TreasuryAccountDrawer
+            mode={data ? 'view' : 'create'}
+            open={open}
+            onOpenChange={onOpenChange}
+            accountId={id}
+            onSuccess={() => onSuccess?.()}
+        />
     ),
 
     // ── Production ────────────────────────────────────────────────────────────
@@ -340,7 +346,7 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
     // ── Treasury hardware ─────────────────────────────────────────────────────
     // * requires full terminal/provider data — EntityBadge always provides it
     "treasury.terminal": ({ open, onOpenChange, data, onSuccess }) => (
-        <TerminalDrawer
+        <PosTerminalDrawer
             open={open}
             onOpenChange={onOpenChange}
             terminal={data ?? null}

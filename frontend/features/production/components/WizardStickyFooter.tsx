@@ -439,7 +439,7 @@ export function WizardStickyFooter({
                                             })
                                             setShowAlert(true)
                                         }}
-                                        className="gap-2 bg-success hover:bg-success/90 text-white shadow-lg shadow-success/20"
+                                        className="gap-2 bg-success hover:bg-success/90 text-success-foreground shadow-lg shadow-success/20"
                                         aria-label="Rectificar y Finalizar Producción"
                                     >
                                         {transitioning ? (
