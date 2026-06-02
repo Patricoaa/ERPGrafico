@@ -1,8 +1,8 @@
 from rest_framework import serializers
-from .models import (TreasuryMovement, TreasuryAccount, BankStatement, BankStatementLine,  
-                     ReconciliationSettings, POSTerminal, 
+from .models import (TreasuryMovement, TreasuryAccount, BankStatement, BankStatementLine,
+                     ReconciliationSettings, POSTerminal,
                      POSSessionAudit, Bank, PaymentMethod,
-                     PaymentTerminalProvider, PaymentTerminalDevice)
+                     PaymentTerminalProvider, PaymentTerminalDevice, Check)
 # Remove top-level import to avoid circular dependency
 # from accounting.serializers import JournalEntrySerializer
 
@@ -629,3 +629,40 @@ class TerminalBatchSerializer(serializers.ModelSerializer):
                 'status': obj.supplier_invoice.status
             }
         return None
+
+
+
+class CheckSerializer(serializers.ModelSerializer):
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    direction_display = serializers.CharField(source='get_direction_display', read_only=True)
+    display_id = serializers.CharField(read_only=True)
+    is_overdue = serializers.BooleanField(read_only=True)
+    bank_name = serializers.CharField(source='bank.name', read_only=True)
+    counterparty_name = serializers.SerializerMethodField()
+
+    def get_counterparty_name(self, obj):
+        if obj.counterparty:
+            return obj.counterparty.name
+        return obj.drawer_name or None
+
+    class Meta:
+        model = Check
+        fields = [
+            'id', 'display_id', 'direction', 'direction_display',
+            'status', 'status_display', 'is_overdue',
+            'bank', 'bank_name', 'check_number', 'amount',
+            'issue_date', 'due_date',
+            'counterparty', 'counterparty_name', 'drawer_name',
+            'portfolio_account', 'deposit_account',
+            'receipt_movement', 'settlement_movement',
+            'invoice', 'sale_order',
+            'notes', 'deposited_at', 'cleared_at', 'bounced_at',
+            'created_at', 'created_by',
+        ]
+        read_only_fields = [
+            'display_id', 'status', 'is_overdue',
+            'portfolio_account', 'deposit_account',
+            'receipt_movement', 'settlement_movement',
+            'deposited_at', 'cleared_at', 'bounced_at',
+            'created_at', 'created_by',
+        ]

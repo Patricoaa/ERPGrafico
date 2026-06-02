@@ -1259,6 +1259,98 @@ class POSSessionViewSet(viewsets.ModelViewSet):
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+class CheckViewSet(viewsets.ModelViewSet):
+    """CRUD + transiciones de estado para cheques recibidos."""
+    from .serializers import CheckSerializer
+    from .models import Check as CheckModel
+
+    serializer_class = CheckSerializer
+    filterset_fields = ['status', 'direction', 'bank', 'counterparty']
+
+    def get_queryset(self):
+        from .models import Check as CheckModel
+        qs = CheckModel.objects.select_related(
+            'bank', 'counterparty', 'portfolio_account', 'deposit_account'
+        )
+        due_before = self.request.query_params.get('due_before')
+        if due_before:
+            qs = qs.filter(due_date__lte=due_before)
+        return qs.order_by('due_date', '-id')
+
+    def perform_create(self, serializer):
+        from .check_service import CheckService
+        data = self.request.data
+        check = CheckService.receive(
+            bank_id=data['bank'],
+            check_number=data['check_number'],
+            amount=data['amount'],
+            issue_date=data['issue_date'],
+            due_date=data['due_date'],
+            counterparty_id=data.get('counterparty'),
+            drawer_name=data.get('drawer_name', ''),
+            notes=data.get('notes', ''),
+            invoice_id=data.get('invoice'),
+            sale_order_id=data.get('sale_order'),
+            created_by=self.request.user,
+        )
+        serializer.instance = check
+
+    @action(detail=True, methods=['post'])
+    def deposit(self, request, pk=None):
+        from .check_service import CheckService
+        check = self.get_object()
+        try:
+            deposit_account = TreasuryAccount.objects.get(pk=request.data['deposit_account'])
+            check = CheckService.deposit(check, deposit_account, created_by=request.user)
+        except (ValidationError, TreasuryAccount.DoesNotExist, KeyError) as e:
+            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(self.get_serializer(check).data)
+
+    @action(detail=True, methods=['post'])
+    def clear(self, request, pk=None):
+        from .check_service import CheckService
+        check = self.get_object()
+        try:
+            check = CheckService.clear(check)
+        except ValidationError as e:
+            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(self.get_serializer(check).data)
+
+    @action(detail=True, methods=['post'])
+    def bounce(self, request, pk=None):
+        from .check_service import CheckService
+        check = self.get_object()
+        try:
+            check = CheckService.bounce(check, notes=request.data.get('notes', ''), created_by=request.user)
+        except ValidationError as e:
+            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(self.get_serializer(check).data)
+
+    @action(detail=True, methods=['post'])
+    def void(self, request, pk=None):
+        from .check_service import CheckService
+        check = self.get_object()
+        try:
+            check = CheckService.void(check, notes=request.data.get('notes', ''))
+        except ValidationError as e:
+            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(self.get_serializer(check).data)
+
+    @action(detail=False, methods=['get'])
+    def portfolio(self, request):
+        from .check_service import CheckService
+        summary = CheckService.get_portfolio_summary()
+        data = self.get_serializer(summary['checks'], many=True).data
+        return Response({'checks': data, 'total': summary['total']})
+
+    @action(detail=False, methods=['get'])
+    def in_transit(self, request):
+        from .check_service import CheckService
+        summary = CheckService.get_in_transit_summary()
+        data = self.get_serializer(summary['checks'], many=True).data
+        return Response({'checks': data, 'total': summary['total']})
+
+
 class TreasuryDashboardViewSet(viewsets.ViewSet):
     """
     Vista consolidada de flujos de efectivo y gestión de tesorería.

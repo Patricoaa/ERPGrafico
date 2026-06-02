@@ -697,6 +697,12 @@ class AccountingSettings(TimeStampedModel):
         verbose_name=_("Cuenta de Retenciones / Impuestos"),
         help_text=_("Cuenta para ajustes de conciliación por retenciones de impuestos.")
     )
+    check_portfolio_account = models.ForeignKey(
+        Account, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='settings_check_portfolio',
+        verbose_name=_("Cuenta Cheques en Cartera"),
+        help_text=_("Cuenta de activo (documentos por cobrar) donde se registran los cheques de terceros recibidos hasta su depósito/cobro.")
+    )
 
     # POS Cash Control Accounts
     pos_cash_difference_gain_account = models.ForeignKey(
