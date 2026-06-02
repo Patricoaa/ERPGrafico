@@ -183,21 +183,6 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
                 )
             },
         },
-        {
-            accessorKey: "account_type",
-            header: "Tipo",
-            enableHiding: true,
-            cell: ({ row }: { row: any }) => {
-                const val = row.original.account_type
-                if (!val) return null
-                const upperVal = String(val).toUpperCase()
-                return (
-                    <DataCell.Text>
-                        {typeLabels[upperVal] || val}
-                    </DataCell.Text>
-                )
-            }
-        },
         createActionsColumn<TreasuryAccount>({
             renderActions: (item) => (
                 item.is_system_managed ? (
