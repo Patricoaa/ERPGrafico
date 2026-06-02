@@ -41,3 +41,15 @@ def pytest_configure(config):  # noqa: ARG001 — firma de hook pytest
     }
     settings.CELERY_TASK_ALWAYS_EAGER = True
     settings.CELERY_TASK_EAGER_PROPAGATES = True
+
+
+import pytest  # noqa: E402
+
+
+@pytest.fixture(autouse=True)
+def clear_singleton_cache():
+    """Limpia la cache de singletons antes y después de cada test."""
+    from django.core.cache import cache
+    cache.clear()
+    yield
+    cache.clear()

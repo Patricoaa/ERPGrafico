@@ -9,6 +9,7 @@ from simple_history.models import HistoricalRecords
 from django.conf import settings
 from django.utils import timezone
 from core.utils import get_current_date
+from decimal import Decimal
 from django.core.validators import MinValueValidator
 from django.core.exceptions import ValidationError
 from core.validators import validate_file_size, validate_file_extension
@@ -406,9 +407,11 @@ class TreasuryAccount(models.Model):
         CASH = 'CASH', _('Caja Física (Efectivo)')
         BRIDGE = 'BRIDGE', _('Puente')
         MERCHANT = 'MERCHANT', _('Cuenta Recaudadora')
+        CHECK_PORTFOLIO = 'CHECK_PORTFOLIO', _('Cheques en Cartera')
 
-    # Types que NO son efectivo/banco directo — usan prefijos contables distintos.
-    _NON_CASH_EQUIVALENT_TYPES = frozenset({'BRIDGE', 'MERCHANT'})
+    # Types que NO son efectivo/banco directo — usan prefijos contables distintos
+    # y son gestionados por el sistema (no editables vía wizard).
+    _NON_CASH_EQUIVALENT_TYPES = frozenset({'BRIDGE', 'MERCHANT', 'CHECK_PORTFOLIO'})
 
     name = models.CharField(_("Nombre"), max_length=100)
     code = models.CharField(_("Código"), max_length=20, blank=True, null=True)
@@ -492,6 +495,11 @@ class TreasuryAccount(models.Model):
                 if self.account.account_type != AccountType.LIABILITY:
                     raise ValidationError({
                         'account': _("La tarjeta de crédito propia debe vincularse a una cuenta de PASIVO (deuda), no a Efectivo.")
+                    })
+            elif self.account_type == self.Type.CHECK_PORTFOLIO:
+                if self.account.account_type != AccountType.ASSET:
+                    raise ValidationError({
+                        'account': _("La cuenta de Cheques en Cartera debe ser una cuenta de ACTIVO (documentos por cobrar).")
                     })
             elif self.account_type not in self._NON_CASH_EQUIVALENT_TYPES:
                 if not self.account.code.startswith('1.1.01'):
@@ -1839,5 +1847,140 @@ class PaymentAllocation(models.Model):
         super().save(*args, **kwargs)
 
 
+# ---------------------------------------------------------------------------
+# Cheques recibidos de terceros — Cartera de cheques con cuenta puente
+# ---------------------------------------------------------------------------
+
+class Check(models.Model):
+    """
+    Cheque de tercero recibido (cliente u otro proveedor).
+    Vive en la cuenta puente "Cheques en Cartera" hasta depositarse/cobrarse.
+
+    Flujo de estados:
+      IN_PORTFOLIO → DEPOSITED → CLEARED
+                   → BOUNCED   (desde DEPOSITED: protesto)
+      IN_PORTFOLIO → VOIDED    (anulación antes de depositar)
+    """
+
+    class Direction(models.TextChoices):
+        RECEIVED = 'RECEIVED', _('Recibido')
+        ISSUED   = 'ISSUED',   _('Girado')   # reservado para fase siguiente
+
+    class Status(models.TextChoices):
+        IN_PORTFOLIO = 'IN_PORTFOLIO', _('En Cartera')
+        DEPOSITED    = 'DEPOSITED',    _('Depositado (En Tránsito)')
+        CLEARED      = 'CLEARED',      _('Cobrado / Liquidado')
+        BOUNCED      = 'BOUNCED',      _('Protestado / Rechazado')
+        VOIDED       = 'VOIDED',       _('Anulado')
+
+    # ── Identificación ────────────────────────────────────────────────────
+    direction = models.CharField(
+        _("Dirección"), max_length=10,
+        choices=Direction.choices, default=Direction.RECEIVED
+    )
+    status = models.CharField(
+        _("Estado"), max_length=15,
+        choices=Status.choices, default=Status.IN_PORTFOLIO
+    )
+
+    # ── Datos del cheque ─────────────────────────────────────────────────
+    bank = models.ForeignKey(
+        'Bank', on_delete=models.PROTECT,
+        related_name='checks', verbose_name=_("Banco Emisor")
+    )
+    check_number = models.CharField(_("N° de Cheque"), max_length=50)
+    amount = models.DecimalField(
+        _("Monto"), max_digits=14, decimal_places=2,
+        validators=[MinValueValidator(Decimal('0.01'))]
+    )
+    issue_date = models.DateField(_("Fecha de Emisión"))
+    due_date   = models.DateField(
+        _("Fecha de Cobro / Vencimiento"),
+        help_text=_("Para cheques a fecha: día a partir del cual es cobrable.")
+    )
+    counterparty = models.ForeignKey(
+        'contacts.Contact', on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='checks_received', verbose_name=_("Girador / Emisor")
+    )
+    drawer_name = models.CharField(
+        _("Nombre Girador"), max_length=150, blank=True,
+        help_text=_("Nombre libre si el girador no es un contacto del sistema.")
+    )
+
+    # ── Cuentas / Movimientos ────────────────────────────────────────────
+    portfolio_account = models.ForeignKey(
+        'TreasuryAccount', on_delete=models.PROTECT,
+        related_name='checks_in_portfolio',
+        verbose_name=_("Cuenta Cheques en Cartera")
+    )
+    deposit_account = models.ForeignKey(
+        'TreasuryAccount', on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='checks_deposited',
+        verbose_name=_("Cuenta Bancaria de Depósito")
+    )
+    receipt_movement = models.OneToOneField(
+        'TreasuryMovement', on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='check_receipt',
+        verbose_name=_("Movimiento de Recepción")
+    )
+    settlement_movement = models.OneToOneField(
+        'TreasuryMovement', on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='check_settlement',
+        verbose_name=_("Movimiento de Depósito / Liquidación")
+    )
+
+    # ── Documentos relacionados ──────────────────────────────────────────
+    invoice = models.ForeignKey(
+        'billing.Invoice', on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='check_payments', verbose_name=_("Factura")
+    )
+    sale_order = models.ForeignKey(
+        'sales.SaleOrder', on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='check_payments', verbose_name=_("Orden de Venta")
+    )
+
+    # ── Auditoría ────────────────────────────────────────────────────────
+    notes        = models.TextField(_("Notas"), blank=True)
+    deposited_at = models.DateTimeField(_("Depositado el"), null=True, blank=True)
+    cleared_at   = models.DateTimeField(_("Cobrado el"),    null=True, blank=True)
+    bounced_at   = models.DateTimeField(_("Protestado el"), null=True, blank=True)
+    created_at   = models.DateTimeField(auto_now_add=True)
+    created_by   = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='checks_created', verbose_name=_("Creado Por")
+    )
+    history = HistoricalRecords()
+
+    class Meta:
+        verbose_name        = _("Cheque")
+        verbose_name_plural = _("Cheques")
+        ordering            = ['due_date', '-id']
+        indexes = [
+            models.Index(fields=['status']),
+            models.Index(fields=['due_date']),
+            models.Index(fields=['counterparty', 'status']),
+        ]
+
+    def __str__(self) -> str:
+        return self.display_id
+
+    @property
+    def display_id(self) -> str:
+        return f"CHQ-{self.id}"
+
+    @property
+    def is_overdue(self) -> bool:
+        from core.utils import get_current_date
+        return (
+            self.status == self.Status.IN_PORTFOLIO
+            and self.due_date < get_current_date()
+        )
 
 

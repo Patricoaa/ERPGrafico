@@ -14,6 +14,7 @@ export function TreasuryHeader() {
     // Map physical routes to tab values
     const segmentToTab: Record<string, string> = {
         movements: 'movements',
+        checks: 'checks',
         accounts: 'accounts',
         reconciliation: 'reconciliation',
         'terminal-cobro': 'terminal-cobro',
@@ -35,6 +36,7 @@ export function TreasuryHeader() {
 
     const tabs = [
         { value: "movements", label: "Movimientos", iconName: "banknote", href: "/treasury/movements" },
+        { value: "checks", label: "Cheques", iconName: "check-square", href: "/treasury/checks" },
         {
             value: "accounts",
             label: "Cuentas y bancos",
