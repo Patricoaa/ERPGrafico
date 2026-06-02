@@ -12,7 +12,8 @@ import { DataTableColumnHeader } from '@/components/shared'
 
 import {Landmark, Lock} from "lucide-react"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
-import { BankManagement, PaymentMethodManagement, TreasuryAccountDrawer } from "@/features/treasury"
+import { BankManagement, PaymentMethodManagement } from "@/features/treasury"
+import { TreasuryAccountWizard } from "./TreasuryAccountWizard"
 
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
 import { DataCell, createActionsColumn, FadeIn } from '@/components/shared'
@@ -313,7 +314,7 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
 
         </Tabs>
 
-        <TreasuryAccountDrawer
+        <TreasuryAccountWizard
             open={isLocalAccountModalOpen}
             onOpenChange={(open) => {
                 if (!open) {

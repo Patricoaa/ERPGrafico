@@ -1259,7 +1259,9 @@ class PaymentMethod(models.Model):
         Type.CREDIT_CARD: [TreasuryAccount.Type.DEBIT_CARD, TreasuryAccount.Type.CREDIT_CARD, TreasuryAccount.Type.CHECKING],
         Type.CARD_TERMINAL: [TreasuryAccount.Type.DEBIT_CARD, TreasuryAccount.Type.CREDIT_CARD, TreasuryAccount.Type.CHECKING],
         Type.TRANSFER: [TreasuryAccount.Type.CHECKING],
-        Type.CHECK: [TreasuryAccount.Type.CHECKING, TreasuryAccount.Type.CHECKBOOK],
+        # CHECKBOOK deprecado como tipo de cuenta: los cheques se giran contra
+        # una cuenta corriente (CHECKING). Ver convergencia de datos en treasury.
+        Type.CHECK: [TreasuryAccount.Type.CHECKING],
     }
 
     def __str__(self):

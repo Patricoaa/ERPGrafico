@@ -26,6 +26,10 @@ export interface TerminalCreatePayload {
 
 export type TerminalUpdatePayload = Partial<TerminalCreatePayload>
 
+// Capa 1 — ubicación del dinero. Alta nueva sólo crea CASH / CHECKING / CREDIT_CARD
+// (vía TreasuryAccountWizard). DEBIT_CARD y CHECKBOOK están DEPRECADOS como tipos de
+// cuenta: son formas de pago (PaymentMethod) sobre una CHECKING. Se conservan aquí
+// solo para mostrar cuentas legacy aún no convergidas (ver command converge_treasury_accounts).
 export type TreasuryAccountType = 'CHECKING' | 'CREDIT_CARD' | 'DEBIT_CARD' | 'CHECKBOOK' | 'CASH' | 'BRIDGE' | 'MERCHANT'
 
 // Treasury Account types
@@ -64,6 +68,20 @@ export interface TreasuryAccountCreatePayload {
 }
 
 export type TreasuryAccountUpdatePayload = Partial<TreasuryAccountCreatePayload>
+
+/** Payload del asistente de alta: crea la cuenta + sus formas de pago en un paso. */
+export interface TreasuryAccountProvisionPayload {
+    name: string
+    code?: string | null
+    currency: string
+    account: number | null
+    account_type: TreasuryAccountType
+    bank?: number | null
+    account_number?: string | null
+    /** Tenders a auto-provisionar (PaymentMethod.method_type). Vacío = defaults del tipo. */
+    tenders: string[]
+    usage: 'sales' | 'purchases' | 'both'
+}
 
 export interface PaymentMethod {
     id: number

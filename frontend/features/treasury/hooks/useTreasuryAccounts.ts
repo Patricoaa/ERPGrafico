@@ -2,11 +2,34 @@ import { showApiError } from "@/lib/errors"
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { treasuryApi } from '../api/treasuryApi'
-import { TREASURY_ACCOUNTS_KEYS } from './queryKeys'
+import { TREASURY_ACCOUNTS_KEYS, PAYMENT_METHODS_KEYS } from './queryKeys'
 import { useRealtime } from '@/features/realtime'
-import type { TreasuryAccount, TreasuryAccountCreatePayload, TreasuryAccountUpdatePayload } from '../types'
+import type { TreasuryAccount, TreasuryAccountCreatePayload, TreasuryAccountUpdatePayload, TreasuryAccountProvisionPayload } from '../types'
 
 export { TREASURY_ACCOUNTS_KEYS }
+
+/**
+ * Asistente de alta: crea una cuenta y auto-provisiona sus formas de pago.
+ * Invalida cuentas + métodos de pago (ambos cambian en la misma operación).
+ */
+export function useProvisionAccount() {
+    const queryClient = useQueryClient()
+    const { markLocalMutation } = useRealtime()
+
+    return useMutation({
+        mutationFn: (payload: TreasuryAccountProvisionPayload) =>
+            treasuryApi.provisionAccount(payload),
+        onSuccess: () => {
+            markLocalMutation()
+            toast.success('Cuenta creada con sus formas de pago')
+            queryClient.invalidateQueries({ queryKey: TREASURY_ACCOUNTS_KEYS.all })
+            queryClient.invalidateQueries({ queryKey: PAYMENT_METHODS_KEYS.all })
+        },
+        onError: (error: Error) => {
+            showApiError(error, 'Error al crear la cuenta')
+        },
+    })
+}
 
 export interface TreasuryAccountFilters {
     name?: string
