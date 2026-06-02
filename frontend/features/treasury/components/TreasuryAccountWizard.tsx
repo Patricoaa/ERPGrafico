@@ -165,10 +165,12 @@ export function TreasuryAccountWizard({ open, onOpenChange, onSuccess }: Treasur
                             />
                         </div>
                         <AccountSelector
-                            label="Cuenta Contable (Efectivo y Equivalentes — 1.1.01)"
+                            label={accountType === "CREDIT_CARD"
+                                ? "Cuenta de Pasivo — Tarjeta por pagar (2.x)"
+                                : "Cuenta Contable (Efectivo y Equivalentes — 1.1.01)"}
                             value={accountId}
                             onChange={setAccountId}
-                            accountType="ASSET"
+                            accountType={accountType === "CREDIT_CARD" ? "LIABILITY" : "ASSET"}
                         />
                         {requiresBank && (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

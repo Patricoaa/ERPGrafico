@@ -34,7 +34,7 @@ Cambios concretos:
 - **Plomería interna oculta.** `settlement_account` y las cuentas `BRIDGE` no se exponen al operador (se auto-resuelven).
 - **Convergencia de datos.** El command `converge_treasury_accounts` (dry-run por defecto, `--apply` para persistir; defensivo e idempotente) re-tipa cuentas `DEBIT_CARD`/`CHECKBOOK` a `CHECKING` y les crea su `PaymentMethod`. Las que no pueden convertirse (p. ej. chequera sin banco/número) se omiten y reportan para resolución manual.
 
-**Fuera de alcance (deferido):** corregir el mapeo contable de `CREDIT_CARD` para que apunte a un **pasivo** (2.x) en vez de `1.1.01`. Se trata en un mini-roadmap separado.
+**Fuera de alcance (deferido) — ✅ RESUELTO 2026-06-01:** corregir el mapeo contable de `CREDIT_CARD` para que apunte a un **pasivo** (2.x) en vez de `1.1.01`. Implementado: `TreasuryAccount.clean()` exige que una cuenta `CREDIT_CARD` se vincule a una cuenta `AccountType.LIABILITY` (los tipos cash-equivalent siguen exigiendo `1.1.01`); el FK `account` admite ASSET+LIABILITY; el `AccountSelector` del wizard/drawer filtra a pasivo cuando el tipo es tarjeta de crédito. Migración `0048` (AlterField no-op) + tests en `test_credit_card_liability.py`.
 
 ## Consequences
 

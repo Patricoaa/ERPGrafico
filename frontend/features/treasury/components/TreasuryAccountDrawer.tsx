@@ -343,11 +343,11 @@ export function TreasuryAccountDrawer({ open, onOpenChange, accountId, onSuccess
                                     name="account"
                                     render={({ field, fieldState }) => (
                                         <AccountSelector
-                                            label="Cuenta del Plan de Cuentas"
+                                            label={type === 'CREDIT_CARD' ? "Cuenta de Pasivo (Tarjeta por pagar)" : "Cuenta del Plan de Cuentas"}
                                             value={field.value}
                                             onChange={field.onChange}
-                                            accountType="ASSET"
-                                            isReconcilable={true}
+                                            accountType={type === 'CREDIT_CARD' ? "LIABILITY" : "ASSET"}
+                                            isReconcilable={type === 'CREDIT_CARD' ? undefined : true}
                                             placeholder="Seleccione cuenta..."
                                             disabled={isSystemManaged}
                                             error={fieldState.error?.message}

@@ -414,11 +414,11 @@ class TreasuryAccount(models.Model):
     code = models.CharField(_("Código"), max_length=20, blank=True, null=True)
     currency = models.CharField(_("Moneda"), max_length=3, default='CLP')
 
-    # Linked financial account (Asset -> Bank/Cash/Bridge)
+    # Linked financial account: Asset (Bank/Cash/Bridge) o Liability (tarjeta de crédito propia).
     account = models.ForeignKey(
         Account,
         on_delete=models.PROTECT,
-        limit_choices_to={'account_type': AccountType.ASSET},
+        limit_choices_to={'account_type__in': [AccountType.ASSET, AccountType.LIABILITY]},
         related_name='treasury_accounts',
         verbose_name=_("Cuenta Contable")
     )
@@ -484,8 +484,16 @@ class TreasuryAccount(models.Model):
                     'account': _("La cuenta contable debe ser una cuenta auxiliar (hoja) sin subcuentas.")
                 })
             
-            # 2. Account prefix validation: 1.1.01 for cash-equivalent; BRIDGE/MERCHANT use other AR/clearing prefixes.
-            if self.account_type not in self._NON_CASH_EQUIVALENT_TYPES:
+            # 2. Account nature validation by treasury type:
+            #    - CREDIT_CARD: tarjeta propia = PASIVO (deuda rotativa), no efectivo.
+            #    - cash-equivalent (CASH/CHECKING/legacy): 'Efectivo y Equivalentes' (1.1.01).
+            #    - BRIDGE/MERCHANT: otros activos de clearing/AR (sin check de prefijo).
+            if self.account_type == self.Type.CREDIT_CARD:
+                if self.account.account_type != AccountType.LIABILITY:
+                    raise ValidationError({
+                        'account': _("La tarjeta de crédito propia debe vincularse a una cuenta de PASIVO (deuda), no a Efectivo.")
+                    })
+            elif self.account_type not in self._NON_CASH_EQUIVALENT_TYPES:
                 if not self.account.code.startswith('1.1.01'):
                     raise ValidationError({
                         'account': _("La cuenta contable debe pertenecer al grupo de 'Efectivo y Equivalentes' (Prefijo 1.1.01).")
