@@ -137,6 +137,18 @@ class TreasuryAccountViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         if err: return err
         return super().destroy(request, *args, **kwargs)
 
+    @action(detail=False, methods=['post'])
+    def provision(self, request):
+        """Asistente de alta: crea una cuenta + sus métodos de pago (auto-provisión)."""
+        from .provisioning_service import TreasuryProvisioningService
+        try:
+            account, _methods = TreasuryProvisioningService.provision_from_payload(
+                request.data, created_by=request.user
+            )
+        except ValidationError as e:
+            return Response({'detail': e.messages}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(self.get_serializer(account).data, status=status.HTTP_201_CREATED)
+
 
 class PaymentTerminalProviderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = PaymentTerminalProvider.objects.all().order_by('name')

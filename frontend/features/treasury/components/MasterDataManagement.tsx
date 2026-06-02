@@ -5,8 +5,9 @@ import { DataTable } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { Button } from "@/components/ui/button"
 import {
-    Plus, CreditCard, Landmark, Lock
+    Plus, CreditCard, Landmark, Lock, ChevronDown
 } from "lucide-react"
+import { cn } from "@/lib/utils"
 import { DataCell, createActionsColumn } from '@/components/shared'
 import { ActivitySidebar } from "@/features/audit/components"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
@@ -484,6 +485,8 @@ function PaymentMethodModal({ open, onOpenChange, method, onSuccess }: PaymentMe
     const { createMethod, updateMethod, isCreating, isUpdating } = usePaymentMethods()
     const isSaving = isCreating || isUpdating
 
+    const [showAdvanced, setShowAdvanced] = useState(false)
+
     const form = useForm<PaymentMethodFormValues>({
         resolver: zodResolver(paymentMethodSchema) as any,
         defaultValues: {
@@ -498,6 +501,7 @@ function PaymentMethodModal({ open, onOpenChange, method, onSuccess }: PaymentMe
 
     useEffect(() => {
         if (open) {
+            setShowAdvanced(false)
             const acc = method?.treasury_account
             const accountId = acc ? (typeof acc === 'object' ? (acc as any).id.toString() : acc.toString()) : ""
 
@@ -511,6 +515,24 @@ function PaymentMethodModal({ open, onOpenChange, method, onSuccess }: PaymentMe
             })
         }
     }, [open, method, form])
+
+    // Al crear, el uso (ventas/compras) se deriva del tipo; el usuario no está obligado
+    // a configurarlo (queda en "Avanzado"). Débito/crédito empresa → solo compras;
+    // terminal → solo ventas; resto → ambos.
+    const watchedType = form.watch("method_type")
+    useEffect(() => {
+        if (method) return // editar: respetar lo guardado
+        if (watchedType === "DEBIT_CARD" || watchedType === "CREDIT_CARD") {
+            form.setValue("allow_for_sales", false)
+            form.setValue("allow_for_purchases", true)
+        } else if (watchedType === "CARD_TERMINAL") {
+            form.setValue("allow_for_sales", true)
+            form.setValue("allow_for_purchases", false)
+        } else {
+            form.setValue("allow_for_sales", true)
+            form.setValue("allow_for_purchases", true)
+        }
+    }, [watchedType, method, form])
 
     const onSubmit = async (data: PaymentMethodFormValues) => {
         try {
@@ -626,31 +648,48 @@ function PaymentMethodModal({ open, onOpenChange, method, onSuccess }: PaymentMe
                             </div>
 
                             <div className="col-span-4">
-                                <FormSection title="Permisos de Uso" icon={Lock} />
-                                <FormField
-                                    control={form.control}
-                                    name="allow_for_sales"
-                                    render={({ field }) => (
-                                        <div className="pt-2">
-                                            <MultiSelectTagInput
-                                                label="Habilitado para"
-                                                options={[
-                                                    { label: "Ventas", value: "sales" },
-                                                    { label: "Compras", value: "purchases" }
-                                                ]}
-                                                value={[
-                                                    ...(form.watch("allow_for_sales") ? ["sales"] : []),
-                                                    ...(form.watch("allow_for_purchases") ? ["purchases"] : [])
-                                                ]}
-                                                onChange={(vals) => {
-                                                    form.setValue("allow_for_sales", vals.includes("sales"))
-                                                    form.setValue("allow_for_purchases", vals.includes("purchases"))
-                                                }}
-                                                placeholder="Defina dónde se permite este método..."
-                                            />
-                                        </div>
-                                    )}
-                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowAdvanced((v) => !v)}
+                                    className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors"
+                                >
+                                    <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", showAdvanced && "rotate-180")} />
+                                    Avanzado · Permisos de uso
+                                </button>
+                                {!showAdvanced && (
+                                    <p className="text-[11px] text-muted-foreground mt-1 ml-5">
+                                        Por defecto se deriva del tipo. Ábrelo solo si necesitas restringir ventas/compras.
+                                    </p>
+                                )}
+                                {showAdvanced && (
+                                    <div className="pt-3">
+                                        <FormSection title="Permisos de Uso" icon={Lock} />
+                                        <FormField
+                                            control={form.control}
+                                            name="allow_for_sales"
+                                            render={() => (
+                                                <div className="pt-2">
+                                                    <MultiSelectTagInput
+                                                        label="Habilitado para"
+                                                        options={[
+                                                            { label: "Ventas", value: "sales" },
+                                                            { label: "Compras", value: "purchases" }
+                                                        ]}
+                                                        value={[
+                                                            ...(form.watch("allow_for_sales") ? ["sales"] : []),
+                                                            ...(form.watch("allow_for_purchases") ? ["purchases"] : [])
+                                                        ]}
+                                                        onChange={(vals) => {
+                                                            form.setValue("allow_for_sales", vals.includes("sales"))
+                                                            form.setValue("allow_for_purchases", vals.includes("purchases"))
+                                                        }}
+                                                        placeholder="Defina dónde se permite este método..."
+                                                    />
+                                                </div>
+                                            )}
+                                        />
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </form>

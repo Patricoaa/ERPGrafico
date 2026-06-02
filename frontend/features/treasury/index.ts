@@ -28,4 +28,5 @@ export * from './components/MasterDataManagement'
 export * from './components/PaymentModal'
 export * from './components/MonthlyInvoiceModal'
 export * from './components/TreasuryAccountDrawer'
+export * from './components/TreasuryAccountWizard'
 

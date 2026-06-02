@@ -7,6 +7,7 @@ import type {
     TreasuryAccount,
     TreasuryAccountCreatePayload,
     TreasuryAccountUpdatePayload,
+    TreasuryAccountProvisionPayload,
     PaymentMethod,
     PaymentTerminalDevice,
     PaymentTerminalProvider,
@@ -123,6 +124,11 @@ export const treasuryApi = {
 
     createAccount: async (payload: TreasuryAccountCreatePayload): Promise<TreasuryAccount> => {
         const { data } = await api.post<TreasuryAccount>('/treasury/accounts/', payload)
+        return data
+    },
+
+    provisionAccount: async (payload: TreasuryAccountProvisionPayload): Promise<TreasuryAccount> => {
+        const { data } = await api.post<TreasuryAccount>('/treasury/accounts/provision/', payload)
         return data
     },
 
