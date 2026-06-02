@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.1.23](https://github.com/Patricoaa/ERPGrafico/compare/v0.1.22...v0.1.23) (2026-06-02)
+
+
+### ✨ Features
+
+* **search:** texto libre sin prefijo + sugerencia de búsqueda general ([b835f4f](https://github.com/Patricoaa/ERPGrafico/commit/b835f4fe45c9a9b3a24b1a013f1c0eea2f1fe524))
+
 ### [0.1.22](https://github.com/Patricoaa/ERPGrafico/compare/v0.1.21...v0.1.22) (2026-06-01)
 
 
