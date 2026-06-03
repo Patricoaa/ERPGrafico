@@ -293,6 +293,39 @@ Una fila por mes del calendario de amortización. Backend: `treasury.LoanInstall
 `Notification` tipo `LOAN_INSTALLMENT_UPCOMING` a superusuarios activos.
 Dedup por día vía `Notification.data.target_date` (ISO).
 
+## CreditCardStatement (Estado de Cuenta Tarjeta de Crédito)
+
+Estado de cuenta mensual de la tarjeta de crédito propia.
+Backend: `treasury.CreditCardStatement`. Lifecycle gobernado por
+`treasury.card_service.CardService` (ADR-0034).
+
+| Status | Intent | Transitions allowed to | Acción de servicio |
+|--------|--------|------------------------|--------------------|
+| `OPEN` | `warning` | `PAID`, `OVERDUE`, `CANCELED` | (inicial tras crear el statement) |
+| `PAID` | `success` | — (terminal) | `pay_statement()` (TRANSFER banco→tarjeta) |
+| `OVERDUE` | `destructive` | `PAID`, `CANCELED` | `mark_overdue_card_statements` (BEAT diario, F3.7 futuro) |
+| `CANCELED` | `neutral` | — (terminal) | Cancelación manual del statement |
+
+**Contabilidad:**
+- Las **compras con tarjeta** se modelan como `TreasuryMovement` OUTBOUND
+  desde la `card_account` (LIABILITY): **acredita** el pasivo (sube la
+  deuda) + **debita** el proveedor/gasto. Ver F3.1.
+- El **pago del estado de cuenta** es un `TreasuryMovement` TRANSFER desde
+  la cuenta bancaria (CHECKING/CASH) hacia la `card_account`:
+  **debita** el pasivo (baja la deuda) + **acredita** el banco. F3.4.
+- Los **intereses y comisiones** del statement se imputan con un
+  `TreasuryMovement` ADJUSTMENT que sube el pasivo y debita el gasto
+  financiero (cuenta configurable en `AccountingSettings`, F5.1). F3.3.
+
+**Conversión UF→CLP:** Por ahora el statement se carga en CLP directo
+(el cargo de la tarjeta en CLP). La conversión UF se hereda del lado
+de la compra (F2.7), no del statement.
+
+**Edit restrictions:** `status` y `payment_movement`/`payment_account`/
+`paid_at` inmutables salvo por `CardService`. `billed_amount` y los
+cargos (`interest_charged`/`fees_charged`) solo editables mientras el
+statement esté en `OPEN` (no pagado, no anulado).
+
 ## Subscription
 
 | Status | Intent | Transitions allowed to |

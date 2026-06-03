@@ -331,6 +331,17 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     partnerField: (data) => data.loan_display_id || '---',
     viewPolicy: { availableViews: ['list'], defaultView: 'list', cardComponent: 'entity', gridLayout: 'single-column' },
   },
+  'treasury.creditcardstatement': {
+    label: 'treasury.creditcardstatement',
+    title: 'Estado de Cuenta Tarjeta',
+    titlePlural: 'Estados de Cuenta Tarjeta',
+    icon: CreditCard,
+    shortTemplate: 'EST-{id}',
+    listUrl: '/treasury/accounts',
+    detailUrlPattern: '/treasury/accounts?tab=credit-cards&statement={id}',
+    partnerField: (data) => data.card_account_name || '---',
+    viewPolicy: { availableViews: ['list'], defaultView: 'list', cardComponent: 'entity', gridLayout: 'single-column' },
+  },
   'accounting.fiscalyear': {
     label: 'accounting.fiscalyear',
     title: 'Ejercicio Contable',
@@ -722,6 +733,7 @@ export const LEGACY_TYPE_LABEL_MAP: Record<string, string> = {
   'terminal_batch':  'treasury.terminalbatch',
   'bank_statement':  'treasury.bankstatement',
   'check':           'treasury.check',
+  'credit_card_statement': 'treasury.creditcardstatement',
   'pos_session':     'pos.session',
   // Tax
   'f29_declaration': 'tax.f29declaration',
@@ -755,6 +767,9 @@ export function detectEntityLabel(text: string): string | null {
   if (t.includes('CAR_') || t.includes('CAR-')) return 'treasury.bankstatement';
   if (t.includes('TRX_') || t.includes('TRX-')) return 'treasury.treasurymovement';
   if (t.includes('CHQ_') || t.includes('CHQ-')) return 'treasury.check';
+  if (t.includes('EST_') || t.includes('EST-')) return 'treasury.creditcardstatement';
+  if (t.includes('CRE_') || t.includes('CRE-')) return 'treasury.bankloan';
+  if (t.includes('CUO_') || t.includes('CUO-')) return 'treasury.loaninstallment';
   if (t.includes('MOV_') || t.includes('MOV-')) return 'inventory.stockmove';
   if (t.includes('AS_') || t.includes('AS-')) return 'accounting.journalentry';
   
