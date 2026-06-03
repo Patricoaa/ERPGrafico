@@ -5,6 +5,7 @@ import {
   List, LayoutDashboard, LayoutGrid, Kanban, CalendarDays, ClipboardCheck,
   Building2, Smartphone, CreditCard, Calendar, CalendarX2, Repeat,
   Tag, Percent, Ruler, PieChart, HandCoins, ClipboardList, PackageCheck,
+  CheckSquare,
   type LucideIcon 
 } from 'lucide-react';
 
@@ -295,6 +296,17 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: 'LIQ-{id}',
     listUrl: '/treasury/terminal-cobro?tab=batches',
     detailUrlPattern: '/treasury/terminal-cobro?tab=batches&selected={id}',
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', gridLayout: 'single-column' },
+  },
+  'treasury.check': {
+    label: 'treasury.check',
+    title: 'Cheque',
+    titlePlural: 'Cheques',
+    icon: CheckSquare,
+    shortTemplate: 'CHQ-{id}',
+    listUrl: '/treasury/checks',
+    detailUrlPattern: '/treasury/checks?selected={id}',
+    partnerField: (data) => data.counterparty_name || data.drawer_name || '---',
     viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', gridLayout: 'single-column' },
   },
   'accounting.fiscalyear': {
@@ -687,6 +699,7 @@ export const LEGACY_TYPE_LABEL_MAP: Record<string, string> = {
   'cash_movement':   'treasury.treasurymovement',
   'terminal_batch':  'treasury.terminalbatch',
   'bank_statement':  'treasury.bankstatement',
+  'check':           'treasury.check',
   'pos_session':     'pos.session',
   // Tax
   'f29_declaration': 'tax.f29declaration',
@@ -719,6 +732,7 @@ export function detectEntityLabel(text: string): string | null {
   if (t.includes('USR_') || t.includes('USR-')) return 'core.user';
   if (t.includes('CAR_') || t.includes('CAR-')) return 'treasury.bankstatement';
   if (t.includes('TRX_') || t.includes('TRX-')) return 'treasury.treasurymovement';
+  if (t.includes('CHQ_') || t.includes('CHQ-')) return 'treasury.check';
   if (t.includes('MOV_') || t.includes('MOV-')) return 'inventory.stockmove';
   if (t.includes('AS_') || t.includes('AS-')) return 'accounting.journalentry';
   

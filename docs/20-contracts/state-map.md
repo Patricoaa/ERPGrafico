@@ -219,6 +219,31 @@ No explicit status field. Edit restrictions based on journal_entry status:
 
 **Edit restrictions:** Campos inmutables: `settlement_journal_entry`, `bank_statement_line`, `supplier_invoice`.
 
+## Check (Cheques Recibidos de Terceros)
+
+Cheque de tercero (cliente u otro pagador) en cartera. Backend: `treasury.Check`.
+Lifecycle gobernado por `treasury.check_service.CheckService` (ADR-0032).
+
+| Status | Intent | Transitions allowed to | Acción de servicio |
+|--------|--------|------------------------|--------------------|
+| `IN_PORTFOLIO` | `info` | `DEPOSITED`, `VOIDED` | `receive()` (entrada) |
+| `DEPOSITED` | `warning` | `CLEARED`, `BOUNCED` | `deposit()` |
+| `CLEARED` | `success` | — (terminal) | `clear()` |
+| `BOUNCED` | `destructive` | — (terminal) | `bounce()` (con reversas contables) |
+| `VOIDED` | `destructive` | — (terminal) | `void()` (solo desde `IN_PORTFOLIO`) |
+
+**Contabilidad:**
+- `receive()`: INBOUND a la `TreasuryAccount` puente `CHECK_PORTFOLIO`
+  (auto-provisionada desde `AccountingSettings.check_portfolio_account`).
+- `deposit()`: TRANSFER puente → cuenta bancaria.
+- `bounce()`: revierte depósito y recepción (2 movimientos OUTBOUND/TRANSFER) y
+  reinstala el documento original como impago.
+- `void()`: revierte solo la recepción.
+
+**Edit restrictions:** Cheque inmutable salvo `notes` y campos de auditoría
+(`deposited_at`/`cleared_at`/`bounced_at`); cambios de estado pasan exclusivamente
+por `CheckService`.
+
 ## Subscription
 
 | Status | Intent | Transitions allowed to |
