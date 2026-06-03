@@ -7,9 +7,11 @@ import {
 import { GenericWizard, LabeledInput, LabeledSelect, FormSection, MultiSelectTagInput } from "@/components/shared"
 import type { WizardStep } from "@/components/shared"
 import { Button } from "@/components/ui/button"
+import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { useBanks } from "../hooks/useMasterData"
 import { useProvisionAccount, useTreasuryAccounts } from "../hooks/useTreasuryAccounts"
 import { useLoanMutations } from "../loans"
+import { useAccountSearch } from "@/features/accounting/hooks/useAccountSearch"
 
 // ─── Local types ─────────────────────────────────────────────────────────────
 
@@ -18,6 +20,8 @@ interface NewCheckingAccount {
     accountNumber: string
     tenders: string[]    // CHECK, TRANSFER, DEBIT_CARD
     currency: string
+    accountId: string | null
+    accountLabel: string
 }
 
 interface NewCreditCard {
@@ -41,7 +45,7 @@ interface NewLoan {
 }
 
 function emptyAccount(): NewCheckingAccount {
-    return { name: "", accountNumber: "", tenders: [], currency: "CLP" }
+    return { name: "", accountNumber: "", tenders: [], currency: "CLP", accountId: null, accountLabel: "" }
 }
 
 function emptyCard(): NewCreditCard {
@@ -125,6 +129,7 @@ export function BankCreationWizard({ open, onOpenChange, onSuccess }: BankCreati
     const { mutateAsync: provision, isPending: isProvisioning } = useProvisionAccount()
     const { create: createLoan, isCreating: isLoanCreating } = useLoanMutations()
     const { accounts: existingAccounts } = useTreasuryAccounts()
+    const { accounts: allAccountingAccounts } = useAccountSearch()
 
     const isCreating = isBankCreating || isProvisioning || isLoanCreating
 
@@ -212,7 +217,7 @@ export function BankCreationWizard({ open, onOpenChange, onSuccess }: BankCreati
                     bank: createdBankId,
                     account_number: acc.accountNumber.trim() || null,
                     currency: acc.currency,
-                    account: null,
+                    account: acc.accountId ? parseInt(acc.accountId) : null,
                     tenders: acc.tenders,
                     usage: "both",
                 })
@@ -334,6 +339,12 @@ export function BankCreationWizard({ open, onOpenChange, onSuccess }: BankCreati
                                         value={acc.currency}
                                         onChange={(v) => updateAccount(i, { currency: v })}
                                         options={CURRENCY_OPTIONS}
+                                    />
+                                    <AccountSelector
+                                        label="Cuenta Contable"
+                                        value={acc.accountId}
+                                        onChange={(v) => updateAccount(i, { accountId: v })}
+                                        accountType="ASSET"
                                     />
                                     <MultiSelectTagInput
                                         label="Habilitar formas de pago"
@@ -533,15 +544,23 @@ export function BankCreationWizard({ open, onOpenChange, onSuccess }: BankCreati
                         </p>
                         <div className="rounded-lg border border-border/50 divide-y divide-border/40 overflow-hidden text-sm">
                             <SummaryRow icon={Landmark} label="Banco" value={bankName} />
-                            {checkingAccounts.filter((a) => a.name).map((a, i) => (
-                                <SummaryRow
-                                    key={i}
-                                    icon={Landmark}
-                                    label="Cuenta corriente"
-                                    value={a.name}
-                                    badge={a.tenders.length > 0 ? a.tenders.map((t) => TENDER_OPTIONS.find((o) => o.value === t)?.label ?? t).join(", ") : undefined}
-                                />
-                            ))}
+                            {checkingAccounts.filter((a) => a.name).map((a, i) => {
+                                const matchedAccount = a.accountId
+                                    ? allAccountingAccounts.find((acc) => acc.id.toString() === a.accountId)
+                                    : null
+                                const accountingLabel = matchedAccount
+                                    ? `${matchedAccount.code} - ${matchedAccount.name}`
+                                    : null
+                                return (
+                                    <SummaryRow
+                                        key={i}
+                                        icon={Landmark}
+                                        label="Cuenta corriente"
+                                        value={a.name}
+                                        badge={accountingLabel || (a.tenders.length > 0 ? a.tenders.map((t) => TENDER_OPTIONS.find((o) => o.value === t)?.label ?? t).join(", ") : undefined)}
+                                    />
+                                )
+                            })}
                             {creditCards.filter((c) => c.name).map((c, i) => (
                                 <SummaryRow key={i} icon={CreditCard} label="Tarjeta crédito" value={c.name} />
                             ))}
@@ -565,7 +584,7 @@ export function BankCreationWizard({ open, onOpenChange, onSuccess }: BankCreati
             },
         ],
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        [bankName, bankCode, bankSwift, checkingAccounts, creditCards, loans, isCreating, disbursementOptions, liabilityOptions, loansValid],
+        [bankName, bankCode, bankSwift, checkingAccounts, creditCards, loans, isCreating, disbursementOptions, liabilityOptions, loansValid, allAccountingAccounts],
     )
 
     return (
