@@ -107,14 +107,14 @@ export function TreasuryAccountDrawer({ open, onOpenChange, accountId, onSuccess
     }, [open, accountId, form])
 
     const requiresBank = (accountType: string) => {
-        return ['CHECKING', 'CREDIT_CARD', 'DEBIT_CARD'].includes(accountType)
+        return ['CHECKING', 'CREDIT_CARD'].includes(accountType)
     }
 
     const onSubmit = async (data: TreasuryAccountFormValues) => {
         if (isSystemManaged) return
         try {
             const allowsCash = data.account_type === 'CASH'
-            const allowsCard = ['CHECKING', 'CREDIT_CARD', 'DEBIT_CARD'].includes(data.account_type)
+            const allowsCard = ['CHECKING', 'CREDIT_CARD'].includes(data.account_type)
             const allowsTransfer = ['CHECKING'].includes(data.account_type)
 
             const payload = {
@@ -269,9 +269,7 @@ export function TreasuryAccountDrawer({ open, onOpenChange, accountId, onSuccess
                                             options={[
                                                 { value: "CASH", label: "Caja Física (Efectivo)" },
                                                 { value: "CHECKING", label: "Cuenta Bancaria (Corriente/Vista)" },
-                                                { value: "DEBIT_CARD", label: "Tarjeta de Débito (Cta. Propia)" },
                                                 { value: "CREDIT_CARD", label: "Tarjeta de Crédito (Cta. Propia)" },
-                                                { value: "CHECKBOOK", label: "Chequera / Instrumentos" },
                                                 { value: "BRIDGE", label: "Cuenta Puente" },
                                                 { value: "MERCHANT", label: "Cuenta Recaudadora (Pasarela/Wallet)" }
                                             ]}
