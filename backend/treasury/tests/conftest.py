@@ -41,6 +41,12 @@ def pytest_configure(config):  # noqa: ARG001 — firma de hook pytest
     }
     settings.CELERY_TASK_ALWAYS_EAGER = True
     settings.CELERY_TASK_EAGER_PROPAGATES = True
+    # Sustituir el channel layer (channels_redis) por InMemory para que
+    # signals como workflow.signals.push_notification_to_channels no
+    # intenten conectar a Redis durante los tests.
+    settings.CHANNEL_LAYERS = {
+        "default": {"BACKEND": "channels.layers.InMemoryChannelLayer"},
+    }
 
 
 import pytest  # noqa: E402
