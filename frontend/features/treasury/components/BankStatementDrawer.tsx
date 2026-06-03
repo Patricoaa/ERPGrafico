@@ -1,6 +1,6 @@
 "use client"
 
-import { Drawer, SkeletonShell, StatusBadge } from "@/components/shared"
+import { Drawer, MoneyDisplay, SkeletonShell, StatusBadge } from "@/components/shared"
 import { BookOpen } from "lucide-react"
 import { useBankStatement } from "../hooks/useBankStatement"
 
@@ -50,11 +50,11 @@ export function BankStatementDrawer({ statementId, open, onOpenChange }: BankSta
                         </div>
                         <div>
                             <span className="text-muted-foreground">Saldo Inicial</span>
-                            <p className="font-medium">${Number(statement.opening_balance || 0).toLocaleString()}</p>
+                            <p className="font-medium"><MoneyDisplay amount={statement.opening_balance || 0} inline /></p>
                         </div>
                         <div>
                             <span className="text-muted-foreground">Saldo Final</span>
-                            <p className="font-medium">${Number(statement.closing_balance || 0).toLocaleString()}</p>
+                            <p className="font-medium"><MoneyDisplay amount={statement.closing_balance || 0} inline /></p>
                         </div>
                     </div>
                     {statement.reconciliation_progress != null && (

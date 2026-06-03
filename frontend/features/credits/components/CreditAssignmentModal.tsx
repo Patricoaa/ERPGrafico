@@ -14,7 +14,7 @@ import {
     FormField,
     FormItem,
 } from "@/components/ui/form"
-import { ActionSlideButton, BaseModal, CancelButton, FormFooter, LabeledInput } from '@/components/shared'
+import { ActionSlideButton, BaseModal, CancelButton, FormFooter, LabeledInput, MoneyDisplay } from '@/components/shared'
 
 import { useContactMutations } from "@/features/contacts/hooks/useContacts"
 import { CreditContact } from '@/features/credits/api/creditsApi'
@@ -83,8 +83,6 @@ export default function CreditAssignmentModal({
         }
     }
 
-    const fmt = (val: number | string) => Number(val).toLocaleString("es-CL", { style: "currency", currency: "CLP", maximumFractionDigits: 0 })
-
     const activeContact = selectedContact || (initialContact as unknown as Contact)
 
     return (
@@ -135,14 +133,14 @@ export default function CreditAssignmentModal({
                                         <TrendingUp className="h-4 w-4 text-success mb-1" />
                                         <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Disponible</span>
                                         <span className="text-lg font-mono font-black text-success">
-                                            {fmt((activeContact as any).credit_available || 0)}
+                                            <MoneyDisplay amount={(activeContact as any).credit_available || 0} inline />
                                         </span>
                                     </div>
                                     <div className="p-4 rounded-lg border bg-muted/30 flex flex-col gap-1 items-center justify-center">
                                         <Banknote className="h-4 w-4 text-destructive mb-1" />
                                         <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Utilizado</span>
                                         <span className="text-lg font-mono font-black text-destructive">
-                                            {fmt((activeContact as any).credit_balance_used || 0)}
+                                            <MoneyDisplay amount={(activeContact as any).credit_balance_used || 0} inline />
                                         </span>
                                     </div>
                                 </div>

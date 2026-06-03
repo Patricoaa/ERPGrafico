@@ -19,6 +19,7 @@ import { useContact, useContactCreditLedger } from "@/features/contacts"
 import { useAccountingSettings } from "@/features/accounting"
 import { useInvoices } from "@/features/billing"
 import { getTask } from "@/features/workflow"
+import { formatMoney } from "@/lib/money"
 
 import {Check, ChevronRight, ChevronLeft, Loader2, ShoppingCart, AlertCircle, ShieldAlert, CheckCircle2, FileWarning, Truck} from "lucide-react"
 import {User} from "lucide-react"
@@ -412,7 +413,7 @@ export function SalesCheckoutWizardContent({
                             const requiredCredit = currentTotal - amountPaid;
                             const creditAvailable = Number(selectedCustomer?.credit_available || 0);
                             if (requiredCredit > creditAvailable) {
-                                setCreditApprovalReason(`Crédito insuficiente (Disponible: $${creditAvailable.toLocaleString()}).`);
+                                setCreditApprovalReason(`Crédito insuficiente (Disponible: ${formatMoney(creditAvailable)}).`);
                                 setCreditApprovalRequired(true);
                                 return { isValid: false, requireApproval: true };
                             }

@@ -2,7 +2,7 @@
 
 import { useDeviceContext } from "@/hooks/useDeviceContext"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
-import { ContactCardGrid } from "@/components/shared"
+import { ContactCardGrid, MoneyDisplay } from "@/components/shared"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { Alert } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
@@ -62,9 +62,7 @@ export function Step1_Customer({
                                 <span className="text-xs text-warning-foreground/80 leading-none">
                                     Total:{" "}
                                     <span className="font-bold font-mono">
-                                        ${pendingDebts
-                                            .reduce((sum, d) => sum + Number(d.balance || 0), 0)
-                                            .toLocaleString("es-CL")}
+                                        <MoneyDisplay amount={pendingDebts.reduce((sum, d) => sum + Number(d.balance || 0), 0)} inline />
                                     </span>
                                 </span>
                             </div>
@@ -80,7 +78,7 @@ export function Step1_Customer({
                                 >
                                     <span className="font-mono">{formatEntityDisplay('sales.saleorder', debt)}</span>
                                     <span className="opacity-60">
-                                        ${Number(debt.balance).toLocaleString("es-CL")}
+                                        <MoneyDisplay amount={debt.balance} inline />
                                     </span>
                                     {(debt.days_overdue ?? 0) > 0 && (
                                         <span className="text-destructive font-bold ml-0.5">

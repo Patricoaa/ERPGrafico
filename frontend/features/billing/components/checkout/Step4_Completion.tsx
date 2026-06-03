@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Loader2, CheckCircle2, Wallet, ArrowRight, Printer, FileText } from "lucide-react"
 import { billingApi } from "../../api/billingApi"
 import { Card, CardContent } from "@/components/ui/card"
-import { Chip } from "@/components/shared"
+import { Chip, MoneyDisplay } from "@/components/shared"
 import { formatPlainDate } from "@/lib/utils"
 
 interface Step4_CompletionProps {
@@ -62,16 +62,16 @@ export function Step4_Completion({
                         <div className="space-y-3">
                             <div className="flex justify-between text-sm py-1">
                                 <span className="text-muted-foreground font-medium">Subtotal Neto</span>
-                                <span className="font-mono font-bold">${Number(invoice.total_net).toLocaleString()}</span>
+                                <span className="font-mono font-bold"><MoneyDisplay amount={invoice.total_net} inline /></span>
                             </div>
                             <div className="flex justify-between text-sm py-1 border-b border-dashed pb-3">
                                 <span className="text-muted-foreground font-medium">IVA (19%)</span>
-                                <span className="font-mono font-bold text-muted-foreground">${Number(invoice.total_tax).toLocaleString()}</span>
+                                <span className="font-mono font-bold text-muted-foreground"><MoneyDisplay amount={invoice.total_tax} inline /></span>
                             </div>
                             <div className="flex justify-between items-center pt-2">
                                 <span className="text-xs font-black uppercase tracking-widest text-primary">Total Documento</span>
                                 <span className="text-3xl font-black text-primary font-mono tracking-tighter">
-                                    ${Number(invoice.total).toLocaleString()}
+                                    <MoneyDisplay amount={invoice.total} inline />
                                 </span>
                             </div>
                         </div>

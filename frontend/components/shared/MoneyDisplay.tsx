@@ -9,7 +9,6 @@ interface MoneyDisplayProps {
     className?: string
     digits?: number
     inline?: boolean
-    colored?: boolean
 }
 
 export const MoneyDisplay: React.FC<MoneyDisplayProps> = ({
@@ -20,7 +19,6 @@ export const MoneyDisplay: React.FC<MoneyDisplayProps> = ({
     className,
     digits = 0,
     inline = false,
-    colored = false,
 }) => {
     if (amount === null || amount === undefined || amount === "") {
         return <span className={cn("text-muted-foreground", className)}>-</span>
@@ -50,8 +48,8 @@ export const MoneyDisplay: React.FC<MoneyDisplayProps> = ({
             className={cn(
                 "font-bold tabular-nums tracking-tight",
                 inline ? "inline" : "inline-block",
-                (showColor || colored) && isNegative && "text-expense",
-                (showColor || colored) && isPositive && "text-income",
+                showColor && isNegative && "text-expense",
+                showColor && isPositive && "text-income",
                 className
             )}
         >

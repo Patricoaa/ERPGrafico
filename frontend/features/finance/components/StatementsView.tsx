@@ -5,6 +5,7 @@ import { TabsContent } from "@/components/ui/tabs"
 import { Card, CardContent } from "@/components/ui/card"
 import { FadeIn, MoneyDisplay, ReportTable, SkeletonShell } from '@/components/shared'
 import { PageContainer } from "@/components/shared"
+import { formatMoney } from "@/lib/money"
 import { Button } from "@/components/ui/button"
 import { SlidersHorizontal, ChevronDown, GitCompare } from "lucide-react"
 import {
@@ -173,31 +174,29 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
         const pP = (p / totalSum) * 100
         const eP = (e / totalSum) * 100
 
-        const fmt = (val: number) => val.toLocaleString('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 })
-
         return (
             <div className="mb-10 overflow-hidden rounded-lg border shadow-sm">
                 <div className="h-10 w-full flex text-[10px] font-bold uppercase tracking-tighter">
                     <div
                         style={{ width: `${aP}%` }}
                         className="bg-asset text-asset-foreground flex items-center justify-center p-1 transition-all border-r border-border whitespace-nowrap overflow-hidden"
-                        title={`Activos: ${fmt(a)}`}
+                        title={`Activos: ${formatMoney(a)}`}
                     >
-                        Activos: {fmt(a)}
+                        Activos: <MoneyDisplay amount={a} inline className="text-[10px]" />
                     </div>
                     <div
                         style={{ width: `${pP}%` }}
                         className="bg-liability text-liability-foreground flex items-center justify-center p-1 transition-all border-r border-border whitespace-nowrap overflow-hidden"
-                        title={`Pasivos: ${fmt(p)}`}
+                        title={`Pasivos: ${formatMoney(p)}`}
                     >
-                        Pasivos: {fmt(p)}
+                        Pasivos: <MoneyDisplay amount={p} inline className="text-[10px]" />
                     </div>
                     <div
                         style={{ width: `${eP}%` }}
                         className="bg-primary text-primary-foreground flex items-center justify-center p-1 transition-all whitespace-nowrap overflow-hidden"
-                        title={`Patrimonio: ${fmt(e)}`}
+                        title={`Patrimonio: ${formatMoney(e)}`}
                     >
-                        Patrimonio: {fmt(e)}
+                        Patrimonio: <MoneyDisplay amount={e} inline className="text-[10px]" />
                     </div>
                 </div>
             </div>
@@ -364,14 +363,14 @@ export function StatementsView({ activeTab }: StatementsViewProps) {
                                                                 <div className="text-right">
                                                                     <div className={cn("text-[10px] uppercase font-bold opacity-70", idx === (d.sections?.length || 0) - 1 ? "text-primary-foreground" : "text-muted-foreground")}>{periodLabel || 'Actual'}</div>
                                                                     <div className="text-2xl font-black font-mono">
-                                                                        <MoneyDisplay amount={section.total} digits={0} />
+                                                                        <MoneyDisplay amount={section.total} />
                                                                     </div>
                                                                 </div>
                                                                 {showComparison && (
                                                                     <div className={cn("text-right border-l pl-12", idx === (d.sections?.length || 0) - 1 ? "border-primary-foreground/30" : "border")}>
                                                                         <div className={cn("text-[10px] uppercase font-bold opacity-70", idx === (d.sections?.length || 0) - 1 ? "text-primary-foreground" : "text-muted-foreground")}>{compPeriodLabel || 'Anterior'}</div>
                                                                         <div className={cn("text-2xl font-black font-mono opacity-80", idx === (d.sections?.length || 0) - 1 ? "text-primary-foreground" : "")}>
-                                                                            <MoneyDisplay amount={section.total_comp} digits={0} />
+                                                                            <MoneyDisplay amount={section.total_comp} />
                                                                         </div>
                                                                     </div>
                                                                 )}

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { financeApi } from "../../api/financeApi"
-import { DataCell, DataTable, EmptyState, SkeletonShell } from '@/components/shared'
+import { DataCell, DataTable, EmptyState, MoneyDisplay, SkeletonShell } from '@/components/shared'
 
 import {formatPlainDate} from "@/lib/utils"
 import type { ColumnDef } from "@tanstack/react-table"
@@ -62,7 +62,7 @@ export function SimulationResults({ rule }: { rule: Record<string, unknown> }) {
                     <div className="text-[10px] font-mono text-muted-foreground mt-0.5">
                         {formatPlainDate(row.original.line.date)} •{" "}
                         <span className="font-bold text-foreground/60">
-                            {Number(row.original.line.amount).toLocaleString("es-CL", { style: "currency", currency: "CLP", maximumFractionDigits: 0 })}
+                            <MoneyDisplay amount={row.original.line.amount} inline className="text-[10px]" />
                         </span>
                     </div>
                 </div>
@@ -78,7 +78,7 @@ export function SimulationResults({ rule }: { rule: Record<string, unknown> }) {
                     <div className="text-[10px] font-mono text-muted-foreground mt-0.5">
                         Ref: <span className="font-bold">{row.original.payment.reference || 'N/A'}</span> •{" "}
                         <span className="font-bold">
-                            {Number(row.original.payment.amount).toLocaleString("es-CL", { style: "currency", currency: "CLP", maximumFractionDigits: 0 })}
+                            <MoneyDisplay amount={row.original.payment.amount} inline className="text-[10px]" />
                         </span>
                     </div>
                 </div>

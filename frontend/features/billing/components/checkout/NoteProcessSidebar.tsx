@@ -2,6 +2,7 @@
 
 import { FileText, Package, CheckCircle2, CreditCard, ShoppingBag, Truck } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { MoneyDisplay } from "@/components/shared"
 
 interface NoteProcessSidebarProps {
     currentStep: number
@@ -102,7 +103,7 @@ export function NoteProcessSidebar({
                                             {methodLabels[paymentData.method]}
                                         </p>
                                         <p className="text-xs font-bold">
-                                            ${paymentData.amount.toLocaleString()}
+                                            <MoneyDisplay amount={paymentData.amount} inline />
                                         </p>
                                     </div>
                                 )}

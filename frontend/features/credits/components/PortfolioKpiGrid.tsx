@@ -24,21 +24,21 @@ export function PortfolioKpiGrid({ data }: { data: CreditPortfolioResponse | nul
         <div className="grid gap-4 md:grid-cols-4">
             <StatCard
                 label="Deuda Total"
-                value={<MoneyDisplay amount={totalDebt} digits={0} />}
+                value={<MoneyDisplay amount={totalDebt} />}
                 subtext={`${s?.count_debtors || 0} clientes con deuda activa`}
                 icon={CreditCard}
                 accent="primary"
             />
             <StatCard
                 label="Exposición Total"
-                value={<MoneyDisplay amount={computedTotalLimit} digits={0} />}
+                value={<MoneyDisplay amount={computedTotalLimit} />}
                 subtext={`Uso: ${computedUtilizationRate.toFixed(1)}% del límite`}
                 icon={Target}
                 accent="info"
             />
             <StatCard
                 label="Pérdida Potencial"
-                value={<MoneyDisplay amount={potentialLoss} digits={0} />}
+                value={<MoneyDisplay amount={potentialLoss} />}
                 subtext={`${s?.risk_distribution?.CRITICAL || 0} riesgos críticos`}
                 icon={ShieldAlert}
                 accent={potentialLoss > 0 ? "destructive" : "muted"}
