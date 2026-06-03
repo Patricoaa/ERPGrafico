@@ -65,5 +65,8 @@ Patrón: análogo a `CHECK_PORTFOLIO` pero en sentido inverso (LIABILITY en vez 
 - `TreasuryAccount.Type.ISSUED_CHECKS` se añade a `_NON_CASH_EQUIVALENT_TYPES`.
 - Transiciones de estado: `IN_PORTFOLIO` → {DEPOSITED, VOIDED, ENDORSED};
   `ISSUED` → {CLEARED, VOIDED}; VOIDED accesible desde IN_PORTFOLIO e ISSUED.
-- 24 tests verdes (7 F4.1 + 4 F4.2 + 6 F4.3 + 7 existentes).
-- Migraciones 0053 (fields) + 0054 (Checkbook).
+- `PaymentOrchestrator.create_movement()` detecta CHECK y deriva a CheckService:
+  INBOUND → `receive()` (venta), OUTBOUND → `issue()` (compra).
+- Purchase checkout acepta `payment_method_id` para routing via orchestrator.
+- Sale checkout pasa check params (number, dates, checkbook) al orchestrator.
+- 31 tests verdes (24 checks + 7 orchestrator). Migraciones 0053 + 0054.
