@@ -24,6 +24,8 @@ export const treasurySchema = z.object({
     // Terminal bridge accounts
     terminal_commission_bridge_account: z.string().nullable(),
     terminal_iva_bridge_account: z.string().nullable(),
+    // Cheques
+    check_portfolio_account: z.string().nullable(),
 })
 
 export type TreasuryFormValues = z.infer<typeof treasurySchema>
