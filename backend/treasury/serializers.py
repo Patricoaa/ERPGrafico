@@ -666,3 +666,196 @@ class CheckSerializer(serializers.ModelSerializer):
             'deposited_at', 'cleared_at', 'bounced_at',
             'created_at', 'created_by',
         ]
+
+
+# ── F2.11: Créditos bancarios (BankLoan + LoanInstallment) ──────────────────
+
+
+class LoanInstallmentSerializer(serializers.ModelSerializer):
+    """Serializer para `LoanInstallment` (cuota individual)."""
+    display_id = serializers.CharField(read_only=True)
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    loan_display_id = serializers.CharField(source='loan.display_id', read_only=True)
+    is_overdue = serializers.BooleanField(read_only=True)
+
+    class Meta:
+        from .models import LoanInstallment
+        model = LoanInstallment
+        fields = [
+            'id', 'display_id', 'loan', 'loan_display_id',
+            'number', 'due_date',
+            'principal_amount', 'interest_amount', 'insurance_amount',
+            'total_amount', 'outstanding_balance',
+            'status', 'status_display', 'is_overdue',
+            'paid_at', 'payment_movement',
+            'uf_value_used', 'clp_amount_paid',
+            'notes',
+        ]
+        read_only_fields = [
+            'display_id', 'status', 'is_overdue', 'outstanding_balance',
+            'paid_at', 'payment_movement',
+            'uf_value_used', 'clp_amount_paid',
+        ]
+
+
+class BankLoanSerializer(serializers.ModelSerializer):
+    """Serializer para `BankLoan` (crédito bancario).
+
+    Incluye campos derivados (display_id, status_display), referencias a
+    entidades relacionadas (nombres legibles) y la lista anidada de cuotas.
+    Para escribir se usan IDs (FK). Validación de `liability_account` se
+    delega al `clean()` del modelo (LIABILITY en taxonomía = CREDIT_CARD).
+    """
+    display_id = serializers.CharField(read_only=True)
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    currency_display = serializers.CharField(source='get_currency_display', read_only=True)
+    rate_basis_display = serializers.CharField(source='get_rate_basis_display', read_only=True)
+    amortization_system_display = serializers.CharField(
+        source='get_amortization_system_display', read_only=True,
+    )
+
+    lender_name = serializers.CharField(source='lender.name', read_only=True)
+    disbursement_account_name = serializers.CharField(
+        source='disbursement_account.name', read_only=True,
+    )
+    liability_account_name = serializers.CharField(
+        source='liability_account.name', read_only=True,
+    )
+    created_by_name = serializers.CharField(
+        source='created_by.username', read_only=True, allow_null=True,
+    )
+
+    # Indicadores agregados útiles para UI.
+    outstanding_balance = serializers.SerializerMethodField()
+    next_due_date = serializers.SerializerMethodField()
+    next_installment_amount = serializers.SerializerMethodField()
+    installments_count = serializers.SerializerMethodField()
+    paid_installments_count = serializers.SerializerMethodField()
+
+    installments = LoanInstallmentSerializer(many=True, read_only=True)
+
+    def get_outstanding_balance(self, obj):
+        # Suma del principal pendiente de cuotas aún no pagadas.
+        from django.db.models import Sum
+        from .models import LoanInstallment
+        agg = obj.installments.exclude(
+            status__in=[LoanInstallment.Status.PAID, LoanInstallment.Status.CANCELED]
+        ).aggregate(s=Sum('principal_amount'))
+        return agg['s'] or 0
+
+    def get_next_due_date(self, obj):
+        from .models import LoanInstallment
+        nxt = obj.installments.filter(
+            status=LoanInstallment.Status.PENDING,
+        ).order_by('due_date').values_list('due_date', flat=True).first()
+        return nxt
+
+    def get_next_installment_amount(self, obj):
+        from .models import LoanInstallment
+        nxt = obj.installments.filter(
+            status=LoanInstallment.Status.PENDING,
+        ).order_by('due_date').first()
+        if not nxt:
+            return None
+        return nxt.total_amount
+
+    def get_installments_count(self, obj):
+        return obj.installments.count()
+
+    def get_paid_installments_count(self, obj):
+        from .models import LoanInstallment
+        return obj.installments.filter(status=LoanInstallment.Status.PAID).count()
+
+    class Meta:
+        from .models import BankLoan
+        model = BankLoan
+        fields = [
+            'id', 'display_id', 'lender', 'lender_name', 'loan_number',
+            'currency', 'currency_display',
+            'principal', 'interest_rate', 'rate_basis', 'rate_basis_display',
+            'amortization_system', 'amortization_system_display',
+            'term_months', 'start_date', 'first_due_date',
+            'insurance_monthly',
+            'disbursement_account', 'disbursement_account_name',
+            'liability_account', 'liability_account_name',
+            'status', 'status_display', 'notes', 'collateral_notes',
+            'outstanding_balance', 'next_due_date', 'next_installment_amount',
+            'installments_count', 'paid_installments_count',
+            'installments',
+            'created_at', 'updated_at', 'created_by', 'created_by_name',
+        ]
+        read_only_fields = [
+            'display_id', 'status', 'created_at', 'updated_at', 'created_by',
+        ]
+
+
+class BankLoanWriteSerializer(serializers.ModelSerializer):
+    """Serializer de escritura más liviano (omite campos derivados)."""
+
+    class Meta:
+        from .models import BankLoan
+        model = BankLoan
+        fields = [
+            'lender', 'loan_number',
+            'currency', 'principal', 'interest_rate', 'rate_basis',
+            'amortization_system', 'term_months', 'start_date', 'first_due_date',
+            'insurance_monthly',
+            'disbursement_account', 'liability_account',
+            'notes', 'collateral_notes',
+        ]
+
+    def validate(self, attrs):
+        # Validar que first_due_date >= start_date (delegable al clean() del modelo).
+        start = attrs.get('start_date')
+        first_due = attrs.get('first_due_date')
+        if start and first_due and first_due < start:
+            raise serializers.ValidationError({
+                'first_due_date': 'El primer vencimiento no puede ser anterior al inicio.',
+            })
+        # Validar que liability_account sea tipo CREDIT_CARD (única LIABILITY
+        # en la taxonomía vigente, ADR-0031). DRF no llama clean() automáticamente.
+        liability = attrs.get('liability_account')
+        if liability and liability.account_type != TreasuryAccount.Type.CREDIT_CARD:
+            raise serializers.ValidationError({
+                'liability_account': (
+                    'La cuenta pasivo del crédito debe ser de tipo Tarjeta de Crédito '
+                    '(CREDIT_CARD) — la única con AccountType=LIABILITY en la '
+                    'taxonomía vigente.'
+                )
+            })
+        disbursement = attrs.get('disbursement_account')
+        if disbursement and disbursement.account_type in (
+            TreasuryAccount.Type.CREDIT_CARD,
+            TreasuryAccount.Type.CHECK_PORTFOLIO,
+        ):
+            raise serializers.ValidationError({
+                'disbursement_account': (
+                    'La cuenta de desembolso debe ser una cuenta bancaria (CHECKING) o '
+                    'caja (CASH); no puede ser de pasivo ni puente.'
+                )
+            })
+        return attrs
+
+
+class PayInstallmentActionSerializer(serializers.Serializer):
+    """Payload para la acción `pay` de LoanInstallmentViewSet."""
+    payment_account = serializers.IntegerField(
+        help_text="ID de la TreasuryAccount desde donde se paga.",
+    )
+    date = serializers.DateField(required=False)
+    interest_expense_account = serializers.IntegerField(required=False, allow_null=True)
+    insurance_expense_account = serializers.IntegerField(required=False, allow_null=True)
+
+
+class PrepayLoanActionSerializer(serializers.Serializer):
+    """Payload para la acción `prepay` de BankLoanViewSet."""
+    payment_account = serializers.IntegerField()
+    date = serializers.DateField(required=False)
+    interest_expense_account = serializers.IntegerField(required=False, allow_null=True)
+    insurance_expense_account = serializers.IntegerField(required=False, allow_null=True)
+
+
+class RefinanceLoanActionSerializer(serializers.Serializer):
+    """Payload para la acción `refinance` de BankLoanViewSet."""
+    notes = serializers.CharField(required=False, allow_blank=True, default='')
+
