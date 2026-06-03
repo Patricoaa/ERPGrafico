@@ -1,11 +1,12 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { DataTable } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { Button } from "@/components/ui/button"
 import {
-    Plus, CreditCard, Landmark, Lock, ChevronDown
+    Plus, CreditCard, Landmark, Lock, ChevronDown, Eye
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { DataCell, createActionsColumn } from '@/components/shared'
@@ -60,6 +61,7 @@ export function BankManagement({ externalOpen, onOpenChange, createAction }: Ban
     const { filterFn: filterBanks } = useClientSearch<Bank>(bankSearchDef)
     const [dialogOpen, setDialogOpen] = useState(false)
     const [selectedBank, setSelectedBank] = useState<Bank | null>(null)
+    const router = useRouter()
 
     const deleteConfirm = useConfirmAction<number>(async (id) => {
         try {
@@ -108,6 +110,11 @@ export function BankManagement({ externalOpen, onOpenChange, createAction }: Ban
         createActionsColumn<Bank>({
             renderActions: (item) => (
                 <>
+                    <DataCell.Action
+                        icon={Eye}
+                        title="Ver Centro de Bancos"
+                        onClick={() => router.push(`/treasury/banks/${item.id}`)}
+                    />
                     <DataCell.Action action="edit" onClick={() => openEdit(item)} />
                     <DataCell.Action action="delete" onClick={() => handleDelete(item.id)} />
                 </>

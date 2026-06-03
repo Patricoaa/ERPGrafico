@@ -183,6 +183,11 @@ export const treasuryApi = {
         await api.delete(`/treasury/banks/${id}/`)
     },
 
+    getBankOverview: async (id: number): Promise<any> => {
+        const { data } = await api.get(`/treasury/banks/${id}/overview/`)
+        return data
+    },
+
     // ========== Movements ==========
 
     getMovements: async (

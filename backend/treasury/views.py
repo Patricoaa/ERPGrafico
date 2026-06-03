@@ -43,6 +43,130 @@ class BankViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = Bank.objects.all().order_by('name')
     serializer_class = BankSerializer
 
+    @action(detail=True, methods=['get'])
+    def overview(self, request, pk=None):
+        """Centro de Bancos: vista unificada por banco (F5.2)."""
+        from django.db.models import Sum, Q
+        from datetime import date, timedelta
+        bank = self.get_object()
+
+        # Cuentas de tesorería del banco
+        accounts = TreasuryAccount.objects.filter(bank=bank).order_by('account_type', 'name')
+        accounts_data = []
+        for acc in accounts:
+            movements = acc.movements_from.all().aggregate(total=Sum('amount'))['total'] or 0
+            movements += acc.movements_to.all().aggregate(total=Sum('amount'))['total'] or 0
+            accounts_data.append({
+                'id': acc.id,
+                'name': acc.name,
+                'account_type': acc.account_type,
+                'account_type_display': acc.get_account_type_display(),
+                'current_balance': float(acc.current_balance),
+            })
+
+        # Tarjetas de crédito del banco (cuentas CREDIT_CARD)
+        card_accounts = accounts.filter(account_type=TreasuryAccount.Type.CREDIT_CARD)
+        from .models import CreditCardStatement
+        open_statements = CreditCardStatement.objects.filter(
+            card_account__in=card_accounts,
+            status__in=[CreditCardStatement.Status.OPEN, CreditCardStatement.Status.OVERDUE],
+        ).order_by('due_date')
+        card_debt = sum(
+            (s.total_to_pay for s in open_statements),
+            __import__('decimal').Decimal('0'),
+        )
+
+        # Cheques en cartera y propios girados
+        from .models import Check
+        portfolio_checks = Check.objects.filter(
+            bank=bank, direction=Check.Direction.RECEIVED,
+            status=Check.Status.IN_PORTFOLIO,
+        ).aggregate(total=Sum('amount'))['total'] or 0
+        issued_checks = Check.objects.filter(
+            bank=bank, direction=Check.Direction.ISSUED,
+            status=Check.Status.ISSUED,
+        ).aggregate(total=Sum('amount'))['total'] or 0
+
+        # Créditos activos
+        from .models import BankLoan, LoanInstallment
+        active_loans = BankLoan.objects.filter(
+            lender=bank, status=BankLoan.Status.ACTIVE,
+        )
+        total_loan_debt = sum(
+            (l.outstanding_balance for l in active_loans),
+            __import__('decimal').Decimal('0'),
+        )
+
+        # Próximos vencimientos (cuotas, cheques, tarjetas) — horizonte 30 días
+        today = timezone.now().date()
+        horizon = today + timedelta(days=30)
+        upcoming = []
+
+        # Cuotas de préstamo
+        upcoming_installments = LoanInstallment.objects.filter(
+            loan__lender=bank,
+            loan__status=BankLoan.Status.ACTIVE,
+            status__in=[LoanInstallment.Status.PENDING, LoanInstallment.Status.OVERDUE],
+            due_date__lte=horizon,
+        ).select_related('loan').order_by('due_date')[:20]
+        for inst in upcoming_installments:
+            upcoming.append({
+                'type': 'LOAN_INSTALLMENT',
+                'label': f"Cuota #{inst.number} — {inst.loan.display_id}",
+                'due_date': inst.due_date.isoformat(),
+                'amount': float(inst.total_amount),
+                'entity_id': inst.loan.id,
+                'display_id': inst.loan.display_id,
+            })
+
+        # Cheques recibidos por vencer
+        expiring_checks = Check.objects.filter(
+            bank=bank, direction=Check.Direction.RECEIVED,
+            status=Check.Status.IN_PORTFOLIO,
+            due_date__lte=horizon,
+        ).order_by('due_date')[:20]
+        for ch in expiring_checks:
+            upcoming.append({
+                'type': 'CHECK',
+                'label': f"Cheque {ch.check_number}",
+                'due_date': ch.due_date.isoformat(),
+                'amount': float(ch.amount),
+                'entity_id': ch.id,
+                'display_id': ch.display_id,
+            })
+
+        # Estados de cuenta de tarjeta por vencer
+        upcoming_statements = CreditCardStatement.objects.filter(
+            card_account__in=card_accounts,
+            status__in=[CreditCardStatement.Status.OPEN, CreditCardStatement.Status.OVERDUE],
+            due_date__lte=horizon,
+        ).order_by('due_date')[:20]
+        for stmt in upcoming_statements:
+            upcoming.append({
+                'type': 'CARD_STATEMENT',
+                'label': f"Estado {stmt.period_month:02d}/{stmt.period_year}",
+                'due_date': stmt.due_date.isoformat(),
+                'amount': float(stmt.total_to_pay),
+                'entity_id': stmt.id,
+                'display_id': stmt.display_id,
+            })
+
+        upcoming.sort(key=lambda x: x['due_date'])
+
+        return Response({
+            'bank': BankSerializer(bank).data,
+            'accounts': accounts_data,
+            'summary': {
+                'total_accounts': len(accounts_data),
+                'card_debt': float(card_debt),
+                'portfolio_checks': float(portfolio_checks),
+                'issued_checks': float(issued_checks),
+                'active_loan_count': active_loans.count(),
+                'total_loan_debt': float(total_loan_debt),
+            },
+            'upcoming_maturities': upcoming,
+        })
+
 
 class PaymentMethodViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = PaymentMethod.objects.all().order_by('name')
@@ -1385,6 +1509,117 @@ class TreasuryDashboardViewSet(viewsets.ViewSet):
         from .serializers import TreasuryAccountSerializer
         serializer = TreasuryAccountSerializer(accounts, many=True)
         return Response(serializer.data)
+
+    @action(detail=False, methods=['get'])
+    def future_maturities(self, request):
+        """
+        Vencimientos futuros para proyección de flujo de caja (F5.3).
+        Query params: days_ahead (default 90), treasury_account (optional).
+        """
+        from datetime import timedelta
+        from django.db.models import Sum
+        days = int(request.query_params.get('days_ahead', 90))
+        today = timezone.now().date()
+        horizon = today + timedelta(days=days)
+        treasury_account_id = request.query_params.get('treasury_account')
+
+        items = []
+
+        # Cuotas de préstamo pendientes
+        installments_qs = LoanInstallment.objects.filter(
+            status__in=[LoanInstallment.Status.PENDING, LoanInstallment.Status.OVERDUE],
+            due_date__gte=today,
+            due_date__lte=horizon,
+        ).select_related('loan', 'loan__lender')
+        if treasury_account_id:
+            installments_qs = installments_qs.filter(
+                loan__disbursement_account_id=treasury_account_id
+            )
+        for inst in installments_qs:
+            items.append({
+                'type': 'LOAN_INSTALLMENT',
+                'direction': 'OUTBOUND',
+                'label': f"Cuota #{inst.number} — {inst.loan.display_id}",
+                'due_date': inst.due_date.isoformat(),
+                'amount': float(inst.total_amount),
+                'account_id': inst.loan.disbursement_account_id,
+            })
+
+        # Cheques recibidos en cartera por vencer
+        checks_qs = Check.objects.filter(
+            direction=Check.Direction.RECEIVED,
+            status=Check.Status.IN_PORTFOLIO,
+            due_date__gte=today,
+            due_date__lte=horizon,
+        )
+        if treasury_account_id:
+            checks_qs = checks_qs.filter(deposit_account_id=treasury_account_id)
+        for ch in checks_qs:
+            items.append({
+                'type': 'CHECK_RECEIVED',
+                'direction': 'INBOUND',
+                'label': f"Cheque {ch.check_number} — {ch.display_id}",
+                'due_date': ch.due_date.isoformat(),
+                'amount': float(ch.amount),
+                'account_id': ch.deposit_account_id,
+            })
+
+        # Cheques propios girados por vencer
+        issued_checks_qs = Check.objects.filter(
+            direction=Check.Direction.ISSUED,
+            status=Check.Status.ISSUED,
+            due_date__gte=today,
+            due_date__lte=horizon,
+        )
+        if treasury_account_id:
+            issued_checks_qs = issued_checks_qs.filter(payment_account_id=treasury_account_id)
+        for ch in issued_checks_qs:
+            items.append({
+                'type': 'CHECK_ISSUED',
+                'direction': 'OUTBOUND',
+                'label': f"Cheque propio {ch.check_number} — {ch.display_id}",
+                'due_date': ch.due_date.isoformat(),
+                'amount': float(ch.amount),
+                'account_id': ch.payment_account_id,
+            })
+
+        # Estados de cuenta de tarjeta por vencer
+        statements_qs = CreditCardStatement.objects.filter(
+            status__in=[CreditCardStatement.Status.OPEN, CreditCardStatement.Status.OVERDUE],
+            due_date__gte=today,
+            due_date__lte=horizon,
+        ).select_related('card_account')
+        if treasury_account_id:
+            statements_qs = statements_qs.filter(card_account_id=treasury_account_id)
+        for stmt in statements_qs:
+            items.append({
+                'type': 'CARD_STATEMENT',
+                'direction': 'OUTBOUND',
+                'label': f"Estado tarjeta {stmt.period_month:02d}/{stmt.period_year} — {stmt.display_id}",
+                'due_date': stmt.due_date.isoformat(),
+                'amount': float(stmt.total_to_pay),
+                'account_id': stmt.card_account_id,
+            })
+
+        items.sort(key=lambda x: x['due_date'])
+
+        # Aggregate by month for the projection
+        from collections import defaultdict
+        monthly = defaultdict(lambda: {'inbound': 0, 'outbound': 0})
+        for item in items:
+            month_key = item['due_date'][:7]  # YYYY-MM
+            if item['direction'] == 'INBOUND':
+                monthly[month_key]['inbound'] += item['amount']
+            else:
+                monthly[month_key]['outbound'] += item['amount']
+
+        return Response({
+            'items': items,
+            'monthly_summary': [
+                {'month': k, 'inbound': v['inbound'], 'outbound': v['outbound'], 'net': v['inbound'] - v['outbound']}
+                for k, v in sorted(monthly.items())
+            ],
+        })
 
     def list(self, request):
         """
