@@ -597,6 +597,24 @@ Si el crédito es UF, `pay` convierte usando
 `IndicatorValue.get_value('UF', pay_date)` y persiste el valor en
 `uf_value_used`.
 
+### card-statements/ (CreditCardStatement) — F3.5
+
+Estado de cuenta mensual de la tarjeta de crédito propia. `card_account`
+debe ser de tipo `CREDIT_CARD` (LIABILITY, ADR-0031).
+
+```
+GET    /api/treasury/card-statements/                    list (filtros: status, card_account, period_year, period_month)
+POST   /api/treasury/card-statements/                    create (OPEN)
+GET    /api/treasury/card-statements/{id}/               detail
+PATCH  /api/treasury/card-statements/{id}/               update (campos editables)
+DELETE /api/treasury/card-statements/{id}/               delete
+POST   /api/treasury/card-statements/{id}/pay/           action — pagar (payload: payment_account, date?)
+POST   /api/treasury/card-statements/{id}/apply-charges/ action — imputar interés/comisiones (payload: interest_expense_account?, fees_expense_account?)
+POST   /api/treasury/card-statements/{id}/cancel/        action — anular (payload: notes?)
+```
+
+Display ID: `EST-{id}`. El pago crea una TRANSFER banco→tarjeta (ADR-0034).
+
 ---
 
 ## production

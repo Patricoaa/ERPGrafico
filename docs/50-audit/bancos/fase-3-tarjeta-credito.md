@@ -1,9 +1,9 @@
 ---
 layer: 50-audit
 doc: bancos/fase-3-tarjeta-credito
-status: active
+status: complete
 owner: core-team
-last_review: 2026-06-02
+last_review: 2026-06-03
 kind: roadmap
 ---
 
@@ -89,12 +89,11 @@ al banco al gastar; sólo al pagar el estado de cuenta. Todo vía `TreasuryServi
 
 > Secuencia atómica. Cierra con `Co-Authored-By`.
 
-1. `feat(treasury): gasto con tarjeta de crédito aumenta el pasivo` — F3.1
-2. `feat(treasury): modelo CreditCardStatement + entity-registry` — F3.2
-3. `feat(treasury): intereses y comisiones de tarjeta` — F3.3
-4. `feat(treasury): pago del estado de cuenta de tarjeta` — F3.4
-5. `feat(treasury): API + UI estado de cuenta de tarjeta` — F3.5
-6. `docs(treasury): ADR-0034 tarjeta de crédito estado/pago + tests` — F3.6
+1. `feat(treasury): gasto con tarjeta de crédito aumenta el pasivo` — F3.1 (`977219f6`)
+2. `feat(treasury): modelo CreditCardStatement + entity-registry` — F3.2 (`85dc6199`)
+3. `feat(treasury): CardService — intereses/comisiones + pago del estado de cuenta` — F3.3+F3.4 (`fa8b526b`)
+4. `feat(treasury): API + UI estados de cuenta de tarjeta de crédito` — F3.5 (`d4cc6060`)
+5. `docs(treasury): ADR-0034 tarjeta de crédito estado/pago + tests` — F3.6
 
 ---
 
