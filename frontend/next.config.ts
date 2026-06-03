@@ -15,16 +15,6 @@ const nextConfig: NextConfig = {
   // standalone solo para Docker/self-hosted — Vercel gestiona el output por su cuenta
   output: process.env.VERCEL ? undefined : "standalone",
   allowedDevOrigins: ["192.168.1.93", "192.168.1.195", "localhost", "127.0.0.1"],
-  async redirects() {
-    return [
-      { source: '/treasury/movements', destination: '/treasury/operaciones?tab=movements', permanent: true },
-      { source: '/treasury/accounts', destination: '/treasury/operaciones?tab=accounts', permanent: true },
-      { source: '/treasury/checks', destination: '/treasury/centro-bancos?tab=all', permanent: true },
-      { source: '/treasury/loans', destination: '/treasury/centro-bancos?tab=all', permanent: true },
-      { source: '/treasury/credit-card-statements', destination: '/treasury/centro-bancos?tab=all', permanent: true },
-      { source: '/treasury/banks/:id', destination: '/treasury/centro-bancos?bank=:id', permanent: true },
-    ]
-  },
   env: {
     NEXT_PUBLIC_APP_VERSION: packageJson.version,
     NEXT_PUBLIC_GIT_HASH: gitHash,
