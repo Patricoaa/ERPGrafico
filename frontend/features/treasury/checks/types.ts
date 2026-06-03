@@ -1,4 +1,4 @@
-export type CheckStatus = 'IN_PORTFOLIO' | 'DEPOSITED' | 'CLEARED' | 'BOUNCED' | 'VOIDED'
+export type CheckStatus = 'IN_PORTFOLIO' | 'DEPOSITED' | 'CLEARED' | 'BOUNCED' | 'VOIDED' | 'ISSUED' | 'ENDORSED'
 export type CheckDirection = 'RECEIVED' | 'ISSUED'
 
 export interface Check {
@@ -50,6 +50,11 @@ export interface CheckDepositPayload {
 }
 
 export interface CheckPortfolioSummary {
+    checks: Check[]
+    total: string
+}
+
+export interface CheckInTransitSummary {
     checks: Check[]
     total: string
 }

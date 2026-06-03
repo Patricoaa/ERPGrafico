@@ -29,6 +29,14 @@ export function useCheckPortfolio() {
     })
 }
 
+export function useCheckInTransit() {
+    return useQuery({
+        queryKey: CHECKS_KEYS.inTransit(),
+        queryFn: checksApi.inTransit,
+        staleTime: 60 * 1000,
+    })
+}
+
 export function useCheckMutations() {
     const queryClient = useQueryClient()
 
