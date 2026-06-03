@@ -26,11 +26,11 @@ export interface TerminalCreatePayload {
 
 export type TerminalUpdatePayload = Partial<TerminalCreatePayload>
 
-// Capa 1 — ubicación del dinero. Alta nueva sólo crea CASH / CHECKING / CREDIT_CARD
-// (vía TreasuryAccountWizard). DEBIT_CARD y CHECKBOOK están DEPRECADOS como tipos de
-// cuenta: son formas de pago (PaymentMethod) sobre una CHECKING. Se conservan aquí
-// solo para mostrar cuentas legacy aún no convergidas (ver command converge_treasury_accounts).
-export type TreasuryAccountType = 'CHECKING' | 'CREDIT_CARD' | 'DEBIT_CARD' | 'CHECKBOOK' | 'CASH' | 'BRIDGE' | 'MERCHANT'
+// Capa 1 — ubicación del dinero. F1.2 (ADR-0031): DEBIT_CARD y CHECKBOOK
+// ya NO son tipos de cuenta — son formas de pago (PaymentMethod) sobre CHECKING.
+// Ver `converge_treasury_accounts` y docs/50-audit/bancos/fase-1-operativo.md.
+// CHECK_PORTFOLIO existe a nivel DB (cuenta puente "Cheques en Cartera" auto-gestionada).
+export type TreasuryAccountType = 'CHECKING' | 'CREDIT_CARD' | 'CASH' | 'BRIDGE' | 'MERCHANT' | 'CHECK_PORTFOLIO'
 
 // Treasury Account types
 export interface TreasuryAccount {

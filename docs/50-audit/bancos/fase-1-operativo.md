@@ -3,7 +3,7 @@ layer: 50-audit
 doc: bancos/fase-1-operativo
 status: active
 owner: core-team
-last_review: 2026-06-02
+last_review: 2026-06-03
 kind: roadmap
 ---
 
@@ -15,18 +15,18 @@ recibidos) **antes** de construir nuevas features: converger datos legacy, elimi
 deprecados, exponer la configuración en la UI y registrar la entidad `Check` en los
 contratos del proyecto. Esfuerzo total: S–M.
 
-## Avance (2026-06-02)
+## Avance (2026-06-03)
 
 | Tarea | Estado | Commit |
 |-------|--------|--------|
-| F1.1 — Convergencia de cuentas legacy (operación) | ⏸ Pendiente · requiere acceso a entorno | — |
-| F1.2 — Eliminar `DEBIT_CARD`/`CHECKBOOK` del enum | ⏸ Bloqueada por F1.1 (gate duro) | — |
+| F1.1 — Convergencia de cuentas legacy (operación) | ✅ Hecho (dev box, 0 restantes) | *(operación, sin commit)* |
+| F1.2 — Eliminar `DEBIT_CARD`/`CHECKBOOK` del enum | ✅ Hecho | F1.2-pending |
 | F1.3 — Panel Settings: sección Cheques | ✅ Hecho | `484d58ee` |
 | F1.4 — Auto-provisión cuenta puente vía signal | ✅ Hecho | `bfd11ea0` |
 | F1.5 — `treasury.check` en ENTITY_REGISTRY + state-map | ✅ Hecho | `6a3b16af` |
 
-> **Próxima acción del operador:** ejecutar el procedimiento de F1.1 (ver más abajo) cuando
-> haya acceso al/los entorno(s) productivo(s)/dev. Recién entonces se puede aplicar F1.2.
+> **Fase 1 cerrada** en dev box. Pendiente ejecutar F1.1 en staging/producción
+> antes de promover el commit de F1.2 a esos entornos.
 
 ---
 
@@ -153,7 +153,7 @@ liberar F1.2.
 2. `feat(settings): cuenta 'Cheques en Cartera' en panel de Tesorería` — F1.3
 3. `feat(treasury): auto-provisión de la cuenta puente Cheques en Cartera` — F1.4
 4. `fix(treasury): registrar treasury.check en ENTITY_REGISTRY + state-map` — F1.5
-5. `refactor(treasury)!: eliminar DEBIT_CARD/CHECKBOOK del enum TreasuryAccount.Type` — F1.2
+5. `refactor(treasury)!: deprecación definitiva de DEBIT_CARD/CHECKBOOK como tipos de cuenta` — F1.2
    *(último; gate duro: 0 cuentas legacy en todos los entornos)*
 
 ---
@@ -197,8 +197,38 @@ liberar F1.2.
   servicio responsable de cada paso y notas contables (cuenta puente, reversas).
 - `STATUS_MAP` (`badge-resolvers.ts`) ya tenía los 5 estados desde ADR-0032; no se tocó.
 
-### Pendiente para cerrar la fase
-- F1.1 (operación) — esperar acceso al/los entorno(s) y ejecutar el bloque
-  bash de arriba. **No** liberar F1.2 antes.
-- F1.2 (refactor breaking del enum) — solo cuando F1.1 reporte 0 en TODOS los
-  entornos. Última tarea de la fase.
+### F1.2 — Deprecación definitiva del enum (cerrada en dev box)
+- `TreasuryAccount.Type` ahora solo expone `CHECKING`, `CREDIT_CARD`, `CASH`,
+  `BRIDGE`, `MERCHANT`, `CHECK_PORTFOLIO` (migration `0050`).
+- `clean()` ya no contempla `DEBIT_CARD`/`CHECKBOOK`; las validaciones de
+  tarjeta y chequera se reducen a `CREDIT_CARD` (débito empresa + chequera
+  son ahora formas de pago sobre `CHECKING`).
+- `PaymentMethod.TYPE_COMPATIBILITY` ajustado: `DEBIT_CARD` como método sigue
+  mapeando a `[CREDIT_CARD, CHECKING]`. `CHECK` como método sigue mapeando a
+  `CHECKING`.
+- Frontend: `TreasuryAccountType` (types/index.ts) sin legacy; options de
+  filtros/forms en `TreasuryAccountsView`, `TreasuryAccountDrawer`,
+  `searchDef.ts` actualizados.
+- **Eliminados** (ya no compatibles con el nuevo modelo):
+  - `backend/treasury/convergence.py`
+  - `backend/treasury/management/commands/converge_treasury_accounts.py`
+  - `backend/treasury/tests/test_convergence.py`
+  El gate de F1.1 los hizo innecesarios: con el enum reducido, `save()`
+  rechaza cualquier intento de crear/actualizar filas con `account_type`
+  legacy, por lo que la guardia no podría correr si reaparecieran. Si llega
+  un dump externo con esos strings, la nota de la migración `0050` indica
+  la conversión manual con SQL antes de operar.
+- **Verificación dev box** (2026-06-03): `manage.py check` 0 issues,
+  `makemigrations --check` No changes, `pytest treasury/tests/test_checks.py
+  treasury/tests/test_check_portfolio_signal.py treasury/tests/test_provisioning.py`
+  → 18/18 passed, `npm run type-check` 0 errores, lint sin nuevos errores.
+
+> Pre-existente: 3 errors en `test_dry_run.py` + 1 fail en
+> `test_proportional_distribution.py::test_adjustment_entry_is_draft` no
+> están relacionados con F1.2 (`difference_service` / cuenta "Comisión
+> Bancaria" sin configurar). Se reportan aparte.
+
+### Pendiente para promover F1.2 a staging/producción
+- Ejecutar F1.1 (procedure de arriba) en cada entorno objetivo.
+- Aplicar la migration `0050_alter_treasuryaccount_remove_legacy_account_types`
+  y redeploy con el commit de F1.2.

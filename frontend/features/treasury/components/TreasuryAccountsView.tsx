@@ -104,11 +104,10 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
     const typeLabels: Record<string, string> = {
         CASH: "Caja Física (Efectivo)",
         CHECKING: "Cuenta Bancaria",
-        DEBIT_CARD: "T. Débito Empresa",
         CREDIT_CARD: "T. Crédito Empresa",
-        CHECKBOOK: "Chequera / Instr.",
         BRIDGE: "Puente",
         MERCHANT: "Cta. Recaudadora",
+        CHECK_PORTFOLIO: "Cheques en Cartera",
     }
 
     const columns: ColumnDef<TreasuryAccount>[] = [

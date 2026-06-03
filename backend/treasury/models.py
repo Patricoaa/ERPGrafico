@@ -402,8 +402,6 @@ class TreasuryAccount(models.Model):
     class Type(models.TextChoices):
         CHECKING = 'CHECKING', _('Cuenta Bancaria (Corriente/Vista)')
         CREDIT_CARD = 'CREDIT_CARD', _('Tarjeta de Crédito (Cta. Propia)')
-        DEBIT_CARD = 'DEBIT_CARD', _('Tarjeta de Débito (Cta. Propia)')
-        CHECKBOOK = 'CHECKBOOK', _('Chequera / Instrumentos')
         CASH = 'CASH', _('Caja Física (Efectivo)')
         BRIDGE = 'BRIDGE', _('Puente')
         MERCHANT = 'MERCHANT', _('Cuenta Recaudadora')
@@ -527,8 +525,8 @@ class TreasuryAccount(models.Model):
                     'account_number': _("Las cuentas corrientes requieren número de cuenta")
                 })
         
-        # Validate Credit/Debit cards
-        if self.account_type in [self.Type.CREDIT_CARD, self.Type.DEBIT_CARD]:
+        # Validate Credit cards
+        if self.account_type == self.Type.CREDIT_CARD:
             if not self.bank:
                 raise ValidationError({
                     'bank': _("Las tarjetas requieren un banco asociado")
@@ -541,7 +539,7 @@ class TreasuryAccount(models.Model):
             })
         
         # Validate account_number only for bank-related accounts
-        if self.account_number and self.account_type not in [self.Type.CHECKING, self.Type.CREDIT_CARD, self.Type.DEBIT_CARD]:
+        if self.account_number and self.account_type not in [self.Type.CHECKING, self.Type.CREDIT_CARD]:
             raise ValidationError({
                 'account_number': _("Solo las cuentas bancarias y tarjetas pueden tener número de cuenta")
             })
@@ -1271,12 +1269,15 @@ class PaymentMethod(models.Model):
     # Mapeo de compatibilidad tipo cuenta ↔ método de pago
     TYPE_COMPATIBILITY = {
         Type.CASH: [TreasuryAccount.Type.CASH],
-        Type.DEBIT_CARD: [TreasuryAccount.Type.DEBIT_CARD, TreasuryAccount.Type.CREDIT_CARD, TreasuryAccount.Type.CHECKING],
-        Type.CREDIT_CARD: [TreasuryAccount.Type.DEBIT_CARD, TreasuryAccount.Type.CREDIT_CARD, TreasuryAccount.Type.CHECKING],
-        Type.CARD_TERMINAL: [TreasuryAccount.Type.DEBIT_CARD, TreasuryAccount.Type.CREDIT_CARD, TreasuryAccount.Type.CHECKING],
+        # DEBIT_CARD / CREDIT_CARD / CARD_TERMINAL como métodos de pago se
+        # vinculan a CHECKING (cuenta corriente) o CREDIT_CARD (línea propia).
+        # DEBIT_CARD y CHECKBOOK como tipos de cuenta están eliminados (ADR-0031):
+        # ver `converge_treasury_accounts` y docs/50-audit/bancos/fase-1-operativo.md.
+        Type.DEBIT_CARD: [TreasuryAccount.Type.CREDIT_CARD, TreasuryAccount.Type.CHECKING],
+        Type.CREDIT_CARD: [TreasuryAccount.Type.CREDIT_CARD, TreasuryAccount.Type.CHECKING],
+        Type.CARD_TERMINAL: [TreasuryAccount.Type.CREDIT_CARD, TreasuryAccount.Type.CHECKING],
         Type.TRANSFER: [TreasuryAccount.Type.CHECKING],
-        # CHECKBOOK deprecado como tipo de cuenta: los cheques se giran contra
-        # una cuenta corriente (CHECKING). Ver convergencia de datos en treasury.
+        # Cheques se giran contra una cuenta corriente (CHECKING).
         Type.CHECK: [TreasuryAccount.Type.CHECKING],
     }
 
