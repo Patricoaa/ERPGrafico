@@ -183,6 +183,16 @@ export const treasuryApi = {
         await api.delete(`/treasury/banks/${id}/`)
     },
 
+    archiveBank: async (id: number): Promise<Bank> => {
+        const { data } = await api.post<Bank>(`/treasury/banks/${id}/archive/`)
+        return data
+    },
+
+    restoreBank: async (id: number): Promise<Bank> => {
+        const { data } = await api.post<Bank>(`/treasury/banks/${id}/restore/`)
+        return data
+    },
+
     getBankOverview: async (id: number): Promise<any> => {
         const { data } = await api.get(`/treasury/banks/${id}/overview/`)
         return data
