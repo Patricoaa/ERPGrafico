@@ -563,6 +563,40 @@ GET    /api/treasury/bank-statements/{id}/       detail (includes lines)
 POST   /api/treasury/bank-statements/{id}/reconcile/  action
 ```
 
+### loans/ (BankLoan) — F2.11
+
+Crédito bancario (CLP o UF). `liability_account` debe ser de tipo
+`CREDIT_CARD` (única `LIABILITY` en taxonomía vigente, ADR-0031).
+
+```
+GET    /api/treasury/loans/                       list (filtros: status, currency, lender, amortization_system)
+POST   /api/treasury/loans/                       create (DRAFT)
+GET    /api/treasury/loans/{id}/                  detail
+PATCH  /api/treasury/loans/{id}/                  update (campos editables)
+DELETE /api/treasury/loans/{id}/                  delete (solo DRAFT)
+POST   /api/treasury/loans/{id}/disburse/         action — genera tabla + INBOUND al banco + ACTIVE (idempotente)
+POST   /api/treasury/loans/{id}/prepay/           action — pago total anticipado (payload: payment_account, date?, interest_expense_account?, insurance_expense_account?)
+POST   /api/treasury/loans/{id}/refinance/        action — marca REFINANCED + cancela pendientes (payload: notes?)
+GET    /api/treasury/loans/{id}/schedule/         preview de tabla sin persistir (solo si no hay tabla ya)
+GET    /api/treasury/loans/{id}/amortization_table/  tabla persistida con cuotas
+```
+
+Display IDs: `CRE-{id}` para el crédito, `CUO-{id}` para cada cuota.
+
+### loan-installments/ (LoanInstallment) — F2.11
+
+Solo lectura + pago. La creación de cuotas es interna (`generate_schedule`).
+
+```
+GET    /api/treasury/loan-installments/           list (filtros: status, loan)
+GET    /api/treasury/loan-installments/{id}/      detail
+POST   /api/treasury/loan-installments/{id}/pay/  action — paga la cuota (payload: payment_account, date?, interest_expense_account?, insurance_expense_account?)
+```
+
+Si el crédito es UF, `pay` convierte usando
+`IndicatorValue.get_value('UF', pay_date)` y persiste el valor en
+`uf_value_used`.
+
 ---
 
 ## production

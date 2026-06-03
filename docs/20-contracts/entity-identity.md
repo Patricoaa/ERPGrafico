@@ -321,6 +321,8 @@ Todos los prefijos canónicos del sistema. **No usar prefijos que no estén en e
 | `inventory.product` | `PRD-` | Producto | `Package` |
 | `treasury.treasurymovement` | `TRX-` | Movimiento de Tesorería | `Landmark` |
 | `treasury.bankstatement` | `CAR-` | Cartola Bancaria | `BookOpen` |
+| `treasury.bankloan` | `CRE-` | Crédito Bancario | `Banknote` |
+| `treasury.loaninstallment` | `CUO-` | Cuota de Crédito | `Calendar` |
 | `accounting.account` | `{code}` | Cuenta Contable | `Book` |
 | `accounting.journalentry` | `AS-` | Asiento Contable | `Hash` |
 | `contacts.contact` | `CON-` | Contacto | `Users` |
