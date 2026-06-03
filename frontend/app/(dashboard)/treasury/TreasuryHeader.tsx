@@ -80,6 +80,7 @@ export function TreasuryHeader() {
                 { value: "audit", label: "Arqueo", href: "/treasury/settings?tab=audit", iconName: "banknote" },
                 { value: "movements", label: "Movimientos", href: "/treasury/settings?tab=movements", iconName: "settings-2" },
                 { value: "terminals", label: "Terminales", href: "/treasury/settings?tab=terminals", iconName: "smartphone" },
+                { value: "checks", label: "Cheques", href: "/treasury/settings?tab=checks", iconName: "check-square" },
             ]
         },
     ]
@@ -95,6 +96,7 @@ export function TreasuryHeader() {
     const getHeaderConfig = () => {
         if (activeValue === 'config') {
             if (subActiveValue === 'terminals') return { title: "Cuentas Puente de Terminales", description: "Configure las cuentas contables puente para comisiones de terminales de pago.", iconName: "smartphone" as const }
+            if (subActiveValue === 'checks') return { title: "Cuentas de Cheques", description: "Cuenta puente donde los cheques de terceros se contabilizan hasta su depósito y cobro.", iconName: "check-square" as const }
             return { title: "Configuración de Tesorería", description: "Gestione las cuentas de ajuste para conciliación bancaria y movimientos de caja.", iconName: "settings" as const }
         }
         if (activeValue === 'movements') return { title: "Movimientos de Tesorería", description: "Registro histórico de ingresos, egresos y traslados de fondos.", iconName: "banknote" as const }

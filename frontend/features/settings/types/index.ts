@@ -60,6 +60,8 @@ export interface TreasurySettings {
     pos_rounding_adjustment_account: string | null
     pos_cashback_error_account: string | null
     pos_other_outflow_account: string | null
+    // Cheques
+    check_portfolio_account: string | null
 }
 
 export type TreasurySettingsUpdatePayload = Partial<TreasurySettings>
