@@ -7,6 +7,7 @@ interface BankSummary {
     bank: { id: number; name: string; code: string | null }
     summary: {
         total_accounts: number
+        card_count: number
         card_debt: number
         portfolio_checks: number
         issued_checks: number

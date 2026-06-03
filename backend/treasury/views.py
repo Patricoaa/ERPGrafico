@@ -158,6 +158,7 @@ class BankViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             'accounts': accounts_data,
             'summary': {
                 'total_accounts': len(accounts_data),
+                'card_count': card_accounts.count(),
                 'card_debt': float(card_debt),
                 'portfolio_checks': float(portfolio_checks),
                 'issued_checks': float(issued_checks),
