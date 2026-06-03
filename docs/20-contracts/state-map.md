@@ -244,6 +244,55 @@ Lifecycle gobernado por `treasury.check_service.CheckService` (ADR-0032).
 (`deposited_at`/`cleared_at`/`bounced_at`); cambios de estado pasan exclusivamente
 por `CheckService`.
 
+## BankLoan (Crédito Bancario)
+
+Crédito / préstamo bancario (CLP o UF). Backend: `treasury.BankLoan`.
+Lifecycle gobernado por `treasury.loan_service.LoanService` (ADR-0033).
+
+| Status | Intent | Transitions allowed to | Acción de servicio |
+|--------|--------|------------------------|--------------------|
+| `DRAFT` | `info` | `ACTIVE` | `disburse()` (desembolso: INBOUND al banco + nace pasivo) |
+| `ACTIVE` | `success` | `PAID`, `REFINANCED` | `pay_installment()` (pago cuota), `prepay()` (pago total), `refinance()` |
+| `PAID` | `success` | — (terminal) | Al pagar última cuota o prepago |
+| `REFINANCED` | `info` | — (terminal) | `refinance()` (cuotas pendientes → CANCELED) |
+| `DEFAULTED` | `destructive` | — (terminal) | Marca manual (futuro) |
+
+**Contabilidad:**
+- `disburse()`: `TreasuryMovement` INBOUND a `disbursement_account` con origen
+  contable = `liability_account` (crédito al pasivo). Idempotente.
+- `pay_installment()`: `TreasuryMovement` OUTBOUND desde `payment_account`;
+  JE custom con desglose Debe `liability_account` (capital) + Debe
+  `interest_expense_account` + Debe `insurance_expense_account` (si configuradas)
+  / Haber `payment_account`. Construido con `is_pending_registration=True` para
+  evitar que el flujo estándar borre el asiento.
+- `prepay()`: un único movimiento OUTBOUND por saldo + interés prorrateado
+  (1/30 por día del mes en curso). Cuotas pendientes → CANCELED, loan → PAID.
+- `refinance()`: solo cambia estado + cancela pendientes; no paga.
+
+**Conversión UF→CLP:** Las cuotas se almacenan en UF; al pagar, se consulta
+`finances.IndicatorValue.get_value('UF', pay_date)` y se persiste el valor
+usado en `installment.uf_value_used` para trazabilidad.
+
+**Edit restrictions:** `status` y `installments` inmutables salvo por las
+acciones de `LoanService`. `principal`/`interest_rate`/`term_months` no son
+editables tras la creación (regenerar la tabla requiere nuevo crédito).
+
+## LoanInstallment (Cuota de Crédito)
+
+Una fila por mes del calendario de amortización. Backend: `treasury.LoanInstallment`.
+
+| Status | Intent | Transitions allowed to | Acción de servicio |
+|--------|--------|------------------------|--------------------|
+| `PENDING` | `warning` | `PAID`, `OVERDUE`, `CANCELED` | (inicial) |
+| `PAID` | `success` | — (terminal) | `pay_installment()` |
+| `OVERDUE` | `destructive` | `PAID`, `CANCELED` | `mark_overdue_loan_installments` (BEAT diario) |
+| `PARTIAL` | `warning` | `PAID`, `CANCELED` | (futuro: pagos parciales) |
+| `CANCELED` | `neutral` | — (terminal) | `prepay()` / `refinance()` sobre el préstamo |
+
+**Notificaciones:** Cuotas próximas a vencer (horizonte 5 días) generan
+`Notification` tipo `LOAN_INSTALLMENT_UPCOMING` a superusuarios activos.
+Dedup por día vía `Notification.data.target_date` (ISO).
+
 ## Subscription
 
 | Status | Intent | Transitions allowed to |

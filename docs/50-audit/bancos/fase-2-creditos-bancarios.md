@@ -188,6 +188,11 @@ Todo vía `TreasuryService.create_movement`.
   "Créditos bancarios — deuda como pasivo + amortización (CLP/UF)". Actualizar este archivo
   a estado ✅.
 - **DoD:** suite de préstamos verde en Postgres real; ADR creado.
+- **Estado:** ✅ Hecho (commits por tarea; ADR-0033 creado en
+  `docs/10-architecture/adr/0033-bank-loans-liabilidad-y-uf.md`; state-map.md
+  extendido con `BankLoan` + `LoanInstallment`; entity-identity.md con
+  `CRE-{id}`/`CUO-{id}`; api-contracts.md con sección `/treasury/loans/`
+  + `/treasury/loan-installments/`; ADR README actualizado).
 
 ---
 
@@ -195,18 +200,13 @@ Todo vía `TreasuryService.create_movement`.
 
 > Secuencia atómica (1 commit por tarea o grupo cohesivo). Cierra con `Co-Authored-By`.
 
-1. `feat(finances): modelo IndicatorValue (UF/UTM/USD) + carga manual` — F2.1
-2. `feat(treasury): modelos BankLoan + LoanInstallment` — F2.2, F2.3
-3. `feat(treasury): LoanService — tabla de amortización (francés/lineal)` — F2.4
-4. `feat(treasury): desembolso de crédito (INBOUND + pasivo)` — F2.5
-5. `feat(treasury): pago de cuota con reparto capital/interés/seguro` — F2.6
-6. `feat(treasury): conversión UF→CLP en pago de cuotas` — F2.7
-7. `feat(treasury): prepago y refinanciación de créditos` — F2.8
-8. `feat(treasury): devengo mensual de interés (Celery, opt-in)` — F2.9
-9. `feat(treasury): alertas de vencimiento de cuotas (Celery)` — F2.10
-10. `feat(treasury): API de créditos (BankLoanViewSet + acciones)` — F2.11
-11. `feat(treasury): UI de créditos (lista + amortización + pago) + entity-registry` — F2.12
-12. `docs(treasury): ADR-0033 créditos bancarios + tests` — F2.13
+1. `feat(finances): modelo IndicatorValue (UF/UTM/USD) + carga manual` (`8f88cedc`) — F2.1
+2. `feat(treasury): modelos BankLoan + LoanInstallment` (`ace7a82f`) — F2.2, F2.3
+3. `feat(treasury): LoanService (amortización + desembolso + pago CLP/UF + prepago + refi)` (`8b8f7bdd`) — F2.4–F2.8
+4. `feat(treasury): Celery tasks para devengo de interés y alertas de cuotas` (`b397da0d`) — F2.9, F2.10
+5. `feat(treasury): API REST de créditos bancarios` (`b6941772`) — F2.11
+6. `feat(treasury): UI de créditos bancarios` (`a11b9de2`) — F2.12
+7. `docs(bancos): ADR-0033 + state-map + entity-identity + api-contracts` — F2.13
 
 ---
 
