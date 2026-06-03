@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react"
 import { useSearchParams } from "next/navigation"
-import { BankCenterAllView, BankCenterView, BankManagement } from "@/features/treasury"
+import { BankCenterView, BankManagement } from "@/features/treasury"
 import { ToolbarCreateButton } from "@/components/shared"
 
 export function CentroBancosClientView() {
@@ -39,20 +39,17 @@ export function CentroBancosClientView() {
     }
 
     return (
-        <div className="h-full flex flex-col space-y-6">
-            <BankCenterAllView />
-            <div className="flex-1 min-h-0">
-                <BankManagement
-                    externalOpen={modalOpen}
-                    onOpenChange={handleModalChange}
-                    createAction={
-                        <ToolbarCreateButton
-                            label="Nuevo Banco"
-                            href="/treasury/centro-bancos?modal=new"
-                        />
-                    }
-                />
-            </div>
+        <div className="h-full flex flex-col">
+            <BankManagement
+                externalOpen={modalOpen}
+                onOpenChange={handleModalChange}
+                createAction={
+                    <ToolbarCreateButton
+                        label="Nuevo Banco"
+                        href="/treasury/centro-bancos?modal=new"
+                    />
+                }
+            />
         </div>
     )
 }

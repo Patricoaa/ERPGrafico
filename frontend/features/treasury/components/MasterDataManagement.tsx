@@ -25,6 +25,7 @@ import { bankSearchDef, paymentMethodSearchDef } from "@/features/treasury/searc
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
 import { Column } from "@tanstack/react-table";
 import { useBanks, usePaymentMethods } from "@/features/treasury/hooks/useMasterData"
+import { useAllBanksOverview } from "@/features/treasury/hooks/useAllBanksOverview"
 import type { Bank, PaymentMethod } from "@/features/treasury/types"
 import { BankCreationWizard } from "./BankCreationWizard"
 
@@ -59,6 +60,7 @@ interface BankManagementProps {
 
 export function BankManagement({ externalOpen, onOpenChange, createAction }: BankManagementProps) {
     const { banks, refetch, deleteBank } = useBanks()
+    const { overviews } = useAllBanksOverview()
     const { filterFn: filterBanks } = useClientSearch<Bank>(bankSearchDef)
     const [dialogOpen, setDialogOpen] = useState(false)
     const [wizardOpen, setWizardOpen] = useState(false)
@@ -108,6 +110,58 @@ export function BankManagement({ externalOpen, onOpenChange, createAction }: Ban
                     <DataCell.Code>{row.original.code || 'N/A'}</DataCell.Code>
                 </div>
             )
+        },
+        {
+            id: "accounts",
+            header: ({ column }: { column: Column<Bank, unknown> }) => <DataTableColumnHeader column={column} title="Cuentas" className="justify-center" />,
+            cell: ({ row }: { row: { original: Bank } }) => {
+                const overview = overviews.find(o => o.bank.id === row.original.id)
+                return (
+                    <div className="flex justify-center w-full">
+                        <DataCell.Text>{overview?.summary.total_accounts ?? 0}</DataCell.Text>
+                    </div>
+                )
+            },
+            accessorFn: (row: Bank) => overviews.find(o => o.bank.id === row.id)?.summary.total_accounts ?? 0,
+        },
+        {
+            id: "cards",
+            header: ({ column }: { column: Column<Bank, unknown> }) => <DataTableColumnHeader column={column} title="Tarjetas" className="justify-center" />,
+            cell: ({ row }: { row: { original: Bank } }) => {
+                const overview = overviews.find(o => o.bank.id === row.original.id)
+                return (
+                    <div className="flex justify-center w-full">
+                        <DataCell.Text>{overview?.summary.card_count ?? 0}</DataCell.Text>
+                    </div>
+                )
+            },
+            accessorFn: (row: Bank) => overviews.find(o => o.bank.id === row.id)?.summary.card_count ?? 0,
+        },
+        {
+            id: "checks",
+            header: ({ column }: { column: Column<Bank, unknown> }) => <DataTableColumnHeader column={column} title="Cheques" className="justify-center" />,
+            cell: ({ row }: { row: { original: Bank } }) => {
+                const overview = overviews.find(o => o.bank.id === row.original.id)
+                return (
+                    <div className="flex justify-center w-full">
+                        <DataCell.Text>{overview?.summary.issued_checks ?? 0}</DataCell.Text>
+                    </div>
+                )
+            },
+            accessorFn: (row: Bank) => overviews.find(o => o.bank.id === row.id)?.summary.issued_checks ?? 0,
+        },
+        {
+            id: "loans",
+            header: ({ column }: { column: Column<Bank, unknown> }) => <DataTableColumnHeader column={column} title="Préstamos" className="justify-center" />,
+            cell: ({ row }: { row: { original: Bank } }) => {
+                const overview = overviews.find(o => o.bank.id === row.original.id)
+                return (
+                    <div className="flex justify-center w-full">
+                        <DataCell.Text>{overview?.summary.active_loan_count ?? 0}</DataCell.Text>
+                    </div>
+                )
+            },
+            accessorFn: (row: Bank) => overviews.find(o => o.bank.id === row.id)?.summary.active_loan_count ?? 0,
         },
         createActionsColumn<Bank>({
             renderActions: (item) => (
