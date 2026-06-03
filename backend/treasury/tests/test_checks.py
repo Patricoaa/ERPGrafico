@@ -1,5 +1,6 @@
 """
-Tests para CheckService: receive, deposit, clear, bounce, void y transiciones.
+Tests para CheckService: receive, deposit, clear, bounce, void, issue,
+mark_cashed, endorse y transiciones.
 """
 import pytest
 from decimal import Decimal
@@ -7,6 +8,7 @@ from django.core.exceptions import ValidationError
 from django.contrib.auth import get_user_model
 
 from accounting.models import Account, AccountType
+from contacts.models import Contact, ContactRole
 from treasury.models import Bank, TreasuryAccount, TreasuryMovement, Check
 from treasury.check_service import CheckService
 
@@ -24,6 +26,9 @@ def base(db):
     bank_acc = Account.objects.create(
         name='Banco BCI', code='1.1.01.080', account_type=AccountType.ASSET
     )
+    issued_checks_acc = Account.objects.create(
+        name='Cheques Girados por Pagar', code='2.1.05.001', account_type=AccountType.LIABILITY
+    )
 
     # Cuenta puente de tesorería (tipo CHECK_PORTFOLIO)
     portfolio_ta = TreasuryAccount.objects.create(
@@ -36,10 +41,23 @@ def base(db):
         account_type=TreasuryAccount.Type.CHECKING,
         bank=bank, account_number='123',
     )
+    issued_checks_ta = TreasuryAccount.objects.create(
+        name='Cheques Girados por Pagar',
+        account=issued_checks_acc,
+        account_type=TreasuryAccount.Type.ISSUED_CHECKS,
+    )
+    supplier = Contact.objects.create(
+        name='Proveedor Cheques',
+        tax_id='12345678-9',
+        roles=['SUPPLIER'],
+        email='prov@cheques.cl',
+    )
     return {
         'user': user, 'bank': bank,
         'portfolio_ta': portfolio_ta,
         'bank_ta': bank_ta,
+        'issued_checks_ta': issued_checks_ta,
+        'supplier': supplier,
     }
 
 
@@ -128,3 +146,197 @@ def test_receive_without_portfolio_account_raises(db):
             bank_id=bank.id, check_number='9999',
             amount=Decimal('1000'), issue_date='2026-06-01', due_date='2026-06-30',
         )
+
+
+# ─────────────────────────────────────────────────────────────────────────
+# F4.1: Cheques propios girados (direction=ISSUED)
+# ─────────────────────────────────────────────────────────────────────────
+
+@pytest.mark.django_db
+def test_issue_creates_check_issued(base):
+    """issue() crea un Check con status=ISSUED y OUTBOUND desde pasivo."""
+    check = CheckService.issue(
+        bank_id=base['bank'].id,
+        check_number='P-0001',
+        amount=Decimal('200000'),
+        issue_date='2026-06-01',
+        due_date='2026-07-01',
+        counterparty_id=base['supplier'].id,
+        payment_account=base['bank_ta'],
+        issued_check_account=base['issued_checks_ta'],
+        created_by=base['user'],
+    )
+    assert check.pk is not None
+    assert check.status == Check.Status.ISSUED
+    assert check.direction == Check.Direction.ISSUED
+    assert check.payment_account == base['bank_ta']
+    assert check.issued_check_account == base['issued_checks_ta']
+    assert check.receipt_movement is not None
+    assert check.receipt_movement.movement_type == TreasuryMovement.Type.OUTBOUND
+    assert check.receipt_movement.from_account == base['issued_checks_ta']
+
+
+@pytest.mark.django_db
+def test_issue_without_payment_account_raises(base):
+    """Sin payment_account → error."""
+    with pytest.raises(ValidationError, match='payment_account'):
+        CheckService.issue(
+            bank_id=base['bank'].id,
+            check_number='P-0002',
+            amount=Decimal('50000'),
+            issue_date='2026-06-01',
+            due_date='2026-07-01',
+        )
+
+
+@pytest.mark.django_db
+def test_mark_cashed_transfers_to_bank(base):
+    """mark_cashed() genera TRANSFER pasivo→banco y status=CLEARED."""
+    check = CheckService.issue(
+        bank_id=base['bank'].id,
+        check_number='P-0003',
+        amount=Decimal('150000'),
+        issue_date='2026-06-01',
+        due_date='2026-07-01',
+        counterparty_id=base['supplier'].id,
+        payment_account=base['bank_ta'],
+        issued_check_account=base['issued_checks_ta'],
+    )
+    initial_count = TreasuryMovement.objects.count()
+    check = CheckService.mark_cashed(check, date='2026-07-01', created_by=base['user'])
+
+    assert check.status == Check.Status.CLEARED
+    assert check.cleared_at is not None
+    # 1 movement: TRANSFER pasivo→banco
+    assert TreasuryMovement.objects.count() == initial_count + 1
+    transfer = TreasuryMovement.objects.order_by('-id').first()
+    assert transfer.movement_type == TreasuryMovement.Type.TRANSFER
+    assert transfer.from_account == base['issued_checks_ta']
+    assert transfer.to_account == base['bank_ta']
+
+
+@pytest.mark.django_db
+def test_void_issued_check_reverses(base):
+    """Anular un cheque ISSUED genera reversa INBOUND al pasivo."""
+    check = CheckService.issue(
+        bank_id=base['bank'].id,
+        check_number='P-0004',
+        amount=Decimal('100000'),
+        issue_date='2026-06-01',
+        due_date='2026-07-01',
+        counterparty_id=base['supplier'].id,
+        payment_account=base['bank_ta'],
+        issued_check_account=base['issued_checks_ta'],
+    )
+    initial_count = TreasuryMovement.objects.count()
+    check = CheckService.void(check, notes='Proveedor canceló')
+
+    assert check.status == Check.Status.VOIDED
+    assert TreasuryMovement.objects.count() == initial_count + 1
+    reversal = TreasuryMovement.objects.order_by('-id').first()
+    assert reversal.movement_type == TreasuryMovement.Type.INBOUND
+    assert reversal.to_account == base['issued_checks_ta']
+
+
+@pytest.mark.django_db
+def test_mark_cashed_on_received_check_raises(base):
+    """mark_cashed no aplica a cheques recibidos."""
+    check = _receive(base, '0007000', '50000')
+    with pytest.raises(ValidationError, match='direction=ISSUED'):
+        CheckService.mark_cashed(check)
+
+
+@pytest.mark.django_db
+def test_issue_creates_valid_check(base):
+    """El check emitido tiene campos correctos."""
+    check = CheckService.issue(
+        bank_id=base['bank'].id,
+        check_number='P-0005',
+        amount=Decimal('80000'),
+        issue_date='2026-06-01',
+        due_date='2026-08-01',
+        counterparty_id=base['supplier'].id,
+        drawer_name='Mi Empresa SpA',
+        payment_account=base['bank_ta'],
+        issued_check_account=base['issued_checks_ta'],
+    )
+    assert check.check_number == 'P-0005'
+    assert check.drawer_name == 'Mi Empresa SpA'
+    assert check.amount == Decimal('80000')
+
+
+@pytest.mark.django_db
+def test_void_issued_check_from_cleared_raises(base):
+    """No se puede anular un cheque que ya está CLEARED."""
+    check = CheckService.issue(
+        bank_id=base['bank'].id,
+        check_number='P-0006',
+        amount=Decimal('60000'),
+        issue_date='2026-06-01',
+        due_date='2026-07-01',
+        payment_account=base['bank_ta'],
+        issued_check_account=base['issued_checks_ta'],
+    )
+    check = CheckService.mark_cashed(check, date='2026-07-01')
+    assert check.status == Check.Status.CLEARED
+    with pytest.raises(ValidationError):
+        CheckService.void(check)
+
+
+# ─────────────────────────────────────────────────────────────────────────
+# F4.2: Endoso de cheques recibidos
+# ─────────────────────────────────────────────────────────────────────────
+
+@pytest.mark.django_db
+def test_endorse_check(base):
+    """endorse() genera OUTBOUND desde cartera y status=ENDORSED."""
+    check = _receive(base, '0008000', '250000', created_by=base['user'])
+    initial_count = TreasuryMovement.objects.count()
+    check = CheckService.endorse(
+        check,
+        endorsed_to_id=base['supplier'].id,
+        date='2026-06-15',
+        created_by=base['user'],
+    )
+
+    assert check.status == Check.Status.ENDORSED
+    assert check.endorsed_to_id == base['supplier'].id
+    assert check.endorsement_movement is not None
+    assert check.endorsement_movement.movement_type == TreasuryMovement.Type.OUTBOUND
+    assert check.endorsement_movement.from_account == base['portfolio_ta']
+    assert TreasuryMovement.objects.count() == initial_count + 1
+
+
+@pytest.mark.django_db
+def test_endorse_issued_check_raises(base):
+    """El endoso no aplica a cheques propios (ISSUED)."""
+    check = CheckService.issue(
+        bank_id=base['bank'].id,
+        check_number='P-0009',
+        amount=Decimal('30000'),
+        issue_date='2026-06-01',
+        due_date='2026-07-01',
+        payment_account=base['bank_ta'],
+        issued_check_account=base['issued_checks_ta'],
+    )
+    with pytest.raises(ValidationError, match='RECEIVED'):
+        CheckService.endorse(check, endorsed_to_id=base['supplier'].id)
+
+
+@pytest.mark.django_db
+def test_endorse_from_cleared_raises(base):
+    """No se puede endosar un cheque ya CLEARED."""
+    check = _receive(base, '0010000', '40000')
+    check = CheckService.deposit(check, base['bank_ta'])
+    check = CheckService.clear(check)
+    with pytest.raises(ValidationError):
+        CheckService.endorse(check, endorsed_to_id=base['supplier'].id)
+
+
+@pytest.mark.django_db
+def test_endorse_from_voided_raises(base):
+    """No se puede endosar un cheque VOIDED."""
+    check = _receive(base, '0011000', '35000')
+    check = CheckService.void(check, notes='Error')
+    with pytest.raises(ValidationError):
+        CheckService.endorse(check, endorsed_to_id=base['supplier'].id)

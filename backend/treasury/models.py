@@ -406,10 +406,11 @@ class TreasuryAccount(models.Model):
         BRIDGE = 'BRIDGE', _('Puente')
         MERCHANT = 'MERCHANT', _('Cuenta Recaudadora')
         CHECK_PORTFOLIO = 'CHECK_PORTFOLIO', _('Cheques en Cartera')
+        ISSUED_CHECKS = 'ISSUED_CHECKS', _('Cheques Girados por Pagar')
 
     # Types que NO son efectivo/banco directo — usan prefijos contables distintos
     # y son gestionados por el sistema (no editables vía wizard).
-    _NON_CASH_EQUIVALENT_TYPES = frozenset({'BRIDGE', 'MERCHANT', 'CHECK_PORTFOLIO'})
+    _NON_CASH_EQUIVALENT_TYPES = frozenset({'BRIDGE', 'MERCHANT', 'CHECK_PORTFOLIO', 'ISSUED_CHECKS'})
 
     name = models.CharField(_("Nombre"), max_length=100)
     code = models.CharField(_("Código"), max_length=20, blank=True, null=True)
@@ -1873,6 +1874,8 @@ class Check(models.Model):
         CLEARED      = 'CLEARED',      _('Cobrado / Liquidado')
         BOUNCED      = 'BOUNCED',      _('Protestado / Rechazado')
         VOIDED       = 'VOIDED',       _('Anulado')
+        ISSUED       = 'ISSUED',       _('Girado (Pendiente de Cobro)')
+        ENDORSED     = 'ENDORSSED',    _('Endosado')
 
     # ── Identificación ────────────────────────────────────────────────────
     direction = models.CharField(
@@ -1944,6 +1947,37 @@ class Check(models.Model):
         'sales.SaleOrder', on_delete=models.SET_NULL,
         null=True, blank=True,
         related_name='check_payments', verbose_name=_("Orden de Venta")
+    )
+
+    # ── Cheques propios girados (direction=ISSUED) ──────────────────────
+    payment_account = models.ForeignKey(
+        'TreasuryAccount', on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='checks_drawn_from',
+        verbose_name=_("Cuenta de Cobro (Banco)"),
+        help_text=_("Para cheques propios: cuenta bancaria desde la que se giró."),
+    )
+    issued_check_account = models.ForeignKey(
+        'TreasuryAccount', on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='checks_issued_liability',
+        verbose_name=_("Cuenta 'Cheques Girados' (Pasivo)"),
+        help_text=_("Cuenta puente LIABILITY para cheques propios girados."),
+    )
+
+    # ── Endoso ──────────────────────────────────────────────────────────
+    endorsed_to = models.ForeignKey(
+        'contacts.Contact', on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='checks_endorsed_to',
+        verbose_name=_("Endosado a"),
+        help_text=_("Proveedor a quien se endosó el cheque recibido."),
+    )
+    endorsement_movement = models.OneToOneField(
+        'TreasuryMovement', on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='check_endorsement',
+        verbose_name=_("Movimiento de Endoso"),
     )
 
     # ── Auditoría ────────────────────────────────────────────────────────
