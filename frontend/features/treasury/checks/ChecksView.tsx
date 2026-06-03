@@ -1,13 +1,13 @@
 "use client"
 
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import { ColumnDef } from '@tanstack/react-table'
-import { CheckSquare, AlertTriangle, ArrowDownToLine, CheckCheck, XCircle, Ban } from 'lucide-react'
+import { CheckSquare, AlertTriangle, ArrowDownToLine, CheckCheck, XCircle, Ban, CircleDollarSign, Clock, Ban as BanIcon } from 'lucide-react'
 import {
-    DataTableView, DataTableColumnHeader, DataCell,
-    createActionsColumn, StatusBadge, MoneyDisplay,
+    DataTableView, DataTableColumnHeader, DataCell, StatCard,
+    createActionsColumn, StatusBadge, MoneyDisplay, Skeleton, EmptyState,
 } from '@/components/shared'
-import { useChecks, useCheckMutations } from './hooks'
+import { useChecks, useCheckPortfolio, useCheckInTransit, useCheckMutations } from './hooks'
 import { CheckRegisterDrawer } from './CheckRegisterDrawer'
 import { CheckDepositModal } from './CheckDepositModal'
 import type { Check } from './types'
@@ -16,18 +16,48 @@ const ACTIONABLE_FROM: Record<string, string[]> = {
     deposit: ['IN_PORTFOLIO'],
     clear:   ['DEPOSITED'],
     bounce:  ['DEPOSITED'],
-    void:    ['IN_PORTFOLIO'],
+    void:    ['IN_PORTFOLIO', 'ISSUED'],
+    mark_cashed: ['ISSUED'],
 }
 
 export function ChecksView() {
     const { data: checks = [], isLoading } = useChecks()
+    const { data: portfolio } = useCheckPortfolio()
+    const { data: inTransit } = useCheckInTransit()
     const { deposit, clear, bounce, void: voidCheck } = useCheckMutations()
 
     const [registerOpen, setRegisterOpen] = useState(false)
     const [depositTarget, setDepositTarget] = useState<Check | null>(null)
+    const [kpiFilter, setKpiFilter] = useState<string | null>(null)
 
     const canDo = (action: string, check: Check) =>
         ACTIONABLE_FROM[action]?.includes(check.status) ?? false
+
+    const kpis = useMemo(() => {
+        const portfolioTotal = portfolio ? parseFloat(portfolio.total) : 0
+        const portfolioCount = portfolio ? portfolio.checks.length : 0
+        const transitTotal = inTransit ? parseFloat(inTransit.total) : 0
+        const transitCount = inTransit ? inTransit.checks.length : 0
+        const issuedChecks = checks.filter(c => c.direction === 'ISSUED' && c.status === 'ISSUED')
+        const issuedTotal = issuedChecks.reduce((s, c) => s + parseFloat(c.amount), 0)
+        return { portfolioTotal, portfolioCount, transitTotal, transitCount, issuedTotal, issuedCount: issuedChecks.length }
+    }, [portfolio, inTransit, checks])
+
+    const filteredData = useMemo(() => {
+        if (!kpiFilter) return checks
+        return checks.filter(c => c.status === kpiFilter)
+    }, [checks, kpiFilter])
+
+    if (isLoading) {
+        return (
+            <div className="space-y-4">
+                <div className="grid grid-cols-4 gap-4">
+                    {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-24" />)}
+                </div>
+                <Skeleton className="h-96" />
+            </div>
+        )
+    }
 
     const columns: ColumnDef<Check>[] = [
         {
@@ -38,6 +68,13 @@ export function ChecksView() {
                     <DataCell.Code>{row.original.display_id}</DataCell.Code>
                     <DataCell.Secondary>{row.original.check_number}</DataCell.Secondary>
                 </div>
+            ),
+        },
+        {
+            accessorKey: 'direction',
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Tipo" />,
+            cell: ({ row }) => (
+                <DataCell.Text>{row.original.direction === 'RECEIVED' ? 'Recibido' : 'Propio'}</DataCell.Text>
             ),
         },
         {
@@ -102,10 +139,45 @@ export function ChecksView() {
 
     return (
         <>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <StatCard
+                    label="En Cartera"
+                    value={<MoneyDisplay amount={kpis.portfolioTotal} />}
+                    subtext={`${kpis.portfolioCount} cheques`}
+                    icon={CircleDollarSign}
+                    onClick={() => setKpiFilter(kpiFilter === 'IN_PORTFOLIO' ? null : 'IN_PORTFOLIO')}
+                    active={kpiFilter === 'IN_PORTFOLIO'}
+                />
+                <StatCard
+                    label="Depósitos en Tránsito"
+                    value={<MoneyDisplay amount={kpis.transitTotal} />}
+                    subtext={`${kpis.transitCount} cheques`}
+                    icon={Clock}
+                    onClick={() => setKpiFilter(kpiFilter === 'DEPOSITED' ? null : 'DEPOSITED')}
+                    active={kpiFilter === 'DEPOSITED'}
+                />
+                <StatCard
+                    label="Cheques Propios Girados"
+                    value={<MoneyDisplay amount={kpis.issuedTotal} />}
+                    subtext={`${kpis.issuedCount} cheques`}
+                    icon={CheckSquare}
+                    onClick={() => setKpiFilter(kpiFilter === 'ISSUED' ? null : 'ISSUED')}
+                    active={kpiFilter === 'ISSUED'}
+                />
+                <StatCard
+                    label="Protestados"
+                    value={checks.filter(c => c.status === 'BOUNCED').length.toString()}
+                    subtext="cheques"
+                    icon={BanIcon}
+                    onClick={() => setKpiFilter(kpiFilter === 'BOUNCED' ? null : 'BOUNCED')}
+                    active={kpiFilter === 'BOUNCED'}
+                />
+            </div>
+
             <DataTableView
                 entityLabel="treasury.check"
                 columns={columns}
-                data={checks}
+                data={filteredData}
                 isLoading={isLoading}
                 variant="embedded"
                 createAction={
@@ -118,8 +190,8 @@ export function ChecksView() {
                 }
                 emptyState={{
                     context: 'treasury',
-                    title: 'Sin cheques en cartera',
-                    description: 'Registra cheques recibidos de clientes para gestionar su cobro.',
+                    title: 'Sin cheques',
+                    description: 'Registra cheques recibidos o propios para gestionar su cobro.',
                 }}
             />
 
