@@ -39,7 +39,7 @@ re-derivar el contexto del código.
 | — | Taxonomía cuentas vs métodos (wizard, provisión, convergencia) | — | — | ✅ Hecho (ADR-0031) |
 | — | Tarjeta de crédito como pasivo | — | — | ✅ Hecho (ADR-0031) |
 | — | Cheques recibidos (cartera, cuenta puente) | — | — | ✅ Hecho (ADR-0032) |
-| **1** | Operativo / limpieza | S–M | **#1** | ⬜ Pendiente |
+| **1** | Operativo / limpieza | S–M | **#1** | 🟡 En curso — F1.3/F1.4/F1.5 ✅, F1.1+F1.2 pendientes de operación |
 | **2** | Créditos bancarios (CLP + UF) | XL | #2 | ⬜ Pendiente |
 | **3** | Tarjeta de crédito: estado + pago | L | #3 | ⬜ Pendiente |
 | **4** | Cheques: propios girados + endoso + extras | L | #4 | ⬜ Pendiente |
