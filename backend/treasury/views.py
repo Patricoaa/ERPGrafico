@@ -22,6 +22,8 @@ from .serializers import (
     BankLoanSerializer, BankLoanWriteSerializer, LoanInstallmentSerializer,
     PayInstallmentActionSerializer, PrepayLoanActionSerializer,
     RefinanceLoanActionSerializer,
+    CreditCardStatementSerializer, CreditCardStatementWriteSerializer,
+    PayStatementActionSerializer, ApplyChargesActionSerializer,
 )
 from .services import TreasuryService, TerminalBatchService
 from .pos_service import POSService
@@ -1839,3 +1841,130 @@ class LoanInstallmentViewSet(viewsets.ModelViewSet):
         except ValidationError as e:
             return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         return Response(self.get_serializer(installment).data)
+
+
+# ── F3.5: Tarjeta de crédito propia — estados de cuenta ─────────────────────
+
+
+class CreditCardStatementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
+    """CRUD + acciones de lifecycle para estados de cuenta de tarjeta de crédito propia.
+
+    Acciones custom:
+      - POST /card-statements/{id}/pay/          → pagar desde una cuenta bancaria.
+      - POST /card-statements/{id}/apply-charges/ → imputar interés/comisiones.
+      - POST /card-statements/{id}/cancel/       → anular un statement OPEN.
+    """
+    from .models import CreditCardStatement
+
+    serializer_class = CreditCardStatementSerializer
+    filterset_fields = ['status', 'card_account', 'period_year', 'period_month']
+
+    def get_queryset(self):
+        from .models import CreditCardStatement
+        return (CreditCardStatement.objects
+                .select_related('card_account', 'payment_account', 'payment_movement', 'created_by')
+                .order_by('-period_year', '-period_month', '-id'))
+
+    def get_serializer_class(self):
+        if self.action in ('create', 'update', 'partial_update'):
+            return CreditCardStatementWriteSerializer
+        return CreditCardStatementSerializer
+
+    def perform_create(self, serializer):
+        from django.core.exceptions import ValidationError as DjangoValidationError
+        try:
+            stmt = serializer.save(created_by=self.request.user)
+        except DjangoValidationError as e:
+            raise drf_serializers.ValidationError(e.message_dict if hasattr(e, 'message_dict') else e.messages)
+        self._just_created = stmt
+
+    def create(self, request, *args, **kwargs):
+        write_serializer = self.get_serializer(data=request.data)
+        write_serializer.is_valid(raise_exception=True)
+        self.perform_create(write_serializer)
+        read_serializer = CreditCardStatementSerializer(self._just_created, context={'request': request})
+        return Response(read_serializer.data, status=status.HTTP_201_CREATED)
+
+    def perform_update(self, serializer):
+        from django.core.exceptions import ValidationError as DjangoValidationError
+        try:
+            serializer.save()
+        except DjangoValidationError as e:
+            raise drf_serializers.ValidationError(e.message_dict if hasattr(e, 'message_dict') else e.messages)
+
+    @action(detail=True, methods=['post'])
+    def pay(self, request, pk=None):
+        from .card_service import CardService
+        from .models import TreasuryAccount
+        stmt = self.get_object()
+        payload = PayStatementActionSerializer(data=request.data)
+        payload.is_valid(raise_exception=True)
+        v = payload.validated_data
+        try:
+            payment_account = TreasuryAccount.objects.get(pk=v['payment_account'])
+        except TreasuryAccount.DoesNotExist:
+            return Response(
+                {'detail': 'payment_account no existe.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        try:
+            stmt = CardService.pay_statement(
+                stmt,
+                payment_account=payment_account,
+                date=v.get('date'),
+                created_by=request.user,
+            )
+        except ValidationError as e:
+            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        stmt.refresh_from_db()
+        return Response(self.get_serializer(stmt).data)
+
+    @action(detail=True, methods=['post'], url_path='apply-charges')
+    def apply_charges(self, request, pk=None):
+        from .card_service import CardService
+        from accounting.models import Account
+        stmt = self.get_object()
+        payload = ApplyChargesActionSerializer(data=request.data)
+        payload.is_valid(raise_exception=True)
+        v = payload.validated_data
+        interest_exp = None
+        fees_exp = None
+        if v.get('interest_expense_account'):
+            try:
+                interest_exp = Account.objects.get(pk=v['interest_expense_account'])
+            except Account.DoesNotExist:
+                return Response(
+                    {'detail': 'interest_expense_account no existe.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+        if v.get('fees_expense_account'):
+            try:
+                fees_exp = Account.objects.get(pk=v['fees_expense_account'])
+            except Account.DoesNotExist:
+                return Response(
+                    {'detail': 'fees_expense_account no existe.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+        try:
+            stmt = CardService.apply_charges(
+                stmt,
+                interest_expense_account=interest_exp,
+                fees_expense_account=fees_exp,
+                created_by=request.user,
+            )
+        except ValidationError as e:
+            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        stmt.refresh_from_db()
+        return Response(self.get_serializer(stmt).data)
+
+    @action(detail=True, methods=['post'])
+    def cancel(self, request, pk=None):
+        from .card_service import CardService
+        stmt = self.get_object()
+        notes = request.data.get('notes', '')
+        try:
+            stmt = CardService.cancel_statement(stmt, notes=notes)
+        except ValidationError as e:
+            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        stmt.refresh_from_db()
+        return Response(self.get_serializer(stmt).data)

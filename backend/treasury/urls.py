@@ -10,6 +10,7 @@ from .views import (
     PaymentTerminalProviderViewSet, PaymentTerminalDeviceViewSet,
     CheckViewSet,
     BankLoanViewSet, LoanInstallmentViewSet,
+    CreditCardStatementViewSet,
 )
 
 router = DefaultRouter()
@@ -33,6 +34,7 @@ router.register(r'dashboard', TreasuryDashboardViewSet, basename='treasury-dashb
 router.register(r'checks', CheckViewSet, basename='check')
 router.register(r'loans', BankLoanViewSet, basename='bankloan')
 router.register(r'loan-installments', LoanInstallmentViewSet, basename='loaninstallment')
+router.register(r'card-statements', CreditCardStatementViewSet, basename='creditcardstatement')
 
 urlpatterns = [
     path('', include(router.urls)),

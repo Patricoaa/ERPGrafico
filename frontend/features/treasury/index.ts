@@ -34,4 +34,7 @@ export * from './loans/LoansView'
 export * from './loans/LoanRegisterDrawer'
 export * from './loans/LoanDetailModal'
 export * from './loans/LoanPayInstallmentModal'
+export * from './card-statements/StatementsView'
+export * from './card-statements/StatementDetailModal'
+export * from './card-statements/PayStatementModal'
 

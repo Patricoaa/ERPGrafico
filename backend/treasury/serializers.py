@@ -859,3 +859,97 @@ class RefinanceLoanActionSerializer(serializers.Serializer):
     """Payload para la acción `refinance` de BankLoanViewSet."""
     notes = serializers.CharField(required=False, allow_blank=True, default='')
 
+
+# ── F3.5: Tarjeta de crédito — estados de cuenta ────────────────────────────
+
+
+class CreditCardStatementSerializer(serializers.ModelSerializer):
+    """Serializer de lectura para `CreditCardStatement`."""
+    display_id = serializers.CharField(read_only=True)
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    card_account_name = serializers.CharField(
+        source='card_account.name', read_only=True,
+    )
+    payment_movement_id = serializers.PrimaryKeyRelatedField(
+        source='payment_movement', read_only=True,
+    )
+    payment_account_name = serializers.CharField(
+        source='payment_account.name', read_only=True, allow_null=True,
+    )
+    created_by_name = serializers.CharField(
+        source='created_by.username', read_only=True, allow_null=True,
+    )
+    total_to_pay = serializers.SerializerMethodField()
+    is_overdue = serializers.BooleanField(read_only=True)
+
+    def get_total_to_pay(self, obj):
+        return str(obj.total_to_pay)
+
+    class Meta:
+        from .models import CreditCardStatement
+        model = CreditCardStatement
+        fields = [
+            'id', 'display_id',
+            'card_account', 'card_account_name',
+            'period_year', 'period_month',
+            'cut_off_date', 'due_date',
+            'billed_amount', 'minimum_payment',
+            'interest_charged', 'fees_charged',
+            'credit_limit',
+            'status', 'status_display', 'is_overdue',
+            'total_to_pay',
+            'paid_at', 'payment_movement', 'payment_movement_id',
+            'payment_account', 'payment_account_name',
+            'notes',
+            'created_at', 'updated_at', 'created_by', 'created_by_name',
+        ]
+        read_only_fields = [
+            'display_id', 'status', 'is_overdue', 'total_to_pay',
+            'paid_at', 'payment_movement', 'payment_account',
+            'created_at', 'updated_at', 'created_by',
+        ]
+
+
+class CreditCardStatementWriteSerializer(serializers.ModelSerializer):
+    """Serializer de escritura para `CreditCardStatement`."""
+
+    class Meta:
+        from .models import CreditCardStatement
+        model = CreditCardStatement
+        fields = [
+            'card_account', 'period_year', 'period_month',
+            'cut_off_date', 'due_date',
+            'billed_amount', 'minimum_payment',
+            'interest_charged', 'fees_charged',
+            'credit_limit', 'notes',
+        ]
+
+    def validate(self, attrs):
+        from .models import CreditCardStatement
+        card_account = attrs.get('card_account')
+        if card_account and card_account.account_type != TreasuryAccount.Type.CREDIT_CARD:
+            raise serializers.ValidationError({
+                'card_account': 'La cuenta debe ser de tipo Tarjeta de Crédito (CREDIT_CARD).',
+            })
+        due_date = attrs.get('due_date')
+        cut_off = attrs.get('cut_off_date')
+        if due_date and cut_off and due_date < cut_off:
+            raise serializers.ValidationError({
+                'due_date': 'La fecha de vencimiento no puede ser anterior al cierre.',
+            })
+        return attrs
+
+
+class PayStatementActionSerializer(serializers.Serializer):
+    """Payload para la acción `pay` de CreditCardStatementViewSet."""
+    payment_account = serializers.IntegerField(
+        help_text="ID de la TreasuryAccount bancaria desde donde se paga.",
+    )
+    date = serializers.DateField(required=False)
+
+
+class ApplyChargesActionSerializer(serializers.Serializer):
+    """Payload para la acción `apply_charges` de CreditCardStatementViewSet."""
+    interest_expense_account = serializers.IntegerField(required=False, allow_null=True)
+    fees_expense_account = serializers.IntegerField(required=False, allow_null=True)
+
