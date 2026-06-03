@@ -59,7 +59,7 @@ interface BankManagementProps {
 }
 
 export function BankManagement({ externalOpen, onOpenChange, createAction }: BankManagementProps) {
-    const { banks, refetch, deleteBank } = useBanks()
+    const { banks, refetch, archiveBank, restoreBank } = useBanks()
     const { overviews } = useAllBanksOverview()
     const { filterFn: filterBanks } = useClientSearch<Bank>(bankSearchDef)
     const [dialogOpen, setDialogOpen] = useState(false)
@@ -67,16 +67,28 @@ export function BankManagement({ externalOpen, onOpenChange, createAction }: Ban
     const [selectedBank, setSelectedBank] = useState<Bank | null>(null)
     const router = useRouter()
 
-    const deleteConfirm = useConfirmAction<number>(async (id) => {
+    const archiveConfirm = useConfirmAction<number>(async (id) => {
         try {
-            await deleteBank(id)
+            await archiveBank(id)
         } catch {
             // Error handled by hook
         }
     })
 
-    const handleDelete = (id: number) => {
-        deleteConfirm.requestConfirm(id)
+    const restoreConfirm = useConfirmAction<number>(async (id) => {
+        try {
+            await restoreBank(id)
+        } catch {
+            // Error handled by hook
+        }
+    })
+
+    const handleArchive = (id: number) => {
+        archiveConfirm.requestConfirm(id)
+    }
+
+    const handleRestore = (id: number) => {
+        restoreConfirm.requestConfirm(id)
     }
 
     const openCreate = () => {
@@ -163,6 +175,20 @@ export function BankManagement({ externalOpen, onOpenChange, createAction }: Ban
             },
             accessorFn: (row: Bank) => overviews.find(o => o.bank.id === row.id)?.summary.active_loan_count ?? 0,
         },
+        {
+            id: "is_active",
+            header: ({ column }: { column: Column<Bank, unknown> }) => <DataTableColumnHeader column={column} title="Estado" className="justify-center" />,
+            cell: ({ row }: { row: { original: Bank } }) => (
+                <div className="flex justify-center w-full">
+                    {row.original.is_active ? (
+                        <Chip size="xs" intent="success">Activo</Chip>
+                    ) : (
+                        <Chip size="xs" intent="neutral">Archivado</Chip>
+                    )}
+                </div>
+            ),
+            accessorFn: (row: Bank) => (row.is_active ? "Activo" : "Archivado"),
+        },
         createActionsColumn<Bank>({
             renderActions: (item) => (
                 <>
@@ -172,7 +198,11 @@ export function BankManagement({ externalOpen, onOpenChange, createAction }: Ban
                         onClick={() => router.push(`/treasury/centro-bancos?bank=${item.id}&tab=overview`)}
                     />
                     <DataCell.Action action="edit" onClick={() => openEdit(item)} />
-                    <DataCell.Action action="delete" onClick={() => handleDelete(item.id)} />
+                    {item.is_active ? (
+                        <DataCell.Action action="archive" onClick={() => handleArchive(item.id)} />
+                    ) : (
+                        <DataCell.Action action="restore" onClick={() => handleRestore(item.id)} />
+                    )}
                 </>
             )
         })
@@ -232,12 +262,20 @@ export function BankManagement({ externalOpen, onOpenChange, createAction }: Ban
             />
 
             <ActionConfirmModal
-                open={deleteConfirm.isOpen}
-                onOpenChange={(open) => { if (!open) deleteConfirm.cancel() }}
-                onConfirm={deleteConfirm.confirm}
-                title="Eliminar Banco"
-                description="¿Está seguro de eliminar este banco? Esta acción no se puede deshacer."
-                variant="destructive"
+                open={archiveConfirm.isOpen}
+                onOpenChange={(open) => { if (!open) archiveConfirm.cancel() }}
+                onConfirm={archiveConfirm.confirm}
+                title="Archivar Banco"
+                description="El banco quedará inactivo y no aparecerá en los selectores. Podrá restaurarlo en cualquier momento."
+                variant="warning"
+            />
+            <ActionConfirmModal
+                open={restoreConfirm.isOpen}
+                onOpenChange={(open) => { if (!open) restoreConfirm.cancel() }}
+                onConfirm={restoreConfirm.confirm}
+                title="Restaurar Banco"
+                description="¿Desea reactivar este banco? Volverá a estar disponible en los selectores."
+                variant="info"
             />
         </div>
     )
