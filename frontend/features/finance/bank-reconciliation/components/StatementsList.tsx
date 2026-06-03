@@ -1,47 +1,73 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
-import { Eye } from "lucide-react"
+import React, { useState, useEffect, useMemo } from "react"
+import { useRouter } from "next/navigation"
+import { Eye, Upload } from "lucide-react"
 import { useStatementsQuery } from "../hooks/useReconciliationQueries"
 import { useSelectedEntity } from "@/hooks/useSelectedEntity"
 import type { BankStatement } from "../types"
 import { StatementImportModal } from "@/features/treasury"
-import { DataTable, StatusBadge } from '@/components/shared'
+import { DataTable, StatusBadge, SmartSearchBar, useClientSearch } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
-import { ColumnDef } from "@tanstack/react-table"
+import type { ColumnDef } from "@tanstack/react-table"
 import { createActionsColumn, DataCell } from '@/components/shared'
 import { Progress } from "@/components/ui/progress"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Button } from "@/components/ui/button"
+import type { SearchDefinition } from '@/types/search'
+
+const statementsSearchDef: SearchDefinition = {
+    fields: [
+        {
+            key: 'display_id',
+            label: 'Cartola',
+            type: 'text',
+            serverParam: 'search',
+            clientKey: ['display_id', 'treasury_account_name'],
+        },
+        {
+            key: 'state',
+            label: 'Estado',
+            type: 'enum',
+            serverParam: 'state',
+            options: [
+                { label: 'Borrador', value: 'DRAFT' },
+                { label: 'Confirmado', value: 'CONFIRMED' },
+                { label: 'Anulado', value: 'CANCELLED' },
+            ],
+        },
+    ],
+}
 
 interface StatementsListProps {
     externalOpen?: boolean
     createAction?: React.ReactNode
     bankId?: number
-    accountId?: number
+    accounts?: Array<{ id: number; name: string }>
 }
 
-export function StatementsList({ externalOpen = false, createAction, bankId, accountId }: StatementsListProps) {
+export function StatementsList({ externalOpen = false, createAction, bankId, accounts }: StatementsListProps) {
     const router = useRouter()
-    const searchParams = useSearchParams()
-    const { data: statements = [], isLoading, refetch } = useStatementsQuery(
-        accountId ? { treasury_account: String(accountId) } : bankId ? { bank: String(bankId) } : undefined,
-    )
-    const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<BankStatement>({
-        endpoint: '/treasury/statements'
-    })
+    const [selectedAccountId, setSelectedAccountId] = useState<number | null>(null)
     const [importModalOpen, setImportModalOpen] = useState(false)
 
-    const initialFilters = React.useMemo(() => {
-        const filters = []
-        if (searchParams.get("filter") === "in_progress") {
-            filters.push({ id: "state", value: ["DRAFT"] })
-        }
-        return filters
-    }, [searchParams])
+    const { filterFn, isFiltered } = useClientSearch<BankStatement>(statementsSearchDef)
+
+    const { data: statements = [], isLoading, refetch } = useStatementsQuery(
+        selectedAccountId
+            ? { treasury_account: String(selectedAccountId) }
+            : bankId
+            ? { bank: String(bankId) }
+            : undefined,
+    )
+
+    const filteredStatements = useMemo(() => filterFn(statements), [filterFn, statements])
+
+    const { entity: selectedFromUrl } = useSelectedEntity<BankStatement>({
+        endpoint: '/treasury/statements'
+    })
 
     // Handle deep-linked statement selection (ADR-0020)
-    // replace (not push): reemplaza la entrada ?selected= en el historial sin añadir una nueva.
-    // El botón "Ver" ya navega directo al workbench — este efecto solo atiende deeplinks externos.
     useEffect(() => {
         if (selectedFromUrl) {
             router.replace(`/treasury/reconciliation/${selectedFromUrl.id}`)
@@ -49,7 +75,6 @@ export function StatementsList({ externalOpen = false, createAction, bankId, acc
     }, [selectedFromUrl, router])
 
     // Open import dialog when triggered via URL (?modal=import)
-    // T-105: cancelAnimationFrame cleanup prevents setState on unmounted component
     useEffect(() => {
         if (externalOpen) {
             const handle = requestAnimationFrame(() => setImportModalOpen(true))
@@ -60,13 +85,14 @@ export function StatementsList({ externalOpen = false, createAction, bankId, acc
     const handleImportSuccess = () => {
         refetch()
         setImportModalOpen(false)
-        // Clear modal param from URL
-        router.replace('/treasury/reconciliation?tab=statements')
+        if (!accounts) {
+            router.replace('/treasury/reconciliation?tab=statements')
+        }
     }
 
     const handleModalChange = (open: boolean) => {
         setImportModalOpen(open)
-        if (!open) {
+        if (!open && !accounts) {
             router.replace('/treasury/reconciliation?tab=statements')
         }
     }
@@ -180,31 +206,62 @@ export function StatementsList({ externalOpen = false, createAction, bankId, acc
         })
     ]
 
+    const leftAction = (
+        <div className="flex items-center gap-2 w-full">
+            {accounts !== undefined && (
+                accounts.length > 0 ? (
+                    <Select
+                        value={selectedAccountId?.toString() || 'all'}
+                        onValueChange={(v) => setSelectedAccountId(v === 'all' ? null : Number(v))}
+                    >
+                        <SelectTrigger className="h-9 w-[200px] shrink-0 text-[10px] font-black uppercase tracking-widest">
+                            <SelectValue placeholder="Todas las cuentas" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all" className="text-[10px] font-bold uppercase">Todas las cuentas</SelectItem>
+                            {accounts.map(acc => (
+                                <SelectItem key={acc.id} value={acc.id.toString()} className="text-[10px] font-bold uppercase">
+                                    {acc.name}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                ) : (
+                    <div className="h-9 flex items-center px-3 rounded-md border border-border/50 bg-muted/20 shrink-0 gap-2">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/50">Sin cuentas bancarias</span>
+                    </div>
+                )
+            )}
+            <SmartSearchBar
+                searchDef={statementsSearchDef}
+                placeholder="Buscar por ID o cuenta..."
+                className="flex-1"
+            />
+        </div>
+    )
+
+    const internalImportButton = accounts !== undefined ? (
+        <Button
+            className="h-9 px-4 rounded-md text-[10px] font-black uppercase tracking-widest shadow-sm bg-primary text-primary-foreground hover:bg-primary/90"
+            onClick={() => setImportModalOpen(true)}
+        >
+            <Upload className="h-3.5 w-3.5 mr-2" />
+            Importar Cartola
+        </Button>
+    ) : undefined
+
     return (
         <div className="h-full flex flex-col">
             <div className="flex-1 min-h-0">
                 <DataTable
                     columns={columns}
-                    data={statements}
+                    data={filteredStatements}
                     variant="embedded"
                     isLoading={isLoading}
-                    globalFilterFields={["treasury_account_name", "display_id"]}
-                    searchPlaceholder="Buscar por ID..."
-                    facetedFilters={[
-                        {
-                            column: "state",
-                            title: "Estado",
-                            options: [
-                                { label: "Borrador", value: "DRAFT" },
-                                { label: "Confirmado", value: "CONFIRMED" },
-                                { label: "Anulado", value: "CANCELLED" },
-                            ]
-                        }
-                    ]}
-                    initialColumnFilters={initialFilters}
-                    useAdvancedFilter={true}
+                    isFiltered={isFiltered}
+                    leftAction={leftAction}
+                    createAction={internalImportButton ?? createAction}
                     defaultPageSize={10}
-                    createAction={createAction}
                 />
             </div>
 
@@ -212,6 +269,8 @@ export function StatementsList({ externalOpen = false, createAction, bankId, acc
                 open={importModalOpen}
                 onOpenChange={handleModalChange}
                 onSuccess={handleImportSuccess}
+                defaultAccountId={selectedAccountId || undefined}
+                allowedAccountIds={accounts?.map(a => a.id)}
             />
         </div>
     )

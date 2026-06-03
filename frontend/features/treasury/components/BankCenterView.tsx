@@ -1,23 +1,21 @@
 "use client"
 
-import React, { useState } from 'react'
+import React from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
-import { Landmark, Banknote, CreditCard, CheckSquare, Calendar, AlertTriangle, Upload } from 'lucide-react'
+import { Landmark, Banknote, CreditCard, CheckSquare, Calendar, AlertTriangle } from 'lucide-react'
 import {
     StatCard, Skeleton, EmptyState, StatusBadge, MoneyDisplay,
 } from '@/components/shared'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Button } from '@/components/ui/button'
 import { treasuryApi } from '../api/treasuryApi'
 import { BANKS_KEYS } from '../hooks/queryKeys'
 import { ChecksView } from '../checks/ChecksView'
 import { LoansView } from '../loans/LoansView'
 import { StatementsView } from '../card-statements/StatementsView'
-import { StatementsList, StatementImportModal } from '@/features/finance/bank-reconciliation/components'
+import { StatementsList } from '@/features/finance/bank-reconciliation/components'
 
 interface MaturityItem {
     type: string
@@ -61,8 +59,6 @@ export function BankCenterView({ bankId }: { bankId: number }) {
     const searchParams = useSearchParams()
     const activeTab = searchParams.get('tab') || 'overview'
     const { data, isLoading, isError } = useBankOverview(bankId)
-    const [selectedAccountId, setSelectedAccountId] = useState<number | null>(null)
-    const [importModalOpen, setImportModalOpen] = useState(false)
 
     const handleTabChange = (tab: string) => {
         router.push(`/treasury/centro-bancos?bank=${bankId}&tab=${tab}`, { scroll: false })
@@ -243,47 +239,13 @@ export function BankCenterView({ bankId }: { bankId: number }) {
             </TabsContent>
 
             <TabsContent value="reconciliation" className="mt-6">
-                <div className="space-y-4">
-                    <div className="flex items-center gap-4">
-                        <Select
-                            value={selectedAccountId?.toString() || 'all'}
-                            onValueChange={(value) => setSelectedAccountId(value === 'all' ? null : Number(value))}
-                        >
-                            <SelectTrigger className="w-[280px]">
-                                <SelectValue placeholder="Todas las cuentas" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">Todas las cuentas</SelectItem>
-                                {accounts
-                                    .filter(acc => acc.account_type === 'CHECKING')
-                                    .map(acc => (
-                                        <SelectItem key={acc.id} value={acc.id.toString()}>
-                                            {acc.name}
-                                        </SelectItem>
-                                    ))
-                                }
-                            </SelectContent>
-                        </Select>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setImportModalOpen(true)}
-                            disabled={!selectedAccountId}
-                        >
-                            <Upload className="h-4 w-4 mr-2" />
-                            Importar Cartola
-                        </Button>
-                    </div>
-                    <StatementsList
-                        bankId={bankId}
-                        accountId={selectedAccountId || undefined}
-                    />
-                    <StatementImportModal
-                        open={importModalOpen}
-                        onOpenChange={setImportModalOpen}
-                        defaultAccountId={selectedAccountId || undefined}
-                    />
-                </div>
+                <StatementsList
+                    bankId={bankId}
+                    accounts={accounts
+                        .filter(acc => acc.account_type === 'CHECKING')
+                        .map(acc => ({ id: acc.id, name: acc.name }))
+                    }
+                />
             </TabsContent>
         </Tabs>
     )

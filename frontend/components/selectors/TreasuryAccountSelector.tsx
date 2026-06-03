@@ -32,6 +32,9 @@ interface TreasuryAccountSelectorProps {
     // Exclude specific account
     excludeId?: number
 
+    // Restrict to specific account IDs (e.g. accounts belonging to a bank)
+    allowedIds?: number[]
+
     // Optional: Return full account object on select
     onSelect?: (account: any) => void
     label?: string
@@ -48,6 +51,7 @@ export function TreasuryAccountSelector({
     paymentMethod,
     type,
     excludeId,
+    allowedIds,
     onSelect,
     label,
     error
@@ -61,14 +65,15 @@ export function TreasuryAccountSelector({
         excludeId
     })
 
-    // Filter by search and legacy type
+    // Filter by search, legacy type, and optional allowedIds
     const filteredAccounts = accounts.filter(a => {
         const matchesType = !type || a.account_type === type
+        const matchesAllowed = !allowedIds || allowedIds.includes(a.id)
         const searchLower = search.toLowerCase()
         const matchesSearch = !search ||
             a.name.toLowerCase().includes(searchLower) ||
             a.account_type.toLowerCase().includes(searchLower)
-        return matchesType && matchesSearch
+        return matchesType && matchesAllowed && matchesSearch
     })
 
     const selectedAccount = value && accounts.length > 0
