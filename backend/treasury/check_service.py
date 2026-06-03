@@ -27,7 +27,7 @@ from django.db import transaction
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _t
 
-from .models import Check, TreasuryAccount, TreasuryMovement
+from .models import Check, Checkbook, TreasuryAccount, TreasuryMovement
 
 if TYPE_CHECKING:
     from django.contrib.auth.models import AbstractUser
@@ -256,7 +256,7 @@ class CheckService:
     def issue(
         *,
         bank_id: int,
-        check_number: str,
+        check_number: str | None = None,
         amount: Decimal,
         issue_date,
         due_date,
@@ -264,6 +264,7 @@ class CheckService:
         drawer_name: str = "",
         payment_account: "TreasuryAccount | None" = None,
         issued_check_account: "TreasuryAccount | None" = None,
+        checkbook: "Checkbook | None" = None,
         notes: str = "",
         created_by: "AbstractUser | None" = None,
     ) -> Check:
@@ -274,6 +275,9 @@ class CheckService:
         puente LIABILITY "Cheques Girados por Pagar" y salda al proveedor.
         Cuando el proveedor cobre (mark_cashed), la TRANSFER pasivo→banco
         cierra el ciclo.
+
+        Si se proporciona checkbook, toma el siguiente folio automáticamente
+        si check_number es None. Valida unicidad por banco.
         """
         if payment_account is None:
             raise ValidationError(
@@ -282,11 +286,32 @@ class CheckService:
         if issued_check_account is None:
             issued_check_account = CheckService.ensure_issued_checks_account()
 
+        # Folio: automático desde chequera o manual
+        if checkbook is not None and check_number is None:
+            if checkbook.is_exhausted():
+                raise ValidationError(
+                    _t(f"La chequera {checkbook} no tiene folios disponibles.")
+                )
+            check_number = str(checkbook.next_folio)
+            checkbook.next_folio += 1
+            if checkbook.is_exhausted():
+                checkbook.status = Checkbook.Status.EXHAUSTED
+            checkbook.save(update_fields=['next_folio', 'status'])
+        elif check_number is None:
+            raise ValidationError(
+                _t("check_number es obligatorio si no se proporciona checkbook.")
+            )
+
+        # Validar que el número no exista para este banco
+        if Check.objects.filter(
+            bank_id=bank_id, check_number=check_number
+        ).exists():
+            raise ValidationError(
+                _t(f"El cheque {check_number} ya existe para este banco.")
+            )
+
         from .services import TreasuryService
 
-        # OUTBOUND desde la cuenta puente LIABILITY "Cheques Girados".
-        # El asiento estándar: Debita gasto/proveedor, Credita pasivo
-        # (la cuenta puente "Cheques Girados por Pagar").
         movement = TreasuryService.create_movement(
             amount=amount,
             movement_type=TreasuryMovement.Type.OUTBOUND,
@@ -311,6 +336,7 @@ class CheckService:
             portfolio_account=issued_check_account,
             payment_account=payment_account,
             issued_check_account=issued_check_account,
+            checkbook=checkbook,
             receipt_movement=movement,
             notes=notes,
             created_by=created_by,

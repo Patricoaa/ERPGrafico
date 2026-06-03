@@ -1950,6 +1950,13 @@ class Check(models.Model):
     )
 
     # ── Cheques propios girados (direction=ISSUED) ──────────────────────
+    checkbook = models.ForeignKey(
+        'Checkbook', on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='checks',
+        verbose_name=_("Chequera"),
+        help_text=_("Talonario del que se tomó el folio (solo cheques propios)."),
+    )
     payment_account = models.ForeignKey(
         'TreasuryAccount', on_delete=models.SET_NULL,
         null=True, blank=True,
@@ -2413,4 +2420,89 @@ class CreditCardStatement(models.Model):
             + (self.interest_charged or Decimal('0'))
             + (self.fees_charged or Decimal('0'))
         )
+
+
+class Checkbook(models.Model):
+    """
+    Talonario de cheques propios vinculado a una cuenta bancaria (CHECKING).
+    Controla folios correlativos y previene duplicados.
+    """
+    class Status(models.TextChoices):
+        ACTIVE  = 'ACTIVE',  _('Activo')
+        CLOSED  = 'CLOSED',  _('Cerrado')
+        EXHAUSTED = 'EXHAUSTED', _('Agotado')
+
+    bank_account = models.ForeignKey(
+        TreasuryAccount, on_delete=models.PROTECT,
+        related_name='checkbooks',
+        verbose_name=_("Cuenta Bancaria"),
+        limit_choices_to={'account_type': 'CHECKING'},
+    )
+    bank = models.ForeignKey(
+        Bank, on_delete=models.PROTECT,
+        related_name='checkbooks',
+        verbose_name=_("Banco"),
+    )
+    start_folio = models.PositiveIntegerField(
+        _("Primer Folio"), help_text=_("Número de cheque inicial del talonario.")
+    )
+    end_folio = models.PositiveIntegerField(
+        _("Último Folio"), help_text=_("Número de cheque final del talonario.")
+    )
+    next_folio = models.PositiveIntegerField(
+        _("Siguiente Folio"),
+        help_text=_("Próximo número a asignar. Se incrementa automáticamente."),
+    )
+    status = models.CharField(
+        _("Estado"), max_length=12,
+        choices=Status.choices, default=Status.ACTIVE,
+    )
+    notes = models.TextField(_("Notas"), blank=True)
+
+    created_at = models.DateTimeField(_("Creado"), auto_now_add=True)
+    updated_at = models.DateTimeField(_("Actualizado"), auto_now=True)
+
+    class Meta:
+        verbose_name = _("Chequera")
+        verbose_name_plural = _("Chequeras")
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(start_folio__lte=models.F('end_folio')),
+                name='ck_checkbook_folio_range',
+            ),
+            models.UniqueConstraint(
+                fields=['bank_account', 'start_folio'],
+                name='uniq_checkbook_start',
+            ),
+        ]
+        ordering = ['bank_account', 'start_folio']
+
+    def __str__(self) -> str:
+        return f"Chequera {self.start_folio}–{self.end_folio} ({self.bank.name})"
+
+    def clean(self):
+        super().clean()
+        if self.start_folio and self.end_folio:
+            if self.start_folio > self.end_folio:
+                raise ValidationError({
+                    'end_folio': _("El último folio debe ser mayor o igual al primero.")
+                })
+        if self.next_folio and self.start_folio and self.end_folio:
+            if self.next_folio < self.start_folio or self.next_folio > self.end_folio + 1:
+                raise ValidationError({
+                    'next_folio': _("El siguiente folio debe estar dentro del rango del talonario.")
+                })
+
+    def available_folios(self) -> int:
+        """Cantidad de folios disponibles para emitir."""
+        if self.status != self.Status.ACTIVE:
+            return 0
+        return self.end_folio - self.next_folio + 1
+
+    def is_exhausted(self) -> bool:
+        return self.next_folio > self.end_folio
+
+    @property
+    def display_id(self) -> str:
+        return f"CHQ-{self.id}"
 

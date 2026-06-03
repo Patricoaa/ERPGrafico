@@ -9,7 +9,7 @@ from django.contrib.auth import get_user_model
 
 from accounting.models import Account, AccountType
 from contacts.models import Contact, ContactRole
-from treasury.models import Bank, TreasuryAccount, TreasuryMovement, Check
+from treasury.models import Bank, TreasuryAccount, TreasuryMovement, Check, Checkbook
 from treasury.check_service import CheckService
 
 User = get_user_model()
@@ -340,3 +340,120 @@ def test_endorse_from_voided_raises(base):
     check = CheckService.void(check, notes='Error')
     with pytest.raises(ValidationError):
         CheckService.endorse(check, endorsed_to_id=base['supplier'].id)
+
+
+# ─────────────────────────────────────────────────────────────────────────
+# F4.3: Chequera con folios correlativos
+# ─────────────────────────────────────────────────────────────────────────
+
+@pytest.mark.django_db
+def test_checkbook_creation(base):
+    """Crear una chequera con rango válido."""
+    cb = Checkbook.objects.create(
+        bank_account=base['bank_ta'],
+        bank=base['bank'],
+        start_folio=1,
+        end_folio=100,
+        next_folio=1,
+    )
+    assert cb.available_folios() == 100
+    assert not cb.is_exhausted()
+
+
+@pytest.mark.django_db
+def test_checkbook_invalid_range_raises(db):
+    """Rango start > end → error."""
+    bank = Bank.objects.create(name='BancoX', code='BX1')
+    acc = Account.objects.create(
+        name='Banco X', code='1.1.01.090', account_type=AccountType.ASSET
+    )
+    ta = TreasuryAccount.objects.create(
+        name='Banco X', account=acc,
+        account_type=TreasuryAccount.Type.CHECKING,
+        bank=bank, account_number='456',
+    )
+    with pytest.raises(ValidationError):
+        cb = Checkbook(
+            bank_account=ta, bank=bank, start_folio=100, end_folio=1, next_folio=1
+        )
+        cb.full_clean()
+
+
+@pytest.mark.django_db
+def test_checkbook_exhausted(base):
+    """Cuando next_folio > end_folio, available_folios = 0."""
+    cb = Checkbook.objects.create(
+        bank_account=base['bank_ta'],
+        bank=base['bank'],
+        start_folio=1,
+        end_folio=5,
+        next_folio=6,
+        status=Checkbook.Status.EXHAUSTED,
+    )
+    assert cb.available_folios() == 0
+    assert cb.is_exhausted()
+
+
+@pytest.mark.django_db
+def test_checkbook_closed_no_available(base):
+    """Chequera cerrada no tiene folios disponibles."""
+    cb = Checkbook.objects.create(
+        bank_account=base['bank_ta'],
+        bank=base['bank'],
+        start_folio=1,
+        end_folio=50,
+        next_folio=10,
+        status=Checkbook.Status.CLOSED,
+    )
+    assert cb.available_folios() == 0
+
+
+@pytest.mark.django_db
+def test_issue_with_checkbook(base):
+    """Emitir cheque con chequera asigna el folio y crea Check."""
+    cb = Checkbook.objects.create(
+        bank_account=base['bank_ta'],
+        bank=base['bank'],
+        start_folio=1000,
+        end_folio=1100,
+        next_folio=1000,
+    )
+    check = CheckService.issue(
+        bank_id=base['bank'].id,
+        amount=Decimal('50000'),
+        issue_date='2026-06-01',
+        due_date='2026-07-01',
+        counterparty_id=base['supplier'].id,
+        payment_account=base['bank_ta'],
+        issued_check_account=base['issued_checks_ta'],
+        checkbook=cb,
+        created_by=base['user'],
+    )
+    assert check.checkbook == cb
+    assert check.check_number == '1000'
+    cb.refresh_from_db()
+    assert cb.next_folio == 1001
+
+
+@pytest.mark.django_db
+def test_issue_duplicate_check_number_same_bank_raises(base):
+    """Número de cheque duplicado en el mismo banco → error."""
+    CheckService.issue(
+        bank_id=base['bank'].id,
+        check_number='5001',
+        amount=Decimal('30000'),
+        issue_date='2026-06-01',
+        due_date='2026-07-01',
+        payment_account=base['bank_ta'],
+        issued_check_account=base['issued_checks_ta'],
+    )
+    with pytest.raises(ValidationError, match='ya existe'):
+        CheckService.issue(
+            bank_id=base['bank'].id,
+            check_number='5001',
+            amount=Decimal('25000'),
+            issue_date='2026-06-01',
+            due_date='2026-07-01',
+            payment_account=base['bank_ta'],
+            issued_check_account=base['issued_checks_ta'],
+        )
