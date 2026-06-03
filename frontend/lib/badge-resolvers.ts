@@ -126,6 +126,10 @@ export const STATUS_MAP: Record<string, StatusStyle> = {
     OVERDUE_60:    { label: '31-60 Días', intent: 'warning' },
     OVERDUE_90:    { label: '61-90 Días', intent: 'destructive' },
     OVERDUE_90PLUS:{ label: '+90 Días',   intent: 'destructive' },
+    OVERDUE:       { label: 'Vencida',    intent: 'destructive' },
+    CANCELED:      { label: 'Anulada',    intent: 'neutral' },
+    REFINANCED:    { label: 'Refinanciado', intent: 'info' },
+    DEFAULTED:     { label: 'En Mora',    intent: 'destructive' },
 
     // ── HR ────────────────────────────────────────────────────────────────
     AUSENTISMO:        { label: 'Ausentismo',     intent: 'destructive' },

@@ -30,4 +30,8 @@ export * from './components/MonthlyInvoiceModal'
 export * from './components/TreasuryAccountDrawer'
 export * from './components/TreasuryAccountWizard'
 export * from './checks/ChecksView'
+export * from './loans/LoansView'
+export * from './loans/LoanRegisterDrawer'
+export * from './loans/LoanDetailModal'
+export * from './loans/LoanPayInstallmentModal'
 
