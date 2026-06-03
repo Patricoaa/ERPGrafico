@@ -18,9 +18,9 @@ Patrón:
   - Para asientos con desglose custom (interés / fee), se usa
     `is_pending_registration=True` y se construye el JE a mano,
     análogo al patrón de `LoanService` (ADR-0033).
-  - Las cuentas de gasto financiero (`interest_expense_account`/
-    `fees_expense_account`) se pasan como parámetro hasta que F5.1 las
-    añada a `AccountingSettings`.
+  -   Las cuentas de gasto financiero (`interest_expense_account`/
+    `fees_expense_account`) se resuelven desde `AccountingSettings` si
+    no se pasan como parámetro.
 
 Ver `docs/50-audit/bancos/fase-3-tarjeta-credito.md` (F3.3, F3.4).
 """
@@ -136,6 +136,16 @@ class CardService:
                 _t("Solo se pueden aplicar cargos a un statement OPEN (estado: %(s)s).")
                 % {'s': statement.get_status_display()}
             )
+
+        # Resolver cuentas de gasto desde settings si no se pasan como parámetro.
+        if not interest_expense_account or not fees_expense_account:
+            from accounting.models import AccountingSettings
+            settings_obj = AccountingSettings.get_solo()
+            if settings_obj:
+                if not interest_expense_account:
+                    interest_expense_account = getattr(settings_obj, 'interest_expense_account', None)
+                if not fees_expense_account:
+                    fees_expense_account = getattr(settings_obj, 'bank_commission_account', None)
 
         interest = statement.interest_charged or Decimal('0')
         fees = statement.fees_charged or Decimal('0')

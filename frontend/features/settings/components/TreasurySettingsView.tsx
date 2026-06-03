@@ -7,7 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { settingsApi } from "../hooks"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Form, FormField } from "@/components/ui/form"
-import { Banknote, ArrowLeftRight, Settings2, Smartphone, CheckSquare } from "lucide-react"
+import { Banknote, ArrowLeftRight, Settings2, Smartphone, CheckSquare, Receipt } from "lucide-react"
 import {AutoSaveStatusBadge, FadeIn} from "@/components/shared"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { useAutoSaveForm } from "@/hooks/useAutoSaveForm"
@@ -40,6 +40,9 @@ const DEFAULT_VALUES: TreasuryFormValues = {
     terminal_commission_bridge_account: null,
     terminal_iva_bridge_account: null,
     check_portfolio_account: null,
+    interest_expense_account: null,
+    insurance_expense_account: null,
+    interest_payable_account: null,
 }
 
 import { useTreasurySettings } from "@/features/settings/hooks/useTreasurySettings"
@@ -189,6 +192,27 @@ export function TreasurySettingsView({ activeTab = "conciliation" }: TreasurySet
                                     <CardContent>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                                             <AccountField form={form} name="check_portfolio_account" label="Cheques en Cartera (Documentos por Cobrar)" accountType="ASSET" />
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </div>
+                        )}
+
+                        {activeTab === "financial" && (
+                            <div className="m-0 p-0 border-0 outline-none mt-6">
+                                <Card variant="transparent" className="border-2">
+                                    <CardHeader className="pb-4">
+                                        <div className="flex items-center gap-2">
+                                            <Receipt className="h-4 w-4 text-primary opacity-50" />
+                                            <CardTitle className="text-sm font-black uppercase text-primary tracking-widest">Cuentas de Gasto Financiero</CardTitle>
+                                        </div>
+                                        <CardDescription className="text-[10px] uppercase font-bold text-muted-foreground italic">Cuentas contables para intereses, seguros y comisiones bancarias</CardDescription>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                                            <AccountField form={form} name="interest_expense_account" label="Gasto por Intereses (Préstamos / Tarjeta)" accountType="EXPENSE" />
+                                            <AccountField form={form} name="insurance_expense_account" label="Gasto por Seguros (Desgravamen / Cesantía)" accountType="EXPENSE" />
+                                            <AccountField form={form} name="interest_payable_account" label="Intereses por Pagar (Pasivo Devengado)" accountType="LIABILITY" />
                                         </div>
                                     </CardContent>
                                 </Card>

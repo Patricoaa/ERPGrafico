@@ -118,8 +118,8 @@ def accrue_monthly_loan_interest(year: int = None, month: int = None):
       - Idempotente: si ya existe JE con la misma referencia/mes/loan, no duplica.
 
     Requiere que AccountingSettings tenga las cuentas
-    `loan_interest_expense_account` y `loan_interest_payable_account`
-    (F5.1 las añadirá). Mientras tanto, retorna 0 sin error.
+    `interest_expense_account` e `interest_payable_account`
+    (F5.1). Si no están configuradas, retorna 0 sin error.
     """
     from .models import BankLoan, LoanInstallment
     from accounting.models import AccountingSettings, JournalEntry, JournalItem
@@ -134,12 +134,12 @@ def accrue_monthly_loan_interest(year: int = None, month: int = None):
     if not settings_obj:
         return {'accrued': 0, 'reason': 'no AccountingSettings'}
 
-    # F5.1 añadirá estas cuentas; mientras tanto, opt-in off.
+    # F5.1: resolver cuentas desde AccountingSettings.
     interest_expense_account = getattr(
-        settings_obj, 'loan_interest_expense_account', None
+        settings_obj, 'interest_expense_account', None
     )
     interest_payable_account = getattr(
-        settings_obj, 'loan_interest_payable_account', None
+        settings_obj, 'interest_payable_account', None
     )
     if not (interest_expense_account and interest_payable_account):
         return {'accrued': 0, 'reason': 'no interest accounts configured (F5.1)'}
@@ -493,5 +493,152 @@ def check_alerts(days_ahead: int = 5, transit_max_days: int = 10, notify: bool =
         'portfolio_expiring': len(portfolio_expiring),
         'transit_stale': len(transit_stale),
         'issued_expiring': len(issued_expiring),
+        'notified': notified,
+    }
+
+
+# ── F5.4: Calendario unificado de vencimientos ────────────────────────────
+
+
+@shared_task(name='treasury.unified_maturity_alerts')
+def unified_maturity_alerts(days_ahead: int = 7, notify: bool = True):
+    """
+    Alerta consolidada diaria de TODOS los vencimientos bancarios:
+      - Cuotas de préstamo (PENDING / OVERDUE)
+      - Cheques recibidos en cartera (IN_PORTFOLIO)
+      - Cheques propios girados (ISSUED)
+      - Estados de cuenta de tarjeta de crédito (OPEN / OVERDUE)
+
+    Emite una notificación por cada ítem a vencer dentro del horizonte,
+    con deduplicación por (notification_type, object_id, target_date).
+    """
+    from django.contrib.auth import get_user_model
+    from django.contrib.contenttypes.models import ContentType
+    from .models import BankLoan, LoanInstallment, Check, CreditCardStatement
+    from workflow.models import Notification
+
+    today = timezone.now().date()
+    horizon = today + timedelta(days=days_ahead)
+
+    items = []
+
+    # 1) Cuotas de préstamo
+    upcoming_installments = LoanInstallment.objects.filter(
+        status__in=[LoanInstallment.Status.PENDING, LoanInstallment.Status.OVERDUE],
+        due_date__gte=today,
+        due_date__lte=horizon,
+    ).select_related('loan', 'loan__lender')
+    for inst in upcoming_installments:
+        items.append({
+            'notification_type': 'UNIFIED_MATURITY_LOAN',
+            'content_model': LoanInstallment,
+            'object_id': inst.id,
+            'title': f"Cuota #{inst.number} próxima a vencer",
+            'message': (
+                f"Crédito {inst.loan.display_id} ({inst.loan.lender.name}): "
+                f"vence el {inst.due_date.strftime('%d/%m/%Y')} "
+                f"por ${inst.total_amount:,.0f}."
+            ),
+            'link': f"/treasury/loans?selected={inst.loan.id}",
+        })
+
+    # 2) Cheques recibidos en cartera
+    expiring_checks = Check.objects.filter(
+        direction=Check.Direction.RECEIVED,
+        status=Check.Status.IN_PORTFOLIO,
+        due_date__gte=today,
+        due_date__lte=horizon,
+    ).select_related('bank')
+    for ch in expiring_checks:
+        items.append({
+            'notification_type': 'UNIFIED_MATURITY_CHECK',
+            'content_model': Check,
+            'object_id': ch.id,
+            'title': f"Cheque {ch.display_id} por vencer",
+            'message': (
+                f"Cheque de {ch.bank.name} N° {ch.check_number} "
+                f"por ${ch.amount:,.0f} vence el {ch.due_date.strftime('%d/%m/%Y')}."
+            ),
+            'link': '/treasury/checks',
+        })
+
+    # 3) Cheques propios girados
+    issued_checks = Check.objects.filter(
+        direction=Check.Direction.ISSUED,
+        status=Check.Status.ISSUED,
+        due_date__gte=today,
+        due_date__lte=horizon,
+    ).select_related('bank')
+    for ch in issued_checks:
+        items.append({
+            'notification_type': 'UNIFIED_MATURITY_CHECK_ISSUED',
+            'content_model': Check,
+            'object_id': ch.id,
+            'title': f"Cheque propio {ch.display_id} por vencer",
+            'message': (
+                f"Cheque propio N° {ch.check_number} "
+                f"por ${ch.amount:,.0f} vence el {ch.due_date.strftime('%d/%m/%Y')}."
+            ),
+            'link': '/treasury/checks',
+        })
+
+    # 4) Estados de cuenta de tarjeta
+    open_statements = CreditCardStatement.objects.filter(
+        status__in=[CreditCardStatement.Status.OPEN, CreditCardStatement.Status.OVERDUE],
+        due_date__gte=today,
+        due_date__lte=horizon,
+    ).select_related('card_account')
+    for stmt in open_statements:
+        items.append({
+            'notification_type': 'UNIFIED_MATURITY_CARD',
+            'content_model': CreditCardStatement,
+            'object_id': stmt.id,
+            'title': f"Estado tarjeta {stmt.period_month:02d}/{stmt.period_year} por vencer",
+            'message': (
+                f"Estado de cuenta de la tarjeta {stmt.card_account.name} "
+                f"vence el {stmt.due_date.strftime('%d/%m/%Y')} "
+                f"por ${stmt.total_to_pay:,.0f}."
+            ),
+            'link': '/treasury/credit-card-statements',
+        })
+
+    # Enviar notificaciones con deduplicación
+    notified = 0
+    if notify and items:
+        User = get_user_model()
+        recipients = User.objects.filter(is_active=True, is_superuser=True)
+        if not recipients.exists():
+            return {'total_items': len(items), 'notified': 0}
+
+        target_iso = today.isoformat()
+        for item_data in items:
+            ct = ContentType.objects.get_for_model(item_data['content_model'])
+            already = Notification.objects.filter(
+                notification_type=item_data['notification_type'],
+                content_type=ct, object_id=item_data['object_id'],
+                data__target_date=target_iso,
+            ).exists()
+            if already:
+                continue
+            for user in recipients:
+                Notification.objects.create(
+                    user=user,
+                    title=item_data['title'],
+                    message=item_data['message'],
+                    type=Notification.Type.WARNING,
+                    notification_type=item_data['notification_type'],
+                    content_type=ct,
+                    object_id=item_data['object_id'],
+                    link=item_data['link'],
+                    data={'target_date': target_iso},
+                )
+                notified += 1
+
+    return {
+        'total_items': len(items),
+        'loan_installments': len(upcoming_installments),
+        'checks_expiring': len(expiring_checks),
+        'checks_issued': len(issued_checks),
+        'card_statements': len(open_statements),
         'notified': notified,
     }

@@ -255,8 +255,8 @@ class LoanService:
         valor UF usado se persiste en `installment.uf_value_used` para
         trazabilidad.
 
-        `interest_expense_account` e `insurance_expense_account` se toman
-        como parámetro hasta que F5.1 los añada a AccountingSettings.
+        `interest_expense_account` e `insurance_expense_account` se resuelven
+        desde `AccountingSettings` si no se pasan como parámetro.
         """
         if loan.status != BankLoan.Status.ACTIVE:
             raise ValidationError(
@@ -267,6 +267,16 @@ class LoanService:
             raise ValidationError(_t("Esta cuota ya está pagada."))
         if installment.loan_id != loan.id:
             raise ValidationError(_t("La cuota no pertenece a este crédito."))
+
+        # Resolver cuentas de gasto desde settings si no se pasan como parámetro.
+        if not interest_expense_account or not insurance_expense_account:
+            from accounting.models import AccountingSettings
+            settings_obj = AccountingSettings.get_solo()
+            if settings_obj:
+                if not interest_expense_account:
+                    interest_expense_account = getattr(settings_obj, 'interest_expense_account', None)
+                if not insurance_expense_account:
+                    insurance_expense_account = getattr(settings_obj, 'insurance_expense_account', None)
 
         pay_date = date or timezone.now().date()
         # Si la cuota estaba marcada OVERDUE, mantenemos la fecha de
