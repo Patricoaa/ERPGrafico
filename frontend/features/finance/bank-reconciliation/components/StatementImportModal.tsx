@@ -42,13 +42,14 @@ interface StatementImportModalProps {
     onOpenChange: (open: boolean) => void
     onSuccess?: () => void
     defaultAccountId?: number
+    allowedAccountIds?: number[]
 }
 
 // Removed Step type as it's handled by GenericWizard
 
 // No longer needed here as it's handled by Zod
 
-export default function StatementImportModal({ open, onOpenChange, onSuccess, defaultAccountId }: StatementImportModalProps) {
+export default function StatementImportModal({ open, onOpenChange, onSuccess, defaultAccountId, allowedAccountIds }: StatementImportModalProps) {
 
     const [previewData, setPreviewData] = useState<ImportPreviewData | null>(null)
     const [dryRunResult, setDryRunResult] = useState<DryRunResult | null>(null)
@@ -293,6 +294,7 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess, de
                                 value={treasuryAccountId}
                                 onChange={(val) => form.setValue("treasury_account_id", val || "")}
                                 type="CHECKING"
+                                allowedIds={allowedAccountIds}
                             />
                         </div>
                         <div className="col-span-1">
