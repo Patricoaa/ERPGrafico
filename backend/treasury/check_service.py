@@ -513,7 +513,7 @@ class CheckService:
             if existing:
                 return existing
 
-            from accounting.models import Account
+            from accounting.models import Account, AccountType
             account, _ = Account.objects.get_or_create(
                 code='2.1.05.001',
                 defaults={
