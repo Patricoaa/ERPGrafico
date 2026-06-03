@@ -76,7 +76,23 @@
       "Bash(npx vitest *)",
       "Bash(echo \"exit: $?\")",
       "Bash(sort -t: -k1)",
-      "Bash(echo \"tw/no-raw-color: $\\(npx eslint . --no-cache 2>&1)"
+      "Bash(echo \"tw/no-raw-color: $\\(npx eslint . --no-cache 2>&1)",
+      "Bash(sed -n '1,80p' \"frontend/app/\\(dashboard\\)/treasury/settings/page.tsx\")",
+      "Bash(grep -niA1 \"tesor\\\\|banco\\\\|cheque\\\\|conciliac\\\\|tarjeta\\\\|terminal\\\\|cartola\\\\|crédito\\\\|credito\" docs/00-context/domain-glossary.md)",
+      "Bash(venv/bin/python manage.py check treasury)",
+      "Bash(venv/bin/python manage.py makemigrations --dry-run)",
+      "Bash(venv/bin/python manage.py makemigrations accounting treasury)",
+      "Bash(TMPDIR=/tmp venv/bin/pytest treasury/tests/test_checks.py -v --no-migrations -p no:cacheprovider)",
+      "Bash(TMPDIR=/tmp venv/bin/pytest treasury/tests/test_checks.py::test_receive_without_settings_raises treasury/tests/test_checks.py::test_receive_creates_check_and_movement -v --no-migrations -p no:cacheprovider)",
+      "Bash(TMPDIR=/tmp venv/bin/pytest treasury/tests/test_checks.py::test_receive_without_settings_raises treasury/tests/test_checks.py::test_receive_creates_check_and_movement --no-migrations -p no:cacheprovider --tb=short)",
+      "Bash(TMPDIR=/tmp venv/bin/pytest treasury/tests/test_checks.py -v --no-migrations -p no:cacheprovider --create-db)",
+      "Bash(TMPDIR=/tmp venv/bin/pytest treasury/tests/test_checks.py::test_receive_creates_check_and_movement --no-migrations -p no:cacheprovider -s)",
+      "Bash(TMPDIR=/tmp venv/bin/python -c ' *)",
+      "Bash(TMPDIR=/tmp venv/bin/pytest treasury/tests/test_checks.py::test_receive_creates_check_and_movement --no-migrations -p no:cacheprovider --create-db --tb=long)",
+      "Bash(TMPDIR=/tmp venv/bin/pytest treasury/tests/test_checks.py::test_invalid_transition_raises -v --no-migrations -p no:cacheprovider)",
+      "Bash(TMPDIR=/tmp venv/bin/pytest treasury/tests/ -q --no-migrations -p no:cacheprovider)",
+      "Bash(TMPDIR=/tmp venv/bin/pytest treasury/tests/test_checks.py treasury/tests/test_provisioning.py treasury/tests/test_convergence.py treasury/tests/test_credit_card_liability.py -q --no-migrations -p no:cacheprovider)",
+      "Bash(ssh -o BatchMode=yes -o ConnectTimeout=8 pato@192.168.1.93 'docker exec erpgrafico-backend-1 sh -c \"cd /app && python manage.py converge_treasury_accounts --dry-run 2>&1\"')"
     ],
     "additionalDirectories": [
       "/home/pato/Nextcloud/Pato/Aplicaciones/ERPGrafico/frontend/features/workflow"
