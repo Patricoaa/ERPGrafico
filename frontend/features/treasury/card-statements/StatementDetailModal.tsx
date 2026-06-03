@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import { CreditCard, Banknote, CheckCircle, XCircle } from 'lucide-react'
 import {
-    BaseModal, StatCard, StatusBadge, Skeleton,
+    BaseModal, MoneyDisplay, StatCard, StatusBadge, Skeleton,
 } from '@/components/shared'
 import { Button } from '@/components/ui/button'
 import { useCardStatement, useCardStatementMutations } from './hooks'
@@ -46,25 +46,25 @@ export function StatementDetailModal({ statementId, open, onOpenChange }: Statem
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                             <StatCard
                                 label="Facturado"
-                                value={parseFloat(stmt.billed_amount).toLocaleString('es-CL')}
+                                value={<MoneyDisplay amount={parseFloat(stmt.billed_amount)} />}
                                 icon={CreditCard}
                                 accent="primary"
                             />
                             <StatCard
                                 label="Interés"
-                                value={parseFloat(stmt.interest_charged).toLocaleString('es-CL')}
+                                value={<MoneyDisplay amount={parseFloat(stmt.interest_charged)} />}
                                 icon={Banknote}
                                 accent="info"
                             />
                             <StatCard
                                 label="Comisiones"
-                                value={parseFloat(stmt.fees_charged).toLocaleString('es-CL')}
+                                value={<MoneyDisplay amount={parseFloat(stmt.fees_charged)} />}
                                 icon={Banknote}
                                 accent="info"
                             />
                             <StatCard
                                 label="Total a Pagar"
-                                value={parseFloat(stmt.total_to_pay).toLocaleString('es-CL')}
+                                value={<MoneyDisplay amount={parseFloat(stmt.total_to_pay)} />}
                                 icon={CreditCard}
                                 accent="warning"
                             />

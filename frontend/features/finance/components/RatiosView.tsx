@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { EmptyState, PageContainer } from '@/components/shared'
+import { EmptyState, MoneyDisplay, PageContainer } from '@/components/shared'
+import { formatMoney } from "@/lib/money"
 import {
     PieChart,
     Pie,
@@ -155,7 +156,7 @@ export const RatiosView: React.FC<RatiosViewProps> = ({ date, showComparison, co
                 </StatCard>
                 <StatCard
                     label="Capital de Trabajo"
-                    value={(d.liquidity.current_assets - d.liquidity.current_liabilities).toLocaleString('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 })}
+                    value={<MoneyDisplay amount={d.liquidity.current_assets - d.liquidity.current_liabilities} />}
                     valueSize="xl"
                     subtext="Activo Corriente - Pasivo Corriente"
                     accent="success"
@@ -226,7 +227,7 @@ export const RatiosView: React.FC<RatiosViewProps> = ({ date, showComparison, co
                                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                     ))}
                                 </Pie>
-                                <Tooltip formatter={((value: number | string) => [Number(value || 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' }), 'Monto']) as any} />
+                                <Tooltip formatter={((value: number | string) => [formatMoney(value), 'Monto']) as any} />
                                 <Legend />
                             </PieChart>
                         </ResponsiveContainer>
@@ -256,7 +257,7 @@ export const RatiosView: React.FC<RatiosViewProps> = ({ date, showComparison, co
                                         <Cell key={`cell-${index}`} fill={COLORS[(index + 2) % COLORS.length]} />
                                     ))}
                                 </Pie>
-                                <Tooltip formatter={((value: number | string) => [Number(value || 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' }), 'Monto']) as any} />
+                                <Tooltip formatter={((value: number | string) => [formatMoney(value), 'Monto']) as any} />
                                 <Legend />
                             </PieChart>
                         </ResponsiveContainer>
@@ -306,7 +307,7 @@ export const RatiosView: React.FC<RatiosViewProps> = ({ date, showComparison, co
                                 <CartesianGrid strokeDasharray="3 3" />
                                 <XAxis dataKey="name" />
                                 <YAxis />
-                                <Tooltip formatter={((value: number | string) => [Number(value || 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' }), 'Monto']) as any} />
+                                <Tooltip formatter={((value: number | string) => [formatMoney(value), 'Monto']) as any} />
                                 <Bar dataKey="value" fill={COLORS[3]} />
                             </BarChart>
                         </ResponsiveContainer>

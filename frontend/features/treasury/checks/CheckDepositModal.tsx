@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react'
 import { BaseModal, FormFooter, CancelButton, ActionSlideButton, LabeledSelect } from '@/components/shared'
+import { formatMoney } from '@/lib/money'
 import { TreasuryAccountSelector } from '@/components/selectors/TreasuryAccountSelector'
 import { useCheckMutations } from './hooks'
 import type { Check } from './types'
@@ -34,7 +35,7 @@ export function CheckDepositModal({ check, open, onOpenChange }: Props) {
             onOpenChange={onOpenChange}
             size="sm"
             title={`Depositar ${check.display_id}`}
-            description={`Cheque N° ${check.check_number} — $${parseFloat(check.amount).toLocaleString('es-CL')}`}
+            description={`Cheque N° ${check.check_number} — ${formatMoney(parseFloat(check.amount))}`}
             footer={
                 <FormFooter
                     actions={

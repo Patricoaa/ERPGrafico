@@ -12,7 +12,7 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover"
 import { useTreasuryAccounts, PaymentContext } from "@/hooks/useTreasuryAccounts"
-import { EmptyState } from '@/components/shared'
+import { EmptyState, MoneyDisplay } from '@/components/shared'
 import { Input } from "@/components/ui/input"
 
 interface TreasuryAccountSelectorProps {
@@ -183,7 +183,7 @@ export function TreasuryAccountSelector({
                                             </div>
                                             {account.current_balance !== undefined && account.current_balance !== null && (
                                                 <span className="text-xs text-muted-foreground">
-                                                    Disponible: ${Number(account.current_balance).toLocaleString('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                                                    Disponible: <MoneyDisplay amount={account.current_balance} inline className="text-xs" />
                                                 </span>
                                             )}
                                         </div>

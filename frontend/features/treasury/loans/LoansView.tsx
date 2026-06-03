@@ -170,7 +170,7 @@ export function LoansView() {
                 />
                 <StatCard
                     label="Deuda Total (CLP)"
-                    value={totalOutstanding.toLocaleString('es-CL', { maximumFractionDigits: 0 })}
+                    value={<MoneyDisplay amount={totalOutstanding} inline />}
                     icon={Coins}
                     accent="warning"
                 />

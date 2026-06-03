@@ -116,7 +116,7 @@ export function StatementsView() {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <StatCard
                     label="Deuda Total Tarjeta"
-                    value={totalDebt.toLocaleString('es-CL', { maximumFractionDigits: 0 })}
+                    value={<MoneyDisplay amount={totalDebt} inline />}
                     icon={CreditCard}
                     accent="warning"
                 />

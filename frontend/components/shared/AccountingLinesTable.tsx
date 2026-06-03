@@ -10,7 +10,7 @@ import {
     FormMessage,
 } from "@/components/ui/form"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
-import { FormLineItemsTable, IconButton, LabeledInput } from '@/components/shared'
+import { FormLineItemsTable, IconButton, LabeledInput, MoneyDisplay } from '@/components/shared'
 
 import { cn } from "@/lib/utils"
 
@@ -30,10 +30,10 @@ const TotalBalance = ({ control, name }: { control: Control<any>; name: string }
 
     return (
         <div className={cn("flex flex-col items-end text-sm font-medium", isBalanced ? "text-success" : "text-destructive")}>
-            <span>Total Debe: {totalDebit.toLocaleString("es-CL", { style: "currency", currency: "CLP" })}</span>
-            <span>Total Haber: {totalCredit.toLocaleString("es-CL", { style: "currency", currency: "CLP" })}</span>
+            <span>Total Debe: <MoneyDisplay amount={totalDebit} inline /></span>
+            <span>Total Haber: <MoneyDisplay amount={totalCredit} inline /></span>
             {!isBalanced && (
-                <span>Diferencia: {diff.toLocaleString("es-CL", { style: "currency", currency: "CLP" })}</span>
+                <span>Diferencia: <MoneyDisplay amount={diff} inline /></span>
             )}
         </div>
     )

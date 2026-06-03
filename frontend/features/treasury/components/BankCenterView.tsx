@@ -92,19 +92,19 @@ export function BankCenterView({ bankId }: { bankId: number }) {
                 />
                 <StatCard
                     label="Deuda Tarjeta"
-                    value={summary.card_debt.toLocaleString('es-CL', { maximumFractionDigits: 0 })}
+                    value={<MoneyDisplay amount={summary.card_debt} inline />}
                     icon={CreditCard}
                     accent="warning"
                 />
                 <StatCard
                     label="Cheques en Cartera"
-                    value={summary.portfolio_checks.toLocaleString('es-CL', { maximumFractionDigits: 0 })}
+                    value={<MoneyDisplay amount={summary.portfolio_checks} inline />}
                     icon={CheckSquare}
                     accent="info"
                 />
                 <StatCard
                     label="Cheques Propios"
-                    value={summary.issued_checks.toLocaleString('es-CL', { maximumFractionDigits: 0 })}
+                    value={<MoneyDisplay amount={summary.issued_checks} inline />}
                     icon={CheckSquare}
                     accent="destructive"
                 />
@@ -116,7 +116,7 @@ export function BankCenterView({ bankId }: { bankId: number }) {
                 />
                 <StatCard
                     label="Deuda Préstamos"
-                    value={summary.total_loan_debt.toLocaleString('es-CL', { maximumFractionDigits: 0 })}
+                    value={<MoneyDisplay amount={summary.total_loan_debt} inline />}
                     icon={Banknote}
                     accent="warning"
                 />
