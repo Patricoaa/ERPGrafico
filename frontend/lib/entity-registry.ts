@@ -5,7 +5,7 @@ import {
   List, LayoutDashboard, LayoutGrid, Kanban, CalendarDays, ClipboardCheck,
   Building2, Smartphone, CreditCard, Calendar, CalendarX2, Repeat,
   Tag, Percent, Ruler, PieChart, HandCoins, ClipboardList, PackageCheck,
-  CheckSquare,
+  CheckSquare, Banknote,
   type LucideIcon 
 } from 'lucide-react';
 
@@ -308,6 +308,28 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     detailUrlPattern: '/treasury/checks?selected={id}',
     partnerField: (data) => data.counterparty_name || data.drawer_name || '---',
     viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', gridLayout: 'single-column' },
+  },
+  'treasury.bankloan': {
+    label: 'treasury.bankloan',
+    title: 'Crédito Bancario',
+    titlePlural: 'Créditos Bancarios',
+    icon: Banknote,
+    shortTemplate: 'CRE-{id}',
+    listUrl: '/treasury/loans',
+    detailUrlPattern: '/treasury/loans?selected={id}',
+    partnerField: (data) => data.lender_name || '---',
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', gridLayout: 'single-column' },
+  },
+  'treasury.loaninstallment': {
+    label: 'treasury.loaninstallment',
+    title: 'Cuota de Crédito',
+    titlePlural: 'Cuotas de Crédito',
+    icon: Calendar,
+    shortTemplate: 'CUO-{id}',
+    listUrl: '/treasury/loans',
+    detailUrlPattern: '/treasury/loans?selected={loan}&installment={id}',
+    partnerField: (data) => data.loan_display_id || '---',
+    viewPolicy: { availableViews: ['list'], defaultView: 'list', cardComponent: 'entity', gridLayout: 'single-column' },
   },
   'accounting.fiscalyear': {
     label: 'accounting.fiscalyear',

@@ -15,6 +15,7 @@ export function TreasuryHeader() {
     const segmentToTab: Record<string, string> = {
         movements: 'movements',
         checks: 'checks',
+        loans: 'loans',
         accounts: 'accounts',
         reconciliation: 'reconciliation',
         'terminal-cobro': 'terminal-cobro',
@@ -37,6 +38,7 @@ export function TreasuryHeader() {
     const tabs = [
         { value: "movements", label: "Movimientos", iconName: "banknote", href: "/treasury/movements" },
         { value: "checks", label: "Cheques", iconName: "check-square", href: "/treasury/checks" },
+        { value: "loans", label: "Préstamos", iconName: "banknote", href: "/treasury/loans" },
         {
             value: "accounts",
             label: "Cuentas y bancos",
@@ -100,6 +102,7 @@ export function TreasuryHeader() {
             return { title: "Configuración de Tesorería", description: "Gestione las cuentas de ajuste para conciliación bancaria y movimientos de caja.", iconName: "settings" as const }
         }
         if (activeValue === 'movements') return { title: "Movimientos de Tesorería", description: "Registro histórico de ingresos, egresos y traslados de fondos.", iconName: "banknote" as const }
+        if (activeValue === 'loans') return { title: "Créditos Bancarios", description: "Gestión de préstamos, tabla de amortización y pago de cuotas.", iconName: "banknote" as const }
         if (activeValue === 'accounts') {
             if (subActiveValue === 'banks') return { title: "Gestión de Bancos", description: "Administre las entidades bancarias globales del sistema.", iconName: "landmark" as const }
             if (subActiveValue === 'methods') return { title: "Métodos de Pago", description: "Configure los medios de pago aceptados y sus cuentas vinculadas.", iconName: "credit-card" as const }
