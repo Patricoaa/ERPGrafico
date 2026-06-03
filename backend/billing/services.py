@@ -517,7 +517,8 @@ class BillingService:
                      is_pending_registration=False, payment_is_pending=False, amount=None, treasury_account_id=None,
                      document_number=None, document_date=None, document_attachment=None,
                      delivery_type='IMMEDIATE', delivery_date=None, immediate_lines=None, payment_type='INBOUND',
-                     line_files=None, pos_session_id=None, user=None, payment_method_id=None, credit_approval_task_id=None, draft_id=None, direct_credit_approval=False):
+                     line_files=None, pos_session_id=None, user=None, payment_method_id=None, credit_approval_task_id=None, draft_id=None, direct_credit_approval=False,
+                     check_number=None, check_issue_date=None, check_due_date=None, checkbook_id=None):
         """
         Complete POS checkout: Create Order -> Confirm -> Invoice -> Payment -> (Optional) Delivery.
         pos_session_id: Optional ID of an open POS session to link the payment to.
@@ -859,6 +860,11 @@ class BillingService:
                     transaction_number=transaction_number or None,
                     is_pending_registration=payment_is_pending,
                     created_by=user,
+                    # Check-specific params (only used when method_type == 'CHECK')
+                    check_number=check_number,
+                    check_issue_date=check_issue_date,
+                    check_due_date=check_due_date,
+                    checkbook_id=checkbook_id,
                 )
             else:
                 # Fallback legacy path: payment_method_id not provided (non-POS flows).
