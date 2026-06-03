@@ -30,23 +30,29 @@ export function CentroBancosClientView() {
     if (bank) {
         const bankId = Number(bank)
         if (bankId) {
-            return <BankCenterView bankId={bankId} />
+            return (
+                <div className="flex-1 min-h-0 flex flex-col">
+                    <BankCenterView bankId={bankId} />
+                </div>
+            )
         }
     }
 
     return (
-        <div className="space-y-6">
+        <div className="h-full flex flex-col space-y-6">
             <BankCenterAllView />
-            <BankManagement
-                externalOpen={modalOpen}
-                onOpenChange={handleModalChange}
-                createAction={
-                    <ToolbarCreateButton
-                        label="Nuevo Banco"
-                        href="/treasury/centro-bancos?modal=new"
-                    />
-                }
-            />
+            <div className="flex-1 min-h-0">
+                <BankManagement
+                    externalOpen={modalOpen}
+                    onOpenChange={handleModalChange}
+                    createAction={
+                        <ToolbarCreateButton
+                            label="Nuevo Banco"
+                            href="/treasury/centro-bancos?modal=new"
+                        />
+                    }
+                />
+            </div>
         </div>
     )
 }

@@ -94,8 +94,8 @@ export function BankCenterView({ bankId }: { bankId: number }) {
     }
 
     return (
-        <Tabs value={activeTab} onValueChange={handleTabChange}>
-            <TabsList>
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="h-full flex flex-col">
+            <TabsList className="shrink-0">
                 <TabsTrigger value="overview">Resumen</TabsTrigger>
                 <TabsTrigger value="checks">Cheques</TabsTrigger>
                 <TabsTrigger value="loans">Préstamos</TabsTrigger>
@@ -103,7 +103,7 @@ export function BankCenterView({ bankId }: { bankId: number }) {
                 <TabsTrigger value="reconciliation">Conciliación</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="overview" className="mt-6">
+            <TabsContent value="overview" className="mt-6 overflow-y-auto data-[state=inactive]:hidden custom-scrollbar">
                 <div className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
                         <StatCard
@@ -226,19 +226,19 @@ export function BankCenterView({ bankId }: { bankId: number }) {
                 </div>
             </TabsContent>
 
-            <TabsContent value="checks" className="mt-6">
+            <TabsContent value="checks" className="mt-6 overflow-y-auto data-[state=inactive]:hidden custom-scrollbar">
                 <ChecksView bankId={bankId} />
             </TabsContent>
 
-            <TabsContent value="loans" className="mt-6">
+            <TabsContent value="loans" className="mt-6 overflow-y-auto data-[state=inactive]:hidden custom-scrollbar">
                 <LoansView bankId={bankId} />
             </TabsContent>
 
-            <TabsContent value="cards" className="mt-6">
+            <TabsContent value="cards" className="mt-6 overflow-y-auto data-[state=inactive]:hidden custom-scrollbar">
                 <StatementsView bankId={bankId} />
             </TabsContent>
 
-            <TabsContent value="reconciliation" className="mt-6">
+            <TabsContent value="reconciliation" className="mt-6 flex-1 min-h-0 data-[state=inactive]:hidden">
                 <StatementsList
                     bankId={bankId}
                     accounts={accounts

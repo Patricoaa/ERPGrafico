@@ -92,7 +92,10 @@
       "Bash(TMPDIR=/tmp venv/bin/pytest treasury/tests/test_checks.py::test_invalid_transition_raises -v --no-migrations -p no:cacheprovider)",
       "Bash(TMPDIR=/tmp venv/bin/pytest treasury/tests/ -q --no-migrations -p no:cacheprovider)",
       "Bash(TMPDIR=/tmp venv/bin/pytest treasury/tests/test_checks.py treasury/tests/test_provisioning.py treasury/tests/test_convergence.py treasury/tests/test_credit_card_liability.py -q --no-migrations -p no:cacheprovider)",
-      "Bash(ssh -o BatchMode=yes -o ConnectTimeout=8 pato@192.168.1.93 'docker exec erpgrafico-backend-1 sh -c \"cd /app && python manage.py converge_treasury_accounts --dry-run 2>&1\"')"
+      "Bash(ssh -o BatchMode=yes -o ConnectTimeout=8 pato@192.168.1.93 'docker exec erpgrafico-backend-1 sh -c \"cd /app && python manage.py converge_treasury_accounts --dry-run 2>&1\"')",
+      "Bash(sed -n '146,155p' /home/pato/Nextcloud/Pato/Aplicaciones/ERPGrafico/frontend/features/treasury/checks/ChecksView.tsx)",
+      "Bash(sed -n '116,125p' /home/pato/Nextcloud/Pato/Aplicaciones/ERPGrafico/frontend/features/treasury/card-statements/StatementsView.tsx)",
+      "Bash(sed -n '164,173p' /home/pato/Nextcloud/Pato/Aplicaciones/ERPGrafico/frontend/features/treasury/loans/LoansView.tsx)"
     ],
     "additionalDirectories": [
       "/home/pato/Nextcloud/Pato/Aplicaciones/ERPGrafico/frontend/features/workflow"
