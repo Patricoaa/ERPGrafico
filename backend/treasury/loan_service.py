@@ -1,0 +1,583 @@
+"""
+loan_service.py — Lógica de negocio para créditos bancarios (Fase 2).
+
+Responsabilidades:
+  - generate_schedule(loan): tabla de amortización (francés / lineal).
+  - disburse(loan): INBOUND al banco + nacimiento del pasivo.
+  - pay_installment(loan, n): pago con reparto capital/interés/seguro.
+    - Si el crédito es UF, convierte usando IndicatorValue.get_value('UF', on_date).
+  - prepay(loan): pago total anticipado.
+  - refinance(loan): marca como REFINANCED.
+
+Convenciones:
+  - Todos los movimientos se generan vía `TreasuryService.create_movement`.
+  - Vistas Django ≤ 20 líneas → delegan a este servicio.
+  - Las cuentas de gasto (interés/seguro) se pasan como parámetro; cuando
+    F5.1 las añada a AccountingSettings, la vista las resolverá desde allí.
+
+Ver `docs/50-audit/bancos/fase-2-creditos-bancarios.md` (F2.4–F2.8).
+"""
+from __future__ import annotations
+
+from datetime import date
+from decimal import Decimal, ROUND_HALF_UP
+from typing import TYPE_CHECKING
+
+from django.core.exceptions import ValidationError
+from django.db import transaction
+from django.utils import timezone
+from django.utils.translation import gettext_lazy as _t
+
+from .models import BankLoan, LoanInstallment, TreasuryMovement
+
+if TYPE_CHECKING:
+    from accounting.models import Account
+    from django.contrib.auth.models import AbstractUser
+    from treasury.models import TreasuryAccount
+
+
+_TWO = Decimal('0.01')
+
+
+def _q(x: Decimal) -> Decimal:
+    """Quantize to 2 decimals (banking rounding)."""
+    return x.quantize(_TWO, rounding=ROUND_HALF_UP)
+
+
+class LoanService:
+    """Operaciones sobre créditos / préstamos bancarios."""
+
+    # ── Generación de tabla de amortización (F2.4) ─────────────────────────
+
+    @staticmethod
+    @transaction.atomic
+    def generate_schedule(loan: BankLoan) -> list[LoanInstallment]:
+        """
+        Genera la tabla de amortización completa y la persiste.
+
+        Soporta sistemas:
+          - FRENCH: cuota fija (capital + interés variable, interés sobre saldo).
+          - LINEAR: capital constante, interés sobre saldo decreciente.
+
+        Para créditos en UF, los montos quedan almacenados en UF (la
+        conversión a CLP ocurre al pagar — F2.7).
+        """
+        if loan.term_months <= 0:
+            raise ValidationError(_t("El plazo en meses debe ser positivo."))
+
+        # Si ya hay tabla, purgar pendientes (idempotencia manual).
+        loan.installments.filter(status=LoanInstallment.Status.PENDING).delete()
+
+        # Tasa mensual efectiva (la cuota se calcula mes a mes).
+        if loan.rate_basis == BankLoan.RateBasis.MONTHLY:
+            i = (loan.interest_rate / Decimal('100'))
+        else:  # ANNUAL
+            i = (loan.interest_rate / Decimal('100')) / Decimal('12')
+
+        # Validar i > 0 para evitar división por cero en fórmula francesa.
+        if i <= 0:
+            i = Decimal('0')
+
+        n = loan.term_months
+        P = loan.principal
+        insurance = loan.insurance_monthly or Decimal('0')
+
+        rows: list[LoanInstallment] = []
+        if loan.amortization_system == BankLoan.AmortizationSystem.FRENCH:
+            rows = LoanService._french_schedule(loan, P, i, n, insurance)
+        else:  # LINEAR
+            rows = LoanService._linear_schedule(loan, P, i, n, insurance)
+
+        # Bulk create — más rápido que N saves y mantiene orden por `number`.
+        LoanInstallment.objects.bulk_create(rows)
+        return list(loan.installments.order_by('number'))
+
+    @staticmethod
+    def _french_schedule(loan, P, i, n, insurance):
+        """Cuota fija: C = P · i / (1 - (1+i)^-n)."""
+        if i == 0:
+            # Sin interés → todas las cuotas son capital constante.
+            capital_const = (P / Decimal(n)).quantize(_TWO, rounding=ROUND_HALF_UP)
+            balance = P
+            rows = []
+            for k in range(1, n + 1):
+                due = _add_months(loan.first_due_date, k - 1)
+                principal = capital_const
+                # Ajuste de redondeo en la última cuota.
+                if k == n:
+                    principal = balance
+                interest = Decimal('0.00')
+                balance = (balance - principal)
+                rows.append(LoanInstallment(
+                    loan=loan, number=k, due_date=due,
+                    principal_amount=_q(principal),
+                    interest_amount=_q(interest),
+                    insurance_amount=_q(insurance),
+                    total_amount=_q(principal + interest + insurance),
+                    outstanding_balance=_q(balance),
+                    status=LoanInstallment.Status.PENDING,
+                ))
+            return rows
+
+        # Cuota constante francesa.
+        one_plus_i = Decimal(1) + i
+        # C = P · i · (1+i)^n / ((1+i)^n - 1)
+        factor_n = one_plus_i ** n
+        C = (P * i * factor_n) / (factor_n - Decimal(1))
+        C = _q(C)
+
+        balance = P
+        rows = []
+        for k in range(1, n + 1):
+            interest = _q(balance * i)
+            # Última cuota: ajustar capital para que outstanding_balance == 0.
+            if k == n:
+                principal = balance
+                C = _q(principal + interest + insurance)
+            else:
+                principal = _q(C - interest - insurance)
+                if principal < 0:
+                    # Tasa demasiado alta vs. seguro — el interés se come la cuota.
+                    # Forzamos principal=0 (no es realista, pero no rompe).
+                    principal = Decimal('0.00')
+                    C = _q(interest + insurance)
+            balance = _q(balance - principal)
+            due = _add_months(loan.first_due_date, k - 1)
+            rows.append(LoanInstallment(
+                loan=loan, number=k, due_date=due,
+                principal_amount=principal,
+                interest_amount=interest,
+                insurance_amount=_q(insurance),
+                total_amount=C,
+                outstanding_balance=balance,
+                status=LoanInstallment.Status.PENDING,
+            ))
+        return rows
+
+    @staticmethod
+    def _linear_schedule(loan, P, i, n, insurance):
+        """Capital constante: capital_k = P/n; interés_k = saldo · i."""
+        capital_const = (P / Decimal(n)).quantize(_TWO, rounding=ROUND_HALF_UP)
+        balance = P
+        rows = []
+        for k in range(1, n + 1):
+            interest = _q(balance * i)
+            # Última cuota absorbe redondeo.
+            if k == n:
+                principal = balance
+            else:
+                principal = capital_const
+            balance = _q(balance - principal)
+            due = _add_months(loan.first_due_date, k - 1)
+            total = _q(principal + interest + insurance)
+            rows.append(LoanInstallment(
+                loan=loan, number=k, due_date=due,
+                principal_amount=principal,
+                interest_amount=interest,
+                insurance_amount=_q(insurance),
+                total_amount=total,
+                outstanding_balance=balance,
+                status=LoanInstallment.Status.PENDING,
+            ))
+        return rows
+
+    # ── Desembolso (F2.5) ──────────────────────────────────────────────────
+
+    @staticmethod
+    @transaction.atomic
+    def disburse(
+        loan: BankLoan,
+        *,
+        date=None,
+        created_by: "AbstractUser | None" = None,
+    ) -> BankLoan:
+        """
+        Registra el desembolso del crédito en el banco y materializa la deuda.
+
+        1. Genera la tabla de amortización si no existe.
+        2. Crea TreasuryMovement INBOUND al disbursement_account con origen
+           contable = liability_account (crédito al pasivo). El asiento
+           contable lo genera `TreasuryService._create_accounting_entry`.
+        3. Marca el crédito como ACTIVE.
+
+        Idempotencia: si el crédito ya está ACTIVE, retorna sin error.
+        """
+        if loan.status == BankLoan.Status.PAID:
+            raise ValidationError(_t("No se puede desembolsar un crédito ya pagado."))
+        if loan.status == BankLoan.Status.ACTIVE:
+            return loan  # ya desembolsado, idempotente
+
+        if not loan.installments.exists():
+            LoanService.generate_schedule(loan)
+
+        from .services import TreasuryService
+
+        TreasuryService.create_movement(
+            amount=loan.principal,
+            movement_type=TreasuryMovement.Type.INBOUND,
+            payment_method=TreasuryMovement.Method.TRANSFER,
+            to_account=loan.disbursement_account,
+            date=date or loan.start_date,
+            created_by=created_by,
+            reference=loan.display_id,
+            notes=f"Desembolso crédito {loan.display_id} ({loan.lender.name})",
+        )
+
+        loan.status = BankLoan.Status.ACTIVE
+        loan.save(update_fields=['status', 'updated_at'])
+        return loan
+
+    # ── Pago de cuota (F2.6 / F2.7) ────────────────────────────────────────
+
+    @staticmethod
+    @transaction.atomic
+    def pay_installment(
+        loan: BankLoan,
+        installment: LoanInstallment,
+        *,
+        payment_account: "TreasuryAccount",
+        interest_expense_account: "Account | None" = None,
+        insurance_expense_account: "Account | None" = None,
+        date=None,
+        created_by: "AbstractUser | None" = None,
+    ) -> LoanInstallment:
+        """
+        Paga una cuota: OUTBOUND desde `payment_account` por el total.
+
+        Reparto contable (asiento en DRAFT, post por TreasuryService):
+          - Debe  `liability_account`           (amortización de capital)
+          - Debe  `interest_expense_account`    (gasto interés)
+          - Debe  `insurance_expense_account`   (gasto seguro, si > 0)
+          - Haber `payment_account`              (banco/caja)
+
+        Si el crédito es UF, convierte al CLP vigente en la fecha de pago
+        (F2.7) usando `IndicatorValue.get_value('UF', payment_date)`. El
+        valor UF usado se persiste en `installment.uf_value_used` para
+        trazabilidad.
+
+        `interest_expense_account` e `insurance_expense_account` se toman
+        como parámetro hasta que F5.1 los añada a AccountingSettings.
+        """
+        if loan.status != BankLoan.Status.ACTIVE:
+            raise ValidationError(
+                _t("El crédito debe estar ACTIVE para pagar cuotas (estado actual: %(s)s).")
+                % {'s': loan.get_status_display()}
+            )
+        if installment.status == LoanInstallment.Status.PAID:
+            raise ValidationError(_t("Esta cuota ya está pagada."))
+        if installment.loan_id != loan.id:
+            raise ValidationError(_t("La cuota no pertenece a este crédito."))
+
+        pay_date = date or timezone.now().date()
+        # Si la cuota estaba marcada OVERDUE, mantenemos la fecha de
+        # vencimiento original en el asiento; solo cambia paid_at.
+
+        # Conversión UF → CLP si corresponde (F2.7).
+        uf_value_used = None
+        if loan.currency == BankLoan.Currency.UF:
+            from finances.models import IndicatorValue
+            try:
+                uf_value_used = IndicatorValue.get_value('UF', pay_date)
+            except IndicatorValue.DoesNotExist as e:
+                raise ValidationError(
+                    _t("No hay valor UF cargado para la fecha de pago. "
+                       "Cargue el valor en Tesorería > Configuración > Indicadores.")
+                ) from e
+            principal_clp = _q(installment.principal_amount * uf_value_used)
+            interest_clp = _q(installment.interest_amount * uf_value_used)
+            insurance_clp = _q(installment.insurance_amount * uf_value_used)
+            total_clp = _q(installment.total_amount * uf_value_used)
+        else:
+            principal_clp = installment.principal_amount
+            interest_clp = installment.interest_amount
+            insurance_clp = installment.insurance_amount
+            total_clp = installment.total_amount
+
+        # Crear movimiento OUTBOUND por el total (CLP) sin auto-asiento
+        # (`is_pending_registration=True`): construimos el JE manualmente
+        # con el reparto capital/interés/seguro (el flujo estándar de
+        # TreasuryService no conoce la liability_account del préstamo).
+        from .services import TreasuryService
+
+        movement = TreasuryService.create_movement(
+            amount=total_clp,
+            movement_type=TreasuryMovement.Type.OUTBOUND,
+            payment_method=TreasuryMovement.Method.TRANSFER,
+            from_account=payment_account,
+            date=pay_date,
+            created_by=created_by,
+            reference=installment.display_id,
+            notes=(
+                f"Pago cuota #{installment.number} crédito {loan.display_id} "
+                f"({loan.currency}{'=' + str(uf_value_used) if uf_value_used else ''})"
+            ),
+            is_pending_registration=True,
+        )
+
+        # Construir el asiento con el reparto explícito.
+        _build_installment_entry(
+            movement=movement,
+            liability_account=loan.liability_account.account,
+            interest_expense_account=interest_expense_account,
+            insurance_expense_account=insurance_expense_account,
+            principal_clp=principal_clp,
+            interest_clp=interest_clp,
+            insurance_clp=insurance_clp,
+            total_clp=total_clp,
+            from_account=payment_account,
+        )
+
+        installment.status = LoanInstallment.Status.PAID
+        installment.paid_at = timezone.now()
+        installment.payment_movement = movement
+        installment.uf_value_used = uf_value_used
+        installment.clp_amount_paid = total_clp if uf_value_used else None
+        installment.save()
+
+        # Si todas las cuotas están PAID/CANCELED → crédito PAID.
+        remaining = loan.installments.exclude(
+            status__in=[LoanInstallment.Status.PAID, LoanInstallment.Status.CANCELED]
+        ).exists()
+        if not remaining:
+            loan.status = BankLoan.Status.PAID
+            loan.save(update_fields=['status', 'updated_at'])
+
+        return installment
+
+    # ── Prepago (F2.8) ────────────────────────────────────────────────────
+
+    @staticmethod
+    @transaction.atomic
+    def prepay(
+        loan: BankLoan,
+        *,
+        payment_account: "TreasuryAccount",
+        interest_expense_account: "Account | None" = None,
+        insurance_expense_account: "Account | None" = None,
+        date=None,
+        created_by: "AbstractUser | None" = None,
+    ) -> BankLoan:
+        """
+        Pago anticipado total: paga el saldo insoluto y cierra el crédito.
+
+        - Calcula el saldo = suma de `principal_amount` de las cuotas
+          PENDING/PARTIAL/OVERDUE.
+        - Si el crédito es UF, convierte a CLP con la UF vigente.
+        - Crea un único movimiento OUTBOUND; no genera asientos separados
+          por cuota (es un evento excepcional).
+        - Marca todas las cuotas pendientes como CANCELED, y el crédito
+          como PAID.
+        """
+        if loan.status == BankLoan.Status.PAID:
+            return loan
+        if loan.status != BankLoan.Status.ACTIVE:
+            raise ValidationError(
+                _t("Solo se puede prepagar un crédito ACTIVE (estado: %(s)s).")
+                % {'s': loan.get_status_display()}
+            )
+
+        pending = loan.installments.filter(
+            status__in=[
+                LoanInstallment.Status.PENDING,
+                LoanInstallment.Status.OVERDUE,
+                LoanInstallment.Status.PARTIAL,
+            ]
+        )
+        if not pending.exists():
+            loan.status = BankLoan.Status.PAID
+            loan.save(update_fields=['status', 'updated_at'])
+            return loan
+
+        pay_date = date or timezone.now().date()
+
+        # Saldo insoluto en CLP.
+        outstanding = sum(
+            (i.principal_amount for i in pending),
+            Decimal('0'),
+        )
+        # Interés acumulado del mes en curso sobre el saldo pendiente.
+        # Para prepago, asumimos que el interés es proporcional al mes
+        # en curso (1/30 por día). Esto es un cálculo conservador — los
+        # bancos pueden usar otras convenciones; se documenta en F2.8.
+        from datetime import timedelta
+        days_elapsed = (pay_date - _first_of_month(pay_date)).days + 1
+        accrued_interest = _q(
+            sum((i.interest_amount for i in pending), Decimal('0'))
+            * Decimal(days_elapsed) / Decimal('30')
+        )
+
+        if loan.currency == BankLoan.Currency.UF:
+            from finances.models import IndicatorValue
+            try:
+                uf_value = IndicatorValue.get_value('UF', pay_date)
+            except IndicatorValue.DoesNotExist as e:
+                raise ValidationError(
+                    _t("No hay valor UF cargado para la fecha de pago. "
+                       "Cargue el valor en Tesorería > Configuración > Indicadores.")
+                ) from e
+            principal_clp = _q(outstanding * uf_value)
+            interest_clp = _q(accrued_interest * uf_value)
+            total_clp = _q((outstanding + accrued_interest) * uf_value)
+            uf_value_used = uf_value
+        else:
+            principal_clp = outstanding
+            interest_clp = accrued_interest
+            total_clp = _q(principal_clp + interest_clp)
+            uf_value_used = None
+
+        from .services import TreasuryService
+
+        movement = TreasuryService.create_movement(
+            amount=total_clp,
+            movement_type=TreasuryMovement.Type.OUTBOUND,
+            payment_method=TreasuryMovement.Method.TRANSFER,
+            from_account=payment_account,
+            date=pay_date,
+            created_by=created_by,
+            reference=f"PREPAGO-{loan.display_id}",
+            notes=(
+                f"Prepago total crédito {loan.display_id} "
+                f"({loan.currency}{'=' + str(uf_value_used) if uf_value_used else ''})"
+            ),
+            is_pending_registration=True,
+        )
+
+        _build_installment_entry(
+            movement=movement,
+            liability_account=loan.liability_account.account,
+            interest_expense_account=interest_expense_account,
+            insurance_expense_account=insurance_expense_account,
+            principal_clp=principal_clp,
+            interest_clp=interest_clp,
+            insurance_clp=Decimal('0'),
+            total_clp=total_clp,
+            from_account=payment_account,
+        )
+
+        # Cancelar cuotas pendientes.
+        pending.update(status=LoanInstallment.Status.CANCELED)
+        loan.status = BankLoan.Status.PAID
+        loan.save(update_fields=['status', 'updated_at'])
+        return loan
+
+    # ── Refinanciación (F2.8) ──────────────────────────────────────────────
+
+    @staticmethod
+    @transaction.atomic
+    def refinance(loan: BankLoan, notes: str = "") -> BankLoan:
+        """
+        Marca el crédito como REFINANCIADO (no se paga, se sustituye por uno
+        nuevo). Las cuotas pendientes quedan CANCELED.
+
+        La operatoria de "abrir el nuevo crédito" queda fuera de este método
+        — se hace creando un nuevo `BankLoan` vinculado por la nota.
+        """
+        if loan.status == BankLoan.Status.PAID:
+            raise ValidationError(_t("Un crédito pagado no se puede refinanciar."))
+        loan.installments.filter(
+            status__in=[
+                LoanInstallment.Status.PENDING,
+                LoanInstallment.Status.OVERDUE,
+                LoanInstallment.Status.PARTIAL,
+            ]
+        ).update(status=LoanInstallment.Status.CANCELED)
+        loan.status = BankLoan.Status.REFINANCED
+        if notes:
+            loan.notes = (loan.notes + "\n" + notes).strip() if loan.notes else notes
+        loan.save(update_fields=['status', 'notes', 'updated_at'])
+        return loan
+
+
+# ── Helpers privados ───────────────────────────────────────────────────────
+
+def _add_months(start, k):
+    """Suma `k` meses a `start`, ajustando al último día si el mes no tiene ese día."""
+    import calendar
+    year = start.year + (start.month - 1 + k) // 12
+    month = (start.month - 1 + k) % 12 + 1
+    day = min(start.day, calendar.monthrange(year, month)[1])
+    return date(year, month, day)
+
+
+def _first_of_month(d):
+    return d.replace(day=1)
+
+
+def _build_installment_entry(
+    *,
+    movement,
+    liability_account,
+    interest_expense_account,
+    insurance_expense_account,
+    principal_clp,
+    interest_clp,
+    insurance_clp,
+    total_clp,
+    from_account,
+):
+    """
+    Construye el asiento contable con el reparto explícito:
+
+      Debe  `liability_account`            (amortización de capital)
+      Debe  `interest_expense_account`     (gasto interés, si > 0 y cuenta dada)
+      Debe  `insurance_expense_account`    (gasto seguro, si > 0 y cuenta dada)
+      Haber `from_account.account`         (banco/caja que paga)
+
+    Si no se pasan las cuentas de gasto, su línea se omite y la diferencia
+    se imputa a la `liability_account` para no perder la cuadratura.
+
+    El movimiento se crea con `is_pending_registration=True` para que
+    TreasuryService NO genere un asiento estándar (que no conoce la
+    liability_account del préstamo). Aquí construimos el JE y lo
+    vinculamos manualmente.
+    """
+    from django.contrib.contenttypes.models import ContentType
+    from accounting.models import JournalEntry, JournalItem
+    from accounting.services import JournalEntryService
+
+    # Construir DRAFT con la descripción y el source (el movimiento).
+    entry = JournalEntry.objects.create(
+        date=movement.date,
+        description=(
+            f"Pago cuota crédito {movement.reference or ''} - {movement.notes[:120]}"
+        ),
+        reference=movement.reference or f"MOV-{movement.id}",
+        status=JournalEntry.Status.DRAFT,
+        source_content_type=ContentType.objects.get_for_model(movement),
+        source_object_id=movement.id,
+    )
+
+    # Si falta alguna cuenta de gasto, prorrateamos la diferencia
+    # en `liability_account` para mantener la cuadratura D=C.
+    liability_debit = principal_clp
+    if interest_clp and not interest_expense_account:
+        liability_debit = _q(liability_debit + interest_clp)
+    if insurance_clp and not insurance_expense_account:
+        liability_debit = _q(liability_debit + insurance_clp)
+
+    # 1) Debe: pasivo (amortización de capital — más interés/seguro si no hay cuentas)
+    JournalItem.objects.create(
+        entry=entry, account=liability_account,
+        debit=liability_debit, credit=Decimal('0'),
+    )
+    # 2) Debe: gasto interés
+    if interest_clp and interest_expense_account:
+        JournalItem.objects.create(
+            entry=entry, account=interest_expense_account,
+            debit=interest_clp, credit=Decimal('0'),
+        )
+    # 3) Debe: gasto seguro
+    if insurance_clp and insurance_expense_account:
+        JournalItem.objects.create(
+            entry=entry, account=insurance_expense_account,
+            debit=insurance_clp, credit=Decimal('0'),
+        )
+    # 4) Haber: cuenta de tesorería (banco/caja que paga)
+    JournalItem.objects.create(
+        entry=entry, account=from_account.account,
+        debit=Decimal('0'), credit=total_clp,
+    )
+
+    JournalEntryService.post_entry(entry)
+    movement.journal_entry = entry
+    movement.save(update_fields=['journal_entry'])
