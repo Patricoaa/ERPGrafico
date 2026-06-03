@@ -307,7 +307,7 @@ export function BankCreationWizard({ open, onOpenChange, onSuccess }: BankCreati
             {
                 id: "accounts",
                 title: "Cuentas Corrientes",
-                isValid: checkingAccounts.every((a) => a.name.trim()),
+                isValid: checkingAccounts.every((a) => a.name.trim() && a.accountNumber.trim()),
                 component: (
                     <div className="space-y-4 pt-2">
                         <FormSection title="Cuentas Corrientes" icon={Landmark} />
@@ -323,21 +323,18 @@ export function BankCreationWizard({ open, onOpenChange, onSuccess }: BankCreati
                                             onChange={(e) => updateAccount(i, { name: e.target.value })}
                                         />
                                         <LabeledInput
-                                            label="N° de cuenta"
+                                            label="N° de cuenta *"
                                             placeholder="00123456"
                                             value={acc.accountNumber}
                                             onChange={(e) => updateAccount(i, { accountNumber: e.target.value })}
                                         />
                                     </div>
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <LabeledSelect
-                                            label="Moneda"
-                                            value={acc.currency}
-                                            onChange={(v) => updateAccount(i, { currency: v })}
-                                            options={CURRENCY_OPTIONS}
-                                        />
-                                        <div />
-                                    </div>
+                                    <LabeledSelect
+                                        label="Moneda *"
+                                        value={acc.currency}
+                                        onChange={(v) => updateAccount(i, { currency: v })}
+                                        options={CURRENCY_OPTIONS}
+                                    />
                                     <MultiSelectTagInput
                                         label="Habilitar formas de pago"
                                         options={TENDER_OPTIONS}

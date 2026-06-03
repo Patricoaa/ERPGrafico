@@ -422,7 +422,9 @@ class TreasuryAccount(models.Model):
         on_delete=models.PROTECT,
         limit_choices_to={'account_type__in': [AccountType.ASSET, AccountType.LIABILITY]},
         related_name='treasury_accounts',
-        verbose_name=_("Cuenta Contable")
+        verbose_name=_("Cuenta Contable"),
+        null=True,
+        blank=True,
     )
     
     account_type = models.CharField(
@@ -478,8 +480,8 @@ class TreasuryAccount(models.Model):
         5. CASH accounts cannot have bank.
         """
         from django.core.exceptions import ValidationError
-        
-        if self.account:
+
+        if self.account_id:
             # 1. Leaf account validation
             if not self.account.is_selectable:
                 raise ValidationError({
