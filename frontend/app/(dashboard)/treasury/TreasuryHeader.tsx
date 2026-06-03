@@ -1,55 +1,76 @@
 "use client"
 
 import { usePathname, useSearchParams } from "next/navigation"
+import { useMemo } from "react"
 import { PageHeader } from "@/components/shared"
 import { getModuleIconName } from "@/lib/module-registry"
+import { useBanks } from "@/features/treasury"
 
 export function TreasuryHeader() {
     const pathname = usePathname()
     const searchParams = useSearchParams()
+    const { banks } = useBanks()
 
     const segments = pathname.split('/').filter(Boolean)
-    const currentSegment = segments[1] || 'movements'
+    const currentSegment = segments[1] || 'operaciones'
 
-    // Map physical routes to tab values
     const segmentToTab: Record<string, string> = {
-        movements: 'movements',
-        checks: 'checks',
-        loans: 'loans',
-        accounts: 'accounts',
-        banks: 'banks',
-        reconciliation: 'reconciliation',
+        operaciones: 'operaciones',
+        movements: 'operaciones',
+        accounts: 'operaciones',
+        'centro-bancos': 'centro-bancos',
+        banks: 'centro-bancos',
         'terminal-cobro': 'terminal-cobro',
         settings: 'config',
     }
 
-    const activeValue = segmentToTab[currentSegment] || 'movements'
+    const activeValue = segmentToTab[currentSegment] || 'operaciones'
 
     const tabParam = searchParams.get('tab')
+    const bankParam = searchParams.get('bank')
 
-    // Determine subActiveValue
-    const subActiveValue = (() => {
-        if (activeValue === 'config') return tabParam || 'conciliation'
-        if (activeValue === 'accounts') return tabParam || 'accounts'
-        if (activeValue === 'reconciliation') return tabParam || 'statements'
+    const subActiveValue = useMemo(() => {
+        if (activeValue === 'config') return tabParam || 'accounts'
+        if (activeValue === 'operaciones') return tabParam || 'movements'
         if (activeValue === 'terminal-cobro') return tabParam || 'providers'
+        if (activeValue === 'centro-bancos') {
+            if (bankParam) return `bank-${bankParam}`
+            return tabParam || 'all'
+        }
         return undefined
-    })()
+    }, [activeValue, tabParam, bankParam])
+
+    const bankSubTabs = useMemo(() => {
+        const allTab = { value: 'all', label: 'Todos', iconName: 'layout-grid', href: '/treasury/centro-bancos?tab=all' }
+        const bankTabs = banks
+            .filter(b => b.is_active)
+            .map(bank => ({
+                value: `bank-${bank.id}`,
+                label: bank.name,
+                iconName: 'landmark' as string,
+                href: `/treasury/centro-bancos?bank=${bank.id}`,
+            }))
+        return [allTab, ...bankTabs]
+    }, [banks])
 
     const tabs = [
-        { value: "movements", label: "Movimientos", iconName: "banknote", href: "/treasury/movements" },
-        { value: "checks", label: "Cheques", iconName: "check-square", href: "/treasury/checks" },
-        { value: "loans", label: "Préstamos", iconName: "banknote", href: "/treasury/loans" },
         {
-            value: "accounts",
-            label: "Cuentas y bancos",
-            iconName: "landmark",
-            href: "/treasury/accounts",
+            value: "operaciones",
+            label: "Operaciones",
+            iconName: "banknote",
+            href: "/treasury/operaciones?tab=movements",
             subTabs: [
-                { value: "accounts", label: "Cuentas", href: "/treasury/accounts?tab=accounts", iconName: "list" },
-                { value: "banks", label: "Bancos", href: "/treasury/accounts?tab=banks", iconName: "landmark" },
-                { value: "methods", label: "Métodos", href: "/treasury/accounts?tab=methods", iconName: "credit-card" },
+                { value: "movements", label: "Movimientos", href: "/treasury/operaciones?tab=movements", iconName: "banknote" },
+                { value: "accounts", label: "Cuentas", href: "/treasury/operaciones?tab=accounts", iconName: "landmark" },
+                { value: "methods", label: "Métodos de Pago", href: "/treasury/operaciones?tab=methods", iconName: "credit-card" },
             ]
+        },
+        {
+            value: "centro-bancos",
+            label: "Centro de Bancos",
+            iconName: "landmark",
+            href: "/treasury/centro-bancos?tab=all",
+            subTabs: bankSubTabs,
         },
         {
             value: "terminal-cobro",
@@ -63,28 +84,14 @@ export function TreasuryHeader() {
             ]
         },
         {
-            value: "reconciliation",
-            label: "Conciliación",
-            iconName: "history",
-            href: "/treasury/reconciliation",
-            subTabs: [
-                { value: "statements", label: "Cartolas", iconName: "file-text", href: "/treasury/reconciliation?tab=statements" },
-                { value: "dashboard", label: "Dashboard", iconName: "bar-chart-3", href: "/treasury/reconciliation?tab=dashboard" },
-                { value: "intelligence", label: "Inteligencia", iconName: "brain", href: "/treasury/reconciliation?tab=intelligence" },
-            ]
-        },
-        {
             value: "config",
             label: "Configuración",
             iconName: "settings",
-            href: "/treasury/settings",
+            href: "/treasury/settings?tab=accounts",
             subTabs: [
-                { value: "conciliation", label: "Conciliación", href: "/treasury/settings?tab=conciliation", iconName: "arrow-left-right" },
-                { value: "audit", label: "Arqueo", href: "/treasury/settings?tab=audit", iconName: "banknote" },
-                { value: "movements", label: "Movimientos", href: "/treasury/settings?tab=movements", iconName: "settings-2" },
-                { value: "terminals", label: "Terminales", href: "/treasury/settings?tab=terminals", iconName: "smartphone" },
-                { value: "checks", label: "Cheques", href: "/treasury/settings?tab=checks", iconName: "check-square" },
-                { value: "financial", label: "Financiero", href: "/treasury/settings?tab=financial", iconName: "receipt" },
+                { value: "accounts", label: "Bancos", href: "/treasury/settings?tab=accounts", iconName: "landmark" },
+                { value: "conciliation", label: "Cuentas Contables", href: "/treasury/settings?tab=conciliation", iconName: "arrow-left-right" },
+                { value: "terminals", label: "Sistema", href: "/treasury/settings?tab=terminals", iconName: "settings" },
             ]
         },
     ]
@@ -99,28 +106,30 @@ export function TreasuryHeader() {
 
     const getHeaderConfig = () => {
         if (activeValue === 'config') {
-            if (subActiveValue === 'terminals') return { title: "Cuentas Puente de Terminales", description: "Configure las cuentas contables puente para comisiones de terminales de pago.", iconName: "smartphone" as const }
-            if (subActiveValue === 'checks') return { title: "Cuentas de Cheques", description: "Cuenta puente donde los cheques de terceros se contabilizan hasta su depósito y cobro.", iconName: "check-square" as const }
-            if (subActiveValue === 'financial') return { title: "Cuentas de Gasto Financiero", description: "Configure las cuentas de intereses, seguros y comisiones bancarias.", iconName: "receipt" as const }
-            return { title: "Configuración de Tesorería", description: "Gestione las cuentas de ajuste para conciliación bancaria y movimientos de caja.", iconName: "settings" as const }
+            if (subActiveValue === 'terminals') return { title: "Sistema", description: "Configure cuentas puente de terminales y otros ajustes del sistema.", iconName: "settings" as const }
+            if (subActiveValue === 'conciliation') return { title: "Cuentas Contables", description: "Gestione las cuentas contables para conciliación, arqueo y gastos financieros.", iconName: "arrow-left-right" as const }
+            return { title: "Configuración de Tesorería", description: "Administre el catálogo de bancos y cuentas contables.", iconName: "settings" as const }
         }
-        if (activeValue === 'movements') return { title: "Movimientos de Tesorería", description: "Registro histórico de ingresos, egresos y traslados de fondos.", iconName: "banknote" as const }
-        if (activeValue === 'loans') return { title: "Créditos Bancarios", description: "Gestión de préstamos, tabla de amortización y pago de cuotas.", iconName: "banknote" as const }
-        if (activeValue === 'banks') return { title: "Centro de Bancos", description: "Vista unificada del banco: cuentas, créditos, cheques y vencimientos.", iconName: "landmark" as const }
-        if (activeValue === 'accounts') {
-            if (subActiveValue === 'banks') return { title: "Gestión de Bancos", description: "Administre las entidades bancarias globales del sistema.", iconName: "landmark" as const }
+        if (activeValue === 'operaciones') {
+            if (subActiveValue === 'accounts') return { title: "Cuentas de Tesorería", description: "Registre y configure sus cuentas bancarias y de efectivo.", iconName: "landmark" as const }
             if (subActiveValue === 'methods') return { title: "Métodos de Pago", description: "Configure los medios de pago aceptados y sus cuentas vinculadas.", iconName: "credit-card" as const }
-            return { title: "Cuentas de Tesorería", description: "Registre y configure sus cuentas bancarias y de efectivo.", iconName: "landmark" as const }
+            return { title: "Movimientos de Tesorería", description: "Registro histórico de ingresos, egresos y traslados de fondos.", iconName: "banknote" as const }
+        }
+        if (activeValue === 'centro-bancos') {
+            if (bankParam) {
+                const selectedBank = banks.find(b => b.id === Number(bankParam))
+                return {
+                    title: selectedBank?.name || "Banco",
+                    description: "Vista unificada: cuentas, productos financieros y conciliación del banco.",
+                    iconName: "landmark" as const
+                }
+            }
+            return { title: "Centro de Bancos", description: "Vista consolidada de todos sus bancos, productos financieros y vencimientos.", iconName: "landmark" as const }
         }
         if (activeValue === 'terminal-cobro') {
             if (subActiveValue === 'batches') return { title: "Lotes de Pago", description: "Gestión de cierres diarios y liquidaciones de tarjetas.", iconName: "credit-card" as const }
             if (subActiveValue === 'devices') return { title: "Dispositivos de Pago", description: "Gestione los terminales físicos de cobro y su vinculación con proveedores.", iconName: "smartphone" as const }
             return { title: "Proveedores de Pago", description: "Configuración de cuentas y comisiones por proveedor (TUU, Transbank, etc.).", iconName: "building2" as const }
-        }
-        if (activeValue === 'reconciliation') {
-            if (subActiveValue === 'dashboard') return { title: "Dashboard de Conciliación", description: "Métricas y resumen de la cuadratura contable y bancaria.", iconName: "bar-chart-3" as const }
-            if (subActiveValue === 'intelligence') return { title: "Inteligencia de Conciliación", description: "Configura pesos y umbrales para el matching automático por cuenta.", iconName: "brain" as const }
-            return { title: "Cartolas Bancarias", description: "Importación y gestión de cartolas para conciliación.", iconName: "file-text" as const }
         }
         return { title: "Tesorería", description: "", iconName: getModuleIconName('treasury') ?? "banknote" }
     }
