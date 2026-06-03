@@ -80,6 +80,34 @@ re-derivar el contexto del código.
 7. **Verificación obligatoria:** antes de marcar una tarea ✅, ejecutar literal el comando
    del DoD (test/grep/migrate) y citar el resultado. No marcar por inferencia.
 
+### Contratos a respetar en entidades / UI nuevas
+
+Toda fase que cree una entidad, estado o monto **debe** cumplir estos contratos del
+proyecto (de lo contrario el PR se rechaza):
+
+- **Entidad nueva** (`BankLoan`, `LoanInstallment`, `CreditCardStatement`, `Checkbook`…):
+  registrarla en `frontend/lib/entity-registry.ts` (`ENTITY_REGISTRY`) para `display_id`,
+  icono, `listUrl`/`detailUrlPattern`. Contrato: `docs/20-contracts/entity-identity.md`
+  (GOVERNANCE regla 42). El `display_id` del modelo (`CRE-{id}`, etc.) es el identificador
+  de negocio; nunca exponer el PK como tal.
+- **Estados nuevos:** documentarlos en `docs/20-contracts/state-map.md` **y** añadirlos al
+  `STATUS_MAP` de `frontend/lib/badge-resolvers.ts`. Renderizar SIEMPRE con `StatusBadge`.
+- **Montos:** `DecimalField` en backend (seguir el patrón de `TreasuryMovement.amount`,
+  `decimal_places=2`); render SOLO con `MoneyDisplay` (ADR-0014, GOVERNANCE regla 41).
+  Para UF, guardar el valor UF usado por trazabilidad.
+- **Formularios:** `react-hook-form` + `zodResolver`, schema en el componente/`schema.ts`.
+  Drawer/Modal/Wizard según `docs/20-contracts/component-form-patterns.md`.
+- **Entity drawers / drill-down:** si la entidad se abre desde otras vistas, registrarla en
+  el drawer registry (`docs/20-contracts/component-entity-drawers.md`).
+- **Contrato modificado / API pública nueva:** requiere ADR (invariante 12). Cada fase de
+  feature cierra con su ADR (ver "Commits de la fase").
+
+### Estructura de cada archivo de fase
+
+Cada `fase-N-*.md` contiene: **Objetivo de la fase** → **Tareas** (`F<n>.<m>`, con DoD) →
+**Commits de la fase** (secuencia atómica a ejecutar) → **Verificación de la fase**. Cada
+commit cierra con `Co-Authored-By: <modelo> <noreply@anthropic.com>`.
+
 ### Nota de entorno de tests (importante)
 
 El sandbox local usa **SQLite** y una migración antigua (`treasury/0008`) tiene SQL
