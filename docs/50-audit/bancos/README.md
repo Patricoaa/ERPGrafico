@@ -1,7 +1,7 @@
 ---
 layer: 50-audit
 doc: bancos/README
-status: active
+status: complete
 owner: core-team
 last_review: 2026-06-03
 kind: roadmap-index
@@ -39,11 +39,11 @@ re-derivar el contexto del código.
 | — | Taxonomía cuentas vs métodos (wizard, provisión, convergencia) | — | — | ✅ Hecho (ADR-0031) |
 | — | Tarjeta de crédito como pasivo | — | — | ✅ Hecho (ADR-0031) |
 | — | Cheques recibidos (cartera, cuenta puente) | — | — | ✅ Hecho (ADR-0032) |
-| **1** | Operativo / limpieza | S–M | **#1** | ✅ Cerrada en dev box — pendiente promover F1.1+F1.2 a staging/prod |
-| **2** | Créditos bancarios (CLP + UF) | XL | #2 | 🔄 En curso (2026-06-03) |
-| **3** | Tarjeta de crédito: estado + pago | L | #3 | ⬜ Pendiente |
-| **4** | Cheques: propios girados + endoso + extras | L | #4 | ⬜ Pendiente |
-| **5** | Transversal (Centro de Bancos, flujo, alertas) | L | #5 | ⬜ Pendiente |
+| **1** | Operativo / limpieza | S–M | **#1** | ✅ Cerrada |
+| **2** | Créditos bancarios (CLP + UF) | XL | #2 | ✅ Cerrada (ADR-0033) |
+| **3** | Tarjeta de crédito: estado + pago | L | #3 | ✅ Cerrada (ADR-0034) |
+| **4** | Cheques: propios girados + endoso + extras | L | #4 | ✅ Cerrada (ADR-0035) |
+| **5** | Transversal (Centro de Bancos, flujo, alertas) | L | #5 | ✅ Cerrada (ADR-0036) |
 
 > El orden de prioridad lo fijó el usuario (operativo primero). Las fases 2–5 son
 > independientes entre sí salvo dependencias explícitas anotadas en cada archivo;

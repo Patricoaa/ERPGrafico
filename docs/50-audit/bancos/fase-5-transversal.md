@@ -1,9 +1,9 @@
 ---
 layer: 50-audit
 doc: bancos/fase-5-transversal
-status: active
+status: complete
 owner: core-team
-last_review: 2026-06-02
+last_review: 2026-06-03
 kind: roadmap
 ---
 
@@ -34,6 +34,8 @@ conviene) hacerse antes** porque la necesitan F2 (pago de cuotas) y F3 (interese
   para gastos bancarios. Exponer en el panel de settings.
 - **DoD:** las cuentas se configuran desde la UI; `LoanService.pay_installment` y el pago de
   tarjeta las leen de settings (en vez de parámetros temporales).
+- **Estado:** ✅ Hecho. Migración `accounting/0021`. Pestaña "Financiero" con 3 AccountFields.
+  `LoanService` y `CardService` resuelven desde settings como fallback.
 
 ### F5.2 · "Centro de Bancos" — vista unificada por banco
 - **Objetivo:** una pantalla por banco que muestre todo: cuentas, tarjetas, cheques, créditos,
@@ -49,6 +51,8 @@ conviene) hacerse antes** porque la necesitan F2 (pago de cuotas) y F3 (interese
   - UI: tarjetas resumen + tabla de próximos vencimientos (cuotas, cheques a fecha, fecha de
     pago de tarjeta).
 - **DoD:** la vista de un banco muestra saldos correctos y los próximos N vencimientos.
+- **Estado:** ✅ Hecho. Action `bank_overview` en `BankViewSet`. Componente `BankCenterView`.
+  Ruta `/treasury/banks/[id]/page.tsx`. Acción "Ver Centro" en tabla de bancos.
 
 ### F5.3 · Proyección de flujo de caja con vencimientos
 - **Objetivo:** que el flujo de caja proyectado incluya las salidas/entradas futuras de
@@ -60,6 +64,8 @@ conviene) hacerse antes** porque la necesitan F2 (pago de cuotas) y F3 (interese
   `Check` `IN_PORTFOLIO` por `due_date` (entradas), `CreditCardStatement` OPEN por `due_date`
   (salidas). Distinguir realizado vs proyectado.
 - **DoD:** el flujo proyectado refleja una cuota de crédito futura y un cheque a fecha.
+- **Estado:** ✅ Hecho. Action `future_maturities` en `TreasuryDashboardViewSet`. `CashFlowTable`
+  acepta prop `futureMaturities` y renderiza tabla de vencimientos con colores por dirección.
 
 ### F5.4 · Calendario unificado de vencimientos + notificaciones
 - **Objetivo:** un solo lugar (y alertas) para todos los vencimientos bancarios.
@@ -69,6 +75,8 @@ conviene) hacerse antes** porque la necesitan F2 (pago de cuotas) y F3 (interese
 - **Cambios esperados:** task diario que recolecta vencimientos de cuotas, cheques y estados
   de cuenta de tarjeta a N días y emite notificación/badge unificado.
 - **DoD:** con datos de prueba a vencer, el task emite una notificación consolidada.
+- **Estado:** ✅ Hecho. Task `unified_maturity_alerts` consolida las 4 fuentes. Deduplicación
+  por (notification_type, object_id, target_date).
 
 ### F5.5 · Docs + ADR de cierre
 - **Dificultad:** S
@@ -76,6 +84,8 @@ conviene) hacerse antes** porque la necesitan F2 (pago de cuotas) y F3 (interese
   Actualizar `README.md` de esta carpeta marcando todas las fases ✅ y el dominio bancario
   como completo.
 - **DoD:** índice actualizado; ADR creado.
+- **Estado:** ✅ Hecho. ADR-0036 creado en `docs/10-architecture/adr/0036-centro-de-bancos-y-vencimientos.md`.
+  README.md y fase-5-transversal.md actualizados con estado complete.
 
 ---
 
