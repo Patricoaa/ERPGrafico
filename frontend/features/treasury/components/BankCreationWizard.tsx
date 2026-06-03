@@ -125,13 +125,13 @@ interface BankCreationWizardProps {
 }
 
 export function BankCreationWizard({ open, onOpenChange, onSuccess }: BankCreationWizardProps) {
-    const { createBank, isCreating: isBankCreating } = useBanks()
+    const { createBank, updateBank, isCreating: isBankCreating, isUpdating: isBankUpdating } = useBanks()
     const { mutateAsync: provision, isPending: isProvisioning } = useProvisionAccount()
     const { create: createLoan, isCreating: isLoanCreating } = useLoanMutations()
     const { accounts: existingAccounts } = useTreasuryAccounts()
     const { accounts: allAccountingAccounts } = useAccountSearch()
 
-    const isCreating = isBankCreating || isProvisioning || isLoanCreating
+    const isCreating = isBankCreating || isBankUpdating || isProvisioning || isLoanCreating
 
     // Bank
     const [bankName, setBankName] = useState("")
@@ -194,11 +194,16 @@ export function BankCreationWizard({ open, onOpenChange, onSuccess }: BankCreati
 
     const handleCreateBank = async (): Promise<boolean> => {
         try {
-            const result = await createBank({
+            const payload = {
                 name: bankName.trim(),
                 code: bankCode.trim() || undefined,
                 swift_code: bankSwift.trim() || undefined,
-            })
+            }
+            if (createdBankId !== null) {
+                await updateBank({ id: createdBankId, payload })
+                return true
+            }
+            const result = await createBank(payload)
             setCreatedBankId(result.id)
             return true
         } catch {
@@ -312,7 +317,7 @@ export function BankCreationWizard({ open, onOpenChange, onSuccess }: BankCreati
             {
                 id: "accounts",
                 title: "Cuentas Corrientes",
-                isValid: checkingAccounts.every((a) => a.name.trim() && a.accountNumber.trim()),
+                isValid: checkingAccounts.every((a) => a.name.trim() && a.accountNumber.trim() && a.accountId),
                 component: (
                     <div className="space-y-4 pt-2">
                         <FormSection title="Cuentas Corrientes" icon={Landmark} />
