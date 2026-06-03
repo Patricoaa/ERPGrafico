@@ -1985,3 +1985,257 @@ class Check(models.Model):
         )
 
 
+class BankLoan(models.Model):
+    """
+    Crédito / préstamo bancario (CLP o UF).
+
+    Modela la deuda como pasivo (`liability_account` con `AccountType.LIABILITY`).
+    Al desembolsar, la cuenta destino del banco se incrementa (INBOUND) y la
+    cuenta pasivo refleja la deuda. Al pagar una cuota, se debita la
+    `liability_account` (amortización de capital) y se asientan los gastos de
+    interés/seguro en cuentas de gasto configuradas en `AccountingSettings`.
+
+    Ver `docs/50-audit/bancos/fase-2-creditos-bancarios.md` (F2.2).
+    """
+
+    class Status(models.TextChoices):
+        DRAFT        = 'DRAFT',        _('Borrador')
+        ACTIVE       = 'ACTIVE',       _('Vigente')
+        PAID         = 'PAID',         _('Pagado')
+        REFINANCED   = 'REFINANCED',   _('Refinanciado')
+        DEFAULTED    = 'DEFAULTED',    _('En Mora / Incobrable')
+
+    class Currency(models.TextChoices):
+        CLP = 'CLP', _('Pesos Chilenos (CLP)')
+        UF  = 'UF',  _('Unidad de Fomento (UF)')
+
+    class AmortizationSystem(models.TextChoices):
+        FRENCH = 'FRENCH', _('Francés (cuota fija)')
+        LINEAR = 'LINEAR', _('Lineal (capital fijo)')
+
+    class RateBasis(models.TextChoices):
+        MONTHLY = 'MONTHLY', _('Mensual')
+        ANNUAL  = 'ANNUAL',  _('Anual')
+
+    lender = models.ForeignKey(
+        'Bank', on_delete=models.PROTECT,
+        related_name='loans', verbose_name=_("Banco Acreedor"),
+    )
+    loan_number = models.CharField(
+        _("N° de Operación / Crédito"), max_length=60, blank=True,
+        help_text=_("Identificador del crédito en el banco (opcional)."),
+    )
+    currency = models.CharField(
+        _("Moneda"), max_length=3,
+        choices=Currency.choices, default=Currency.CLP,
+    )
+    principal = models.DecimalField(
+        _("Capital (monto original)"),
+        max_digits=18, decimal_places=2,
+        validators=[MinValueValidator(Decimal('0.01'))],
+        help_text=_("Monto original del crédito en la moneda elegida."),
+    )
+    interest_rate = models.DecimalField(
+        _("Tasa de Interés"),
+        max_digits=8, decimal_places=4,
+        validators=[MinValueValidator(Decimal('0'))],
+        help_text=_("Tasa en % (ej. 1.2000 = 1.2%). Ver `rate_basis` para periodicidad."),
+    )
+    rate_basis = models.CharField(
+        _("Base de Tasa"), max_length=10,
+        choices=RateBasis.choices, default=RateBasis.MONTHLY,
+        help_text=_("Mensual: % directo por cuota. Anual: se divide por 12 al calcular la cuota."),
+    )
+    amortization_system = models.CharField(
+        _("Sistema de Amortización"), max_length=10,
+        choices=AmortizationSystem.choices, default=AmortizationSystem.FRENCH,
+    )
+    term_months = models.PositiveIntegerField(
+        _("Plazo (meses)"), validators=[MinValueValidator(1)],
+    )
+    start_date = models.DateField(_("Fecha de Inicio"))
+    first_due_date = models.DateField(_("Primer Vencimiento"))
+    insurance_monthly = models.DecimalField(
+        _("Seguro Mensual (opcional)"),
+        max_digits=18, decimal_places=2, default=Decimal('0'),
+        help_text=_("Seguro desgravamen/cesantía mensual. Sumado a cada cuota."),
+    )
+
+    disbursement_account = models.ForeignKey(
+        'TreasuryAccount', on_delete=models.PROTECT,
+        related_name='loans_disbursed',
+        verbose_name=_("Cuenta de Desembolso (Banco)"),
+        help_text=_("Cuenta de tesorería tipo CHECKING/CASH donde se recibe el dinero."),
+    )
+    liability_account = models.ForeignKey(
+        'TreasuryAccount', on_delete=models.PROTECT,
+        related_name='loans_as_liability',
+        verbose_name=_("Cuenta Pasivo (Préstamo por Pagar)"),
+        help_text=_("Cuenta de tesorería tipo LIABILITY que materializa la deuda."),
+    )
+
+    status = models.CharField(
+        _("Estado"), max_length=15,
+        choices=Status.choices, default=Status.DRAFT,
+    )
+    notes = models.TextField(_("Notas"), blank=True)
+    collateral_notes = models.CharField(
+        _("Garantías (notas)"), max_length=255, blank=True,
+        help_text=_("Descripción libre de garantías. Modelo dedicado queda fuera del MVP."),
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='loans_created',
+        verbose_name=_("Creado Por"),
+    )
+    history = HistoricalRecords()
+
+    class Meta:
+        verbose_name = _("Crédito Bancario")
+        verbose_name_plural = _("Créditos Bancarios")
+        ordering = ['-start_date', '-id']
+        indexes = [
+            models.Index(fields=['status']),
+            models.Index(fields=['lender', 'status']),
+            models.Index(fields=['currency']),
+        ]
+
+    def __str__(self) -> str:
+        return self.display_id
+
+    @property
+    def display_id(self) -> str:
+        return f"CRE-{self.id}"
+
+    def clean(self):
+        """
+        Validaciones:
+        1. `liability_account` debe ser tipo CREDIT_CARD (que en taxonomía
+           vigente representa PASIVO — deuda rotativa, ADR-0031).
+        2. `disbursement_account` no puede ser de tipo pasivo ni puente.
+        3. `first_due_date` no puede ser anterior a `start_date`.
+        """
+        if self.liability_account_id:
+            if self.liability_account.account_type != TreasuryAccount.Type.CREDIT_CARD:
+                raise ValidationError({
+                    'liability_account': _(
+                        "La cuenta pasivo del crédito debe ser una cuenta de tesorería tipo "
+                        "Tarjeta de Crédito (CREDIT_CARD) — la única con AccountType=LIABILITY "
+                        "en la taxonomía vigente (ADR-0031). Cuenta actual: %(type)s."
+                    ) % {'type': self.liability_account.get_account_type_display()}
+                })
+
+        if self.disbursement_account_id and self.disbursement_account.account_type in (
+            TreasuryAccount.Type.CREDIT_CARD,
+            TreasuryAccount.Type.CHECK_PORTFOLIO,
+        ):
+            raise ValidationError({
+                'disbursement_account': _(
+                    "La cuenta de desembolso debe ser una cuenta bancaria (CHECKING) o "
+                    "caja (CASH); no puede ser de pasivo ni puente."
+                )
+            })
+
+        if self.start_date and self.first_due_date and self.first_due_date < self.start_date:
+            raise ValidationError({
+                'first_due_date': _("El primer vencimiento no puede ser anterior al inicio.")
+            })
+
+
+class LoanInstallment(models.Model):
+    """
+    Cuota de un `BankLoan`. Una fila por mes del calendario de amortización.
+
+    - `currency` heredada del préstamo (`loan.currency`).
+    - Para créditos en UF, los montos se guardan en UF y se convierten a CLP
+      al momento de pagar (F2.7) usando el valor UF vigente a la fecha de pago.
+    - `outstanding_balance` se persiste para acelerar listados/queries de
+      morosidad sin tener que recorrer el historial.
+    """
+
+    class Status(models.TextChoices):
+        PENDING  = 'PENDING',  _('Pendiente')
+        PAID     = 'PAID',     _('Pagada')
+        OVERDUE  = 'OVERDUE',  _('Vencida')
+        PARTIAL  = 'PARTIAL',  _('Pago Parcial')
+        CANCELED = 'CANCELED', _('Anulada (refinanciación)')
+
+    loan = models.ForeignKey(
+        'BankLoan', on_delete=models.CASCADE,
+        related_name='installments', verbose_name=_("Crédito"),
+    )
+    number = models.PositiveIntegerField(_("N° de Cuota"))
+    due_date = models.DateField(_("Vencimiento"))
+    principal_amount = models.DecimalField(
+        _("Capital"), max_digits=18, decimal_places=2,
+    )
+    interest_amount = models.DecimalField(
+        _("Interés"), max_digits=18, decimal_places=2,
+    )
+    insurance_amount = models.DecimalField(
+        _("Seguro"), max_digits=18, decimal_places=2, default=Decimal('0'),
+    )
+    total_amount = models.DecimalField(
+        _("Cuota Total"), max_digits=18, decimal_places=2,
+        help_text=_("principal + interest + insurance (en la moneda del crédito)."),
+    )
+    outstanding_balance = models.DecimalField(
+        _("Saldo Insoluto"), max_digits=18, decimal_places=2,
+        help_text=_("Saldo del crédito después de pagar esta cuota."),
+    )
+    status = models.CharField(
+        _("Estado"), max_length=10,
+        choices=Status.choices, default=Status.PENDING,
+    )
+    paid_at = models.DateTimeField(_("Pagada el"), null=True, blank=True)
+    payment_movement = models.OneToOneField(
+        'TreasuryMovement', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='installment_payment',
+        verbose_name=_("Movimiento de Pago"),
+    )
+    # Trazabilidad UF: si el préstamo es UF, se persiste el valor UF usado al pagar.
+    uf_value_used = models.DecimalField(
+        _("Valor UF al Pago"), max_digits=18, decimal_places=4,
+        null=True, blank=True,
+    )
+    clp_amount_paid = models.DecimalField(
+        _("CLP Pagado"), max_digits=18, decimal_places=2,
+        null=True, blank=True,
+        help_text=_("Monto efectivamente pagado en CLP (para créditos UF)."),
+    )
+
+    notes = models.CharField(_("Notas"), max_length=255, blank=True)
+    history = HistoricalRecords()
+
+    class Meta:
+        verbose_name = _("Cuota de Crédito")
+        verbose_name_plural = _("Cuotas de Crédito")
+        ordering = ['loan', 'number']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['loan', 'number'],
+                name='uniq_installment_per_loan',
+            ),
+        ]
+        indexes = [
+            models.Index(fields=['loan', 'status']),
+            models.Index(fields=['status', 'due_date']),
+            models.Index(fields=['due_date']),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.loan.display_id} #{self.number}"
+
+    @property
+    def display_id(self) -> str:
+        return f"CUO-{self.id}"
+
+    @property
+    def is_overdue(self) -> bool:
+        from core.utils import get_current_date
+        return self.status == self.Status.PENDING and self.due_date < get_current_date()
+
+
