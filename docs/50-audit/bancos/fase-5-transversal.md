@@ -9,11 +9,17 @@ kind: roadmap
 
 # Fase 5 — Transversal (consolidación)
 
-Vistas y servicios que unifican todo lo bancario una vez que existen las entidades
-(créditos, tarjeta, cheques). Esfuerzo: L.
+## Objetivo de la fase
+Unificar todo lo bancario en vistas y servicios transversales una vez que existen las
+entidades (créditos, tarjeta, cheques): cuentas de gasto financiero centralizadas, un
+"Centro de Bancos" por banco, la proyección de flujo de caja con vencimientos futuros, y
+un calendario unificado de vencimientos con alertas. Esfuerzo: L.
 
-**Precondiciones generales:** se aprovecha mejor tras Fases 2–4, pero F5.1 puede hacerse
-antes (la necesitan F2 y F3).
+**Precondiciones generales:** se aprovecha mejor tras Fases 2–4, pero **F5.1 puede (y
+conviene) hacerse antes** porque la necesitan F2 (pago de cuotas) y F3 (intereses de tarjeta).
+
+> **Contratos:** montos con `MoneyDisplay`; cualquier endpoint nuevo sigue
+> `docs/20-contracts/api-contracts.md` y `pagination-contract.md`; ADR-0036 al cierre.
 
 ---
 
@@ -70,6 +76,18 @@ antes (la necesitan F2 y F3).
   Actualizar `README.md` de esta carpeta marcando todas las fases ✅ y el dominio bancario
   como completo.
 - **DoD:** índice actualizado; ADR creado.
+
+---
+
+## Commits de la fase
+
+> Secuencia atómica. F5.1 conviene adelantarla (la usan F2 y F3). Cierra con `Co-Authored-By`.
+
+1. `feat(settings): cuentas de gasto financiero (intereses, seguros)` — F5.1
+2. `feat(treasury): Centro de Bancos — vista unificada por banco` — F5.2
+3. `feat(finances): proyección de flujo de caja con vencimientos` — F5.3
+4. `feat(treasury): calendario unificado de vencimientos + alertas` — F5.4
+5. `docs(bancos): ADR-0036 + cierre del dominio bancario` — F5.5
 
 ---
 

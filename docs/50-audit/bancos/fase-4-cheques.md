@@ -9,9 +9,15 @@ kind: roadmap
 
 # Fase 4 — Cheques: completar el módulo
 
-Ya está entregado el flujo de **cheques recibidos de terceros** (cartera con cuenta puente
-`CHECK_PORTFOLIO`, `Check`, `CheckService`, UI — ADR-0032). Esta fase completa el resto.
-Esfuerzo: L.
+## Objetivo de la fase
+Completar el módulo de cheques sobre el flujo ya entregado de **cheques recibidos de
+terceros** (cartera con cuenta puente `CHECK_PORTFOLIO`, `Check`, `CheckService`, UI —
+ADR-0032): agregar cheques propios girados, endoso, chequera con folios, integración con
+el método de pago `CHECK`, reportería de cartera/tránsito y alertas. Esfuerzo: L.
+
+> **Contratos:** registrar `Checkbook` en `ENTITY_REGISTRY`; nuevos estados
+> (`ISSUED`, `ENDORSED`) en `state-map.md` + `STATUS_MAP`; montos con `MoneyDisplay`;
+> ADR-0035 al cierre. Depende de F1.5 (registro de `treasury.check` ya hecho).
 
 **Reutiliza:** todo el andamiaje de `Check`/`CheckService`. La mayoría de tareas EXTIENDEN
 el modelo y servicio existentes (no se crea uno nuevo).
@@ -88,6 +94,20 @@ el modelo y servicio existentes (no se crea uno nuevo).
 - **Cambios esperados:** extender `test_checks.py` (issue, endorse, folios, integración);
   ADR-0035 "Cheques propios girados y endoso". Actualizar este archivo a ✅.
 - **DoD:** suite de cheques verde en Postgres real.
+
+---
+
+## Commits de la fase
+
+> Secuencia atómica. Cierra con `Co-Authored-By`.
+
+1. `feat(treasury): cheques propios girados (direction=ISSUED) + cuenta puente` — F4.1
+2. `feat(treasury): endoso de cheques recibidos` — F4.2
+3. `feat(treasury): chequera con folios correlativos + entity-registry` — F4.3
+4. `feat(treasury): integración del método CHECK crea entidad Check` — F4.4
+5. `feat(treasury): KPIs de cartera y depósitos en tránsito (UI)` — F4.5
+6. `feat(treasury): alertas Celery de cheques por vencer/en tránsito` — F4.6
+7. `docs(treasury): ADR-0035 cheques propios + endoso + tests` — F4.7
 
 ---
 

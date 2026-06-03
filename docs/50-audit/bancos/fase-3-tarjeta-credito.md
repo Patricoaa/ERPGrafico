@@ -9,9 +9,13 @@ kind: roadmap
 
 # Fase 3 — Tarjeta de crédito propia: estado de cuenta + pago
 
-Continúa lo entregado (la cuenta `CREDIT_CARD` ya es un **pasivo**, ADR-0031). Cierra el
-ciclo: gastar con la tarjeta aumenta la deuda, llega el estado de cuenta, y se paga desde
-el banco. Esfuerzo: L.
+## Objetivo de la fase
+Cerrar el ciclo de la tarjeta de crédito propia sobre la base ya entregada (la cuenta
+`CREDIT_CARD` es un **pasivo**, ADR-0031): gastar con la tarjeta aumenta la deuda, llega el
+estado de cuenta, y se paga desde el banco. Esfuerzo: L.
+
+> **Contratos:** registrar `CreditCardStatement` en `ENTITY_REGISTRY`; estados en
+> `state-map.md` + `STATUS_MAP`; montos `DecimalField` + `MoneyDisplay`; ADR-0034 al cierre.
 
 **Patrón base:** la `TreasuryAccount` `CREDIT_CARD` (LIABILITY) es la deuda. No se mueve
 al banco al gastar; sólo al pagar el estado de cuenta. Todo vía `TreasuryService.create_movement`.
@@ -78,6 +82,19 @@ al banco al gastar; sólo al pagar el estado de cuenta. Todo vía `TreasuryServi
 - **Cambios esperados:** `test_credit_card_statement.py`; ADR-0034 "Tarjeta de crédito —
   estado de cuenta y pago". Actualizar este archivo a ✅.
 - **DoD:** suite verde en Postgres real; ADR creado.
+
+---
+
+## Commits de la fase
+
+> Secuencia atómica. Cierra con `Co-Authored-By`.
+
+1. `feat(treasury): gasto con tarjeta de crédito aumenta el pasivo` — F3.1
+2. `feat(treasury): modelo CreditCardStatement + entity-registry` — F3.2
+3. `feat(treasury): intereses y comisiones de tarjeta` — F3.3
+4. `feat(treasury): pago del estado de cuenta de tarjeta` — F3.4
+5. `feat(treasury): API + UI estado de cuenta de tarjeta` — F3.5
+6. `docs(treasury): ADR-0034 tarjeta de crédito estado/pago + tests` — F3.6
 
 ---
 

@@ -9,9 +9,14 @@ kind: roadmap
 
 # Fase 2 — Créditos / préstamos bancarios (CLP + UF)
 
-Proceso totalmente ausente. Modela la deuda, la tabla de amortización, el desembolso y
-el pago de cuotas (capital + interés + seguros), con soporte de indexación **UF** desde
-el inicio (decisión del usuario). Esfuerzo: XL.
+## Objetivo de la fase
+Modelar el proceso completo de créditos bancarios (hoy ausente): la deuda como pasivo, la
+tabla de amortización, el desembolso al banco y el pago de cuotas (capital + interés +
+seguros), con indexación **UF** desde el inicio (decisión del usuario). Esfuerzo: XL.
+
+> **Contratos:** registrar `BankLoan` y `LoanInstallment` en `ENTITY_REGISTRY`
+> (`display_id` `CRE-{id}` / `CUO-{id}`); estados nuevos en `state-map.md` + `STATUS_MAP`;
+> montos `DecimalField` + `MoneyDisplay`; ADR-0033 al cierre.
 
 **Patrón base:** una `TreasuryAccount` `CREDIT_CARD`-style de tipo **LIABILITY** representa
 la deuda (préstamo por pagar). Desembolso = INBOUND al banco. Pago de cuota = movimiento(s)
@@ -175,6 +180,25 @@ Todo vía `TreasuryService.create_movement`.
   "Créditos bancarios — deuda como pasivo + amortización (CLP/UF)". Actualizar este archivo
   a estado ✅.
 - **DoD:** suite de préstamos verde en Postgres real; ADR creado.
+
+---
+
+## Commits de la fase
+
+> Secuencia atómica (1 commit por tarea o grupo cohesivo). Cierra con `Co-Authored-By`.
+
+1. `feat(finances): modelo IndicatorValue (UF/UTM/USD) + carga manual` — F2.1
+2. `feat(treasury): modelos BankLoan + LoanInstallment` — F2.2, F2.3
+3. `feat(treasury): LoanService — tabla de amortización (francés/lineal)` — F2.4
+4. `feat(treasury): desembolso de crédito (INBOUND + pasivo)` — F2.5
+5. `feat(treasury): pago de cuota con reparto capital/interés/seguro` — F2.6
+6. `feat(treasury): conversión UF→CLP en pago de cuotas` — F2.7
+7. `feat(treasury): prepago y refinanciación de créditos` — F2.8
+8. `feat(treasury): devengo mensual de interés (Celery, opt-in)` — F2.9
+9. `feat(treasury): alertas de vencimiento de cuotas (Celery)` — F2.10
+10. `feat(treasury): API de créditos (BankLoanViewSet + acciones)` — F2.11
+11. `feat(treasury): UI de créditos (lista + amortización + pago) + entity-registry` — F2.12
+12. `docs(treasury): ADR-0033 créditos bancarios + tests` — F2.13
 
 ---
 
