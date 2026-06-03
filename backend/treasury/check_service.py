@@ -1,12 +1,18 @@
 """
-check_service.py — Lógica de negocio para cheques recibidos de terceros.
+check_service.py — Lógica de negocio para cheques (recibidos + propios girados).
 
-Flujo soportado:
+Flujo recibido (direction=RECEIVED):
   receive()  → Check IN_PORTFOLIO + TreasuryMovement INBOUND a la cuenta puente.
   deposit()  → TreasuryMovement TRANSFER puente→banco; DEPOSITED.
   clear()    → CLEARED (cobrado definitivamente).
   bounce()   → Revierte movimientos (reversa contable); BOUNCED.
   void()     → VOIDED (solo desde IN_PORTFOLIO).
+  endorse()  → OUTBOUND desde cartera + salda proveedor; ENDORSED.
+
+Flujo propio (direction=ISSUED):
+  issue()    → Check ISSUED + OUTBOUND desde pasivo "Cheques Girados" salda proveedor.
+  mark_cashed() → TRANSFER pasivo "Cheques Girados" → banco; CLEARED.
+  void()     → Revierte el issue; VOIDED.
 
 Reutiliza TreasuryService.create_movement para todos los movimientos de tesorería,
 garantizando que se genere el asiento contable correcto sin código duplicado.
@@ -29,11 +35,13 @@ if TYPE_CHECKING:
 
 # Transiciones de estado permitidas.
 _VALID_TRANSITIONS: dict[str, set[str]] = {
-    Check.Status.IN_PORTFOLIO: {Check.Status.DEPOSITED, Check.Status.VOIDED},
+    Check.Status.IN_PORTFOLIO: {Check.Status.DEPOSITED, Check.Status.VOIDED, Check.Status.ENDORSED},
     Check.Status.DEPOSITED:    {Check.Status.CLEARED, Check.Status.BOUNCED},
     Check.Status.CLEARED:      set(),
     Check.Status.BOUNCED:      set(),
     Check.Status.VOIDED:       set(),
+    Check.Status.ISSUED:       {Check.Status.CLEARED, Check.Status.VOIDED},
+    Check.Status.ENDORSED:     set(),
 }
 
 
@@ -205,12 +213,13 @@ class CheckService:
     @staticmethod
     @transaction.atomic
     def void(check: Check, *, notes: str = "") -> Check:
-        """Anula el cheque (solo desde IN_PORTFOLIO). Genera reversa OUTBOUND."""
+        """Anula el cheque (solo desde IN_PORTFOLIO o ISSUED). Genera reversa."""
         CheckService._assert_transition(check, Check.Status.VOIDED)
 
         from .services import TreasuryService
 
-        if check.receipt_movement:
+        if check.direction == Check.Direction.RECEIVED and check.receipt_movement:
+            # Reversa de recepción (cartera → externo): OUTBOUND
             TreasuryService.create_movement(
                 amount=check.amount,
                 movement_type=TreasuryMovement.Type.OUTBOUND,
@@ -222,10 +231,170 @@ class CheckService:
                 partner=check.counterparty,
                 notes=f"Anulación {check.display_id}",
             )
+        elif check.direction == Check.Direction.ISSUED and check.issued_check_account:
+            # Reversa de emisión: INBOUND pasivo "Cheques Girados" → cancela el débito.
+            TreasuryService.create_movement(
+                amount=check.amount,
+                movement_type=TreasuryMovement.Type.INBOUND,
+                payment_method=TreasuryMovement.Method.OTHER,
+                to_account=check.issued_check_account,
+                date=timezone.now().date(),
+                partner=check.counterparty,
+                notes=f"Reversa emisión {check.display_id} (anulación)",
+            )
 
         check.status = Check.Status.VOIDED
         if notes:
             check.notes = (check.notes + "\n" + notes).strip()
+        check.save()
+        return check
+
+    # ── Cheques propios girados (direction=ISSUED) ───────────────────────
+
+    @staticmethod
+    @transaction.atomic
+    def issue(
+        *,
+        bank_id: int,
+        check_number: str,
+        amount: Decimal,
+        issue_date,
+        due_date,
+        counterparty_id: int | None = None,
+        drawer_name: str = "",
+        payment_account: "TreasuryAccount | None" = None,
+        issued_check_account: "TreasuryAccount | None" = None,
+        notes: str = "",
+        created_by: "AbstractUser | None" = None,
+    ) -> Check:
+        """
+        Emite un cheque propio para pagar a un proveedor.
+
+        El OUTBOUND no toca el banco directamente: acredita la cuenta
+        puente LIABILITY "Cheques Girados por Pagar" y salda al proveedor.
+        Cuando el proveedor cobre (mark_cashed), la TRANSFER pasivo→banco
+        cierra el ciclo.
+        """
+        if payment_account is None:
+            raise ValidationError(
+                _t("Para cheques propios, payment_account (banco) es obligatorio.")
+            )
+        if issued_check_account is None:
+            issued_check_account = CheckService.ensure_issued_checks_account()
+
+        from .services import TreasuryService
+
+        # OUTBOUND desde la cuenta puente LIABILITY "Cheques Girados".
+        # El asiento estándar: Debita gasto/proveedor, Credita pasivo
+        # (la cuenta puente "Cheques Girados por Pagar").
+        movement = TreasuryService.create_movement(
+            amount=amount,
+            movement_type=TreasuryMovement.Type.OUTBOUND,
+            payment_method=TreasuryMovement.Method.OTHER,
+            from_account=issued_check_account,
+            date=due_date,
+            created_by=created_by,
+            partner=_obj_or_none('contacts.Contact', counterparty_id),
+            notes=f"Cheque propio {check_number} girado",
+        )
+
+        check = Check.objects.create(
+            direction=Check.Direction.ISSUED,
+            status=Check.Status.ISSUED,
+            bank_id=bank_id,
+            check_number=check_number,
+            amount=amount,
+            issue_date=issue_date,
+            due_date=due_date,
+            counterparty_id=counterparty_id,
+            drawer_name=drawer_name,
+            portfolio_account=issued_check_account,
+            payment_account=payment_account,
+            issued_check_account=issued_check_account,
+            receipt_movement=movement,
+            notes=notes,
+            created_by=created_by,
+        )
+        return check
+
+    @staticmethod
+    @transaction.atomic
+    def mark_cashed(
+        check: Check,
+        *,
+        date=None,
+        created_by: "AbstractUser | None" = None,
+    ) -> Check:
+        """
+        Marca un cheque propio como cobrado por el proveedor.
+
+        TRANSFER pasivo "Cheques Girados" → banco: debita el pasivo,
+        acredita el banco. El ciclo queda cerrado.
+        """
+        if check.direction != Check.Direction.ISSUED:
+            raise ValidationError(
+                _t("mark_cashed solo aplica a cheques propios (direction=ISSUED).")
+            )
+        CheckService._assert_transition(check, Check.Status.CLEARED)
+
+        from .services import TreasuryService
+
+        if check.payment_account:
+            TreasuryService.create_movement(
+                amount=check.amount,
+                movement_type=TreasuryMovement.Type.TRANSFER,
+                payment_method=TreasuryMovement.Method.OTHER,
+                from_account=check.issued_check_account,
+                to_account=check.payment_account,
+                date=date or timezone.now().date(),
+                created_by=created_by,
+                notes=f"Cobro cheque propio {check.display_id}",
+            )
+
+        check.status = Check.Status.CLEARED
+        check.cleared_at = timezone.now()
+        check.save()
+        return check
+
+    # ── Endoso de cheques recibidos ──────────────────────────────────────
+
+    @staticmethod
+    @transaction.atomic
+    def endorse(
+        check: Check,
+        *,
+        endorsed_to_id: int,
+        date=None,
+        created_by: "AbstractUser | None" = None,
+    ) -> Check:
+        """
+        Endosa un cheque recibido a un proveedor.
+
+        OUTBOUND desde cartera salda la cuenta del proveedor.
+        El cheque pasa a ENDORSED y queda fuera de la cartera.
+        """
+        if check.direction != Check.Direction.RECEIVED:
+            raise ValidationError(
+                _t("El endoso solo aplica a cheques recibidos (direction=RECEIVED).")
+            )
+        CheckService._assert_transition(check, Check.Status.ENDORSED)
+
+        from .services import TreasuryService
+
+        movement = TreasuryService.create_movement(
+            amount=check.amount,
+            movement_type=TreasuryMovement.Type.OUTBOUND,
+            payment_method=TreasuryMovement.Method.OTHER,
+            from_account=check.portfolio_account,
+            date=date or timezone.now().date(),
+            created_by=created_by,
+            partner=_obj_or_none('contacts.Contact', endorsed_to_id),
+            notes=f"Endoso {check.display_id}",
+        )
+
+        check.status = Check.Status.ENDORSED
+        check.endorsed_to_id = endorsed_to_id
+        check.endorsement_movement = movement
         check.save()
         return check
 
@@ -294,6 +463,51 @@ class CheckService:
             portfolio.account = account
             portfolio.save(update_fields=['account'])
         return portfolio
+
+    @staticmethod
+    def ensure_issued_checks_account() -> TreasuryAccount:
+        """
+        Garantiza que exista la TreasuryAccount puente 'Cheques Girados por Pagar'
+        vinculada a una cuenta contable LIABILITY.
+
+        Idempotente: si ya existe, la retorna; si no, la crea con AccountingSettings.
+        """
+        from accounting.models import AccountingSettings
+
+        s = AccountingSettings.get_solo()
+        account = None
+        if s and hasattr(s, 'issued_checks_account_id') and s.issued_checks_account_id:
+            account = s.issued_checks_account
+
+        if account is None:
+            # Fallback: buscar una existente o crear una cuenta contable básica.
+            existing = TreasuryAccount.objects.filter(
+                account_type=TreasuryAccount.Type.ISSUED_CHECKS,
+            ).first()
+            if existing:
+                return existing
+
+            from accounting.models import Account
+            account, _ = Account.objects.get_or_create(
+                code='2.1.05.001',
+                defaults={
+                    'name': 'Cheques Girados por Pagar',
+                    'account_type': AccountType.LIABILITY,
+                },
+            )
+
+        ta, created = TreasuryAccount.objects.get_or_create(
+            account_type=TreasuryAccount.Type.ISSUED_CHECKS,
+            defaults={
+                'name': 'Cheques Girados por Pagar',
+                'account': account,
+                'currency': 'CLP',
+            },
+        )
+        if not created and ta.account_id != account.id:
+            ta.account = account
+            ta.save(update_fields=['account'])
+        return ta
 
     @staticmethod
     def _get_portfolio_account() -> TreasuryAccount:
