@@ -2239,3 +2239,144 @@ class LoanInstallment(models.Model):
         return self.status == self.Status.PENDING and self.due_date < get_current_date()
 
 
+class CreditCardStatement(models.Model):
+    """
+    Estado de cuenta mensual de la tarjeta de crédito propia.
+
+    Representa el ciclo de facturación: la tarjeta cierra cada mes
+    (`cut_off_date`), informa un total facturado (`billed_amount`) y
+    un pago mínimo (`minimum_payment`), y vence (`due_date`).
+
+    - `billed_amount` puede incluir compras + interés + comisiones del
+      periodo; en su mayoría se va acumulando automáticamente desde
+      `TreasuryMovement` OUTBOUND sobre la `card_account`. Aquí se
+      carga de forma manual o al cierre del mes (los movimientos del
+      periodo se pueden importar después).
+    - Los intereses (`interest_charged`) y comisiones (`fees_charged`)
+      se imputan al gasto financiero y suben la deuda (F3.3).
+    - El pago (`payment_movement`) es un `TreasuryMovement` TRANSFER
+      desde una cuenta bancaria (CHECKING/CASH) hacia la tarjeta
+      (LIABILITY): debita el pasivo y acredita el banco (F3.4).
+
+    Ver `docs/50-audit/bancos/fase-3-tarjeta-credito.md` (F3.2–F3.4).
+    """
+
+    class Status(models.TextChoices):
+        OPEN     = 'OPEN',     _('Abierto')
+        PAID     = 'PAID',     _('Pagado')
+        OVERDUE  = 'OVERDUE',  _('Vencido')
+        CANCELED = 'CANCELED', _('Anulado')
+
+    card_account = models.ForeignKey(
+        'TreasuryAccount', on_delete=models.PROTECT,
+        related_name='card_statements',
+        limit_choices_to={'account_type': 'CREDIT_CARD'},
+        verbose_name=_("Cuenta Tarjeta de Crédito"),
+    )
+    period_year = models.PositiveIntegerField(_("Año del Período"))
+    period_month = models.PositiveIntegerField(_("Mes del Período"))
+    cut_off_date = models.DateField(_("Fecha de Cierre"))
+    due_date = models.DateField(_("Fecha de Vencimiento"))
+
+    billed_amount = models.DecimalField(
+        _("Monto Facturado"),
+        max_digits=18, decimal_places=2, default=Decimal('0'),
+        help_text=_("Total facturado por la tarjeta en el período (compras + cargos)."),
+    )
+    minimum_payment = models.DecimalField(
+        _("Pago Mínimo"),
+        max_digits=18, decimal_places=2, default=Decimal('0'),
+        help_text=_("Pago mínimo exigido por el banco."),
+    )
+    interest_charged = models.DecimalField(
+        _("Interés del Período"),
+        max_digits=18, decimal_places=2, default=Decimal('0'),
+        help_text=_("Intereses cargados en el estado de cuenta (gasto financiero)."),
+    )
+    fees_charged = models.DecimalField(
+        _("Comisiones del Período"),
+        max_digits=18, decimal_places=2, default=Decimal('0'),
+        help_text=_("Comisiones y otros cargos del período (gasto financiero)."),
+    )
+
+    # Cupo: copia local del `credit_limit` de la tarjeta al momento del
+    # statement. No referenciamos `card_account.credit_limit` (que no
+    # existe como campo del modelo) para mantener el statement
+    # autocontenido.
+    credit_limit = models.DecimalField(
+        _("Cupo Disponible (Snapshot)"),
+        max_digits=18, decimal_places=2, null=True, blank=True,
+        help_text=_("Cupo total de la tarjeta al cierre del período."),
+    )
+
+    status = models.CharField(
+        _("Estado"), max_length=10,
+        choices=Status.choices, default=Status.OPEN,
+    )
+    paid_at = models.DateTimeField(_("Pagado el"), null=True, blank=True)
+    payment_movement = models.OneToOneField(
+        'TreasuryMovement', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='card_statement_payment',
+        verbose_name=_("Movimiento de Pago"),
+    )
+    payment_account = models.ForeignKey(
+        'TreasuryAccount', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='card_statement_payments_made',
+        verbose_name=_("Cuenta desde la que se pagó"),
+        help_text=_("Cuenta bancaria origen del pago (CHECKING/CASH)."),
+    )
+
+    notes = models.TextField(_("Notas"), blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='card_statements_created',
+        verbose_name=_("Creado Por"),
+    )
+    history = HistoricalRecords()
+
+    class Meta:
+        verbose_name = _("Estado de Cuenta Tarjeta")
+        verbose_name_plural = _("Estados de Cuenta Tarjeta")
+        ordering = ['-period_year', '-period_month', '-id']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['card_account', 'period_year', 'period_month'],
+                name='uniq_card_period',
+            ),
+            models.CheckConstraint(
+                condition=models.Q(period_month__gte=1) & models.Q(period_month__lte=12),
+                name='ck_period_month_range',
+            ),
+        ]
+        indexes = [
+            models.Index(fields=['card_account', 'status']),
+            models.Index(fields=['status', 'due_date']),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.display_id} ({self.period_month:02d}/{self.period_year})"
+
+    @property
+    def display_id(self) -> str:
+        return f"EST-{self.id}"
+
+    @property
+    def is_overdue(self) -> bool:
+        from core.utils import get_current_date
+        return (
+            self.status == self.Status.OPEN
+            and self.due_date < get_current_date()
+        )
+
+    @property
+    def total_to_pay(self) -> Decimal:
+        """Total que efectivamente se paga al liquidar (billed + interest + fees)."""
+        return (
+            (self.billed_amount or Decimal('0'))
+            + (self.interest_charged or Decimal('0'))
+            + (self.fees_charged or Decimal('0'))
+        )
+
