@@ -256,23 +256,49 @@ class CheckService:
     # ── Helpers privados ─────────────────────────────────────────────────
 
     @staticmethod
-    def _get_portfolio_account() -> TreasuryAccount:
+    def ensure_portfolio_account(account=None) -> TreasuryAccount:
+        """
+        Garantiza que exista la TreasuryAccount puente 'Cheques en Cartera'
+        vinculada a la cuenta contable configurada en AccountingSettings.
+
+        Idempotente: si ya existe, la retorna sin tocar nada; si la cuenta
+        contable cambió, actualiza el vínculo (cambio raro pero soportado).
+
+        account: opcional accounting.Account; si se omite, se lee de
+                 AccountingSettings.check_portfolio_account.
+
+        Llamado tanto desde CheckService.receive (lazy) como desde el signal
+        post_save de AccountingSettings (proactivo, ver treasury/signals.py).
+        """
         from accounting.models import AccountingSettings
-        s = AccountingSettings.get_solo()
-        if not s or not s.check_portfolio_account_id:
-            raise ValidationError(
-                _t("No hay cuenta 'Cheques en Cartera' configurada. "
-                  "Configúrela en Ajustes Contables antes de registrar cheques.")
-            )
-        portfolio, _ = TreasuryAccount.objects.get_or_create(
+
+        if account is None:
+            s = AccountingSettings.get_solo()
+            if not s or not s.check_portfolio_account_id:
+                raise ValidationError(
+                    _t("No hay cuenta 'Cheques en Cartera' configurada. "
+                      "Configúrela en Ajustes Contables antes de registrar cheques.")
+                )
+            account = s.check_portfolio_account
+
+        portfolio, created = TreasuryAccount.objects.get_or_create(
             account_type=TreasuryAccount.Type.CHECK_PORTFOLIO,
             defaults={
                 'name': 'Cheques en Cartera',
-                'account': s.check_portfolio_account,
+                'account': account,
                 'currency': 'CLP',
             },
         )
+        # Si ya existe pero la cuenta contable cambió, re-vincular.
+        if not created and portfolio.account_id != account.id:
+            portfolio.account = account
+            portfolio.save(update_fields=['account'])
         return portfolio
+
+    @staticmethod
+    def _get_portfolio_account() -> TreasuryAccount:
+        """Alias interno legado — preferir ensure_portfolio_account()."""
+        return CheckService.ensure_portfolio_account()
 
     @staticmethod
     def _assert_transition(check: Check, target: str) -> None:
