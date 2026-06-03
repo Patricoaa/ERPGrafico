@@ -219,26 +219,41 @@ No explicit status field. Edit restrictions based on journal_entry status:
 
 **Edit restrictions:** Campos inmutables: `settlement_journal_entry`, `bank_statement_line`, `supplier_invoice`.
 
-## Check (Cheques Recibidos de Terceros)
+## Check (Cheques Recibidos y Propios Girados)
 
-Cheque de tercero (cliente u otro pagador) en cartera. Backend: `treasury.Check`.
-Lifecycle gobernado por `treasury.check_service.CheckService` (ADR-0032).
+Cheque de tercero (cliente u otro pagador) en cartera, o cheque propio girado a proveedor.
+Backend: `treasury.Check`. Lifecycle gobernado por `treasury.check_service.CheckService` (ADR-0032, ADR-0035).
 
 | Status | Intent | Transitions allowed to | Acción de servicio |
 |--------|--------|------------------------|--------------------|
-| `IN_PORTFOLIO` | `info` | `DEPOSITED`, `VOIDED` | `receive()` (entrada) |
+| `IN_PORTFOLIO` | `info` | `DEPOSITED`, `VOIDED`, `ENDORSED` | `receive()` (entrada) |
 | `DEPOSITED` | `warning` | `CLEARED`, `BOUNCED` | `deposit()` |
 | `CLEARED` | `success` | — (terminal) | `clear()` |
 | `BOUNCED` | `destructive` | — (terminal) | `bounce()` (con reversas contables) |
-| `VOIDED` | `destructive` | — (terminal) | `void()` (solo desde `IN_PORTFOLIO`) |
+| `VOIDED` | `destructive` | — (terminal) | `void()` (desde `IN_PORTFOLIO` o `ISSUED`) |
+| `ISSUED` | `info` | `CLEARED`, `VOIDED` | `issue()` (cheque propio girado) |
+| `ENDORSED` | `destructive` | — (terminal) | `endorse()` (endoso de cheque recibido a proveedor) |
 
-**Contabilidad:**
+**Contabilidad — Cheques recibidos:**
 - `receive()`: INBOUND a la `TreasuryAccount` puente `CHECK_PORTFOLIO`
   (auto-provisionada desde `AccountingSettings.check_portfolio_account`).
 - `deposit()`: TRANSFER puente → cuenta bancaria.
 - `bounce()`: revierte depósito y recepción (2 movimientos OUTBOUND/TRANSFER) y
   reinstala el documento original como impago.
 - `void()`: revierte solo la recepción.
+- `endorse()`: OUTBOUND desde cartera salda al proveedor; estado `ENDORSED`.
+
+**Contabilidad — Cheques propios girados:**
+- `issue()`: OUTBOUND desde `TreasuryAccount` puente `ISSUED_CHECKS`
+  (LIABILITY, auto-provisionada) salda al proveedor. No toca banco.
+- `mark_cashed()`: TRANSFER pasivo "Cheques Girados" → banco; `CLEARED`.
+- `void()`: INBOUND reversa al pasivo (desde `ISSUED`).
+
+**Chequera (Checkbook):**
+- Model `treasury.Checkbook` con `bank_account` (CHECKING), `start_folio`, `end_folio`,
+  `next_folio`, `status` (ACTIVE/CLOSED/EXHAUSTED).
+- `issue()` toma siguiente folio automáticamente si check_number es None.
+- Validación: unicidad check_number por banco.
 
 **Edit restrictions:** Cheque inmutable salvo `notes` y campos de auditoría
 (`deposited_at`/`cleared_at`/`bounced_at`); cambios de estado pasan exclusivamente

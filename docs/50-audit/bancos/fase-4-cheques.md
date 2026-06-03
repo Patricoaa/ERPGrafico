@@ -1,9 +1,9 @@
 ---
 layer: 50-audit
 doc: bancos/fase-4-cheques
-status: active
+status: complete
 owner: core-team
-last_review: 2026-06-02
+last_review: 2026-06-03
 kind: roadmap
 ---
 
