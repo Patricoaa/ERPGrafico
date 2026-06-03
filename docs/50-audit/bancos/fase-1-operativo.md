@@ -15,6 +15,19 @@ recibidos) **antes** de construir nuevas features: converger datos legacy, elimi
 deprecados, exponer la configuración en la UI y registrar la entidad `Check` en los
 contratos del proyecto. Esfuerzo total: S–M.
 
+## Avance (2026-06-02)
+
+| Tarea | Estado | Commit |
+|-------|--------|--------|
+| F1.1 — Convergencia de cuentas legacy (operación) | ⏸ Pendiente · requiere acceso a entorno | — |
+| F1.2 — Eliminar `DEBIT_CARD`/`CHECKBOOK` del enum | ⏸ Bloqueada por F1.1 (gate duro) | — |
+| F1.3 — Panel Settings: sección Cheques | ✅ Hecho | `484d58ee` |
+| F1.4 — Auto-provisión cuenta puente vía signal | ✅ Hecho | `bfd11ea0` |
+| F1.5 — `treasury.check` en ENTITY_REGISTRY + state-map | ✅ Hecho | `6a3b16af` |
+
+> **Próxima acción del operador:** ejecutar el procedimiento de F1.1 (ver más abajo) cuando
+> haya acceso al/los entorno(s) productivo(s)/dev. Recién entonces se puede aplicar F1.2.
+
 ---
 
 ### F1.1 · Correr convergencia de cuentas legacy en cada entorno
@@ -32,6 +45,35 @@ contratos del proyecto. Esfuerzo total: S–M.
     con banco + número, o re-clasificarla) y re-correr.
 - **DoD:** en el entorno objetivo, `converge_treasury_accounts --dry-run` reporta
   `0 cuentas legacy restantes`.
+
+#### Procedimiento exacto a ejecutar (operador)
+
+> Ejecutar **una vez por entorno** (dev box, staging, producción). Necesario antes
+> de aplicar F1.2.
+
+```bash
+# 1) Backup (ver docs/30-playbooks/backup-and-restore-postgres.md).
+
+# 2) Diagnóstico — ver qué quedaría sin tocar nada
+docker exec erpgrafico-backend-1 sh -c \
+  'cd /app && python manage.py converge_treasury_accounts --dry-run'
+
+# 3) Aplicar. Idempotente si no quedan legacy: no hace nada.
+docker exec erpgrafico-backend-1 sh -c \
+  'cd /app && python manage.py converge_treasury_accounts --apply'
+
+# 4) Verificar que el reporte queda en cero (gate para F1.2)
+docker exec erpgrafico-backend-1 sh -c \
+  'cd /app && python manage.py converge_treasury_accounts --dry-run' \
+  | tee /tmp/converge_final.log
+grep -E "0 cuentas legacy|nothing to do|sin cuentas" /tmp/converge_final.log
+
+# 5) Si quedan cuentas "omitidas" (chequera sin banco/número):
+#    editar manualmente desde /treasury/accounts y re-correr el paso 4.
+```
+
+**Reporta a este documento** el resultado (entorno + fecha + reporte final) antes de
+liberar F1.2.
 
 ### F1.2 · Deprecación definitiva de `DEBIT_CARD` / `CHECKBOOK` como tipos de cuenta
 - **Objetivo:** eliminar los valores del enum `TreasuryAccount.Type` una vez que no quedan
@@ -120,3 +162,43 @@ contratos del proyecto. Esfuerzo total: S–M.
 - `manage.py check` + `makemigrations --check` limpios.
 - Tests de F1.4 verdes (local `--no-migrations` + Postgres real).
 - `frontend`: `npm run type-check` + ESLint sin errores.
+
+---
+
+## Notas de implementación (lo entregado)
+
+### F1.3 — Settings UI (commit `484d58ee`)
+- Sub-tab nueva `checks` en `/treasury/settings?tab=checks`. Header dinámico
+  actualizado en `frontend/app/(dashboard)/treasury/TreasuryHeader.tsx`.
+- `AccountField` (selector ASSET) para `check_portfolio_account`. Persiste vía
+  `AccountingSettingsSerializer` (que usa `fields='__all__'`, sin cambios backend).
+- Schema, types, `DEFAULT_VALUES` extendidos.
+
+### F1.4 — Auto-provisión de cuenta puente (commit `bfd11ea0`)
+- `CheckService.ensure_portfolio_account(account=None)` ahora público e idempotente.
+  Acepta la cuenta contable opcional para que el signal evite re-leer settings.
+  `_get_portfolio_account()` queda como alias legado.
+- Signal `pre_save` + `post_save` en `backend/treasury/signals.py` escucha
+  `accounting.AccountingSettings` (sender por string para evitar import circular).
+  Detecta cambio en `check_portfolio_account_id` y dispara `ensure_portfolio_account`.
+- La `TreasuryAccount` puente queda como system-managed (tipo `CHECK_PORTFOLIO`
+  está en `TreasuryAccount._NON_CASH_EQUIVALENT_TYPES` → el view la bloquea para edición).
+- Tests: `backend/treasury/tests/test_check_portfolio_signal.py` (5 casos).
+  Local: `pytest treasury/tests/test_check_portfolio_signal.py --no-migrations` → 5 passed.
+  Regresión: `pytest treasury/tests/test_checks.py --no-migrations` → 7 passed.
+
+### F1.5 — Contratos de identidad y estado (commit `6a3b16af`)
+- `ENTITY_REGISTRY['treasury.check']` registrado con icon `CheckSquare`, shortTemplate
+  `CHQ-{id}`, listUrl `/treasury/checks`. `partnerField` resuelve `counterparty_name`
+  con fallback a `drawer_name` (alineado con `ChecksView`).
+- Alias `'check'` → `'treasury.check'` en `LEGACY_TYPE_LABEL_MAP` y prefijo `CHQ-`
+  detectado por `detectEntityLabel`.
+- `docs/20-contracts/state-map.md` ahora tiene `## Check` con tabla de transiciones,
+  servicio responsable de cada paso y notas contables (cuenta puente, reversas).
+- `STATUS_MAP` (`badge-resolvers.ts`) ya tenía los 5 estados desde ADR-0032; no se tocó.
+
+### Pendiente para cerrar la fase
+- F1.1 (operación) — esperar acceso al/los entorno(s) y ejecutar el bloque
+  bash de arriba. **No** liberar F1.2 antes.
+- F1.2 (refactor breaking del enum) — solo cuando F1.1 reporte 0 en TODOS los
+  entornos. Última tarea de la fase.
