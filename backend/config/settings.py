@@ -413,6 +413,21 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'core.tasks.ping_healthcheck',
         'schedule': crontab(minute='*/5'),       # Every 5 minutes
     },
+
+    # ── Treasury / Loans (Fase 2 — F2.10) ──────────────────────────────────
+    # Marca OVERDUE las cuotas vencidas y notifica las próximas a vencer.
+    'mark_overdue_loan_installments_daily': {
+        'task': 'treasury.tasks.mark_overdue_loan_installments',
+        'schedule': crontab(hour=8, minute=0),   # Diario a las 08:00
+    },
+
+    # ── Treasury / Loans (Fase 2 — F2.9, opt-in) ───────────────────────────
+    # Devenga el interés del mes para créditos ACTIVE. No-op si no hay
+    # cuentas de gasto/pasivo configuradas en AccountingSettings (F5.1).
+    'accrue_monthly_loan_interest': {
+        'task': 'treasury.tasks.accrue_monthly_loan_interest',
+        'schedule': crontab(hour=7, minute=0, day_of_month=1),  # Día 1 de cada mes
+    },
 }
 
 # ── Observability: Sentry (errores y trazas) ────────────────────────────────

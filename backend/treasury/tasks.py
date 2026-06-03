@@ -2,7 +2,218 @@
 Celery tasks for the Treasury module.
 """
 from celery import shared_task
+from datetime import timedelta
+from django.core.exceptions import ValidationError
+from django.db.models import Q
+from django.utils import timezone
+
 from .matching_service import MatchingService
+
+
+# ── F2.10: Alertas de vencimiento de cuotas ──────────────────────────────
+
+
+@shared_task(name='treasury.mark_overdue_loan_installments')
+def mark_overdue_loan_installments(days_ahead: int = 5, notify: bool = True):
+    """
+    Marca como OVERDUE las cuotas PENDING con due_date < hoy y notifica
+    las próximas a vencer (entre hoy y hoy+days_ahead).
+
+    Pensado para correr diariamente vía beat (ver settings.CELERY_BEAT_SCHEDULE).
+    Retorna un dict con contadores para diagnóstico.
+    """
+    from django.contrib.auth import get_user_model
+    from django.contrib.contenttypes.models import ContentType
+    from .models import BankLoan, LoanInstallment
+    from workflow.models import Notification
+
+    today = timezone.now().date()
+    horizon = today + timedelta(days=days_ahead)
+
+    # 1) Marcar OVERDUE las vencidas y aún PENDING.
+    overdue_qs = LoanInstallment.objects.filter(
+        status=LoanInstallment.Status.PENDING,
+        due_date__lt=today,
+    )
+    overdue_count = overdue_qs.update(status=LoanInstallment.Status.OVERDUE)
+
+    # 2) Notificar próximas a vencer (a usuarios con permiso view_bank_loan).
+    upcoming = list(
+        LoanInstallment.objects.filter(
+            status=LoanInstallment.Status.PENDING,
+            due_date__gte=today,
+            due_date__lte=horizon,
+        ).select_related('loan', 'loan__lender')
+    )
+
+    notified = 0
+    if notify and upcoming:
+        User = get_user_model()
+        # Notificar a usuarios activos con permiso sobre el módulo treasury
+        # (admin y tesoreros). Si no hay, se cae a superusuarios.
+        recipients = User.objects.filter(is_active=True, is_superuser=True)
+        if not recipients.exists():
+            return {
+                'overdue_marked': overdue_count,
+                'upcoming_count': len(upcoming),
+                'upcoming_notified': 0,
+            }
+        ct = ContentType.objects.get_for_model(LoanInstallment)
+        for inst in upcoming:
+            # Deduplicación: 1 notificación por (inst, día). Usamos el
+            # campo `data` para guardar la fecha objetivo como string
+            # ISO y dedupeamos contra eso (más robusto que comparar
+            # `created_at__date` cuando el proceso corre a través de
+            # medianoche o en distintos timezones).
+            target_iso = today.isoformat()
+            already = Notification.objects.filter(
+                notification_type='LOAN_INSTALLMENT_UPCOMING',
+                content_type=ct, object_id=inst.id,
+                data__target_date=target_iso,
+            ).exists()
+            if already:
+                continue
+            for user in recipients:
+                Notification.objects.create(
+                    user=user,
+                    title=f"Cuota #{inst.number} próxima a vencer",
+                    message=(
+                        f"Crédito {inst.loan.display_id} ({inst.loan.lender.name}): "
+                        f"vence el {inst.due_date.strftime('%d/%m/%Y')} "
+                        f"por ${inst.total_amount:,.0f}."
+                    ),
+                    type=Notification.Type.WARNING,
+                    notification_type='LOAN_INSTALLMENT_UPCOMING',
+                    content_type=ct,
+                    object_id=inst.id,
+                    link=f"/treasury/loans?selected={inst.loan.id}",
+                    data={'target_date': target_iso},
+                )
+                notified += 1
+
+    return {
+        'overdue_marked': overdue_count,
+        'upcoming_count': len(upcoming),
+        'upcoming_notified': notified,
+    }
+
+
+# ── F2.9: Devengo mensual de interés (opt-in) ────────────────────────────
+
+
+@shared_task(name='treasury.accrue_monthly_loan_interest')
+def accrue_monthly_loan_interest(year: int = None, month: int = None):
+    """
+    Devenga el interés del periodo para créditos ACTIVE (criterio devengado).
+
+    Opt-in: solo se ejecuta para créditos donde el operador haya decidido
+    devengar (futuro flag en BankLoan). Por ahora, default off (PYME-friendly).
+
+    Para cada crédito ACTIVE con cuotas en el mes:
+      - Calcula el interés total del mes (suma de interest_amount).
+      - Si UF, convierte con IndicatorValue del último día del mes.
+      - Crea 1 JournalEntry DRAFT con:
+          Debe  interest_expense_account
+          Haber interest_payable_account (pasivo transitorio, hasta pagar)
+      - Idempotente: si ya existe JE con la misma referencia/mes/loan, no duplica.
+
+    Requiere que AccountingSettings tenga las cuentas
+    `loan_interest_expense_account` y `loan_interest_payable_account`
+    (F5.1 las añadirá). Mientras tanto, retorna 0 sin error.
+    """
+    from .models import BankLoan, LoanInstallment
+    from accounting.models import AccountingSettings, JournalEntry, JournalItem
+    from django.db.models import Sum
+
+    if year is None or month is None:
+        today = timezone.now().date()
+        year = today.year
+        month = today.month
+
+    settings_obj = AccountingSettings.get_solo()
+    if not settings_obj:
+        return {'accrued': 0, 'reason': 'no AccountingSettings'}
+
+    # F5.1 añadirá estas cuentas; mientras tanto, opt-in off.
+    interest_expense_account = getattr(
+        settings_obj, 'loan_interest_expense_account', None
+    )
+    interest_payable_account = getattr(
+        settings_obj, 'loan_interest_payable_account', None
+    )
+    if not (interest_expense_account and interest_payable_account):
+        return {'accrued': 0, 'reason': 'no interest accounts configured (F5.1)'}
+
+    # Cuotas del mes por crédito ACTIVE.
+    installments = (
+        LoanInstallment.objects
+        .filter(
+            loan__status=BankLoan.Status.ACTIVE,
+            due_date__year=year, due_date__month=month,
+            status__in=[LoanInstallment.Status.PENDING, LoanInstallment.Status.PAID],
+        )
+        .select_related('loan')
+    )
+
+    accrued = 0
+    seen_loans = set()
+    for inst in installments:
+        if inst.loan_id in seen_loans:
+            continue
+        seen_loans.add(inst.loan_id)
+
+        total_interest_uf = (
+            installments.filter(loan_id=inst.loan_id)
+            .aggregate(s=Sum('interest_amount'))['s'] or 0
+        )
+        if total_interest_uf <= 0:
+            continue
+
+        # Conversión UF → CLP si el crédito es UF.
+        if inst.loan.currency == BankLoan.Currency.UF:
+            from finances.models import IndicatorValue
+            try:
+                # Usamos el UF del último día del mes.
+                last_day = timezone.now().date().replace(
+                    year=year, month=month, day=1
+                ) + timedelta(days=31)
+                last_day = last_day.replace(day=1) - timedelta(days=1)
+                uf_value = IndicatorValue.get_value('UF', last_day)
+            except IndicatorValue.DoesNotExist:
+                continue
+            total_interest_clp = (
+                total_interest_uf * uf_value
+            ).quantize(__import__('decimal').Decimal('0.01'))
+        else:
+            total_interest_clp = total_interest_uf.quantize(
+                __import__('decimal').Decimal('0.01')
+            )
+
+        # Idempotencia: si ya hay JE con este ref, no duplicar.
+        ref = f"ACCRUAL-{inst.loan.display_id}-{year:04d}{month:02d}"
+        if JournalEntry.objects.filter(reference=ref).exists():
+            continue
+
+        entry = JournalEntry.objects.create(
+            date=timezone.now().date(),
+            description=f"Devengo intereses {month:02d}/{year} - {inst.loan.display_id}",
+            reference=ref,
+            status=JournalEntry.Status.DRAFT,
+        )
+        JournalItem.objects.create(
+            entry=entry, account=interest_expense_account,
+            debit=total_interest_clp, credit=0,
+        )
+        JournalItem.objects.create(
+            entry=entry, account=interest_payable_account,
+            debit=0, credit=total_interest_clp,
+        )
+        from accounting.services import JournalEntryService
+        JournalEntryService.post_entry(entry)
+        accrued += 1
+
+    return {'accrued': accrued, 'year': year, 'month': month}
+
 
 
 @shared_task(bind=True, max_retries=1, soft_time_limit=300)
