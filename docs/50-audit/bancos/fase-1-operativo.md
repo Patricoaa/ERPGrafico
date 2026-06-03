@@ -20,7 +20,7 @@ contratos del proyecto. Esfuerzo total: S–M.
 | Tarea | Estado | Commit |
 |-------|--------|--------|
 | F1.1 — Convergencia de cuentas legacy (operación) | ✅ Hecho (dev box, 0 restantes) | *(operación, sin commit)* |
-| F1.2 — Eliminar `DEBIT_CARD`/`CHECKBOOK` del enum | ✅ Hecho | F1.2-pending |
+| F1.2 — Eliminar `DEBIT_CARD`/`CHECKBOOK` del enum | ✅ Hecho | `0fd14785` |
 | F1.3 — Panel Settings: sección Cheques | ✅ Hecho | `484d58ee` |
 | F1.4 — Auto-provisión cuenta puente vía signal | ✅ Hecho | `bfd11ea0` |
 | F1.5 — `treasury.check` en ENTITY_REGISTRY + state-map | ✅ Hecho | `6a3b16af` |
