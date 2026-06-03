@@ -20,6 +20,7 @@ interface TreasuryAccountWizardProps {
     open: boolean
     onOpenChange: (open: boolean) => void
     onSuccess?: () => void
+    defaultBankId?: number
 }
 
 type Usage = "sales" | "purchases" | "both"
@@ -52,7 +53,7 @@ const USAGE_CARDS: { value: Usage; label: string; hint: string; icon: typeof Wal
     { value: "both", label: "Ambos", hint: "Cobros y pagos", icon: ArrowDownUp },
 ]
 
-export function TreasuryAccountWizard({ open, onOpenChange, onSuccess }: TreasuryAccountWizardProps) {
+export function TreasuryAccountWizard({ open, onOpenChange, onSuccess, defaultBankId }: TreasuryAccountWizardProps) {
     const { banks } = useBanks()
     const { mutateAsync: provision, isPending } = useProvisionAccount()
 
@@ -77,13 +78,13 @@ export function TreasuryAccountWizard({ open, onOpenChange, onSuccess }: Treasur
             setCode("")
             setCurrency("CLP")
             setAccountId(null)
-            setBank("")
+            setBank(defaultBankId ? String(defaultBankId) : "")
             setAccountNumber("")
             setTenders([])
             setUsage("both")
         })
         return () => cancelAnimationFrame(id)
-    }, [open])
+    }, [open, defaultBankId])
 
     const requiresBank = accountType === "CHECKING" || accountType === "CREDIT_CARD"
     const requiresAccountNumber = accountType === "CHECKING"

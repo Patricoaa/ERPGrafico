@@ -37,13 +37,13 @@ export const checksApi = {
         return data
     },
 
-    portfolio: async (): Promise<CheckPortfolioSummary> => {
-        const { data } = await api.get<CheckPortfolioSummary>('/treasury/checks/portfolio/')
+    portfolio: async (params?: Record<string, string>): Promise<CheckPortfolioSummary> => {
+        const { data } = await api.get<CheckPortfolioSummary>('/treasury/checks/portfolio/', { params })
         return data
     },
 
-    inTransit: async (): Promise<CheckPortfolioSummary> => {
-        const { data } = await api.get<CheckPortfolioSummary>('/treasury/checks/in_transit/')
+    inTransit: async (params?: Record<string, string>): Promise<CheckPortfolioSummary> => {
+        const { data } = await api.get<CheckPortfolioSummary>('/treasury/checks/in_transit/', { params })
         return data
     },
 }

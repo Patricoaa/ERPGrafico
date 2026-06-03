@@ -11,8 +11,10 @@ import { useCardStatements } from './hooks'
 import { StatementDetailModal } from './StatementDetailModal'
 import type { CreditCardStatement } from './types'
 
-export function StatementsView() {
-    const { data: statements = [], isLoading, isError } = useCardStatements()
+export function StatementsView({ bankId }: { bankId?: number } = {}) {
+    const { data: statements = [], isLoading, isError } = useCardStatements(
+        bankId ? { bank: String(bankId) } : undefined,
+    )
     const [selectedId, setSelectedId] = useState<number | null>(null)
 
     if (isLoading) {

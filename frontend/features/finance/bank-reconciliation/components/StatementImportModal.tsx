@@ -40,14 +40,15 @@ interface ImportPreviewData {
 interface StatementImportModalProps {
     open: boolean
     onOpenChange: (open: boolean) => void
-    onSuccess: () => void
+    onSuccess?: () => void
+    defaultAccountId?: number
 }
 
 // Removed Step type as it's handled by GenericWizard
 
 // No longer needed here as it's handled by Zod
 
-export default function StatementImportModal({ open, onOpenChange, onSuccess }: StatementImportModalProps) {
+export default function StatementImportModal({ open, onOpenChange, onSuccess, defaultAccountId }: StatementImportModalProps) {
 
     const [previewData, setPreviewData] = useState<ImportPreviewData | null>(null)
     const [dryRunResult, setDryRunResult] = useState<DryRunResult | null>(null)
@@ -85,14 +86,27 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess }: 
     const REQUIRED_FIELDS = ['date', 'description', 'debit', 'credit', 'balance']
 
     const resetForm = useCallback(() => {
-        form.reset()
+        form.reset({
+            treasury_account_id: defaultAccountId ? String(defaultAccountId) : "",
+            bank_format: "GENERIC_CSV",
+            file: undefined,
+            mapping: {
+                date: null,
+                description: null,
+                debit: null,
+                credit: null,
+                balance: null,
+                reference: null,
+                transaction_id: null
+            }
+        })
         setPreviewData(null)
         setDryRunResult(null)
         setCsvDelimiter('auto')
         setSkipRows(0)
         setSkipFooterRows(0)
         setError(null)
-    }, [form])
+    }, [form, defaultAccountId])
 
     const fetchBankFormats = useCallback(async () => {
         try {
@@ -238,7 +252,7 @@ export default function StatementImportModal({ open, onOpenChange, onSuccess }: 
 
             await financeApi.importStatement(importData)
 
-            onSuccess()
+            onSuccess?.()
             return true
         } catch (error: unknown) {
             console.error('Error importing:', error)

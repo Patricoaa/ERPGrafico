@@ -636,7 +636,8 @@ class TreasuryMovementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 class BankStatementViewSet(viewsets.ModelViewSet):
     """ViewSet for managing bank statements"""
     queryset = BankStatement.objects.all().select_related('treasury_account', 'imported_by')
-    
+    filterset_fields = ['status', 'treasury_account']
+
     def get_serializer_class(self):
         if self.action == 'list':
             return BankStatementListSerializer
@@ -1468,14 +1469,16 @@ class CheckViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def portfolio(self, request):
         from .check_service import CheckService
-        summary = CheckService.get_portfolio_summary()
+        bank_id = request.query_params.get('bank')
+        summary = CheckService.get_portfolio_summary(bank_id=bank_id)
         data = self.get_serializer(summary['checks'], many=True).data
         return Response({'checks': data, 'total': summary['total']})
 
     @action(detail=False, methods=['get'])
     def in_transit(self, request):
         from .check_service import CheckService
-        summary = CheckService.get_in_transit_summary()
+        bank_id = request.query_params.get('bank')
+        summary = CheckService.get_in_transit_summary(bank_id=bank_id)
         data = self.get_serializer(summary['checks'], many=True).data
         return Response({'checks': data, 'total': summary['total']})
 
@@ -2096,9 +2099,13 @@ class CreditCardStatementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
     def get_queryset(self):
         from .models import CreditCardStatement
-        return (CreditCardStatement.objects
-                .select_related('card_account', 'payment_account', 'payment_movement', 'created_by')
-                .order_by('-period_year', '-period_month', '-id'))
+        qs = CreditCardStatement.objects.select_related(
+            'card_account', 'payment_account', 'payment_movement', 'created_by'
+        ).order_by('-period_year', '-period_month', '-id')
+        bank_id = self.request.query_params.get('bank')
+        if bank_id:
+            qs = qs.filter(card_account__bank_id=bank_id)
+        return qs
 
     def get_serializer_class(self):
         if self.action in ('create', 'update', 'partial_update'):

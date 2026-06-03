@@ -1,10 +1,10 @@
 import type { Metadata } from "next"
-import { TreasuryMovementsClientView, TreasuryAccountsView } from "@/features/treasury"
+import { TreasuryMovementsClientView, TreasuryAccountsView, ChecksView } from "@/features/treasury"
 import { ToolbarCreateButton } from '@/components/shared'
 
 export const metadata: Metadata = {
     title: "Operaciones de Tesorería | ERPGrafico",
-    description: "Movimientos, cuentas de tesorería y métodos de pago.",
+    description: "Movimientos, cheques, cuentas de tesorería y métodos de pago.",
 }
 
 interface PageProps {
@@ -24,6 +24,10 @@ export default async function OperacionesPage({ searchParams }: PageProps) {
     if (activeTab === "methods") {
         const action = <ToolbarCreateButton label="Nuevo Método" href="/treasury/operaciones?tab=methods&modal=new" />
         return <TreasuryAccountsView activeTab="methods" externalOpen={modalOpen} createAction={action} />
+    }
+
+    if (activeTab === "checks") {
+        return <ChecksView />
     }
 
     const createAction = (

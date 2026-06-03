@@ -26,6 +26,7 @@ import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountS
 import { Column } from "@tanstack/react-table";
 import { useBanks, usePaymentMethods } from "@/features/treasury/hooks/useMasterData"
 import type { Bank, PaymentMethod } from "@/features/treasury/types"
+import { BankCreationWizard } from "./BankCreationWizard"
 
 // --- Schemas ---
 
@@ -60,6 +61,7 @@ export function BankManagement({ externalOpen, onOpenChange, createAction }: Ban
     const { banks, refetch, deleteBank } = useBanks()
     const { filterFn: filterBanks } = useClientSearch<Bank>(bankSearchDef)
     const [dialogOpen, setDialogOpen] = useState(false)
+    const [wizardOpen, setWizardOpen] = useState(false)
     const [selectedBank, setSelectedBank] = useState<Bank | null>(null)
     const router = useRouter()
 
@@ -77,7 +79,7 @@ export function BankManagement({ externalOpen, onOpenChange, createAction }: Ban
 
     const openCreate = () => {
         setSelectedBank(null)
-        setDialogOpen(true)
+        setWizardOpen(true)
     }
 
     const openEdit = (bank: Bank) => {
@@ -112,8 +114,8 @@ export function BankManagement({ externalOpen, onOpenChange, createAction }: Ban
                 <>
                     <DataCell.Action
                         icon={Eye}
-                        title="Ver Centro de Bancos"
-                        onClick={() => router.push(`/treasury/banks/${item.id}`)}
+                        title="Ver detalles"
+                        onClick={() => router.push(`/treasury/centro-bancos?bank=${item.id}&tab=overview`)}
                     />
                     <DataCell.Action action="edit" onClick={() => openEdit(item)} />
                     <DataCell.Action action="delete" onClick={() => handleDelete(item.id)} />
@@ -143,8 +145,21 @@ export function BankManagement({ externalOpen, onOpenChange, createAction }: Ban
                 />
             </div>
 
+            <BankCreationWizard
+                open={wizardOpen || (!!externalOpen && !selectedBank)}
+                onOpenChange={(open: boolean) => {
+                    setWizardOpen(open)
+                    if (!open) {
+                        onOpenChange?.(false)
+                    }
+                }}
+                onSuccess={() => {
+                    refetch()
+                }}
+            />
+
             <BankModal
-                open={dialogOpen || !!externalOpen}
+                open={dialogOpen || (!!externalOpen && !!selectedBank)}
                 onOpenChange={(open: boolean) => {
                     setDialogOpen(open)
                     if (!open) {
