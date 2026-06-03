@@ -37,4 +37,5 @@ export * from './loans/LoanPayInstallmentModal'
 export * from './card-statements/StatementsView'
 export * from './card-statements/StatementDetailModal'
 export * from './card-statements/PayStatementModal'
+export * from './components/BankCenterView'
 
