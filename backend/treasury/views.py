@@ -1,4 +1,4 @@
-from rest_framework import viewsets, status, filters as drf_filters
+from rest_framework import viewsets, status, filters as drf_filters, serializers as drf_serializers
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend, FilterSet
@@ -18,7 +18,10 @@ from .serializers import (
     POSTerminalSerializer,
     POSSessionSerializer, POSSessionAuditSerializer,
     BankSerializer, PaymentMethodSerializer, TerminalBatchSerializer,
-    PaymentTerminalProviderSerializer, PaymentTerminalDeviceSerializer
+    PaymentTerminalProviderSerializer, PaymentTerminalDeviceSerializer,
+    BankLoanSerializer, BankLoanWriteSerializer, LoanInstallmentSerializer,
+    PayInstallmentActionSerializer, PrepayLoanActionSerializer,
+    RefinanceLoanActionSerializer,
 )
 from .services import TreasuryService, TerminalBatchService
 from .pos_service import POSService
@@ -1603,3 +1606,236 @@ class TerminalBatchViewSet(viewsets.ModelViewSet):
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
+# ── F2.11: Créditos bancarios (BankLoan + LoanInstallment) ──────────────────
+
+
+class BankLoanViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
+    """CRUD + acciones de lifecycle para créditos bancarios (Fase 2).
+
+    Acciones custom:
+      - POST /loans/{id}/disburse/  → desembolsar (idempotente si ya ACTIVE).
+      - POST /loans/{id}/prepay/    → pago total anticipado.
+      - POST /loans/{id}/refinance/ → marca REFINANCED (no paga, sólo cierra).
+      - GET  /loans/{id}/schedule/  → preview de tabla de amortización sin
+        persistir (útil al registrar el crédito).
+      - GET  /loans/{id}/amortization_table/ → tabla persistida con cuotas.
+    """
+    from .models import BankLoan
+    from .serializers import BankLoanSerializer as _BLRead
+
+    serializer_class = BankLoanSerializer
+    filterset_fields = ['status', 'currency', 'lender', 'amortization_system']
+
+    def get_queryset(self):
+        from .models import BankLoan
+        return (BankLoan.objects
+                .select_related(
+                    'lender', 'disbursement_account', 'liability_account',
+                    'created_by',
+                )
+                .prefetch_related('installments')
+                .order_by('-start_date', '-id'))
+
+    def get_serializer_class(self):
+        from .serializers import BankLoanSerializer, BankLoanWriteSerializer
+        if self.action in ('create', 'update', 'partial_update'):
+            return BankLoanWriteSerializer
+        return BankLoanSerializer
+
+    def perform_create(self, serializer):
+        from .models import BankLoan
+        from django.core.exceptions import ValidationError as DjangoValidationError
+        try:
+            loan = serializer.save(created_by=self.request.user)
+        except DjangoValidationError as e:
+            raise drf_serializers.ValidationError(e.message_dict if hasattr(e, 'message_dict') else e.messages)
+        # Devolver el objeto hidratado al serializer de lectura.
+        self._just_created = loan
+
+    def create(self, request, *args, **kwargs):
+        write_serializer = self.get_serializer(data=request.data)
+        write_serializer.is_valid(raise_exception=True)
+        self.perform_create(write_serializer)
+        read_serializer = BankLoanSerializer(self._just_created, context={'request': request})
+        return Response(read_serializer.data, status=status.HTTP_201_CREATED)
+
+    def perform_update(self, serializer):
+        from django.core.exceptions import ValidationError as DjangoValidationError
+        try:
+            serializer.save()
+        except DjangoValidationError as e:
+            raise drf_serializers.ValidationError(e.message_dict if hasattr(e, 'message_dict') else e.messages)
+
+    @action(detail=True, methods=['post'])
+    def disburse(self, request, pk=None):
+        from .loan_service import LoanService
+        loan = self.get_object()
+        try:
+            loan = LoanService.disburse(loan, created_by=request.user)
+        except ValidationError as e:
+            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        # Refrescar para invalidar el prefetch de installments.
+        loan.refresh_from_db()
+        return Response(self.get_serializer(loan).data)
+
+    @action(detail=True, methods=['post'])
+    def prepay(self, request, pk=None):
+        from .loan_service import LoanService
+        from .models import TreasuryAccount
+        loan = self.get_object()
+        payload = PrepayLoanActionSerializer(data=request.data)
+        payload.is_valid(raise_exception=True)
+        v = payload.validated_data
+        try:
+            payment_account = TreasuryAccount.objects.get(pk=v['payment_account'])
+        except TreasuryAccount.DoesNotExist:
+            return Response(
+                {'detail': 'payment_account no existe.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        interest_exp = v.get('interest_expense_account')
+        insurance_exp = v.get('insurance_expense_account')
+        try:
+            loan = LoanService.prepay(
+                loan,
+                payment_account=payment_account,
+                interest_expense_account=interest_exp,
+                insurance_expense_account=insurance_exp,
+                date=v.get('date'),
+                created_by=request.user,
+            )
+        except ValidationError as e:
+            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        loan.refresh_from_db()
+        return Response(self.get_serializer(loan).data)
+
+    @action(detail=True, methods=['post'])
+    def refinance(self, request, pk=None):
+        from .loan_service import LoanService
+        loan = self.get_object()
+        payload = RefinanceLoanActionSerializer(data=request.data)
+        payload.is_valid(raise_exception=True)
+        try:
+            loan = LoanService.refinance(loan, notes=payload.validated_data.get('notes', ''))
+        except ValidationError as e:
+            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        loan.refresh_from_db()
+        return Response(self.get_serializer(loan).data)
+
+    @action(detail=True, methods=['get'])
+    def schedule(self, request, pk=None):
+        """Preview de la tabla de amortización SIN persistir."""
+        from decimal import Decimal
+        from .loan_service import _add_months
+        loan = self.get_object()
+        if loan.installments.exists():
+            return Response(
+                {'detail': 'El crédito ya tiene una tabla generada. Use GET amortization_table.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        # Calcular in-memory (mismo algoritmo que generate_schedule).
+        if loan.rate_basis == loan.RateBasis.MONTHLY:
+            i = (loan.interest_rate / Decimal('100'))
+        else:
+            i = (loan.interest_rate / Decimal('100')) / Decimal('12')
+        if i <= 0:
+            i = Decimal('0')
+        n = loan.term_months
+        P = loan.principal
+        ins = loan.insurance_monthly or Decimal('0')
+        # Calcular cuota francesa fija.
+        if i == 0:
+            C = P / Decimal(n)
+        else:
+            C = P * i / (Decimal(1) - (Decimal(1) + i) ** (-n))
+        rows = []
+        balance = P
+        for k in range(1, n + 1):
+            interest = (balance * i).quantize(Decimal('0.01'))
+            principal = (C - interest).quantize(Decimal('0.01'))
+            if k == n:  # última cuota: ajuste de redondeo
+                principal = balance
+            total = principal + interest + ins
+            balance = (balance - principal).quantize(Decimal('0.01'))
+            rows.append({
+                'number': k,
+                'due_date': _add_months(loan.first_due_date, k - 1).isoformat(),
+                'principal_amount': str(principal),
+                'interest_amount': str(interest),
+                'insurance_amount': str(ins),
+                'total_amount': str(total),
+                'outstanding_balance': str(balance),
+            })
+        return Response({
+            'currency': loan.currency,
+            'monthly_rate': str(i),
+            'installments': rows,
+        })
+
+    @action(detail=True, methods=['get'])
+    def amortization_table(self, request, pk=None):
+        loan = self.get_object()
+        return Response(self.get_serializer(loan).data)
+
+
+class LoanInstallmentViewSet(viewsets.ModelViewSet):
+    """Listado y pago de cuotas. Creación/edición no expuestas (se generan
+    vía `BankLoan.generate_schedule` y se cierran vía acciones de pago)."""
+    from .models import LoanInstallment
+    serializer_class = LoanInstallmentSerializer
+    filterset_fields = ['status', 'loan']
+    http_method_names = ['get', 'post', 'head', 'options']  # sin PUT/DELETE
+
+    def get_queryset(self):
+        from .models import LoanInstallment
+        return (LoanInstallment.objects
+                .select_related('loan', 'loan__lender', 'payment_movement')
+                .order_by('loan', 'number'))
+
+    @action(detail=True, methods=['post'])
+    def pay(self, request, pk=None):
+        from .loan_service import LoanService
+        from .models import TreasuryAccount
+        from accounting.models import Account
+        installment = self.get_object()
+        payload = PayInstallmentActionSerializer(data=request.data)
+        payload.is_valid(raise_exception=True)
+        v = payload.validated_data
+        try:
+            payment_account = TreasuryAccount.objects.get(pk=v['payment_account'])
+        except TreasuryAccount.DoesNotExist:
+            return Response(
+                {'detail': 'payment_account no existe.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        interest_exp = None
+        insurance_exp = None
+        if v.get('interest_expense_account'):
+            try:
+                interest_exp = Account.objects.get(pk=v['interest_expense_account'])
+            except Account.DoesNotExist:
+                return Response(
+                    {'detail': 'interest_expense_account no existe.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+        if v.get('insurance_expense_account'):
+            try:
+                insurance_exp = Account.objects.get(pk=v['insurance_expense_account'])
+            except Account.DoesNotExist:
+                return Response(
+                    {'detail': 'insurance_expense_account no existe.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+        try:
+            installment = LoanService.pay_installment(
+                installment.loan,
+                installment,
+                payment_account=payment_account,
+                interest_expense_account=interest_exp,
+                insurance_expense_account=insurance_exp,
+                date=v.get('date'),
+                created_by=request.user,
+            )
+        except ValidationError as e:
+            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(self.get_serializer(installment).data)
