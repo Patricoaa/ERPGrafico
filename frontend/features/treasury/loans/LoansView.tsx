@@ -162,7 +162,7 @@ export function LoansView({ bankId }: { bankId?: number } = {}) {
     ]
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-4 h-full flex flex-col">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <StatCard
                     label="Créditos Activos"
@@ -192,32 +192,34 @@ export function LoansView({ bankId }: { bankId?: number } = {}) {
                 />
             </div>
 
-            {loans.length === 0 ? (
-                <EmptyState
-                    title="No hay créditos registrados"
-                    description="Registra tu primer crédito bancario para llevar el control de cuotas y amortización."
-                    icon={FileText}
-                    action={
-                        <Button onClick={() => setRegisterOpen(true)}>
-                            <Plus className="h-4 w-4 mr-2" />
-                            Registrar Crédito
-                        </Button>
-                    }
-                />
-            ) : (
-                <DataTableView
-                    entityLabel="treasury.bankloan"
-                    columns={columns as ColumnDef<unknown, unknown>[]}
-                    data={loans as unknown[]}
-                    variant="embedded"
-                    createAction={
-                        <Button onClick={() => setRegisterOpen(true)}>
-                            <Plus className="h-4 w-4 mr-2" />
-                            Registrar Crédito
-                        </Button>
-                    }
-                />
-            )}
+            <div className="flex-1 min-h-0">
+                {loans.length === 0 ? (
+                    <EmptyState
+                        title="No hay créditos registrados"
+                        description="Registra tu primer crédito bancario para llevar el control de cuotas y amortización."
+                        icon={FileText}
+                        action={
+                            <Button onClick={() => setRegisterOpen(true)}>
+                                <Plus className="h-4 w-4 mr-2" />
+                                Registrar Crédito
+                            </Button>
+                        }
+                    />
+                ) : (
+                    <DataTableView
+                        entityLabel="treasury.bankloan"
+                        columns={columns as ColumnDef<unknown, unknown>[]}
+                        data={loans as unknown[]}
+                        variant="embedded"
+                        createAction={
+                            <Button onClick={() => setRegisterOpen(true)}>
+                                <Plus className="h-4 w-4 mr-2" />
+                                Registrar Crédito
+                            </Button>
+                        }
+                    />
+                )}
+            </div>
 
             <LoanRegisterDrawer open={registerOpen} onOpenChange={setRegisterOpen} />
             <LoanDetailModal

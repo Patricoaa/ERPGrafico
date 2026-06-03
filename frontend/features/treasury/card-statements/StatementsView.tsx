@@ -114,7 +114,7 @@ export function StatementsView({ bankId }: { bankId?: number } = {}) {
     ]
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-4 h-full flex flex-col">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <StatCard
                     label="Deuda Total Tarjeta"
@@ -144,20 +144,22 @@ export function StatementsView({ bankId }: { bankId?: number } = {}) {
                 />
             </div>
 
-            {statements.length === 0 ? (
-                <EmptyState
-                    title="No hay estados de cuenta"
-                    description="Los estados de cuenta de la tarjeta de crédito aparecerán aquí."
-                    icon={CreditCard}
-                />
-            ) : (
-                <DataTableView
-                    entityLabel="treasury.creditcardstatement"
-                    columns={columns as ColumnDef<unknown, unknown>[]}
-                    data={statements as unknown[]}
-                    variant="embedded"
-                />
-            )}
+            <div className="flex-1 min-h-0">
+                {statements.length === 0 ? (
+                    <EmptyState
+                        title="No hay estados de cuenta"
+                        description="Los estados de cuenta de la tarjeta de crédito aparecerán aquí."
+                        icon={CreditCard}
+                    />
+                ) : (
+                    <DataTableView
+                        entityLabel="treasury.creditcardstatement"
+                        columns={columns as ColumnDef<unknown, unknown>[]}
+                        data={statements as unknown[]}
+                        variant="embedded"
+                    />
+                )}
+            </div>
 
             <StatementDetailModal
                 statementId={selectedId}

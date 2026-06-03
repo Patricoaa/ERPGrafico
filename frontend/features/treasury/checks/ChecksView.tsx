@@ -1,11 +1,11 @@
 "use client"
 
 import React, { useState, useMemo } from 'react'
-import { ColumnDef } from '@tanstack/react-table'
+import type { ColumnDef } from '@tanstack/react-table'
 import { CheckSquare, AlertTriangle, ArrowDownToLine, CheckCheck, XCircle, Ban, CircleDollarSign, Clock, Ban as BanIcon } from 'lucide-react'
 import {
     DataTableView, DataTableColumnHeader, DataCell, StatCard,
-    createActionsColumn, StatusBadge, MoneyDisplay, Skeleton, EmptyState,
+    createActionsColumn, StatusBadge, MoneyDisplay, Skeleton,
 } from '@/components/shared'
 import { useChecks, useCheckPortfolio, useCheckInTransit, useCheckMutations } from './hooks'
 import { CheckRegisterDrawer } from './CheckRegisterDrawer'
@@ -30,7 +30,7 @@ export function ChecksView({ bankId }: { bankId?: number } = {}) {
     const { data: inTransit } = useCheckInTransit(
         bankId ? { bank: String(bankId) } : undefined,
     )
-    const { deposit, clear, bounce, void: voidCheck } = useCheckMutations()
+    const { clear, bounce, void: voidCheck } = useCheckMutations()
 
     const [registerOpen, setRegisterOpen] = useState(false)
     const [depositTarget, setDepositTarget] = useState<Check | null>(null)
@@ -144,7 +144,7 @@ export function ChecksView({ bankId }: { bankId?: number } = {}) {
     ]
 
     return (
-        <>
+        <div className="h-full flex flex-col">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                 <StatCard
                     label="En Cartera"
@@ -180,26 +180,28 @@ export function ChecksView({ bankId }: { bankId?: number } = {}) {
                 />
             </div>
 
-            <DataTableView
-                entityLabel="treasury.check"
-                columns={columns}
-                data={filteredData}
-                isLoading={isLoading}
-                variant="embedded"
-                createAction={
-                    <button
-                        onClick={() => setRegisterOpen(true)}
-                        className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
-                    >
-                        <CheckSquare className="h-4 w-4" /> Registrar Cheque
-                    </button>
-                }
-                emptyState={{
-                    context: 'treasury',
-                    title: 'Sin cheques',
-                    description: 'Registra cheques recibidos o propios para gestionar su cobro.',
-                }}
-            />
+            <div className="flex-1 min-h-0">
+                <DataTableView
+                    entityLabel="treasury.check"
+                    columns={columns}
+                    data={filteredData}
+                    isLoading={isLoading}
+                    variant="embedded"
+                    createAction={
+                        <button
+                            onClick={() => setRegisterOpen(true)}
+                            className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                        >
+                            <CheckSquare className="h-4 w-4" /> Registrar Cheque
+                        </button>
+                    }
+                    emptyState={{
+                        context: 'treasury',
+                        title: 'Sin cheques',
+                        description: 'Registra cheques recibidos o propios para gestionar su cobro.',
+                    }}
+                />
+            </div>
 
             <CheckRegisterDrawer
                 open={registerOpen}
@@ -213,6 +215,6 @@ export function ChecksView({ bankId }: { bankId?: number } = {}) {
                     onOpenChange={(open) => { if (!open) setDepositTarget(null) }}
                 />
             )}
-        </>
+        </div>
     )
 }
