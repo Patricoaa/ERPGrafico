@@ -21,18 +21,18 @@ export function useChecks(params?: Record<string, string>) {
     })
 }
 
-export function useCheckPortfolio() {
+export function useCheckPortfolio(params?: Record<string, string>) {
     return useQuery({
         queryKey: CHECKS_KEYS.portfolio(),
-        queryFn: checksApi.portfolio,
+        queryFn: () => checksApi.portfolio(params),
         staleTime: 60 * 1000,
     })
 }
 
-export function useCheckInTransit() {
+export function useCheckInTransit(params?: Record<string, string>) {
     return useQuery({
         queryKey: CHECKS_KEYS.inTransit(),
-        queryFn: checksApi.inTransit,
+        queryFn: () => checksApi.inTransit(params),
         staleTime: 60 * 1000,
     })
 }

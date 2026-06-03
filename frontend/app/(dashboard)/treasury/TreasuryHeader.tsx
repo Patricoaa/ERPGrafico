@@ -30,7 +30,7 @@ export function TreasuryHeader() {
     const bankParam = searchParams.get('bank')
 
     const subActiveValue = useMemo(() => {
-        if (activeValue === 'config') return tabParam || 'accounts'
+        if (activeValue === 'config') return tabParam || 'conciliation'
         if (activeValue === 'operaciones') return tabParam || 'movements'
         if (activeValue === 'terminal-cobro') return tabParam || 'providers'
         if (activeValue === 'centro-bancos') {
@@ -61,6 +61,7 @@ export function TreasuryHeader() {
             href: "/treasury/operaciones?tab=movements",
             subTabs: [
                 { value: "movements", label: "Movimientos", href: "/treasury/operaciones?tab=movements", iconName: "banknote" },
+                { value: "checks", label: "Cheques", href: "/treasury/operaciones?tab=checks", iconName: "check-square" },
                 { value: "accounts", label: "Cuentas", href: "/treasury/operaciones?tab=accounts", iconName: "landmark" },
                 { value: "methods", label: "Métodos de Pago", href: "/treasury/operaciones?tab=methods", iconName: "credit-card" },
             ]
@@ -87,9 +88,8 @@ export function TreasuryHeader() {
             value: "config",
             label: "Configuración",
             iconName: "settings",
-            href: "/treasury/settings?tab=accounts",
+            href: "/treasury/settings?tab=conciliation",
             subTabs: [
-                { value: "accounts", label: "Bancos", href: "/treasury/settings?tab=accounts", iconName: "landmark" },
                 { value: "conciliation", label: "Cuentas Contables", href: "/treasury/settings?tab=conciliation", iconName: "arrow-left-right" },
                 { value: "terminals", label: "Sistema", href: "/treasury/settings?tab=terminals", iconName: "settings" },
             ]
@@ -107,12 +107,12 @@ export function TreasuryHeader() {
     const getHeaderConfig = () => {
         if (activeValue === 'config') {
             if (subActiveValue === 'terminals') return { title: "Sistema", description: "Configure cuentas puente de terminales y otros ajustes del sistema.", iconName: "settings" as const }
-            if (subActiveValue === 'conciliation') return { title: "Cuentas Contables", description: "Gestione las cuentas contables para conciliación, arqueo y gastos financieros.", iconName: "arrow-left-right" as const }
-            return { title: "Configuración de Tesorería", description: "Administre el catálogo de bancos y cuentas contables.", iconName: "settings" as const }
+            return { title: "Cuentas Contables", description: "Gestione las cuentas contables para conciliación, arqueo y gastos financieros.", iconName: "arrow-left-right" as const }
         }
         if (activeValue === 'operaciones') {
             if (subActiveValue === 'accounts') return { title: "Cuentas de Tesorería", description: "Registre y configure sus cuentas bancarias y de efectivo.", iconName: "landmark" as const }
             if (subActiveValue === 'methods') return { title: "Métodos de Pago", description: "Configure los medios de pago aceptados y sus cuentas vinculadas.", iconName: "credit-card" as const }
+            if (subActiveValue === 'checks') return { title: "Gestión de Cheques", description: "Registre, deposite y gestione cheques recibidos y propios.", iconName: "check-square" as const }
             return { title: "Movimientos de Tesorería", description: "Registro histórico de ingresos, egresos y traslados de fondos.", iconName: "banknote" as const }
         }
         if (activeValue === 'centro-bancos') {

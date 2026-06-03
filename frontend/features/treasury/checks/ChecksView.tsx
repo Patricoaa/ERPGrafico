@@ -20,10 +20,16 @@ const ACTIONABLE_FROM: Record<string, string[]> = {
     mark_cashed: ['ISSUED'],
 }
 
-export function ChecksView() {
-    const { data: checks = [], isLoading } = useChecks()
-    const { data: portfolio } = useCheckPortfolio()
-    const { data: inTransit } = useCheckInTransit()
+export function ChecksView({ bankId }: { bankId?: number } = {}) {
+    const { data: checks = [], isLoading } = useChecks(
+        bankId ? { bank: String(bankId) } : undefined,
+    )
+    const { data: portfolio } = useCheckPortfolio(
+        bankId ? { bank: String(bankId) } : undefined,
+    )
+    const { data: inTransit } = useCheckInTransit(
+        bankId ? { bank: String(bankId) } : undefined,
+    )
     const { deposit, clear, bounce, void: voidCheck } = useCheckMutations()
 
     const [registerOpen, setRegisterOpen] = useState(false)

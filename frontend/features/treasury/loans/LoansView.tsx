@@ -13,8 +13,10 @@ import { LoanRegisterDrawer } from './LoanRegisterDrawer'
 import { LoanDetailModal } from './LoanDetailModal'
 import type { BankLoan } from './types'
 
-export function LoansView() {
-    const { data: loans = [], isLoading, isError } = useLoans()
+export function LoansView({ bankId }: { bankId?: number } = {}) {
+    const { data: loans = [], isLoading, isError } = useLoans(
+        bankId ? { lender: String(bankId) } : undefined,
+    )
     const { disburse } = useLoanMutations()
 
     const [registerOpen, setRegisterOpen] = useState(false)

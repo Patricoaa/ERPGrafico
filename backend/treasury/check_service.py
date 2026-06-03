@@ -427,23 +427,33 @@ class CheckService:
     # ── Reportería ────────────────────────────────────────────────────────
 
     @staticmethod
-    def get_portfolio_summary() -> dict:
+    def get_portfolio_summary(bank_id=None) -> dict:
         """Cheques IN_PORTFOLIO: total y lista ordenada por vencimiento."""
         from django.db.models import Sum
+        filters = {
+            'direction': Check.Direction.RECEIVED,
+            'status': Check.Status.IN_PORTFOLIO,
+        }
+        if bank_id is not None:
+            filters['bank_id'] = bank_id
         qs = Check.objects.filter(
-            direction=Check.Direction.RECEIVED,
-            status=Check.Status.IN_PORTFOLIO,
+            **filters,
         ).select_related('bank', 'counterparty', 'portfolio_account')
         total = qs.aggregate(total=Sum('amount'))['total'] or Decimal('0')
         return {'checks': list(qs), 'total': total}
 
     @staticmethod
-    def get_in_transit_summary() -> dict:
+    def get_in_transit_summary(bank_id=None) -> dict:
         """Cheques DEPOSITED pendientes de confirmación bancaria."""
         from django.db.models import Sum
+        filters = {
+            'direction': Check.Direction.RECEIVED,
+            'status': Check.Status.DEPOSITED,
+        }
+        if bank_id is not None:
+            filters['bank_id'] = bank_id
         qs = Check.objects.filter(
-            direction=Check.Direction.RECEIVED,
-            status=Check.Status.DEPOSITED,
+            **filters,
         ).select_related('bank', 'counterparty', 'deposit_account')
         total = qs.aggregate(total=Sum('amount'))['total'] or Decimal('0')
         return {'checks': list(qs), 'total': total}

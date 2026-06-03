@@ -16,12 +16,16 @@ import { Progress } from "@/components/ui/progress"
 interface StatementsListProps {
     externalOpen?: boolean
     createAction?: React.ReactNode
+    bankId?: number
+    accountId?: number
 }
 
-export function StatementsList({ externalOpen = false, createAction }: StatementsListProps) {
+export function StatementsList({ externalOpen = false, createAction, bankId, accountId }: StatementsListProps) {
     const router = useRouter()
     const searchParams = useSearchParams()
-    const { data: statements = [], isLoading, refetch } = useStatementsQuery()
+    const { data: statements = [], isLoading, refetch } = useStatementsQuery(
+        accountId ? { treasury_account: String(accountId) } : bankId ? { bank: String(bankId) } : undefined,
+    )
     const { entity: selectedFromUrl, clearSelection } = useSelectedEntity<BankStatement>({
         endpoint: '/treasury/statements'
     })
