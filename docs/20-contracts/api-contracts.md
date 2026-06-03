@@ -909,6 +909,30 @@ The `_cents` convention in the SaleOrder example section above is illustrative o
 
 Current: implicit v1 via URL path. Breaking change → `/api/v2/[app]/`, parallel period ≥1 release. ADR required.
 
+### PaymentOrchestrator — CHECK integration (F4.4)
+
+When `PaymentMethod.method_type == 'CHECK'`, the orchestrator branches to `CheckService`
+instead of creating a generic `TreasuryMovement`.
+
+**Orchestrator params (CHECK-specific, optional):**
+
+| Param | Type | Description |
+|-------|------|-------------|
+| `check_bank_id` | int \| None | Banco del cheque. Si None, se resuelve del settlement account. |
+| `check_number` | str \| None | Número del cheque. Si checkbook_id se provee, se auto-genera. |
+| `check_issue_date` | date \| None | Fecha de emisión. Default: hoy. |
+| `check_due_date` | date \| None | Fecha de vencimiento. Default: hoy. |
+| `checkbook_id` | int \| None | ID de la chequera para auto-folio. |
+
+**Behavior:**
+- `INBOUND` → `CheckService.receive()` → Check `IN_PORTFOLIO`
+- `OUTBOUND` → `CheckService.issue()` → Check `ISSUED`
+- Return: `Check` instance (not `TreasuryMovement`)
+
+**Purchase checkout** accepts `payment_method_id` + same check params.
+
+**Sale checkout** passes check params through orchestrator.
+
 ## Rate limits
 
 | Scope | Limit |
