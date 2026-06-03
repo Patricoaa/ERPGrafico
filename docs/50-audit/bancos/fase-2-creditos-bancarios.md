@@ -142,6 +142,10 @@ Todo vía `TreasuryService.create_movement`.
 - **Cambios esperados:** task mensual que crea el asiento de interés devengado por crédito
   ACTIVE. **Opt-in** (setting), default off para PYME.
 - **DoD:** ejecutar el task manualmente genera el asiento devengado del mes.
+- **Estado:** ✅ Hecho (`b397da0d` — `accrue_monthly_loan_interest` con BEAT mensual
+  `crontab(hour=7, minute=0, day_of_month=1)`; opt-in hasta F5.1 añada las cuentas a
+  `AccountingSettings`; idempotente vía `reference ACCRUAL-<display_id>-YYYYMM`; convierte
+  UF→CLP con `IndicatorValue` del último día del mes; 1 test (no-op sin cuentas) passing).
 
 ### F2.10 · Alertas de vencimiento de cuotas (Celery)
 - **Objetivo:** avisar cuotas próximas / vencidas.
@@ -150,6 +154,10 @@ Todo vía `TreasuryService.create_movement`.
 - **Cambios esperados:** task diario marca `OVERDUE` las PENDING con `due_date < hoy` y
   notifica cuotas a N días.
 - **DoD:** simular cuota vencida → queda OVERDUE + notificación.
+- **Estado:** ✅ Hecho (`b397da0d` — `mark_overdue_loan_installments` con BEAT diario
+  `crontab(hour=8, minute=0)`; marca OVERDUE y notifica a superusuarios activos las próximas
+  a 5 días; dedup por día vía `Notification.data.target_date` (ISO), robusto a TZ/medianoche;
+  3 tests passing — overdue marca, notificaciones + dedup).
 
 ---
 
