@@ -26,6 +26,7 @@ from .serializers import (
     PayStatementActionSerializer, ApplyChargesActionSerializer,
 )
 from .services import TreasuryService, TerminalBatchService
+from .deletion_service import BankDeletionService
 from .pos_service import POSService
 from .reconciliation_service import ReconciliationService
 from .matching_service import MatchingService
@@ -168,6 +169,50 @@ class BankViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             'upcoming_maturities': upcoming,
         })
 
+    @action(detail=True, methods=['post'])
+    def archive(self, request, pk=None):
+        """Archivo del banco: ``is_active = False`` (cf. ADR-0037).
+
+        Valida dependencias activas con :class:`BankDeletionService`. Devuelve
+        ``409 Conflict`` si el banco tiene préstamos vigentes o cheques
+        pendientes.
+        """
+        bank = self.get_object()
+        ok, reason = BankDeletionService.can_archive(bank)
+        if not ok:
+            return Response({'detail': reason}, status=status.HTTP_409_CONFLICT)
+        bank.is_active = False
+        bank.save(update_fields=['is_active', 'updated_at'])
+        return Response(BankSerializer(bank).data)
+
+    @action(detail=True, methods=['post'])
+    def restore(self, request, pk=None):
+        """Restaura un banco archivado (``is_active = True``)."""
+        bank = self.get_object()
+        bank.is_active = True
+        bank.save(update_fields=['is_active', 'updated_at'])
+        return Response(BankSerializer(bank).data)
+
+    def destroy(self, request, *args, **kwargs):
+        """Hard delete deshabilitado para usuarios finales.
+
+        Por política (cf. [deletion-policy.md](../../../docs/20-contracts/deletion-policy.md))
+        los bancos se archivan, no se borran. Este endpoint existe solo como
+        fallback administrativo: captura ``ProtectedError`` y devuelve un
+        mensaje legible en ``409 Conflict`` cuando hay dependencias.
+        """
+        bank = self.get_object()
+        ok, reason = BankDeletionService.can_destroy(bank)
+        if not ok:
+            return Response({'detail': reason}, status=status.HTTP_409_CONFLICT)
+        try:
+            return super().destroy(request, *args, **kwargs)
+        except Exception as exc:  # ProtectedError u otros
+            return Response(
+                {'detail': str(exc) or 'No se puede eliminar el banco.'},
+                status=status.HTTP_409_CONFLICT,
+            )
+
 
 class PaymentMethodViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = PaymentMethod.objects.all().order_by('name')
@@ -197,6 +242,11 @@ class PaymentMethodViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         if instance.is_integrated:
             return Response(
                 {'detail': 'Los métodos de pago integrados (CARD_TERMINAL con dispositivo) son gestionados por el sistema. Modifique el dispositivo o proveedor en su lugar.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        if instance.bank_provisioned:
+            return Response(
+                {'detail': 'Este método de pago fue creado automáticamente al provisionar el banco. Gestiónelo desde el Centro de Bancos.'},
                 status=status.HTTP_403_FORBIDDEN,
             )
 
@@ -249,6 +299,11 @@ class TreasuryAccountViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         if instance.account_type in TreasuryAccount._NON_CASH_EQUIVALENT_TYPES:
             return Response(
                 {'detail': f'Las cuentas de tipo {instance.get_account_type_display()} son gestionadas por el sistema (vinculadas a un proveedor de terminal). Modifique el proveedor en su lugar.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        if instance.bank_provisioned:
+            return Response(
+                {'detail': 'Esta cuenta fue creada automáticamente al provisionar el banco. Gestiónela desde el Centro de Bancos.'},
                 status=status.HTTP_403_FORBIDDEN,
             )
 
