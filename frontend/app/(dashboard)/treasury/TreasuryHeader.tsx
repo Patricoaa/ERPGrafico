@@ -17,6 +17,7 @@ export function TreasuryHeader() {
         checks: 'checks',
         loans: 'loans',
         accounts: 'accounts',
+        banks: 'banks',
         reconciliation: 'reconciliation',
         'terminal-cobro': 'terminal-cobro',
         settings: 'config',
@@ -83,6 +84,7 @@ export function TreasuryHeader() {
                 { value: "movements", label: "Movimientos", href: "/treasury/settings?tab=movements", iconName: "settings-2" },
                 { value: "terminals", label: "Terminales", href: "/treasury/settings?tab=terminals", iconName: "smartphone" },
                 { value: "checks", label: "Cheques", href: "/treasury/settings?tab=checks", iconName: "check-square" },
+                { value: "financial", label: "Financiero", href: "/treasury/settings?tab=financial", iconName: "receipt" },
             ]
         },
     ]
@@ -99,10 +101,12 @@ export function TreasuryHeader() {
         if (activeValue === 'config') {
             if (subActiveValue === 'terminals') return { title: "Cuentas Puente de Terminales", description: "Configure las cuentas contables puente para comisiones de terminales de pago.", iconName: "smartphone" as const }
             if (subActiveValue === 'checks') return { title: "Cuentas de Cheques", description: "Cuenta puente donde los cheques de terceros se contabilizan hasta su depósito y cobro.", iconName: "check-square" as const }
+            if (subActiveValue === 'financial') return { title: "Cuentas de Gasto Financiero", description: "Configure las cuentas de intereses, seguros y comisiones bancarias.", iconName: "receipt" as const }
             return { title: "Configuración de Tesorería", description: "Gestione las cuentas de ajuste para conciliación bancaria y movimientos de caja.", iconName: "settings" as const }
         }
         if (activeValue === 'movements') return { title: "Movimientos de Tesorería", description: "Registro histórico de ingresos, egresos y traslados de fondos.", iconName: "banknote" as const }
         if (activeValue === 'loans') return { title: "Créditos Bancarios", description: "Gestión de préstamos, tabla de amortización y pago de cuotas.", iconName: "banknote" as const }
+        if (activeValue === 'banks') return { title: "Centro de Bancos", description: "Vista unificada del banco: cuentas, créditos, cheques y vencimientos.", iconName: "landmark" as const }
         if (activeValue === 'accounts') {
             if (subActiveValue === 'banks') return { title: "Gestión de Bancos", description: "Administre las entidades bancarias globales del sistema.", iconName: "landmark" as const }
             if (subActiveValue === 'methods') return { title: "Métodos de Pago", description: "Configure los medios de pago aceptados y sus cuentas vinculadas.", iconName: "credit-card" as const }

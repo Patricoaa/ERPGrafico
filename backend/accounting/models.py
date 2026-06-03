@@ -704,6 +704,26 @@ class AccountingSettings(TimeStampedModel):
         help_text=_("Cuenta de activo (documentos por cobrar) donde se registran los cheques de terceros recibidos hasta su depósito/cobro.")
     )
 
+    # Financial Expense Accounts (F5.1)
+    interest_expense_account = models.ForeignKey(
+        Account, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='settings_interest_expense',
+        verbose_name=_("Cuenta de Gasto por Intereses"),
+        help_text=_("Cuenta de gasto para intereses pagados de préstamos bancarios y tarjetas de crédito.")
+    )
+    insurance_expense_account = models.ForeignKey(
+        Account, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='settings_insurance_expense',
+        verbose_name=_("Cuenta de Gasto por Seguros"),
+        help_text=_("Cuenta de gasto para seguros de desgravamen/cesantía en préstamos bancarios.")
+    )
+    interest_payable_account = models.ForeignKey(
+        Account, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='settings_interest_payable',
+        verbose_name=_("Cuenta Intereses por Pagar"),
+        help_text=_("Cuenta de pasivo para intereses devengados no pagados (préstamos).")
+    )
+
     # POS Cash Control Accounts
     pos_cash_difference_gain_account = models.ForeignKey(
         Account, on_delete=models.SET_NULL, null=True, blank=True,

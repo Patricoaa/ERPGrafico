@@ -62,6 +62,10 @@ export interface TreasurySettings {
     pos_other_outflow_account: string | null
     // Cheques
     check_portfolio_account: string | null
+    // Financial expense accounts (F5.1)
+    interest_expense_account: string | null
+    insurance_expense_account: string | null
+    interest_payable_account: string | null
 }
 
 export type TreasurySettingsUpdatePayload = Partial<TreasurySettings>
