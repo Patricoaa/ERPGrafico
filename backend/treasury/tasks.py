@@ -347,3 +347,151 @@ def auto_match_statement_task(self, statement_id: int, confidence_threshold: flo
     except Exception as exc:
         self.update_state(state='FAILURE', meta={'error': str(exc)})
         raise
+
+
+# ── F4.6: Alertas de cheques por vencer y depósitos en tránsito ─────────
+
+
+@shared_task(name='treasury.check_alerts')
+def check_alerts(days_ahead: int = 5, transit_max_days: int = 10, notify: bool = True):
+    """
+    Alertas diarias de cheques:
+
+    1. Cheques en cartera (IN_PORTFOLIO) con due_date próximo a vencer.
+    2. Cheques depositados (DEPOSITED) con más de N días sin cobrar (tránsito añejo).
+    3. Cheques propios girados (ISSUED) con due_date próximo a vencer.
+
+    Retorna un dict con contadores para diagnóstico.
+    """
+    from django.contrib.auth import get_user_model
+    from django.contrib.contenttypes.models import ContentType
+    from .models import Check
+    from workflow.models import Notification
+
+    today = timezone.now().date()
+    horizon = today + timedelta(days=days_ahead)
+
+    # 1) Cheques en cartera por vencer
+    portfolio_expiring = list(
+        Check.objects.filter(
+            direction=Check.Direction.RECEIVED,
+            status=Check.Status.IN_PORTFOLIO,
+            due_date__gte=today,
+            due_date__lte=horizon,
+        ).select_related('bank', 'counterparty')
+    )
+
+    # 2) Depósitos en tránsito añejos
+    transit_stale = list(
+        Check.objects.filter(
+            status=Check.Status.DEPOSITED,
+            deposited_at__date__lte=today - timedelta(days=transit_max_days),
+        ).select_related('bank', 'counterparty')
+    )
+
+    # 3) Cheques propios por vencer
+    issued_expiring = list(
+        Check.objects.filter(
+            direction=Check.Direction.ISSUED,
+            status=Check.Status.ISSUED,
+            due_date__gte=today,
+            due_date__lte=horizon,
+        ).select_related('bank', 'counterparty')
+    )
+
+    notified = 0
+    if notify and (portfolio_expiring or transit_stale or issued_expiring):
+        User = get_user_model()
+        recipients = User.objects.filter(is_active=True, is_superuser=True)
+        if not recipients.exists():
+            return {
+                'portfolio_expiring': len(portfolio_expiring),
+                'transit_stale': len(transit_stale),
+                'issued_expiring': len(issued_expiring),
+                'notified': 0,
+            }
+
+        ct = ContentType.objects.get_for_model(Check)
+        target_iso = today.isoformat()
+
+        for check in portfolio_expiring:
+            already = Notification.objects.filter(
+                notification_type='CHECK_PORTFOLIO_UPCOMING',
+                content_type=ct, object_id=check.id,
+                data__target_date=target_iso,
+            ).exists()
+            if already:
+                continue
+            for user in recipients:
+                Notification.objects.create(
+                    user=user,
+                    title=f"Cheque {check.display_id} por vencer",
+                    message=(
+                        f"Cheque de {check.bank.name} N° {check.check_number} "
+                        f"por ${check.amount:,.0f} vence el {check.due_date.strftime('%d/%m/%Y')}."
+                    ),
+                    type=Notification.Type.WARNING,
+                    notification_type='CHECK_PORTFOLIO_UPCOMING',
+                    content_type=ct,
+                    object_id=check.id,
+                    link="/treasury/checks",
+                    data={'target_date': target_iso},
+                )
+                notified += 1
+
+        for check in transit_stale:
+            already = Notification.objects.filter(
+                notification_type='CHECK_TRANSIT_STALE',
+                content_type=ct, object_id=check.id,
+                data__target_date=target_iso,
+            ).exists()
+            if already:
+                continue
+            for user in recipients:
+                Notification.objects.create(
+                    user=user,
+                    title=f"Cheque {check.display_id} en tránsito prolongado",
+                    message=(
+                        f"Cheque de {check.bank.name} N° {check.check_number} "
+                        f"depositado hace más de {transit_max_days} días sin cobrar."
+                    ),
+                    type=Notification.Type.WARNING,
+                    notification_type='CHECK_TRANSIT_STALE',
+                    content_type=ct,
+                    object_id=check.id,
+                    link="/treasury/checks",
+                    data={'target_date': target_iso},
+                )
+                notified += 1
+
+        for check in issued_expiring:
+            already = Notification.objects.filter(
+                notification_type='CHECK_ISSUED_UPCOMING',
+                content_type=ct, object_id=check.id,
+                data__target_date=target_iso,
+            ).exists()
+            if already:
+                continue
+            for user in recipients:
+                Notification.objects.create(
+                    user=user,
+                    title=f"Cheque propio {check.display_id} por vencer",
+                    message=(
+                        f"Cheque propio N° {check.check_number} "
+                        f"por ${check.amount:,.0f} vence el {check.due_date.strftime('%d/%m/%Y')}."
+                    ),
+                    type=Notification.Type.WARNING,
+                    notification_type='CHECK_ISSUED_UPCOMING',
+                    content_type=ct,
+                    object_id=check.id,
+                    link="/treasury/checks",
+                    data={'target_date': target_iso},
+                )
+                notified += 1
+
+    return {
+        'portfolio_expiring': len(portfolio_expiring),
+        'transit_stale': len(transit_stale),
+        'issued_expiring': len(issued_expiring),
+        'notified': notified,
+    }
