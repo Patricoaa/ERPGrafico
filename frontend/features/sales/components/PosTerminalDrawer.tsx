@@ -5,13 +5,11 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { toast } from "sonner"
-import { MonitorSmartphone, Banknote, CreditCard, Landmark, Smartphone, Printer, ClipboardList } from "lucide-react"
+import { MonitorSmartphone, Banknote, CreditCard, Landmark, Smartphone, Printer, FileCheck } from "lucide-react"
 import { usePaymentMethods, useTerminalDevices, type Terminal } from "@/features/treasury"
 import { treasuryApi } from "@/features/treasury/api/treasuryApi"
 import { cn } from "@/lib/utils"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Switch } from "@/components/ui/switch"
-import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Form, FormField } from "@/components/ui/form"
 import { Drawer, CancelButton, LabeledInput, LabeledSelect, FormSection, FormFooter, FormSplitLayout, ActionSlideButton } from "@/components/shared"
@@ -122,6 +120,11 @@ export function PosTerminalDrawer({ open, onOpenChange, terminal, onSuccess, mod
         })
     }
 
+    const toggleCheck = () => {
+        if (isView) return
+        setAllowsCheck(prev => !prev)
+    }
+
     const onSubmit = async (values: TerminalFormValues) => {
         setIsSubmitting(true)
         try {
@@ -159,13 +162,14 @@ export function PosTerminalDrawer({ open, onOpenChange, terminal, onSuccess, mod
         }
     }
 
-    const typeOrder = ['CASH', 'CARD', 'TRANSFER', 'OTHER']
+    const typeOrder = ['CASH', 'CARD', 'TRANSFER', 'CHECK', 'OTHER']
 
     const getTypeLabel = (type: string) => {
         const labels: Record<string, string> = {
             'CASH': 'Efectivo (Cajas)',
             'CARD': 'Tarjetas (Débito / Crédito)',
             'TRANSFER': 'Transferencias',
+            'CHECK': 'Cheques',
             'OTHER': 'Otros'
         }
         return labels[type] || type
@@ -179,7 +183,14 @@ export function PosTerminalDrawer({ open, onOpenChange, terminal, onSuccess, mod
         if (!acc[type]) acc[type] = []
         acc[type].push(method)
         return acc
-    }, {} as Record<string, any[]>)
+    }, {} as Record<string, Array<{ id: number; name: string; treasury_account_name: string; method_type: string }>>)
+
+    const checkMethod = {
+        id: -1,
+        name: 'Cheque',
+        method_type: 'CHECK',
+        treasury_account_name: 'Sin cuenta de tesorería',
+    }
 
     const drawerTitle = isView
         ? `Ficha de Caja POS${terminal?.id ? ` #${terminal.id}` : ""}`
@@ -316,78 +327,60 @@ export function PosTerminalDrawer({ open, onOpenChange, terminal, onSuccess, mod
                             />
                         </div>
 
-                        <div className="space-y-2">
-                            <FormField
-                                control={form.control}
-                                name="device_id"
-                                render={({ field }) => (
-                                    <LabeledSelect
-                                        label="Dispositivo de Terminal"
-                                        placeholder="Sin dispositivo integrado"
-                                        value={field.value || ""}
-                                        onChange={field.onChange}
-                                        options={[
-                                            { value: "none", label: "Ninguno (Manual)" },
-                                            ...allDevices.map(dev => ({
-                                                value: dev.id.toString(),
-                                                label: `${dev.name} (${dev.provider_name})`
-                                            }))
-                                        ]}
-                                    />
-                                )}
-                            />
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="col-span-2">
+                                <FormField
+                                    control={form.control}
+                                    name="device_id"
+                                    render={({ field }) => (
+                                        <LabeledSelect
+                                            label="Dispositivo de Terminal"
+                                            placeholder="Sin dispositivo integrado"
+                                            value={field.value || ""}
+                                            onChange={field.onChange}
+                                            options={[
+                                                { value: "none", label: "Ninguno (Manual)" },
+                                                ...allDevices.map(dev => ({
+                                                    value: dev.id.toString(),
+                                                    label: `${dev.name} (${dev.provider_name})`
+                                                }))
+                                            ]}
+                                        />
+                                    )}
+                                />
+                            </div>
                         </div>
 
-                        <div className="mt-2">
+                        <div className="space-y-4">
                             <FormSection title="Métodos de Pago Permitidos" icon={CreditCard} />
 
-                            <div className="px-2 lg:px-6 mb-4">
-                                <div className="flex items-center justify-between p-3 rounded-md border border-border/60 bg-muted/10">
-                                    <div className="flex items-center gap-3">
-                                        <ClipboardList className="h-4 w-4 text-warning" />
-                                        <div>
-                                            <Label htmlFor="allows-check" className="text-sm font-semibold cursor-pointer">
-                                                Cheque
-                                            </Label>
-                                            <p className="text-[10px] text-muted-foreground font-medium">
-                                                Método hardcodeado — no requiere cuenta de tesorería
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <Switch
-                                        id="allows-check"
-                                        checked={allowsCheck}
-                                        onCheckedChange={setAllowsCheck}
-                                        disabled={isView}
-                                    />
-                                </div>
-                            </div>
+                            <div className="px-2 lg:px-6 space-y-4">
+                                {typeOrder.map(type => {
+                                    const isCheckGroup = type === 'CHECK'
+                                    const groupMethods = isCheckGroup ? [checkMethod] : (methodsGrouped[type] || [])
+                                    if (groupMethods.length === 0) return null
 
-                            <div className="mt-6 px-2 lg:px-6">
-                                <div className="max-h-[500px] overflow-y-auto pr-4 scrollbar-thin space-y-8 py-2">
-                                    {typeOrder.map(type => {
-                                        const groupMethods = methodsGrouped[type] || []
-                                        if (groupMethods.length === 0) return null
+                                    return (
+                                        <div key={type} className="space-y-4">
+                                            <div className="flex items-center gap-3 text-muted-foreground/70 pl-1">
+                                                {type === 'CASH' && <Banknote className="h-4 w-4" />}
+                                                {type === 'TERMINAL' && <Smartphone className="h-4 w-4" />}
+                                                {type === 'CARD' && <CreditCard className="h-4 w-4" />}
+                                                {type === 'TRANSFER' && <Landmark className="h-4 w-4" />}
+                                                {type === 'CHECK' && <FileCheck className="h-4 w-4" />}
+                                                <h4 className="text-[11px] font-black uppercase tracking-[0.2em]">
+                                                    {getTypeLabel(type)}
+                                                </h4>
+                                            </div>
 
-                                        return (
-                                            <div key={type} className="space-y-4">
-                                                <div className="flex items-center gap-3 text-muted-foreground/70 pl-1">
-                                                    {type === 'CASH' && <Banknote className="h-4 w-4" />}
-                                                    {type === 'TERMINAL' && <Smartphone className="h-4 w-4" />}
-                                                    {type === 'CARD' && <CreditCard className="h-4 w-4" />}
-                                                    {type === 'TRANSFER' && <Landmark className="h-4 w-4" />}
-                                                    <h4 className="text-[11px] font-black uppercase tracking-[0.2em]">
-                                                        {getTypeLabel(type)}
-                                                    </h4>
-                                                </div>
-
-                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                                    {groupMethods.map((method: any) => {
-                                                        const isSelected = selectedMethodIds.includes(method.id)
-                                                        return (
-                                                            <div
-                                                                key={method.id}
-                                                            onClick={() => toggleMethod(method.id)}
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                {groupMethods.map((method) => {
+                                                    const isCheckCard = isCheckGroup
+                                                    const isSelected = isCheckCard ? allowsCheck : selectedMethodIds.includes(method.id)
+                                                    return (
+                                                        <div
+                                                            key={method.id}
+                                                            onClick={() => isCheckCard ? toggleCheck() : toggleMethod(method.id)}
                                                             className={cn(
                                                                 "flex items-center space-x-3 p-3 rounded-md border transition-all group",
                                                                 isView ? "cursor-default opacity-70" : "cursor-pointer",
@@ -395,32 +388,33 @@ export function PosTerminalDrawer({ open, onOpenChange, terminal, onSuccess, mod
                                                                         ? "bg-primary/5 border-primary/40 shadow-sm ring-1 ring-primary/20"
                                                                         : "bg-background hover:bg-muted/30 border-border/60 hover:border-border"
                                                                 )}
-                                                            >
-                                                                <Checkbox
-                                                                    checked={isSelected}
-                                                                    disabled={isView}
-                                                                    onCheckedChange={() => toggleMethod(method.id)}
-                                                                    className={isSelected ? "text-primary border-primary" : "border-muted-foreground/40 group-hover:border-primary/50"}
-                                                                />
-                                                                <div className="flex flex-col">
-                                                                    <span className={cn(
-                                                                        "text-sm font-semibold transition-colors",
-                                                                        isSelected ? "text-foreground" : "text-muted-foreground"
-                                                                    )}>
-                                                                        {method.name}
-                                                                    </span>
-                                                                    <span className="text-[10px] text-muted-foreground/70 font-medium">
-                                                                        Cta: {method.treasury_account_name}
-                                                                    </span>
-                                                                </div>
+                                                        >
+                                                            <Checkbox
+                                                                checked={isSelected}
+                                                                disabled={isView}
+                                                                onCheckedChange={() => isCheckCard ? toggleCheck() : toggleMethod(method.id)}
+                                                                className={isSelected ? "text-primary border-primary" : "border-muted-foreground/40 group-hover:border-primary/50"}
+                                                            />
+                                                            <div className="flex flex-col">
+                                                                <span className={cn(
+                                                                    "text-sm font-semibold transition-colors",
+                                                                    isSelected ? "text-foreground" : "text-muted-foreground"
+                                                                )}>
+                                                                    {method.name}
+                                                                </span>
+                                                                <span className="text-[10px] text-muted-foreground/70 font-medium">
+                                                                    {isCheckCard
+                                                                        ? method.treasury_account_name
+                                                                        : `Cta: ${method.treasury_account_name}`}
+                                                                </span>
                                                             </div>
-                                                        )
-                                                    })}
-                                                </div>
+                                                        </div>
+                                                    )
+                                                })}
                                             </div>
-                                        )
-                                    })}
-                                </div>
+                                        </div>
+                                    )
+                                })}
                             </div>
                         </div>
                     </fieldset>
