@@ -161,6 +161,7 @@ class Command(BaseCommand):
             'POS Cash Difference (Gain)': settings.pos_cash_difference_gain_account,
             'POS Cash Difference (Loss)': settings.pos_cash_difference_loss_account,
             'Terminal Commission Bridge': settings.terminal_commission_bridge_account,
+            'Terminal Commission IVA Bridge': settings.terminal_iva_bridge_account,
             'Bank Commission': settings.bank_commission_account,
             'VAT Payable': settings.vat_payable_account,
             'Loan Retention': settings.loan_retention_account,

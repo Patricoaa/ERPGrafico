@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button"
 import { useReactToPrint } from "react-to-print"
 import { PrintableLayout } from "@/features/_shared/transaction-drawer"
 import type { DrawerMode } from "@/features/_shared/drawer/types"
-import { Drawer, CancelButton, ActionSlideButton, LabeledInput, LabeledSelect, FormSection, FormFooter, MultiSelectTagInput } from "@/components/shared"
+import { Drawer, CancelButton, ActionSlideButton, LabeledInput, LabeledSelect, FormSection, FormFooter, FormSplitLayout, MultiSelectTagInput } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { toast } from "sonner"
 
@@ -150,7 +150,8 @@ export function DeviceDrawer({ open, onOpenChange, device, providers: providersP
                 )}
             >
             <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-2">
+                <FormSplitLayout>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 px-4 pb-4 pt-2">
                     <fieldset disabled={isView} className="contents">
                     <FormSection title="Información General" icon={Smartphone} />
                     <FormField
@@ -226,6 +227,7 @@ export function DeviceDrawer({ open, onOpenChange, device, providers: providersP
                     </div>
                     </fieldset>
                 </form>
+                </FormSplitLayout>
             </Form>
         </Drawer>
         </>

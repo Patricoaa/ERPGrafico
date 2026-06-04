@@ -18,6 +18,17 @@ def _capture_provider_previous_bridge(sender, instance, **kwargs):
         instance._prev_bridge_id = None
 
 
+@receiver(pre_save, sender='treasury.PaymentTerminalProvider')
+def _ensure_provider_bridge_account(sender, instance, **kwargs):
+    """Auto-crea TreasuryAccount BRIDGE si el proveedor nuevo no tiene una asignada."""
+    if instance.pk or instance.bank_treasury_account_id:
+        return  # Solo para nuevos providers
+    from treasury.services import ProviderAccountService
+    instance.bank_treasury_account = ProviderAccountService.ensure_bridge_account(
+        provider_name=instance.name,
+    )
+
+
 @receiver(post_save, sender='treasury.PaymentTerminalProvider')
 def sync_settlement_on_provider_bridge_change(sender, instance, **kwargs):
     """
