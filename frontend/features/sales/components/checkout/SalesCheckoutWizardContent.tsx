@@ -407,6 +407,10 @@ export function SalesCheckoutWizardContent({
                             return { isValid: false }
                         }
                     }
+                    if (paymentData.method === 'CHECK' && paymentData.amount > 0 && !paymentData.transactionNumber) {
+                        toast.error("Debe ingresar el N° de Cheque para registrar el pago.")
+                        return { isValid: false }
+                    }
                     if (!approvalTaskId && !isApproved) {
                         const amountPaid = paymentData.amount || 0;
                         if (amountPaid < currentTotal) {
