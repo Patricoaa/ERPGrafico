@@ -148,10 +148,11 @@ export function PaymentModal({
                         })}
                         disabled={
                             (paymentData.amount < 0) ||
-                            (paymentData.amount > 0 && !paymentData.treasuryAccountId) ||
+                            (paymentData.amount > 0 && !paymentData.treasuryAccountId && paymentData.method !== 'CHECK') ||
                             ((!hideDteFields && isPurchase && (dteType === 'BOLETA' || dteType === 'FACTURA') && !existingInvoice && !documentReference && !isDocumentPending)) ||
                             ((hideDteFields && isPurchase && (dteType === 'BOLETA' || dteType === 'FACTURA') && !!existingInvoice && !documentReference)) ||
                             ((paymentData.method === 'TRANSFER') && !paymentData.isPending && !paymentData.transactionNumber && paymentData.amount > 0) ||
+                            ((paymentData.method === 'CHECK') && !paymentData.transactionNumber && paymentData.amount > 0) ||
                             (!hideDteFields && dteType === 'FACTURA' && !existingInvoice && !isDocumentPending && !documentAttachment) ||
                             ((dteType === 'BOLETA' || dteType === 'FACTURA') && !isPeriodValid)
                         }
