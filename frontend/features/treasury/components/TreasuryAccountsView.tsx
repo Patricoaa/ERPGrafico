@@ -161,46 +161,31 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
         {
             accessorKey: "bank",
             header: ({ column }: { column: any }) => (
-                <DataTableColumnHeader column={column} title="Banco" className="justify-center" />
+                <DataTableColumnHeader column={column} title="Entidad Externa" className="justify-center" />
             ),
             cell: ({ row }: { row: any }) => {
                 const bankId = row.original.bank
                 const bankName = row.original.bank_name
-                if (!bankId) {
-                    return (
-                        <div className="flex justify-center w-full">
-                            <DataCell.Secondary className="italic">Sin banco</DataCell.Secondary>
-                        </div>
-                    )
-                }
-                return (
-                    <div className="flex justify-center w-full">
-                        <EntityBadge
-                            label="treasury.bank"
-                            data={{ id: bankId, name: bankName }}
-                            size="sm"
-                            showIcon
-                        />
-                    </div>
-                )
-            },
-        },
-        {
-            accessorKey: "terminal_providers",
-            header: ({ column }: { column: any }) => (
-                <DataTableColumnHeader column={column} title="Proveedor de Terminal" className="justify-center" />
-            ),
-            cell: ({ row }: { row: any }) => {
                 const providers = row.original.terminal_providers ?? []
-                if (providers.length === 0) {
+                const hasBank = !!bankId
+                const hasProviders = providers.length > 0
+                if (!hasBank && !hasProviders) {
                     return (
                         <div className="flex justify-center w-full">
-                            <DataCell.Secondary className="italic">—</DataCell.Secondary>
+                            <DataCell.Secondary className="italic">Sin entidad externa</DataCell.Secondary>
                         </div>
                     )
                 }
                 return (
                     <div className="flex flex-col items-center justify-center gap-1 w-full">
+                        {hasBank && (
+                            <EntityBadge
+                                label="treasury.bank"
+                                data={{ id: bankId, name: bankName }}
+                                size="sm"
+                                showIcon
+                            />
+                        )}
                         {providers.map((p: { id: number; name: string; provider_type: string; provider_type_display: string }) => (
                             <EntityBadge
                                 key={p.id}
@@ -282,6 +267,8 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
                                 renderCard: (acc: TreasuryAccount) => {
                                     const name = acc.account_name
                                     const providers = acc.terminal_providers ?? []
+                                    const hasBank = !!acc.bank
+                                    const hasProviders = providers.length > 0
                                     return (
                                         <EntityCard key={acc.id} onClick={() => handleEdit(acc)}>
                                             <EntityCard.Header
@@ -300,19 +287,19 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
                                                         </div>
                                                     ) : <DataCell.Secondary className="italic">No vinculada</DataCell.Secondary>
                                                 } />
-                                                <EntityCard.Field label="Banco" value={
-                                                    acc.bank && acc.bank_name ? (
-                                                        <EntityBadge
-                                                            label="treasury.bank"
-                                                            data={{ id: acc.bank, name: acc.bank_name }}
-                                                            size="sm"
-                                                            showIcon
-                                                        />
-                                                    ) : <DataCell.Secondary className="italic">Sin banco</DataCell.Secondary>
-                                                } />
-                                                {providers.length > 0 && (
-                                                    <EntityCard.Field label="Proveedor de Terminal" value={
+                                                <EntityCard.Field label="Entidad Externa" value={
+                                                    !hasBank && !hasProviders ? (
+                                                        <DataCell.Secondary className="italic">Sin entidad externa</DataCell.Secondary>
+                                                    ) : (
                                                         <div className="flex flex-col gap-1 items-start">
+                                                            {hasBank && acc.bank_name && (
+                                                                <EntityBadge
+                                                                    label="treasury.bank"
+                                                                    data={{ id: acc.bank, name: acc.bank_name }}
+                                                                    size="sm"
+                                                                    showIcon
+                                                                />
+                                                            )}
                                                             {providers.map((p) => (
                                                                 <EntityBadge
                                                                     key={p.id}
@@ -323,8 +310,8 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
                                                                 />
                                                             ))}
                                                         </div>
-                                                    } />
-                                                )}
+                                                    )
+                                                } />
                                             </EntityCard.Body>
                                             <EntityCard.Footer className="justify-between items-center border-t bg-muted/10 py-2 px-4">
                                                 <span className="text-[10px] font-bold text-muted-foreground uppercase">Saldo Actual</span>
