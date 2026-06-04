@@ -10,13 +10,13 @@ import {
 import { DataTableView } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 
-import {Landmark, Lock} from "lucide-react"
+import { Lock } from "lucide-react"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { BankManagement, PaymentMethodManagement } from "@/features/treasury"
 import { TreasuryAccountWizard } from "./TreasuryAccountWizard"
 
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
-import { DataCell, createActionsColumn, FadeIn } from '@/components/shared'
+import { DataCell, createActionsColumn, FadeIn, EntityBadge } from '@/components/shared'
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
@@ -117,16 +117,10 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
                 <DataTableColumnHeader column={column} title="Nombre de Cuenta" className="justify-center" />
             ),
             cell: ({ row }: { row: any }) => (
-                <div className="flex flex-col items-center text-center w-full">
+                <div className="flex justify-center w-full">
                     <DataCell.Text>
                         {row.original.name}
                     </DataCell.Text>
-                    {row.original.bank_name && (
-                        <DataCell.Secondary className="text-[10px] flex items-center gap-1 mt-0.5">
-                            <Landmark className="h-3 w-3" />
-                            {row.original.bank_name}
-                        </DataCell.Secondary>
-                    )}
                 </div>
             ),
         },
@@ -163,6 +157,62 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
                     </div>
                 )
             }
+        },
+        {
+            accessorKey: "bank",
+            header: ({ column }: { column: any }) => (
+                <DataTableColumnHeader column={column} title="Banco" className="justify-center" />
+            ),
+            cell: ({ row }: { row: any }) => {
+                const bankId = row.original.bank
+                const bankName = row.original.bank_name
+                if (!bankId) {
+                    return (
+                        <div className="flex justify-center w-full">
+                            <DataCell.Secondary className="italic">Sin banco</DataCell.Secondary>
+                        </div>
+                    )
+                }
+                return (
+                    <div className="flex justify-center w-full">
+                        <EntityBadge
+                            label="treasury.bank"
+                            data={{ id: bankId, name: bankName }}
+                            size="sm"
+                            showIcon
+                        />
+                    </div>
+                )
+            },
+        },
+        {
+            accessorKey: "terminal_providers",
+            header: ({ column }: { column: any }) => (
+                <DataTableColumnHeader column={column} title="Proveedor de Terminal" className="justify-center" />
+            ),
+            cell: ({ row }: { row: any }) => {
+                const providers = row.original.terminal_providers ?? []
+                if (providers.length === 0) {
+                    return (
+                        <div className="flex justify-center w-full">
+                            <DataCell.Secondary className="italic">—</DataCell.Secondary>
+                        </div>
+                    )
+                }
+                return (
+                    <div className="flex flex-col items-center justify-center gap-1 w-full">
+                        {providers.map((p: { id: number; name: string; provider_type: string; provider_type_display: string }) => (
+                            <EntityBadge
+                                key={p.id}
+                                label="treasury.terminalprovider"
+                                data={{ id: p.id, name: p.name }}
+                                size="sm"
+                                showIcon
+                            />
+                        ))}
+                    </div>
+                )
+            },
         },
         {
             accessorKey: "current_balance",
@@ -231,11 +281,11 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
                                 },
                                 renderCard: (acc: TreasuryAccount) => {
                                     const name = acc.account_name
+                                    const providers = acc.terminal_providers ?? []
                                     return (
                                         <EntityCard key={acc.id} onClick={() => handleEdit(acc)}>
                                             <EntityCard.Header
                                                 title={acc.name}
-                                                subtitle={acc.bank_name || 'Sin banco vinculado'}
                                                 trailing={
                                                     acc.is_system_managed ? <Lock className="h-4 w-4 text-muted-foreground opacity-50" /> : null
                                                 }
@@ -250,6 +300,31 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
                                                         </div>
                                                     ) : <DataCell.Secondary className="italic">No vinculada</DataCell.Secondary>
                                                 } />
+                                                <EntityCard.Field label="Banco" value={
+                                                    acc.bank && acc.bank_name ? (
+                                                        <EntityBadge
+                                                            label="treasury.bank"
+                                                            data={{ id: acc.bank, name: acc.bank_name }}
+                                                            size="sm"
+                                                            showIcon
+                                                        />
+                                                    ) : <DataCell.Secondary className="italic">Sin banco</DataCell.Secondary>
+                                                } />
+                                                {providers.length > 0 && (
+                                                    <EntityCard.Field label="Proveedor de Terminal" value={
+                                                        <div className="flex flex-col gap-1 items-start">
+                                                            {providers.map((p) => (
+                                                                <EntityBadge
+                                                                    key={p.id}
+                                                                    label="treasury.terminalprovider"
+                                                                    data={{ id: p.id, name: p.name }}
+                                                                    size="sm"
+                                                                    showIcon
+                                                                />
+                                                            ))}
+                                                        </div>
+                                                    } />
+                                                )}
                                             </EntityCard.Body>
                                             <EntityCard.Footer className="justify-between items-center border-t bg-muted/10 py-2 px-4">
                                                 <span className="text-[10px] font-bold text-muted-foreground uppercase">Saldo Actual</span>

@@ -53,6 +53,13 @@ export interface TreasuryAccount {
     bank_name?: string
     account_number?: string | null
     identifier?: string
+    /** POS terminal providers (Transbank, TUU, etc.) whose destination/bridge account is this one. */
+    terminal_providers?: Array<{
+        id: number
+        name: string
+        provider_type: PaymentTerminalProvider['provider_type']
+        provider_type_display: string
+    }>
 }
 
 export interface TreasuryAccountCreatePayload {

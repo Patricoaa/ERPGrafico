@@ -230,8 +230,8 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     titlePlural: 'Movimientos de Tesorería',
     icon: Landmark,
     shortTemplate: 'TRX-{id}',
-    listUrl: '/treasury/movements',
-    detailUrlPattern: '/treasury/movements/{id}',
+    listUrl: '/treasury/operaciones?tab=movements',
+    detailUrlPattern: '/treasury/operaciones?tab=movements&selected={id}',
     viewPolicy: { availableViews: ['list', 'grid'], defaultView: 'list', cardComponent: 'entity-compact', gridLayout: 'multi-column' },
   },
   'treasury.treasuryaccount': {
@@ -282,7 +282,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     title: 'Proveedor',
     titlePlural: 'Proveedores',
     icon: Building2,
-    shortTemplate: 'PROV-{id}',
+    shortTemplate: '{name}',
     listUrl: '/treasury/hardware',
     detailUrlPattern: '/treasury/hardware?selected={id}',
     hasDrawer: true,
@@ -569,7 +569,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     icon: Landmark,
     shortTemplate: '{name}',
     listUrl: '/treasury/terminals',
-    detailUrlPattern: '/treasury/terminals?tab=accounts',
+    detailUrlPattern: '/treasury/centro-bancos?bank={id}',
   },
   'treasury.paymentmethod': {
     label: 'treasury.paymentmethod',
