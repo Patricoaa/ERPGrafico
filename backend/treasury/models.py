@@ -587,13 +587,6 @@ class POSTerminal(models.Model):
         help_text=_("Ubicación física del terminal")
     )
     is_active = models.BooleanField(_("Activo"), default=True)
-    
-    # Hardcoded system payment method flags (no DB PaymentMethod needed)
-    allows_check = models.BooleanField(
-        _("Permite Cheque"),
-        default=False,
-        help_text=_("Habilita el método de pago 'Cheque' como opción hardcodeada en el POS, sin requerir una cuenta de tesorería vinculada.")
-    )
 
     # ManyToMany: Cuentas de tesorería permitidas para este terminal
     allowed_payment_methods = models.ManyToManyField(
@@ -667,7 +660,6 @@ class POSTerminal(models.Model):
         """
         Tipos de métodos de pago permitidos en este terminal.
         Sustituye DEBIT_CARD y CREDIT_CARD por 'CARD' para agrupar en la UI.
-        Incluye 'CHECK' si allows_check=True (método hardcodeado, sin PaymentMethod DB).
         """
         types = set()
         for mt in self.allowed_payment_methods.values_list('method_type', flat=True):
@@ -675,8 +667,6 @@ class POSTerminal(models.Model):
                 types.add('CARD')
             else:
                 types.add(mt)
-        if self.allows_check:
-            types.add('CHECK')
         return sorted(list(types))
     
     def get_accounts_for_method(self, payment_method):
@@ -1290,8 +1280,9 @@ class PaymentMethod(models.Model):
         Type.CREDIT_CARD: [TreasuryAccount.Type.CREDIT_CARD, TreasuryAccount.Type.CHECKING],
         Type.CARD_TERMINAL: [TreasuryAccount.Type.CREDIT_CARD, TreasuryAccount.Type.CHECKING],
         Type.TRANSFER: [TreasuryAccount.Type.CHECKING],
-        # Cheques se giran contra una cuenta corriente (CHECKING).
-        Type.CHECK: [TreasuryAccount.Type.CHECKING],
+        # CHECK para compras: vinculado a CHECKING (cheque propio girado).
+        # CHECK para ventas: vinculado a CHECK_PORTFOLIO (cheque recibido en cartera).
+        Type.CHECK: [TreasuryAccount.Type.CHECKING, TreasuryAccount.Type.CHECK_PORTFOLIO],
     }
 
     def __str__(self):
@@ -1323,9 +1314,14 @@ class PaymentMethod(models.Model):
         if self.method_type in (self.Type.DEBIT_CARD, self.Type.CREDIT_CARD):
             self.allow_for_sales = False
 
-        # CHECK → solo compras (ventas usan método hardcodeado vía POSTerminal.allows_check)
-        if self.method_type == self.Type.CHECK:
-            self.allow_for_sales = False
+        # CHECK vinculado a CHECKING → solo compras (cheque propio girado a proveedor).
+        # CHECK vinculado a CHECK_PORTFOLIO → solo ventas (cheque recibido de cliente).
+        if self.method_type == self.Type.CHECK and self.treasury_account_id:
+            acct_type = self.treasury_account.account_type
+            if acct_type == TreasuryAccount.Type.CHECKING:
+                self.allow_for_sales = False
+            elif acct_type == TreasuryAccount.Type.CHECK_PORTFOLIO:
+                self.allow_for_purchases = False
 
         # CARD_TERMINAL → solo ventas, requiere device vinculado
         if self.method_type == self.Type.CARD_TERMINAL:

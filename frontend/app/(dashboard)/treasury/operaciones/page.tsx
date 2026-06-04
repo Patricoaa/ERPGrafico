@@ -27,7 +27,7 @@ export default async function OperacionesPage({ searchParams }: PageProps) {
     }
 
     if (activeTab === "checks") {
-        return <ChecksView />
+        return <ChecksView direction="RECEIVED" />
     }
 
     const createAction = (

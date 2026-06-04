@@ -148,8 +148,7 @@ class POSTerminalSerializer(serializers.ModelSerializer):
         model = POSTerminal
         fields = [
             'id', 'name', 'code', 'location', 'is_active',
-            'allows_check',
-            'default_treasury_account', 'default_treasury_account_name', 
+            'default_treasury_account', 'default_treasury_account_name',
             'default_treasury_account_code', 'default_treasury_account_balance',
             'allowed_treasury_accounts',  # Read (full objects)
             'allowed_treasury_account_ids',  # Write (only IDs)

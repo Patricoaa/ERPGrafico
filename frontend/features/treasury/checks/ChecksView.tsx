@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { CheckSquare, AlertTriangle, ArrowDownToLine, CheckCheck, XCircle, Ban, CircleDollarSign, Clock, Ban as BanIcon } from 'lucide-react'
+import { CheckSquare, AlertTriangle, ArrowDownToLine, CheckCheck, XCircle, Ban, CircleDollarSign, Clock, Ban as BanIcon, FileCheck } from 'lucide-react'
 import {
     DataTableView, DataTableColumnHeader, DataCell, StatCard,
     createActionsColumn, StatusBadge, MoneyDisplay, Skeleton,
@@ -11,27 +11,37 @@ import { useChecks, useCheckPortfolio, useCheckInTransit, useCheckMutations } fr
 import { CheckRegisterDrawer } from './CheckRegisterDrawer'
 import { CheckDepositModal } from './CheckDepositModal'
 import { CheckEndorseModal } from './CheckEndorseModal'
-import type { Check } from './types'
+import type { Check, CheckDirection } from './types'
 
 const ACTIONABLE_FROM: Record<string, string[]> = {
-    deposit: ['IN_PORTFOLIO'],
-    clear:   ['DEPOSITED'],
-    bounce:  ['DEPOSITED'],
-    void:    ['IN_PORTFOLIO', 'ISSUED'],
+    deposit:     ['IN_PORTFOLIO'],
+    clear:       ['DEPOSITED'],
+    bounce:      ['DEPOSITED'],
+    endorse:     ['IN_PORTFOLIO'],
+    void:        ['IN_PORTFOLIO', 'ISSUED'],
     mark_cashed: ['ISSUED'],
-    endorse:  ['IN_PORTFOLIO'],
 }
 
-export function ChecksView({ bankId }: { bankId?: number } = {}) {
-    const { data: checks = [], isLoading } = useChecks(
-        bankId ? { bank: String(bankId) } : undefined,
-    )
-    const { data: portfolio } = useCheckPortfolio(
-        bankId ? { bank: String(bankId) } : undefined,
-    )
-    const { data: inTransit } = useCheckInTransit(
-        bankId ? { bank: String(bankId) } : undefined,
-    )
+interface ChecksViewProps {
+    bankId?: number
+    direction?: CheckDirection
+}
+
+export function ChecksView({ bankId, direction }: ChecksViewProps = {}) {
+    const queryParams = useMemo(() => {
+        const p: Record<string, string> = {}
+        if (bankId) p.bank = String(bankId)
+        if (direction) p.direction = direction
+        return Object.keys(p).length ? p : undefined
+    }, [bankId, direction])
+
+    const { data: checks = [], isLoading } = useChecks(queryParams)
+
+    // Portfolio / in-transit summaries only apply to received checks.
+    const receivedParams = bankId ? { bank: String(bankId) } : undefined
+    const { data: portfolio } = useCheckPortfolio(receivedParams, direction !== 'ISSUED')
+    const { data: inTransit } = useCheckInTransit(receivedParams, direction !== 'ISSUED')
+
     const { clear, bounce, void: voidCheck, markCashed } = useCheckMutations()
 
     const [registerOpen, setRegisterOpen] = useState(false)
@@ -47,9 +57,10 @@ export function ChecksView({ bankId }: { bankId?: number } = {}) {
         const portfolioCount = portfolio ? portfolio.checks.length : 0
         const transitTotal = inTransit ? parseFloat(inTransit.total) : 0
         const transitCount = inTransit ? inTransit.checks.length : 0
-        const issuedChecks = checks.filter(c => c.direction === 'ISSUED' && c.status === 'ISSUED')
-        const issuedTotal = issuedChecks.reduce((s, c) => s + parseFloat(c.amount), 0)
-        return { portfolioTotal, portfolioCount, transitTotal, transitCount, issuedTotal, issuedCount: issuedChecks.length }
+        const pendingIssued = checks.filter(c => c.status === 'ISSUED')
+        const pendingIssuedTotal = pendingIssued.reduce((s, c) => s + parseFloat(c.amount), 0)
+        const bouncedCount = checks.filter(c => c.status === 'BOUNCED').length
+        return { portfolioTotal, portfolioCount, transitTotal, transitCount, pendingIssuedTotal, pendingIssuedCount: pendingIssued.length, bouncedCount }
     }, [portfolio, inTransit, checks])
 
     const filteredData = useMemo(() => {
@@ -60,13 +71,15 @@ export function ChecksView({ bankId }: { bankId?: number } = {}) {
     if (isLoading) {
         return (
             <div className="space-y-4">
-                <div className="grid grid-cols-4 gap-4">
-                    {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-24" />)}
+                <div className="grid grid-cols-3 gap-4">
+                    {[1, 2, 3].map((i) => <Skeleton key={i} className="h-24" />)}
                 </div>
                 <Skeleton className="h-96" />
             </div>
         )
     }
+
+    const isIssued = direction === 'ISSUED'
 
     const columns: ColumnDef<Check>[] = [
         {
@@ -80,20 +93,13 @@ export function ChecksView({ bankId }: { bankId?: number } = {}) {
             ),
         },
         {
-            accessorKey: 'direction',
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Tipo" />,
-            cell: ({ row }) => (
-                <DataCell.Text>{row.original.direction === 'RECEIVED' ? 'Recibido' : 'Propio'}</DataCell.Text>
-            ),
-        },
-        {
             accessorKey: 'bank_name',
             header: ({ column }) => <DataTableColumnHeader column={column} title="Banco" />,
             cell: ({ row }) => <DataCell.Text>{row.original.bank_name}</DataCell.Text>,
         },
         {
             accessorKey: 'counterparty_name',
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Girador" />,
+            header: ({ column }) => <DataTableColumnHeader column={column} title={isIssued ? 'Beneficiario' : 'Girador'} />,
             cell: ({ row }) => (
                 <DataCell.Text>{row.original.counterparty_name ?? row.original.drawer_name ?? '—'}</DataCell.Text>
             ),
@@ -129,20 +135,20 @@ export function ChecksView({ bankId }: { bankId?: number } = {}) {
         createActionsColumn<Check>({
             renderActions: (check) => (
                 <>
-                    {canDo('deposit', check) && (
+                    {!isIssued && canDo('deposit', check) && (
                         <DataCell.Action icon={ArrowDownToLine} title="Depositar" onClick={() => setDepositTarget(check)} />
                     )}
-                    {canDo('clear', check) && (
+                    {!isIssued && canDo('clear', check) && (
                         <DataCell.Action icon={CheckCheck} title="Marcar cobrado" onClick={() => clear(check.id)} />
                     )}
-                    {canDo('bounce', check) && (
+                    {!isIssued && canDo('bounce', check) && (
                         <DataCell.Action icon={XCircle} title="Protestar" onClick={() => bounce({ id: check.id })} />
                     )}
-                    {canDo('mark_cashed', check) && (
-                        <DataCell.Action icon={CheckCheck} title="Marcar cobrado por proveedor" onClick={() => markCashed(check.id)} />
-                    )}
-                    {canDo('endorse', check) && (
+                    {!isIssued && canDo('endorse', check) && (
                         <DataCell.Action icon={ArrowDownToLine} title="Endosar" onClick={() => setEndorseTarget(check)} />
+                    )}
+                    {isIssued && canDo('mark_cashed', check) && (
+                        <DataCell.Action icon={CheckCheck} title="Marcar cobrado por banco" onClick={() => markCashed(check.id)} />
                     )}
                     {canDo('void', check) && (
                         <DataCell.Action icon={Ban} title="Anular" onClick={() => voidCheck({ id: check.id })} />
@@ -154,39 +160,63 @@ export function ChecksView({ bankId }: { bankId?: number } = {}) {
 
     return (
         <div className="h-full flex flex-col">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                <StatCard
-                    label="En Cartera"
-                    value={<MoneyDisplay amount={kpis.portfolioTotal} />}
-                    subtext={`${kpis.portfolioCount} cheques`}
-                    icon={CircleDollarSign}
-                    onClick={() => setKpiFilter(kpiFilter === 'IN_PORTFOLIO' ? null : 'IN_PORTFOLIO')}
-                    active={kpiFilter === 'IN_PORTFOLIO'}
-                />
-                <StatCard
-                    label="Depósitos en Tránsito"
-                    value={<MoneyDisplay amount={kpis.transitTotal} />}
-                    subtext={`${kpis.transitCount} cheques`}
-                    icon={Clock}
-                    onClick={() => setKpiFilter(kpiFilter === 'DEPOSITED' ? null : 'DEPOSITED')}
-                    active={kpiFilter === 'DEPOSITED'}
-                />
-                <StatCard
-                    label="Cheques Propios Girados"
-                    value={<MoneyDisplay amount={kpis.issuedTotal} />}
-                    subtext={`${kpis.issuedCount} cheques`}
-                    icon={CheckSquare}
-                    onClick={() => setKpiFilter(kpiFilter === 'ISSUED' ? null : 'ISSUED')}
-                    active={kpiFilter === 'ISSUED'}
-                />
-                <StatCard
-                    label="Protestados"
-                    value={checks.filter(c => c.status === 'BOUNCED').length.toString()}
-                    subtext="cheques"
-                    icon={BanIcon}
-                    onClick={() => setKpiFilter(kpiFilter === 'BOUNCED' ? null : 'BOUNCED')}
-                    active={kpiFilter === 'BOUNCED'}
-                />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                {!isIssued && (
+                    <>
+                        <StatCard
+                            label="En Cartera"
+                            value={<MoneyDisplay amount={kpis.portfolioTotal} />}
+                            subtext={`${kpis.portfolioCount} cheques`}
+                            icon={CircleDollarSign}
+                            onClick={() => setKpiFilter(kpiFilter === 'IN_PORTFOLIO' ? null : 'IN_PORTFOLIO')}
+                            active={kpiFilter === 'IN_PORTFOLIO'}
+                        />
+                        <StatCard
+                            label="Depósitos en Tránsito"
+                            value={<MoneyDisplay amount={kpis.transitTotal} />}
+                            subtext={`${kpis.transitCount} cheques`}
+                            icon={Clock}
+                            onClick={() => setKpiFilter(kpiFilter === 'DEPOSITED' ? null : 'DEPOSITED')}
+                            active={kpiFilter === 'DEPOSITED'}
+                        />
+                        <StatCard
+                            label="Protestados"
+                            value={kpis.bouncedCount.toString()}
+                            subtext="cheques"
+                            icon={BanIcon}
+                            onClick={() => setKpiFilter(kpiFilter === 'BOUNCED' ? null : 'BOUNCED')}
+                            active={kpiFilter === 'BOUNCED'}
+                        />
+                    </>
+                )}
+                {isIssued && (
+                    <>
+                        <StatCard
+                            label="Pendientes de Cobro"
+                            value={<MoneyDisplay amount={kpis.pendingIssuedTotal} />}
+                            subtext={`${kpis.pendingIssuedCount} cheques`}
+                            icon={FileCheck}
+                            onClick={() => setKpiFilter(kpiFilter === 'ISSUED' ? null : 'ISSUED')}
+                            active={kpiFilter === 'ISSUED'}
+                        />
+                        <StatCard
+                            label="Vencidos"
+                            value={checks.filter(c => c.is_overdue && c.status === 'ISSUED').length.toString()}
+                            subtext="cheques"
+                            icon={AlertTriangle}
+                            onClick={() => setKpiFilter(kpiFilter === 'ISSUED' ? null : 'ISSUED')}
+                            active={false}
+                        />
+                        <StatCard
+                            label="Anulados"
+                            value={checks.filter(c => c.status === 'VOIDED').length.toString()}
+                            subtext="cheques"
+                            icon={BanIcon}
+                            onClick={() => setKpiFilter(kpiFilter === 'VOIDED' ? null : 'VOIDED')}
+                            active={kpiFilter === 'VOIDED'}
+                        />
+                    </>
+                )}
             </div>
 
             <div className="flex-1 min-h-0">
@@ -197,25 +227,29 @@ export function ChecksView({ bankId }: { bankId?: number } = {}) {
                     isLoading={isLoading}
                     variant="embedded"
                     createAction={
-                        <button
-                            onClick={() => setRegisterOpen(true)}
-                            className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
-                        >
-                            <CheckSquare className="h-4 w-4" /> Registrar Cheque
-                        </button>
+                        !isIssued ? (
+                            <button
+                                onClick={() => setRegisterOpen(true)}
+                                className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                            >
+                                <CheckSquare className="h-4 w-4" /> Registrar Cheque Recibido
+                            </button>
+                        ) : undefined
                     }
-                    emptyState={{
-                        context: 'treasury',
-                        title: 'Sin cheques',
-                        description: 'Registra cheques recibidos o propios para gestionar su cobro.',
-                    }}
+                    emptyState={
+                        isIssued
+                            ? { context: 'treasury', title: 'Sin cheques girados', description: 'Los cheques propios emitidos en compras aparecerán aquí.' }
+                            : { context: 'treasury', title: 'Sin cheques en cartera', description: 'Registra cheques recibidos de clientes para gestionar su cobro.' }
+                    }
                 />
             </div>
 
-            <CheckRegisterDrawer
-                open={registerOpen}
-                onOpenChange={setRegisterOpen}
-            />
+            {!isIssued && (
+                <CheckRegisterDrawer
+                    open={registerOpen}
+                    onOpenChange={setRegisterOpen}
+                />
+            )}
 
             {depositTarget && (
                 <CheckDepositModal

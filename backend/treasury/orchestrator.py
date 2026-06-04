@@ -77,8 +77,7 @@ class PaymentOrchestrator:
 
         Dos modos de entrada:
         - payment_method_obj: PaymentMethod DB (vía M2M en POSTerminal).
-        - method_type='CHECK' sin payment_method_obj: método hardcodeado
-          (POSTerminal.allows_check=True, sin PaymentMethod en DB).
+        - method_type='CHECK' sin payment_method_obj: ruta legacy (no usada por el POS normal).
 
         Resolución de cuenta:
           INBOUND → to_account = payment_method_obj.effective_settlement_account

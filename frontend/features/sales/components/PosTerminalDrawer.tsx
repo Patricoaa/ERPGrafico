@@ -46,7 +46,6 @@ export function PosTerminalDrawer({ open, onOpenChange, terminal, onSuccess, mod
 
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [selectedMethodIds, setSelectedMethodIds] = useState<number[]>([])
-    const [allowsCheck, setAllowsCheck] = useState(false)
 
     const { methods: allPaymentMethods } = usePaymentMethods()
     const { devices: allDevices } = useTerminalDevices()
@@ -81,7 +80,6 @@ export function PosTerminalDrawer({ open, onOpenChange, terminal, onSuccess, mod
                         })(),
                     })
                     setSelectedMethodIds(terminal.allowed_payment_methods.map(m => m.id))
-                    setAllowsCheck(terminal.allows_check ?? false)
                 } else {
                     form.reset({
                         name: "",
@@ -92,7 +90,6 @@ export function PosTerminalDrawer({ open, onOpenChange, terminal, onSuccess, mod
                         device_id: "",
                     })
                     setSelectedMethodIds([])
-                    setAllowsCheck(false)
                 }
             })
         }
@@ -120,11 +117,6 @@ export function PosTerminalDrawer({ open, onOpenChange, terminal, onSuccess, mod
         })
     }
 
-    const toggleCheck = () => {
-        if (isView) return
-        setAllowsCheck(prev => !prev)
-    }
-
     const onSubmit = async (values: TerminalFormValues) => {
         setIsSubmitting(true)
         try {
@@ -140,7 +132,6 @@ export function PosTerminalDrawer({ open, onOpenChange, terminal, onSuccess, mod
                 serial_number: values.serial_number || "",
                 ip_address: values.ip_address || null,
                 payment_terminal_device: (values.device_id === "none" || !values.device_id) ? null : Number(values.device_id),
-                allows_check: allowsCheck,
                 allowed_payment_method_ids: selectedMethodIds,
                 default_treasury_account: defaultAccount
             }
@@ -184,13 +175,6 @@ export function PosTerminalDrawer({ open, onOpenChange, terminal, onSuccess, mod
         acc[type].push(method)
         return acc
     }, {} as Record<string, Array<{ id: number; name: string; treasury_account_name: string; method_type: string }>>)
-
-    const checkMethod = {
-        id: -1,
-        name: 'Cheque',
-        method_type: 'CHECK',
-        treasury_account_name: 'Sin cuenta de tesorería',
-    }
 
     const drawerTitle = isView
         ? `Ficha de Caja POS${terminal?.id ? ` #${terminal.id}` : ""}`
@@ -356,8 +340,7 @@ export function PosTerminalDrawer({ open, onOpenChange, terminal, onSuccess, mod
 
                             <div className="px-2 lg:px-6 space-y-4">
                                 {typeOrder.map(type => {
-                                    const isCheckGroup = type === 'CHECK'
-                                    const groupMethods = isCheckGroup ? [checkMethod] : (methodsGrouped[type] || [])
+                                    const groupMethods = methodsGrouped[type] || []
                                     if (groupMethods.length === 0) return null
 
                                     return (
@@ -375,12 +358,11 @@ export function PosTerminalDrawer({ open, onOpenChange, terminal, onSuccess, mod
 
                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                                 {groupMethods.map((method) => {
-                                                    const isCheckCard = isCheckGroup
-                                                    const isSelected = isCheckCard ? allowsCheck : selectedMethodIds.includes(method.id)
+                                                    const isSelected = selectedMethodIds.includes(method.id)
                                                     return (
                                                         <div
                                                             key={method.id}
-                                                            onClick={() => isCheckCard ? toggleCheck() : toggleMethod(method.id)}
+                                                            onClick={() => toggleMethod(method.id)}
                                                             className={cn(
                                                                 "flex items-center space-x-3 p-3 rounded-md border transition-all group",
                                                                 isView ? "cursor-default opacity-70" : "cursor-pointer",
@@ -392,7 +374,7 @@ export function PosTerminalDrawer({ open, onOpenChange, terminal, onSuccess, mod
                                                             <Checkbox
                                                                 checked={isSelected}
                                                                 disabled={isView}
-                                                                onCheckedChange={() => isCheckCard ? toggleCheck() : toggleMethod(method.id)}
+                                                                onCheckedChange={() => toggleMethod(method.id)}
                                                                 className={isSelected ? "text-primary border-primary" : "border-muted-foreground/40 group-hover:border-primary/50"}
                                                             />
                                                             <div className="flex flex-col">
@@ -403,9 +385,7 @@ export function PosTerminalDrawer({ open, onOpenChange, terminal, onSuccess, mod
                                                                     {method.name}
                                                                 </span>
                                                                 <span className="text-[10px] text-muted-foreground/70 font-medium">
-                                                                    {isCheckCard
-                                                                        ? method.treasury_account_name
-                                                                        : `Cta: ${method.treasury_account_name}`}
+                                                                    {`Cta: ${method.treasury_account_name}`}
                                                                 </span>
                                                             </div>
                                                         </div>
