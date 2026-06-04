@@ -30,7 +30,7 @@ export type TerminalUpdatePayload = Partial<TerminalCreatePayload>
 // ya NO son tipos de cuenta — son formas de pago (PaymentMethod) sobre CHECKING.
 // Ver `converge_treasury_accounts` y docs/50-audit/bancos/fase-1-operativo.md.
 // CHECK_PORTFOLIO existe a nivel DB (cuenta puente "Cheques en Cartera" auto-gestionada).
-export type TreasuryAccountType = 'CHECKING' | 'CREDIT_CARD' | 'CASH' | 'BRIDGE' | 'MERCHANT' | 'CHECK_PORTFOLIO'
+export type TreasuryAccountType = 'CHECKING' | 'CREDIT_CARD' | 'CASH' | 'BRIDGE' | 'CHECK_PORTFOLIO'
 
 // Treasury Account types
 export interface TreasuryAccount {
@@ -46,7 +46,7 @@ export interface TreasuryAccount {
     allows_cash: boolean
     allows_card: boolean
     allows_transfer: boolean
-    /** true for BRIDGE/MERCHANT — managed by provider, no manual edit/delete */
+    /** true for BRIDGE — managed by provider, no manual edit/delete */
     is_system_managed: boolean
     current_balance?: number
     bank?: number | null
@@ -125,7 +125,7 @@ export interface PaymentTerminalProvider {
     commission_iva_account_name?: string
     receivable_account: number
     receivable_account_name?: string
-    /** TreasuryAccount (BRIDGE/MERCHANT) where this provider settles funds. Auto-created. */
+    /** TreasuryAccount (BRIDGE) where this provider settles funds. Auto-created. */
     bank_treasury_account: number | null
     bank_treasury_account_name?: string | null
     /** Product used for commission purchase invoices (Stage 3). */

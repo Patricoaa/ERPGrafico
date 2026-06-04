@@ -18,7 +18,6 @@ export const treasuryAccountSearchDef: SearchDefinition = {
         { label: 'Cuenta Bancaria', value: 'CHECKING' },
         { label: 'T. Crédito Empresa', value: 'CREDIT_CARD' },
         { label: 'Puente', value: 'BRIDGE' },
-        { label: 'Cta. Recaudadora', value: 'MERCHANT' },
         { label: 'Cheques en Cartera', value: 'CHECK_PORTFOLIO' },
       ],
     },

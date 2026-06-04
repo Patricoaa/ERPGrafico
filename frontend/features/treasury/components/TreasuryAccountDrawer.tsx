@@ -38,7 +38,7 @@ interface TreasuryAccountDrawerProps {
     mode?: DrawerMode
 }
 
-const SYSTEM_MANAGED_TYPES = new Set(['BRIDGE', 'MERCHANT'])
+const SYSTEM_MANAGED_TYPES = new Set(['BRIDGE'])
 
 export function TreasuryAccountDrawer({ open, onOpenChange, accountId, onSuccess, mode: modeProp }: TreasuryAccountDrawerProps) {
     const { createAccount, updateAccount, isCreating, isUpdating } = useTreasuryAccounts()
@@ -270,8 +270,7 @@ export function TreasuryAccountDrawer({ open, onOpenChange, accountId, onSuccess
                                                 { value: "CASH", label: "Caja Física (Efectivo)" },
                                                 { value: "CHECKING", label: "Cuenta Bancaria (Corriente/Vista)" },
                                                 { value: "CREDIT_CARD", label: "Tarjeta de Crédito (Cta. Propia)" },
-                                                { value: "BRIDGE", label: "Cuenta Puente" },
-                                                { value: "MERCHANT", label: "Cuenta Recaudadora (Pasarela/Wallet)" }
+                                                { value: "BRIDGE", label: "Cuenta Puente" }
                                             ]}
                                         />
                                     )}

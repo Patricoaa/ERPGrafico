@@ -106,7 +106,6 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
         CHECKING: "Cuenta Bancaria",
         CREDIT_CARD: "T. Crédito Empresa",
         BRIDGE: "Puente",
-        MERCHANT: "Cta. Recaudadora",
         CHECK_PORTFOLIO: "Cheques en Cartera",
     }
 

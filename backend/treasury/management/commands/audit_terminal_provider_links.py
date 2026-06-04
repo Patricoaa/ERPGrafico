@@ -2,12 +2,12 @@
 Management command: audit_terminal_provider_links
 
 Audita la integridad de los vínculos entre PaymentTerminalProvider y sus
-cuentas puente (TreasuryAccount.account_type ∈ {BRIDGE, MERCHANT}).
+cuentas puente (TreasuryAccount.account_type = BRIDGE).
 
 Casos que detecta:
 
-  1. Bridge/merchant sin proveedor
-     → Cuentas tipo BRIDGE/MERCHANT que ningún PaymentTerminalProvider
+  1. Bridge sin proveedor
+     → Cuentas tipo BRIDGE que ningún PaymentTerminalProvider
        tiene como bank_treasury_account.
 
   2. Proveedor sin cuenta puente
@@ -18,7 +18,7 @@ Casos que detecta:
 
   3. Proveedor con cuenta puente de tipo incorrecto
      → PaymentTerminalProvider.bank_treasury_account.account_type
-       ∉ {BRIDGE, MERCHANT}. La liquidación debería caer en una
+       ∉ {BRIDGE}. La liquidación debería caer en una
        cuenta puente, no en una cuenta corriente o de caja.
 
   4. Duplicados por (provider, bank_treasury_account)
@@ -35,7 +35,7 @@ from django.db.models import Count
 from treasury.models import PaymentTerminalProvider, TreasuryAccount
 
 
-BRIDGE_LIKE = {TreasuryAccount.Type.BRIDGE, TreasuryAccount.Type.MERCHANT}
+BRIDGE_LIKE = {TreasuryAccount.Type.BRIDGE}
 
 
 class Command(BaseCommand):
@@ -125,7 +125,7 @@ class Command(BaseCommand):
         section(
             'Proveedores con cuenta puente de TIPO incorrecto',
             findings['providers_with_wrong_bridge_type'],
-            'OK: la cuenta puente de todos los proveedores es BRIDGE o MERCHANT.',
+            'OK: la cuenta puente de todos los proveedores es BRIDGE.',
         )
         section(
             'Duplicados proveedor↔cuenta puente',

@@ -37,7 +37,7 @@ def setup_data(db):
     card_treasury = TreasuryAccount.objects.create(
         name='Card Treasury',
         account=card_acc_cont,
-        account_type=TreasuryAccount.Type.MERCHANT,
+        account_type=TreasuryAccount.Type.BRIDGE,
         bank=bank
     )
     
