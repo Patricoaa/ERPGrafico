@@ -363,6 +363,11 @@ class Command(BaseCommand):
             'expense_salary': Account.objects.get(code='5.2.01.01'),
             'expense_prevision': Account.objects.get(code='5.2.01.02'),
             'bank_commission': Account.objects.get(code='5.2.10'),
+            # F5.1 — Financial expense accounts (ADR-0036)
+            'interest_expense': Account.objects.get(code='5.3.01'),
+            'insurance_expense': Account.objects.get(code='5.2.09'),
+            'interest_payable': Account.objects.get(code='2.1.04.01'),
+            'credit_card_payable': Account.objects.get(code='2.1.04.02'),
         }
 
     def _create_partners(self, accounts):
@@ -1082,12 +1087,18 @@ class Command(BaseCommand):
         b_chile, _ = Bank.objects.get_or_create(code="CHILE", defaults={'name': "Banco de Chile", 'is_active': True})
         b_santander, _ = Bank.objects.get_or_create(code="SANTANDER", defaults={'name': "Banco Santander", 'is_active': True})
         b_bci, _ = Bank.objects.get_or_create(code="BCI", defaults={'name': "Banco BCI", 'is_active': True})
+        # Banco de Ripley archivado de demo — usado para exhibir el patrón
+        # "Archivo" del ADR-0037 (is_active=False, fuera de selectores, no se borra).
+        b_ripley, _ = Bank.objects.get_or_create(
+            code="RIPLEY",
+            defaults={'name': "Banco Ripley (Demo Archivo)", 'is_active': False},
+        )
 
         # 1. Create Physical Treasury Accounts with UNIQUE Accounting Accounts
-        
+
         # Helper to get/create specific cash account
         cash_parent = accounts['cash'].parent if accounts['cash'].parent else accounts['cash']
-        
+
         def get_create_cash_account(code, name):
             acc, _ = Account.objects.get_or_create(
                 code=code,
@@ -1097,6 +1108,21 @@ class Command(BaseCommand):
                     'parent': cash_parent,
                     'is_reconcilable': True,
                     'bs_category': BSCategory.CURRENT_ASSET # Explicitly for Liquidity Ratio
+                }
+            )
+            return acc
+
+        def get_create_liability_account(code, name):
+            """Crea cuenta de pasivo bajo 2.1 (Pasivos Corrientes) para tarjetas de crédito."""
+            parent = Account.objects.get(code='2.1')
+            acc, _ = Account.objects.get_or_create(
+                code=code,
+                defaults={
+                    'name': name,
+                    'account_type': AccountType.LIABILITY,
+                    'parent': parent,
+                    'is_reconcilable': True,
+                    'bs_category': BSCategory.CURRENT_LIABILITY,
                 }
             )
             return acc
@@ -1113,7 +1139,7 @@ class Command(BaseCommand):
                 'allows_cash': True,
             }
         )
-        
+
         # Default Payment Method for Safe
         PaymentMethod.objects.get_or_create(
             name="Efectivo Tesorería Central",
@@ -1137,7 +1163,7 @@ class Command(BaseCommand):
                 'allows_cash': True,
             }
         )
-        
+
         # Default Payment Method for Till 1
         PaymentMethod.objects.get_or_create(
             name="Efectivo (Recaudación POS 01)",
@@ -1160,7 +1186,7 @@ class Command(BaseCommand):
                 'allows_cash': True,
             }
         )
-        
+
         # Default Payment Method for Petty Cash
         PaymentMethod.objects.get_or_create(
             name="Efectivo Fondo Fijo Adm.",
@@ -1171,14 +1197,18 @@ class Command(BaseCommand):
                 'allow_for_purchases': True
             }
         )
-        
+
         # 1.1 New Additional Accounts
+        # Cada cuenta corriente debe tener su propia sub-cuenta contable
+        # (regla del wizard F5.1 y del ADR-0037). Antes: ambos bancos
+        # compartían 1.1.01.02 y 1.1.01.03 a nivel de sub-ledger.
+        acc_banco_estado = get_create_cash_account('1.1.01.20', "Banco Estado (Cta Corriente)")
         bco01, _ = TreasuryAccount.objects.get_or_create(
             code="BCO-ESTADO",
             defaults={
-                'name': "Banco Estado Empresa", 
-                'currency': "CLP", 
-                'account': accounts['bank'], 
+                'name': "Banco Estado Empresa",
+                'currency': "CLP",
+                'account': acc_banco_estado,
                 'account_type': TreasuryAccount.Type.CHECKING,
                 'account_number': "123-45678-01",
                 'allows_cash': False,
@@ -1187,7 +1217,7 @@ class Command(BaseCommand):
                 'bank': b_estado
             }
         )
-        
+
         # Payment Methods for Bank Account (Estado)
         pm_trans_est, _ = PaymentMethod.objects.get_or_create(
             name="Transferencia Estado",
@@ -1204,14 +1234,14 @@ class Command(BaseCommand):
         caja01, _ = TreasuryAccount.objects.get_or_create(
             code="CAJA-TALLER",
             defaults={
-                'name': "Caja Física Taller", 
-                'currency': "CLP", 
-                'account': acc_workshop, 
+                'name': "Caja Física Taller",
+                'currency': "CLP",
+                'account': acc_workshop,
                 'account_type': TreasuryAccount.Type.CASH,
                 'allows_cash': True,
             }
         )
-        
+
         # Payment Method for Workshop
         pm_efectivo_taller, _ = PaymentMethod.objects.get_or_create(
             name="Efectivo (Pagos Taller)",
@@ -1223,12 +1253,13 @@ class Command(BaseCommand):
             }
         )
 
+        acc_banco_chile = get_create_cash_account('1.1.01.21', "Banco de Chile (Cta Corriente)")
         bank_chile, _ = TreasuryAccount.objects.get_or_create(
             code="BCO-CHILE",
             defaults={
                 'name': "Banco de Chile (Cta Corriente)",
                 'currency': "CLP",
-                'account': Account.objects.get(code='1.1.01.03'),
+                'account': acc_banco_chile,
                 'account_type': TreasuryAccount.Type.CHECKING,
                 'account_number': "987-65432-09",
                 'allows_cash': False,
@@ -1249,6 +1280,60 @@ class Command(BaseCommand):
             }
         )
 
+        # Cta corriente BCI para exhibir más bancos y más cuentas
+        acc_banco_bci = get_create_cash_account('1.1.01.22', "Banco BCI (Cta Corriente)")
+        bank_bci, _ = TreasuryAccount.objects.get_or_create(
+            code="BCO-BCI",
+            defaults={
+                'name': "Banco BCI (Cta Corriente)",
+                'currency': "CLP",
+                'account': acc_banco_bci,
+                'account_type': TreasuryAccount.Type.CHECKING,
+                'account_number': "111-22233-44",
+                'allows_cash': False,
+                'allows_card': True,
+                'allows_transfer': True,
+                'bank': b_bci
+            }
+        )
+        PaymentMethod.objects.get_or_create(
+            name="Transferencia BCI",
+            treasury_account=bank_bci,
+            defaults={
+                'method_type': PaymentMethod.Type.TRANSFER,
+                'allow_for_sales': True,
+                'allow_for_purchases': True
+            }
+        )
+
+        # Tarjeta de crédito corporativa (CREDIT_CARD) — usa cuenta de pasivo
+        # 2.1.04.02 creada en populate_ifrs_coa.
+        acc_cc_chile = get_create_liability_account('2.1.04.02.01', "Tarjeta de Crédito Visa Chile")
+        card_chile, _ = TreasuryAccount.objects.get_or_create(
+            code="TC-VISA-CHILE",
+            defaults={
+                'name': "Visa Empresas Banco de Chile",
+                'currency': "CLP",
+                'account': acc_cc_chile,
+                'account_type': TreasuryAccount.Type.CREDIT_CARD,
+                'account_number': "4500-XXXX-XXXX-1234",
+                'allows_cash': False,
+                'allows_card': True,
+                'allows_transfer': False,
+                'bank': b_chile
+            }
+        )
+        # Default payment method for corporate credit card
+        PaymentMethod.objects.get_or_create(
+            name="Tarjeta Crédito Visa Chile",
+            treasury_account=card_chile,
+            defaults={
+                'method_type': PaymentMethod.Type.CREDIT_CARD,
+                'allow_for_sales': False,
+                'allow_for_purchases': True,
+            }
+        )
+
         # Reception Till Account
         acc_reception = get_create_cash_account('1.1.01.15', "Efectivo Caja Recepción")
         recepcion, _ = TreasuryAccount.objects.get_or_create(
@@ -1261,7 +1346,7 @@ class Command(BaseCommand):
                 'allows_cash': True,
             }
         )
-        
+
         # Payment Methods for Reception
         PaymentMethod.objects.get_or_create(
             name="Efectivo Recepción",
@@ -1340,7 +1425,7 @@ class Command(BaseCommand):
         )
 
         # 2. POS Terminals
-        
+
         # POS-01: Caja Central P1 — con device TUU integrado.
         # post_save signal auto-crea método CARD_TERMINAL y lo agrega a allowed_payment_methods.
         t1, t1_created = POSTerminal.objects.get_or_create(
@@ -1374,7 +1459,7 @@ class Command(BaseCommand):
         t2.allowed_payment_methods.set([pm_efectivo_taller, pm_webpay])
 
         # Ensure cashier user is linked to sessions correctly (Optional but good for demo)
-        self.stdout.write("    ✓ Infrastructure created (Terminals, Safe, Tills, refined Payment Methods).")
+        self.stdout.write("    ✓ Infrastructure created (Banks, Terminals, Safe, Tills, refined Payment Methods).")
 
     def _create_periods(self):
         """Creates tax and accounting periods for the current year."""
