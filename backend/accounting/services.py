@@ -169,7 +169,11 @@ class AccountingService:
             ('2.1.03', 'Obligaciones Laborales', AccountType.LIABILITY, '2.1', None, CFCategory.OPERATING, None),
             ('2.1.03.01', 'Remuneraciones por Pagar', AccountType.LIABILITY, '2.1.03', None, None, None),
             ('2.1.03.02', 'Leyes Sociales por Pagar', AccountType.LIABILITY, '2.1.03', None, None, None),
-            
+
+            ('2.1.04', 'Pasivos Financieros', AccountType.LIABILITY, '2.1', None, CFCategory.FINANCING, None),
+            ('2.1.04.01', 'Intereses por Pagar (Devengados)', AccountType.LIABILITY, '2.1.04', None, None, None),
+            ('2.1.04.02', 'Tarjetas de Crédito por Pagar (Pasivo)', AccountType.LIABILITY, '2.1.04', None, None, None),
+
             ('2.1.06', 'Cuentas Puente Pasivo', AccountType.LIABILITY, '2.1', None, None, None),
             ('2.1.06.01', 'Entrada de Stock (Pendiente de Recibir Factura)', AccountType.LIABILITY, '2.1.06', None, None, None),
             ('2.1.07', 'Dividendos por Pagar (Pasivo)', AccountType.LIABILITY, '2.1', None, CFCategory.FINANCING, None),
@@ -359,6 +363,11 @@ class AccountingService:
             'rounding_adjustment_account': '5.2.11',
             'error_adjustment_account': '5.2.12',
             'miscellaneous_adjustment_account': '5.2.99', # Otros Gastos Varios (needs creation)
+
+            # F5.1 — Financial expense accounts (ADR-0036)
+            'interest_expense_account': '5.3.01',   # Gastos Financieros / Intereses
+            'insurance_expense_account': '5.2.09',  # Seguros
+            'interest_payable_account': '2.1.04.01',# Intereses por Pagar (needs creation)
         }
 
         for field, code in mapping.items():
