@@ -186,11 +186,11 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
                                 showIcon
                             />
                         )}
-                        {providers.map((p: { id: number; name: string; provider_type: string; provider_type_display: string }) => (
+                        {providers.map((p: NonNullable<TreasuryAccount['terminal_providers']>[number]) => (
                             <EntityBadge
                                 key={p.id}
                                 label="treasury.terminalprovider"
-                                data={{ id: p.id, name: p.name }}
+                                data={p}
                                 size="sm"
                                 showIcon
                             />
@@ -304,7 +304,7 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
                                                                 <EntityBadge
                                                                     key={p.id}
                                                                     label="treasury.terminalprovider"
-                                                                    data={{ id: p.id, name: p.name }}
+                                                                    data={p}
                                                                     size="sm"
                                                                     showIcon
                                                                 />

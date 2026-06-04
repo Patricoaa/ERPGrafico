@@ -61,6 +61,12 @@ class TreasuryAccountSerializer(serializers.ModelSerializer):
                 'name': p.name,
                 'provider_type': p.provider_type,
                 'provider_type_display': p.get_provider_type_display(),
+                'supplier': p.supplier_id,
+                'receivable_account': p.receivable_account_id,
+                'commission_expense_account': p.commission_expense_account_id,
+                'commission_iva_account': p.commission_iva_account_id,
+                'bank_treasury_account': p.bank_treasury_account_id,
+                'bank_treasury_account_name': p.bank_treasury_account.name if p.bank_treasury_account_id else None,
             }
             for p in obj.terminal_providers.all()
         ]
