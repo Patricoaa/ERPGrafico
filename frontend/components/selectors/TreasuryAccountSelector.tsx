@@ -33,7 +33,7 @@ interface TreasuryAccountSelectorProps {
     /**
      * Restrict to one or more account types. Takes precedence over the legacy
      * `type` prop when both are provided. Use this for new call sites that
-     * need types other than the legacy four (e.g. BRIDGE, MERCHANT).
+     * need types other than the legacy four (e.g. BRIDGE).
      */
     accountTypes?: TreasuryAccountType[]
 
@@ -98,8 +98,7 @@ export function TreasuryAccountSelector({
             case 'CASH': return <Wallet className="h-4 w-4" />
             case 'CREDIT_CARD':
             case 'DEBIT_CARD': return <CreditCard className="h-4 w-4" />
-            case 'BRIDGE':
-            case 'MERCHANT': return <Loader2 className="h-4 w-4" />
+            case 'BRIDGE': return <Loader2 className="h-4 w-4" />
             default: return <Banknote className="h-4 w-4" />
         }
     }
@@ -111,7 +110,6 @@ export function TreasuryAccountSelector({
         'CREDIT_CARD': 'Crédito Empresa',
         'CHECKBOOK': 'Chequera',
         'BRIDGE': 'Puente',
-        'MERCHANT': 'Recaudadora',
     }
 
     const handleSelect = (account: any) => {

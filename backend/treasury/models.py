@@ -404,13 +404,12 @@ class TreasuryAccount(models.Model):
         CREDIT_CARD = 'CREDIT_CARD', _('Tarjeta de Crédito (Cta. Propia)')
         CASH = 'CASH', _('Caja Física (Efectivo)')
         BRIDGE = 'BRIDGE', _('Puente')
-        MERCHANT = 'MERCHANT', _('Cuenta Recaudadora')
         CHECK_PORTFOLIO = 'CHECK_PORTFOLIO', _('Cheques en Cartera')
         ISSUED_CHECKS = 'ISSUED_CHECKS', _('Cheques Girados por Pagar')
 
     # Types que NO son efectivo/banco directo — usan prefijos contables distintos
     # y son gestionados por el sistema (no editables vía wizard).
-    _NON_CASH_EQUIVALENT_TYPES = frozenset({'BRIDGE', 'MERCHANT', 'CHECK_PORTFOLIO', 'ISSUED_CHECKS'})
+    _NON_CASH_EQUIVALENT_TYPES = frozenset({'BRIDGE', 'CHECK_PORTFOLIO', 'ISSUED_CHECKS'})
 
     name = models.CharField(_("Nombre"), max_length=100)
     code = models.CharField(_("Código"), max_length=20, blank=True, null=True)
@@ -491,7 +490,7 @@ class TreasuryAccount(models.Model):
             # 2. Account nature validation by treasury type:
             #    - CREDIT_CARD: tarjeta propia = PASIVO (deuda rotativa), no efectivo.
             #    - cash-equivalent (CASH/CHECKING/legacy): 'Efectivo y Equivalentes' (1.1.01).
-            #    - BRIDGE/MERCHANT: otros activos de clearing/AR (sin check de prefijo).
+            #    - BRIDGE: otros activos de clearing/AR (sin check de prefijo).
             if self.account_type == self.Type.CREDIT_CARD:
                 if self.account.account_type != AccountType.LIABILITY:
                     raise ValidationError({
