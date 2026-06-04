@@ -10,6 +10,7 @@ import {
 import { useChecks, useCheckPortfolio, useCheckInTransit, useCheckMutations } from './hooks'
 import { CheckRegisterDrawer } from './CheckRegisterDrawer'
 import { CheckDepositModal } from './CheckDepositModal'
+import { CheckEndorseModal } from './CheckEndorseModal'
 import type { Check } from './types'
 
 const ACTIONABLE_FROM: Record<string, string[]> = {
@@ -18,6 +19,7 @@ const ACTIONABLE_FROM: Record<string, string[]> = {
     bounce:  ['DEPOSITED'],
     void:    ['IN_PORTFOLIO', 'ISSUED'],
     mark_cashed: ['ISSUED'],
+    endorse:  ['IN_PORTFOLIO'],
 }
 
 export function ChecksView({ bankId }: { bankId?: number } = {}) {
@@ -30,10 +32,11 @@ export function ChecksView({ bankId }: { bankId?: number } = {}) {
     const { data: inTransit } = useCheckInTransit(
         bankId ? { bank: String(bankId) } : undefined,
     )
-    const { clear, bounce, void: voidCheck } = useCheckMutations()
+    const { clear, bounce, void: voidCheck, markCashed } = useCheckMutations()
 
     const [registerOpen, setRegisterOpen] = useState(false)
     const [depositTarget, setDepositTarget] = useState<Check | null>(null)
+    const [endorseTarget, setEndorseTarget] = useState<Check | null>(null)
     const [kpiFilter, setKpiFilter] = useState<string | null>(null)
 
     const canDo = (action: string, check: Check) =>
@@ -135,6 +138,12 @@ export function ChecksView({ bankId }: { bankId?: number } = {}) {
                     {canDo('bounce', check) && (
                         <DataCell.Action icon={XCircle} title="Protestar" onClick={() => bounce({ id: check.id })} />
                     )}
+                    {canDo('mark_cashed', check) && (
+                        <DataCell.Action icon={CheckCheck} title="Marcar cobrado por proveedor" onClick={() => markCashed(check.id)} />
+                    )}
+                    {canDo('endorse', check) && (
+                        <DataCell.Action icon={ArrowDownToLine} title="Endosar" onClick={() => setEndorseTarget(check)} />
+                    )}
                     {canDo('void', check) && (
                         <DataCell.Action icon={Ban} title="Anular" onClick={() => voidCheck({ id: check.id })} />
                     )}
@@ -213,6 +222,14 @@ export function ChecksView({ bankId }: { bankId?: number } = {}) {
                     check={depositTarget}
                     open={!!depositTarget}
                     onOpenChange={(open) => { if (!open) setDepositTarget(null) }}
+                />
+            )}
+
+            {endorseTarget && (
+                <CheckEndorseModal
+                    check={endorseTarget}
+                    open={!!endorseTarget}
+                    onOpenChange={(open) => { if (!open) setEndorseTarget(null) }}
                 />
             )}
         </div>

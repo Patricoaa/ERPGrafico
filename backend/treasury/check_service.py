@@ -512,7 +512,7 @@ class CheckService:
 
         s = AccountingSettings.get_solo()
         account = None
-        if s and hasattr(s, 'issued_checks_account_id') and s.issued_checks_account_id:
+        if s and s.issued_checks_account_id:
             account = s.issued_checks_account
 
         if account is None:

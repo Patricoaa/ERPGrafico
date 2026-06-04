@@ -46,6 +46,7 @@ export interface TreasuryAccount {
     allows_cash: boolean
     allows_card: boolean
     allows_transfer: boolean
+    allows_check: boolean
     /** true for BRIDGE — managed by provider, no manual edit/delete */
     is_system_managed: boolean
     current_balance?: number

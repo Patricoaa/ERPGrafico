@@ -328,6 +328,7 @@ export function PurchaseCheckoutWizard({
                 formData.append('payment_is_pending', (paymentData.isPending || false).toString())
                 if (paymentData.transactionNumber) formData.append('transaction_number', paymentData.transactionNumber)
                 if (paymentData.treasuryAccountId) formData.append('treasury_account_id', paymentData.treasuryAccountId)
+                if (paymentData.paymentMethodId) formData.append('payment_method_id', paymentData.paymentMethodId.toString())
                 formData.append('payment_type', 'OUTBOUND')
             } else {
                 // Implicit credit - no payment

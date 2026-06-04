@@ -1522,6 +1522,19 @@ class CheckViewSet(viewsets.ModelViewSet):
             return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         return Response(self.get_serializer(check).data)
 
+    @action(detail=True, methods=['post'])
+    def endorse(self, request, pk=None):
+        from .check_service import CheckService
+        check = self.get_object()
+        try:
+            endorsed_to_id = request.data.get('endorsed_to')
+            if not endorsed_to_id:
+                return Response({'detail': 'endorsed_to es requerido'}, status=status.HTTP_400_BAD_REQUEST)
+            check = CheckService.endorse(check, endorsed_to_id=int(endorsed_to_id), created_by=request.user)
+        except ValidationError as e:
+            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(self.get_serializer(check).data)
+
     @action(detail=False, methods=['get'])
     def portfolio(self, request):
         from .check_service import CheckService

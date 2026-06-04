@@ -59,7 +59,7 @@ export const searchableEntityRoutes: Record<string, string> = {
     'inventory.stockmove':       '/inventory/stock?tab=movements',
 
     // Treasury
-    'treasury.treasurymovement': '/treasury/movements',
+    'treasury.treasurymovement': '/treasury/operaciones?tab=movements',
     'treasury.treasuryaccount':  '/treasury/accounts',
     // possession: vive en /sales/sessions (POSSessionsView) — T-99
     'treasury.possession':       '/sales/sessions',
