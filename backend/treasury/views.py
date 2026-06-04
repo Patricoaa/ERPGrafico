@@ -289,7 +289,7 @@ class TreasuryAccountViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     search_fields = ['name']
 
     def get_queryset(self):
-        qs = super().get_queryset()
+        qs = super().get_queryset().select_related('bank', 'account').prefetch_related('terminal_providers')
         exclude_id = self.request.query_params.get('exclude_id')
         if exclude_id:
             qs = qs.exclude(id=exclude_id)
