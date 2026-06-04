@@ -588,6 +588,13 @@ class POSTerminal(models.Model):
     )
     is_active = models.BooleanField(_("Activo"), default=True)
     
+    # Hardcoded system payment method flags (no DB PaymentMethod needed)
+    allows_check = models.BooleanField(
+        _("Permite Cheque"),
+        default=False,
+        help_text=_("Habilita el método de pago 'Cheque' como opción hardcodeada en el POS, sin requerir una cuenta de tesorería vinculada.")
+    )
+
     # ManyToMany: Cuentas de tesorería permitidas para este terminal
     allowed_payment_methods = models.ManyToManyField(
         'PaymentMethod',
@@ -660,6 +667,7 @@ class POSTerminal(models.Model):
         """
         Tipos de métodos de pago permitidos en este terminal.
         Sustituye DEBIT_CARD y CREDIT_CARD por 'CARD' para agrupar en la UI.
+        Incluye 'CHECK' si allows_check=True (método hardcodeado, sin PaymentMethod DB).
         """
         types = set()
         for mt in self.allowed_payment_methods.values_list('method_type', flat=True):
@@ -667,6 +675,8 @@ class POSTerminal(models.Model):
                 types.add('CARD')
             else:
                 types.add(mt)
+        if self.allows_check:
+            types.add('CHECK')
         return sorted(list(types))
     
     def get_accounts_for_method(self, payment_method):
@@ -1313,6 +1323,10 @@ class PaymentMethod(models.Model):
         if self.method_type in (self.Type.DEBIT_CARD, self.Type.CREDIT_CARD):
             self.allow_for_sales = False
 
+        # CHECK → solo compras (ventas usan método hardcodeado vía POSTerminal.allows_check)
+        if self.method_type == self.Type.CHECK:
+            self.allow_for_sales = False
+
         # CARD_TERMINAL → solo ventas, requiere device vinculado
         if self.method_type == self.Type.CARD_TERMINAL:
             self.allow_for_purchases = False
@@ -1658,6 +1672,12 @@ class POSSession(models.Model):
     )
     total_credit_sales = models.DecimalField(
         _("Total Ventas Crédito"),
+        max_digits=12,
+        decimal_places=2,
+        default=0
+    )
+    total_check_sales = models.DecimalField(
+        _("Total Ventas Cheque"),
         max_digits=12,
         decimal_places=2,
         default=0

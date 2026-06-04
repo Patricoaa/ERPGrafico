@@ -407,6 +407,7 @@ class POSTerminalViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         
         Returns:
             list[PaymentMethod]: Métodos de pago permitidos
+            Incluye un entry virtual para CHECK cuando terminal.allows_check=True.
         """
         terminal = self.get_object()
         operation = request.query_params.get('operation')
@@ -421,7 +422,28 @@ class POSTerminalViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             methods = methods.filter(allow_for_purchases=True)
         
         serializer = PaymentMethodSerializer(methods, many=True)
-        return Response(serializer.data)
+        data = serializer.data
+        
+        # Agregar método virtual CHECK si el terminal lo permite (hardcodeado)
+        if terminal.allows_check:
+            data.append({
+                'id': None,
+                'method_type': 'CHECK',
+                'method_type_display': 'Cheque',
+                'name': 'Cheque',
+                'treasury_account': None,
+                'treasury_account_name': None,
+                'settlement_account': None,
+                'settlement_account_name': None,
+                'is_active': True,
+                'is_terminal_integration': False,
+                'allow_for_sales': True,
+                'allow_for_purchases': True,
+                'requires_reference': False,
+                'notes': 'Método hardcodeado — sin cuenta de tesorería vinculada',
+            })
+        
+        return Response(data)
 
 
 

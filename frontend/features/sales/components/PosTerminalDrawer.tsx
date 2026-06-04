@@ -5,11 +5,13 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { toast } from "sonner"
-import { MonitorSmartphone, Banknote, CreditCard, Landmark, Smartphone, Printer } from "lucide-react"
+import { MonitorSmartphone, Banknote, CreditCard, Landmark, Smartphone, Printer, ClipboardList } from "lucide-react"
 import { usePaymentMethods, useTerminalDevices, type Terminal } from "@/features/treasury"
 import { treasuryApi } from "@/features/treasury/api/treasuryApi"
 import { cn } from "@/lib/utils"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Switch } from "@/components/ui/switch"
+import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Form, FormField } from "@/components/ui/form"
 import { Drawer, CancelButton, LabeledInput, LabeledSelect, FormSection, FormFooter, FormSplitLayout, ActionSlideButton } from "@/components/shared"
@@ -46,6 +48,7 @@ export function PosTerminalDrawer({ open, onOpenChange, terminal, onSuccess, mod
 
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [selectedMethodIds, setSelectedMethodIds] = useState<number[]>([])
+    const [allowsCheck, setAllowsCheck] = useState(false)
 
     const { methods: allPaymentMethods } = usePaymentMethods()
     const { devices: allDevices } = useTerminalDevices()
@@ -80,6 +83,7 @@ export function PosTerminalDrawer({ open, onOpenChange, terminal, onSuccess, mod
                         })(),
                     })
                     setSelectedMethodIds(terminal.allowed_payment_methods.map(m => m.id))
+                    setAllowsCheck(terminal.allows_check ?? false)
                 } else {
                     form.reset({
                         name: "",
@@ -90,6 +94,7 @@ export function PosTerminalDrawer({ open, onOpenChange, terminal, onSuccess, mod
                         device_id: "",
                     })
                     setSelectedMethodIds([])
+                    setAllowsCheck(false)
                 }
             })
         }
@@ -132,6 +137,7 @@ export function PosTerminalDrawer({ open, onOpenChange, terminal, onSuccess, mod
                 serial_number: values.serial_number || "",
                 ip_address: values.ip_address || null,
                 payment_terminal_device: (values.device_id === "none" || !values.device_id) ? null : Number(values.device_id),
+                allows_check: allowsCheck,
                 allowed_payment_method_ids: selectedMethodIds,
                 default_treasury_account: defaultAccount
             }
@@ -153,14 +159,13 @@ export function PosTerminalDrawer({ open, onOpenChange, terminal, onSuccess, mod
         }
     }
 
-    const typeOrder = ['CASH', 'CARD', 'TRANSFER', 'CHECK', 'OTHER']
+    const typeOrder = ['CASH', 'CARD', 'TRANSFER', 'OTHER']
 
     const getTypeLabel = (type: string) => {
         const labels: Record<string, string> = {
             'CASH': 'Efectivo (Cajas)',
             'CARD': 'Tarjetas (Débito / Crédito)',
             'TRANSFER': 'Transferencias',
-            'CHECK': 'Cheques',
             'OTHER': 'Otros'
         }
         return labels[type] || type
@@ -335,6 +340,28 @@ export function PosTerminalDrawer({ open, onOpenChange, terminal, onSuccess, mod
 
                         <div className="mt-2">
                             <FormSection title="Métodos de Pago Permitidos" icon={CreditCard} />
+
+                            <div className="px-2 lg:px-6 mb-4">
+                                <div className="flex items-center justify-between p-3 rounded-md border border-border/60 bg-muted/10">
+                                    <div className="flex items-center gap-3">
+                                        <ClipboardList className="h-4 w-4 text-warning" />
+                                        <div>
+                                            <Label htmlFor="allows-check" className="text-sm font-semibold cursor-pointer">
+                                                Cheque
+                                            </Label>
+                                            <p className="text-[10px] text-muted-foreground font-medium">
+                                                Método hardcodeado — no requiere cuenta de tesorería
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <Switch
+                                        id="allows-check"
+                                        checked={allowsCheck}
+                                        onCheckedChange={setAllowsCheck}
+                                        disabled={isView}
+                                    />
+                                </div>
+                            </div>
 
                             <div className="mt-6 px-2 lg:px-6">
                                 <div className="max-h-[500px] overflow-y-auto pr-4 scrollbar-thin space-y-8 py-2">

@@ -248,6 +248,11 @@ class TreasuryService:
                      pos_session.total_transfer_sales += amount
                  elif movement.payment_method == TreasuryMovement.Method.CREDIT:
                      pos_session.total_credit_sales += amount
+                 elif movement.payment_method == TreasuryMovement.Method.OTHER:
+                     if 'CHEQUE' in (movement.reference or '').upper() or movement.payment_method_new_id is None:
+                         pos_session.total_check_sales += amount
+                     else:
+                         pos_session.total_other_cash_inflow += amount
              else:
                  pos_session.total_other_cash_inflow += amount
 

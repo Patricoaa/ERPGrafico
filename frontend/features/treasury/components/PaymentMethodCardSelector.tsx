@@ -40,6 +40,8 @@ interface PaymentMethodCardSelectorProps {
     compactMode?: boolean
     customerCreditBalance?: number
     allowCreditBalanceAccumulation?: boolean
+    /** Permite cheque como método hardcodeado (sin PaymentMethod DB) */
+    allowsCheck?: boolean
     /** Componente renderizado entre los labels de resumen y los métodos de pago */
     methodTitle?: React.ReactNode
 }
@@ -54,6 +56,7 @@ export function PaymentMethodCardSelector({
     compactMode = false,
     customerCreditBalance = 0,
     allowCreditBalanceAccumulation = false,
+    allowsCheck = false,
     methodTitle
 }: PaymentMethodCardSelectorProps) {
     const {
@@ -86,7 +89,8 @@ export function PaymentMethodCardSelector({
             case 'TRANSFER':
                 return allowedMethods.some(m => m.method_type === 'TRANSFER')
             case 'CHECK':
-                return allowedMethods.some(m => m.method_type === 'CHECK')
+                // CHECK puede ser método hardcodeado (allowsCheck del terminal) o PaymentMethod DB
+                return allowsCheck || allowedMethods.some(m => m.method_type === 'CHECK')
             case 'CREDIT_BALANCE':
                 if (operation === 'sales') return customerCreditBalance > 0
                 return allowCreditBalanceAccumulation
@@ -154,22 +158,33 @@ export function PaymentMethodCardSelector({
     }, [allowedMethods, paymentData.method])
 
     useEffect(() => {
+        // CHECK hardcodeado: no tiene PaymentMethod ni treasury_account
+        if (paymentData.method === 'CHECK' && allowsCheck && methodsForType.every(m => m.id === null)) {
+            if (paymentData.treasuryAccountId !== null || paymentData.paymentMethodId !== null) {
+                requestAnimationFrame(() => {
+                    onPaymentDataChange({ ...paymentData, treasuryAccountId: null, paymentMethodId: null });
+                })
+            }
+            return
+        }
+
         // Auto-select: If there is at least one candidate account/method
         if (methodsForType.length >= 1) {
             const currentAccountId = paymentData.treasuryAccountId?.toString();
             // If the current account ID is not associated with any of the allowed methods for this type, select the first one
-            const isValid = methodsForType.some(m => m.treasury_account.toString() === currentAccountId);
+            const isValid = methodsForType.some(m => m.treasury_account?.toString() === currentAccountId);
 
             if (!isValid) {
+                const first = methodsForType[0]
                 requestAnimationFrame(() => {
                     onPaymentDataChange({
                         ...paymentData,
-                        treasuryAccountId: methodsForType[0].treasury_account.toString(),
-                        paymentMethodId: methodsForType[0].id
+                        treasuryAccountId: first.treasury_account?.toString() ?? null,
+                        paymentMethodId: first.id
                     });
                 })
             }
-        } else if (methodsForType.length === 0 && paymentData.treasuryAccountId) {
+        } else if (methodsForType.length === 0 && (paymentData.treasuryAccountId || paymentData.paymentMethodId)) {
             requestAnimationFrame(() => {
                 onPaymentDataChange({ ...paymentData, treasuryAccountId: null, paymentMethodId: null });
             })
@@ -337,20 +352,24 @@ export function PaymentMethodCardSelector({
                                             />
                                         )}
 
-                                        {methodsForType.length > 1 && (
+                                        {paymentData.method === 'CHECK' && methodsForType.every(m => m.id === null) ? (
+                                            <p className="text-[10px] text-muted-foreground font-medium italic px-1">
+                                                Método hardcodeado — el cheque va a cartera, no a una cuenta de tesorería
+                                            </p>
+                                        ) : methodsForType.filter(m => m.treasury_account != null).length > 1 && (
                                             <LabeledSelect
                                                 label={paymentData.method === 'TRANSFER' ? 'Banco / Cuenta' : 'Cuenta'}
                                                 value={paymentData.treasuryAccountId || ""}
                                                 onChange={(val) => {
-                                                    const selectedMethod = methodsForType.find(m => m.treasury_account.toString() === val)
+                                                    const selectedMethod = methodsForType.find(m => String(m.treasury_account) === val)
                                                     onPaymentDataChange({
                                                         ...paymentData,
                                                         treasuryAccountId: val,
-                                                        paymentMethodId: selectedMethod?.id || null
+                                                        paymentMethodId: selectedMethod?.id ?? null
                                                     })
                                                 }}
-                                                options={methodsForType.map((m) => ({
-                                                    value: m.treasury_account.toString(),
+                                                options={methodsForType.filter(m => m.treasury_account != null).map((m) => ({
+                                                    value: String(m.treasury_account),
                                                     label: `${m.name} (${m.treasury_account_name})`
                                                 }))}
                                             />

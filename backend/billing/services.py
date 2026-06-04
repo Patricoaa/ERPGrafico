@@ -866,6 +866,28 @@ class BillingService:
                     check_due_date=check_due_date,
                     checkbook_id=checkbook_id,
                 )
+            elif payment_method == 'CHECK':
+                # CHECK como método hardcodeado (sin PaymentMethod DB).
+                # Solo para ventas (recibidos): el banco emisor es opcional.
+                from treasury.orchestrator import PaymentOrchestrator
+                PaymentOrchestrator.create_movement(
+                    method_type='CHECK',
+                    amount=payment_amount,
+                    movement_type=payment_type,
+                    reference=f"NV-{order.number}",
+                    partner=order.customer,
+                    invoice=invoice,
+                    date=movement_date,
+                    sale_order=order,
+                    pos_session_id=pos_session_id,
+                    transaction_number=transaction_number or None,
+                    is_pending_registration=payment_is_pending,
+                    created_by=user,
+                    check_number=check_number,
+                    check_issue_date=check_issue_date,
+                    check_due_date=check_due_date,
+                    checkbook_id=checkbook_id,
+                )
             else:
                 # Fallback legacy path: payment_method_id not provided (non-POS flows).
                 treasury_account = TreasuryAccount.objects.filter(id=treasury_account_id).first() if treasury_account_id else None
