@@ -105,7 +105,7 @@ class Command(BaseCommand):
 
         # Salida humana
         def section(title, items, empty_msg):
-            self.stdout.write(self.style.NOTCHANGING(f"\n=== {title} ({len(items)}) ==="))
+            self.stdout.write(self.style.NOTICE(f"\n=== {title} ({len(items)}) ==="))
             if not items:
                 self.stdout.write(self.style.SUCCESS(f"  {empty_msg}"))
                 return
