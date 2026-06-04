@@ -239,6 +239,12 @@ class InvoiceViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         if isinstance(direct_credit_approval, str):
             direct_credit_approval = direct_credit_approval.lower() == 'true'
 
+        # Check-specific params (paymentMethodCardSelector sends check# as transaction_number)
+        check_number = request.data.get('check_number') or transaction_number
+        check_issue_date = request.data.get('check_issue_date')
+        check_due_date = request.data.get('check_due_date')
+        checkbook_id = request.data.get('checkbook_id')
+
         try:
             invoice = BillingService.pos_checkout(
                 order_data, dte_type, payment_method,
@@ -261,6 +267,10 @@ class InvoiceViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                 credit_approval_task_id=request.data.get('credit_approval_task_id'),
                 draft_id=request.data.get('draft_id'),
                 direct_credit_approval=direct_credit_approval,
+                check_number=check_number,
+                check_issue_date=check_issue_date,
+                check_due_date=check_due_date,
+                checkbook_id=checkbook_id,
             )
             return Response(InvoiceSerializer(invoice).data, status=status.HTTP_201_CREATED)
         except ValidationError as e:

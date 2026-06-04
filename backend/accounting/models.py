@@ -703,6 +703,12 @@ class AccountingSettings(TimeStampedModel):
         verbose_name=_("Cuenta Cheques en Cartera"),
         help_text=_("Cuenta de activo (documentos por cobrar) donde se registran los cheques de terceros recibidos hasta su depósito/cobro.")
     )
+    issued_checks_account = models.ForeignKey(
+        Account, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='settings_issued_checks',
+        verbose_name=_("Cuenta Cheques Girados por Pagar"),
+        help_text=_("Cuenta de pasivo donde se registran los cheques propios emitidos hasta su cobro efectivo.")
+    )
 
     # Financial Expense Accounts (F5.1)
     interest_expense_account = models.ForeignKey(

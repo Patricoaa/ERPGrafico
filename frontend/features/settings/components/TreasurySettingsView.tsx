@@ -40,6 +40,7 @@ const DEFAULT_VALUES: TreasuryFormValues = {
     terminal_commission_bridge_account: null,
     terminal_iva_bridge_account: null,
     check_portfolio_account: null,
+    issued_checks_account: null,
     interest_expense_account: null,
     insurance_expense_account: null,
     interest_payable_account: null,
@@ -187,11 +188,12 @@ export function TreasurySettingsView({ activeTab = "conciliation" }: TreasurySet
                                             <CheckSquare className="h-4 w-4 text-primary opacity-50" />
                                             <CardTitle className="text-sm font-black uppercase text-primary tracking-widest">Cuentas de Cheques</CardTitle>
                                         </div>
-                                        <CardDescription className="text-[10px] uppercase font-bold text-muted-foreground italic">Cuenta puente donde los cheques de terceros se contabilizan hasta su depósito y cobro</CardDescription>
+                                        <CardDescription className="text-[10px] uppercase font-bold text-muted-foreground italic">Cuentas puente para contabilización de cheques recibidos y emitidos</CardDescription>
                                     </CardHeader>
                                     <CardContent>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                                             <AccountField form={form} name="check_portfolio_account" label="Cheques en Cartera (Documentos por Cobrar)" accountType="ASSET" />
+                                            <AccountField form={form} name="issued_checks_account" label="Cheques Girados por Pagar (Pasivo)" accountType="LIABILITY" />
                                         </div>
                                     </CardContent>
                                 </Card>

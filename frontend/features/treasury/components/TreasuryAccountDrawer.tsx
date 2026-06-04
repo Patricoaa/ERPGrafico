@@ -116,6 +116,7 @@ export function TreasuryAccountDrawer({ open, onOpenChange, accountId, onSuccess
             const allowsCash = data.account_type === 'CASH'
             const allowsCard = ['CHECKING', 'CREDIT_CARD'].includes(data.account_type)
             const allowsTransfer = ['CHECKING'].includes(data.account_type)
+            const allowsCheck = ['CHECKING'].includes(data.account_type)
 
             const payload = {
                 ...data,
@@ -125,6 +126,7 @@ export function TreasuryAccountDrawer({ open, onOpenChange, accountId, onSuccess
                 allows_cash: allowsCash,
                 allows_card: allowsCard,
                 allows_transfer: allowsTransfer,
+                allows_check: allowsCheck,
             }
 
             if (accountId) {
