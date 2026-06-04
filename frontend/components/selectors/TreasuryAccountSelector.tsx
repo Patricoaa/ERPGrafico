@@ -14,6 +14,7 @@ import {
 import { useTreasuryAccounts, PaymentContext } from "@/hooks/useTreasuryAccounts"
 import { EmptyState, MoneyDisplay } from '@/components/shared'
 import { Input } from "@/components/ui/input"
+import type { TreasuryAccountType } from "@/features/treasury/types"
 
 interface TreasuryAccountSelectorProps {
     value?: string | number | null
@@ -28,6 +29,13 @@ interface TreasuryAccountSelectorProps {
 
     // Legacy filter (optional)
     type?: 'BANK' | 'CASH' | 'CHECKING' | 'CREDIT_CARD'
+
+    /**
+     * Restrict to one or more account types. Takes precedence over the legacy
+     * `type` prop when both are provided. Use this for new call sites that
+     * need types other than the legacy four (e.g. BRIDGE, MERCHANT).
+     */
+    accountTypes?: TreasuryAccountType[]
 
     // Exclude specific account
     excludeId?: number
@@ -50,6 +58,7 @@ export function TreasuryAccountSelector({
     terminalId,
     paymentMethod,
     type,
+    accountTypes,
     excludeId,
     allowedIds,
     onSelect,
@@ -65,9 +74,12 @@ export function TreasuryAccountSelector({
         excludeId
     })
 
-    // Filter by search, legacy type, and optional allowedIds
+    // Filter by search, legacy type, accountTypes, and optional allowedIds.
+    // `accountTypes` takes precedence over the legacy `type` prop.
     const filteredAccounts = accounts.filter(a => {
-        const matchesType = !type || a.account_type === type
+        const matchesType = accountTypes
+            ? accountTypes.includes(a.account_type as TreasuryAccountType)
+            : !type || a.account_type === type
         const matchesAllowed = !allowedIds || allowedIds.includes(a.id)
         const searchLower = search.toLowerCase()
         const matchesSearch = !search ||
