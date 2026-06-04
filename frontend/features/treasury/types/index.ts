@@ -59,6 +59,12 @@ export interface TreasuryAccount {
         name: string
         provider_type: PaymentTerminalProvider['provider_type']
         provider_type_display: string
+        supplier?: number | null
+        receivable_account?: number | null
+        commission_expense_account?: number | null
+        commission_iva_account?: number | null
+        bank_treasury_account?: number | null
+        bank_treasury_account_name?: string | null
     }>
 }
 
