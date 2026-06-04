@@ -1458,25 +1458,33 @@ class Command(BaseCommand):
                 'ip_address': '192.168.1.100',
                 'default_treasury_account': bco01,
                 'payment_terminal_device': tuu_device,
+                'allows_check': True,
             }
         )
         if not t1_created and t1.payment_terminal_device != tuu_device:
             t1.payment_terminal_device = tuu_device
             t1.save()  # Triggers signal → auto-creates CARD_TERMINAL method
+        if not t1_created and not t1.allows_check:
+            t1.allows_check = True
+            t1.save(update_fields=['allows_check'])
         cash_pm_01 = PaymentMethod.objects.get(name="Efectivo (Recaudación POS 01)")
         # Signal already added CARD_TERMINAL; ensure cash is also present
         t1.allowed_payment_methods.add(cash_pm_01)
 
         # POS-02: Caja Taller P2
-        t2, _ = POSTerminal.objects.get_or_create(
+        t2, t2_created = POSTerminal.objects.get_or_create(
             code="POS-02",
             defaults={
                 'name': "Caja Taller P2",
                 'location': "Planta 2 - Taller",
                 'ip_address': '192.168.1.100',
-                'default_treasury_account': bco01
+                'default_treasury_account': bco01,
+                'allows_check': True,
             }
         )
+        if not t2_created and not t2.allows_check:
+            t2.allows_check = True
+            t2.save(update_fields=['allows_check'])
         # Association per screenshot: Efectivo Taller + Webpay / Transbank
         t2.allowed_payment_methods.set([pm_efectivo_taller, pm_webpay])
 
