@@ -49,9 +49,21 @@ class TreasuryAccountSerializer(serializers.ModelSerializer):
 
     current_balance = serializers.DecimalField(max_digits=20, decimal_places=0, read_only=True)
     payment_methods = PaymentMethodSerializer(many=True, read_only=True)
+    terminal_providers = serializers.SerializerMethodField()
 
     def get_is_system_managed(self, obj):
         return obj.account_type in TreasuryAccount._NON_CASH_EQUIVALENT_TYPES
+
+    def get_terminal_providers(self, obj):
+        return [
+            {
+                'id': p.id,
+                'name': p.name,
+                'provider_type': p.provider_type,
+                'provider_type_display': p.get_provider_type_display(),
+            }
+            for p in obj.terminal_providers.all()
+        ]
 
     reconciliation_settings = serializers.SerializerMethodField()
 
@@ -65,7 +77,8 @@ class TreasuryAccountSerializer(serializers.ModelSerializer):
         model = TreasuryAccount
         fields = ['id', 'name', 'code', 'currency', 'account', 'account_name', 'account_code', 'account_type', 'account_type_display',
                   'bank', 'bank_name', 'account_number', 'allows_cash', 'allows_card', 'allows_transfer', 'allows_check',
-                  'is_system_managed', 'current_balance', 'payment_methods', 'default_bank_format', 'reconciliation_settings']
+                  'is_system_managed', 'current_balance', 'payment_methods', 'default_bank_format', 'reconciliation_settings',
+                  'terminal_providers']
 
 
 class POSTerminalSerializer(serializers.ModelSerializer):
