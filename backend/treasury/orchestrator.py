@@ -47,7 +47,8 @@ class PaymentOrchestrator:
     @staticmethod
     def create_movement(
         *,
-        payment_method_obj: "PaymentMethod",
+        payment_method_obj: "PaymentMethod | None" = None,
+        method_type: str | None = None,
         amount: Decimal | int | str,
         movement_type: str = TreasuryMovement.Type.INBOUND,
         sale_order: "SaleOrder | None" = None,
@@ -74,6 +75,11 @@ class PaymentOrchestrator:
         Cuando method_type == 'CHECK', deriva a CheckService.receive() (INBOUND)
         o CheckService.issue() (OUTBOUND) en vez de crear un movimiento genérico.
 
+        Dos modos de entrada:
+        - payment_method_obj: PaymentMethod DB (vía M2M en POSTerminal).
+        - method_type='CHECK' sin payment_method_obj: método hardcodeado
+          (POSTerminal.allows_check=True, sin PaymentMethod en DB).
+
         Resolución de cuenta:
           INBOUND → to_account = payment_method_obj.effective_settlement_account
           OUTBOUND → from_account = payment_method_obj.effective_settlement_account
@@ -84,15 +90,20 @@ class PaymentOrchestrator:
 
         amount = Decimal(str(amount))
 
-        # 1. Resolver cuenta destino/origen real
-        settlement = payment_method_obj.effective_settlement_account
-        if settlement is None:
-            raise ValidationError(
-                f"El método de pago '{payment_method_obj.name}' no tiene cuenta de liquidación configurada."
-            )
+        # ── Resolver method_type ──────────────────────────────────────────
+        pm_method_type = method_type
+        settlement = None
+
+        if payment_method_obj is not None:
+            pm_method_type = payment_method_obj.method_type
+            settlement = payment_method_obj.effective_settlement_account
+            if settlement is None:
+                raise ValidationError(
+                    f"El método de pago '{payment_method_obj.name}' no tiene cuenta de liquidación configurada."
+                )
 
         # ── CHECK: derivar a CheckService ────────────────────────────────
-        if payment_method_obj.method_type == 'CHECK':
+        if pm_method_type == 'CHECK':
             return PaymentOrchestrator._handle_check(
                 settlement=settlement,
                 amount=amount,
@@ -111,6 +122,10 @@ class PaymentOrchestrator:
             )
 
         # ── Non-CHECK: flujo estándar ────────────────────────────────────
+        if payment_method_obj is None:
+            raise ValidationError(
+                "Para métodos de pago no-CHECK se requiere un PaymentMethod (payment_method_obj)."
+            )
         from_acc = None
         to_acc = None
         if movement_type == TreasuryMovement.Type.INBOUND:
@@ -164,18 +179,18 @@ class PaymentOrchestrator:
     ) -> "Check":
         """
         Maneja pagos con método CHECK: crea Check + TreasuryMovement via CheckService.
+        
+        Cuando el método es hardcodeado (sin PaymentMethod DB), settlement es None
+        y el banco se resuelve exclusivamente de check_bank_id.
         """
         from .check_service import CheckService
         from .models import Checkbook
 
         # Resolver banco: del settlement (CHECKING) o del check_bank_id explícito
         bank_id = check_bank_id
-        if bank_id is None and settlement.bank_id is not None:
+        if bank_id is None and settlement is not None and settlement.bank_id is not None:
             bank_id = settlement.bank_id
-        if bank_id is None:
-            raise ValidationError(
-                "Para pagos con cheque, se requiere un banco (check_bank_id o settlement con bank)."
-            )
+        # Para método hardcodeado: bank_id es opcional (se asigna null, el usuario lo completa después)
 
         # Fechas por defecto
         from django.utils import timezone

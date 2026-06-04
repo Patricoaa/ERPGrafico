@@ -4,6 +4,7 @@ export interface Terminal {
     code: string
     location: string
     is_active: boolean
+    allows_check: boolean
     allowed_payment_methods: PaymentMethod[]
     payment_terminal_device?: number
     payment_terminal_device_name?: string
@@ -17,6 +18,7 @@ export interface TerminalCreatePayload {
     code: string
     location: string
     is_active: boolean
+    allows_check?: boolean
     allowed_payment_methods: number[]
     payment_terminal_device?: number | null
     default_treasury_account?: number | null

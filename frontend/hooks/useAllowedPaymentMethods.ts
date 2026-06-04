@@ -2,14 +2,14 @@ import { useQuery } from '@tanstack/react-query'
 import api from '@/lib/api'
 
 export interface PaymentMethod {
-    id: number
+    id: number | null
     name: string
     method_type: 'CASH' | 'CHECKING' | 'CREDIT_CARD' | 'DEBIT_CARD' | 'CHECKBOOK' | 'TRANSFER' | 'CHECK' | 'CARD' | 'CARD_TERMINAL' | 'OTHER'
     allow_for_sales: boolean
     allow_for_purchases: boolean
     is_active: boolean
-    treasury_account: number
-    treasury_account_name: string
+    treasury_account: number | null
+    treasury_account_name: string | null
     /** true solo para CARD_TERMINAL — activa flujo TUU automatizado en POS */
     is_terminal_integration: boolean
     linked_terminal_device: number | null
