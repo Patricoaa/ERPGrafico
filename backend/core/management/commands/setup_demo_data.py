@@ -1402,7 +1402,7 @@ class Command(BaseCommand):
             }
         )
 
-        tuu_provider, _ = PaymentTerminalProvider.objects.get_or_create(
+        tuu_provider, _ = PaymentTerminalProvider.objects.update_or_create(
             name="TUU",
             defaults={
                 'provider_type': PaymentTerminalProvider.ProviderType.TUU,
