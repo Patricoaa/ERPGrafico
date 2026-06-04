@@ -1131,6 +1131,7 @@ class PaymentTerminalProvider(models.Model):
     )
     bank_treasury_account = models.ForeignKey(
         'TreasuryAccount', on_delete=models.PROTECT,
+        null=True, blank=True,
         related_name='terminal_providers',
         verbose_name=_("Cuenta Destino Liquidación")
     )

@@ -125,9 +125,12 @@ export interface PaymentTerminalProvider {
     commission_iva_account_name?: string
     receivable_account: number
     receivable_account_name?: string
-    /** TreasuryAccount (BRIDGE/MERCHANT) where this provider settles funds. */
-    bank_treasury_account: number
-    bank_treasury_account_name?: string
+    /** TreasuryAccount (BRIDGE/MERCHANT) where this provider settles funds. Auto-created. */
+    bank_treasury_account: number | null
+    bank_treasury_account_name?: string | null
+    /** Product used for commission purchase invoices (Stage 3). */
+    commission_product: number | null
+    commission_product_name?: string
     config?: Record<string, unknown>
     is_active: boolean
 }
@@ -245,8 +248,8 @@ export interface PaymentTerminalProviderCreatePayload {
     commission_expense_account: number
     commission_iva_account: number
     receivable_account: number
-    /** Required FK to the bridge/merchant TreasuryAccount where this provider settles funds. */
-    bank_treasury_account: number
+    /** Product used for commission purchase invoices. */
+    commission_product: number | null
     config?: Record<string, unknown>
     is_active?: boolean
 }

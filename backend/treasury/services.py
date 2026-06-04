@@ -1,3 +1,5 @@
+import logging
+
 from django.db import transaction
 from django.core.exceptions import ValidationError
 from django.utils import timezone
@@ -6,6 +8,8 @@ from .models import TreasuryMovement, TreasuryAccount, TerminalBatch, PaymentMet
 from accounting.models import JournalEntry, JournalItem, AccountingSettings
 from accounting.services import JournalEntryService
 from decimal import Decimal
+
+logger = logging.getLogger(__name__)
 
 class TreasuryService:
     @staticmethod
@@ -845,3 +849,31 @@ class TerminalBatchService:
         JournalEntryService.post_entry(bridge_entry)
 
         return invoice
+
+
+class ProviderAccountService:
+    """Gestión automática de cuentas contables para proveedores de terminal."""
+
+    @staticmethod
+    def ensure_bridge_account(provider_name: str) -> 'TreasuryAccount':
+        """
+        Garantiza que exista una TreasuryAccount de tipo BRIDGE para el
+        proveedor de terminal. Idempotente: si ya existe una con ese nombre,
+        la reusa.
+
+        Sigue el patrón de CheckService.ensure_portfolio_account().
+        """
+        from django.utils.text import slugify
+
+        code_base = slugify(provider_name)[:8].upper() or "PROVIDER"
+        bridge, created = TreasuryAccount.objects.get_or_create(
+            account_type=TreasuryAccount.Type.BRIDGE,
+            name=f"Puente {provider_name}",
+            defaults={
+                'currency': 'CLP',
+                'code': f"BRIDGE-{code_base}",
+            },
+        )
+        if created:
+            logger.info(f"Auto-creada TreasuryAccount BRIDGE: {bridge.name} (code={bridge.code})")
+        return bridge

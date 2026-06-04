@@ -62,7 +62,7 @@ export function TreasuryAccountDrawer({ open, onOpenChange, accountId, onSuccess
     const isSubmitting = isCreating || isUpdating
     const isSystemManaged = SYSTEM_MANAGED_TYPES.has(type)
     const mode: DrawerMode = modeProp ?? (accountId ? 'edit' : 'create')
-    const isView = mode === 'view'
+    const isView = mode === 'view' || isSystemManaged
     const printRef = useRef<HTMLDivElement>(null)
     const handlePrint = useReactToPrint({ contentRef: printRef })
 
