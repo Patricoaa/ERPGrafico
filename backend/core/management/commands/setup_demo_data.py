@@ -179,6 +179,10 @@ class Command(BaseCommand):
             'Rounding Adj': settings.rounding_adjustment_account,
             'Error Adj': settings.error_adjustment_account,
             'Misc Adj': settings.miscellaneous_adjustment_account,
+
+            # Check Portfolio / Issued Checks (ADR-0038)
+            'Check Portfolio (Asset)': settings.check_portfolio_account,
+            'Issued Checks (Liability)': settings.issued_checks_account,
         }
         
         self.stdout.write("\n  📊 Key Account Mappings:")
@@ -187,6 +191,21 @@ class Command(BaseCommand):
                 self.stdout.write(f"     • {name}: {account.code} - {account.name}")
             else:
                 self.stdout.write(self.style.WARNING(f"     ⚠ {name}: NOT CONFIGURED"))
+
+        # ADR-0038: Verifica que las TreasuryAccount puente de Cheque fueron
+        # auto-creadas por el signal post_save de AccountingSettings al
+        # cablear check_portfolio_account / issued_checks_account. Si el
+        # operador reconfigura las cuentas vía UI, el signal las recrea
+        # de forma idempotente.
+        self.stdout.write("\n  💳 Check Bridge TreasuryAccounts (ADR-0038):")
+        for ta in TreasuryAccount.objects.filter(
+            account_type__in=[
+                TreasuryAccount.Type.CHECK_PORTFOLIO,
+                TreasuryAccount.Type.ISSUED_CHECKS,
+            ]
+        ).order_by('account_type'):
+            gl = f"{ta.account.code} - {ta.account.name}" if ta.account_id else "—"
+            self.stdout.write(f"     • {ta.code} ({ta.get_account_type_display()}): GL {gl}")
 
 
     def _purge_data(self):
