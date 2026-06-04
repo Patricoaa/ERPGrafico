@@ -1,7 +1,7 @@
 #docker compose exec backend python manage.py setup_demo_data --purge
 # SYNC_TRIGGER_20260207_0251
 
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from django.utils import timezone
 from django.contrib.auth.hashers import make_password
@@ -1415,6 +1415,27 @@ class Command(BaseCommand):
                 'is_active': True,
             }
         )
+
+        tuu_provider.refresh_from_db()
+        if tuu_provider.bank_treasury_account_id != tuu_bridge.id:
+            raise CommandError(
+                f"Fallo al vincular el proveedor TUU con la cuenta puente "
+                f"({tuu_bridge.code!r} / id={tuu_bridge.id}). "
+                f"bank_treasury_account quedó apuntando a "
+                f"id={tuu_provider.bank_treasury_account_id} en lugar de "
+                f"id={tuu_bridge.id}. Esto suele indicar drift de datos en la BD "
+                f"(el provider se creó en una versión anterior del esquema o con "
+                f"otro valor para el FK). Diagnostique con "
+                f"`python manage.py audit_terminal_provider_links` y, si es "
+                f"necesario, re-ejecute con `--purge` o arregle el FK a mano."
+            )
+        if not tuu_bridge.terminal_providers.filter(pk=tuu_provider.pk).exists():
+            raise CommandError(
+                f"Inconsistencia: el provider TUU (pk={tuu_provider.pk}) tiene "
+                f"bank_treasury_account apuntando a la cuenta puente, pero la "
+                f"relación inversa tuu_bridge.terminal_providers no la ve. "
+                f"Reintente con `--purge` o revise `audit_terminal_provider_links`."
+            )
         tuu_device, _ = PaymentTerminalDevice.objects.get_or_create(
             serial_number="TUU-DEMO-001",
             defaults={
