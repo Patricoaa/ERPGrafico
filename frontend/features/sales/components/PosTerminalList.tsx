@@ -204,10 +204,6 @@ export function PosTerminalList({ externalOpen, onExternalOpenChange, createActi
                                     return acc
                                 }, {} as Record<string, number>)
 
-                                if (terminal.allows_check) {
-                                    methodsByType['CHECK'] = (methodsByType['CHECK'] ?? 0) + 1
-                                }
-
                                 const orderedTypes = PAYMENT_TYPE_ORDER.filter(t => methodsByType[t] !== undefined)
                                 const totalMethods = Object.values(methodsByType).reduce((a, b) => a + b, 0)
 

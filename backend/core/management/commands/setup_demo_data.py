@@ -1467,6 +1467,17 @@ class Command(BaseCommand):
 
         # 2. POS Terminals
 
+        # Método CHECK vinculado a la cuenta puente CHEQUES-CARTERA (creado por ensure_portfolio_account).
+        from treasury.models import TreasuryAccount as TA
+        check_portfolio = TA.objects.filter(account_type=TA.Type.CHECK_PORTFOLIO).first()
+        check_pm = (
+            PaymentMethod.objects.filter(
+                method_type=PaymentMethod.Type.CHECK,
+                treasury_account=check_portfolio,
+            ).first()
+            if check_portfolio else None
+        )
+
         # POS-01: Caja Central P1 — con device TUU integrado.
         # post_save signal auto-crea método CARD_TERMINAL y lo agrega a allowed_payment_methods.
         t1, t1_created = POSTerminal.objects.get_or_create(
@@ -1477,18 +1488,16 @@ class Command(BaseCommand):
                 'ip_address': '192.168.1.100',
                 'default_treasury_account': bco01,
                 'payment_terminal_device': tuu_device,
-                'allows_check': True,
             }
         )
         if not t1_created and t1.payment_terminal_device != tuu_device:
             t1.payment_terminal_device = tuu_device
             t1.save()  # Triggers signal → auto-creates CARD_TERMINAL method
-        if not t1_created and not t1.allows_check:
-            t1.allows_check = True
-            t1.save(update_fields=['allows_check'])
         cash_pm_01 = PaymentMethod.objects.get(name="Efectivo (Recaudación POS 01)")
-        # Signal already added CARD_TERMINAL; ensure cash is also present
+        # Signal already added CARD_TERMINAL; ensure cash and check are also present
         t1.allowed_payment_methods.add(cash_pm_01)
+        if check_pm:
+            t1.allowed_payment_methods.add(check_pm)
 
         # POS-02: Caja Taller P2
         t2, t2_created = POSTerminal.objects.get_or_create(
@@ -1498,14 +1507,12 @@ class Command(BaseCommand):
                 'location': "Planta 2 - Taller",
                 'ip_address': '192.168.1.100',
                 'default_treasury_account': bco01,
-                'allows_check': True,
             }
         )
-        if not t2_created and not t2.allows_check:
-            t2.allows_check = True
-            t2.save(update_fields=['allows_check'])
         # Association per screenshot: Efectivo Taller + Webpay / Transbank
         t2.allowed_payment_methods.set([pm_efectivo_taller, pm_webpay])
+        if check_pm:
+            t2.allowed_payment_methods.add(check_pm)
 
         # Ensure cashier user is linked to sessions correctly (Optional but good for demo)
         self.stdout.write("    ✓ Infrastructure created (Banks, Terminals, Safe, Tills, refined Payment Methods).")

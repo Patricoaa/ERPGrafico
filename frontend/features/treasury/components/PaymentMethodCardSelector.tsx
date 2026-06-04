@@ -1,7 +1,7 @@
 "use client"
 
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import {Banknote, CreditCard, Building2, ClipboardList, Wallet} from "lucide-react"
+import { Banknote, CreditCard, Building2, ClipboardList, Wallet } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useAllowedPaymentMethods, PaymentMethod } from "@/hooks/useAllowedPaymentMethods"
@@ -40,8 +40,6 @@ interface PaymentMethodCardSelectorProps {
     compactMode?: boolean
     customerCreditBalance?: number
     allowCreditBalanceAccumulation?: boolean
-    /** Permite cheque como método hardcodeado (sin PaymentMethod DB) */
-    allowsCheck?: boolean
     /** Componente renderizado entre los labels de resumen y los métodos de pago */
     methodTitle?: React.ReactNode
 }
@@ -56,7 +54,6 @@ export function PaymentMethodCardSelector({
     compactMode = false,
     customerCreditBalance = 0,
     allowCreditBalanceAccumulation = false,
-    allowsCheck = false,
     methodTitle
 }: PaymentMethodCardSelectorProps) {
     const {
@@ -89,8 +86,7 @@ export function PaymentMethodCardSelector({
             case 'TRANSFER':
                 return allowedMethods.some(m => m.method_type === 'TRANSFER')
             case 'CHECK':
-                // CHECK puede ser método hardcodeado (allowsCheck del terminal) o PaymentMethod DB
-                return allowsCheck || allowedMethods.some(m => m.method_type === 'CHECK')
+                return allowedMethods.some(m => m.method_type === 'CHECK')
             case 'CREDIT_BALANCE':
                 if (operation === 'sales') return customerCreditBalance > 0
                 return allowCreditBalanceAccumulation
@@ -158,16 +154,6 @@ export function PaymentMethodCardSelector({
     }, [allowedMethods, paymentData.method])
 
     useEffect(() => {
-        // CHECK hardcodeado: no tiene PaymentMethod ni treasury_account
-        if (paymentData.method === 'CHECK' && allowsCheck && methodsForType.every(m => m.id === null)) {
-            if (paymentData.treasuryAccountId !== null || paymentData.paymentMethodId !== null) {
-                requestAnimationFrame(() => {
-                    onPaymentDataChange({ ...paymentData, treasuryAccountId: null, paymentMethodId: null });
-                })
-            }
-            return
-        }
-
         // Auto-select: If there is at least one candidate account/method
         if (methodsForType.length >= 1) {
             const currentAccountId = paymentData.treasuryAccountId?.toString();
@@ -342,7 +328,7 @@ export function PaymentMethodCardSelector({
 
                                 {paymentData.method === m.id && (
                                     <div className="mt-2 space-y-3 pt-3 border-t w-full animate-in fade-in slide-in-from-top-2" onClick={(e) => e.stopPropagation()}>
-                                        {(m.id === 'TRANSFER' || m.id === 'CHECK') && (
+                                                        {(m.id === 'TRANSFER' || m.id === 'CHECK') && (
                                             <LabeledInput
                                                 label={m.id === 'CHECK' ? 'N° de Cheque' : 'N° Operación / Folio'}
                                                 placeholder={m.id === 'CHECK' ? "Ej: 000123" : "Ej: 123456"}
@@ -352,11 +338,7 @@ export function PaymentMethodCardSelector({
                                             />
                                         )}
 
-                                        {paymentData.method === 'CHECK' && methodsForType.every(m => m.id === null) ? (
-                                            <p className="text-[10px] text-muted-foreground font-medium italic px-1">
-                                                Método hardcodeado — el cheque va a cartera, no a una cuenta de tesorería
-                                            </p>
-                                        ) : methodsForType.filter(m => m.treasury_account != null).length > 1 && (
+                                        {methodsForType.filter(m => m.treasury_account != null).length > 1 && (
                                             <LabeledSelect
                                                 label={paymentData.method === 'TRANSFER' ? 'Banco / Cuenta' : 'Cuenta'}
                                                 value={paymentData.treasuryAccountId || ""}

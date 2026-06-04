@@ -980,7 +980,7 @@ class PurchasingService:
             document_number: Supplier's invoice number (folio)
             document_date: Invoice date
             document_attachment: File attachment
-            payment_method: 'CASH', 'CARD', 'TRANSFER', 'CREDIT'
+            payment_method: 'CASH', 'CARD', 'TRANSFER', 'CHECK', 'CREDIT'
             amount: Payment amount (defaults to order total)
             treasury_account_id: Treasury account for payment
             transaction_number: Transaction reference

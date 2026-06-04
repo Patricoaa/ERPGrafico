@@ -33,6 +33,7 @@ class Invoice(TransactionalDocument):
         CASH = 'CASH', _('Efectivo')
         CARD = 'CARD', _('Tarjeta')
         TRANSFER = 'TRANSFER', _('Transferencia')
+        CHECK = 'CHECK', _('Cheque')
         CREDIT = 'CREDIT', _('Crédito')
         CREDIT_BALANCE = 'CREDIT_BALANCE', _('Saldo a Favor')
 

@@ -498,7 +498,29 @@ class CheckService:
         if not created and portfolio.account_id != account.id:
             portfolio.account = account
             portfolio.save(update_fields=['account'])
+
+        CheckService._ensure_check_portfolio_payment_method(portfolio)
         return portfolio
+
+    @staticmethod
+    def _ensure_check_portfolio_payment_method(portfolio: TreasuryAccount):
+        """
+        Garantiza que exista un PaymentMethod CHECK vinculado a la cuenta puente
+        CHECK_PORTFOLIO con allow_for_sales=True.
+
+        Idempotente: get_or_create por (method_type, treasury_account).
+        """
+        from .models import PaymentMethod
+        PaymentMethod.objects.get_or_create(
+            method_type=PaymentMethod.Type.CHECK,
+            treasury_account=portfolio,
+            defaults={
+                'name': 'Cheque en Cartera',
+                'allow_for_sales': True,
+                'allow_for_purchases': False,
+                'is_active': True,
+            },
+        )
 
     @staticmethod
     def ensure_issued_checks_account() -> TreasuryAccount:

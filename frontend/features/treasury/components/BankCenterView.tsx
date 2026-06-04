@@ -97,7 +97,7 @@ export function BankCenterView({ bankId }: { bankId: number }) {
         <Tabs value={activeTab} onValueChange={handleTabChange} className="h-full flex flex-col">
             <TabsList className="shrink-0">
                 <TabsTrigger value="overview">Resumen</TabsTrigger>
-                <TabsTrigger value="checks">Cheques</TabsTrigger>
+                <TabsTrigger value="checks">Cheques Girados</TabsTrigger>
                 <TabsTrigger value="loans">Préstamos</TabsTrigger>
                 <TabsTrigger value="cards">Tarjetas</TabsTrigger>
                 <TabsTrigger value="reconciliation">Conciliación</TabsTrigger>
@@ -227,7 +227,7 @@ export function BankCenterView({ bankId }: { bankId: number }) {
             </TabsContent>
 
             <TabsContent value="checks" className="mt-6 overflow-y-auto data-[state=inactive]:hidden custom-scrollbar">
-                <ChecksView bankId={bankId} />
+                <ChecksView bankId={bankId} direction="ISSUED" />
             </TabsContent>
 
             <TabsContent value="loans" className="mt-6 overflow-y-auto data-[state=inactive]:hidden custom-scrollbar">

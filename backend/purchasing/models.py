@@ -35,6 +35,7 @@ class PurchaseOrder(TransactionalDocument, TotalsCalculationMixin):
         CASH = 'CASH', _('Efectivo')
         CARD = 'CARD', _('Tarjeta')
         TRANSFER = 'TRANSFER', _('Transferencia')
+        CHECK = 'CHECK', _('Cheque')
         CREDIT = 'CREDIT', _('Crédito')
 
     # T-17 — Strategy Pattern (P-02.A): reemplaza el antipatrón __class__.__name__
