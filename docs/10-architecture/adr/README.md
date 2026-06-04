@@ -97,5 +97,10 @@ Proposed → (review) → Accepted → (later) → Superseded | Deprecated
 | [0031](0031-treasury-account-vs-payment-method-taxonomy.md) | Treasury account vs payment method — two-layer taxonomy (wizard + auto-provision + convergence) | Accepted |
 | [0032](0032-check-portfolio-cuenta-puente.md) | Cheques recibidos — cartera con cuenta puente CHECK_PORTFOLIO | Accepted |
 | [0033](0033-bank-loans-liabilidad-y-uf.md) | Créditos bancarios — deuda como pasivo + amortización (CLP/UF) | Accepted |
+| [0034](0034-credit-card-statement-and-payment.md) | Estado de cuenta y pago de tarjeta de crédito corporativa | Accepted |
+| [0035](0035-checks-issued-endorsed.md) | Cheques girados y endosados — modelado de pasivo y circulación | Accepted |
+| [0036](0036-centro-de-bancos-y-vencimientos.md) | Centro de bancos y vencimientos — vista consolidada | Accepted |
+| [0037](0037-bank-archive-restore.md) | Eliminación de bancos — patrón Archivo | Accepted |
+| [0038](0038-check-portfolio-seed.md) | Seed del puente de Cheques en Cartera — pre-cableado de CoA y AccountingSettings | Accepted |
 
 > **Lint:** este índice debe coincidir 1-a-1 con los archivos `NNNN-*.md` presentes en este directorio. Cualquier ADR nuevo o renombramiento exige actualizar también esta tabla.
