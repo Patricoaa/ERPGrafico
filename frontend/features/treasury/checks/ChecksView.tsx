@@ -2,13 +2,12 @@
 
 import React, { useState, useMemo } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { CheckSquare, AlertTriangle, ArrowDownToLine, CheckCheck, XCircle, Ban, CircleDollarSign, Clock, Ban as BanIcon, FileCheck } from 'lucide-react'
+import { AlertTriangle, ArrowDownToLine, CheckCheck, XCircle, Ban, CircleDollarSign, Clock, Ban as BanIcon, FileCheck } from 'lucide-react'
 import {
     DataTableView, DataTableColumnHeader, DataCell, StatCard,
     createActionsColumn, StatusBadge, MoneyDisplay, Skeleton, EntityCard,
 } from '@/components/shared'
 import { useChecks, useCheckPortfolio, useCheckInTransit, useCheckMutations } from './hooks'
-import { CheckRegisterDrawer } from './CheckRegisterDrawer'
 import { CheckDepositModal } from './CheckDepositModal'
 import type { Check, CheckDirection } from './types'
 
@@ -42,7 +41,6 @@ export function ChecksView({ bankId, direction }: ChecksViewProps = {}) {
 
     const { clear, bounce, void: voidCheck, markCashed } = useCheckMutations()
 
-    const [registerOpen, setRegisterOpen] = useState(false)
     const [depositTarget, setDepositTarget] = useState<Check | null>(null)
     const [kpiFilter, setKpiFilter] = useState<string | null>(null)
 
@@ -217,20 +215,10 @@ export function ChecksView({ bankId, direction }: ChecksViewProps = {}) {
                     data={filteredData}
                     isLoading={isLoading}
                     variant="embedded"
-                    createAction={
-                        !isIssued ? (
-                            <button
-                                onClick={() => setRegisterOpen(true)}
-                                className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
-                            >
-                                <CheckSquare className="h-4 w-4" /> Registrar Cheque Recibido
-                            </button>
-                        ) : undefined
-                    }
                     emptyState={
                         isIssued
                             ? { context: 'treasury', title: 'Sin cheques girados', description: 'Los cheques propios emitidos en compras aparecerán aquí.' }
-                            : { context: 'treasury', title: 'Sin cheques en cartera', description: 'Registra cheques recibidos de clientes para gestionar su cobro.' }
+                            : { context: 'treasury', title: 'Sin cheques en cartera', description: 'Los cheques recibidos en ventas o registro de pagos aparecerán aquí.' }
                     }
                     renderCard={(check: Check) => (
                         <EntityCard>
@@ -282,13 +270,6 @@ export function ChecksView({ bankId, direction }: ChecksViewProps = {}) {
                     )}
                 />
             </div>
-
-            {!isIssued && (
-                <CheckRegisterDrawer
-                    open={registerOpen}
-                    onOpenChange={setRegisterOpen}
-                />
-            )}
 
             {depositTarget && (
                 <CheckDepositModal

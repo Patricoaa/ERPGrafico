@@ -14,11 +14,27 @@ class Migration(migrations.Migration):
         ('sales', '0010_fts_gin_index'),
     ]
 
+    def remove_unique_together(apps, schema_editor):
+        vendor = schema_editor.connection.vendor
+        if vendor == 'postgresql':
+            schema_editor.alter_unique_together(
+                model_name='workordermaterial',
+                old_unique_together=(('work_order', 'component'),),
+                new_unique_together=set(),
+            )
+        elif vendor == 'sqlite':
+            with schema_editor.connection.cursor() as cursor:
+                cursor.execute(
+                    "SELECT name FROM sqlite_master WHERE type='index' AND sql LIKE '%UNIQUE%' "
+                    "AND tbl_name='production_workordermaterial' "
+                    "AND sql LIKE '%work_order_id%' AND sql LIKE '%component_id%'"
+                )
+                row = cursor.fetchone()
+                if row:
+                    cursor.execute(f"DROP INDEX IF EXISTS [{row[0]}]")
+
     operations = [
-        migrations.AlterUniqueTogether(
-            name='workordermaterial',
-            unique_together=set(),
-        ),
+        migrations.RunPython(remove_unique_together, migrations.RunPython.noop),
         migrations.AddConstraint(
             model_name='workorder',
             constraint=models.UniqueConstraint(condition=models.Q(('status__in', ['DRAFT', 'IN_PROGRESS'])), fields=('sale_line',), name='unique_active_workorder_per_saleline'),

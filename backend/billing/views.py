@@ -241,6 +241,9 @@ class InvoiceViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
         # Check-specific params (paymentMethodCardSelector sends check# as transaction_number)
         check_number = request.data.get('check_number') or transaction_number
+        check_bank_id = request.data.get('check_bank_id')
+        if check_bank_id:
+            check_bank_id = int(check_bank_id)
         check_issue_date = request.data.get('check_issue_date')
         check_due_date = request.data.get('check_due_date')
         checkbook_id = request.data.get('checkbook_id')
@@ -268,6 +271,7 @@ class InvoiceViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                 draft_id=request.data.get('draft_id'),
                 direct_credit_approval=direct_credit_approval,
                 check_number=check_number,
+                check_bank_id=check_bank_id,
                 check_issue_date=check_issue_date,
                 check_due_date=check_due_date,
                 checkbook_id=checkbook_id,

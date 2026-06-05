@@ -95,7 +95,9 @@
       "Bash(ssh -o BatchMode=yes -o ConnectTimeout=8 pato@192.168.1.93 'docker exec erpgrafico-backend-1 sh -c \"cd /app && python manage.py converge_treasury_accounts --dry-run 2>&1\"')",
       "Bash(sed -n '146,155p' /home/pato/Nextcloud/Pato/Aplicaciones/ERPGrafico/frontend/features/treasury/checks/ChecksView.tsx)",
       "Bash(sed -n '116,125p' /home/pato/Nextcloud/Pato/Aplicaciones/ERPGrafico/frontend/features/treasury/card-statements/StatementsView.tsx)",
-      "Bash(sed -n '164,173p' /home/pato/Nextcloud/Pato/Aplicaciones/ERPGrafico/frontend/features/treasury/loans/LoansView.tsx)"
+      "Bash(sed -n '164,173p' /home/pato/Nextcloud/Pato/Aplicaciones/ERPGrafico/frontend/features/treasury/loans/LoansView.tsx)",
+      "Bash(python manage.py migrate --run-syncdb)",
+      "Bash(git *)"
     ],
     "additionalDirectories": [
       "/home/pato/Nextcloud/Pato/Aplicaciones/ERPGrafico/frontend/features/workflow"
