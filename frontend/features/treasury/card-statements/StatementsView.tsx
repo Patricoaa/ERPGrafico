@@ -5,7 +5,7 @@ import type { ColumnDef } from '@tanstack/react-table'
 import { CreditCard, AlertTriangle, Eye } from 'lucide-react'
 import {
     DataTableView, DataTableColumnHeader, DataCell,
-    createActionsColumn, StatusBadge, MoneyDisplay, Skeleton, EmptyState,
+    createActionsColumn, StatusBadge, MoneyDisplay, Skeleton, EmptyState, EntityCard,
 } from '@/components/shared'
 import { useCardStatements } from './hooks'
 import { StatementDetailModal } from './StatementDetailModal'
@@ -31,7 +31,7 @@ export function StatementsView({ bankId }: { bankId?: number } = {}) {
         )
     }
 
-    const columns: ColumnDef<CreditCardStatement, unknown>[] = [
+    const columns: ColumnDef<CreditCardStatement>[] = [
         {
             accessorKey: 'display_id',
             header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" />,
@@ -87,35 +87,67 @@ export function StatementsView({ bankId }: { bankId?: number } = {}) {
             cell: ({ row }) => <StatusBadge status={row.original.status} />,
         },
         createActionsColumn<CreditCardStatement>({
-            renderActions: (stmt) => (
-                <DataCell.Action
-                    icon={Eye}
-                    title="Ver detalle"
-                    onClick={() => setSelectedId(stmt.id)}
-                />
-            ),
+            renderActions: (stmt) => renderStatementActions(stmt),
         }),
     ]
+
+    function renderStatementActions(stmt: CreditCardStatement) {
+        return (
+            <DataCell.Action
+                icon={Eye}
+                title="Ver detalle"
+                onClick={() => setSelectedId(stmt.id)}
+            />
+        )
+    }
 
     return (
         <div className="h-full flex flex-col">
             <div className="flex-1 min-h-0">
-                {statements.length === 0 ? (
-                    <EmptyState
-                        title="No hay estados de cuenta"
-                        description="Los estados de cuenta de la tarjeta de crédito aparecerán aquí."
-                        icon={CreditCard}
-                    />
-                ) : (
-                    <DataTableView
-                        entityLabel="treasury.creditcardstatement"
-                        columns={columns as ColumnDef<unknown, unknown>[]}
-                        data={statements as unknown[]}
-                        variant="embedded"
-                        filterColumn="display_id"
-                        searchPlaceholder="Buscar por estado de cuenta..."
-                    />
-                )}
+                <DataTableView
+                    entityLabel="treasury.creditcardstatement"
+                    columns={columns}
+                    data={statements}
+                    variant="embedded"
+                    filterColumn="display_id"
+                    searchPlaceholder="Buscar por estado de cuenta..."
+                    emptyState={{
+                        context: 'treasury',
+                        icon: CreditCard,
+                        title: 'No hay estados de cuenta',
+                        description: 'Los estados de cuenta de la tarjeta de crédito aparecerán aquí.',
+                    }}
+                    renderCard={(stmt: CreditCardStatement) => (
+                        <EntityCard>
+                            <EntityCard.Header
+                                title={stmt.display_id}
+                                subtitle={stmt.card_account_name}
+                                trailing={<StatusBadge status={stmt.status} />}
+                            />
+                            <EntityCard.Body>
+                                <EntityCard.Field
+                                    label="Período"
+                                    value={`${String(stmt.period_month).padStart(2, '0')}/${stmt.period_year}`}
+                                />
+                                <EntityCard.Field
+                                    label="Facturado"
+                                    value={<MoneyDisplay amount={parseFloat(stmt.billed_amount)} />}
+                                />
+                                <EntityCard.Field
+                                    label="Total a Pagar"
+                                    value={<MoneyDisplay amount={parseFloat(stmt.total_to_pay)} className="font-bold" />}
+                                />
+                                <EntityCard.Field
+                                    label="Vencimiento"
+                                    value={new Date(stmt.due_date).toLocaleDateString('es-CL')}
+                                />
+                            </EntityCard.Body>
+                            <EntityCard.Footer>
+                                {renderStatementActions(stmt)}
+                            </EntityCard.Footer>
+                        </EntityCard>
+                    )}
+                />
             </div>
 
             <StatementDetailModal
