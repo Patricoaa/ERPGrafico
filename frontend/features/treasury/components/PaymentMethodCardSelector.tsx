@@ -5,6 +5,7 @@ import { Banknote, CreditCard, Building2, ClipboardList, Wallet } from "lucide-r
 import { cn } from "@/lib/utils"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useAllowedPaymentMethods, PaymentMethod } from "@/hooks/useAllowedPaymentMethods"
+import { useBanks } from '../hooks/useMasterData'
 import { useState, useMemo, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { BaseModal, Numpad } from '@/components/shared'
@@ -21,6 +22,10 @@ export interface PaymentData {
     isPending?: boolean
     /** true cuando el método es CARD_TERMINAL — activa flujo TUU automatizado */
     isTerminalIntegration?: boolean
+    /** CHECK: banco emisor del cheque */
+    checkBankId?: number | null
+    /** CHECK: fecha de vencimiento (ISO date string) */
+    checkDueDate?: string
 }
 
 interface PaymentMethodCardSelectorProps {
@@ -70,6 +75,8 @@ export function PaymentMethodCardSelector({
         operation,
         enabled: true
     })
+
+    const { banks } = useBanks()
 
     const isMethodAllowed = (methodId: string) => {
         if (loadingMethods) return true
@@ -336,6 +343,29 @@ export function PaymentMethodCardSelector({
                                                 onChange={(e) => onPaymentDataChange({ ...paymentData, transactionNumber: e.target.value })}
                                                 disabled={paymentData.isPending}
                                             />
+                                        )}
+
+                                        {m.id === 'CHECK' && (
+                                            <>
+                                                <LabeledSelect
+                                                    label="Banco Emisor"
+                                                    placeholder="Seleccione banco..."
+                                                    value={paymentData.checkBankId?.toString() || ""}
+                                                    onChange={(val) => onPaymentDataChange({
+                                                        ...paymentData,
+                                                        checkBankId: val ? parseInt(val) : null
+                                                    })}
+                                                    options={banks
+                                                        .filter(b => b.is_active)
+                                                        .map(b => ({ value: b.id.toString(), label: b.name }))}
+                                                />
+                                                <LabeledInput
+                                                    label="Fecha Vencimiento"
+                                                    type="date"
+                                                    value={paymentData.checkDueDate || ""}
+                                                    onChange={(e) => onPaymentDataChange({ ...paymentData, checkDueDate: e.target.value })}
+                                                />
+                                            </>
                                         )}
 
                                         {methodsForType.filter(m => m.treasury_account != null).length > 1 && (

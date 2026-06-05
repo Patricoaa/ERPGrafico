@@ -411,6 +411,10 @@ export function SalesCheckoutWizardContent({
                         toast.error("Debe ingresar el N° de Cheque para registrar el pago.")
                         return { isValid: false }
                     }
+                    if (paymentData.method === 'CHECK' && paymentData.amount > 0 && !paymentData.checkBankId) {
+                        toast.error("Debe seleccionar el banco emisor del cheque.")
+                        return { isValid: false }
+                    }
                     if (!approvalTaskId && !isApproved) {
                         const amountPaid = paymentData.amount || 0;
                         if (amountPaid < currentTotal) {
@@ -517,6 +521,8 @@ export function SalesCheckoutWizardContent({
             formData.append('payment_is_pending', paymentData.isPending.toString())
             if (paymentData.transactionNumber && paymentData.amount > 0) formData.append('transaction_number', paymentData.transactionNumber)
             if (paymentData.treasuryAccountId && paymentData.amount > 0) formData.append('treasury_account_id', paymentData.treasuryAccountId.toString())
+            if (paymentData.method === 'CHECK' && paymentData.checkBankId) formData.append('check_bank_id', paymentData.checkBankId.toString())
+            if (paymentData.method === 'CHECK' && paymentData.checkDueDate) formData.append('check_due_date', paymentData.checkDueDate)
             formData.append('payment_type', 'INBOUND')
 
             formData.append('delivery_type', deliveryData.type)

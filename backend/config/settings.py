@@ -313,14 +313,25 @@ def fix_redis_url(url, db_index):
     return url
 
 # Django Cache Framework — backed by Redis DB 2 (or 0 in cloud)
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
-        'LOCATION': fix_redis_url(REDIS_URL, 2),
-        'KEY_PREFIX': 'erp',
-        'TIMEOUT': 300,  # 5 min default TTL
+# Falls back to LocMemCache if Redis is unreachable (useful for local dev without Docker)
+_CACHE_BACKEND = os.environ.get('CACHE_BACKEND', 'redis')
+if _CACHE_BACKEND == 'locmem':
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'KEY_PREFIX': 'erp',
+            'TIMEOUT': 300,
+        }
     }
-}
+else:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+            'LOCATION': fix_redis_url(REDIS_URL, 2),
+            'KEY_PREFIX': 'erp',
+            'TIMEOUT': 300,  # 5 min default TTL
+        }
+    }
 
 # Channels Channel Layer
 CHANNEL_LAYERS = {
@@ -342,6 +353,9 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = TIME_ZONE
 CELERY_WORKER_CONCURRENCY = int(os.environ.get('CELERY_WORKER_CONCURRENCY', 2))
+if _CACHE_BACKEND == 'locmem':
+    CELERY_TASK_ALWAYS_EAGER = True
+    CELERY_TASK_EAGER_PROPAGATES = False
 
 # Celery Beat
 # Using the default PersistentScheduler since all schedules are defined in
