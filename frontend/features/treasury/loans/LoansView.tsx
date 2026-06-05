@@ -2,9 +2,9 @@
 
 import React, { useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { Banknote, FileText, AlertTriangle, Calendar, Coins, Plus, Eye, Send } from 'lucide-react'
+import { FileText, AlertTriangle, Plus, Eye, Send } from 'lucide-react'
 import {
-    DataTableView, DataTableColumnHeader, DataCell, StatCard,
+    DataTableView, DataTableColumnHeader, DataCell,
     createActionsColumn, StatusBadge, MoneyDisplay, Skeleton, EmptyState,
 } from '@/components/shared'
 import { Button } from '@/components/ui/button'
@@ -29,14 +29,7 @@ export function LoansView({ bankId }: { bankId?: number } = {}) {
     }
 
     if (isLoading) {
-        return (
-            <div className="space-y-4">
-                <div className="grid grid-cols-4 gap-4">
-                    {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-24" />)}
-                </div>
-                <Skeleton className="h-96" />
-            </div>
-        )
+        return <Skeleton className="h-full" />
     }
 
     if (isError) {
@@ -48,20 +41,6 @@ export function LoansView({ bankId }: { bankId?: number } = {}) {
             />
         )
     }
-
-    // KPIs
-    const totalOutstanding = loans.reduce(
-        (sum, l) => sum + (l.status === 'ACTIVE' ? parseFloat(l.outstanding_balance) : 0),
-        0,
-    )
-    const activeLoans = loans.filter((l) => l.status === 'ACTIVE').length
-    const overdueInstallmentsCount = loans.reduce(
-        (sum, l) => sum + l.installments.filter((i) => i.status === 'OVERDUE').length,
-        0,
-    )
-    const nextDue = loans
-        .filter((l) => l.status === 'ACTIVE' && l.next_due_date)
-        .sort((a, b) => (a.next_due_date ?? '').localeCompare(b.next_due_date ?? ''))[0]
 
     const columns: ColumnDef<BankLoan, unknown>[] = [
         {
@@ -162,36 +141,7 @@ export function LoansView({ bankId }: { bankId?: number } = {}) {
     ]
 
     return (
-        <div className="space-y-4 h-full flex flex-col">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <StatCard
-                    label="Créditos Activos"
-                    value={activeLoans.toString()}
-                    icon={Banknote}
-                    accent="primary"
-                />
-                <StatCard
-                    label="Deuda Total (CLP)"
-                    value={<MoneyDisplay amount={totalOutstanding} inline />}
-                    icon={Coins}
-                    accent="warning"
-                />
-                <StatCard
-                    label="Cuotas Vencidas"
-                    value={overdueInstallmentsCount.toString()}
-                    icon={AlertTriangle}
-                    accent={overdueInstallmentsCount > 0 ? 'destructive' : 'success'}
-                />
-                <StatCard
-                    label="Próx. Vencimiento"
-                    value={nextDue?.next_due_date
-                        ? new Date(nextDue.next_due_date).toLocaleDateString('es-CL')
-                        : '—'}
-                    icon={Calendar}
-                    accent="info"
-                />
-            </div>
-
+        <div className="h-full flex flex-col">
             <div className="flex-1 min-h-0">
                 {loans.length === 0 ? (
                     <EmptyState
