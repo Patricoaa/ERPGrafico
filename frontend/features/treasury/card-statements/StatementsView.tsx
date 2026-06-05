@@ -112,6 +112,8 @@ export function StatementsView({ bankId }: { bankId?: number } = {}) {
                         columns={columns as ColumnDef<unknown, unknown>[]}
                         data={statements as unknown[]}
                         variant="embedded"
+                        filterColumn="display_id"
+                        searchPlaceholder="Buscar por estado de cuenta..."
                     />
                 )}
             </div>

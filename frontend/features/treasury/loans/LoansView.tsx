@@ -161,6 +161,8 @@ export function LoansView({ bankId }: { bankId?: number } = {}) {
                         columns={columns as ColumnDef<unknown, unknown>[]}
                         data={loans as unknown[]}
                         variant="embedded"
+                        filterColumn="display_id"
+                        searchPlaceholder="Buscar por crédito o número..."
                         createAction={
                             <Button onClick={() => setRegisterOpen(true)}>
                                 <Plus className="h-4 w-4 mr-2" />
