@@ -10,6 +10,7 @@ from django.conf import settings
 from django.utils import timezone
 from core.utils import get_current_date
 from decimal import Decimal
+import uuid as uuid_lib
 from django.core.validators import MinValueValidator
 from django.core.exceptions import ValidationError
 from core.validators import validate_file_size, validate_file_extension
@@ -270,6 +271,35 @@ class TreasuryMovement(models.Model):
         help_text=_("Lote al que pertenece este pago (si es terminal)")
     )
 
+    # Card purchase installments (Onda 2, ADR-0043): agrupa N
+    # movimientos como cuotas de una misma compra en tarjeta. Un
+    # grupo `CardPurchaseGroup` representa la compra; cada cuota
+    # (1..N) puede ser OUTBOUND (principal) o ADJUSTMENT (interés).
+    card_purchase_group = models.ForeignKey(
+        'CardPurchaseGroup', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='movements',
+        verbose_name=_("Grupo de Compra en Cuotas"),
+        help_text=_(
+            "Si el movimiento es una cuota de una compra con tarjeta, "
+            "FK al grupo. Permite listar y conciliar todas las cuotas "
+            "de una misma compra."
+        ),
+    )
+    installment_number = models.PositiveSmallIntegerField(
+        _("Número de Cuota"),
+        null=True, blank=True,
+        help_text=_("Posición de la cuota dentro del grupo (1..N)."),
+    )
+    is_installment_interest = models.BooleanField(
+        _("Interés de Cuota"),
+        default=False,
+        help_text=_(
+            "True si este movimiento es un ADJUSTMENT que imputa el "
+            "interés explícito de una cuota (no el interés punitorio "
+            "del emisor)."
+        ),
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -278,7 +308,7 @@ class TreasuryMovement(models.Model):
         related_name='created_movements',
         verbose_name=_("Creado Por")
     )
-    
+
     history = HistoricalRecords()
 
     class Meta:
@@ -358,6 +388,150 @@ class TreasuryMovement(models.Model):
 
     def delete(self, *args, **kwargs):
         super().delete(*args, **kwargs)
+
+
+class CardPurchaseGroup(models.Model):
+    """
+    Grupo de cuotas para una compra con tarjeta de crédito en N
+    cuotas (Onda 2, ADR-0043).
+
+    Representa la compra lógica y agrupa los `TreasuryMovement` que
+    son cuotas de esa compra. Cada cuota puede ser:
+
+    - 1 `OUTBOUND` por el principal de la cuota (deuda sube).
+    - 1 `ADJUSTMENT` por el interés explícito de la cuota, si
+      `monthly_rate > 0` (gasto financiero sube, deuda sube).
+
+    El schedule se calcula con la fórmula francesa (cuota fija,
+    interés decreciente, principal creciente). El redondeo se
+    aplica a 2 decimales por cuota; el residuo se asigna a la
+    última cuota para garantizar que la suma de principals
+    coincida exactamente con `total_amount`.
+
+    `client_reference` (opcional, unique) permite idempotencia
+    ante doble POST desde un cliente. La unicidad es a nivel de
+    grupo, no de movimiento: el `reference` de cada cuota
+    (`CP-<uuid>-i<N>`) puede repetirse entre los N miembros del
+    grupo, pero el `client_reference` del grupo es único.
+
+    La factura o asiento contable de cada cuota sigue la misma
+    lógica que un `OUTBOUND` normal (D=proveedor o gasto,
+    H=pasivo tarjeta). El interés, si existe, se imputa en un
+    ADJUSTMENT aparte (D=gasto_interés, H=pasivo tarjeta).
+    """
+
+    uuid = models.UUIDField(
+        _("UUID"),
+        default=uuid_lib.uuid4,
+        editable=False,
+        unique=True,
+        help_text=_("Identificador externo del grupo (idempotencia)."),
+    )
+    card_account = models.ForeignKey(
+        'TreasuryAccount', on_delete=models.PROTECT,
+        related_name='card_purchase_groups',
+        verbose_name=_("Tarjeta"),
+    )
+    partner = models.ForeignKey(
+        'contacts.Contact', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='card_purchase_groups',
+        verbose_name=_("Proveedor"),
+    )
+    total_amount = models.DecimalField(
+        _("Monto Total"),
+        max_digits=18, decimal_places=2,
+        validators=[MinValueValidator(Decimal('0.01'))],
+    )
+    installments = models.PositiveSmallIntegerField(
+        _("Cantidad de Cuotas"),
+        validators=[MinValueValidator(1)],
+    )
+    monthly_rate = models.DecimalField(
+        _("Tasa Mensual (0–1)"),
+        max_digits=8, decimal_places=6,
+        default=Decimal('0'),
+        validators=[MinValueValidator(Decimal('0'))],
+        help_text=_(
+            "Tasa de interés explícita por cuota (ej. 0.015 = 1.5% "
+            "mensual). 0 = cuotas sin interés."
+        ),
+    )
+    principal_per_installment = models.DecimalField(
+        _("Principal por Cuota (sin residuo)"),
+        max_digits=18, decimal_places=2,
+        help_text=_(
+            "Snapshot del cálculo: `total_amount / installments` "
+            "redondeado a 2 decimales. La última cuota absorbe el "
+            "residuo."
+        ),
+    )
+    first_installment_date = models.DateField(
+        _("Fecha Primera Cuota"),
+    )
+    client_reference = models.CharField(
+        _("Referencia Cliente"),
+        max_length=128, blank=True,
+        help_text=_(
+            "ID externo opcional para idempotencia. Si llega un "
+            "segundo POST con la misma `client_reference`, retorna "
+            "el grupo existente sin duplicar cuotas."
+        ),
+    )
+    notes = models.CharField(_("Notas"), max_length=255, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='card_purchase_groups',
+        verbose_name=_("Creado Por"),
+    )
+
+    class Meta:
+        verbose_name = _("Grupo de Compra en Cuotas")
+        verbose_name_plural = _("Grupos de Compra en Cuotas")
+        ordering = ['-first_installment_date', '-id']
+        indexes = [
+            models.Index(fields=['card_account', 'first_installment_date']),
+            models.Index(fields=['partner', 'first_installment_date']),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=['client_reference'],
+                condition=~models.Q(client_reference=''),
+                name='uniq_card_purchase_client_ref',
+            ),
+            models.CheckConstraint(
+                condition=models.Q(installments__gte=1) & models.Q(installments__lte=36),
+                name='ck_card_purchase_installments_range',
+            ),
+            models.CheckConstraint(
+                condition=models.Q(monthly_rate__gte=0) & models.Q(monthly_rate__lt=1),
+                name='ck_card_purchase_monthly_rate_range',
+            ),
+        ]
+
+    def __str__(self):
+        return f"CP-{self.uuid}"
+
+    @property
+    def display_id(self):
+        return f"CPG-{self.id}"
+
+    @property
+    def total_interest(self) -> Decimal:
+        """Suma de los ADJUSTMENT de interés del grupo (cached al
+        momento del cálculo; no recalcula histórico)."""
+        agg = self.movements.filter(
+            is_installment_interest=True,
+        ).aggregate(total=models.Sum('amount'))
+        return agg['total'] or Decimal('0')
+
+    @property
+    def total_payable(self) -> Decimal:
+        """Total a pagar: principal + interés."""
+        return self.total_amount + self.total_interest
+
 
 class TreasuryAccountManager(models.Manager):
     """Custom manager with query helpers for filtering by payment methods."""
