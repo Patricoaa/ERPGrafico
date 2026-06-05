@@ -41,5 +41,6 @@ export * from './card-statements/StatementsClientView'
 export * from './card-statements/StatementDetailModal'
 export * from './card-statements/PayStatementModal'
 export * from './components/BankCenterView'
+export * from './components/BankPageHeader'
 export * from './components/CentroBancosClientView'
 

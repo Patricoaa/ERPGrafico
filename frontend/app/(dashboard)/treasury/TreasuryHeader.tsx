@@ -21,6 +21,7 @@ export function TreasuryHeader() {
         'centro-bancos': 'centro-bancos',
         banks: 'centro-bancos',
         'terminal-cobro': 'terminal-cobro',
+        reconciliation: 'centro-bancos',
         settings: 'config',
     }
 
@@ -34,21 +35,25 @@ export function TreasuryHeader() {
         if (activeValue === 'operaciones') return tabParam || 'movements'
         if (activeValue === 'terminal-cobro') return tabParam || 'providers'
         if (activeValue === 'centro-bancos') {
+            // New segment-based routing: /centro-bancos/[bankId]/...
+            const bankIdSegment = segments[2]
+            if (bankIdSegment && !isNaN(Number(bankIdSegment))) return `bank-${bankIdSegment}`
+            // Legacy query-param fallback
             if (bankParam) return `bank-${bankParam}`
-            return tabParam || 'all'
+            return 'all'
         }
         return undefined
-    }, [activeValue, tabParam, bankParam])
+    }, [activeValue, tabParam, bankParam, segments])
 
     const bankSubTabs = useMemo(() => {
-        const allTab = { value: 'all', label: 'Todos', iconName: 'layout-grid', href: '/treasury/centro-bancos?tab=all' }
+        const allTab = { value: 'all', label: 'Todos', iconName: 'layout-grid', href: '/treasury/centro-bancos' }
         const bankTabs = banks
             .filter(b => b.is_active)
             .map(bank => ({
                 value: `bank-${bank.id}`,
                 label: bank.name,
                 iconName: 'landmark' as string,
-                href: `/treasury/centro-bancos?bank=${bank.id}`,
+                href: `/treasury/centro-bancos/${bank.id}`,
             }))
         return [allTab, ...bankTabs]
     }, [banks])
