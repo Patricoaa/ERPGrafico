@@ -831,20 +831,20 @@ class BankLoanWriteSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({
                 'first_due_date': 'El primer vencimiento no puede ser anterior al inicio.',
             })
-        # Validar que liability_account sea tipo CREDIT_CARD (única LIABILITY
-        # en la taxonomía vigente, ADR-0031). DRF no llama clean() automáticamente.
+        # Validar que liability_account sea tipo LOAN (cuenta de tesorería
+        # dedicada a la deuda del préstamo, ADR-0041). DRF no llama clean().
         liability = attrs.get('liability_account')
-        if liability and liability.account_type != TreasuryAccount.Type.CREDIT_CARD:
+        if liability and liability.account_type != TreasuryAccount.Type.LOAN:
             raise serializers.ValidationError({
                 'liability_account': (
-                    'La cuenta pasivo del crédito debe ser de tipo Tarjeta de Crédito '
-                    '(CREDIT_CARD) — la única con AccountType=LIABILITY en la '
-                    'taxonomía vigente.'
+                    'La cuenta pasivo del crédito debe ser de tipo Préstamo Bancario '
+                    '(LOAN), vinculada a una cuenta contable de PASIVO (ADR-0041).'
                 )
             })
         disbursement = attrs.get('disbursement_account')
         if disbursement and disbursement.account_type in (
             TreasuryAccount.Type.CREDIT_CARD,
+            TreasuryAccount.Type.LOAN,
             TreasuryAccount.Type.CHECK_PORTFOLIO,
         ):
             raise serializers.ValidationError({

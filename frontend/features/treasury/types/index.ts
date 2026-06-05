@@ -30,7 +30,8 @@ export type TerminalUpdatePayload = Partial<TerminalCreatePayload>
 // ya NO son tipos de cuenta — son formas de pago (PaymentMethod) sobre CHECKING.
 // Ver `converge_treasury_accounts` y docs/50-audit/bancos/fase-1-operativo.md.
 // CHECK_PORTFOLIO existe a nivel DB (cuenta puente "Cheques en Cartera" auto-gestionada).
-export type TreasuryAccountType = 'CHECKING' | 'CREDIT_CARD' | 'CASH' | 'BRIDGE' | 'CHECK_PORTFOLIO'
+// LOAN = cuenta-pasivo dedicada a la deuda de un crédito bancario (ADR-0041).
+export type TreasuryAccountType = 'CHECKING' | 'CREDIT_CARD' | 'LOAN' | 'CASH' | 'BRIDGE' | 'CHECK_PORTFOLIO'
 
 // Treasury Account types
 export interface TreasuryAccount {

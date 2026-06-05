@@ -70,7 +70,7 @@ export function LoanRegisterDrawer({ open, onOpenChange }: Props) {
         (a) => a.account_type === 'CHECKING' || a.account_type === 'CASH',
     )
     const liabilityAccounts = (accounts ?? []).filter(
-        (a) => a.account_type === 'CREDIT_CARD',
+        (a) => a.account_type === 'LOAN',
     )
 
     const onSubmit = async (values: FormValues) => {

@@ -50,7 +50,7 @@ def base(db):
         bank=bank, account_number='900',
     )
 
-    # Pasivo: tarjeta de crédito tipo (LIABILITY)
+    # Pasivo: cuenta de tesorería tipo LOAN (vinculada a cuenta LIABILITY)
     liab_acc = Account.objects.create(
         name='Préstamo BCI por Pagar', code='2.1.01.050',
         account_type=AccountType.LIABILITY,
@@ -58,7 +58,7 @@ def base(db):
     liab_ta = TreasuryAccount.objects.create(
         name='Préstamo BCI por Pagar',
         account=liab_acc,
-        account_type=TreasuryAccount.Type.CREDIT_CARD,
+        account_type=TreasuryAccount.Type.LOAN,
         bank=bank,
     )
 
@@ -201,6 +201,27 @@ def test_disburse_books_balanced_liability_entry(base):
     # El pasivo (LIABILITY: credit - debit) refleja la deuda recién nacida.
     base['liab_ta'].account.refresh_from_db()
     assert base['liab_ta'].account.balance == Decimal('12000000.00')
+
+
+@pytest.mark.django_db
+def test_loan_rejects_non_loan_liability_account(base):
+    """La liability_account de un crédito debe ser tipo LOAN (ADR-0041)."""
+    # Reusar la cuenta bancaria (CHECKING) como pasivo → debe fallar el clean().
+    bad = BankLoan(
+        lender=base['bank'],
+        currency=BankLoan.Currency.CLP,
+        principal=Decimal('1000000'),
+        interest_rate=Decimal('1.00'),
+        rate_basis=BankLoan.RateBasis.MONTHLY,
+        amortization_system=BankLoan.AmortizationSystem.FRENCH,
+        term_months=6,
+        start_date=date(2026, 6, 1),
+        first_due_date=date(2026, 7, 1),
+        disbursement_account=base['bank_ta'],
+        liability_account=base['bank_ta'],  # CHECKING, no LOAN
+    )
+    with pytest.raises(ValidationError):
+        bad.full_clean()
 
 
 @pytest.mark.django_db
