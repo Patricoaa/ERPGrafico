@@ -2,9 +2,9 @@
 
 import React, { useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { CreditCard, FileText, AlertTriangle, Calendar, Eye } from 'lucide-react'
+import { CreditCard, AlertTriangle, Eye } from 'lucide-react'
 import {
-    DataTableView, DataTableColumnHeader, DataCell, StatCard,
+    DataTableView, DataTableColumnHeader, DataCell,
     createActionsColumn, StatusBadge, MoneyDisplay, Skeleton, EmptyState,
 } from '@/components/shared'
 import { useCardStatements } from './hooks'
@@ -18,14 +18,7 @@ export function StatementsView({ bankId }: { bankId?: number } = {}) {
     const [selectedId, setSelectedId] = useState<number | null>(null)
 
     if (isLoading) {
-        return (
-            <div className="space-y-4">
-                <div className="grid grid-cols-4 gap-4">
-                    {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-24" />)}
-                </div>
-                <Skeleton className="h-96" />
-            </div>
-        )
+        return <Skeleton className="h-full" />
     }
 
     if (isError) {
@@ -37,15 +30,6 @@ export function StatementsView({ bankId }: { bankId?: number } = {}) {
             />
         )
     }
-
-    const totalDebt = statements
-        .filter((s) => s.status === 'OPEN' || s.status === 'OVERDUE')
-        .reduce((sum, s) => sum + parseFloat(s.total_to_pay), 0)
-    const openCount = statements.filter((s) => s.status === 'OPEN').length
-    const overdueCount = statements.filter((s) => s.status === 'OVERDUE').length
-    const nextDue = statements
-        .filter((s) => s.status === 'OPEN' || s.status === 'OVERDUE')
-        .sort((a, b) => a.due_date.localeCompare(b.due_date))[0]
 
     const columns: ColumnDef<CreditCardStatement, unknown>[] = [
         {
@@ -114,36 +98,7 @@ export function StatementsView({ bankId }: { bankId?: number } = {}) {
     ]
 
     return (
-        <div className="space-y-4 h-full flex flex-col">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <StatCard
-                    label="Deuda Total Tarjeta"
-                    value={<MoneyDisplay amount={totalDebt} inline />}
-                    icon={CreditCard}
-                    accent="warning"
-                />
-                <StatCard
-                    label="Estados Abiertos"
-                    value={openCount.toString()}
-                    icon={FileText}
-                    accent="primary"
-                />
-                <StatCard
-                    label="Vencidos"
-                    value={overdueCount.toString()}
-                    icon={AlertTriangle}
-                    accent={overdueCount > 0 ? 'destructive' : 'success'}
-                />
-                <StatCard
-                    label="Próx. Vencimiento"
-                    value={nextDue
-                        ? new Date(nextDue.due_date).toLocaleDateString('es-CL')
-                        : '—'}
-                    icon={Calendar}
-                    accent="info"
-                />
-            </div>
-
+        <div className="h-full flex flex-col">
             <div className="flex-1 min-h-0">
                 {statements.length === 0 ? (
                     <EmptyState

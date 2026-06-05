@@ -2,12 +2,12 @@
 
 import React, { useState, useMemo } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { AlertTriangle, ArrowDownToLine, CheckCheck, XCircle, Ban, CircleDollarSign, Clock, Ban as BanIcon, FileCheck } from 'lucide-react'
+import { AlertTriangle, ArrowDownToLine, CheckCheck, XCircle, Ban } from 'lucide-react'
 import {
-    DataTableView, DataTableColumnHeader, DataCell, StatCard,
+    DataTableView, DataTableColumnHeader, DataCell,
     createActionsColumn, StatusBadge, MoneyDisplay, Skeleton, EntityCard,
 } from '@/components/shared'
-import { useChecks, useCheckPortfolio, useCheckInTransit, useCheckMutations } from './hooks'
+import { useChecks, useCheckMutations } from './hooks'
 import { CheckDepositModal } from './CheckDepositModal'
 import type { Check, CheckDirection } from './types'
 
@@ -34,44 +34,15 @@ export function ChecksView({ bankId, direction }: ChecksViewProps = {}) {
 
     const { data: checks = [], isLoading } = useChecks(queryParams)
 
-    // Portfolio / in-transit summaries only apply to received checks.
-    const receivedParams = bankId ? { bank: String(bankId) } : undefined
-    const { data: portfolio } = useCheckPortfolio(receivedParams, direction !== 'ISSUED')
-    const { data: inTransit } = useCheckInTransit(receivedParams, direction !== 'ISSUED')
-
     const { clear, bounce, void: voidCheck, markCashed } = useCheckMutations()
 
     const [depositTarget, setDepositTarget] = useState<Check | null>(null)
-    const [kpiFilter, setKpiFilter] = useState<string | null>(null)
 
     const canDo = (action: string, check: Check) =>
         ACTIONABLE_FROM[action]?.includes(check.status) ?? false
 
-    const kpis = useMemo(() => {
-        const portfolioTotal = portfolio ? parseFloat(portfolio.total) : 0
-        const portfolioCount = portfolio ? portfolio.checks.length : 0
-        const transitTotal = inTransit ? parseFloat(inTransit.total) : 0
-        const transitCount = inTransit ? inTransit.checks.length : 0
-        const pendingIssued = checks.filter(c => c.status === 'ISSUED')
-        const pendingIssuedTotal = pendingIssued.reduce((s, c) => s + parseFloat(c.amount), 0)
-        const bouncedCount = checks.filter(c => c.status === 'BOUNCED').length
-        return { portfolioTotal, portfolioCount, transitTotal, transitCount, pendingIssuedTotal, pendingIssuedCount: pendingIssued.length, bouncedCount }
-    }, [portfolio, inTransit, checks])
-
-    const filteredData = useMemo(() => {
-        if (!kpiFilter) return checks
-        return checks.filter(c => c.status === kpiFilter)
-    }, [checks, kpiFilter])
-
     if (isLoading) {
-        return (
-            <div className="space-y-4">
-                <div className="grid grid-cols-3 gap-4">
-                    {[1, 2, 3].map((i) => <Skeleton key={i} className="h-24" />)}
-                </div>
-                <Skeleton className="h-96" />
-            </div>
-        )
+        return <Skeleton className="h-full" />
     }
 
     const isIssued = direction === 'ISSUED'
@@ -149,70 +120,11 @@ export function ChecksView({ bankId, direction }: ChecksViewProps = {}) {
 
     return (
         <div className="h-full flex flex-col">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                {!isIssued && (
-                    <>
-                        <StatCard
-                            label="En Cartera"
-                            value={<MoneyDisplay amount={kpis.portfolioTotal} />}
-                            subtext={`${kpis.portfolioCount} cheques`}
-                            icon={CircleDollarSign}
-                            onClick={() => setKpiFilter(kpiFilter === 'IN_PORTFOLIO' ? null : 'IN_PORTFOLIO')}
-                            active={kpiFilter === 'IN_PORTFOLIO'}
-                        />
-                        <StatCard
-                            label="Depósitos en Tránsito"
-                            value={<MoneyDisplay amount={kpis.transitTotal} />}
-                            subtext={`${kpis.transitCount} cheques`}
-                            icon={Clock}
-                            onClick={() => setKpiFilter(kpiFilter === 'DEPOSITED' ? null : 'DEPOSITED')}
-                            active={kpiFilter === 'DEPOSITED'}
-                        />
-                        <StatCard
-                            label="Protestados"
-                            value={kpis.bouncedCount.toString()}
-                            subtext="cheques"
-                            icon={BanIcon}
-                            onClick={() => setKpiFilter(kpiFilter === 'BOUNCED' ? null : 'BOUNCED')}
-                            active={kpiFilter === 'BOUNCED'}
-                        />
-                    </>
-                )}
-                {isIssued && (
-                    <>
-                        <StatCard
-                            label="Pendientes de Cobro"
-                            value={<MoneyDisplay amount={kpis.pendingIssuedTotal} />}
-                            subtext={`${kpis.pendingIssuedCount} cheques`}
-                            icon={FileCheck}
-                            onClick={() => setKpiFilter(kpiFilter === 'ISSUED' ? null : 'ISSUED')}
-                            active={kpiFilter === 'ISSUED'}
-                        />
-                        <StatCard
-                            label="Vencidos"
-                            value={checks.filter(c => c.is_overdue && c.status === 'ISSUED').length.toString()}
-                            subtext="cheques"
-                            icon={AlertTriangle}
-                            onClick={() => setKpiFilter(kpiFilter === 'ISSUED' ? null : 'ISSUED')}
-                            active={false}
-                        />
-                        <StatCard
-                            label="Anulados"
-                            value={checks.filter(c => c.status === 'VOIDED').length.toString()}
-                            subtext="cheques"
-                            icon={BanIcon}
-                            onClick={() => setKpiFilter(kpiFilter === 'VOIDED' ? null : 'VOIDED')}
-                            active={kpiFilter === 'VOIDED'}
-                        />
-                    </>
-                )}
-            </div>
-
             <div className="flex-1 min-h-0">
                 <DataTableView
                     entityLabel="treasury.check"
                     columns={columns}
-                    data={filteredData}
+                    data={checks}
                     isLoading={isLoading}
                     variant="embedded"
                     emptyState={
