@@ -5,6 +5,7 @@ import { BANKS_KEYS, PAYMENT_METHODS_KEYS } from './queryKeys'
 import type { Bank, BankCreatePayload, BankUpdatePayload } from '../types'
 import type { PaymentMethod, PaymentMethodCreatePayload, PaymentMethodUpdatePayload } from '../types'
 import { getErrorMessage } from '@/lib/errors'
+import { ALLOWED_PAYMENT_METHODS_KEYS } from '@/hooks/useAllowedPaymentMethods'
 
 export type { Bank, PaymentMethod }
 export { BANKS_KEYS, PAYMENT_METHODS_KEYS }
@@ -95,6 +96,7 @@ export function usePaymentMethods() {
 
     const invalidate = () => {
         queryClient.invalidateQueries({ queryKey: PAYMENT_METHODS_KEYS.all })
+        queryClient.invalidateQueries({ queryKey: ALLOWED_PAYMENT_METHODS_KEYS.all })
     }
 
     const createMutation = useMutation({
