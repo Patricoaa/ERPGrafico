@@ -17,6 +17,7 @@ from decimal import Decimal
 import pytest
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
+from django.db.models import Sum
 
 from accounting.models import Account, AccountType
 from finances.models import IndicatorValue
@@ -173,6 +174,33 @@ def test_disburse_creates_movement_and_marks_active(base):
     )
     assert mv.count() == 1
     assert mv.first().amount == Decimal('12000000.00')
+
+
+@pytest.mark.django_db
+def test_disburse_books_balanced_liability_entry(base):
+    """El desembolso debe asentar Debe banco / Haber pasivo (no descartarse)."""
+    from accounting.models import JournalItem
+    loan = _make_loan(base)
+    LoanService.disburse(loan, created_by=base['user'])
+
+    movement = TreasuryMovement.objects.get(reference=loan.display_id)
+    entry = movement.journal_entry
+    assert entry is not None, "El desembolso no generó asiento (bug histórico)."
+    assert entry.status == 'POSTED'
+    assert entry.items.count() == 2
+
+    debit_bank = JournalItem.objects.filter(
+        entry=entry, account=base['bank_ta'].account,
+    ).aggregate(s=Sum('debit'))['s']
+    credit_liab = JournalItem.objects.filter(
+        entry=entry, account=base['liab_ta'].account,
+    ).aggregate(s=Sum('credit'))['s']
+    assert debit_bank == Decimal('12000000.00')
+    assert credit_liab == Decimal('12000000.00')
+
+    # El pasivo (LIABILITY: credit - debit) refleja la deuda recién nacida.
+    base['liab_ta'].account.refresh_from_db()
+    assert base['liab_ta'].account.balance == Decimal('12000000.00')
 
 
 @pytest.mark.django_db

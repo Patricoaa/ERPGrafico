@@ -212,7 +212,17 @@ class LoanService:
 
         from .services import TreasuryService
 
-        TreasuryService.create_movement(
+        # INBOUND al banco SIN auto-asiento: el flujo estándar de Treasury no
+        # conoce la liability_account del préstamo y, al quedar el asiento con
+        # una sola línea (sin contraparte), lo borraría (services.py:410). Lo
+        # construimos a mano balanceado: Debe banco (activo ↑) / Haber pasivo
+        # (deuda ↑).
+        #
+        # Nota UF: el monto se asienta tal cual `loan.principal` (igual que el
+        # movimiento). El nacimiento del pasivo en CLP y su reajuste por
+        # corrección monetaria para créditos UF queda fuera de este fix —
+        # ver evaluación de extensibilidad (intereses/reajuste/comisiones).
+        movement = TreasuryService.create_movement(
             amount=loan.principal,
             movement_type=TreasuryMovement.Type.INBOUND,
             payment_method=TreasuryMovement.Method.TRANSFER,
@@ -221,6 +231,14 @@ class LoanService:
             created_by=created_by,
             reference=loan.display_id,
             notes=f"Desembolso crédito {loan.display_id} ({loan.lender.name})",
+            is_pending_registration=True,
+        )
+
+        _build_disbursement_entry(
+            movement=movement,
+            debit_account=loan.disbursement_account.account,
+            credit_account=loan.liability_account.account,
+            amount=loan.principal,
         )
 
         loan.status = BankLoan.Status.ACTIVE
@@ -511,6 +529,45 @@ def _add_months(start, k):
 
 def _first_of_month(d):
     return d.replace(day=1)
+
+
+def _build_disbursement_entry(*, movement, debit_account, credit_account, amount):
+    """
+    Construye el asiento del desembolso de un crédito:
+
+      Debe  debit_account   (banco/caja que recibe el dinero — activo ↑)
+      Haber credit_account  (pasivo del préstamo — deuda ↑)
+
+    El movimiento se crea con `is_pending_registration=True` para que
+    TreasuryService NO genere un asiento estándar de una sola línea (que se
+    borraría al no encontrar contraparte). Aquí lo construimos balanceado y
+    lo vinculamos al movimiento.
+    """
+    from django.contrib.contenttypes.models import ContentType
+    from accounting.models import JournalEntry, JournalItem
+    from accounting.services import JournalEntryService
+
+    entry = JournalEntry.objects.create(
+        date=movement.date,
+        description=(
+            f"Desembolso crédito {movement.reference or ''} - {movement.notes[:120]}"
+        ),
+        reference=movement.reference or f"MOV-{movement.id}",
+        status=JournalEntry.Status.DRAFT,
+        source_content_type=ContentType.objects.get_for_model(movement),
+        source_object_id=movement.id,
+    )
+    JournalItem.objects.create(
+        entry=entry, account=debit_account,
+        debit=amount, credit=Decimal('0'),
+    )
+    JournalItem.objects.create(
+        entry=entry, account=credit_account,
+        debit=Decimal('0'), credit=amount,
+    )
+    JournalEntryService.post_entry(entry)
+    movement.journal_entry = entry
+    movement.save(update_fields=['journal_entry'])
 
 
 def _build_installment_entry(
