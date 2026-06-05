@@ -1,8 +1,9 @@
 ---
 layer: 10-architecture
 doc: adr/0035-checks-issued-endorsed
-status: accepted
+status: Accepted (partially superseded by 0039)
 date: 2026-06-03
+superseded_by: 0039 (sección "Endoso de cheques recibidos")
 ---
 
 # ADR-0035: Cheques propios girados y endoso de cheques recibidos

@@ -5,19 +5,17 @@ import type { ColumnDef } from '@tanstack/react-table'
 import { CheckSquare, AlertTriangle, ArrowDownToLine, CheckCheck, XCircle, Ban, CircleDollarSign, Clock, Ban as BanIcon, FileCheck } from 'lucide-react'
 import {
     DataTableView, DataTableColumnHeader, DataCell, StatCard,
-    createActionsColumn, StatusBadge, MoneyDisplay, Skeleton,
+    createActionsColumn, StatusBadge, MoneyDisplay, Skeleton, EntityCard,
 } from '@/components/shared'
 import { useChecks, useCheckPortfolio, useCheckInTransit, useCheckMutations } from './hooks'
 import { CheckRegisterDrawer } from './CheckRegisterDrawer'
 import { CheckDepositModal } from './CheckDepositModal'
-import { CheckEndorseModal } from './CheckEndorseModal'
 import type { Check, CheckDirection } from './types'
 
 const ACTIONABLE_FROM: Record<string, string[]> = {
     deposit:     ['IN_PORTFOLIO'],
     clear:       ['DEPOSITED'],
     bounce:      ['DEPOSITED'],
-    endorse:     ['IN_PORTFOLIO'],
     void:        ['IN_PORTFOLIO', 'ISSUED'],
     mark_cashed: ['ISSUED'],
 }
@@ -46,7 +44,6 @@ export function ChecksView({ bankId, direction }: ChecksViewProps = {}) {
 
     const [registerOpen, setRegisterOpen] = useState(false)
     const [depositTarget, setDepositTarget] = useState<Check | null>(null)
-    const [endorseTarget, setEndorseTarget] = useState<Check | null>(null)
     const [kpiFilter, setKpiFilter] = useState<string | null>(null)
 
     const canDo = (action: string, check: Check) =>
@@ -83,13 +80,10 @@ export function ChecksView({ bankId, direction }: ChecksViewProps = {}) {
 
     const columns: ColumnDef<Check>[] = [
         {
-            accessorKey: 'display_id',
+            accessorKey: 'check_number',
             header: ({ column }) => <DataTableColumnHeader column={column} title="N° Cheque" />,
             cell: ({ row }) => (
-                <div className="flex flex-col items-center">
-                    <DataCell.Code>{row.original.display_id}</DataCell.Code>
-                    <DataCell.Secondary>{row.original.check_number}</DataCell.Secondary>
-                </div>
+                <DataCell.Code>{row.original.check_number}</DataCell.Code>
             ),
         },
         {
@@ -143,9 +137,6 @@ export function ChecksView({ bankId, direction }: ChecksViewProps = {}) {
                     )}
                     {!isIssued && canDo('bounce', check) && (
                         <DataCell.Action icon={XCircle} title="Protestar" onClick={() => bounce({ id: check.id })} />
-                    )}
-                    {!isIssued && canDo('endorse', check) && (
-                        <DataCell.Action icon={ArrowDownToLine} title="Endosar" onClick={() => setEndorseTarget(check)} />
                     )}
                     {isIssued && canDo('mark_cashed', check) && (
                         <DataCell.Action icon={CheckCheck} title="Marcar cobrado por banco" onClick={() => markCashed(check.id)} />
@@ -241,6 +232,54 @@ export function ChecksView({ bankId, direction }: ChecksViewProps = {}) {
                             ? { context: 'treasury', title: 'Sin cheques girados', description: 'Los cheques propios emitidos en compras aparecerán aquí.' }
                             : { context: 'treasury', title: 'Sin cheques en cartera', description: 'Registra cheques recibidos de clientes para gestionar su cobro.' }
                     }
+                    renderCard={(check: Check) => (
+                        <EntityCard>
+                            <EntityCard.Header
+                                title={check.check_number}
+                                trailing={<StatusBadge status={check.status} />}
+                            />
+                            <EntityCard.Body>
+                                <EntityCard.Field
+                                    label={isIssued ? 'Beneficiario' : 'Girador'}
+                                    value={check.counterparty_name ?? check.drawer_name ?? '—'}
+                                />
+                                <EntityCard.Field
+                                    label="Monto"
+                                    value={<MoneyDisplay amount={parseFloat(check.amount)} className="font-bold" />}
+                                />
+                                <EntityCard.Field
+                                    label="Vencimiento"
+                                    value={
+                                        <span className="inline-flex items-center gap-1.5">
+                                            <span>{check.due_date}</span>
+                                            {check.is_overdue && (
+                                                <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-destructive uppercase">
+                                                    <AlertTriangle className="h-3 w-3" /> Vencido
+                                                </span>
+                                            )}
+                                        </span>
+                                    }
+                                />
+                            </EntityCard.Body>
+                            <EntityCard.Footer>
+                                {!isIssued && canDo('deposit', check) && (
+                                    <DataCell.Action icon={ArrowDownToLine} title="Depositar" onClick={() => setDepositTarget(check)} />
+                                )}
+                                {!isIssued && canDo('clear', check) && (
+                                    <DataCell.Action icon={CheckCheck} title="Marcar cobrado" onClick={() => clear(check.id)} />
+                                )}
+                                {!isIssued && canDo('bounce', check) && (
+                                    <DataCell.Action icon={XCircle} title="Protestar" onClick={() => bounce({ id: check.id })} />
+                                )}
+                                {isIssued && canDo('mark_cashed', check) && (
+                                    <DataCell.Action icon={CheckCheck} title="Marcar cobrado por banco" onClick={() => markCashed(check.id)} />
+                                )}
+                                {canDo('void', check) && (
+                                    <DataCell.Action icon={Ban} title="Anular" onClick={() => voidCheck({ id: check.id })} />
+                                )}
+                            </EntityCard.Footer>
+                        </EntityCard>
+                    )}
                 />
             </div>
 
@@ -256,14 +295,6 @@ export function ChecksView({ bankId, direction }: ChecksViewProps = {}) {
                     check={depositTarget}
                     open={!!depositTarget}
                     onOpenChange={(open) => { if (!open) setDepositTarget(null) }}
-                />
-            )}
-
-            {endorseTarget && (
-                <CheckEndorseModal
-                    check={endorseTarget}
-                    open={!!endorseTarget}
-                    onOpenChange={(open) => { if (!open) setEndorseTarget(null) }}
                 />
             )}
         </div>

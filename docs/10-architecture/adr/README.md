@@ -102,5 +102,7 @@ Proposed → (review) → Accepted → (later) → Superseded | Deprecated
 | [0036](0036-centro-de-bancos-y-vencimientos.md) | Centro de bancos y vencimientos — vista consolidada | Accepted |
 | [0037](0037-bank-archive-restore.md) | Eliminación de bancos — patrón Archivo | Accepted |
 | [0038](0038-check-portfolio-seed.md) | Seed del puente de Cheques en Cartera — pre-cableado de CoA y AccountingSettings | Accepted |
+| [0039](0039-removal-of-check-endorsement.md) | Remoción del endoso de cheques recibidos (supersede parcial de 0035) | Accepted |
+| [0040](0040-check-bounce-void-invoice-demotion.md) | Demover factura/orden al protestar o anular un cheque | Accepted |
 
 > **Lint:** este índice debe coincidir 1-a-1 con los archivos `NNNN-*.md` presentes en este directorio. Cualquier ADR nuevo o renombramiento exige actualizar también esta tabla.

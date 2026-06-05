@@ -42,11 +42,6 @@ export const checksApi = {
         return data
     },
 
-    endorse: async (id: number, endorsedTo: number): Promise<Check> => {
-        const { data } = await api.post<Check>(`/treasury/checks/${id}/endorse/`, { endorsed_to: endorsedTo })
-        return data
-    },
-
     portfolio: async (params?: Record<string, string>): Promise<CheckPortfolioSummary> => {
         const { data } = await api.get<CheckPortfolioSummary>('/treasury/checks/portfolio/', { params })
         return data

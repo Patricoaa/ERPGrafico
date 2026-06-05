@@ -1,6 +1,8 @@
 """
 Tests para CheckService: receive, deposit, clear, bounce, void, issue,
-mark_cashed, endorse y transiciones.
+mark_cashed y transiciones.
+
+Nota: los tests de `endorse()` (F4.2 endoso) se removieron en ADR-0039.
 """
 import pytest
 from decimal import Decimal
@@ -286,61 +288,89 @@ def test_void_issued_check_from_cleared_raises(base):
 # ─────────────────────────────────────────────────────────────────────────
 # F4.2: Endoso de cheques recibidos
 # ─────────────────────────────────────────────────────────────────────────
+# Removido en ADR-0039. El estado ENDORSED, los campos endorsed_to y
+# endorsement_movement, y el servicio CheckService.endorse ya no existen.
+# Si se reintroduce el endoso, escribir los tests en un nuevo bloque F4.2-bis
+# con un ADR explícito que justifique la reversión.
+
+# ─────────────────────────────────────────────────────────────────────────
+# ADR-0040: Democión de factura/orden al protestar o anular un cheque
+# ─────────────────────────────────────────────────────────────────────────
+
+
+@pytest.fixture
+def posted_invoice(base):
+    """Crea una Invoice POSTED de 119.000 CLP (100.000 neto + 19% IVA)."""
+    from billing.models import Invoice
+    customer = Contact.objects.create(
+        name='Cliente Cheque',
+        tax_id='11111111-1',
+        roles=['CUSTOMER'],
+        email='cli@cheques.cl',
+    )
+    return Invoice.objects.create(
+        dte_type=Invoice.DTEType.FACTURA,
+        number='F-100',
+        status=Invoice.Status.POSTED,
+        contact=customer,
+        total_net=Decimal('100000'),
+        total_tax=Decimal('19000'),
+        total=Decimal('119000'),
+    )
+
 
 @pytest.mark.django_db
-def test_endorse_check(base):
-    """endorse() genera OUTBOUND desde cartera y status=ENDORSED."""
-    check = _receive(base, '0008000', '250000', created_by=base['user'])
-    initial_count = TreasuryMovement.objects.count()
-    check = CheckService.endorse(
-        check,
-        endorsed_to_id=base['supplier'].id,
-        date='2026-06-15',
+def test_bounce_demotes_invoice_to_posted(base, posted_invoice):
+    """
+    bounce() sobre un cheque que pagó una factura debe demover la factura
+    a POSTED (matemática firmada: INBOUND 119k - OUTBOUND 119k = 0 < 119k).
+    """
+    check = _receive(
+        base, '0008001', '119000',
+        invoice_id=posted_invoice.id,
         created_by=base['user'],
     )
+    check = CheckService.deposit(check, base['bank_ta'], created_by=base['user'])
+    posted_invoice.refresh_from_db()
+    assert posted_invoice.status == posted_invoice.Status.PAID
 
-    assert check.status == Check.Status.ENDORSED
-    assert check.endorsed_to_id == base['supplier'].id
-    assert check.endorsement_movement is not None
-    assert check.endorsement_movement.movement_type == TreasuryMovement.Type.OUTBOUND
-    assert check.endorsement_movement.from_account == base['portfolio_ta']
-    assert TreasuryMovement.objects.count() == initial_count + 1
+    CheckService.bounce(check, notes='Sin fondos', created_by=base['user'])
+
+    posted_invoice.refresh_from_db()
+    assert posted_invoice.status == posted_invoice.Status.POSTED
 
 
 @pytest.mark.django_db
-def test_endorse_issued_check_raises(base):
-    """El endoso no aplica a cheques propios (ISSUED)."""
-    check = CheckService.issue(
-        bank_id=base['bank'].id,
-        check_number='P-0009',
-        amount=Decimal('30000'),
-        issue_date='2026-06-01',
-        due_date='2026-07-01',
-        payment_account=base['bank_ta'],
-        issued_check_account=base['issued_checks_ta'],
+def test_void_demotes_invoice_to_posted(base, posted_invoice):
+    """
+    void() sobre un cheque en cartera que pagó una factura debe demover la
+    factura a POSTED.
+    """
+    check = _receive(
+        base, '0008002', '119000',
+        invoice_id=posted_invoice.id,
+        created_by=base['user'],
     )
-    with pytest.raises(ValidationError, match='RECEIVED'):
-        CheckService.endorse(check, endorsed_to_id=base['supplier'].id)
+    posted_invoice.refresh_from_db()
+    assert posted_invoice.status == posted_invoice.Status.PAID
+
+    CheckService.void(check, notes='Anulado por operador')
+
+    posted_invoice.refresh_from_db()
+    assert posted_invoice.status == posted_invoice.Status.POSTED
 
 
 @pytest.mark.django_db
-def test_endorse_from_cleared_raises(base):
-    """No se puede endosar un cheque ya CLEARED."""
-    check = _receive(base, '0010000', '40000')
-    check = CheckService.deposit(check, base['bank_ta'])
-    check = CheckService.clear(check)
-    with pytest.raises(ValidationError):
-        CheckService.endorse(check, endorsed_to_id=base['supplier'].id)
+def test_bounce_without_invoice_is_noop(base):
+    """
+    bounce() sobre un cheque sin invoice_id ni sale_order_id no debe
+    explotar ni afectar el estado de documentos.
+    """
+    check = _receive(base, '0008003', '50000', created_by=base['user'])
+    check = CheckService.deposit(check, base['bank_ta'], created_by=base['user'])
 
-
-@pytest.mark.django_db
-def test_endorse_from_voided_raises(base):
-    """No se puede endosar un cheque VOIDED."""
-    check = _receive(base, '0011000', '35000')
-    check = CheckService.void(check, notes='Error')
-    with pytest.raises(ValidationError):
-        CheckService.endorse(check, endorsed_to_id=base['supplier'].id)
-
+    bounced = CheckService.bounce(check, created_by=base['user'])
+    assert bounced.status == Check.Status.BOUNCED
 
 # ─────────────────────────────────────────────────────────────────────────
 # F4.3: Chequera con folios correlativos

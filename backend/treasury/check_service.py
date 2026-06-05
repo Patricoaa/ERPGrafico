@@ -7,12 +7,22 @@ Flujo recibido (direction=RECEIVED):
   clear()    → CLEARED (cobrado definitivamente).
   bounce()   → Revierte movimientos (reversa contable); BOUNCED.
   void()     → VOIDED (solo desde IN_PORTFOLIO).
-  endorse()  → OUTBOUND desde cartera + salda proveedor; ENDORSED.
 
 Flujo propio (direction=ISSUED):
   issue()    → Check ISSUED + OUTBOUND desde pasivo "Cheques Girados" salda proveedor.
   mark_cashed() → TRANSFER pasivo "Cheques Girados" → banco; CLEARED.
   void()     → Revierte el issue; VOIDED.
+
+Nota histórica: el endoso de cheques recibidos (`endorse()` → estado
+`ENDORSED`) se removió en ADR-0039. El dominio de cheques girados
+(ADR-0035) se mantiene íntegro.
+
+Democión de factura/SO: bounce() y void() invocan
+`_recompute_invoice_status()` para recalcular el estado de pago del
+documento vinculado con matemática firmada y demoverlo a no-pagado si
+corresponde (ADR-0040). La lógica vive aquí (no en
+`TreasuryService.update_related_document_status`) para preservar el
+comportamiento de pagos no-cheque.
 
 Reutiliza TreasuryService.create_movement para todos los movimientos de tesorería,
 garantizando que se genere el asiento contable correcto sin código duplicado.
@@ -34,14 +44,14 @@ if TYPE_CHECKING:
 
 
 # Transiciones de estado permitidas.
+# (Sin ENDORSED desde ADR-0039; IN_PORTFOLIO ya no transiciona a ENDORSED.)
 _VALID_TRANSITIONS: dict[str, set[str]] = {
-    Check.Status.IN_PORTFOLIO: {Check.Status.DEPOSITED, Check.Status.VOIDED, Check.Status.ENDORSED},
+    Check.Status.IN_PORTFOLIO: {Check.Status.DEPOSITED, Check.Status.VOIDED},
     Check.Status.DEPOSITED:    {Check.Status.CLEARED, Check.Status.BOUNCED},
     Check.Status.CLEARED:      set(),
     Check.Status.BOUNCED:      set(),
     Check.Status.VOIDED:       set(),
     Check.Status.ISSUED:       {Check.Status.CLEARED, Check.Status.VOIDED},
-    Check.Status.ENDORSED:     set(),
 }
 
 
@@ -206,6 +216,7 @@ class CheckService:
         if notes:
             check.notes = (check.notes + "\n" + notes).strip()
         check.save()
+        CheckService._recompute_invoice_status(check)
         return check
 
     # ── Anulación ─────────────────────────────────────────────────────────
@@ -247,6 +258,7 @@ class CheckService:
         if notes:
             check.notes = (check.notes + "\n" + notes).strip()
         check.save()
+        CheckService._recompute_invoice_status(check)
         return check
 
     # ── Cheques propios girados (direction=ISSUED) ───────────────────────
@@ -379,48 +391,6 @@ class CheckService:
 
         check.status = Check.Status.CLEARED
         check.cleared_at = timezone.now()
-        check.save()
-        return check
-
-    # ── Endoso de cheques recibidos ──────────────────────────────────────
-
-    @staticmethod
-    @transaction.atomic
-    def endorse(
-        check: Check,
-        *,
-        endorsed_to_id: int,
-        date=None,
-        created_by: "AbstractUser | None" = None,
-    ) -> Check:
-        """
-        Endosa un cheque recibido a un proveedor.
-
-        OUTBOUND desde cartera salda la cuenta del proveedor.
-        El cheque pasa a ENDORSED y queda fuera de la cartera.
-        """
-        if check.direction != Check.Direction.RECEIVED:
-            raise ValidationError(
-                _t("El endoso solo aplica a cheques recibidos (direction=RECEIVED).")
-            )
-        CheckService._assert_transition(check, Check.Status.ENDORSED)
-
-        from .services import TreasuryService
-
-        movement = TreasuryService.create_movement(
-            amount=check.amount,
-            movement_type=TreasuryMovement.Type.OUTBOUND,
-            payment_method=TreasuryMovement.Method.OTHER,
-            from_account=check.portfolio_account,
-            date=date or timezone.now().date(),
-            created_by=created_by,
-            partner=_obj_or_none('contacts.Contact', endorsed_to_id),
-            notes=f"Endoso {check.display_id}",
-        )
-
-        check.status = Check.Status.ENDORSED
-        check.endorsed_to_id = endorsed_to_id
-        check.endorsement_movement = movement
         check.save()
         return check
 
@@ -583,6 +553,70 @@ class CheckService:
                     'to': dict(Check.Status.choices)[target],
                 }
             )
+
+    @staticmethod
+    def _recompute_invoice_status(check: "Check") -> None:
+        """
+        Recalcula el estado de pago de la factura/SO vinculada con matemática
+        firmada (INBOUND suma, OUTBOUND resta, TRANSFER es interno) y demueve
+        a estado no-pagado si el total neto cae por debajo del total facturado.
+
+        Idempotente. No-op si el cheque no tiene invoice_id ni sale_order_id.
+        Se invoca solo desde bounce() y void() (ADR-0040).
+        """
+        invoice = _obj_or_none('billing.Invoice', check.invoice_id)
+        sale_order = _obj_or_none('sales.SaleOrder', check.sale_order_id)
+
+        if invoice is not None:
+            CheckService._demote_invoice_to_posted(invoice)
+        if sale_order is not None:
+            CheckService._demote_sale_order_to_confirmed(sale_order)
+
+    @staticmethod
+    def _demote_invoice_to_posted(invoice) -> None:
+        """Demueve Invoice PAID → POSTED si el total firmado es < total facturado."""
+        if not hasattr(invoice, 'Status') or not hasattr(invoice.Status, 'PAID'):
+            return
+        if invoice.status != invoice.Status.PAID:
+            return
+
+        movements = invoice.payments.all()
+        net_paid = sum(
+            m.amount for m in movements if m.movement_type == TreasuryMovement.Type.INBOUND
+        ) - sum(
+            m.amount for m in movements if m.movement_type == TreasuryMovement.Type.OUTBOUND
+        )
+
+        target_total = getattr(invoice, 'effective_total', None) or getattr(invoice, 'total', 0)
+
+        if net_paid < target_total:
+            invoice.status = invoice.Status.POSTED
+            invoice.save(update_fields=['status'])
+
+    @staticmethod
+    def _demote_sale_order_to_confirmed(sale_order) -> None:
+        """
+        Demueve SaleOrder si expone Status.PAID; si no, no-op.
+        Hoy sales.SaleOrder solo define DRAFT/CONFIRMED/CANCELLED (cf.
+        sales/models.py:405-408), así que la rama es no-op por defecto.
+        """
+        if not hasattr(sale_order, 'Status') or not hasattr(sale_order.Status, 'PAID'):
+            return
+        if sale_order.status != sale_order.Status.PAID:
+            return
+
+        movements = sale_order.payments.all()
+        net_paid = sum(
+            m.amount for m in movements if m.movement_type == TreasuryMovement.Type.INBOUND
+        ) - sum(
+            m.amount for m in movements if m.movement_type == TreasuryMovement.Type.OUTBOUND
+        )
+
+        target_total = getattr(sale_order, 'effective_total', None) or getattr(sale_order, 'total', 0)
+
+        if net_paid < target_total and hasattr(sale_order.Status, 'CONFIRMED'):
+            sale_order.status = sale_order.Status.CONFIRMED
+            sale_order.save(update_fields=['status'])
 
 
 def _obj_or_none(model_label: str, pk: int | None):

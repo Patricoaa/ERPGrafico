@@ -61,9 +61,9 @@ export function TreasuryHeader() {
             href: "/treasury/operaciones?tab=movements",
             subTabs: [
                 { value: "movements", label: "Movimientos", href: "/treasury/operaciones?tab=movements", iconName: "banknote" },
-                { value: "checks", label: "Cheques", href: "/treasury/operaciones?tab=checks", iconName: "check-square" },
-                { value: "accounts", label: "Cuentas", href: "/treasury/operaciones?tab=accounts", iconName: "landmark" },
+                { value: "accounts", label: "Cuentas de Tesorería", href: "/treasury/operaciones?tab=accounts", iconName: "landmark" },
                 { value: "methods", label: "Métodos de Pago", href: "/treasury/operaciones?tab=methods", iconName: "credit-card" },
+                { value: "checks", label: "Cheques Recibidos", href: "/treasury/operaciones?tab=checks", iconName: "check-square" },
             ]
         },
         {
