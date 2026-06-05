@@ -6,39 +6,38 @@ import { Button } from "@/components/ui/button"
 import { Loader2, CheckCircle2 } from "lucide-react"
 import { useStatementQuery } from "@/features/finance"
 import { ReconciliationPanel } from "@/features/treasury"
-import { ActionConfirmModal, PageHeader } from '@/components/shared'
+import { ActionConfirmModal } from '@/components/shared'
+import { BankPageHeader } from "@/features/treasury"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
-
 import api from "@/lib/api"
 import { toast } from "sonner"
 import { showApiError } from "@/lib/errors"
 import { SkeletonShell } from "@/components/shared"
 
-export default function WorkbenchPage({ params }: { params: Promise<{ id: string }> }) {
-    const { id } = use(params)
+export default function BankWorkbenchPage({
+    params,
+}: {
+    params: Promise<{ bankId: string; statementId: string }>
+}) {
+    const { bankId, statementId } = use(params)
+    const bankIdNum = Number(bankId)
+    const statementIdNum = parseInt(statementId)
     const router = useRouter()
 
-    const statementId = parseInt(id)
-    const { data: statement, isLoading, refetch } = useStatementQuery(statementId)
+    const reconciliationBase = `/treasury/centro-bancos/${bankId}/reconciliation`
+    const { data: statement, isLoading, refetch } = useStatementQuery(statementIdNum)
 
     const confirmAction = useConfirmAction(async () => {
         try {
-            await api.post(`/treasury/statements/${statementId}/confirm/`)
+            await api.post(`/treasury/statements/${statementIdNum}/confirm/`)
             toast.success('Cartola confirmada exitosamente')
-            router.push('/treasury/reconciliation')
+            router.push(reconciliationBase)
         } catch (error: unknown) {
-            console.error('Error confirming statement:', error)
             showApiError(error, 'Error al confirmar cartola')
         }
     })
 
-    if (isLoading) {
-        return (
-            <div className="flex-1">
-                <SkeletonShell isLoading ariaLabel="Cargando..." />
-            </div>
-        )
-    }
+    if (isLoading) return <div className="flex-1"><SkeletonShell isLoading ariaLabel="Cargando..." /></div>
 
     if (!statement) {
         return (
@@ -48,35 +47,20 @@ export default function WorkbenchPage({ params }: { params: Promise<{ id: string
         )
     }
 
-    const navigation = {
-        moduleName: "Tesorería",
-        moduleHref: "/treasury",
-        tabs: [
-            { value: "operaciones", label: "Operaciones", iconName: "banknote", href: "/treasury/operaciones?tab=movements" },
-            { value: "centro-bancos", label: "Centro de Bancos", iconName: "landmark", href: "/treasury/centro-bancos?tab=all" },
-            { value: "terminal-cobro", label: "Terminal de Cobro", iconName: "cpu", href: "/treasury/terminal-cobro?tab=providers" },
-            { value: "config", label: "Configuración", iconName: "settings", href: "/treasury/settings?tab=conciliation" },
-        ],
-        activeValue: "centro-bancos",
-        breadcrumbs: [
-            { label: statement.display_id, href: `/treasury/reconciliation/${statement.id}` },
-            { label: "Mesa de Conciliación" }
-        ]
-    }
-
     return (
         <div className="flex-1 space-y-4 pt-2 h-full flex flex-col">
-            <PageHeader
+            <BankPageHeader
+                bankId={bankIdNum}
                 title="Mesa de Conciliación"
                 description={`${statement.display_id} — ${statement.treasury_account_name}`}
-                variant="minimal"
-                navigation={navigation}
-                status={{
-                    label: statement.state_display || statement.state,
-                    type: statement.state === 'CONFIRMED' ? 'synced' : 'info'
-                }}
+                status={{ label: statement.state_display || statement.state, type: statement.state === 'CONFIRMED' ? 'synced' : 'info' }}
+                breadcrumbs={[
+                    { label: "Conciliación", href: reconciliationBase },
+                    { label: statement.display_id, href: `${reconciliationBase}/${statement.id}` },
+                    { label: "Mesa de Conciliación" },
+                ]}
                 titleActions={
-                    statement.reconciliation_progress === 100 && statement.state !== 'CONFIRMED' && (
+                    statement.reconciliation_progress === 100 && statement.state !== 'CONFIRMED' ? (
                         <Button
                             onClick={() => confirmAction.requestConfirm()}
                             disabled={confirmAction.isConfirming}
@@ -88,7 +72,7 @@ export default function WorkbenchPage({ params }: { params: Promise<{ id: string
                                 <><CheckCircle2 className="mr-2 h-4 w-4" />Confirmar Cartola</>
                             )}
                         </Button>
-                    )
+                    ) : undefined
                 }
             />
 

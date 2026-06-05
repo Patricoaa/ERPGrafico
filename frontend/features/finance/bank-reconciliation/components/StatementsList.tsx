@@ -44,9 +44,11 @@ interface StatementsListProps {
     createAction?: React.ReactNode
     bankId?: number
     accounts?: Array<{ id: number; name: string }>
+    detailBasePath?: string
 }
 
-export function StatementsList({ externalOpen = false, createAction, bankId, accounts }: StatementsListProps) {
+export function StatementsList({ externalOpen = false, createAction, bankId, accounts, detailBasePath }: StatementsListProps) {
+    const statementDetailUrl = (id: number) => detailBasePath ? `${detailBasePath}/${id}` : `/treasury/reconciliation/${id}`
     const router = useRouter()
     const [selectedAccountId, setSelectedAccountId] = useState<number | null>(null)
     const [importModalOpen, setImportModalOpen] = useState(false)
@@ -70,7 +72,7 @@ export function StatementsList({ externalOpen = false, createAction, bankId, acc
     // Handle deep-linked statement selection (ADR-0020)
     useEffect(() => {
         if (selectedFromUrl) {
-            router.replace(`/treasury/reconciliation/${selectedFromUrl.id}`)
+            router.replace(statementDetailUrl(selectedFromUrl.id))
         }
     }, [selectedFromUrl, router])
 
@@ -199,7 +201,7 @@ export function StatementsList({ externalOpen = false, createAction, bankId, acc
                     icon={Eye}
                     title="Ver"
                     onClick={() => {
-                        router.push(`/treasury/reconciliation/${item.id}`)
+                        router.push(statementDetailUrl(item.id))
                     }}
                 />
             )

@@ -1,7 +1,7 @@
 "use client"
+
 import { formatCurrency } from "@/lib/money"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
-
 import { showApiError } from "@/lib/errors"
 import { useState, useEffect, use } from "react"
 import { useRouter } from "next/navigation"
@@ -11,20 +11,17 @@ import {
     Calendar, Banknote, TrendingUp, TrendingDown,
     Undo2, Info, AlertCircle, ExternalLink, Activity
 } from "lucide-react"
-import { ActionConfirmModal, PageHeader, SkeletonShell } from '@/components/shared'
-
+import { ActionConfirmModal, SkeletonShell } from '@/components/shared'
+import { BankPageHeader } from "@/features/treasury"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import api from "@/lib/api"
-
 import { DataTable } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
-
 import { createActionsColumn, DataCell } from '@/components/shared'
 import { Progress } from "@/components/ui/progress"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
-
 import { toast } from "sonner"
 
 interface BankStatementLine {
@@ -39,12 +36,7 @@ interface BankStatementLine {
     balance: string
     reconciliation_state: string
     reconciliation_state_display: string
-    matched_payment_info: {
-        id: number
-        display_id: string
-        amount: string
-        date: string
-    } | null
+    matched_payment_info: { id: number; display_id: string; amount: string; date: string } | null
 }
 
 interface BankStatement {
@@ -65,23 +57,29 @@ interface BankStatement {
     lines: BankStatementLine[]
 }
 
-export default function StatementDetailPage({ params }: { params: Promise<{ id: string }> }) {
-    const { id } = use(params)
+export default function BankStatementDetailPage({
+    params,
+}: {
+    params: Promise<{ bankId: string; statementId: string }>
+}) {
+    const { bankId, statementId } = use(params)
+    const bankIdNum = Number(bankId)
     const router = useRouter()
 
     const [statement, setStatement] = useState<BankStatement | null>(null)
     const [loading, setLoading] = useState(true)
-    const [unmatchDialog, setUnmatchDialog] = useState<{ open: boolean, lineId: number | null }>({ open: false, lineId: null })
+    const [unmatchDialog, setUnmatchDialog] = useState<{ open: boolean; lineId: number | null }>({ open: false, lineId: null })
     const [confirming, setConfirming] = useState(false)
-    const [paymentModal, setPaymentModal] = useState<{ open: boolean, id: number }>({ open: false, id: 0 })
+
+    const reconciliationBase = `/treasury/centro-bancos/${bankId}/reconciliation`
 
     const fetchStatement = async () => {
         try {
             setLoading(true)
-            const response = await api.get(`/treasury/statements/${id}/`)
+            const response = await api.get(`/treasury/statements/${statementId}/`)
             setStatement(response.data)
-        } catch (error) {
-            console.error('Error fetching statement:', error)
+        } catch {
+            // handled below
         } finally {
             setLoading(false)
         }
@@ -89,28 +87,26 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
 
     useEffect(() => {
         let cancelled = false
-            ; (async () => {
-                setLoading(true)
-                try {
-                    const response = await api.get(`/treasury/statements/${id}/`)
-                    if (!cancelled) setStatement(response.data)
-                } catch (error) {
-                    if (!cancelled) console.error('Error fetching statement:', error)
-                } finally {
-                    if (!cancelled) setLoading(false)
-                }
-            })()
+        ;(async () => {
+            setLoading(true)
+            try {
+                const response = await api.get(`/treasury/statements/${statementId}/`)
+                if (!cancelled) setStatement(response.data)
+            } catch {
+                if (!cancelled) setStatement(null)
+            } finally {
+                if (!cancelled) setLoading(false)
+            }
+        })()
         return () => { cancelled = true }
-    }, [id])
+    }, [statementId])
 
     const handleUnmatch = async () => {
         if (!unmatchDialog.lineId) return
-
         try {
             await api.post(`/treasury/statement-lines/${unmatchDialog.lineId}/unmatch/`)
             await fetchStatement()
-        } catch (error) {
-            console.error('Error unmatching line:', error)
+        } catch {
             toast.error('Error al deshacer la reconciliación')
         } finally {
             setUnmatchDialog({ open: false, lineId: null })
@@ -120,11 +116,10 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
     const confirmAction = useConfirmAction(async () => {
         try {
             setConfirming(true)
-            await api.post(`/treasury/statements/${id}/confirm/`)
+            await api.post(`/treasury/statements/${statementId}/confirm/`)
             toast.success('Cartola confirmada exitosamente')
-            router.push('/treasury/reconciliation')
+            router.push(reconciliationBase)
         } catch (error: unknown) {
-            console.error('Error confirming statement:', error)
             showApiError(error, 'Error al confirmar cartola')
         } finally {
             setConfirming(false)
@@ -134,23 +129,17 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
     const columns: ColumnDef<BankStatementLine>[] = [
         {
             accessorKey: "line_number",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="#" />
-            ),
+            header: ({ column }) => <DataTableColumnHeader column={column} title="#" />,
             cell: ({ row }) => <span className="text-muted-foreground font-mono text-xs">{row.getValue("line_number")}</span>,
         },
         {
             accessorKey: "transaction_date",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Fecha" />
-            ),
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Fecha" />,
             cell: ({ row }) => <DataCell.Date value={row.getValue("transaction_date")} />,
         },
         {
             accessorKey: "description",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Descripción" />
-            ),
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Descripción" />,
             cell: ({ row }) => (
                 <div className="flex flex-col max-w-[200px]">
                     <Tooltip>
@@ -160,58 +149,41 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
                         <TooltipContent side="top">{row.getValue("description")}</TooltipContent>
                     </Tooltip>
                     {row.original.reference && (
-                        <span className="text-[10px] text-muted-foreground truncate"> {/* intentional: badge density */} {row.original.reference}</span>
+                        <span className="text-[10px] text-muted-foreground truncate">{row.original.reference}</span>
                     )}
                 </div>
             ),
         },
         {
             accessorKey: "debit",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Cargo" />
-            ),
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Cargo" />,
             cell: ({ row }) => {
                 const val = parseFloat(row.getValue("debit"))
-                return val > 0 ? (
-                    <DataCell.Currency value={val} />
-                ) : (
-                    <span className="text-muted-foreground/30 ml-4">-</span>
-                )
+                return val > 0 ? <DataCell.Currency value={val} /> : <span className="text-muted-foreground/30 ml-4">-</span>
             },
         },
         {
             accessorKey: "credit",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Abono" />
-            ),
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Abono" />,
             cell: ({ row }) => {
                 const val = parseFloat(row.getValue("credit"))
-                return val > 0 ? (
-                    <DataCell.Currency value={val} />
-                ) : (
-                    <span className="text-muted-foreground/30 ml-4">-</span>
-                )
+                return val > 0 ? <DataCell.Currency value={val} /> : <span className="text-muted-foreground/30 ml-4">-</span>
             },
         },
         {
             accessorKey: "balance",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Saldo" />
-            ),
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Saldo" />,
             cell: ({ row }) => <DataCell.Currency value={row.getValue("balance")} />,
         },
         {
             accessorKey: "reconciliation_state",
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Estado" />
-            ),
+            header: ({ column }) => <DataTableColumnHeader column={column} title="Estado" />,
             cell: ({ row }) => {
                 const state = row.getValue("reconciliation_state") as string
-                const label = row.original.reconciliation_state_display
                 return (
                     <DataCell.Status
                         status={state}
-                        label={state === 'MATCHED' ? "Sugerencia Match" : label}
+                        label={state === 'MATCHED' ? "Sugerencia Match" : row.original.reconciliation_state_display}
                     />
                 )
             },
@@ -222,15 +194,11 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
             cell: ({ row }) => {
                 const info = row.original.matched_payment_info
                 if (!info) return <span className="text-muted-foreground/30 ml-4">-</span>
-
                 return (
-                    <button
-                        onClick={() => setPaymentModal({ open: true, id: info.id })}
-                        className="text-[10px] font-mono font-bold text-primary hover:underline flex items-center gap-1 group w-full justify-center"
-                    >
+                    <span className="text-[10px] font-mono font-bold text-primary flex items-center gap-1">
                         {info.display_id}
-                        <ExternalLink className="h-2 w-2 opacity-0 group-hover:opacity-100 transition-opacity" />
-                    </button>
+                        <ExternalLink className="h-2 w-2" />
+                    </span>
                 )
             },
         },
@@ -238,7 +206,6 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
             renderActions: (line) => {
                 const state = line.reconciliation_state
                 const canUnmatch = ['MATCHED', 'RECONCILED', 'EXCLUDED'].includes(state) && statement?.state !== 'CONFIRMED'
-
                 return canUnmatch ? (
                     <DataCell.Action
                         icon={Undo2}
@@ -251,11 +218,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
         }),
     ]
 
-    if (loading) return (
-        <div className="flex-1">
-            <SkeletonShell isLoading ariaLabel="Cargando..." />
-        </div>
-    )
+    if (loading) return <div className="flex-1"><SkeletonShell isLoading ariaLabel="Cargando..." /></div>
 
     if (!statement) {
         return (
@@ -263,13 +226,12 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
                 <Card className="max-w-md mx-auto mt-12">
                     <CardHeader>
                         <CardTitle className="text-destructive flex items-center gap-2">
-                            <AlertCircle className="h-5 w-5" />
-                            Error
+                            <AlertCircle className="h-5 w-5" />Error
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
                         <p className="text-muted-foreground">No se pudo encontrar la cartola solicitada.</p>
-                        <Button onClick={() => router.push('/treasury/reconciliation')} className="mt-4 w-full">
+                        <Button onClick={() => router.push(reconciliationBase)} className="mt-4 w-full">
                             Volver al listado
                         </Button>
                     </CardContent>
@@ -278,40 +240,24 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
         )
     }
 
-    // --- RENDER SUMMARY VIEW ---
-    const totalDebits = statement.lines.reduce((acc, line) => acc + parseFloat(line.debit), 0)
-    const totalCredits = statement.lines.reduce((acc, line) => acc + parseFloat(line.credit), 0)
+    const totalDebits = statement.lines.reduce((acc, l) => acc + parseFloat(l.debit), 0)
+    const totalCredits = statement.lines.reduce((acc, l) => acc + parseFloat(l.credit), 0)
     const netMovement = totalCredits - totalDebits
-
-    const navigation = {
-        moduleName: "Tesorería",
-        moduleHref: "/treasury",
-        tabs: [
-            { value: "operaciones", label: "Operaciones", iconName: "banknote", href: "/treasury/operaciones?tab=movements" },
-            { value: "centro-bancos", label: "Centro de Bancos", iconName: "landmark", href: "/treasury/centro-bancos?tab=all" },
-            { value: "terminal-cobro", label: "Terminal de Cobro", iconName: "cpu", href: "/treasury/terminal-cobro?tab=providers" },
-            { value: "config", label: "Configuración", iconName: "settings", href: "/treasury/settings?tab=conciliation" },
-        ],
-        activeValue: "centro-bancos",
-        breadcrumbs: [
-            { label: statement.display_id }
-        ]
-    }
 
     return (
         <div className="flex-1 flex flex-col min-h-0">
-            <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar space-y-4 pt-2 pb-4">
-                <PageHeader
-                    title={statement.display_id}
-                    description={statement.treasury_account_name}
-                    variant="minimal"
-                    navigation={navigation}
-                    status={{
-                        label: statement.state_display || statement.state,
-                        type: statement.state === 'CONFIRMED' ? 'synced' : 'info'
-                    }}
-                />
+            <BankPageHeader
+                bankId={bankIdNum}
+                title={statement.display_id}
+                description={statement.treasury_account_name}
+                status={{ label: statement.state_display || statement.state, type: statement.state === 'CONFIRMED' ? 'synced' : 'info' }}
+                breadcrumbs={[
+                    { label: "Conciliación", href: reconciliationBase },
+                    { label: statement.display_id },
+                ]}
+            />
 
+            <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar space-y-4 pt-2 pb-4">
                 {/* Summary Grid */}
                 <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
                     <Card className="shadow-sm bg-card border">
@@ -320,64 +266,53 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
                             <Banknote className="h-3.5 w-3.5 text-primary" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-xl font-bold font-mono">
-                                {formatCurrency(statement.opening_balance)}
-                            </div>
-                            <p className="text-[10px] text-muted-foreground mt-0.5 flex items-center gap-1"> {/* intentional: badge density */}
+                            <div className="text-xl font-bold font-mono">{formatCurrency(statement.opening_balance)}</div>
+                            <p className="text-[10px] text-muted-foreground mt-0.5 flex items-center gap-1">
                                 <Calendar className="h-2.5 w-2.5" />
                                 {format(new Date(statement.statement_date), 'dd MMMM yyyy', { locale: es })}
                             </p>
                         </CardContent>
                     </Card>
-
                     <Card className="shadow-sm bg-card border">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
                             <CardTitle className="text-xs font-bold uppercase text-muted-foreground tracking-wider">Cierre</CardTitle>
                             <TrendingUp className="h-3.5 w-3.5 text-success" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-xl font-bold font-mono">
-                                {formatCurrency(statement.closing_balance)}
-                            </div>
-                            <p className={`text-[10px] font-black mt-0.5 flex items-center gap-1 ${netMovement >= 0 ? 'text-income' : 'text-expense'}`}> {/* intentional: badge density */}
+                            <div className="text-xl font-bold font-mono">{formatCurrency(statement.closing_balance)}</div>
+                            <p className={`text-[10px] font-black mt-0.5 flex items-center gap-1 ${netMovement >= 0 ? 'text-income' : 'text-expense'}`}>
                                 {netMovement >= 0 ? <TrendingUp className="h-2.5 w-2.5" /> : <TrendingDown className="h-2.5 w-2.5" />}
                                 {netMovement >= 0 ? 'Excedente' : 'Déficit'}: {formatCurrency(Math.abs(netMovement))}
                             </p>
                         </CardContent>
                     </Card>
-
                     <Card className="shadow-sm bg-card border">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
                             <CardTitle className="text-xs font-bold uppercase text-muted-foreground tracking-wider">Cargos (Sale)</CardTitle>
                             <TrendingDown className="h-3.5 w-3.5 text-destructive" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-xl font-bold font-mono text-expense">
-                                {formatCurrency(totalDebits)}
-                            </div>
-                            <p className="text-[10px] text-muted-foreground mt-0.5"> {/* intentional: badge density */}
+                            <div className="text-xl font-bold font-mono text-expense">{formatCurrency(totalDebits)}</div>
+                            <p className="text-[10px] text-muted-foreground mt-0.5">
                                 {statement.lines.filter(l => parseFloat(l.debit) > 0).length} cargos detectados
                             </p>
                         </CardContent>
                     </Card>
-
                     <Card className="shadow-sm bg-card border">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
                             <CardTitle className="text-xs font-bold uppercase text-muted-foreground tracking-wider">Abonos (Entra)</CardTitle>
                             <TrendingUp className="h-3.5 w-3.5 text-success/50" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-xl font-bold font-mono text-income">
-                                {formatCurrency(totalCredits)}
-                            </div>
-                            <p className="text-[10px] text-muted-foreground mt-0.5"> {/* intentional: badge density */}
+                            <div className="text-xl font-bold font-mono text-income">{formatCurrency(totalCredits)}</div>
+                            <p className="text-[10px] text-muted-foreground mt-0.5">
                                 {statement.lines.filter(l => parseFloat(l.credit) > 0).length} abonos detectados
                             </p>
                         </CardContent>
                     </Card>
                 </div>
 
-                {/* Progress Bar Container */}
+                {/* Progress */}
                 <div className="bg-card p-4 rounded-xl border shadow-sm">
                     <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
@@ -387,7 +322,7 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
                         <span className="text-sm font-bold text-primary">{statement.reconciliation_progress}% completado</span>
                     </div>
                     <Progress value={statement.reconciliation_progress} className="h-2.5 bg-muted" />
-                    <div className="mt-2 text-[10px] text-muted-foreground flex justify-between"> {/* intentional: badge density */}
+                    <div className="mt-2 text-[10px] text-muted-foreground flex justify-between">
                         <span>{statement.reconciled_lines} líneas procesadas</span>
                         <span>{statement.total_lines - statement.reconciled_lines} sin conciliar</span>
                     </div>
@@ -412,11 +347,11 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
                             ]
                         }
                     ]}
-                    useAdvancedFilter={true}
+                    useAdvancedFilter
                     defaultPageSize={20}
                     createAction={
                         statement.state !== 'CONFIRMED' && statement.reconciliation_progress < 100 ? (
-                            <Button onClick={() => router.push(`/treasury/reconciliation/${statement.id}/workbench`)}>
+                            <Button onClick={() => router.push(`${reconciliationBase}/${statement.id}/workbench`)}>
                                 <Activity className="mr-2 h-4 w-4" />
                                 Reconciliar
                             </Button>
@@ -424,21 +359,18 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
                     }
                 />
 
-                {/* Metadata Footer */}
                 <div className="flex items-center justify-between px-2 pt-2">
                     <div className="flex gap-4">
-                        <div className="flex items-center gap-1 text-[10px] text-muted-foreground"> {/* intentional: badge density */}
+                        <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
                             <span className="font-semibold uppercase">Importado:</span>
                             <span>{format(new Date(statement.imported_at), 'dd/MM/yyyy HH:mm', { locale: es })}</span>
                         </div>
-                        <div className="flex items-center gap-1 text-[10px] text-muted-foreground"> {/* intentional: badge density */}
+                        <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
                             <span className="font-semibold uppercase">Por:</span>
                             <span>{statement.imported_by_name}</span>
                         </div>
                     </div>
-                    <div className="text-[10px] text-muted-foreground/40 italic"> {/* intentional: badge density */}
-                        Referencia del sistema: #{statement.id}
-                    </div>
+                    <div className="text-[10px] text-muted-foreground/40 italic">Referencia del sistema: #{statement.id}</div>
                 </div>
             </div>
 

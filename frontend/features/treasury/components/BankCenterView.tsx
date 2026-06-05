@@ -1,7 +1,7 @@
 "use client"
 
 import React from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
 import { Landmark, Banknote, CreditCard, CheckSquare, Calendar, AlertTriangle } from 'lucide-react'
 import {
@@ -56,12 +56,13 @@ function useBankOverview(bankId: number | null) {
 
 export function BankCenterView({ bankId }: { bankId: number }) {
     const router = useRouter()
-    const searchParams = useSearchParams()
-    const activeTab = searchParams.get('tab') || 'overview'
+    const pathname = usePathname()
+    const segments = pathname.split('/').filter(Boolean)
+    const activeTab = segments[3] || 'overview'
     const { data, isLoading, isError } = useBankOverview(bankId)
 
     const handleTabChange = (tab: string) => {
-        router.push(`/treasury/centro-bancos?bank=${bankId}&tab=${tab}`, { scroll: false })
+        router.push(`/treasury/centro-bancos/${bankId}/${tab}`, { scroll: false })
     }
 
     if (isLoading) {
@@ -241,6 +242,7 @@ export function BankCenterView({ bankId }: { bankId: number }) {
             <TabsContent value="reconciliation" className="mt-6 flex-1 min-h-0 data-[state=inactive]:hidden">
                 <StatementsList
                     bankId={bankId}
+                    detailBasePath={`/treasury/centro-bancos/${bankId}/reconciliation`}
                     accounts={accounts
                         .filter(acc => acc.account_type === 'CHECKING')
                         .map(acc => ({ id: acc.id, name: acc.name }))
