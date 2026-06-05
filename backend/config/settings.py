@@ -435,6 +435,14 @@ CELERY_BEAT_SCHEDULE = {
         'schedule': crontab(hour=8, minute=0),   # Diario a las 08:00
     },
 
+    # ── Treasury / Tarjeta de crédito propia (Fase 3 — F3.7, ADR-0037) ───
+    # Marca OVERDUE los estados de cuenta vencidos y notifica los próximos
+    # a vencer (cierra el gap A: estado OVERDUE persistido).
+    'mark_overdue_credit_card_statements_daily': {
+        'task': 'treasury.tasks.mark_overdue_credit_card_statements',
+        'schedule': crontab(hour=8, minute=5),   # Diario a las 08:05
+    },
+
     # ── Treasury / Loans (Fase 2 — F2.9, opt-in) ───────────────────────────
     # Devenga el interés del mes para créditos ACTIVE. No-op si no hay
     # cuentas de gasto/pasivo configuradas en AccountingSettings (F5.1).

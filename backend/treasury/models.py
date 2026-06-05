@@ -2375,6 +2375,15 @@ class CreditCardStatement(models.Model):
         null=True, blank=True, related_name='card_statement_payment',
         verbose_name=_("Movimiento de Pago"),
     )
+    charges_movement = models.OneToOneField(
+        'TreasuryMovement', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='card_statement_charges',
+        verbose_name=_("Movimiento de Cargos"),
+        help_text=_(
+            "ADJUSTMENT que imputa interest_charged + fees_charged como "
+            "gasto financiero y sube la deuda. Simétrico a payment_movement."
+        ),
+    )
     payment_account = models.ForeignKey(
         'TreasuryAccount', on_delete=models.SET_NULL,
         null=True, blank=True, related_name='card_statement_payments_made',

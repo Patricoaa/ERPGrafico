@@ -85,6 +85,36 @@ def card_account(db, bank):
     )
 
 
+@pytest.fixture
+def funded_checking(db, checking_account, user):
+    """
+    Devuelve el checking_account cargado con $1.000.000 vía un INBOUND
+    con factura para que el asiento contable quede válido.
+    """
+    ar = Account.objects.create(
+        name='AR API', code='1.1.02.020',
+        account_type=AccountType.ASSET,
+    )
+    customer = Contact.objects.create(
+        name='Cliente API', tax_id='76.333.333-3',
+        account_receivable=ar,
+    )
+    invoice = Invoice.objects.create(
+        contact=customer, date=date(2026, 6, 1), number='FAC-API-FUND-1',
+    )
+    from treasury.services import TreasuryService
+    TreasuryService.create_movement(
+        amount=Decimal('1000000'),
+        movement_type=TreasuryMovement.Type.INBOUND,
+        to_account=checking_account,
+        partner=customer,
+        date=date(2026, 6, 1),
+        created_by=user,
+        invoice=invoice,
+    )
+    return checking_account
+
+
 def _make_payload(card_account, **overrides):
     base = {
         'card_account': card_account.id,
@@ -216,7 +246,7 @@ def test_update_statement_notes(auth_client, card_account):
 
 
 @pytest.mark.django_db
-def test_pay_statement_action(auth_client, card_account, checking_account):
+def test_pay_statement_action(auth_client, card_account, funded_checking):
     create = auth_client.post(
         '/api/treasury/card-statements/',
         _make_payload(card_account, billed_amount='100000.00'),
@@ -226,13 +256,13 @@ def test_pay_statement_action(auth_client, card_account, checking_account):
 
     resp = auth_client.post(
         f'/api/treasury/card-statements/{stmt_id}/pay/',
-        {'payment_account': checking_account.id},
+        {'payment_account': funded_checking.id},
         format='json',
     )
     assert resp.status_code == 200, resp.json()
     data = resp.json()
     assert data['status'] == 'PAID'
-    assert data['payment_account'] == checking_account.id
+    assert data['payment_account'] == funded_checking.id
     assert data['paid_at'] is not None
 
 
@@ -254,7 +284,7 @@ def test_pay_statement_requires_valid_account(auth_client, card_account):
 
 
 @pytest.mark.django_db
-def test_pay_already_paid_is_idempotent(auth_client, card_account, checking_account):
+def test_pay_already_paid_is_idempotent(auth_client, card_account, funded_checking):
     create = auth_client.post(
         '/api/treasury/card-statements/',
         _make_payload(card_account, billed_amount='50000.00'),
@@ -264,14 +294,14 @@ def test_pay_already_paid_is_idempotent(auth_client, card_account, checking_acco
 
     r1 = auth_client.post(
         f'/api/treasury/card-statements/{stmt_id}/pay/',
-        {'payment_account': checking_account.id},
+        {'payment_account': funded_checking.id},
         format='json',
     )
     assert r1.status_code == 200
 
     r2 = auth_client.post(
         f'/api/treasury/card-statements/{stmt_id}/pay/',
-        {'payment_account': checking_account.id},
+        {'payment_account': funded_checking.id},
         format='json',
     )
     assert r2.status_code == 200  # idempotent
@@ -279,7 +309,7 @@ def test_pay_already_paid_is_idempotent(auth_client, card_account, checking_acco
 
 
 @pytest.mark.django_db
-def test_pay_canceled_statement_fails(auth_client, card_account, checking_account):
+def test_pay_canceled_statement_fails(auth_client, card_account, funded_checking):
     create = auth_client.post(
         '/api/treasury/card-statements/',
         _make_payload(card_account),
@@ -295,7 +325,7 @@ def test_pay_canceled_statement_fails(auth_client, card_account, checking_accoun
 
     resp = auth_client.post(
         f'/api/treasury/card-statements/{stmt_id}/pay/',
-        {'payment_account': checking_account.id},
+        {'payment_account': funded_checking.id},
         format='json',
     )
     assert resp.status_code == 400
@@ -336,7 +366,7 @@ def test_apply_charges_action(auth_client, card_account):
 
 
 @pytest.mark.django_db
-def test_apply_charges_on_paid_statement_fails(auth_client, card_account, checking_account):
+def test_apply_charges_on_paid_statement_fails(auth_client, card_account, funded_checking):
     create = auth_client.post(
         '/api/treasury/card-statements/',
         _make_payload(card_account),
@@ -346,7 +376,7 @@ def test_apply_charges_on_paid_statement_fails(auth_client, card_account, checki
 
     auth_client.post(
         f'/api/treasury/card-statements/{stmt_id}/pay/',
-        {'payment_account': checking_account.id},
+        {'payment_account': funded_checking.id},
         format='json',
     )
 
@@ -381,7 +411,7 @@ def test_cancel_statement_action(auth_client, card_account):
 
 
 @pytest.mark.django_db
-def test_cancel_paid_statement_fails(auth_client, card_account, checking_account):
+def test_cancel_paid_statement_fails(auth_client, card_account, funded_checking):
     create = auth_client.post(
         '/api/treasury/card-statements/',
         _make_payload(card_account),
@@ -391,7 +421,7 @@ def test_cancel_paid_statement_fails(auth_client, card_account, checking_account
 
     auth_client.post(
         f'/api/treasury/card-statements/{stmt_id}/pay/',
-        {'payment_account': checking_account.id},
+        {'payment_account': funded_checking.id},
         format='json',
     )
 
@@ -401,3 +431,53 @@ def test_cancel_paid_statement_fails(auth_client, card_account, checking_account
         format='json',
     )
     assert resp.status_code == 400
+
+
+# ── reverse action (Gap 1.6, ADR-0037) ────────────────────────────────────
+
+
+@pytest.mark.django_db
+def test_reverse_statement_action_cancels_and_clears(
+    auth_client, card_account, funded_checking,
+):
+    """POST /reverse anula el statement con limpieza contable
+    transaccional."""
+    create = auth_client.post(
+        '/api/treasury/card-statements/',
+        _make_payload(
+            card_account,
+            interest_charged='5000.00',
+            fees_charged='1000.00',
+        ),
+        format='json',
+    )
+    stmt_id = create.json()['id']
+
+    interest_exp = Account.objects.create(
+        name='Interés', code='5.2.01.200',
+        account_type=AccountType.EXPENSE,
+    )
+    fees_exp = Account.objects.create(
+        name='Comisiones', code='5.2.01.201',
+        account_type=AccountType.EXPENSE,
+    )
+    auth_client.post(
+        f'/api/treasury/card-statements/{stmt_id}/apply-charges/',
+        {
+            'interest_expense_account': interest_exp.id,
+            'fees_expense_account': fees_exp.id,
+        },
+        format='json',
+    )
+
+    resp = auth_client.post(
+        f'/api/treasury/card-statements/{stmt_id}/reverse/',
+        {'notes': 'Error en la carga'},
+        format='json',
+    )
+    assert resp.status_code == 200, resp.json()
+    data = resp.json()
+    assert data['status'] == 'CANCELED'
+    assert data['charges_movement'] is None
+    assert '[REVERSAL]' in data['notes']
+    assert 'Error en la carga' in data['notes']
