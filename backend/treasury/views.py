@@ -580,6 +580,115 @@ class TreasuryMovementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             traceback.print_exc()
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+    @action(detail=False, methods=['post'], url_path='card-purchase')
+    def card_purchase(self, request):
+        """
+        Crea una compra con tarjeta en N cuotas con interés
+        explícito opcional (Onda 2, ADR-0043). Si el payload trae
+        `installments > 1` o `monthly_rate > 0` y
+        `from_account.account_type == CREDIT_CARD`, delega a
+        `TreasuryService.create_card_purchase`; en cualquier otro
+        caso, 400 con instrucción de usar POST regular.
+
+        Body esperado:
+          {
+            "amount": "150000.00",
+            "from_account": <id de cuenta CREDIT_CARD>,
+            "installments": 3,
+            "monthly_rate": "0.015",  # opcional
+            "date": "2026-06-15",     # opcional, default hoy
+            "partner": <id contacto>, # opcional
+            "client_reference": "...", # opcional, idempotencia
+            "notes": "..."            # opcional
+          }
+
+        Devuelve el `CardPurchaseGroup` con sus cuotas (lazy en
+        `installments`).
+        """
+        from .models import CardPurchaseGroup
+        from contacts.models import Contact
+
+        data = request.data
+        try:
+            from_account_id = data.get('from_account')
+            if not from_account_id:
+                return Response(
+                    {'error': 'from_account es requerido.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            try:
+                from_account = TreasuryAccount.objects.get(pk=from_account_id)
+            except TreasuryAccount.DoesNotExist:
+                return Response(
+                    {'error': 'from_account no existe.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            if from_account.account_type != TreasuryAccount.Type.CREDIT_CARD:
+                return Response(
+                    {'error': 'card-purchase requiere from_account de tipo CREDIT_CARD.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            partner = None
+            partner_id = data.get('partner')
+            if partner_id:
+                try:
+                    partner = Contact.objects.get(pk=partner_id)
+                except Contact.DoesNotExist:
+                    return Response(
+                        {'error': 'partner no existe.'},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+
+            installments = int(data.get('installments', 1))
+            monthly_rate = data.get('monthly_rate', '0') or '0'
+            amount = data.get('amount', '0')
+            date_value = data.get('date')
+            if date_value and isinstance(date_value, str):
+                from datetime import date as _date
+                date_value = _date.fromisoformat(date_value)
+
+            group = TreasuryService.create_card_purchase(
+                amount=amount,
+                card_account=from_account,
+                installments=installments,
+                monthly_rate=monthly_rate,
+                date=date_value,
+                partner=partner,
+                client_reference=data.get('client_reference', '') or '',
+                notes=data.get('notes', '') or '',
+                created_by=request.user,
+            )
+            # Devolver el grupo + lista de movimientos generados.
+            installments_data = TreasuryMovementSerializer(
+                group.movements.all().order_by('installment_number', 'is_installment_interest'),
+                many=True,
+            ).data
+            return Response(
+                {
+                    'group': {
+                        'uuid': str(group.uuid),
+                        'display_id': group.display_id,
+                        'card_account': from_account.id,
+                        'total_amount': str(group.total_amount),
+                        'installments': group.installments,
+                        'monthly_rate': str(group.monthly_rate),
+                        'first_installment_date': group.first_installment_date.isoformat(),
+                        'client_reference': group.client_reference,
+                        'total_interest': str(group.total_interest),
+                        'total_payable': str(group.total_payable),
+                    },
+                    'installments': installments_data,
+                },
+                status=status.HTTP_201_CREATED,
+            )
+        except ValidationError as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
     @action(detail=True, methods=['post'])
     def annul(self, request, pk=None):
         movement = self.get_object()

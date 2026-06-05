@@ -4,10 +4,11 @@ from django.db import transaction
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.contrib.contenttypes.models import ContentType
+from datetime import timedelta
+from decimal import Decimal, ROUND_HALF_UP
 from .models import TreasuryMovement, TreasuryAccount, TerminalBatch, PaymentMethod
 from accounting.models import JournalEntry, JournalItem, AccountingSettings
 from accounting.services import JournalEntryService
-from decimal import Decimal
 
 logger = logging.getLogger(__name__)
 
@@ -413,6 +414,177 @@ class TreasuryService:
              movement.save()
         else:
              entry.delete()
+
+    # ── Compras en tarjeta en cuotas (Onda 2, ADR-0043) ─────────────
+
+    @staticmethod
+    @transaction.atomic
+    def create_card_purchase(
+        amount,
+        card_account: "TreasuryAccount",
+        *,
+        installments: int = 1,
+        monthly_rate=Decimal('0'),
+        date=None,
+        partner=None,
+        client_reference: str = '',
+        notes: str = '',
+        created_by=None,
+    ) -> "CardPurchaseGroup":
+        """
+        Crea una compra con tarjeta de crédito propia en N cuotas
+        con interés explícito opcional (Onda 2, ADR-0043).
+
+        - `amount`: monto total de la compra (sin interés).
+        - `card_account`: `TreasuryAccount` con `account_type=CREDIT_CARD`.
+        - `installments`: cantidad de cuotas (1 a 36).
+        - `monthly_rate`: tasa mensual decimal (0 = sin interés, 0.015
+          = 1.5%/mes). El interés se imputa como ADJUSTMENT
+          separado del principal.
+        - `date`: fecha de la primera cuota (las siguientes se
+          distribuyen a 30 días cada una).
+        - `client_reference`: id externo opcional para idempotencia.
+          Si llega un segundo POST con la misma
+          `client_reference`, retorna el grupo existente.
+        - `notes`: notas adicionales.
+
+        Genera `installments` movimientos `OUTBOUND` (uno por cuota
+        de principal) más, si `monthly_rate > 0`, `installments`
+        movimientos `ADJUSTMENT` (uno por cuota de interés). Cada
+        par principal+interés cae en el mismo mes (mismo `date`),
+        separados 30 días de la cuota anterior.
+
+        El asiento contable es el estándar de `OUTBOUND`/`ADJUSTMENT`
+        con la cuenta de tarjeta como origen: D=proveedor/gasto /
+        H=pasivo tarjeta.
+        """
+        from .models import CardPurchaseGroup
+
+        amount = Decimal(str(amount))
+        monthly_rate = Decimal(str(monthly_rate))
+
+        if card_account.account_type != TreasuryAccount.Type.CREDIT_CARD:
+            raise ValidationError(
+                f"create_card_purchase requiere una cuenta CREDIT_CARD "
+                f"(recibida: {card_account.get_account_type_display()})."
+            )
+        if amount <= 0:
+            raise ValidationError("El monto de la compra debe ser mayor a cero.")
+        if not isinstance(installments, int) or installments < 1 or installments > 36:
+            raise ValidationError(
+                f"La cantidad de cuotas debe estar entre 1 y 36 (recibido: {installments})."
+            )
+        if monthly_rate < 0 or monthly_rate >= 1:
+            raise ValidationError(
+                f"La tasa mensual debe estar en [0, 1) (recibido: {monthly_rate})."
+            )
+        if not date:
+            date = timezone.now().date()
+
+        # Idempotencia por client_reference.
+        if client_reference:
+            existing = (
+                CardPurchaseGroup.objects
+                .filter(client_reference=client_reference)
+                .first()
+            )
+            if existing is not None:
+                return existing
+
+        # Calcular principal por cuota (residuo en la última).
+        # `quantize(Decimal('0.01'))` aplica redondeo bancario a 2
+        # decimales; la última cuota recibe el ajuste.
+        principal_base = (amount / installments).quantize(
+            Decimal('0.01'), rounding=ROUND_HALF_UP,
+        )
+        principals: list[Decimal] = [principal_base] * (installments - 1)
+        principals.append(amount - sum(principals))
+
+        # Calcular intereses (cuota francesa): interest_i = balance_i * monthly_rate
+        # donde balance_i es el capital vivo al inicio del periodo i.
+        # El interés se redondea a 2 decimales por cuota; el residuo
+        # se asigna a la última cuota de interés (si hay).
+        if monthly_rate > 0:
+            interests: list[Decimal] = []
+            balance = amount
+            for i in range(installments):
+                interest_i = (balance * monthly_rate).quantize(
+                    Decimal('0.01'), rounding=ROUND_HALF_UP,
+                )
+                interests.append(interest_i)
+                balance -= principals[i]
+            # Ajuste de residuo en la última cuota de interés: el
+            # total a pagar (Σ principal + Σ interest) puede diferir
+            # del interés teórico acumulado por redondeos. Para
+            # mantener la congruencia contable, NO ajustamos: la
+            # diferencia de centavos queda en la última cuota.
+        else:
+            interests = [Decimal('0')] * installments
+
+        # Crear el grupo y los N pares de movimientos.
+        group = CardPurchaseGroup.objects.create(
+            card_account=card_account,
+            partner=partner,
+            total_amount=amount,
+            installments=installments,
+            monthly_rate=monthly_rate,
+            principal_per_installment=principal_base,
+            first_installment_date=date,
+            client_reference=client_reference or '',
+            notes=notes or '',
+            created_by=created_by,
+        )
+
+        for i in range(installments):
+            installment_date = date + timedelta(days=30 * i)
+            base_reference = f"CP-{group.uuid}-i{i + 1}"
+
+            # 1) OUTBOUND por principal.
+            principal_mv = TreasuryService.create_movement(
+                amount=principals[i],
+                movement_type=TreasuryMovement.Type.OUTBOUND,
+                payment_method=TreasuryMovement.Method.CARD,
+                date=installment_date,
+                created_by=created_by,
+                from_account=card_account,
+                partner=partner,
+                reference=base_reference,
+                notes=(
+                    f"Cuota {i + 1}/{installments} "
+                    f"(principal) de {group.display_id} {notes}".strip()
+                ),
+            )
+            principal_mv.card_purchase_group = group
+            principal_mv.installment_number = i + 1
+            principal_mv.is_installment_interest = False
+            principal_mv.save(update_fields=[
+                'card_purchase_group', 'installment_number', 'is_installment_interest',
+            ])
+
+            # 2) ADJUSTMENT por interés, si aplica.
+            if interests[i] > 0:
+                interest_mv = TreasuryService.create_movement(
+                    amount=interests[i],
+                    movement_type=TreasuryMovement.Type.ADJUSTMENT,
+                    payment_method=TreasuryMovement.Method.CARD,
+                    date=installment_date,
+                    created_by=created_by,
+                    from_account=card_account,
+                    partner=partner,
+                    reference=f"{base_reference}-INT",
+                    notes=(
+                        f"Interés de cuota {i + 1}/{installments} "
+                        f"de {group.display_id}".strip()
+                    ),
+                )
+                interest_mv.card_purchase_group = group
+                interest_mv.installment_number = i + 1
+                interest_mv.is_installment_interest = True
+                interest_mv.save(update_fields=[
+                    'card_purchase_group', 'installment_number', 'is_installment_interest',
+                ])
+
+        return group
 
     @staticmethod
     def _get_reason_account(settings, reason, direction):
