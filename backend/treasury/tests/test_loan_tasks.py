@@ -49,7 +49,7 @@ def base(db):
     liab_ta = TreasuryAccount.objects.create(
         name='Préstamo BCI por Pagar',
         account=liab_acc,
-        account_type=TreasuryAccount.Type.CREDIT_CARD,
+        account_type=TreasuryAccount.Type.LOAN,
         bank=bank,
     )
     return {

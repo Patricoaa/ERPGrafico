@@ -17,6 +17,7 @@ export const treasuryAccountSearchDef: SearchDefinition = {
         { label: 'Caja Física (Efectivo)', value: 'CASH' },
         { label: 'Cuenta Bancaria', value: 'CHECKING' },
         { label: 'T. Crédito Empresa', value: 'CREDIT_CARD' },
+        { label: 'Préstamo Bancario', value: 'LOAN' },
         { label: 'Puente', value: 'BRIDGE' },
         { label: 'Cheques en Cartera', value: 'CHECK_PORTFOLIO' },
       ],

@@ -107,8 +107,9 @@ export function TreasuryAccountDrawer({ open, onOpenChange, accountId, onSuccess
     }, [open, accountId, form])
 
     const requiresBank = (accountType: string) => {
-        return ['CHECKING', 'CREDIT_CARD'].includes(accountType)
+        return ['CHECKING', 'CREDIT_CARD', 'LOAN'].includes(accountType)
     }
+    const isLiabilityType = (accountType: string) => ['CREDIT_CARD', 'LOAN'].includes(accountType)
 
     const onSubmit = async (data: TreasuryAccountFormValues) => {
         if (isSystemManaged) return
@@ -272,6 +273,7 @@ export function TreasuryAccountDrawer({ open, onOpenChange, accountId, onSuccess
                                                 { value: "CASH", label: "Caja Física (Efectivo)" },
                                                 { value: "CHECKING", label: "Cuenta Bancaria (Corriente/Vista)" },
                                                 { value: "CREDIT_CARD", label: "Tarjeta de Crédito (Cta. Propia)" },
+                                                { value: "LOAN", label: "Préstamo Bancario (Pasivo)" },
                                                 { value: "BRIDGE", label: "Cuenta Puente" }
                                             ]}
                                         />
@@ -342,11 +344,13 @@ export function TreasuryAccountDrawer({ open, onOpenChange, accountId, onSuccess
                                     name="account"
                                     render={({ field, fieldState }) => (
                                         <AccountSelector
-                                            label={type === 'CREDIT_CARD' ? "Cuenta de Pasivo (Tarjeta por pagar)" : "Cuenta del Plan de Cuentas"}
+                                            label={type === 'CREDIT_CARD' ? "Cuenta de Pasivo (Tarjeta por pagar)"
+                                                : type === 'LOAN' ? "Cuenta de Pasivo (Préstamo por pagar)"
+                                                : "Cuenta del Plan de Cuentas"}
                                             value={field.value}
                                             onChange={field.onChange}
-                                            accountType={type === 'CREDIT_CARD' ? "LIABILITY" : "ASSET"}
-                                            isReconcilable={type === 'CREDIT_CARD' ? undefined : true}
+                                            accountType={isLiabilityType(type) ? "LIABILITY" : "ASSET"}
+                                            isReconcilable={isLiabilityType(type) ? undefined : true}
                                             placeholder="Seleccione cuenta..."
                                             disabled={isSystemManaged}
                                             error={fieldState.error?.message}

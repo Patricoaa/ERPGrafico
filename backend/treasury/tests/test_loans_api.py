@@ -5,7 +5,7 @@ Cubre:
   - CRUD básico de BankLoan.
   - Acciones custom: disburse, pay, prepay, refinance.
   - Endpoints auxiliares: schedule, amortization_table.
-  - Validación: liability_account debe ser CREDIT_CARD.
+  - Validación: liability_account debe ser LOAN.
   - Permisos: solo autenticados.
 """
 from __future__ import annotations
@@ -75,7 +75,7 @@ def checking_account(db, bank):
 
 @pytest.fixture
 def liability_account(db, bank):
-    # Tarjeta de Crédito (que en taxonomía vigente representa pasivo — ADR-0031).
+    # Cuenta de tesorería tipo LOAN, vinculada a una cuenta contable de PASIVO (ADR-0041).
     liability = Account.objects.create(
         name='Línea de Crédito Banco', code='2.1.04.001',
         account_type=AccountType.LIABILITY,
@@ -85,7 +85,7 @@ def liability_account(db, bank):
         code='LC-001',
         account=liability,
         bank=bank,
-        account_type=TreasuryAccount.Type.CREDIT_CARD,
+        account_type=TreasuryAccount.Type.LOAN,
     )
 
 
@@ -141,7 +141,7 @@ def test_create_loan_requires_auth(client, bank, checking_account, liability_acc
 def test_create_loan_rejects_wrong_liability_type(
     auth_client, bank, checking_account,
 ):
-    # Crea una cuenta de tesorería que NO es CREDIT_CARD para que falle validación.
+    # Crea una cuenta de tesorería que NO es LOAN para que falle validación.
     other_asset = Account.objects.create(
         name='Caja General', code='1.1.01.099',
         account_type=AccountType.ASSET,

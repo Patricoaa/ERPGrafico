@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react"
 import {
-    Wallet, Landmark, CreditCard,
+    Wallet, Landmark, CreditCard, Banknote,
     ArrowDownToLine, ArrowUpFromLine, ArrowDownUp, CheckCircle2,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -31,6 +31,7 @@ const ACCOUNT_TYPE_CARDS: { type: TreasuryAccountType; label: string; hint: stri
     { type: "CASH", label: "Caja", hint: "Efectivo físico", icon: Wallet },
     { type: "CHECKING", label: "Cuenta Bancaria", hint: "Corriente / Vista", icon: Landmark },
     { type: "CREDIT_CARD", label: "Tarjeta de Crédito", hint: "Línea propia", icon: CreditCard },
+    { type: "LOAN", label: "Préstamo Bancario", hint: "Deuda por pagar", icon: Banknote },
 ]
 
 const TENDER_OPTIONS = [
@@ -86,7 +87,8 @@ export function TreasuryAccountWizard({ open, onOpenChange, onSuccess, defaultBa
         return () => cancelAnimationFrame(id)
     }, [open, defaultBankId])
 
-    const requiresBank = accountType === "CHECKING" || accountType === "CREDIT_CARD"
+    const requiresBank = accountType === "CHECKING" || accountType === "CREDIT_CARD" || accountType === "LOAN"
+    const isLiabilityType = accountType === "CREDIT_CARD" || accountType === "LOAN"
     const requiresAccountNumber = accountType === "CHECKING"
     const showTendersStep = accountType === "CHECKING"
 
@@ -168,10 +170,12 @@ export function TreasuryAccountWizard({ open, onOpenChange, onSuccess, defaultBa
                         <AccountSelector
                             label={accountType === "CREDIT_CARD"
                                 ? "Cuenta de Pasivo — Tarjeta por pagar (2.x)"
-                                : "Cuenta Contable (Efectivo y Equivalentes — 1.1.01)"}
+                                : accountType === "LOAN"
+                                    ? "Cuenta de Pasivo — Préstamo por pagar (2.x)"
+                                    : "Cuenta Contable (Efectivo y Equivalentes — 1.1.01)"}
                             value={accountId}
                             onChange={setAccountId}
-                            accountType={accountType === "CREDIT_CARD" ? "LIABILITY" : "ASSET"}
+                            accountType={isLiabilityType ? "LIABILITY" : "ASSET"}
                         />
                         {requiresBank && (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -278,7 +282,7 @@ export function TreasuryAccountWizard({ open, onOpenChange, onSuccess, defaultBa
         ]
         return list.filter((s): s is WizardStep => s !== null)
     }, [accountType, name, code, currency, accountId, bank, accountNumber, tenders, usage, isPending, banks,
-        requiresBank, requiresAccountNumber, showTendersStep, fixedTenderLabel])
+        requiresBank, requiresAccountNumber, showTendersStep, fixedTenderLabel, isLiabilityType])
 
     const handleComplete = async () => {
         try {

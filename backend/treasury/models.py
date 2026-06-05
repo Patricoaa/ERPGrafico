@@ -402,6 +402,7 @@ class TreasuryAccount(models.Model):
     class Type(models.TextChoices):
         CHECKING = 'CHECKING', _('Cuenta Bancaria (Corriente/Vista)')
         CREDIT_CARD = 'CREDIT_CARD', _('Tarjeta de Crédito (Cta. Propia)')
+        LOAN = 'LOAN', _('Préstamo Bancario (Pasivo)')
         CASH = 'CASH', _('Caja Física (Efectivo)')
         BRIDGE = 'BRIDGE', _('Puente')
         CHECK_PORTFOLIO = 'CHECK_PORTFOLIO', _('Cheques en Cartera')
@@ -495,6 +496,11 @@ class TreasuryAccount(models.Model):
                 if self.account.account_type != AccountType.LIABILITY:
                     raise ValidationError({
                         'account': _("La tarjeta de crédito propia debe vincularse a una cuenta de PASIVO (deuda), no a Efectivo.")
+                    })
+            elif self.account_type == self.Type.LOAN:
+                if self.account.account_type != AccountType.LIABILITY:
+                    raise ValidationError({
+                        'account': _("La cuenta de Préstamo Bancario debe vincularse a una cuenta de PASIVO (deuda por pagar), no a Efectivo.")
                     })
             elif self.account_type == self.Type.CHECK_PORTFOLIO:
                 if self.account.account_type != AccountType.ASSET:
@@ -2168,17 +2174,18 @@ class BankLoan(models.Model):
         3. `first_due_date` no puede ser anterior a `start_date`.
         """
         if self.liability_account_id:
-            if self.liability_account.account_type != TreasuryAccount.Type.CREDIT_CARD:
+            if self.liability_account.account_type != TreasuryAccount.Type.LOAN:
                 raise ValidationError({
                     'liability_account': _(
                         "La cuenta pasivo del crédito debe ser una cuenta de tesorería tipo "
-                        "Tarjeta de Crédito (CREDIT_CARD) — la única con AccountType=LIABILITY "
-                        "en la taxonomía vigente (ADR-0031). Cuenta actual: %(type)s."
+                        "Préstamo Bancario (LOAN) vinculada a una cuenta contable de PASIVO "
+                        "(ADR-0041). Cuenta actual: %(type)s."
                     ) % {'type': self.liability_account.get_account_type_display()}
                 })
 
         if self.disbursement_account_id and self.disbursement_account.account_type in (
             TreasuryAccount.Type.CREDIT_CARD,
+            TreasuryAccount.Type.LOAN,
             TreasuryAccount.Type.CHECK_PORTFOLIO,
         ):
             raise ValidationError({
