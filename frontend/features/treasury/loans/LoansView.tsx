@@ -5,7 +5,7 @@ import type { ColumnDef } from '@tanstack/react-table'
 import { FileText, AlertTriangle, Plus, Eye, Send } from 'lucide-react'
 import {
     DataTableView, DataTableColumnHeader, DataCell,
-    createActionsColumn, StatusBadge, MoneyDisplay, Skeleton, EmptyState,
+    createActionsColumn, StatusBadge, MoneyDisplay, Skeleton, EmptyState, EntityCard,
 } from '@/components/shared'
 import { Button } from '@/components/ui/button'
 import { useLoans, useLoanMutations } from './hooks'
@@ -42,7 +42,14 @@ export function LoansView({ bankId }: { bankId?: number } = {}) {
         )
     }
 
-    const columns: ColumnDef<BankLoan, unknown>[] = [
+    const registerAction = (
+        <Button onClick={() => setRegisterOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Registrar Crédito
+        </Button>
+    )
+
+    const columns: ColumnDef<BankLoan>[] = [
         {
             accessorKey: 'display_id',
             header: ({ column }) => <DataTableColumnHeader column={column} title="Crédito" />,
@@ -121,56 +128,87 @@ export function LoansView({ bankId }: { bankId?: number } = {}) {
             cell: ({ row }) => <StatusBadge status={row.original.status} />,
         },
         createActionsColumn<BankLoan>({
-            renderActions: (loan) => (
-                <>
-                    <DataCell.Action
-                        icon={Eye}
-                        title="Ver detalle"
-                        onClick={() => setSelectedId(loan.id)}
-                    />
-                    {loan.status === 'DRAFT' && (
-                        <DataCell.Action
-                            icon={Send}
-                            title="Desembolsar"
-                            onClick={() => { void handleDisburse(loan.id) }}
-                        />
-                    )}
-                </>
-            ),
+            renderActions: (loan) => renderLoanActions(loan),
         }),
     ]
+
+    function renderLoanActions(loan: BankLoan) {
+        return (
+            <>
+                <DataCell.Action
+                    icon={Eye}
+                    title="Ver detalle"
+                    onClick={() => setSelectedId(loan.id)}
+                />
+                {loan.status === 'DRAFT' && (
+                    <DataCell.Action
+                        icon={Send}
+                        title="Desembolsar"
+                        onClick={() => { void handleDisburse(loan.id) }}
+                    />
+                )}
+            </>
+        )
+    }
 
     return (
         <div className="h-full flex flex-col">
             <div className="flex-1 min-h-0">
-                {loans.length === 0 ? (
-                    <EmptyState
-                        title="No hay créditos registrados"
-                        description="Registra tu primer crédito bancario para llevar el control de cuotas y amortización."
-                        icon={FileText}
-                        action={
-                            <Button onClick={() => setRegisterOpen(true)}>
-                                <Plus className="h-4 w-4 mr-2" />
-                                Registrar Crédito
-                            </Button>
-                        }
-                    />
-                ) : (
-                    <DataTableView
-                        entityLabel="treasury.bankloan"
-                        columns={columns as ColumnDef<unknown, unknown>[]}
-                        data={loans as unknown[]}
-                        variant="embedded"
-                        filterColumn="display_id"
-                        searchPlaceholder="Buscar por crédito o número..."
-                        createAction={
-                            <Button onClick={() => setRegisterOpen(true)}>
-                                <Plus className="h-4 w-4 mr-2" />
-                                Registrar Crédito
-                            </Button>
-                        }
-                    />
-                )}
+                <DataTableView
+                    entityLabel="treasury.bankloan"
+                    columns={columns}
+                    data={loans}
+                    variant="embedded"
+                    filterColumn="display_id"
+                    searchPlaceholder="Buscar por crédito o número..."
+                    createAction={registerAction}
+                    emptyState={{
+                        context: 'treasury',
+                        icon: FileText,
+                        title: 'No hay créditos registrados',
+                        description: 'Registra tu primer crédito bancario para llevar el control de cuotas y amortización.',
+                        action: registerAction,
+                    }}
+                    renderCard={(loan: BankLoan) => (
+                        <EntityCard>
+                            <EntityCard.Header
+                                title={loan.display_id}
+                                subtitle={loan.loan_number || undefined}
+                                trailing={<StatusBadge status={loan.status} />}
+                            />
+                            <EntityCard.Body>
+                                <EntityCard.Field label="Banco" value={loan.lender_name} />
+                                <EntityCard.Field
+                                    label="Capital"
+                                    value={<MoneyDisplay amount={parseFloat(loan.principal)} />}
+                                />
+                                <EntityCard.Field
+                                    label="Saldo Insoluto"
+                                    value={
+                                        <MoneyDisplay
+                                            amount={parseFloat(loan.outstanding_balance)}
+                                            className={loan.status === 'ACTIVE' ? 'font-bold' : 'text-muted-foreground'}
+                                        />
+                                    }
+                                />
+                                <EntityCard.Field
+                                    label="Tasa"
+                                    value={`${loan.interest_rate}% ${loan.rate_basis_display.toLowerCase()}`}
+                                />
+                                <EntityCard.Field label="Plazo" value={`${loan.term_months} meses`} />
+                                <EntityCard.Field
+                                    label="Próx. Vencimiento"
+                                    value={loan.next_due_date
+                                        ? new Date(loan.next_due_date).toLocaleDateString('es-CL')
+                                        : '—'}
+                                />
+                            </EntityCard.Body>
+                            <EntityCard.Footer>
+                                {renderLoanActions(loan)}
+                            </EntityCard.Footer>
+                        </EntityCard>
+                    )}
+                />
             </div>
 
             <LoanRegisterDrawer open={registerOpen} onOpenChange={setRegisterOpen} />

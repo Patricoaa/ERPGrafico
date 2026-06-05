@@ -340,7 +340,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     listUrl: '/treasury/accounts',
     detailUrlPattern: '/treasury/accounts?tab=credit-cards&statement={id}',
     partnerField: (data) => data.card_account_name || '---',
-    viewPolicy: { availableViews: ['list'], defaultView: 'list', cardComponent: 'entity', gridLayout: 'single-column' },
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', gridLayout: 'single-column' },
   },
   'accounting.fiscalyear': {
     label: 'accounting.fiscalyear',
