@@ -2263,3 +2263,69 @@ class CreditCardStatementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         stmt.refresh_from_db()
         return Response(self.get_serializer(stmt).data)
+
+    @action(detail=True, methods=['post'], url_path='recalculate')
+    def recalculate(self, request, pk=None):
+        """Recalcula `billed_amount` agregando los OUTBOUND del período (Gap 1.2)."""
+        from .card_service import CardService
+        stmt = self.get_object()
+        try:
+            new_amount = CardService.recalculate_billed_amount(stmt)
+        except ValidationError as e:
+            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        stmt.refresh_from_db()
+        return Response(self.get_serializer(stmt).data)
+
+    @action(detail=True, methods=['post'], url_path='reapply-charges')
+    def reapply_charges(self, request, pk=None):
+        """Reversa el cargo actual y vuelve a imputarlo (Gap 1.4)."""
+        from .card_service import CardService
+        from accounting.models import Account
+        stmt = self.get_object()
+        payload = ApplyChargesActionSerializer(data=request.data)
+        payload.is_valid(raise_exception=True)
+        v = payload.validated_data
+        interest_exp = None
+        fees_exp = None
+        if v.get('interest_expense_account'):
+            try:
+                interest_exp = Account.objects.get(pk=v['interest_expense_account'])
+            except Account.DoesNotExist:
+                return Response(
+                    {'detail': 'interest_expense_account no existe.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+        if v.get('fees_expense_account'):
+            try:
+                fees_exp = Account.objects.get(pk=v['fees_expense_account'])
+            except Account.DoesNotExist:
+                return Response(
+                    {'detail': 'fees_expense_account no existe.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+        try:
+            stmt = CardService.reapply_charges(
+                stmt,
+                interest_expense_account=interest_exp,
+                fees_expense_account=fees_exp,
+                created_by=request.user,
+            )
+        except ValidationError as e:
+            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        stmt.refresh_from_db()
+        return Response(self.get_serializer(stmt).data)
+
+    @action(detail=True, methods=['post'], url_path='reverse')
+    def reverse(self, request, pk=None):
+        """Reversa contablemente cargos + pago y anula el statement
+        (Gap 1.6, ADR-0037). Equivalente a `cancel` con limpieza
+        contable transaccional. Refresca saldos de la tarjeta y banco."""
+        from .card_service import CardService
+        stmt = self.get_object()
+        notes = request.data.get('notes', '') or ''
+        try:
+            stmt = CardService.reverse_statement(stmt, notes=notes)
+        except ValidationError as e:
+            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        stmt.refresh_from_db()
+        return Response(self.get_serializer(stmt).data)

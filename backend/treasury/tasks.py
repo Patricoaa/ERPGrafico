@@ -98,6 +98,96 @@ def mark_overdue_loan_installments(days_ahead: int = 5, notify: bool = True):
     }
 
 
+# ── F3.7: Marcar como OVERDUE los estados de cuenta de tarjeta vencidos ───
+
+
+@shared_task(name='treasury.mark_overdue_credit_card_statements')
+def mark_overdue_credit_card_statements(days_ahead: int = 5, notify: bool = True):
+    """
+    Marca como OVERDUE los `CreditCardStatement` con `status=OPEN` y
+    `due_date < hoy`, y notifica los próximos a vencer
+    (`OPEN` con `due_date` entre hoy y `hoy + days_ahead`).
+
+    Análogo a `mark_overdue_loan_installments`. Pensado para correr
+    diariamente vía beat (ver `settings.CELERY_BEAT_SCHEDULE`).
+
+    Persiste el cambio de estado (cierra el gap A del análisis del
+    ciclo de vida de tarjeta de crédito, ver ADR-0037).
+
+    Retorna un dict con contadores para diagnóstico.
+    """
+    from django.contrib.auth import get_user_model
+    from django.contrib.contenttypes.models import ContentType
+    from .models import CreditCardStatement
+    from workflow.models import Notification
+
+    today = timezone.now().date()
+    horizon = today + timedelta(days=days_ahead)
+
+    # 1) Marcar OVERDUE los vencidos y aún OPEN.
+    overdue_qs = CreditCardStatement.objects.filter(
+        status=CreditCardStatement.Status.OPEN,
+        due_date__lt=today,
+    )
+    overdue_count = overdue_qs.update(status=CreditCardStatement.Status.OVERDUE)
+
+    # 2) Notificar próximos a vencer (a usuarios con permiso sobre el
+    # módulo treasury). Se cae a superusuarios si no hay destinatarios.
+    upcoming = list(
+        CreditCardStatement.objects.filter(
+            status=CreditCardStatement.Status.OPEN,
+            due_date__gte=today,
+            due_date__lte=horizon,
+        ).select_related('card_account', 'card_account__bank')
+    )
+
+    notified = 0
+    if notify and upcoming:
+        User = get_user_model()
+        recipients = User.objects.filter(is_active=True, is_superuser=True)
+        if not recipients.exists():
+            return {
+                'overdue_marked': overdue_count,
+                'upcoming_count': len(upcoming),
+                'upcoming_notified': 0,
+            }
+        ct = ContentType.objects.get_for_model(CreditCardStatement)
+        for stmt in upcoming:
+            # Deduplicación: 1 notificación por (statement, día).
+            target_iso = today.isoformat()
+            already = Notification.objects.filter(
+                notification_type='CARD_STATEMENT_UPCOMING',
+                content_type=ct, object_id=stmt.id,
+                data__target_date=target_iso,
+            ).exists()
+            if already:
+                continue
+            for user in recipients:
+                Notification.objects.create(
+                    user=user,
+                    title=f"Estado tarjeta {stmt.period_month:02d}/{stmt.period_year} por vencer",
+                    message=(
+                        f"Estado de cuenta de la tarjeta {stmt.card_account.name} "
+                        f"({stmt.card_account.bank.name if stmt.card_account.bank else 's/banco'}) "
+                        f"vence el {stmt.due_date.strftime('%d/%m/%Y')} "
+                        f"por ${stmt.total_to_pay:,.0f}."
+                    ),
+                    type=Notification.Type.WARNING,
+                    notification_type='CARD_STATEMENT_UPCOMING',
+                    content_type=ct,
+                    object_id=stmt.id,
+                    link=f"/treasury/cards?selected={stmt.id}",
+                    data={'target_date': target_iso},
+                )
+                notified += 1
+
+    return {
+        'overdue_marked': overdue_count,
+        'upcoming_count': len(upcoming),
+        'upcoming_notified': notified,
+    }
+
+
 # ── F2.9: Devengo mensual de interés (opt-in) ────────────────────────────
 
 

@@ -104,5 +104,7 @@ Proposed → (review) → Accepted → (later) → Superseded | Deprecated
 | [0038](0038-check-portfolio-seed.md) | Seed del puente de Cheques en Cartera — pre-cableado de CoA y AccountingSettings | Accepted |
 | [0039](0039-removal-of-check-endorsement.md) | Remoción del endoso de cheques recibidos (supersede parcial de 0035) | Accepted |
 | [0040](0040-check-bounce-void-invoice-demotion.md) | Demover factura/orden al protestar o anular un cheque | Accepted |
+| [0041](0041-loan-treasury-account-type.md) | Loan como `TreasuryAccount` con `account_type=LOAN` y opción REFINANCED | Accepted |
+| [0042](0042-credit-card-p0-accounting-close.md) | Cierre P0 contable de tarjeta de crédito propia — cargos reales, idempotencia, reversa transaccional | Accepted |
 
 > **Lint:** este índice debe coincidir 1-a-1 con los archivos `NNNN-*.md` presentes en este directorio. Cualquier ADR nuevo o renombramiento exige actualizar también esta tabla.

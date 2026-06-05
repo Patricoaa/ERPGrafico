@@ -108,13 +108,19 @@ class Account(TimeStampedModel):
     def debit_total(self):
         if hasattr(self, 'annotated_debit_total') and self.annotated_debit_total is not None:
             return self.annotated_debit_total
-        return sum(item.debit for item in self.journal_items.filter(entry__status='POSTED'))
+        return sum(
+            item.debit for item in
+            self.journal_items.filter(entry__status__in=JournalEntry.balance_affecting_statuses())
+        )
 
     @property
     def credit_total(self):
         if hasattr(self, 'annotated_credit_total') and self.annotated_credit_total is not None:
             return self.annotated_credit_total
-        return sum(item.credit for item in self.journal_items.filter(entry__status='POSTED'))
+        return sum(
+            item.credit for item in
+            self.journal_items.filter(entry__status__in=JournalEntry.balance_affecting_statuses())
+        )
 
     @property
     def balance(self):

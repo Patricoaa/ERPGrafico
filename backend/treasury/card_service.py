@@ -11,6 +11,9 @@ Responsabilidades:
   - pay_statement(statement, payment_account, ...) — paga el total
     del statement desde una cuenta bancaria (TRANSFER banco→tarjeta).
   - cancel_statement(statement) — anula un statement OPEN.
+  - recalculate_billed_amount(statement) — recalcula el monto facturado
+    agregando los OUTBOUND del período (cierra el gap B del análisis
+    del ciclo de vida, ver ADR-0037).
 
 Patrón:
   - Todos los movimientos se generan vía `TreasuryService.create_movement`,
@@ -32,6 +35,7 @@ from datetime import date as _date
 
 from django.core.exceptions import ValidationError
 from django.db import transaction
+from django.db import models as dj_models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _t
 
@@ -137,31 +141,60 @@ class CardService:
                 % {'s': statement.get_status_display()}
             )
 
-        # Resolver cuentas de gasto desde settings si no se pasan como parámetro.
-        if not interest_expense_account or not fees_expense_account:
-            from accounting.models import AccountingSettings
-            settings_obj = AccountingSettings.get_solo()
-            if settings_obj:
-                if not interest_expense_account:
-                    interest_expense_account = getattr(settings_obj, 'interest_expense_account', None)
-                if not fees_expense_account:
-                    fees_expense_account = getattr(settings_obj, 'bank_commission_account', None)
-
         interest = statement.interest_charged or Decimal('0')
         fees = statement.fees_charged or Decimal('0')
         total = interest + fees
         if total <= 0:
-            # Nada que aplicar.
+            # Nada que aplicar. La resolución de cuentas no es necesaria.
             return statement
 
-        # Idempotencia: si ya hay un ADJUSTMENT con la referencia del
-        # statement, no generamos otro. El operador puede revertir el
-        # movimiento manualmente si necesita recalcular.
-        existing = TreasuryMovement.objects.filter(
+        # Resolver cuentas de gasto desde settings si no se pasan como parámetro.
+        # Gap 1.5b (ADR-0037): ya NO usamos el workaround del pasivo. Si
+        # falta la cuenta de gasto (sea de interés o de comisiones),
+        # levantamos `ValidationError` para forzar la configuración en
+        # `AccountingSettings` antes de imputar cargos.
+        from accounting.models import AccountingSettings
+        settings_obj = AccountingSettings.get_solo()
+
+        if interest and not interest_expense_account:
+            interest_expense_account = (
+                getattr(settings_obj, 'interest_expense_account', None) if settings_obj else None
+            )
+            if interest_expense_account is None:
+                raise ValidationError(
+                    _t("No hay cuenta de gasto por intereses configurada. "
+                       "Configure `AccountingSettings.interest_expense_account` "
+                       "o pase `interest_expense_account` explícitamente.")
+                )
+
+        if fees and not fees_expense_account:
+            fees_expense_account = (
+                getattr(settings_obj, 'bank_commission_account', None) if settings_obj else None
+            )
+            if fees_expense_account is None:
+                raise ValidationError(
+                    _t("No hay cuenta de gasto por comisiones configurada. "
+                       "Configure `AccountingSettings.bank_commission_account` "
+                       "o pase `fees_expense_account` explícitamente.")
+                )
+
+        # Idempotencia por FK directo (Gap 1.4, ADR-0037): si el
+        # statement ya tiene un cargo aplicado, no generamos otro. Para
+        # recalcular, usar `reapply_charges` (que reversa y vuelve a
+        # imputar). El fallback a búsqueda por `reference` se conserva
+        # para data legacy donde el FK aún no estaba populado (migración
+        # 0068 lo backfillea, pero mantenemos el safety net).
+        if statement.charges_movement_id is not None:
+            return statement
+        legacy_existing = TreasuryMovement.objects.filter(
             reference=statement.display_id,
             movement_type=TreasuryMovement.Type.ADJUSTMENT,
+            from_account=statement.card_account,
         ).exists()
-        if existing:
+        if legacy_existing and statement.charges_movement_id is None:
+            # Data legacy: el ADJUSTMENT existe pero el FK no se
+            # populó (caso raro post-backfill). El próximo
+            # `reapply_charges` lo vinculará. Por ahora, no duplicamos.
             return statement
 
         card_acc = statement.card_account
@@ -207,19 +240,18 @@ class CardService:
             debit=Decimal('0'), credit=total,
         )
 
-        # El Debe: si la cuenta de gasto está configurada, va ahí;
-        # si NO, se imputa al pasivo (workaround análogo al de
-        # LoanService — preserva la cuadratura D=C).
+        # El Debe: las cuentas de gasto YA están validadas arriba
+        # (Gap 1.5b, ADR-0037). Si llegamos aquí, son siempre válidas
+        # y la imputación es Debe gasto / Haber pasivo — sin
+        # workaround.
         if interest:
-            target_acc = interest_expense_account or liability_acc
             JournalItem.objects.create(
-                entry=entry, account=target_acc,
+                entry=entry, account=interest_expense_account,
                 debit=interest, credit=Decimal('0'),
             )
         if fees:
-            target_acc = fees_expense_account or liability_acc
             JournalItem.objects.create(
-                entry=entry, account=target_acc,
+                entry=entry, account=fees_expense_account,
                 debit=fees, credit=Decimal('0'),
             )
 
@@ -228,12 +260,87 @@ class CardService:
         movement.journal_entry = entry
         movement.save(update_fields=['journal_entry'])
 
+        # Vincular el FK directo (Gap 1.4). Permite recálculo
+        # posterior y búsqueda robusta por `reapply_charges` /
+        # `reverse_statement`.
+        statement.charges_movement = movement
         statement.notes = (
             f"[CHARGES] Movimiento {movement.display_id} aplicado el "
             f"{apply_date.isoformat()}.\n" + (statement.notes or '')
         ).strip()
-        statement.save(update_fields=['notes', 'updated_at'])
+        statement.save(update_fields=['charges_movement', 'notes', 'updated_at'])
         return statement
+
+    # ── Reaplicar cargos (Gap 1.4) ──────────────────────────────────────
+
+    @staticmethod
+    @transaction.atomic
+    def reapply_charges(
+        statement: CreditCardStatement,
+        *,
+        interest_expense_account: "Account | None" = None,
+        fees_expense_account: "Account | None" = None,
+        date: _date | None = None,
+        created_by: "AbstractUser | None" = None,
+    ) -> CreditCardStatement:
+        """
+        Reversa el cargo actual (si existe) y vuelve a imputar con los
+        valores actualizados de `interest_charged` y `fees_charged`.
+
+        Pensado para cuando el operador edita los montos del statement
+        después de aplicar cargos: en vez de revertir manualmente y
+        reaplicar, esta operación lo hace atómicamente.
+
+        - Reversa el `JournalEntry` vinculado al `charges_movement`
+          (queda como `REVERSAL`, conserva audit trail).
+        - Borra el `charges_movement` y limpia el FK en el statement.
+        - Llama a `apply_charges` con los nuevos valores.
+
+        Idempotente: si no hay cargo previo, sólo llama a `apply_charges`.
+        """
+        if statement.status not in (
+            CreditCardStatement.Status.OPEN,
+            CreditCardStatement.Status.OVERDUE,
+        ):
+            raise ValidationError(
+                _t("Solo se pueden reaplicar cargos a un statement OPEN u OVERDUE "
+                   "(estado: %(s)s).")
+                % {'s': statement.get_status_display()}
+            )
+
+        old_movement = statement.charges_movement
+        if old_movement is not None:
+            from accounting.services import JournalEntryService
+            if old_movement.journal_entry and old_movement.journal_entry.status in (
+                'POSTED', 'CLOSED',
+            ):
+                # `reverse_entry` valida que no esté ya revertido.
+                try:
+                    JournalEntryService.reverse_entry(
+                        old_movement.journal_entry,
+                        description=(
+                            f"REVERSO cargos {statement.display_id} (reaplicación)"
+                        ),
+                    )
+                except ValidationError:
+                    # Si ya estaba revertido, no es error: limpiamos igual.
+                    pass
+            # Borrar el movimiento (cascade del JE está manejado por
+            # la FK PROTECT en TreasuryMovement.journal_entry; al
+            # borrar el movimiento, primero desligamos el JE).
+            old_movement.journal_entry = None
+            old_movement.save(update_fields=['journal_entry'])
+            old_movement.delete()
+            statement.charges_movement = None
+            statement.save(update_fields=['charges_movement'])
+
+        return CardService.apply_charges(
+            statement,
+            interest_expense_account=interest_expense_account,
+            fees_expense_account=fees_expense_account,
+            date=date,
+            created_by=created_by,
+        )
 
     # ── Pago del estado de cuenta (F3.4) ─────────────────────────────────
 
@@ -259,6 +366,13 @@ class CardService:
         - Si el total a pagar es 0, solo marca el statement como PAID
           (caso raro: statement vacío).
         - Idempotente: si ya está PAID, retorna sin error.
+
+        Validaciones (Gap 1.3, ADR-0037):
+        - `payment_account` debe ser ASSET (CHECKING o CASH). Cualquier
+          otro tipo (otra tarjeta, BRIDGE, CHECK_PORTFOLIO…) es rechazado.
+        - Si es CHECKING, debe tener saldo suficiente. Si es CASH, también
+          (la validación de CASH ya existe en TreasuryService, pero la
+          hacemos explícita aquí para no depender de ella).
         """
         if statement.status == CreditCardStatement.Status.PAID:
             return statement  # idempotente
@@ -271,8 +385,32 @@ class CardService:
                 % {'s': statement.get_status_display()}
             )
 
+        # Validación de tipo de cuenta de pago.
+        valid_types = (
+            TreasuryAccount.Type.CHECKING,
+            TreasuryAccount.Type.CASH,
+        )
+        if payment_account.account_type not in valid_types:
+            raise ValidationError(
+                _t("La cuenta de pago debe ser una cuenta bancaria (CHECKING) o caja (CASH). "
+                   "Tipo recibido: %(t)s.")
+                % {'t': payment_account.get_account_type_display()}
+            )
+
         total = statement.total_to_pay
         pay_date = date or timezone.now().date()
+
+        # Validación de fondos (Gap 1.3, ADR-0037). Permite pagar
+        # aunque no haya saldo si `total == 0` (statement vacío).
+        if total > 0 and payment_account.current_balance < total:
+            raise ValidationError(
+                _t("Saldo insuficiente en %(acc)s. Disponible: $%(avail)s, a pagar: $%(total)s.")
+                % {
+                    'acc': payment_account.name,
+                    'avail': f"{payment_account.current_balance:,.0f}",
+                    'total': f"{total:,.0f}",
+                }
+            )
 
         from .services import TreasuryService
 
@@ -324,3 +462,199 @@ class CardService:
             statement.notes = (statement.notes + "\n" + notes).strip() if statement.notes else notes
         statement.save(update_fields=['status', 'notes', 'updated_at'])
         return statement
+
+    # ── Reversa transaccional completa (Gap 1.6) ──────────────────────────
+
+    @staticmethod
+    @transaction.atomic
+    def reverse_statement(
+        statement: CreditCardStatement,
+        *,
+        notes: str = '',
+    ) -> CreditCardStatement:
+        """
+        Reversa contablemente todos los movimientos vinculados al
+        statement en una sola operación atómica (Gap 1.6, ADR-0037):
+
+        1. Reversa el `JournalEntry` del cargo (si existe) y borra el
+           `charges_movement` con su FK desligada.
+        2. Reversa el `JournalEntry` del pago (si existe) y borra el
+           `payment_movement` con su FK desligada.
+        3. Marca el statement como `CANCELED` con timestamp en `notes`.
+
+        Deja la tarjeta y el banco en el mismo balance que antes de
+        aplicar cargos o pagar. Útil para corregir errores de carga
+        del estado de cuenta.
+
+        Si el statement no tiene movimientos vinculados, sólo cambia
+        el estado a CANCELED (equivalente a `cancel_statement`).
+
+        Si el statement ya está CANCELED, es idempotente (no-op).
+        Si está OPEN/OVERDUE, ejecuta la reversa.
+
+        Raises `ValidationError` si el cargo/pago está reconciliado
+        contra el banco (no se puede reversar sin des-reconciliar).
+        """
+        from accounting.services import JournalEntryService
+        from accounting.models import JournalEntry as JournalEntryModel
+
+        if statement.status == CreditCardStatement.Status.CANCELED:
+            return statement  # idempotente
+
+        timestamp = timezone.now().isoformat()
+        reversal_lines: list[str] = []
+        reversible_statuses = (
+            JournalEntryModel.Status.POSTED,
+            JournalEntryModel.Status.CLOSED,
+        )
+
+        # 1) Reversar cargo (si existe).
+        old_charges_mv = statement.charges_movement
+        if old_charges_mv is not None:
+            if old_charges_mv.is_reconciled:
+                raise ValidationError(
+                    _t("El movimiento de cargos está conciliado. Des-reconcílielo antes de reversar.")
+                )
+            if old_charges_mv.journal_entry and old_charges_mv.journal_entry.status in reversible_statuses:
+                try:
+                    JournalEntryService.reverse_entry(
+                        old_charges_mv.journal_entry,
+                        description=(
+                            f"REVERSO cargos {statement.display_id} "
+                            f"(anulación de statement)"
+                        ),
+                    )
+                    reversal_lines.append(f"Cargos {old_charges_mv.display_id} reversados")
+                except ValidationError:
+                    # Si ya estaba revertido, no es error: limpiamos igual.
+                    pass
+            old_charges_mv.journal_entry = None
+            old_charges_mv.save(update_fields=['journal_entry'])
+            old_charges_mv.delete()
+            statement.charges_movement = None
+
+        # 2) Reversar pago (si existe).
+        old_payment_mv = statement.payment_movement
+        if old_payment_mv is not None:
+            if old_payment_mv.is_reconciled:
+                raise ValidationError(
+                    _t("El movimiento de pago está conciliado. Des-reconcílielo antes de reversar.")
+                )
+            if old_payment_mv.journal_entry and old_payment_mv.journal_entry.status in reversible_statuses:
+                try:
+                    JournalEntryService.reverse_entry(
+                        old_payment_mv.journal_entry,
+                        description=(
+                            f"REVERSO pago {statement.display_id} "
+                            f"(anulación de statement)"
+                        ),
+                    )
+                    reversal_lines.append(f"Pago {old_payment_mv.display_id} reversado")
+                except ValidationError:
+                    pass
+            old_payment_mv.journal_entry = None
+            old_payment_mv.save(update_fields=['journal_entry'])
+            old_payment_mv.delete()
+            statement.payment_movement = None
+            statement.payment_account = None
+            statement.paid_at = None
+
+        # 3) Marcar CANCELED.
+        statement.status = CreditCardStatement.Status.CANCELED
+        log_lines = [f"[REVERSAL] {timestamp}"]
+        log_lines.extend(reversal_lines)
+        if notes:
+            log_lines.append(notes)
+        statement.notes = (
+            (statement.notes + "\n" + "\n".join(log_lines))
+            if statement.notes else "\n".join(log_lines)
+        )
+        statement.save(update_fields=[
+            'status', 'notes',
+            'charges_movement', 'payment_movement', 'payment_account', 'paid_at',
+            'updated_at',
+        ])
+        return statement
+
+    # ── Recalcular billed_amount desde movimientos (Gap 1.2) ─────────────
+
+    @staticmethod
+    @transaction.atomic
+    def recalculate_billed_amount(
+        statement: CreditCardStatement,
+        *,
+        commit: bool = True,
+    ) -> Decimal:
+        """
+        Recalcula `billed_amount` del statement sumando los `OUTBOUND`
+        sobre `card_account` con `date` en [period_start, cut_off_date].
+
+        - `period_start` = primer día del mes del período.
+        - `period_end`   = `cut_off_date` del statement.
+        - Se incluyen también los `ADJUSTMENT` previos del propio statement
+          (interest/fees que ya se aplicaron) para que el `billed_amount`
+          refleje el "total facturado" cargado al cierre.
+
+        Si difiere del valor actual y `commit=True`, actualiza y registra
+        la fecha del recálculo en `notes`. Idempotente: una segunda llamada
+        con los mismos movimientos no genera cambios.
+
+        Retorna el monto calculado.
+        """
+        from calendar import monthrange
+
+        period_start = _date(statement.period_year, statement.period_month, 1)
+        # `cut_off_date` puede ser anterior o posterior al fin del mes —
+        # el cargo de la tarjeta se acumula hasta el cierre real, no
+        # necesariamente hasta el último día del mes.
+        period_end = statement.cut_off_date
+        if period_end < period_start:
+            raise ValidationError(
+                _t("cut_off_date (%(co)s) no puede ser anterior al inicio del período (%(ps)s).")
+                % {'co': period_end.isoformat(), 'ps': period_start.isoformat()}
+            )
+
+        # OUTBOUND de compras del período (gasto real con la tarjeta).
+        outbound_sum = (
+            TreasuryMovement.objects
+            .filter(
+                from_account=statement.card_account,
+                movement_type=TreasuryMovement.Type.OUTBOUND,
+                date__gte=period_start,
+                date__lte=period_end,
+            )
+            .aggregate(total=dj_models.Sum('amount'))['total']
+            or Decimal('0')
+        )
+
+        # ADJUSTMENT previo del propio statement (interés + comisiones
+        # ya aplicados vía `apply_charges`). Sumarlos evita que el
+        # `billed_amount` se "pierda" el cargo financiero al recalcular.
+        charges_sum = (
+            TreasuryMovement.objects
+            .filter(
+                from_account=statement.card_account,
+                movement_type=TreasuryMovement.Type.ADJUSTMENT,
+                reference=statement.display_id,
+            )
+            .aggregate(total=dj_models.Sum('amount'))['total']
+            or Decimal('0')
+        )
+
+        new_amount = (outbound_sum or Decimal('0')) + (charges_sum or Decimal('0'))
+        if not commit:
+            return new_amount
+
+        if statement.billed_amount != new_amount:
+            old_amount = statement.billed_amount or Decimal('0')
+            statement.billed_amount = new_amount
+            note = (
+                f"[RECALC] billed_amount {old_amount} → {new_amount} "
+                f"el {timezone.now().date().isoformat()} "
+                f"(OUTBOUND={outbound_sum}, CHARGES={charges_sum})"
+            )
+            statement.notes = (
+                (statement.notes + "\n" + note) if statement.notes else note
+            )
+            statement.save(update_fields=['billed_amount', 'notes', 'updated_at'])
+        return new_amount

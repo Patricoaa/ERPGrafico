@@ -1,5 +1,5 @@
 """
-Tests: card_service (CardService) — F3.3 + F3.4.
+Tests: card_service (CardService) — F3.3 + F3.4 + Gap 1.5b.
 
 Cubre:
   - open_statement con defaults y validaciones.
@@ -7,7 +7,8 @@ Cubre:
     genera el asiento con desglose.
   - apply_charges idempotente: no duplica cargos.
   - apply_charges con cuenta de gasto: el desglose D=expense, C=liability.
-  - apply_charges sin cuenta de gasto: imputa a liability.
+  - apply_charges sin cuenta de gasto en settings: ValidationError
+    (Gap 1.5b, ADR-0037 — ya NO usa el workaround del pasivo).
   - pay_statement: TRANSFER banco→tarjeta, baja la deuda y el banco.
   - pay_statement idempotente.
   - pay_statement con total = 0: marca PAID sin movimiento.
@@ -167,40 +168,38 @@ def test_apply_charges_increases_liability_and_books_expense(env):
 
 
 @pytest.mark.django_db
-def test_apply_charges_without_expense_accounts_imputes_to_liability(env):
-    """Sin cuentas de gasto, la diferencia se imputa al pasivo (workaround)."""
+def test_apply_charges_without_expense_accounts_raises(env):
+    """Gap 1.5b (ADR-0037): sin cuentas de gasto configuradas, NO se
+    usa el workaround del pasivo. Se exige configurar settings antes
+    de imputar cargos (o pasar las cuentas explícitamente)."""
+    from accounting.models import AccountingSettings
+    # Forzar que AccountingSettings esté vacío para las cuentas de
+    # gasto financiero. (AccountingSettings es singleton; el conftest
+    # no la crea automáticamente en cada test.)
+    settings_obj, _ = AccountingSettings.objects.get_or_create()
+    settings_obj.interest_expense_account = None
+    settings_obj.bank_commission_account = None
+    settings_obj.save()
+
     stmt = _open(env)
     stmt.interest_charged = Decimal('8000')
     stmt.fees_charged = Decimal('2000')
     stmt.save()
 
-    CardService.apply_charges(
-        stmt, interest_expense_account=None, fees_expense_account=None,
-        created_by=env['user'],
-    )
+    with pytest.raises(ValidationError, match='cuenta de gasto por intereses'):
+        CardService.apply_charges(
+            stmt, interest_expense_account=None, fees_expense_account=None,
+            created_by=env['user'],
+        )
 
-    # Deuda subió por 10000 (no hay cuentas de gasto, todo al pasivo)
+    # El balance de la tarjeta NO cambió (la operación se abortó).
     env['card_ta'].refresh_from_db()
-    # Sin cuentas de gasto: Debe y Haber van a la misma liability,
-    # neto = 0 (workaround preserva D=C).
     assert env['card_ta'].current_balance == Decimal('0')
-
-    movement = TreasuryMovement.objects.filter(
+    # No se creó movimiento.
+    assert not TreasuryMovement.objects.filter(
         reference=stmt.display_id,
         movement_type=TreasuryMovement.Type.ADJUSTMENT,
-    ).first()
-    items = list(movement.journal_entry.items.all())
-    # 3 líneas: Debe liability 8000 (interest) + Debe liability 2000 (fees)
-    #           + Haber liability 10000 (total).
-    # Todas sobre la misma cuenta liability (workaround sin expense accounts).
-    assert len(items) == 3
-    # El asiento cuadrará: Debe 10000 = Haber 10000.
-    total_debit = sum(it.debit for it in items)
-    total_credit = sum(it.credit for it in items)
-    assert total_debit == total_credit == Decimal('10000')
-    # Todas las líneas son la liability_account.
-    for it in items:
-        assert it.account_id == env['card_acc'].id
+    ).exists()
 
 
 @pytest.mark.django_db
@@ -235,6 +234,53 @@ def test_apply_charges_only_interest(env):
 
     env['card_ta'].refresh_from_db()
     assert env['card_ta'].current_balance == Decimal('5000')
+
+
+@pytest.mark.django_db
+def test_apply_charges_resolves_accounts_from_settings(env):
+    """Gap 1.5b: si no se pasan cuentas explícitas, se resuelven de
+    `AccountingSettings` (configuración centralizada)."""
+    from accounting.models import AccountingSettings
+    settings_obj, _ = AccountingSettings.objects.get_or_create()
+    settings_obj.interest_expense_account = env['interest_exp']
+    settings_obj.bank_commission_account = env['fees_exp']
+    settings_obj.save()
+
+    stmt = _open(env)
+    stmt.interest_charged = Decimal('7000')
+    stmt.fees_charged = Decimal('3000')
+    stmt.save()
+
+    # Sin pasar cuentas explícitamente: las toma de settings.
+    CardService.apply_charges(stmt, created_by=env['user'])
+
+    stmt.refresh_from_db()
+    assert stmt.charges_movement is not None
+    assert stmt.charges_movement.amount == Decimal('10000')
+    items = list(stmt.charges_movement.journal_entry.items.all())
+    interest_line = next(i for i in items if i.account_id == env['interest_exp'].id)
+    fees_line = next(i for i in items if i.account_id == env['fees_exp'].id)
+    assert interest_line.debit == Decimal('7000')
+    assert fees_line.debit == Decimal('3000')
+
+
+@pytest.mark.django_db
+def test_apply_charges_only_fees_missing_settings_raises(env):
+    """Si sólo hay interés pero falta la cuenta de comisiones en
+    settings, y no se pasa explícitamente → ValidationError."""
+    from accounting.models import AccountingSettings
+    settings_obj, _ = AccountingSettings.objects.get_or_create()
+    settings_obj.interest_expense_account = env['interest_exp']
+    settings_obj.bank_commission_account = None
+    settings_obj.save()
+
+    stmt = _open(env)
+    stmt.interest_charged = Decimal('5000')
+    stmt.fees_charged = Decimal('1500')
+    stmt.save()
+
+    with pytest.raises(ValidationError, match='cuenta de gasto por comisiones'):
+        CardService.apply_charges(stmt, created_by=env['user'])
 
 
 @pytest.mark.django_db

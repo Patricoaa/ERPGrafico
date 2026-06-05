@@ -895,6 +895,9 @@ class CreditCardStatementSerializer(serializers.ModelSerializer):
     payment_account_name = serializers.CharField(
         source='payment_account.name', read_only=True, allow_null=True,
     )
+    charges_movement_id = serializers.PrimaryKeyRelatedField(
+        source='charges_movement', read_only=True,
+    )
     created_by_name = serializers.CharField(
         source='created_by.username', read_only=True, allow_null=True,
     )
@@ -919,12 +922,14 @@ class CreditCardStatementSerializer(serializers.ModelSerializer):
             'total_to_pay',
             'paid_at', 'payment_movement', 'payment_movement_id',
             'payment_account', 'payment_account_name',
+            'charges_movement', 'charges_movement_id',
             'notes',
             'created_at', 'updated_at', 'created_by', 'created_by_name',
         ]
         read_only_fields = [
             'display_id', 'status', 'is_overdue', 'total_to_pay',
             'paid_at', 'payment_movement', 'payment_account',
+            'charges_movement',
             'created_at', 'updated_at', 'created_by',
         ]
 

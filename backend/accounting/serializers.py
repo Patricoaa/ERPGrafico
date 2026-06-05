@@ -32,6 +32,11 @@ class AccountingSettingsSerializer(serializers.ModelSerializer):
     partner_current_year_earnings_account_name = serializers.CharField(source='partner_current_year_earnings_account.name', read_only=True, default=None)
     partner_dividends_payable_account_name = serializers.CharField(source='partner_dividends_payable_account.name', read_only=True, default=None)
     partner_capital_receivable_account_name = serializers.CharField(source='partner_capital_receivable_account.name', read_only=True, default=None)
+    # Cierran F5.1 / Gap 1.5a (ADR-0037): nombres legibles de las cuentas
+    # de gasto financiero que `CardService.apply_charges` resuelve
+    # automáticamente desde settings.
+    interest_expense_account_name = serializers.CharField(source='interest_expense_account.name', read_only=True, default=None)
+    bank_commission_account_name = serializers.CharField(source='bank_commission_account.name', read_only=True, default=None)
 
 
     class Meta:
