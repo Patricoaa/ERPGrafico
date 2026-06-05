@@ -222,17 +222,31 @@ No explicit status field. Edit restrictions based on journal_entry status:
 ## Check (Cheques Recibidos y Propios Girados)
 
 Cheque de tercero (cliente u otro pagador) en cartera, o cheque propio girado a proveedor.
-Backend: `treasury.Check`. Lifecycle gobernado por `treasury.check_service.CheckService` (ADR-0032, ADR-0035).
+Backend: `treasury.Check`. Lifecycle gobernado por `treasury.check_service.CheckService` (ADR-0032, ADR-0035, ADR-0039).
 
 | Status | Intent | Transitions allowed to | Acción de servicio |
 |--------|--------|------------------------|--------------------|
-| `IN_PORTFOLIO` | `info` | `DEPOSITED`, `VOIDED`, `ENDORSED` | `receive()` (entrada) |
+| `IN_PORTFOLIO` | `info` | `DEPOSITED`, `VOIDED` | `receive()` (entrada) |
 | `DEPOSITED` | `warning` | `CLEARED`, `BOUNCED` | `deposit()` |
 | `CLEARED` | `success` | — (terminal) | `clear()` |
 | `BOUNCED` | `destructive` | — (terminal) | `bounce()` (con reversas contables) |
 | `VOIDED` | `destructive` | — (terminal) | `void()` (desde `IN_PORTFOLIO` o `ISSUED`) |
 | `ISSUED` | `info` | `CLEARED`, `VOIDED` | `issue()` (cheque propio girado) |
-| `ENDORSED` | `destructive` | — (terminal) | `endorse()` (endoso de cheque recibido a proveedor) |
+
+> **ADR-0039** removió el endoso de cheques recibidos (estado `ENDORSED`,
+> campos `endorsed_to` / `endorsement_movement`, servicio `endorse()`).
+> Ver `docs/10-architecture/adr/0039-removal-of-check-endorsement.md`
+> para el rationale. La parte de cheques girados de ADR-0035 sigue
+> vigente (cheques propios, F4.1).
+
+> **ADR-0040** define la democión de factura/orden al protestar o anular un
+> cheque: `bounce()` y `void()` invocan `_recompute_invoice_status()` para
+> recalcular el estado de pago del documento vinculado con matemática
+> firmada (INBOUND suma, OUTBOUND resta, TRANSFER interno) y demover
+> `Invoice.PAID → POSTED` si el total neto es menor al facturado. La
+> lógica vive en `CheckService` (no en `TreasuryService.update_related_document_status`)
+> para preservar el comportamiento de pagos no-cheque. Ver
+> `docs/10-architecture/adr/0040-check-bounce-void-invoice-demotion.md`.
 
 **Contabilidad — Cheques recibidos:**
 - `receive()`: INBOUND a la `TreasuryAccount` puente `CHECK_PORTFOLIO`
@@ -241,7 +255,6 @@ Backend: `treasury.Check`. Lifecycle gobernado por `treasury.check_service.Check
 - `bounce()`: revierte depósito y recepción (2 movimientos OUTBOUND/TRANSFER) y
   reinstala el documento original como impago.
 - `void()`: revierte solo la recepción.
-- `endorse()`: OUTBOUND desde cartera salda al proveedor; estado `ENDORSED`.
 
 **Contabilidad — Cheques propios girados:**
 - `issue()`: OUTBOUND desde `TreasuryAccount` puente `ISSUED_CHECKS`

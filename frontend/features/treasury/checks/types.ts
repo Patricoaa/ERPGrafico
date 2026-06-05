@@ -1,4 +1,4 @@
-export type CheckStatus = 'IN_PORTFOLIO' | 'DEPOSITED' | 'CLEARED' | 'BOUNCED' | 'VOIDED' | 'ISSUED' | 'ENDORSED'
+export type CheckStatus = 'IN_PORTFOLIO' | 'DEPOSITED' | 'CLEARED' | 'BOUNCED' | 'VOIDED' | 'ISSUED'
 export type CheckDirection = 'RECEIVED' | 'ISSUED'
 
 export interface Check {

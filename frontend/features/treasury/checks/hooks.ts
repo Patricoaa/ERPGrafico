@@ -85,13 +85,6 @@ export function useCheckMutations() {
         onError: (e: Error) => showApiError(e, 'Error al marcar cheque como cobrado'),
     })
 
-    const endorse = useMutation({
-        mutationFn: ({ id, endorsedTo }: { id: number; endorsedTo: number }) =>
-            checksApi.endorse(id, endorsedTo),
-        onSuccess: () => { invalidate(); toast.success('Cheque endosado correctamente') },
-        onError: (e: Error) => showApiError(e, 'Error al endosar cheque'),
-    })
-
     return {
         create: create.mutateAsync,
         deposit: deposit.mutateAsync,
@@ -99,7 +92,6 @@ export function useCheckMutations() {
         bounce: bounce.mutateAsync,
         void: voidCheck.mutateAsync,
         markCashed: markCashed.mutateAsync,
-        endorse: endorse.mutateAsync,
         isCreating: create.isPending,
     }
 }

@@ -1880,11 +1880,17 @@ class Check(models.Model):
       IN_PORTFOLIO → DEPOSITED → CLEARED
                    → BOUNCED   (desde DEPOSITED: protesto)
       IN_PORTFOLIO → VOIDED    (anulación antes de depositar)
+      ISSUED       → CLEARED   (cobrado por el proveedor)
+                   → VOIDED    (anulación del cheque girado)
+
+    El endoso (`ENDORSED`) se removió en ADR-0039: ya no se permite endosar
+    un cheque de tercero a un proveedor. Ver `CheckService` y
+    `docs/20-contracts/state-map.md` para el state machine vigente.
     """
 
     class Direction(models.TextChoices):
         RECEIVED = 'RECEIVED', _('Recibido')
-        ISSUED   = 'ISSUED',   _('Girado')   # reservado para fase siguiente
+        ISSUED   = 'ISSUED',   _('Girado')
 
     class Status(models.TextChoices):
         IN_PORTFOLIO = 'IN_PORTFOLIO', _('En Cartera')
@@ -1893,7 +1899,6 @@ class Check(models.Model):
         BOUNCED      = 'BOUNCED',      _('Protestado / Rechazado')
         VOIDED       = 'VOIDED',       _('Anulado')
         ISSUED       = 'ISSUED',       _('Girado (Pendiente de Cobro)')
-        ENDORSED     = 'ENDORSSED',    _('Endosado')
 
     # ── Identificación ────────────────────────────────────────────────────
     direction = models.CharField(
@@ -1988,21 +1993,6 @@ class Check(models.Model):
         related_name='checks_issued_liability',
         verbose_name=_("Cuenta 'Cheques Girados' (Pasivo)"),
         help_text=_("Cuenta puente LIABILITY para cheques propios girados."),
-    )
-
-    # ── Endoso ──────────────────────────────────────────────────────────
-    endorsed_to = models.ForeignKey(
-        'contacts.Contact', on_delete=models.SET_NULL,
-        null=True, blank=True,
-        related_name='checks_endorsed_to',
-        verbose_name=_("Endosado a"),
-        help_text=_("Proveedor a quien se endosó el cheque recibido."),
-    )
-    endorsement_movement = models.OneToOneField(
-        'TreasuryMovement', on_delete=models.SET_NULL,
-        null=True, blank=True,
-        related_name='check_endorsement',
-        verbose_name=_("Movimiento de Endoso"),
     )
 
     # ── Auditoría ────────────────────────────────────────────────────────
