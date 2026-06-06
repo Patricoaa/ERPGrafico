@@ -903,9 +903,17 @@ class CreditCardStatementSerializer(serializers.ModelSerializer):
     )
     total_to_pay = serializers.SerializerMethodField()
     is_overdue = serializers.BooleanField(read_only=True)
+    # Onda 3 (ADR-0044): campos de pagos parciales.
+    amount_paid = serializers.DecimalField(
+        max_digits=14, decimal_places=2, read_only=True,
+    )
+    outstanding_balance = serializers.SerializerMethodField()
 
     def get_total_to_pay(self, obj):
         return str(obj.total_to_pay)
+
+    def get_outstanding_balance(self, obj):
+        return str(obj.outstanding_balance)
 
     class Meta:
         from .models import CreditCardStatement
@@ -919,7 +927,7 @@ class CreditCardStatementSerializer(serializers.ModelSerializer):
             'interest_charged', 'fees_charged',
             'credit_limit',
             'status', 'status_display', 'is_overdue',
-            'total_to_pay',
+            'total_to_pay', 'amount_paid', 'outstanding_balance',
             'paid_at', 'payment_movement', 'payment_movement_id',
             'payment_account', 'payment_account_name',
             'charges_movement', 'charges_movement_id',
@@ -927,7 +935,8 @@ class CreditCardStatementSerializer(serializers.ModelSerializer):
             'created_at', 'updated_at', 'created_by', 'created_by_name',
         ]
         read_only_fields = [
-            'display_id', 'status', 'is_overdue', 'total_to_pay',
+            'display_id', 'status', 'is_overdue',
+            'total_to_pay', 'amount_paid', 'outstanding_balance',
             'paid_at', 'payment_movement', 'payment_account',
             'charges_movement',
             'created_at', 'updated_at', 'created_by',
@@ -970,6 +979,17 @@ class PayStatementActionSerializer(serializers.Serializer):
         help_text="ID de la TreasuryAccount bancaria desde donde se paga.",
     )
     date = serializers.DateField(required=False)
+    # Onda 3 (ADR-0044): pago parcial opcional. Si se omite o es
+    # >= outstanding_balance, se paga el total.
+    amount = serializers.DecimalField(
+        max_digits=14, decimal_places=2, required=False, allow_null=True,
+        help_text=(
+            "Monto a pagar. Si se omite o es >= outstanding_balance, "
+            "se paga el total. Para pago parcial, enviar el monto "
+            "deseado (sujeto a card_minimum_payment_block si está "
+            "activo)."
+        ),
+    )
 
 
 class ApplyChargesActionSerializer(serializers.Serializer):

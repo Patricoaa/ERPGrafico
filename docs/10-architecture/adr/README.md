@@ -107,5 +107,6 @@ Proposed → (review) → Accepted → (later) → Superseded | Deprecated
 | [0041](0041-loan-treasury-account-type.md) | Loan como `TreasuryAccount` con `account_type=LOAN` y opción REFINANCED | Accepted |
 | [0042](0042-credit-card-p0-accounting-close.md) | Cierre P0 contable de tarjeta de crédito propia — cargos reales, idempotencia, reversa transaccional | Accepted |
 | [0043](0043-credit-card-purchase-installments.md) | Compras en tarjeta en cuotas (3/6/12) con interés explícito — `CardPurchaseGroup` + schedule francés | Accepted |
+| [0044](0044-credit-card-partial-payments-and-punitory-interest.md) | Pagos parciales e interés punitorio de tarjeta de crédito propia — `PARTIALLY_PAID` + `card_punitory_monthly_rate` + task mensual | Accepted |
 
 > **Lint:** este índice debe coincidir 1-a-1 con los archivos `NNNN-*.md` presentes en este directorio. Cualquier ADR nuevo o renombramiento exige actualizar también esta tabla.

@@ -124,9 +124,14 @@ def mark_overdue_credit_card_statements(days_ahead: int = 5, notify: bool = True
     today = timezone.now().date()
     horizon = today + timedelta(days=days_ahead)
 
-    # 1) Marcar OVERDUE los vencidos y aún OPEN.
+    # 1) Marcar OVERDUE los vencidos y aún OPEN o PARTIALLY_PAID
+    # (Onda 3, ADR-0044: un pago parcial también puede caer en mora
+    # si la fecha de vencimiento pasó y aún hay saldo).
     overdue_qs = CreditCardStatement.objects.filter(
-        status=CreditCardStatement.Status.OPEN,
+        status__in=(
+            CreditCardStatement.Status.OPEN,
+            CreditCardStatement.Status.PARTIALLY_PAID,
+        ),
         due_date__lt=today,
     )
     overdue_count = overdue_qs.update(status=CreditCardStatement.Status.OVERDUE)
@@ -185,6 +190,76 @@ def mark_overdue_credit_card_statements(days_ahead: int = 5, notify: bool = True
         'overdue_marked': overdue_count,
         'upcoming_count': len(upcoming),
         'upcoming_notified': notified,
+    }
+
+
+# ── Onda 3 (ADR-0044): Interés punitorio mensual ────────────────────────
+
+
+@shared_task(name='treasury.compute_overdue_card_interest')
+def compute_overdue_card_interest():
+    """
+    Para cada `CreditCardStatement` con saldo impago (`outstanding > 0`)
+    y `due_date < hoy`, calcula e imputa el interés punitorio
+    correspondiente a este mes, usando
+    `settings.card_punitory_monthly_rate` (Onda 3, ADR-0044).
+
+    Pensado para correr mensualmente vía beat (1° de cada mes, 09:00).
+    Idempotente por mes: si ya se imputó el interés de este mes
+    (chequeado por `reference` del ADJUSTMENT), no duplica.
+
+    Retorna un dict con el conteo de statements procesados e interés
+    total acumulado.
+    """
+    from decimal import Decimal
+    from .models import CreditCardStatement
+    from .card_service import CardService
+
+    today = timezone.now().date()
+    qs = CreditCardStatement.objects.filter(
+        status__in=(
+            CreditCardStatement.Status.OPEN,
+            CreditCardStatement.Status.OVERDUE,
+            CreditCardStatement.Status.PARTIALLY_PAID,
+        ),
+        due_date__lt=today,
+    ).select_related('card_account', 'card_account__bank')
+
+    processed = 0
+    skipped = 0
+    total_interest = Decimal('0')
+    errors: list[str] = []
+
+    for stmt in qs:
+        try:
+            if stmt.outstanding_balance <= 0:
+                skipped += 1
+                continue
+            interest, _ = CardService.apply_punitory_interest(
+                stmt, as_of_date=today,
+            )
+            if interest > 0:
+                processed += 1
+                total_interest += interest
+            else:
+                skipped += 1
+        except Exception as e:
+            errors.append(f"{stmt.display_id}: {e}")
+            logger.exception(
+                "compute_overdue_card_interest failed for %s",
+                stmt.display_id,
+            )
+
+    logger.info(
+        "compute_overdue_card_interest: processed=%s skipped=%s "
+        "total_interest=%s errors=%s",
+        processed, skipped, total_interest, len(errors),
+    )
+    return {
+        'processed': processed,
+        'skipped': skipped,
+        'total_interest': str(total_interest),
+        'errors': errors,
     }
 
 

@@ -29,7 +29,7 @@ Ver `docs/50-audit/bancos/fase-3-tarjeta-credito.md` (F3.3, F3.4).
 """
 from __future__ import annotations
 
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 from typing import TYPE_CHECKING
 from datetime import date as _date
 
@@ -342,6 +342,162 @@ class CardService:
             created_by=created_by,
         )
 
+    # ── Interés punitorio (Onda 3, ADR-0044) ──────────────────────────────
+
+    @staticmethod
+    def compute_punitory_interest(
+        statement: CreditCardStatement,
+        *,
+        as_of_date: _date | None = None,
+    ) -> Decimal:
+        """
+        Calcula el interés punitorio del emisor sobre el saldo
+        impago a la fecha (Onda 3, ADR-0044).
+
+        - Si `outstanding_balance <= 0` → 0.
+        - Si `due_date >= as_of_date` (no vencido) → 0.
+        - Si `settings.card_punitory_monthly_rate == 0` → 0
+          (cálculo desactivado).
+        - Meses de mora = `floor((as_of_date - due_date) / 30)`,
+          mínimo 1.
+        - Interés = `outstanding_balance × rate × meses_mora`,
+          redondeado a 2 decimales con ROUND_HALF_UP.
+
+        El cálculo es **on-demand**: no persiste. El caller decide
+        si imputarlo vía `apply_punitory_interest`.
+        """
+        from accounting.models import AccountingSettings
+
+        if as_of_date is None:
+            from core.utils import get_current_date
+            as_of_date = get_current_date()
+
+        outstanding = statement.outstanding_balance
+        if outstanding <= 0:
+            return Decimal('0')
+        if statement.due_date >= as_of_date:
+            return Decimal('0')
+
+        settings_obj, _ = AccountingSettings.objects.get_or_create()
+        rate = settings_obj.card_punitory_monthly_rate or Decimal('0')
+        if rate <= 0:
+            return Decimal('0')
+
+        # Meses de mora: 1 mes entero o fracción, mínimo 1.
+        days_late = (as_of_date - statement.due_date).days
+        months_late = max(1, days_late // 30)
+        interest = (outstanding * rate * Decimal(months_late)).quantize(
+            Decimal('0.01'), rounding=ROUND_HALF_UP,
+        )
+        return interest
+
+    @staticmethod
+    @transaction.atomic
+    def apply_punitory_interest(
+        statement: CreditCardStatement,
+        *,
+        as_of_date: _date | None = None,
+        interest_expense_account: Account | None = None,
+        created_by: "AbstractUser | None" = None,
+    ) -> tuple[Decimal, TreasuryMovement | None]:
+        """
+        Calcula e imputa el interés punitorio al statement (Onda 3,
+        ADR-0044). Idempotente por mes: si ya imputó el interés
+        para el mes actual, no duplica el ADJUSTMENT.
+
+        Devuelve `(interest, movement | None)`. Si el cálculo da
+        0, devuelve `(0, None)` y no crea nada.
+
+        El asiento: D=cuenta de gasto (configurable, default
+        `settings.interest_expense_account`) / H=pasivo tarjeta.
+        Referencia: `INT-PUN-{statement.display_id}-{YYYY-MM}`.
+        """
+        from accounting.models import AccountingSettings, Account as AccModel
+        from .services import TreasuryService
+
+        if statement.status not in (
+            CreditCardStatement.Status.OPEN,
+            CreditCardStatement.Status.OVERDUE,
+            CreditCardStatement.Status.PARTIALLY_PAID,
+        ):
+            # No imputar interés a un statement PAID o CANCELED.
+            return (Decimal('0'), None)
+
+        if as_of_date is None:
+            from core.utils import get_current_date
+            as_of_date = get_current_date()
+
+        interest = CardService.compute_punitory_interest(
+            statement, as_of_date=as_of_date,
+        )
+        if interest <= 0:
+            return (Decimal('0'), None)
+
+        # Idempotencia por mes: no imputar dos veces el mismo mes.
+        month_tag = as_of_date.strftime('%Y-%m')
+        reference = f"INT-PUN-{statement.display_id}-{month_tag}"
+        existing = TreasuryMovement.objects.filter(
+            reference=reference,
+            movement_type=TreasuryMovement.Type.ADJUSTMENT,
+        ).first()
+        if existing is not None:
+            return (interest, existing)  # ya estaba aplicado
+
+        # Resolver cuenta de gasto.
+        if interest_expense_account is None:
+            settings_obj, _ = AccountingSettings.objects.get_or_create()
+            interest_expense_account = settings_obj.interest_expense_account
+        if interest_expense_account is None:
+            raise ValidationError(
+                _t("No hay cuenta de gasto para imputar el interés "
+                   "punitorio. Configure `AccountingSettings."
+                   "interest_expense_account` o pase la cuenta "
+                   "explícitamente.")
+            )
+
+        # Crear el ADJUSTMENT que imputa el interés.
+        movement = TreasuryService.create_movement(
+            amount=interest,
+            movement_type=TreasuryMovement.Type.ADJUSTMENT,
+            payment_method=TreasuryMovement.Method.CARD,
+            from_account=statement.card_account,
+            date=as_of_date,
+            created_by=created_by,
+            reference=reference,
+            notes=(
+                f"Interés punitorio {month_tag} sobre saldo impago "
+                f"${statement.outstanding_balance:,.0f} "
+                f"({statement.display_id})"
+            ),
+        )
+        # Vincular al statement (no tenemos `punitory_interest_movement`
+        # como FK porque se imputa mensualmente; lo guardamos en notes
+        # y se detecta por `reference` para idempotencia).
+
+        # Sumar el interés al statement.
+        statement.interest_charged = (
+            (statement.interest_charged or Decimal('0')) + interest
+        )
+        # Reconstruir el JE del cargo si ya existía uno (mismo
+        # approach que `reapply_charges`): reversar el cargo previo
+        # y crear uno nuevo con el interés punitorio incluido.
+        # Sin embargo, en este caso el cargo previo no se tocó
+        # todavía; sólo sumamos a `interest_charged`. El usuario
+        # debe correr `reapply_charges` para imputarlo
+        # contablemente, o se acepta el desfase contable si el
+        # cargo aún no fue aplicado.
+        if statement.charges_movement_id is not None:
+            # Si ya hay cargo aplicado, re-aplicarlo para incluir
+            # el nuevo interés punitorio.
+            CardService.reapply_charges(
+                statement, created_by=created_by,
+                interest_expense_account=interest_expense_account,
+            )
+        statement.save(update_fields=[
+            'interest_charged', 'updated_at',
+        ])
+        return (interest, movement)
+
     # ── Pago del estado de cuenta (F3.4) ─────────────────────────────────
 
     @staticmethod
@@ -351,11 +507,15 @@ class CardService:
         *,
         payment_account: TreasuryAccount,
         date: _date | None = None,
+        amount: Decimal | None = None,
         created_by: "AbstractUser | None" = None,
     ) -> CreditCardStatement:
         """
         Paga el statement desde una cuenta bancaria (CHECKING o CASH).
 
+        - `amount` opcional: si None o >= `outstanding_balance`, paga
+          el saldo total. Si < `outstanding_balance`, es un pago
+          parcial: el status pasa a `PARTIALLY_PAID` (no `PAID`).
         - Crea un `TreasuryMovement` TRANSFER desde `payment_account`
           (origen = banco) hacia la `card_account` (destino = tarjeta /
           LIABILITY).
@@ -365,23 +525,33 @@ class CardService:
           para LIABILITIES y ASSETS, así que no necesita JE custom.
         - Si el total a pagar es 0, solo marca el statement como PAID
           (caso raro: statement vacío).
-        - Idempotente: si ya está PAID, retorna sin error.
+        - Idempotente: si ya está PAID, retorna sin error. Si está
+          `PARTIALLY_PAID`, acepta pagos parciales adicionales
+          hasta completar el total.
 
-        Validaciones (Gap 1.3, ADR-0037):
+        Validaciones (Gap 1.3, ADR-0037 + Onda 3, ADR-0044):
         - `payment_account` debe ser ASSET (CHECKING o CASH). Cualquier
           otro tipo (otra tarjeta, BRIDGE, CHECK_PORTFOLIO…) es rechazado.
         - Si es CHECKING, debe tener saldo suficiente. Si es CASH, también
           (la validación de CASH ya existe en TreasuryService, pero la
           hacemos explícita aquí para no depender de ella).
+        - Si `settings.card_minimum_payment_block` y el statement
+          tiene `minimum_payment > 0`, rechaza pagos parciales
+          menores a `minimum_payment` con ValidationError.
         """
+        from accounting.models import AccountingSettings
+        from .services import TreasuryService
+
         if statement.status == CreditCardStatement.Status.PAID:
             return statement  # idempotente
         if statement.status not in (
             CreditCardStatement.Status.OPEN,
             CreditCardStatement.Status.OVERDUE,
+            CreditCardStatement.Status.PARTIALLY_PAID,
         ):
             raise ValidationError(
-                _t("Solo se puede pagar un statement OPEN u OVERDUE (estado: %(s)s).")
+                _t("Solo se puede pagar un statement OPEN, OVERDUE o "
+                   "PARTIALLY_PAID (estado: %(s)s).")
                 % {'s': statement.get_status_display()}
             )
 
@@ -398,44 +568,91 @@ class CardService:
             )
 
         total = statement.total_to_pay
-        pay_date = date or timezone.now().date()
+        already_paid = statement.amount_paid or Decimal('0')
+        outstanding = max(total - already_paid, Decimal('0'))
 
-        # Validación de fondos (Gap 1.3, ADR-0037). Permite pagar
-        # aunque no haya saldo si `total == 0` (statement vacío).
-        if total > 0 and payment_account.current_balance < total:
+        # Resolver el monto a pagar.
+        pay_date = date or timezone.now().date()
+        if amount is None:
+            amount = outstanding  # default: pagar todo el saldo
+        else:
+            amount = Decimal(str(amount))
+        if amount <= 0:
             raise ValidationError(
-                _t("Saldo insuficiente en %(acc)s. Disponible: $%(avail)s, a pagar: $%(total)s.")
+                _t("El monto a pagar debe ser mayor a cero (recibido: %(a)s).")
+                % {'a': str(amount)}
+            )
+        if amount > outstanding:
+            # Truncar al saldo (no error). El operador puede pasar
+            # `amount = total` por simplicidad y el sistema corrige.
+            amount = outstanding
+
+        # Validación de pago mínimo (Onda 3, ADR-0044, opcional).
+        settings_obj, _ = AccountingSettings.objects.get_or_create()
+        if (
+            statement.minimum_payment
+            and statement.minimum_payment > 0
+            and settings_obj.card_minimum_payment_block
+            and amount < statement.minimum_payment
+            and amount < outstanding
+        ):
+            raise ValidationError(
+                _t("Pago parcial ($%(a)s) menor al mínimo exigido "
+                   "($%(m)s) y el bloqueo está activo. Si querés "
+                   "habilitar pagos menores, desactivá "
+                   "`card_minimum_payment_block` en AccountingSettings.")
                 % {
-                    'acc': payment_account.name,
-                    'avail': f"{payment_account.current_balance:,.0f}",
-                    'total': f"{total:,.0f}",
+                    'a': f"{amount:,.0f}",
+                    'm': f"{statement.minimum_payment:,.0f}",
                 }
             )
 
-        from .services import TreasuryService
-
-        if total > 0:
-            movement = TreasuryService.create_movement(
-                amount=total,
-                movement_type=TreasuryMovement.Type.TRANSFER,
-                payment_method=TreasuryMovement.Method.TRANSFER,
-                from_account=payment_account,
-                to_account=statement.card_account,
-                date=pay_date,
-                created_by=created_by,
-                reference=statement.display_id,
-                notes=(
-                    f"Pago estado de cuenta {statement.display_id} "
-                    f"({statement.period_month:02d}/{statement.period_year})"
-                ),
+        # Validación de fondos. Permite pagar aunque no haya saldo
+        # si `amount == 0` (statement vacío) — caso que ya no llega
+        # acá por el check anterior.
+        if amount > payment_account.current_balance:
+            raise ValidationError(
+                _t("Saldo insuficiente en %(acc)s. Disponible: $%(avail)s, a pagar: $%(amt)s.")
+                % {
+                    'acc': payment_account.name,
+                    'avail': f"{payment_account.current_balance:,.0f}",
+                    'amt': f"{amount:,.0f}",
+                }
             )
-            statement.payment_movement = movement
 
+        # Crear el movimiento TRANSFER.
+        movement = TreasuryService.create_movement(
+            amount=amount,
+            movement_type=TreasuryMovement.Type.TRANSFER,
+            payment_method=TreasuryMovement.Method.TRANSFER,
+            from_account=payment_account,
+            to_account=statement.card_account,
+            date=pay_date,
+            created_by=created_by,
+            reference=statement.display_id,
+            notes=(
+                f"Pago {'parcial' if amount < outstanding else 'total'} "
+                f"estado de cuenta {statement.display_id} "
+                f"({statement.period_month:02d}/{statement.period_year})"
+            ),
+        )
+        # FK al ÚLTIMO pago (no OneToOne, Onda 3). El listado
+        # completo está disponible vía `statement.payment_movements.all()`.
+        statement.payment_movement = movement
         statement.payment_account = payment_account
-        statement.paid_at = timezone.now()
-        statement.status = CreditCardStatement.Status.PAID
+        statement.amount_paid = (already_paid or Decimal('0')) + amount
+
+        # Transición de status: PARTIALLY_PAID si queda saldo, PAID
+        # si outstanding == 0.
+        new_outstanding = total - statement.amount_paid
+        if new_outstanding <= Decimal('0'):
+            statement.status = CreditCardStatement.Status.PAID
+            statement.paid_at = timezone.now()
+        else:
+            statement.status = CreditCardStatement.Status.PARTIALLY_PAID
+
         statement.save(update_fields=[
-            'payment_movement', 'payment_account',
+            'payment_movement', 'payment_account', 'amount_paid',
             'paid_at', 'status', 'updated_at',
         ])
         return statement
@@ -533,12 +750,16 @@ class CardService:
             old_charges_mv.delete()
             statement.charges_movement = None
 
-        # 2) Reversar pago (si existe).
-        old_payment_mv = statement.payment_movement
-        if old_payment_mv is not None:
+        # 2) Reversar pagos (Onda 3: N pagos parciales, no sólo
+        # el último). Itera `payment_movements.all()` para revertir
+        # todos los TRANSFERs vinculados al statement.
+        old_payment_mvs = list(statement.payment_movements.all())
+        for old_payment_mv in old_payment_mvs:
             if old_payment_mv.is_reconciled:
                 raise ValidationError(
-                    _t("El movimiento de pago está conciliado. Des-reconcílielo antes de reversar.")
+                    _t("El movimiento de pago %(id)s está conciliado. "
+                       "Des-reconcílielo antes de reversar.")
+                    % {'id': old_payment_mv.display_id}
                 )
             if old_payment_mv.journal_entry and old_payment_mv.journal_entry.status in reversible_statuses:
                 try:
@@ -555,9 +776,11 @@ class CardService:
             old_payment_mv.journal_entry = None
             old_payment_mv.save(update_fields=['journal_entry'])
             old_payment_mv.delete()
+        if old_payment_mvs:
             statement.payment_movement = None
             statement.payment_account = None
             statement.paid_at = None
+            statement.amount_paid = Decimal('0')
 
         # 3) Marcar CANCELED.
         statement.status = CreditCardStatement.Status.CANCELED
@@ -571,8 +794,8 @@ class CardService:
         )
         statement.save(update_fields=[
             'status', 'notes',
-            'charges_movement', 'payment_movement', 'payment_account', 'paid_at',
-            'updated_at',
+            'charges_movement', 'payment_movement', 'payment_account',
+            'paid_at', 'amount_paid', 'updated_at',
         ])
         return statement
 

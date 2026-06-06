@@ -443,6 +443,15 @@ CELERY_BEAT_SCHEDULE = {
         'schedule': crontab(hour=8, minute=5),   # Diario a las 08:05
     },
 
+    # ── Treasury / Tarjeta — Onda 3 (ADR-0044) ─────────────────────────────
+    # Calcula e imputa el interés punitorio mensual sobre saldos impagos
+    # vencidos. Idempotente por mes. No-op si
+    # `card_punitory_monthly_rate == 0` en AccountingSettings.
+    'compute_overdue_card_interest_monthly': {
+        'task': 'treasury.tasks.compute_overdue_card_interest',
+        'schedule': crontab(hour=9, minute=0, day_of_month=1),  # 1° de cada mes
+    },
+
     # ── Treasury / Loans (Fase 2 — F2.9, opt-in) ───────────────────────────
     # Devenga el interés del mes para créditos ACTIVE. No-op si no hay
     # cuentas de gasto/pasivo configuradas en AccountingSettings (F5.1).
