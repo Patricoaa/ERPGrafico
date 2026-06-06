@@ -275,6 +275,7 @@ export function LoanDetailModal({ loanId, open, onOpenChange }: Props) {
                 <LoanPayInstallmentModal
                     installment={payingInst}
                     loanCurrency={loan.currency}
+                    penaltyRate={loan.penalty_rate}
                     open={true}
                     onOpenChange={(o) => { if (!o) setPayingInst(null) }}
                 />
