@@ -1,6 +1,6 @@
 "use client"
 
-import React from 'react'
+import React, { useEffect, useMemo } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import type { Resolver } from 'react-hook-form'
@@ -16,6 +16,7 @@ import { Banknote } from 'lucide-react'
 import { useBanks } from '../hooks/useMasterData'
 import { useTreasuryAccounts } from '../hooks/useTreasuryAccounts'
 import { useLoanMutations } from './hooks'
+import { AccountSelector } from '@/components/selectors/AccountSelector'
 
 const schema = z.object({
     lender: z.string().min(1, 'Banco es requerido'),
@@ -33,7 +34,7 @@ const schema = z.object({
     stamp_tax: z.string().optional(),
     penalty_rate: z.string().optional(),
     disbursement_account: z.string().min(1, 'Cuenta de desembolso es requerida'),
-    liability_account: z.string().min(1, 'Cuenta pasivo es requerida'),
+    liability_account: z.string().min(1, 'Cuenta contable de pasivo es requerida'),
     notes: z.string().optional(),
 })
 
@@ -42,9 +43,10 @@ type FormValues = z.infer<typeof schema>
 interface Props {
     open: boolean
     onOpenChange: (open: boolean) => void
+    bankId?: number
 }
 
-export function LoanRegisterDrawer({ open, onOpenChange }: Props) {
+export function LoanRegisterDrawer({ open, onOpenChange, bankId }: Props) {
     const { banks } = useBanks()
     const { accounts } = useTreasuryAccounts()
     const { create, isCreating } = useLoanMutations()
@@ -52,7 +54,7 @@ export function LoanRegisterDrawer({ open, onOpenChange }: Props) {
     const form = useForm<FormValues>({
         resolver: zodResolver(schema) as unknown as Resolver<FormValues>,
         defaultValues: {
-            lender: '',
+            lender: bankId ? String(bankId) : '',
             loan_number: '',
             currency: 'CLP',
             principal: '',
@@ -72,11 +74,21 @@ export function LoanRegisterDrawer({ open, onOpenChange }: Props) {
         },
     })
 
-    const disbursementAccounts = (accounts ?? []).filter(
-        (a) => a.account_type === 'CHECKING' || a.account_type === 'CASH',
-    )
-    const liabilityAccounts = (accounts ?? []).filter(
-        (a) => a.account_type === 'LOAN',
+    useEffect(() => {
+        if (open && bankId) {
+            form.setValue('lender', String(bankId))
+        }
+    }, [open, bankId, form])
+
+    // Filtrar cuentas de desembolso: sólo CHECKING o CASH, y si hay bankId
+    // acotamos a las del banco seleccionado.
+    const disbursementAccounts = useMemo(
+        () => (accounts ?? []).filter((a) => {
+            const typeOk = a.account_type === 'CHECKING' || a.account_type === 'CASH'
+            const bankOk = bankId ? a.bank === bankId : true
+            return typeOk && bankOk
+        }),
+        [accounts, bankId],
     )
 
     const onSubmit = async (values: FormValues) => {
@@ -108,6 +120,10 @@ export function LoanRegisterDrawer({ open, onOpenChange }: Props) {
             open={open}
             onOpenChange={onOpenChange}
             side="left"
+            defaultSize="720px"
+            minSize="560px"
+            maxSize="960px"
+            resizable
             title={
                 <div className="flex items-center gap-3">
                     <Banknote className="h-5 w-5 text-muted-foreground" />
@@ -143,6 +159,7 @@ export function LoanRegisterDrawer({ open, onOpenChange }: Props) {
                                 <LabeledSelect
                                     label="Banco Acreedor"
                                     required
+                                    disabled={!!bankId}
                                     options={(banks ?? []).map((b) => ({ value: String(b.id), label: b.name }))}
                                     value={field.value}
                                     onChange={field.onChange}
@@ -272,7 +289,10 @@ export function LoanRegisterDrawer({ open, onOpenChange }: Props) {
                         />
                     </div>
 
-                    <FormSection title="Cargos (opcional)" icon={Banknote} />
+                    <FormSection title="Cargos del Contrato (opcional)" icon={Banknote} />
+                    <p className="text-xs text-muted-foreground -mt-2">
+                        Valores pactados. Podrás editarlos al momento de desembolsar.
+                    </p>
                     <div className="grid grid-cols-3 gap-4">
                         <FormField
                             control={form.control}
@@ -346,7 +366,7 @@ export function LoanRegisterDrawer({ open, onOpenChange }: Props) {
                     </div>
 
                     <FormSection title="Cuentas" icon={Banknote} />
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-4">
                         <FormField
                             control={form.control}
                             name="disbursement_account"
@@ -367,16 +387,15 @@ export function LoanRegisterDrawer({ open, onOpenChange }: Props) {
                             control={form.control}
                             name="liability_account"
                             render={({ field, fieldState }) => (
-                                <LabeledSelect
-                                    label="Cuenta Pasivo (Línea de Crédito)"
-                                    required
-                                    options={liabilityAccounts.map((a) => ({
-                                        value: String(a.id), label: `${a.name} (${a.code})`,
-                                    }))}
-                                    value={field.value}
-                                    onChange={field.onChange}
-                                    error={fieldState.error?.message}
-                                />
+                                <div className="space-y-1">
+                                    <AccountSelector
+                                        label="Cuenta Contable de Pasivo (Préstamo por pagar — 2.x)"
+                                        value={field.value}
+                                        onChange={(v) => field.onChange(v ?? '')}
+                                        accountType="LIABILITY"
+                                        error={fieldState.error?.message}
+                                    />
+                                </div>
                             )}
                         />
                     </div>

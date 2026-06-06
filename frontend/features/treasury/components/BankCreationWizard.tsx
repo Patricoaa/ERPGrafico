@@ -157,14 +157,6 @@ export function BankCreationWizard({ open, onOpenChange, onSuccess }: BankCreati
         [existingAccounts],
     )
 
-    const liabilityOptions = useMemo(
-        () =>
-            (existingAccounts ?? [])
-                .filter((a) => a.account_type === "CREDIT_CARD")
-                .map((a) => ({ value: String(a.id), label: a.name })),
-        [existingAccounts],
-    )
-
     useEffect(() => {
         if (!open) return
         const id = requestAnimationFrame(() => {
@@ -512,12 +504,11 @@ export function BankCreationWizard({ open, onOpenChange, onSuccess }: BankCreati
                                             options={disbursementOptions}
                                             placeholder="Cuenta corriente..."
                                         />
-                                        <LabeledSelect
-                                            label="Cuenta pasivo *"
+                                        <AccountSelector
+                                            label="Cuenta contable de pasivo (2.x) *"
                                             value={loan.liability_account}
-                                            onChange={(v) => updateLoan(i, { liability_account: v })}
-                                            options={liabilityOptions}
-                                            placeholder="Tarjeta crédito..."
+                                            onChange={(v) => updateLoan(i, { liability_account: v ?? '' })}
+                                            accountType="LIABILITY"
                                         />
                                     </div>
                                 </ItemCard>
@@ -589,7 +580,7 @@ export function BankCreationWizard({ open, onOpenChange, onSuccess }: BankCreati
             },
         ],
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        [bankName, bankCode, bankSwift, checkingAccounts, creditCards, loans, isCreating, disbursementOptions, liabilityOptions, loansValid, allAccountingAccounts],
+        [bankName, bankCode, bankSwift, checkingAccounts, creditCards, loans, isCreating, disbursementOptions, loansValid, allAccountingAccounts],
     )
 
     return (
