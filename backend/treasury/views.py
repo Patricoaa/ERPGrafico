@@ -21,7 +21,7 @@ from .serializers import (
     PaymentTerminalProviderSerializer, PaymentTerminalDeviceSerializer,
     BankLoanSerializer, BankLoanWriteSerializer, LoanInstallmentSerializer,
     PayInstallmentActionSerializer, PrepayLoanActionSerializer,
-    RefinanceLoanActionSerializer,
+    RefinanceLoanActionSerializer, DisburseLoanActionSerializer,
     CreditCardStatementSerializer, CreditCardStatementWriteSerializer,
     PayStatementActionSerializer, ApplyChargesActionSerializer,
 )
@@ -2054,10 +2054,42 @@ class BankLoanViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     def perform_create(self, serializer):
         from .models import BankLoan
         from django.core.exceptions import ValidationError as DjangoValidationError
+        from .loan_provisioning import get_or_create_loan_treasury_account
+
+        # El write serializer expone `liability_account` apuntando a
+        # `Account` (cuenta contable), no a `TreasuryAccount`. Aquí
+        # resolvemos/creamos la wrapper LOAN correspondiente y la
+        # inyectamos en `validated_data` para que el `save()` del
+        # ModelSerializer asigne la FK correcta del modelo.
+        validated = serializer.validated_data
+        accounting_account = validated.get('liability_account')
+        if accounting_account is not None:
+            # Necesitamos `loan.lender` para resolver; pero todavía no
+            # tenemos `loan`. Usamos el `lender` validado directamente.
+            from .models import Bank
+            lender = validated.get('lender')
+            if not isinstance(lender, Bank):
+                lender = Bank.objects.get(pk=lender)
+            try:
+                ta = get_or_create_loan_treasury_account(
+                    bank=lender,
+                    accounting_account=accounting_account,
+                    currency=validated.get('currency', 'CLP'),
+                )
+            except DjangoValidationError as e:
+                # Si la cuenta contable ya está usada por otro tipo de TA,
+                # devolvemos 400 con detalle legible.
+                msg = e.message_dict if hasattr(e, 'message_dict') else (
+                    e.messages if hasattr(e, 'messages') else [str(e)]
+                )
+                raise drf_serializers.ValidationError({'liability_account': msg})
+            validated['liability_account'] = ta
+
         try:
             loan = serializer.save(created_by=self.request.user)
         except DjangoValidationError as e:
             raise drf_serializers.ValidationError(e.message_dict if hasattr(e, 'message_dict') else e.messages)
+
         # Devolver el objeto hidratado al serializer de lectura.
         self._just_created = loan
 
@@ -2078,9 +2110,25 @@ class BankLoanViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     @action(detail=True, methods=['post'])
     def disburse(self, request, pk=None):
         from .loan_service import LoanService
+        from decimal import Decimal
         loan = self.get_object()
+        payload = DisburseLoanActionSerializer(data=request.data)
+        payload.is_valid(raise_exception=True)
+        v = payload.validated_data
         try:
-            loan = LoanService.disburse(loan, created_by=request.user)
+            loan = LoanService.disburse(
+                loan,
+                date=v.get('date'),
+                opening_fee_override=(
+                    Decimal(str(v['opening_fee'])) if v.get('opening_fee') is not None else None
+                ),
+                stamp_tax_override=(
+                    Decimal(str(v['stamp_tax'])) if v.get('stamp_tax') is not None else None
+                ),
+                commission_expense_account=v.get('commission_expense_account'),
+                stamp_tax_expense_account=v.get('stamp_tax_expense_account'),
+                created_by=request.user,
+            )
         except ValidationError as e:
             return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         # Refrescar para invalidar el prefetch de installments.

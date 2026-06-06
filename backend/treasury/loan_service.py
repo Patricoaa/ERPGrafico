@@ -199,6 +199,10 @@ class LoanService:
         loan: BankLoan,
         *,
         date=None,
+        opening_fee_override: "Decimal | None" = None,
+        stamp_tax_override: "Decimal | None" = None,
+        commission_expense_account: "Account | None" = None,
+        stamp_tax_expense_account: "Account | None" = None,
         created_by: "AbstractUser | None" = None,
     ) -> BankLoan:
         """
@@ -207,8 +211,24 @@ class LoanService:
         1. Genera la tabla de amortización si no existe.
         2. Crea TreasuryMovement INBOUND al disbursement_account con origen
            contable = liability_account (crédito al pasivo). El asiento
-           contable lo genera `TreasuryService._create_accounting_entry`.
+           contable lo genera `_build_disbursement_entry` (manual, porque el
+           flujo estándar de Treasury no conoce la liability_account).
         3. Marca el crédito como ACTIVE.
+
+        Cargos del desembolso:
+          `opening_fee_override` y `stamp_tax_override` permiten ajustar los
+          cargos guardados en el `BankLoan` **sólo al materializar** el
+          desembolso (one-shot). El contrato conserva los valores originales
+          en el modelo. Si el override difiere del valor original, la
+          diferencia se documenta en las `notes` del `TreasuryMovement` para
+          trazabilidad contable.
+
+        Cuentas de gasto (overrides opcionales del AccountingSettings):
+          `commission_expense_account` y `stamp_tax_expense_account` ganan
+          sobre los settings `loan_commission_expense_account` /
+          `loan_stamp_tax_expense_account` si vienen en el payload. Esto
+          permite al operador configurar el asiento "in-line" cuando los
+          settings no están definidos a nivel empresa (escape híbrido).
 
         Idempotencia: si el crédito ya está ACTIVE, retorna sin error.
         """
@@ -222,30 +242,56 @@ class LoanService:
 
         from .services import TreasuryService
 
-        # Cargos de apertura (comisión + impuesto de timbres) — se cobran al
-        # desembolso como gasto, neteando el efectivo recibido. Si el cargo > 0
-        # se exige su cuenta de gasto (fail-loud: el operador optó por el cargo
-        # y debe indicar dónde se imputa). Por defecto ambos son 0 → sin cambios.
-        opening_fee = loan.opening_fee or Decimal('0')
-        stamp_tax = loan.stamp_tax or Decimal('0')
+        # Cargos de apertura: si llega override, gana. Si no, el del contrato.
+        # El contrato NO se muta (preservamos el valor originalmente pactado).
+        opening_fee_contract = loan.opening_fee or Decimal('0')
+        stamp_tax_contract = loan.stamp_tax or Decimal('0')
+        opening_fee = (
+            opening_fee_override
+            if opening_fee_override is not None
+            else opening_fee_contract
+        )
+        stamp_tax = (
+            stamp_tax_override
+            if stamp_tax_override is not None
+            else stamp_tax_contract
+        )
+        # No aceptamos cargos negativos: el operador ajusta a 0 si quiere
+        # "anular" un cargo del contrato.
+        if opening_fee < 0:
+            raise ValidationError(_t("La comisión de apertura no puede ser negativa."))
+        if stamp_tax < 0:
+            raise ValidationError(_t("El impuesto de timbres no puede ser negativo."))
+
         fee_lines: list = []
         if opening_fee > 0 or stamp_tax > 0:
             from accounting.models import AccountingSettings
             settings_obj = AccountingSettings.get_solo()
-            commission_acc = getattr(settings_obj, 'loan_commission_expense_account', None) if settings_obj else None
-            stamp_acc = getattr(settings_obj, 'loan_stamp_tax_expense_account', None) if settings_obj else None
+            # Override per-desembolso gana sobre el setting; si no, el setting.
+            commission_acc = (
+                commission_expense_account
+                if commission_expense_account is not None
+                else getattr(settings_obj, 'loan_commission_expense_account', None)
+            )
+            stamp_acc = (
+                stamp_tax_expense_account
+                if stamp_tax_expense_account is not None
+                else getattr(settings_obj, 'loan_stamp_tax_expense_account', None)
+            )
             if opening_fee > 0:
                 if not commission_acc:
                     raise ValidationError(_t(
                         "Configure la 'Cuenta de Gasto por Comisiones de Préstamo' en "
-                        "Configuración > Contabilidad para registrar la comisión de apertura."
+                        "Configuración > Contabilidad para registrar la comisión de apertura, "
+                        "o envíela en el payload del desembolso."
                     ))
                 fee_lines.append((commission_acc, opening_fee))
             if stamp_tax > 0:
                 if not stamp_acc:
                     raise ValidationError(_t(
                         "Configure la 'Cuenta de Gasto por Impuesto de Timbres' en "
-                        "Configuración > Contabilidad para registrar el ITE del desembolso."
+                        "Configuración > Contabilidad para registrar el ITE del desembolso, "
+                        "o envíela en el payload del desembolso."
                     ))
                 fee_lines.append((stamp_acc, stamp_tax))
 
@@ -255,6 +301,20 @@ class LoanService:
                 "La comisión de apertura y el impuesto de timbres no pueden igualar "
                 "o superar el capital del crédito."
             ))
+
+        # Notas: documentamos el contrato original + override (si difiere)
+        # para que la auditoría contable vea el ajuste en el movimiento.
+        notes_base = f"Desembolso crédito {loan.display_id} ({loan.lender.name})"
+        notes_adjustments: list[str] = []
+        if opening_fee_override is not None and opening_fee_override != opening_fee_contract:
+            notes_adjustments.append(
+                f"Comisión apertura ajustada: contrato {opening_fee_contract} → materializado {opening_fee}"
+            )
+        if stamp_tax_override is not None and stamp_tax_override != stamp_tax_contract:
+            notes_adjustments.append(
+                f"ITE ajustado: contrato {stamp_tax_contract} → materializado {stamp_tax}"
+            )
+        notes_final = notes_base + ((" · " + " · ".join(notes_adjustments)) if notes_adjustments else "")
 
         # INBOUND al banco por el efectivo NETO, SIN auto-asiento: el flujo
         # estándar de Treasury no conoce la liability_account del préstamo y, al
@@ -273,7 +333,7 @@ class LoanService:
             date=date or loan.start_date,
             created_by=created_by,
             reference=loan.display_id,
-            notes=f"Desembolso crédito {loan.display_id} ({loan.lender.name})",
+            notes=notes_final,
             is_pending_registration=True,
         )
 

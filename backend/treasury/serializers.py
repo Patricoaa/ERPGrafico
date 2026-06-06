@@ -809,10 +809,21 @@ class BankLoanSerializer(serializers.ModelSerializer):
 
 
 class BankLoanWriteSerializer(serializers.ModelSerializer):
-    """Serializer de escritura más liviano (omite campos derivados)."""
+    """
+    Serializer de escritura más liviano (omite campos derivados).
+
+    `liability_account` recibe el ID de una **cuenta contable** (Account)
+    de tipo LIABILITY, NO de una TreasuryAccount. El backend resuelve
+    (o crea) la TreasuryAccount tipo LOAN correspondiente en
+    `BankLoanViewSet.perform_create`, vía
+    `loan_provisioning.get_or_create_loan_treasury_account`. Esto evita que
+    el operador tenga que crear manualmente el wrapper de tesorería para el
+    pasivo del préstamo (ADR-0041).
+    """
 
     class Meta:
         from .models import BankLoan
+        from accounting.models import Account
         model = BankLoan
         fields = [
             'lender', 'loan_number',
@@ -822,6 +833,35 @@ class BankLoanWriteSerializer(serializers.ModelSerializer):
             'disbursement_account', 'liability_account',
             'notes', 'collateral_notes',
         ]
+        extra_kwargs = {
+            # Truco: la FK del modelo apunta a TreasuryAccount, pero acá
+            # sobreescribimos el queryset para que el campo acepte el ID
+            # de la `Account` contable. En `BankLoanViewSet.perform_create`
+            # extraemos `validated_data['liability_account']` (un Account)
+            # y lo reemplazamos por la TreasuryAccount resuelta ANTES del
+            # save, para satisfacer la FK del modelo.
+            'liability_account': {
+                'queryset': Account.objects.all(),
+                'help_text': (
+                    "ID de la cuenta contable de PASIVO (Account.account_type=LIABILITY, "
+                    "hoja) que materializa la deuda. El backend crea/vincula la "
+                    "TreasuryAccount tipo LOAN correspondiente."
+                ),
+            },
+        }
+
+    def validate_liability_account(self, value):
+        """Valida que la cuenta contable de pasivo sea apta."""
+        from accounting.models import AccountType
+        if value.account_type != AccountType.LIABILITY:
+            raise serializers.ValidationError(
+                'La cuenta contable debe ser de tipo PASIVO (LIABILITY).'
+            )
+        if not getattr(value, 'is_selectable', True):
+            raise serializers.ValidationError(
+                'La cuenta contable debe ser una cuenta auxiliar (hoja).'
+            )
+        return value
 
     def validate(self, attrs):
         # Validar que first_due_date >= start_date (delegable al clean() del modelo).
@@ -830,16 +870,6 @@ class BankLoanWriteSerializer(serializers.ModelSerializer):
         if start and first_due and first_due < start:
             raise serializers.ValidationError({
                 'first_due_date': 'El primer vencimiento no puede ser anterior al inicio.',
-            })
-        # Validar que liability_account sea tipo LOAN (cuenta de tesorería
-        # dedicada a la deuda del préstamo, ADR-0041). DRF no llama clean().
-        liability = attrs.get('liability_account')
-        if liability and liability.account_type != TreasuryAccount.Type.LOAN:
-            raise serializers.ValidationError({
-                'liability_account': (
-                    'La cuenta pasivo del crédito debe ser de tipo Préstamo Bancario '
-                    '(LOAN), vinculada a una cuenta contable de PASIVO (ADR-0041).'
-                )
             })
         disbursement = attrs.get('disbursement_account')
         if disbursement and disbursement.account_type in (
@@ -877,6 +907,61 @@ class PrepayLoanActionSerializer(serializers.Serializer):
 class RefinanceLoanActionSerializer(serializers.Serializer):
     """Payload para la acción `refinance` de BankLoanViewSet."""
     notes = serializers.CharField(required=False, allow_blank=True, default='')
+
+
+class DisburseLoanActionSerializer(serializers.Serializer):
+    """
+    Payload para la acción `disburse` de BankLoanViewSet.
+
+    Los cargos (`opening_fee`, `stamp_tax`) son **overrides one-shot**: el
+    `BankLoan` conserva los valores del contrato tal como fueron registrados
+    originalmente. Los overrides se usan exclusivamente para construir el
+    asiento del desembolso. La diferencia (si la hay) se documenta en las
+    `notes` del `TreasuryMovement` para trazabilidad contable.
+
+    Las cuentas de gasto (`commission_expense_account`, `stamp_tax_expense_account`)
+    son **overrides opcionales** del `AccountingSettings`. Si vienen en el
+    payload, ganan sobre los settings; si no, caen a:
+      - `settings.loan_commission_expense_account`
+      - `settings.loan_stamp_tax_expense_account`
+
+    Esto permite al operador configurar el asiento "in-line" cuando los
+    settings no están definidos a nivel empresa (escape híbrido).
+    """
+    from accounting.models import Account
+    date = serializers.DateField(required=False)
+    opening_fee = serializers.DecimalField(
+        max_digits=18, decimal_places=2, required=False, allow_null=True, min_value=0,
+    )
+    stamp_tax = serializers.DecimalField(
+        max_digits=18, decimal_places=2, required=False, allow_null=True, min_value=0,
+    )
+    commission_expense_account = serializers.PrimaryKeyRelatedField(
+        queryset=Account.objects.all(), required=False, allow_null=True,
+    )
+    stamp_tax_expense_account = serializers.PrimaryKeyRelatedField(
+        queryset=Account.objects.all(), required=False, allow_null=True,
+    )
+
+    def validate_commission_expense_account(self, value):
+        from accounting.models import AccountType
+        if value is None:
+            return value
+        if value.account_type != AccountType.EXPENSE:
+            raise serializers.ValidationError(
+                'La cuenta de gasto por comisión debe ser de tipo GASTO (EXPENSE).'
+            )
+        return value
+
+    def validate_stamp_tax_expense_account(self, value):
+        from accounting.models import AccountType
+        if value is None:
+            return value
+        if value.account_type != AccountType.EXPENSE:
+            raise serializers.ValidationError(
+                'La cuenta de gasto por ITE debe ser de tipo GASTO (EXPENSE).'
+            )
+        return value
 
 
 # ── F3.5: Tarjeta de crédito — estados de cuenta ────────────────────────────
