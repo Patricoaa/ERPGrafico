@@ -2289,6 +2289,24 @@ class BankLoan(models.Model):
         max_digits=18, decimal_places=2, default=Decimal('0'),
         help_text=_("Seguro desgravamen/cesantía mensual. Sumado a cada cuota."),
     )
+    opening_fee = models.DecimalField(
+        _("Comisión de Apertura"),
+        max_digits=18, decimal_places=2, default=Decimal('0'),
+        validators=[MinValueValidator(Decimal('0'))],
+        help_text=_("Comisión cobrada al desembolso (gasto). En la moneda del crédito."),
+    )
+    stamp_tax = models.DecimalField(
+        _("Impuesto de Timbres y Estampillas"),
+        max_digits=18, decimal_places=2, default=Decimal('0'),
+        validators=[MinValueValidator(Decimal('0'))],
+        help_text=_("ITE cobrado al desembolso (gasto). En la moneda del crédito."),
+    )
+    penalty_rate = models.DecimalField(
+        _("Tasa de Mora (mensual %)"),
+        max_digits=8, decimal_places=4, default=Decimal('0'),
+        validators=[MinValueValidator(Decimal('0'))],
+        help_text=_("Tasa de interés penal mensual sobre la cuota vencida (ej. 1.5 = 1.5%/mes). 0 = sin mora."),
+    )
 
     disbursement_account = models.ForeignKey(
         'TreasuryAccount', on_delete=models.PROTECT,
@@ -2435,6 +2453,11 @@ class LoanInstallment(models.Model):
         _("CLP Pagado"), max_digits=18, decimal_places=2,
         null=True, blank=True,
         help_text=_("Monto efectivamente pagado en CLP (para créditos UF)."),
+    )
+    penalty_paid = models.DecimalField(
+        _("Mora Pagada (CLP)"), max_digits=18, decimal_places=2,
+        default=Decimal('0'),
+        help_text=_("Interés penal cobrado al pagar esta cuota vencida (en CLP)."),
     )
 
     notes = models.CharField(_("Notas"), max_length=255, blank=True)

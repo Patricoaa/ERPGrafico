@@ -707,13 +707,13 @@ class LoanInstallmentSerializer(serializers.ModelSerializer):
             'total_amount', 'outstanding_balance',
             'status', 'status_display', 'is_overdue',
             'paid_at', 'payment_movement',
-            'uf_value_used', 'clp_amount_paid',
+            'uf_value_used', 'clp_amount_paid', 'penalty_paid',
             'notes',
         ]
         read_only_fields = [
             'display_id', 'status', 'is_overdue', 'outstanding_balance',
             'paid_at', 'payment_movement',
-            'uf_value_used', 'clp_amount_paid',
+            'uf_value_used', 'clp_amount_paid', 'penalty_paid',
         ]
 
 
@@ -794,7 +794,7 @@ class BankLoanSerializer(serializers.ModelSerializer):
             'principal', 'interest_rate', 'rate_basis', 'rate_basis_display',
             'amortization_system', 'amortization_system_display',
             'term_months', 'start_date', 'first_due_date',
-            'insurance_monthly',
+            'insurance_monthly', 'opening_fee', 'stamp_tax', 'penalty_rate',
             'disbursement_account', 'disbursement_account_name',
             'liability_account', 'liability_account_name',
             'status', 'status_display', 'notes', 'collateral_notes',
@@ -818,7 +818,7 @@ class BankLoanWriteSerializer(serializers.ModelSerializer):
             'lender', 'loan_number',
             'currency', 'principal', 'interest_rate', 'rate_basis',
             'amortization_system', 'term_months', 'start_date', 'first_due_date',
-            'insurance_monthly',
+            'insurance_monthly', 'opening_fee', 'stamp_tax', 'penalty_rate',
             'disbursement_account', 'liability_account',
             'notes', 'collateral_notes',
         ]

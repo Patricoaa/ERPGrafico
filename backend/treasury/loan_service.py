@@ -212,18 +212,51 @@ class LoanService:
 
         from .services import TreasuryService
 
-        # INBOUND al banco SIN auto-asiento: el flujo estándar de Treasury no
-        # conoce la liability_account del préstamo y, al quedar el asiento con
-        # una sola línea (sin contraparte), lo borraría (services.py:410). Lo
-        # construimos a mano balanceado: Debe banco (activo ↑) / Haber pasivo
-        # (deuda ↑).
+        # Cargos de apertura (comisión + impuesto de timbres) — se cobran al
+        # desembolso como gasto, neteando el efectivo recibido. Si el cargo > 0
+        # se exige su cuenta de gasto (fail-loud: el operador optó por el cargo
+        # y debe indicar dónde se imputa). Por defecto ambos son 0 → sin cambios.
+        opening_fee = loan.opening_fee or Decimal('0')
+        stamp_tax = loan.stamp_tax or Decimal('0')
+        fee_lines: list = []
+        if opening_fee > 0 or stamp_tax > 0:
+            from accounting.models import AccountingSettings
+            settings_obj = AccountingSettings.get_solo()
+            commission_acc = getattr(settings_obj, 'loan_commission_expense_account', None) if settings_obj else None
+            stamp_acc = getattr(settings_obj, 'loan_stamp_tax_expense_account', None) if settings_obj else None
+            if opening_fee > 0:
+                if not commission_acc:
+                    raise ValidationError(_t(
+                        "Configure la 'Cuenta de Gasto por Comisiones de Préstamo' en "
+                        "Configuración > Contabilidad para registrar la comisión de apertura."
+                    ))
+                fee_lines.append((commission_acc, opening_fee))
+            if stamp_tax > 0:
+                if not stamp_acc:
+                    raise ValidationError(_t(
+                        "Configure la 'Cuenta de Gasto por Impuesto de Timbres' en "
+                        "Configuración > Contabilidad para registrar el ITE del desembolso."
+                    ))
+                fee_lines.append((stamp_acc, stamp_tax))
+
+        net_cash = _q(loan.principal - opening_fee - stamp_tax)
+        if net_cash <= 0:
+            raise ValidationError(_t(
+                "La comisión de apertura y el impuesto de timbres no pueden igualar "
+                "o superar el capital del crédito."
+            ))
+
+        # INBOUND al banco por el efectivo NETO, SIN auto-asiento: el flujo
+        # estándar de Treasury no conoce la liability_account del préstamo y, al
+        # quedar el asiento con una sola línea (sin contraparte), lo borraría
+        # (services.py:410). Lo construimos a mano balanceado:
+        #   Debe banco net_cash · Debe comisión · Debe ITE · Haber pasivo principal
         #
-        # Nota UF: el monto se asienta tal cual `loan.principal` (igual que el
-        # movimiento). El nacimiento del pasivo en CLP y su reajuste por
-        # corrección monetaria para créditos UF queda fuera de este fix —
-        # ver evaluación de extensibilidad (intereses/reajuste/comisiones).
+        # Nota UF: los montos se asientan tal cual la moneda del crédito. El
+        # nacimiento del pasivo en CLP y su reajuste por corrección monetaria
+        # para créditos UF queda fuera de alcance — ver ADR-0033/0042.
         movement = TreasuryService.create_movement(
-            amount=loan.principal,
+            amount=net_cash,
             movement_type=TreasuryMovement.Type.INBOUND,
             payment_method=TreasuryMovement.Method.TRANSFER,
             to_account=loan.disbursement_account,
@@ -236,9 +269,11 @@ class LoanService:
 
         _build_disbursement_entry(
             movement=movement,
-            debit_account=loan.disbursement_account.account,
-            credit_account=loan.liability_account.account,
-            amount=loan.principal,
+            bank_account=loan.disbursement_account.account,
+            liability_account=loan.liability_account.account,
+            principal=loan.principal,
+            net_cash=net_cash,
+            fee_lines=fee_lines,
         )
 
         loan.status = BankLoan.Status.ACTIVE
@@ -321,14 +356,43 @@ class LoanService:
             insurance_clp = installment.insurance_amount
             total_clp = installment.total_amount
 
-        # Crear movimiento OUTBOUND por el total (CLP) sin auto-asiento
-        # (`is_pending_registration=True`): construimos el JE manualmente
-        # con el reparto capital/interés/seguro (el flujo estándar de
+        # Mora (interés penal): solo si la cuota está vencida y el crédito tiene
+        # tasa de mora. Base = cuota total vencida, prorrateo 1/30 por día de
+        # atraso (consistente con `prepay`). La cuenta de gasto es obligatoria
+        # cuando hay mora a cobrar (fail-loud).
+        penalty_clp = Decimal('0')
+        penalty_expense_account = None
+        if installment.status == LoanInstallment.Status.OVERDUE and (loan.penalty_rate or 0) > 0:
+            days_late = (pay_date - installment.due_date).days
+            if days_late > 0:
+                penalty_native = _q(
+                    installment.total_amount
+                    * (loan.penalty_rate / Decimal('100'))
+                    * Decimal(days_late) / Decimal('30')
+                )
+                penalty_clp = _q(penalty_native * uf_value_used) if uf_value_used else penalty_native
+                if penalty_clp > 0:
+                    from accounting.models import AccountingSettings
+                    settings_obj = AccountingSettings.get_solo()
+                    penalty_expense_account = (
+                        getattr(settings_obj, 'loan_penalty_expense_account', None) if settings_obj else None
+                    )
+                    if not penalty_expense_account:
+                        raise ValidationError(_t(
+                            "Configure la 'Cuenta de Gasto por Mora' en Configuración > "
+                            "Contabilidad para cobrar el interés penal de la cuota vencida."
+                        ))
+
+        total_with_penalty = _q(total_clp + penalty_clp)
+
+        # Crear movimiento OUTBOUND por el total + mora (CLP) sin auto-asiento
+        # (`is_pending_registration=True`): construimos el JE manualmente con el
+        # reparto capital/interés/seguro/mora (el flujo estándar de
         # TreasuryService no conoce la liability_account del préstamo).
         from .services import TreasuryService
 
         movement = TreasuryService.create_movement(
-            amount=total_clp,
+            amount=total_with_penalty,
             movement_type=TreasuryMovement.Type.OUTBOUND,
             payment_method=TreasuryMovement.Method.TRANSFER,
             from_account=payment_account,
@@ -337,7 +401,8 @@ class LoanService:
             reference=installment.display_id,
             notes=(
                 f"Pago cuota #{installment.number} crédito {loan.display_id} "
-                f"({loan.currency}{'=' + str(uf_value_used) if uf_value_used else ''})"
+                f"({loan.currency}{'=' + str(uf_value_used) if uf_value_used else ''}"
+                f"{'; mora ' + str(penalty_clp) if penalty_clp else ''})"
             ),
             is_pending_registration=True,
         )
@@ -351,15 +416,18 @@ class LoanService:
             principal_clp=principal_clp,
             interest_clp=interest_clp,
             insurance_clp=insurance_clp,
-            total_clp=total_clp,
+            total_clp=total_with_penalty,
             from_account=payment_account,
+            penalty_clp=penalty_clp,
+            penalty_expense_account=penalty_expense_account,
         )
 
         installment.status = LoanInstallment.Status.PAID
         installment.paid_at = timezone.now()
         installment.payment_movement = movement
         installment.uf_value_used = uf_value_used
-        installment.clp_amount_paid = total_clp if uf_value_used else None
+        installment.clp_amount_paid = total_with_penalty if uf_value_used else None
+        installment.penalty_paid = penalty_clp
         installment.save()
 
         # Si todas las cuotas están PAID/CANCELED → crédito PAID.
@@ -531,12 +599,16 @@ def _first_of_month(d):
     return d.replace(day=1)
 
 
-def _build_disbursement_entry(*, movement, debit_account, credit_account, amount):
+def _build_disbursement_entry(*, movement, bank_account, liability_account, principal, net_cash=None, fee_lines=None):
     """
-    Construye el asiento del desembolso de un crédito:
+    Construye el asiento del desembolso de un crédito (comisión/ITE neteados):
 
-      Debe  debit_account   (banco/caja que recibe el dinero — activo ↑)
-      Haber credit_account  (pasivo del préstamo — deuda ↑)
+      Debe  bank_account        net_cash  (= principal − Σ comisiones/impuestos)
+      Debe  <cuenta de gasto>   monto     (por cada (cuenta, monto) en fee_lines)
+      Haber liability_account   principal (la deuda nace por el capital completo)
+
+    `net_cash + Σ fee_lines == principal`, así el asiento cuadra. Sin cargos,
+    `net_cash == principal` y el asiento es el clásico Debe banco / Haber pasivo.
 
     El movimiento se crea con `is_pending_registration=True` para que
     TreasuryService NO genere un asiento estándar de una sola línea (que se
@@ -546,6 +618,10 @@ def _build_disbursement_entry(*, movement, debit_account, credit_account, amount
     from django.contrib.contenttypes.models import ContentType
     from accounting.models import JournalEntry, JournalItem
     from accounting.services import JournalEntryService
+
+    if net_cash is None:
+        net_cash = principal
+    fee_lines = fee_lines or []
 
     entry = JournalEntry.objects.create(
         date=movement.date,
@@ -557,13 +633,21 @@ def _build_disbursement_entry(*, movement, debit_account, credit_account, amount
         source_content_type=ContentType.objects.get_for_model(movement),
         source_object_id=movement.id,
     )
+    # Debe: banco por el efectivo neto recibido.
     JournalItem.objects.create(
-        entry=entry, account=debit_account,
-        debit=amount, credit=Decimal('0'),
+        entry=entry, account=bank_account,
+        debit=net_cash, credit=Decimal('0'),
     )
+    # Debe: gastos de apertura (comisión, ITE).
+    for fee_account, fee_amount in fee_lines:
+        JournalItem.objects.create(
+            entry=entry, account=fee_account,
+            debit=fee_amount, credit=Decimal('0'),
+        )
+    # Haber: pasivo del préstamo por el capital completo.
     JournalItem.objects.create(
-        entry=entry, account=credit_account,
-        debit=Decimal('0'), credit=amount,
+        entry=entry, account=liability_account,
+        debit=Decimal('0'), credit=principal,
     )
     JournalEntryService.post_entry(entry)
     movement.journal_entry = entry
@@ -581,6 +665,8 @@ def _build_installment_entry(
     insurance_clp,
     total_clp,
     from_account,
+    penalty_clp=Decimal('0'),
+    penalty_expense_account=None,
 ):
     """
     Construye el asiento contable con el reparto explícito:
@@ -588,10 +674,12 @@ def _build_installment_entry(
       Debe  `liability_account`            (amortización de capital)
       Debe  `interest_expense_account`     (gasto interés, si > 0 y cuenta dada)
       Debe  `insurance_expense_account`    (gasto seguro, si > 0 y cuenta dada)
+      Debe  `penalty_expense_account`      (gasto mora, si > 0 — cuenta obligatoria)
       Haber `from_account.account`         (banco/caja que paga)
 
-    Si no se pasan las cuentas de gasto, su línea se omite y la diferencia
-    se imputa a la `liability_account` para no perder la cuadratura.
+    `total_clp` ya incluye la mora cuando la hay. Si no se pasan las cuentas de
+    gasto de interés/seguro, su línea se omite y la diferencia se imputa a la
+    `liability_account` para no perder la cuadratura.
 
     El movimiento se crea con `is_pending_registration=True` para que
     TreasuryService NO genere un asiento estándar (que no conoce la
@@ -638,6 +726,12 @@ def _build_installment_entry(
         JournalItem.objects.create(
             entry=entry, account=insurance_expense_account,
             debit=insurance_clp, credit=Decimal('0'),
+        )
+    # 3.5) Debe: gasto por mora (interés penal de cuota vencida)
+    if penalty_clp and penalty_expense_account:
+        JournalItem.objects.create(
+            entry=entry, account=penalty_expense_account,
+            debit=penalty_clp, credit=Decimal('0'),
         )
     # 4) Haber: cuenta de tesorería (banco/caja que paga)
     JournalItem.objects.create(
