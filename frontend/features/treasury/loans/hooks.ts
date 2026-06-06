@@ -4,7 +4,7 @@ import { showApiError } from '@/lib/errors'
 import { loansApi } from './api'
 import type {
     BankLoanCreatePayload, PayInstallmentPayload, PrepayLoanPayload,
-    RefinanceLoanPayload,
+    RefinanceLoanPayload, DisburseLoanPayload,
 } from './types'
 
 const LOANS_KEYS = {
@@ -65,7 +65,8 @@ export function useLoanMutations() {
     })
 
     const disburse = useMutation({
-        mutationFn: (id: number) => loansApi.disburse(id),
+        mutationFn: ({ id, payload }: { id: number; payload?: DisburseLoanPayload }) =>
+            loansApi.disburse(id, payload),
         onSuccess: () => { invalidate(); toast.success('Crédito desembolsado') },
         onError: (e: Error) => showApiError(e, 'Error al desembolsar crédito'),
     })

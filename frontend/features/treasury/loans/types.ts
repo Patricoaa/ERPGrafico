@@ -106,3 +106,13 @@ export interface PrepayLoanPayload {
 export interface RefinanceLoanPayload {
     notes?: string
 }
+
+export interface DisburseLoanPayload {
+    date?: string
+    opening_fee?: string
+    stamp_tax?: string
+    /** Override per-desembolso de la cuenta de gasto por comisión. */
+    commission_expense_account?: number | null
+    /** Override per-desembolso de la cuenta de gasto por ITE. */
+    stamp_tax_expense_account?: number | null
+}

@@ -1,7 +1,7 @@
 import api from '@/lib/api'
 import type {
     BankLoan, BankLoanCreatePayload, PayInstallmentPayload,
-    PrepayLoanPayload, RefinanceLoanPayload, LoanInstallment,
+    PrepayLoanPayload, RefinanceLoanPayload, DisburseLoanPayload, LoanInstallment,
 } from './types'
 
 export const loansApi = {
@@ -25,8 +25,8 @@ export const loansApi = {
         return data
     },
 
-    disburse: async (id: number): Promise<BankLoan> => {
-        const { data } = await api.post<BankLoan>(`/treasury/loans/${id}/disburse/`, {})
+    disburse: async (id: number, payload?: DisburseLoanPayload): Promise<BankLoan> => {
+        const { data } = await api.post<BankLoan>(`/treasury/loans/${id}/disburse/`, payload ?? {})
         return data
     },
 
