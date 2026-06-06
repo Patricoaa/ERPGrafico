@@ -11,7 +11,7 @@ Cubre:
   - Prepago: saldo 0, status=PAID, cuotas CANCELED.
   - Refinanciación: status=REFINANCED, cuotas CANCELED.
 """
-from datetime import date
+from datetime import date, timedelta
 from decimal import Decimal
 
 import pytest
@@ -19,7 +19,7 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.db.models import Sum
 
-from accounting.models import Account, AccountType
+from accounting.models import Account, AccountType, JournalItem
 from finances.models import IndicatorValue
 from treasury.models import (
     Bank, BankLoan, LoanInstallment, TreasuryAccount, TreasuryMovement,
@@ -239,6 +239,80 @@ def test_disburse_paid_loan_raises(base):
     loan = _make_loan(base, status=BankLoan.Status.PAID)
     with pytest.raises(ValidationError):
         LoanService.disburse(loan)
+
+
+@pytest.mark.django_db
+def test_disburse_with_fees_nets_cash_and_books_expense(base):
+    """Comisión + ITE: el banco recibe el neto y el pasivo nace por el principal."""
+    from accounting.models import AccountingSettings
+    commission_acc = Account.objects.create(
+        name='Comisión Préstamo', code='5.2.01.030', account_type=AccountType.EXPENSE)
+    stamp_acc = Account.objects.create(
+        name='Impuesto Timbres', code='5.2.01.040', account_type=AccountType.EXPENSE)
+    s = AccountingSettings.get_solo()
+    s.loan_commission_expense_account = commission_acc
+    s.loan_stamp_tax_expense_account = stamp_acc
+    s.save()
+
+    loan = _make_loan(base, opening_fee=Decimal('120000'), stamp_tax=Decimal('80000'))
+    LoanService.disburse(loan, created_by=base['user'])
+
+    movement = TreasuryMovement.objects.get(reference=loan.display_id)
+    assert movement.amount == Decimal('11800000.00')  # 12.000.000 − 120.000 − 80.000
+    entry = movement.journal_entry
+    assert entry.items.count() == 4
+    bank_debit = JournalItem.objects.filter(
+        entry=entry, account=base['bank_ta'].account).aggregate(s=Sum('debit'))['s']
+    liab_credit = JournalItem.objects.filter(
+        entry=entry, account=base['liab_ta'].account).aggregate(s=Sum('credit'))['s']
+    comm_debit = JournalItem.objects.filter(
+        entry=entry, account=commission_acc).aggregate(s=Sum('debit'))['s']
+    stamp_debit = JournalItem.objects.filter(
+        entry=entry, account=stamp_acc).aggregate(s=Sum('debit'))['s']
+    assert bank_debit == Decimal('11800000.00')
+    assert liab_credit == Decimal('12000000.00')
+    assert comm_debit == Decimal('120000.00')
+    assert stamp_debit == Decimal('80000.00')
+
+
+@pytest.mark.django_db
+def test_disburse_fee_without_account_raises(base):
+    """Comisión > 0 sin cuenta de gasto configurada → falla (fail-loud)."""
+    loan = _make_loan(base, opening_fee=Decimal('50000'))
+    with pytest.raises(ValidationError, match='Configure'):
+        LoanService.disburse(loan, created_by=base['user'])
+
+
+@pytest.mark.django_db
+def test_pay_overdue_installment_charges_penalty(base):
+    """Cuota vencida con tasa de mora: línea de mora, total mayor y penalty_paid."""
+    from accounting.models import AccountingSettings
+    penalty_acc = Account.objects.create(
+        name='Gasto Mora', code='5.2.01.050', account_type=AccountType.EXPENSE)
+    s = AccountingSettings.get_solo()
+    s.loan_penalty_expense_account = penalty_acc
+    s.save()
+
+    loan = _make_loan(
+        base, penalty_rate=Decimal('3.00'), insurance_monthly=Decimal('0'), term_months=2)
+    LoanService.disburse(loan, created_by=base['user'])
+    inst = loan.installments.first()
+    inst.status = LoanInstallment.Status.OVERDUE
+    inst.save()
+    pay_date = inst.due_date + timedelta(days=30)
+
+    paid = LoanService.pay_installment(
+        loan, inst, payment_account=base['bank_ta'], date=pay_date, created_by=base['user'])
+    paid.refresh_from_db()
+
+    # mora = total cuota × 3% × 30/30.
+    expected_penalty = (inst.total_amount * Decimal('0.03')).quantize(Decimal('0.01'))
+    assert paid.penalty_paid == expected_penalty
+    penalty_debit = JournalItem.objects.filter(
+        account=penalty_acc, debit__gt=0).aggregate(s=Sum('debit'))['s']
+    assert penalty_debit == expected_penalty
+    # El OUTBOUND total incluye la mora.
+    assert paid.payment_movement.amount == (inst.total_amount + expected_penalty)
 
 
 # ── F2.6 / F2.7 pay_installment ───────────────────────────────────────────

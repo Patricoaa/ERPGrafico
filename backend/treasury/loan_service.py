@@ -20,7 +20,7 @@ Ver `docs/50-audit/bancos/fase-2-creditos-bancarios.md` (F2.4–F2.8).
 from __future__ import annotations
 
 from datetime import date
-from decimal import Decimal, ROUND_HALF_UP
+from decimal import Decimal, ROUND_HALF_UP, ROUND_HALF_EVEN
 from typing import TYPE_CHECKING
 
 from django.core.exceptions import ValidationError
@@ -42,6 +42,16 @@ _TWO = Decimal('0.01')
 def _q(x: Decimal) -> Decimal:
     """Quantize to 2 decimals (banking rounding)."""
     return x.quantize(_TWO, rounding=ROUND_HALF_UP)
+
+
+def _peso(x: Decimal) -> Decimal:
+    """
+    Redondeo a peso entero, igual que el libro mayor (JournalItem.debit/credit
+    son `decimal_places=0`). Usa HALF_EVEN para coincidir con el redondeo de
+    Django al persistir, de modo que la línea de cuadre (banco) sume EXACTAMENTE
+    los débitos ya redondeados y el asiento cuadre en pesos enteros (cross-DB).
+    """
+    return Decimal(x).quantize(Decimal('1'), rounding=ROUND_HALF_EVEN)
 
 
 class LoanService:
@@ -633,21 +643,24 @@ def _build_disbursement_entry(*, movement, bank_account, liability_account, prin
         source_content_type=ContentType.objects.get_for_model(movement),
         source_object_id=movement.id,
     )
-    # Debe: banco por el efectivo neto recibido.
+    # Haber: pasivo del préstamo por el capital completo.
     JournalItem.objects.create(
-        entry=entry, account=bank_account,
-        debit=net_cash, credit=Decimal('0'),
+        entry=entry, account=liability_account,
+        debit=Decimal('0'), credit=principal,
     )
     # Debe: gastos de apertura (comisión, ITE).
+    fee_debit_whole = Decimal('0')
     for fee_account, fee_amount in fee_lines:
         JournalItem.objects.create(
             entry=entry, account=fee_account,
             debit=fee_amount, credit=Decimal('0'),
         )
-    # Haber: pasivo del préstamo por el capital completo.
+        fee_debit_whole += _peso(fee_amount)
+    # Debe: banco por el residuo (capital − gastos, ambos a peso entero) para que
+    # el asiento cuadre exactamente en pesos enteros, sin descuadres de redondeo.
     JournalItem.objects.create(
-        entry=entry, account=liability_account,
-        debit=Decimal('0'), credit=principal,
+        entry=entry, account=bank_account,
+        debit=_peso(principal) - fee_debit_whole, credit=Decimal('0'),
     )
     JournalEntryService.post_entry(entry)
     movement.journal_entry = entry
@@ -710,33 +723,42 @@ def _build_installment_entry(
     if insurance_clp and not insurance_expense_account:
         liability_debit = _q(liability_debit + insurance_clp)
 
+    # Acumulamos el total de débitos redondeado a peso entero (como los lee el
+    # libro mayor), para que la línea de cuadre (banco) cuadre exactamente.
+    debit_total_whole = Decimal('0')
+
     # 1) Debe: pasivo (amortización de capital — más interés/seguro si no hay cuentas)
     JournalItem.objects.create(
         entry=entry, account=liability_account,
         debit=liability_debit, credit=Decimal('0'),
     )
+    debit_total_whole += _peso(liability_debit)
     # 2) Debe: gasto interés
     if interest_clp and interest_expense_account:
         JournalItem.objects.create(
             entry=entry, account=interest_expense_account,
             debit=interest_clp, credit=Decimal('0'),
         )
+        debit_total_whole += _peso(interest_clp)
     # 3) Debe: gasto seguro
     if insurance_clp and insurance_expense_account:
         JournalItem.objects.create(
             entry=entry, account=insurance_expense_account,
             debit=insurance_clp, credit=Decimal('0'),
         )
+        debit_total_whole += _peso(insurance_clp)
     # 3.5) Debe: gasto por mora (interés penal de cuota vencida)
     if penalty_clp and penalty_expense_account:
         JournalItem.objects.create(
             entry=entry, account=penalty_expense_account,
             debit=penalty_clp, credit=Decimal('0'),
         )
-    # 4) Haber: cuenta de tesorería (banco/caja que paga)
+        debit_total_whole += _peso(penalty_clp)
+    # 4) Haber: tesorería por la suma EXACTA de los débitos ya redondeados a
+    # peso entero (evita descuadres de 1 peso cuando hay centavos, p. ej. mora).
     JournalItem.objects.create(
         entry=entry, account=from_account.account,
-        debit=Decimal('0'), credit=total_clp,
+        debit=Decimal('0'), credit=debit_total_whole,
     )
 
     JournalEntryService.post_entry(entry)
