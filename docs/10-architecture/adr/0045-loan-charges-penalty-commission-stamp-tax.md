@@ -1,12 +1,12 @@
 ---
-id: 0042
+id: 0045
 title: Cargos configurables de préstamos — mora, comisión de apertura, ITE
 status: Accepted
 date: 2026-06-05
 author: core-team
 ---
 
-# 0042 — Cargos configurables de préstamos (mora, comisión, impuesto de timbres)
+# 0045 — Cargos configurables de préstamos (mora, comisión, impuesto de timbres)
 
 ## Context
 
