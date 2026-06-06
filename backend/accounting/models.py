@@ -735,6 +735,24 @@ class AccountingSettings(TimeStampedModel):
         verbose_name=_("Cuenta Intereses por Pagar"),
         help_text=_("Cuenta de pasivo para intereses devengados no pagados (préstamos).")
     )
+    loan_penalty_expense_account = models.ForeignKey(
+        Account, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='settings_loan_penalty_expense',
+        verbose_name=_("Cuenta de Gasto por Mora"),
+        help_text=_("Cuenta de gasto para el interés penal (mora) de cuotas vencidas de préstamos.")
+    )
+    loan_commission_expense_account = models.ForeignKey(
+        Account, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='settings_loan_commission_expense',
+        verbose_name=_("Cuenta de Gasto por Comisiones de Préstamo"),
+        help_text=_("Cuenta de gasto para la comisión de apertura cobrada al desembolso de un préstamo.")
+    )
+    loan_stamp_tax_expense_account = models.ForeignKey(
+        Account, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='settings_loan_stamp_tax_expense',
+        verbose_name=_("Cuenta de Gasto por Impuesto de Timbres"),
+        help_text=_("Cuenta de gasto para el impuesto de timbres y estampillas (ITE) cobrado al desembolso.")
+    )
 
     # POS Cash Control Accounts
     pos_cash_difference_gain_account = models.ForeignKey(
