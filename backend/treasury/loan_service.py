@@ -264,7 +264,7 @@ class LoanService:
         #
         # Nota UF: los montos se asientan tal cual la moneda del crédito. El
         # nacimiento del pasivo en CLP y su reajuste por corrección monetaria
-        # para créditos UF queda fuera de alcance — ver ADR-0033/0042.
+        # para créditos UF queda fuera de alcance — ver ADR-0033/0045.
         movement = TreasuryService.create_movement(
             amount=net_cash,
             movement_type=TreasuryMovement.Type.INBOUND,
