@@ -2515,10 +2515,11 @@ class CreditCardStatement(models.Model):
     """
 
     class Status(models.TextChoices):
-        OPEN     = 'OPEN',     _('Abierto')
-        PAID     = 'PAID',     _('Pagado')
-        OVERDUE  = 'OVERDUE',  _('Vencido')
-        CANCELED = 'CANCELED', _('Anulado')
+        OPEN            = 'OPEN',            _('Abierto')
+        PARTIALLY_PAID  = 'PARTIALLY_PAID',  _('Pagado Parcialmente')
+        PAID            = 'PAID',            _('Pagado')
+        OVERDUE         = 'OVERDUE',         _('Vencido')
+        CANCELED        = 'CANCELED',        _('Anulado')
 
     card_account = models.ForeignKey(
         'TreasuryAccount', on_delete=models.PROTECT,
@@ -2563,13 +2564,25 @@ class CreditCardStatement(models.Model):
     )
 
     status = models.CharField(
-        _("Estado"), max_length=10,
+        _("Estado"), max_length=14,
         choices=Status.choices, default=Status.OPEN,
     )
     paid_at = models.DateTimeField(_("Pagado el"), null=True, blank=True)
-    payment_movement = models.OneToOneField(
+    amount_paid = models.DecimalField(
+        _("Monto Pagado (acumulado)"),
+        max_digits=18, decimal_places=2, default=Decimal('0'),
+        help_text=_(
+            "Suma de pagos parciales aplicados a este statement. "
+            "Cuando alcanza `outstanding_balance`, el status pasa a PAID."
+        ),
+    )
+    # FK (no OneToOne) para soportar N pagos parciales (Onda 3,
+    # ADR-0044). Cada `payment_movement` es un TRANSFER independiente.
+    # Para la reversa transaccional se itera
+    # `payment_movements.all()`.
+    payment_movement = models.ForeignKey(
         'TreasuryMovement', on_delete=models.SET_NULL,
-        null=True, blank=True, related_name='card_statement_payment',
+        null=True, blank=True, related_name='card_statement_payments',
         verbose_name=_("Movimiento de Pago"),
     )
     charges_movement = models.OneToOneField(
@@ -2629,7 +2642,7 @@ class CreditCardStatement(models.Model):
     def is_overdue(self) -> bool:
         from core.utils import get_current_date
         return (
-            self.status == self.Status.OPEN
+            self.status in (self.Status.OPEN, self.Status.PARTIALLY_PAID)
             and self.due_date < get_current_date()
         )
 
@@ -2641,6 +2654,16 @@ class CreditCardStatement(models.Model):
             + (self.interest_charged or Decimal('0'))
             + (self.fees_charged or Decimal('0'))
         )
+
+    @property
+    def outstanding_balance(self) -> Decimal:
+        """
+        Saldo impago a la fecha (Onda 3, ADR-0044).
+        `total_to_pay - amount_paid`, nunca negativo.
+        """
+        total = self.total_to_pay
+        paid = self.amount_paid or Decimal('0')
+        return max(total - paid, Decimal('0'))
 
 
 class Checkbook(models.Model):

@@ -2315,6 +2315,7 @@ class CreditCardStatementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             stmt = CardService.pay_statement(
                 stmt,
                 payment_account=payment_account,
+                amount=v.get('amount'),
                 date=v.get('date'),
                 created_by=request.user,
             )
