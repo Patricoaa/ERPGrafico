@@ -29,6 +29,9 @@ const schema = z.object({
     start_date: z.string().min(1, 'Fecha de inicio es requerida'),
     first_due_date: z.string().min(1, 'Primer vencimiento es requerido'),
     insurance_monthly: z.string().optional(),
+    opening_fee: z.string().optional(),
+    stamp_tax: z.string().optional(),
+    penalty_rate: z.string().optional(),
     disbursement_account: z.string().min(1, 'Cuenta de desembolso es requerida'),
     liability_account: z.string().min(1, 'Cuenta pasivo es requerida'),
     notes: z.string().optional(),
@@ -60,6 +63,9 @@ export function LoanRegisterDrawer({ open, onOpenChange }: Props) {
             start_date: '',
             first_due_date: '',
             insurance_monthly: '0',
+            opening_fee: '0',
+            stamp_tax: '0',
+            penalty_rate: '0',
             disbursement_account: '',
             liability_account: '',
             notes: '',
@@ -86,6 +92,9 @@ export function LoanRegisterDrawer({ open, onOpenChange }: Props) {
             start_date: values.start_date,
             first_due_date: values.first_due_date,
             insurance_monthly: values.insurance_monthly || '0',
+            opening_fee: values.opening_fee || '0',
+            stamp_tax: values.stamp_tax || '0',
+            penalty_rate: values.penalty_rate || '0',
             disbursement_account: parseInt(values.disbursement_account),
             liability_account: parseInt(values.liability_account),
             notes: values.notes ?? '',
@@ -256,6 +265,49 @@ export function LoanRegisterDrawer({ open, onOpenChange }: Props) {
                                     label="Seguro Mensual (opcional)"
                                     type="number"
                                     step="0.01"
+                                    placeholder="0.00"
+                                    {...field}
+                                />
+                            )}
+                        />
+                    </div>
+
+                    <FormSection title="Cargos (opcional)" icon={Banknote} />
+                    <div className="grid grid-cols-3 gap-4">
+                        <FormField
+                            control={form.control}
+                            name="opening_fee"
+                            render={({ field }) => (
+                                <LabeledInput
+                                    label="Comisión de Apertura"
+                                    type="number"
+                                    step="0.01"
+                                    placeholder="0.00"
+                                    {...field}
+                                />
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="stamp_tax"
+                            render={({ field }) => (
+                                <LabeledInput
+                                    label="Impuesto de Timbres"
+                                    type="number"
+                                    step="0.01"
+                                    placeholder="0.00"
+                                    {...field}
+                                />
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="penalty_rate"
+                            render={({ field }) => (
+                                <LabeledInput
+                                    label="Tasa de Mora (mensual %)"
+                                    type="number"
+                                    step="0.0001"
                                     placeholder="0.00"
                                     {...field}
                                 />

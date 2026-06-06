@@ -44,6 +44,9 @@ const DEFAULT_VALUES: TreasuryFormValues = {
     interest_expense_account: null,
     insurance_expense_account: null,
     interest_payable_account: null,
+    loan_penalty_expense_account: null,
+    loan_commission_expense_account: null,
+    loan_stamp_tax_expense_account: null,
 }
 
 import { useTreasurySettings } from "@/features/settings/hooks/useTreasurySettings"
@@ -215,6 +218,9 @@ export function TreasurySettingsView({ activeTab = "conciliation" }: TreasurySet
                                             <AccountField form={form} name="interest_expense_account" label="Gasto por Intereses (Préstamos / Tarjeta)" accountType="EXPENSE" />
                                             <AccountField form={form} name="insurance_expense_account" label="Gasto por Seguros (Desgravamen / Cesantía)" accountType="EXPENSE" />
                                             <AccountField form={form} name="interest_payable_account" label="Intereses por Pagar (Pasivo Devengado)" accountType="LIABILITY" />
+                                            <AccountField form={form} name="loan_penalty_expense_account" label="Gasto por Mora (Préstamos)" accountType="EXPENSE" />
+                                            <AccountField form={form} name="loan_commission_expense_account" label="Gasto por Comisión de Apertura" accountType="EXPENSE" />
+                                            <AccountField form={form} name="loan_stamp_tax_expense_account" label="Gasto por Impuesto de Timbres (ITE)" accountType="EXPENSE" />
                                         </div>
                                     </CardContent>
                                 </Card>

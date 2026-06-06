@@ -67,6 +67,9 @@ export interface TreasurySettings {
     interest_expense_account: string | null
     insurance_expense_account: string | null
     interest_payable_account: string | null
+    loan_penalty_expense_account: string | null
+    loan_commission_expense_account: string | null
+    loan_stamp_tax_expense_account: string | null
 }
 
 export type TreasurySettingsUpdatePayload = Partial<TreasurySettings>
