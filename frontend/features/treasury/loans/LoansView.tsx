@@ -8,8 +8,9 @@ import {
     createActionsColumn, StatusBadge, MoneyDisplay, Skeleton, EmptyState, EntityCard,
 } from '@/components/shared'
 import { Button } from '@/components/ui/button'
-import { useLoans, useLoanMutations } from './hooks'
+import { useLoans } from './hooks'
 import { LoanRegisterDrawer } from './LoanRegisterDrawer'
+import { LoanDisburseDrawer } from './LoanDisburseDrawer'
 import { LoanDetailModal } from './LoanDetailModal'
 import type { BankLoan } from './types'
 
@@ -17,16 +18,11 @@ export function LoansView({ bankId }: { bankId?: number } = {}) {
     const { data: loans = [], isLoading, isError } = useLoans(
         bankId ? { lender: String(bankId) } : undefined,
     )
-    const { disburse } = useLoanMutations()
 
     const [registerOpen, setRegisterOpen] = useState(false)
+    const [disburseOpen, setDisburseOpen] = useState(false)
+    const [disburseLoan, setDisburseLoan] = useState<BankLoan | null>(null)
     const [selectedId, setSelectedId] = useState<number | null>(null)
-
-    const handleDisburse = async (id: number) => {
-        if (window.confirm('¿Desembolsar este crédito? Esta acción no se puede deshacer.')) {
-            await disburse(id)
-        }
-    }
 
     if (isLoading) {
         return <Skeleton className="h-full" />
@@ -144,7 +140,10 @@ export function LoansView({ bankId }: { bankId?: number } = {}) {
                     <DataCell.Action
                         icon={Send}
                         title="Desembolsar"
-                        onClick={() => { void handleDisburse(loan.id) }}
+                        onClick={() => {
+                            setDisburseLoan(loan)
+                            setDisburseOpen(true)
+                        }}
                     />
                 )}
             </>
@@ -167,7 +166,6 @@ export function LoansView({ bankId }: { bankId?: number } = {}) {
                         icon: FileText,
                         title: 'No hay créditos registrados',
                         description: 'Registra tu primer crédito bancario para llevar el control de cuotas y amortización.',
-                        action: registerAction,
                     }}
                     renderCard={(loan: BankLoan) => (
                         <EntityCard>
@@ -211,7 +209,19 @@ export function LoansView({ bankId }: { bankId?: number } = {}) {
                 />
             </div>
 
-            <LoanRegisterDrawer open={registerOpen} onOpenChange={setRegisterOpen} />
+            <LoanRegisterDrawer
+                open={registerOpen}
+                onOpenChange={setRegisterOpen}
+                bankId={bankId}
+            />
+            <LoanDisburseDrawer
+                open={disburseOpen}
+                onOpenChange={(open) => {
+                    setDisburseOpen(open)
+                    if (!open) setDisburseLoan(null)
+                }}
+                loan={disburseLoan}
+            />
             <LoanDetailModal
                 loanId={selectedId}
                 open={selectedId != null}
