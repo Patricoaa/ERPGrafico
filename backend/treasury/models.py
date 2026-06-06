@@ -299,6 +299,21 @@ class TreasuryMovement(models.Model):
             "del emisor)."
         ),
     )
+    # Onda 3 (ADR-0044): FK al statement de tarjeta al que pertenece
+    # este movimiento como pago. Permite N pagos parciales — cada
+    # pago es un TreasuryMovement que apunta al statement. La FK
+    # inversa en `CreditCardStatement.payment_movements` lista
+    # todos los pagos del statement.
+    from_card_statement = models.ForeignKey(
+        'CreditCardStatement', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='payment_movements',
+        verbose_name=_("Statement de Tarjeta Pagado"),
+        help_text=_(
+            "Si este movimiento es un pago (parcial o total) de un "
+            "statement de tarjeta, FK al statement. Permite listar "
+            "todos los pagos de un statement via payment_movements.all()."
+        ),
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(

@@ -17,8 +17,9 @@ class Migration(migrations.Migration):
     def remove_unique_together(apps, schema_editor):
         vendor = schema_editor.connection.vendor
         if vendor == 'postgresql':
+            model = apps.get_model('production', 'WorkOrderMaterial')
             schema_editor.alter_unique_together(
-                model_name='workordermaterial',
+                model,
                 old_unique_together=(('work_order', 'component'),),
                 new_unique_together=set(),
             )

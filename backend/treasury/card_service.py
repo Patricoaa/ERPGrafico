@@ -470,32 +470,24 @@ class CardService:
                 f"({statement.display_id})"
             ),
         )
-        # Vincular al statement (no tenemos `punitory_interest_movement`
-        # como FK porque se imputa mensualmente; lo guardamos en notes
-        # y se detecta por `reference` para idempotencia).
+        # Vincular al statement (trazabilidad via from_card_statement
+        # FK; no es un "pago", sólo referencia). Esto permite
+        # listar todos los movimientos relacionados al statement
+        # (pagos + intereses punitorios + cargos) si fuera
+        # necesario.
+        movement.from_card_statement = statement
+        movement.save(update_fields=['from_card_statement'])
 
-        # Sumar el interés al statement.
-        statement.interest_charged = (
-            (statement.interest_charged or Decimal('0')) + interest
-        )
-        # Reconstruir el JE del cargo si ya existía uno (mismo
-        # approach que `reapply_charges`): reversar el cargo previo
-        # y crear uno nuevo con el interés punitorio incluido.
-        # Sin embargo, en este caso el cargo previo no se tocó
-        # todavía; sólo sumamos a `interest_charged`. El usuario
-        # debe correr `reapply_charges` para imputarlo
-        # contablemente, o se acepta el desfase contable si el
-        # cargo aún no fue aplicado.
-        if statement.charges_movement_id is not None:
-            # Si ya hay cargo aplicado, re-aplicarlo para incluir
-            # el nuevo interés punitorio.
-            CardService.reapply_charges(
-                statement, created_by=created_by,
-                interest_expense_account=interest_expense_account,
-            )
-        statement.save(update_fields=[
-            'interest_charged', 'updated_at',
-        ])
+        # NO capitalizamos: el interés punitorio es un ADJUSTMENT
+        # independiente (D=gasto / H=pasivo). NO se suma a
+        # `interest_charged` del statement para no inflar
+        # `total_to_pay` y crear un efecto de capitalización no
+        # deseado (ver ADR-0044, decisión D-5).
+        #
+        # La trazabilidad queda via el ADJUSTMENT vinculado al
+        # statement por `from_card_statement`. La idempotencia
+        # por mes se mantiene via la `reference` con YYYY-MM.
+
         return (interest, movement)
 
     # ── Pago del estado de cuenta (F3.4) ─────────────────────────────────
@@ -577,6 +569,23 @@ class CardService:
             amount = outstanding  # default: pagar todo el saldo
         else:
             amount = Decimal(str(amount))
+
+        # Caso especial: statement con saldo 0 (Onda 3) — marca PAID
+        # sin crear movimiento, aunque el caller no haya pasado
+        # `amount` explícitamente. Esto cubre: (a) un statement
+        # recién emitido sin consumos (billed=0), (b) un statement
+        # con todos los pagos parciales ya completados, etc.
+        # En estos casos no hay nada que pagar pero el operador
+        # quiere "cerrar" el statement a PAID.
+        if outstanding <= 0:
+            statement.amount_paid = already_paid
+            statement.status = CreditCardStatement.Status.PAID
+            statement.paid_at = timezone.now()
+            statement.save(update_fields=[
+                'amount_paid', 'status', 'paid_at', 'updated_at',
+            ])
+            return statement
+
         if amount <= 0:
             raise ValidationError(
                 _t("El monto a pagar debe ser mayor a cero (recibido: %(a)s).")
@@ -636,6 +645,11 @@ class CardService:
                 f"({statement.period_month:02d}/{statement.period_year})"
             ),
         )
+        # Vincular el movimiento al statement via `from_card_statement`
+        # (Onda 3, ADR-0044). Esto permite listar todos los pagos
+        # parciales del statement via `statement.payment_movements.all()`.
+        movement.from_card_statement = statement
+        movement.save(update_fields=['from_card_statement'])
         # FK al ÚLTIMO pago (no OneToOne, Onda 3). El listado
         # completo está disponible vía `statement.payment_movements.all()`.
         statement.payment_movement = movement

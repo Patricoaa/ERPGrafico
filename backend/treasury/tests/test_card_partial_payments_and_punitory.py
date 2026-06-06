@@ -54,7 +54,7 @@ def env(db):
 
     # Cargar checking con $1.000.000 vía INBOUND + AR.
     from contacts.models import Contact
-    from sales.models import Invoice
+    from billing.models import Invoice
     ar = Account.objects.create(
         name='AR W', code='1.1.02.030', account_type=AccountType.ASSET,
     )
@@ -78,13 +78,13 @@ def env(db):
     }
 
 
-def _open(env, billed=Decimal('100000'), due=None):
+def _open(env, billed=Decimal('100000'), due=None, period=(2026, 6)):
     if due is None:
         due = date(2026, 7, 25)
     return CreditCardStatement.objects.create(
         card_account=env['card_ta'],
-        period_year=2026, period_month=6,
-        cut_off_date=date(2026, 6, 30),
+        period_year=period[0], period_month=period[1],
+        cut_off_date=date(period[0], period[1], 28),
         due_date=due,
         billed_amount=billed,
         minimum_payment=Decimal('10000'),
@@ -206,12 +206,15 @@ def test_pay_amount_zero_or_negative_rejected(env):
 
 @pytest.mark.django_db
 def test_pay_partial_blocked_when_minimum_payment_block_enabled(env):
-    AccountingSettings.objects.create(card_minimum_payment_block=True)
+    AccountingSettings.objects.update_or_create(
+        defaults={'card_minimum_payment_block': True},
+    )
     stmt = _open(env, billed=Decimal('100000'))
+    # Pago menor al mínimo (10.000) → bloqueado.
     with pytest.raises(ValidationError) as exc:
         CardService.pay_statement(
             stmt, payment_account=env['bank_ta'],
-            amount=Decimal('40000'), date=date(2026, 6, 15),
+            amount=Decimal('5000'), date=date(2026, 6, 15),
             created_by=env['user'],
         )
     assert 'minimum' in str(exc.value).lower() or 'mínimo' in str(exc.value).lower()
@@ -219,7 +222,9 @@ def test_pay_partial_blocked_when_minimum_payment_block_enabled(env):
 
 @pytest.mark.django_db
 def test_pay_partial_allowed_when_minimum_payment_block_disabled(env):
-    AccountingSettings.objects.create(card_minimum_payment_block=False)
+    AccountingSettings.objects.update_or_create(
+        defaults={'card_minimum_payment_block': False},
+    )
     stmt = _open(env, billed=Decimal('100000'))
     stmt = CardService.pay_statement(
         stmt, payment_account=env['bank_ta'],
@@ -254,7 +259,9 @@ def test_partial_pay_from_overdue_status(env):
 def test_compute_punitory_interest_zero_when_not_overdue(env):
     stmt = _open(env, billed=Decimal('100000'),
                  due=date(2026, 8, 1))  # no vencido
-    AccountingSettings.objects.create(card_punitory_monthly_rate=Decimal('0.10'))
+    AccountingSettings.objects.update_or_create(
+        defaults={'card_punitory_monthly_rate': Decimal('0.10')},
+    )
     interest = CardService.compute_punitory_interest(
         stmt, as_of_date=date(2026, 7, 15),
     )
@@ -265,7 +272,9 @@ def test_compute_punitory_interest_zero_when_not_overdue(env):
 def test_compute_punitory_interest_zero_when_rate_zero(env):
     stmt = _open(env, billed=Decimal('100000'),
                  due=date(2026, 5, 1))  # vencido
-    AccountingSettings.objects.create(card_punitory_monthly_rate=Decimal('0'))
+    AccountingSettings.objects.update_or_create(
+        defaults={'card_punitory_monthly_rate': Decimal('0')},
+    )
     interest = CardService.compute_punitory_interest(
         stmt, as_of_date=date(2026, 6, 15),
     )
@@ -276,7 +285,9 @@ def test_compute_punitory_interest_zero_when_rate_zero(env):
 def test_compute_punitory_interest_one_month(env):
     """30 días de mora → 1 mes, 10% de 100.000 = 10.000."""
     stmt = _open(env, billed=Decimal('100000'), due=date(2026, 5, 1))
-    AccountingSettings.objects.create(card_punitory_monthly_rate=Decimal('0.10'))
+    AccountingSettings.objects.update_or_create(
+        defaults={'card_punitory_monthly_rate': Decimal('0.10')},
+    )
     # 45 días de mora → floor(45/30) = 1 mes.
     interest = CardService.compute_punitory_interest(
         stmt, as_of_date=date(2026, 6, 15),
@@ -288,7 +299,9 @@ def test_compute_punitory_interest_one_month(env):
 def test_compute_punitory_interest_multiple_months(env):
     """75 días de mora → floor(75/30) = 2 meses, 10% × 2 × 100.000 = 20.000."""
     stmt = _open(env, billed=Decimal('100000'), due=date(2026, 5, 1))
-    AccountingSettings.objects.create(card_punitory_monthly_rate=Decimal('0.10'))
+    AccountingSettings.objects.update_or_create(
+        defaults={'card_punitory_monthly_rate': Decimal('0.10')},
+    )
     interest = CardService.compute_punitory_interest(
         stmt, as_of_date=date(2026, 7, 15),
     )
@@ -299,7 +312,9 @@ def test_compute_punitory_interest_multiple_months(env):
 def test_compute_punitory_interest_on_outstanding_not_total(env):
     """Aplica al saldo impago, no al total facturado."""
     stmt = _open(env, billed=Decimal('100000'), due=date(2026, 5, 1))
-    AccountingSettings.objects.create(card_punitory_monthly_rate=Decimal('0.10'))
+    AccountingSettings.objects.update_or_create(
+        defaults={'card_punitory_monthly_rate': Decimal('0.10')},
+    )
     # Pago parcial de 40.000 → outstanding 60.000.
     CardService.pay_statement(
         stmt, payment_account=env['bank_ta'],
@@ -317,14 +332,16 @@ def test_compute_punitory_interest_on_outstanding_not_total(env):
 @pytest.mark.django_db
 def test_apply_punitory_interest_creates_adjustment(env):
     stmt = _open(env, billed=Decimal('100000'), due=date(2026, 5, 1))
-    AccountingSettings.objects.create(
-        card_punitory_monthly_rate=Decimal('0.10'),
-    )
     interest_exp = Account.objects.create(
         name='Gasto Interés', code='5.1.01.001',
         account_type=AccountType.EXPENSE,
     )
-    AccountingSettings.objects.update(interest_expense_account=interest_exp)
+    AccountingSettings.objects.update_or_create(
+        defaults={
+            'card_punitory_monthly_rate': Decimal('0.10'),
+            'interest_expense_account': interest_exp,
+        },
+    )
 
     interest, movement = CardService.apply_punitory_interest(
         stmt, as_of_date=date(2026, 6, 15),
@@ -338,14 +355,16 @@ def test_apply_punitory_interest_creates_adjustment(env):
 @pytest.mark.django_db
 def test_apply_punitory_interest_idempotent_same_month(env):
     stmt = _open(env, billed=Decimal('100000'), due=date(2026, 5, 1))
-    AccountingSettings.objects.create(
-        card_punitory_monthly_rate=Decimal('0.10'),
-    )
     interest_exp = Account.objects.create(
         name='Gasto Interés', code='5.1.01.002',
         account_type=AccountType.EXPENSE,
     )
-    AccountingSettings.objects.update(interest_expense_account=interest_exp)
+    AccountingSettings.objects.update_or_create(
+        defaults={
+            'card_punitory_monthly_rate': Decimal('0.10'),
+            'interest_expense_account': interest_exp,
+        },
+    )
 
     interest1, mov1 = CardService.apply_punitory_interest(
         stmt, as_of_date=date(2026, 6, 15),
@@ -365,8 +384,8 @@ def test_apply_punitory_interest_no_op_on_paid(env):
         date=date(2026, 6, 15), created_by=env['user'],
     )
     stmt.refresh_from_db()
-    AccountingSettings.objects.create(
-        card_punitory_monthly_rate=Decimal('0.10'),
+    AccountingSettings.objects.update_or_create(
+        defaults={'card_punitory_monthly_rate': Decimal('0.10')},
     )
     interest, movement = CardService.apply_punitory_interest(stmt)
     assert interest == Decimal('0')
@@ -379,27 +398,40 @@ def test_apply_punitory_interest_no_op_on_paid(env):
 @pytest.mark.django_db
 def test_compute_overdue_card_interest_task_processes_overdue(env):
     from treasury.tasks import compute_overdue_card_interest
-    AccountingSettings.objects.create(
-        card_punitory_monthly_rate=Decimal('0.10'),
-    )
     interest_exp = Account.objects.create(
         name='Gasto Interés', code='5.1.01.003',
         account_type=AccountType.EXPENSE,
     )
-    AccountingSettings.objects.update(interest_expense_account=interest_exp)
+    AccountingSettings.objects.update_or_create(
+        defaults={
+            'card_punitory_monthly_rate': Decimal('0.10'),
+            'interest_expense_account': interest_exp,
+        },
+    )
 
     # Statement vencido.
-    _open(env, billed=Decimal('100000'), due=date(2026, 5, 1))
+    _open(env, billed=Decimal('100000'), due=date(2026, 5, 1),
+          period=(2026, 5))
     # Statement no vencido — no debería procesarse.
-    _open(env, billed=Decimal('50000'), due=date(2026, 8, 1))
+    _open(env, billed=Decimal('50000'), due=date(2026, 8, 1),
+          period=(2026, 7))
     # Statement PAID — no debería procesarse.
-    paid_stmt = _open(env, billed=Decimal('30000'))
+    paid_stmt = _open(env, billed=Decimal('30000'),
+                      period=(2026, 4))
     CardService.pay_statement(
         paid_stmt, payment_account=env['bank_ta'],
         date=date(2026, 6, 15), created_by=env['user'],
     )
 
     result = compute_overdue_card_interest()
+    # El task filtra por status__in (OPEN, OVERDUE, PARTIALLY_PAID) y
+    # due_date<today. Por lo tanto:
+    # - Statement vencido (period 2026-05, due 2026-05-01): OVERDUE →
+    #   procesado, interés 10% × 100.000 = 10.000.
+    # - Statement no vencido (period 2026-07, due 2026-08-01): excluido
+    #   por la query.
+    # - Statement PAID (period 2026-04): excluido por status (no
+    #   está en el filtro).
     assert result['processed'] == 1
-    assert result['skipped'] == 2
+    assert result['skipped'] == 0
     assert Decimal(result['total_interest']) == Decimal('10000.00')
