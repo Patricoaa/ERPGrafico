@@ -441,3 +441,86 @@ def test_loan_installment_pay_double_payment_fails(
         format='json',
     )
     assert r2.status_code == 400
+# ── Bank overview: total_loan_debt ──────────────────────────────────────────
+
+
+@pytest.mark.django_db
+def test_bank_overview_aggregates_active_loan_debt(
+    auth_client, bank, checking_account, liability_accounting,
+):
+    """
+    El endpoint `/api/treasury/banks/{id}/overview/` calcula
+    `summary.total_loan_debt` como la suma del `principal_amount` de
+    las cuotas no pagadas de los créditos activos del banco.
+
+    Antes este cálculo fallaba con AttributeError porque el código
+    accedía a `loan.outstanding_balance` (campo inexistente en el
+    modelo). Esta test fija el contrato.
+    """
+    from accounting.models import AccountingSettings
+    AccountingSettings.get_solo().save()  # no-op; asegura fila
+
+    # Configurar cuenta de gasto por comisión para poder desembolsar
+    from treasury.models import LoanInstallment
+    from decimal import Decimal
+    commission_acc = Account.objects.create(
+        name='Comisión Préstamos', code='5.2.01.030',
+        account_type=AccountType.EXPENSE,
+    )
+    stamp_acc = Account.objects.create(
+        name='ITE Préstamos', code='5.2.01.040',
+        account_type=AccountType.EXPENSE,
+    )
+    settings_obj = AccountingSettings.get_solo()
+    settings_obj.loan_commission_expense_account = commission_acc
+    settings_obj.loan_stamp_tax_expense_account = stamp_acc
+    settings_obj.save()
+
+    # Crear y desembolsar un crédito
+    payload = _make_payload(bank, checking_account, liability_accounting)
+    create = auth_client.post('/api/treasury/loans/', payload, format='json')
+    assert create.status_code == 201
+    loan_id = create.json()['id']
+    disb = auth_client.post(
+        f'/api/treasury/loans/{loan_id}/disburse/',
+        {
+            'opening_fee': '0',
+            'stamp_tax': '0',
+            'commission_expense_account': commission_acc.id,
+            'stamp_tax_expense_account': stamp_acc.id,
+        },
+        format='json',
+    )
+    assert disb.status_code == 200, disb.json()
+
+    # El endpoint no debe romper
+    resp = auth_client.get(f'/api/treasury/banks/{bank.id}/overview/')
+    assert resp.status_code == 200, resp.json()
+
+    body = resp.json()
+    assert body['summary']['active_loan_count'] == 1
+    # total_loan_debt = suma de principal_amount de cuotas no pagadas
+    # Con FRENCH 12 meses, capital total = 10.000.000, ninguna cuota pagada
+    # todavía → total_loan_debt ≈ 10.000.000 (puede haber decimales por
+    # redondeo en la última cuota).
+    expected = LoanInstallment.objects.filter(
+        loan_id=loan_id,
+    ).exclude(
+        status__in=[LoanInstallment.Status.PAID, LoanInstallment.Status.CANCELED]
+    ).aggregate(s=__import__('django.db.models', fromlist=['Sum']).Sum('principal_amount'))['s']
+    assert Decimal(str(body['summary']['total_loan_debt'])) == expected
+
+
+@pytest.mark.django_db
+def test_bank_overview_with_no_loans(auth_client, bank):
+    """
+    Sin créditos, el endpoint debe devolver 200 con `total_loan_debt=0`
+    y `active_loan_count=0`. Antes del fix, este path también fallaba
+    porque el `sum()` se ejecutaba sobre una queryset vacía con la
+    misma expresión rota.
+    """
+    resp = auth_client.get(f'/api/treasury/banks/{bank.id}/overview/')
+    assert resp.status_code == 200, resp.json()
+    body = resp.json()
+    assert body['summary']['active_loan_count'] == 0
+    assert float(body['summary']['total_loan_debt']) == 0.0
