@@ -215,12 +215,10 @@ export function LoanDetailModal({ loanId, open, onOpenChange }: Props) {
                                 <div className="w-64">
                                     <LabeledSelect
                                         label="Prepago desde cuenta"
-                                        options={[
-                                            { value: '', label: 'Seleccionar…' },
-                                            ...disbursementAccounts.map((a) => ({
-                                                value: String(a.id), label: `${a.name} (${a.code})`,
-                                            })),
-                                        ]}
+                                        placeholder="Seleccionar cuenta…"
+                                        options={disbursementAccounts.map((a) => ({
+                                            value: String(a.id), label: `${a.name} (${a.code})`,
+                                        }))}
                                         value={prepayAccount}
                                         onChange={setPrepayAccount}
                                     />

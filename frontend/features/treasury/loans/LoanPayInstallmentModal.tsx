@@ -164,12 +164,10 @@ export function LoanPayInstallmentModal({ installment, loanCurrency, penaltyRate
                     <LabeledSelect
                         label="Pagar desde cuenta"
                         required
-                        options={[
-                            { value: '', label: 'Seleccionar…' },
-                            ...disbursementAccounts.map((a) => ({
-                                value: String(a.id), label: `${a.name} (${a.code})`,
-                            })),
-                        ]}
+                        placeholder="Seleccionar cuenta…"
+                        options={disbursementAccounts.map((a) => ({
+                            value: String(a.id), label: `${a.name} (${a.code})`,
+                        }))}
                         value={paymentAccount}
                         onChange={setPaymentAccount}
                     />
