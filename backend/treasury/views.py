@@ -93,10 +93,17 @@ class BankViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         active_loans = BankLoan.objects.filter(
             lender=bank, status=BankLoan.Status.ACTIVE,
         )
-        total_loan_debt = sum(
-            (l.outstanding_balance for l in active_loans),
-            __import__('decimal').Decimal('0'),
-        )
+        # `outstanding_balance` no es un campo de `BankLoan`: se computa como
+        # la suma del `principal_amount` de las cuotas no pagadas ni anuladas
+        # (mismo criterio que `BankLoanSerializer.get_outstanding_balance`).
+        # Hacemos un único aggregate para evitar N+1.
+        total_loan_debt = LoanInstallment.objects.filter(
+            loan__in=active_loans,
+        ).exclude(
+            status__in=[LoanInstallment.Status.PAID, LoanInstallment.Status.CANCELED]
+        ).aggregate(
+            s=Sum('principal_amount'),
+        )['s'] or __import__('decimal').Decimal('0')
 
         # Próximos vencimientos (cuotas, cheques, tarjetas) — horizonte 30 días
         today = timezone.now().date()
