@@ -1,6 +1,7 @@
 """
 Celery tasks for the Treasury module.
 """
+import logging
 from celery import shared_task
 from datetime import timedelta
 from django.core.exceptions import ValidationError
@@ -8,6 +9,8 @@ from django.db.models import Q
 from django.utils import timezone
 
 from .matching_service import MatchingService
+
+logger = logging.getLogger(__name__)
 
 
 # ── F2.10: Alertas de vencimiento de cuotas ──────────────────────────────

@@ -30,6 +30,5 @@ class Migration(migrations.Migration):
         migrations.RunPython(
             create_gin_index,
             reverse_code=drop_gin_index,
-            atomic=True,
         ),
     ]
