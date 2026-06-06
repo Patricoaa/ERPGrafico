@@ -23,6 +23,7 @@ export interface LoanInstallment {
     payment_movement: number | null
     uf_value_used: string | null
     clp_amount_paid: string | null
+    penalty_paid: string
     notes: string
 }
 
@@ -44,6 +45,9 @@ export interface BankLoan {
     start_date: string
     first_due_date: string
     insurance_monthly: string
+    opening_fee: string
+    stamp_tax: string
+    penalty_rate: string
     disbursement_account: number
     disbursement_account_name: string
     liability_account: number
@@ -76,6 +80,9 @@ export interface BankLoanCreatePayload {
     start_date: string
     first_due_date: string
     insurance_monthly?: string
+    opening_fee?: string
+    stamp_tax?: string
+    penalty_rate?: string
     disbursement_account: number
     liability_account: number
     notes?: string
