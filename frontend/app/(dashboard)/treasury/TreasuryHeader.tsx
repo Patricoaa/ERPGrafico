@@ -96,6 +96,10 @@ export function TreasuryHeader() {
             href: "/treasury/settings?tab=conciliation",
             subTabs: [
                 { value: "conciliation", label: "Cuentas Contables", href: "/treasury/settings?tab=conciliation", iconName: "arrow-left-right" },
+                { value: "financial", label: "Gastos Financieros", href: "/treasury/settings?tab=financial", iconName: "trending-up" },
+                { value: "checks", label: "Cuentas de Cheques", href: "/treasury/settings?tab=checks", iconName: "file-check" },
+                { value: "movements", label: "Movimientos Manuales POS", href: "/treasury/settings?tab=movements", iconName: "shuffle" },
+                { value: "audit", label: "Arqueo de Caja", href: "/treasury/settings?tab=audit", iconName: "wallet" },
                 { value: "terminals", label: "Sistema", href: "/treasury/settings?tab=terminals", iconName: "settings" },
             ]
         },
@@ -111,6 +115,10 @@ export function TreasuryHeader() {
 
     const getHeaderConfig = () => {
         if (activeValue === 'config') {
+            if (subActiveValue === 'financial') return { title: "Cuentas de Gasto Financiero", description: "Cuentas contables para intereses, seguros, mora, comisiones de apertura e impuesto de timbres de préstamos.", iconName: "trending-up" as const }
+            if (subActiveValue === 'checks') return { title: "Cuentas de Cheques", description: "Cuentas puente para contabilización de cheques recibidos y emitidos.", iconName: "file-check" as const }
+            if (subActiveValue === 'movements') return { title: "Cuentas para Movimientos Manuales", description: "Configuración de ingresos y egresos ad-hoc del módulo POS.", iconName: "shuffle" as const }
+            if (subActiveValue === 'audit') return { title: "Arqueo de Caja", description: "Control de discrepancias entre saldo teórico y físico en POS.", iconName: "wallet" as const }
             if (subActiveValue === 'terminals') return { title: "Sistema", description: "Configure cuentas puente de terminales y otros ajustes del sistema.", iconName: "settings" as const }
             return { title: "Cuentas Contables", description: "Gestione las cuentas contables para conciliación, arqueo y gastos financieros.", iconName: "arrow-left-right" as const }
         }

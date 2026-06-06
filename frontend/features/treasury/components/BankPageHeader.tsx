@@ -35,7 +35,17 @@ export function BankPageHeader({ bankId, breadcrumbs, title = "", description, s
             { value: "operaciones", label: "Operaciones", iconName: "banknote", href: "/treasury/operaciones?tab=movements" },
             { value: "centro-bancos", label: "Centro de Bancos", iconName: "landmark", href: "/treasury/centro-bancos", subTabs: bankSubTabs },
             { value: "terminal-cobro", label: "Terminal de Cobro", iconName: "cpu", href: "/treasury/terminal-cobro?tab=providers" },
-            { value: "config", label: "Configuración", iconName: "settings", href: "/treasury/settings?tab=conciliation" },
+            {
+                value: "config", label: "Configuración", iconName: "settings", href: "/treasury/settings?tab=conciliation",
+                subTabs: [
+                    { value: "conciliation", label: "Cuentas Contables", href: "/treasury/settings?tab=conciliation", iconName: "arrow-left-right" },
+                    { value: "financial", label: "Gastos Financieros", href: "/treasury/settings?tab=financial", iconName: "trending-up" },
+                    { value: "checks", label: "Cuentas de Cheques", href: "/treasury/settings?tab=checks", iconName: "file-check" },
+                    { value: "movements", label: "Movimientos Manuales POS", href: "/treasury/settings?tab=movements", iconName: "shuffle" },
+                    { value: "audit", label: "Arqueo de Caja", href: "/treasury/settings?tab=audit", iconName: "wallet" },
+                    { value: "terminals", label: "Sistema", href: "/treasury/settings?tab=terminals", iconName: "settings" },
+                ],
+            },
         ],
         activeValue: "centro-bancos",
         subActiveValue: `bank-${bankId}`,
