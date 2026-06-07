@@ -14,7 +14,7 @@ import { LabeledInput, LabeledSelect, MoneyDisplay } from "@/components/shared"
 import { formatMoney } from "@/lib/money"
 
 export interface PaymentData {
-    method: 'CASH' | 'CARD' | 'CARD_TERMINAL' | 'TRANSFER' | 'CHECK' | 'CREDIT_BALANCE' | null
+    method: 'CASH' | 'CARD' | 'CARD_TERMINAL' | 'CREDIT_CARD' | 'TRANSFER' | 'CHECK' | 'CREDIT_BALANCE' | null
     amount: number
     treasuryAccountId: string | null
     paymentMethodId: number | null
@@ -88,6 +88,8 @@ export function PaymentMethodCardSelector({
             case 'CARD':
                 // Solo métodos CARD genéricos (no CARD_TERMINAL, no DEBIT_CARD/CREDIT_CARD ya filtrados por allow_for_sales)
                 return allowedMethods.some(m => m.method_type === 'CARD')
+            case 'CREDIT_CARD':
+                return allowedMethods.some(m => m.method_type === 'CREDIT_CARD')
             case 'CARD_TERMINAL':
                 return allowedMethods.some(m => m.method_type === 'CARD_TERMINAL' && m.is_terminal_integration)
             case 'TRANSFER':
@@ -152,6 +154,7 @@ export function PaymentMethodCardSelector({
         return allowedMethods.filter(m => {
             if (paymentData.method === 'CASH') return m.method_type === 'CASH'
             if (paymentData.method === 'CARD') return m.method_type === 'CARD'
+            if (paymentData.method === 'CREDIT_CARD') return m.method_type === 'CREDIT_CARD'
             if (paymentData.method === 'CARD_TERMINAL') return m.method_type === 'CARD_TERMINAL'
             if (paymentData.method === 'TRANSFER') return m.method_type === 'TRANSFER'
             if (paymentData.method === 'CHECK') return m.method_type === 'CHECK'
@@ -199,6 +202,13 @@ export function PaymentMethodCardSelector({
                 icon: CreditCard,
                 color: 'text-primary',
                 isAllowed: isMethodAllowed('CARD')
+            },
+            {
+                id: 'CREDIT_CARD',
+                label: 'T. Crédito',
+                icon: CreditCard,
+                color: 'text-primary',
+                isAllowed: isMethodAllowed('CREDIT_CARD')
             },
             {
                 id: 'CARD_TERMINAL',

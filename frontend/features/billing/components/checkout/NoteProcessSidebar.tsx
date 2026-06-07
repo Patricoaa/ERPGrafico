@@ -21,6 +21,7 @@ interface NoteProcessSidebarProps {
 const methodLabels: Record<string, string> = {
     'CASH': 'Efectivo',
     'CARD': 'Tarjeta',
+    'CREDIT_CARD': 'T. Crédito',
     'TRANSFER': 'Transferencia',
     'CREDIT': 'Crédito'
 }

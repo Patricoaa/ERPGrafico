@@ -245,7 +245,7 @@ export function PurchaseCheckoutWizard({
             // Validate at least one account exists for the selected method
             const hasAccountsForMethod = (method: string) => {
                 if (method === 'CASH') return accounts.some(a => a.allows_cash)
-                if (method === 'CARD') return accounts.some(a => a.allows_card)
+                if (method === 'CARD' || method === 'CREDIT_CARD') return accounts.some(a => a.allows_card)
                 if (method === 'TRANSFER') return accounts.some(a => a.allows_transfer)
                 return false
             }
