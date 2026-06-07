@@ -1,17 +1,14 @@
 "use client"
 
 import React, { useState } from 'react'
-import { Banknote, AlertCircle, Calendar, TrendingDown, RefreshCw } from 'lucide-react'
+import { Banknote, AlertCircle, Calendar, TrendingDown } from 'lucide-react'
 import {
-    BaseModal, CancelButton, ActionSlideButton, LabeledSelect,
-    MoneyDisplay, StatusBadge, StatCard, Skeleton, EmptyState,
+    BaseModal, FormFooter, ActionSlideButton, MoneyDisplay, StatusBadge, StatCard, Skeleton, EmptyState,
 } from '@/components/shared'
 import { Button } from '@/components/ui/button'
-import { Textarea } from '@/components/ui/textarea'
-import { Label } from '@/components/ui/label'
-import { useLoan, useLoanMutations } from './hooks'
-import { useTreasuryAccounts } from '../hooks/useTreasuryAccounts'
+import { useLoan } from './hooks'
 import { LoanPayInstallmentModal } from './LoanPayInstallmentModal'
+import { PrepayLoanModal } from './PrepayLoanModal'
 import type { LoanInstallment } from './types'
 
 interface Props {
@@ -22,17 +19,9 @@ interface Props {
 
 export function LoanDetailModal({ loanId, open, onOpenChange }: Props) {
     const { data: loan, isLoading, isError } = useLoan(loanId)
-    const { accounts } = useTreasuryAccounts()
-    const { prepay, refinance, isPrepaying, isRefinancing } = useLoanMutations()
 
     const [payingInst, setPayingInst] = useState<LoanInstallment | null>(null)
-    const [refinanceNotes, setRefinanceNotes] = useState('')
-    const [showRefinance, setShowRefinance] = useState(false)
-    const [prepayAccount, setPrepayAccount] = useState('')
-
-    const disbursementAccounts = (accounts ?? []).filter(
-        (a) => a.account_type === 'CHECKING' || a.account_type === 'CASH',
-    )
+    const [showPrepayModal, setShowPrepayModal] = useState(false)
 
     if (!open) return null
     if (isLoading) return (
@@ -52,26 +41,6 @@ export function LoanDetailModal({ loanId, open, onOpenChange }: Props) {
             />
         </BaseModal>
     )
-
-    const handlePrepay = async () => {
-        if (!prepayAccount) {
-            window.alert('Selecciona la cuenta de pago.')
-            return
-        }
-        if (window.confirm('¿Confirmas el prepago total? Esta acción paga el saldo insoluto y cierra el crédito.')) {
-            await prepay({
-                id: loan.id,
-                payload: { payment_account: parseInt(prepayAccount) },
-            })
-            setPrepayAccount('')
-        }
-    }
-
-    const handleRefinance = async () => {
-        await refinance({ id: loan.id, payload: { notes: refinanceNotes } })
-        setShowRefinance(false)
-        setRefinanceNotes('')
-    }
 
     const canPay = (inst: LoanInstallment) =>
         loan.status === 'ACTIVE' && (inst.status === 'PENDING' || inst.status === 'OVERDUE')
@@ -93,6 +62,20 @@ export function LoanDetailModal({ loanId, open, onOpenChange }: Props) {
                     </div>
                 }
                 size="full"
+                footer={
+                    loan.status === 'ACTIVE' ? (
+                        <FormFooter
+                            actions={
+                                <ActionSlideButton
+                                    variant="destructive"
+                                    onClick={() => setShowPrepayModal(true)}
+                                >
+                                    Prepago Total
+                                </ActionSlideButton>
+                            }
+                        />
+                    ) : undefined
+                }
             >
                 <div className="space-y-6">
                     {/* Status + meta */}
@@ -200,66 +183,6 @@ export function LoanDetailModal({ loanId, open, onOpenChange }: Props) {
                         )}
                     </div>
 
-                    {/* Lifecycle actions */}
-                    {loan.status === 'ACTIVE' && (
-                        <div className="flex flex-wrap gap-2 pt-2 border-t border-border">
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setShowRefinance((v) => !v)}
-                            >
-                                <RefreshCw className="h-4 w-4 mr-2" />
-                                Refinanciar
-                            </Button>
-                            <div className="flex items-end gap-2 ml-auto">
-                                <div className="w-64">
-                                    <LabeledSelect
-                                        label="Prepago desde cuenta"
-                                        placeholder="Seleccionar cuenta…"
-                                        options={disbursementAccounts.map((a) => ({
-                                            value: String(a.id), label: `${a.name} (${a.code})`,
-                                        }))}
-                                        value={prepayAccount}
-                                        onChange={setPrepayAccount}
-                                    />
-                                </div>
-                                <ActionSlideButton
-                                    variant="destructive"
-                                    onClick={handlePrepay}
-                                    loading={isPrepaying}
-                                    disabled={isPrepaying || !prepayAccount}
-                                >
-                                    Prepagar Total
-                                </ActionSlideButton>
-                            </div>
-                        </div>
-                    )}
-
-                    {showRefinance && loan.status === 'ACTIVE' && (
-                        <div className="rounded-lg border border-border p-4 space-y-3 bg-muted/20">
-                            <div className="space-y-2">
-                                <Label htmlFor="refinance-notes">Notas de Refinanciación</Label>
-                                <Textarea
-                                    id="refinance-notes"
-                                    placeholder="¿Con qué banco refinancia? Condiciones, etc."
-                                    rows={3}
-                                    value={refinanceNotes}
-                                    onChange={(e) => setRefinanceNotes(e.target.value)}
-                                />
-                            </div>
-                            <div className="flex justify-end gap-2">
-                                <CancelButton onClick={() => setShowRefinance(false)} />
-                                <ActionSlideButton
-                                    onClick={handleRefinance}
-                                    loading={isRefinancing}
-                                    disabled={isRefinancing}
-                                >
-                                    Confirmar Refinanciación
-                                </ActionSlideButton>
-                            </div>
-                        </div>
-                    )}
-
                     {loan.notes && (
                         <div className="rounded-lg border border-border p-4">
                             <h4 className="text-xs font-semibold text-muted-foreground uppercase mb-1">Notas</h4>
@@ -276,6 +199,14 @@ export function LoanDetailModal({ loanId, open, onOpenChange }: Props) {
                     penaltyRate={loan.penalty_rate}
                     open={true}
                     onOpenChange={(o) => { if (!o) setPayingInst(null) }}
+                />
+            )}
+
+            {showPrepayModal && (
+                <PrepayLoanModal
+                    loan={loan}
+                    open={true}
+                    onOpenChange={(o) => { if (!o) setShowPrepayModal(false) }}
                 />
             )}
         </>

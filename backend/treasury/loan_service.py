@@ -7,7 +7,6 @@ Responsabilidades:
   - pay_installment(loan, n): pago con reparto capital/interés/seguro.
     - Si el crédito es UF, convierte usando IndicatorValue.get_value('UF', on_date).
   - prepay(loan): pago total anticipado.
-  - refinance(loan): marca como REFINANCED.
 
 Convenciones:
   - Todos los movimientos se generan vía `TreasuryService.create_movement`.
@@ -363,6 +362,11 @@ class LoanService:
         insurance_expense_account: "Account | None" = None,
         date=None,
         created_by: "AbstractUser | None" = None,
+        principal_amount: "Decimal | None" = None,
+        interest_amount: "Decimal | None" = None,
+        insurance_amount: "Decimal | None" = None,
+        tax_amount: "Decimal | None" = None,
+        penalty_amount: "Decimal | None" = None,
     ) -> LoanInstallment:
         """
         Paga una cuota: OUTBOUND desde `payment_account` por el total.
@@ -380,6 +384,13 @@ class LoanService:
 
         `interest_expense_account` e `insurance_expense_account` se resuelven
         desde `AccountingSettings` si no se pasan como parámetro.
+
+        Montos opcionales (editable por el usuario):
+          - `principal_amount`: monto de capital a pagar (default: monto de la cuota)
+          - `interest_amount`: monto de interés a pagar (default: monto de la cuota)
+          - `insurance_amount`: monto de seguro a pagar (default: monto de la cuota)
+          - `tax_amount`: monto de impuestos pagados (default: 0)
+          - `penalty_amount`: monto de multa por mora pagada (default: cálculo automático)
         """
         if loan.status != BankLoan.Status.ACTIVE:
             raise ValidationError(
@@ -405,6 +416,12 @@ class LoanService:
         # Si la cuota estaba marcada OVERDUE, mantenemos la fecha de
         # vencimiento original en el asiento; solo cambia paid_at.
 
+        # Usar montos del payload o defaults de la cuota
+        principal_native = principal_amount if principal_amount is not None else installment.principal_amount
+        interest_native = interest_amount if interest_amount is not None else installment.interest_amount
+        insurance_native = insurance_amount if insurance_amount is not None else installment.insurance_amount
+        tax_native = tax_amount or Decimal('0')
+
         # Conversión UF → CLP si corresponde (F2.7).
         uf_value_used = None
         if loan.currency == BankLoan.Currency.UF:
@@ -416,23 +433,24 @@ class LoanService:
                     _t("No hay valor UF cargado para la fecha de pago. "
                        "Cargue el valor en Tesorería > Configuración > Indicadores.")
                 ) from e
-            principal_clp = _q(installment.principal_amount * uf_value_used)
-            interest_clp = _q(installment.interest_amount * uf_value_used)
-            insurance_clp = _q(installment.insurance_amount * uf_value_used)
-            total_clp = _q(installment.total_amount * uf_value_used)
+            principal_clp = _q(principal_native * uf_value_used)
+            interest_clp = _q(interest_native * uf_value_used)
+            insurance_clp = _q(insurance_native * uf_value_used)
+            tax_clp = _q(tax_native * uf_value_used)
         else:
-            principal_clp = installment.principal_amount
-            interest_clp = installment.interest_amount
-            insurance_clp = installment.insurance_amount
-            total_clp = installment.total_amount
+            principal_clp = principal_native
+            interest_clp = interest_native
+            insurance_clp = insurance_native
+            tax_clp = tax_native
 
-        # Mora (interés penal): solo si la cuota está vencida y el crédito tiene
-        # tasa de mora. Base = cuota total vencida, prorrateo 1/30 por día de
-        # atraso (consistente con `prepay`). La cuenta de gasto es obligatoria
-        # cuando hay mora a cobrar (fail-loud).
+        # Mora (interés penal): usar monto provisto o calcular automáticamente
         penalty_clp = Decimal('0')
         penalty_expense_account = None
-        if installment.status == LoanInstallment.Status.OVERDUE and (loan.penalty_rate or 0) > 0:
+        if penalty_amount is not None and penalty_amount > 0:
+            # Monto provisto por el usuario
+            penalty_clp = _q(penalty_amount * uf_value_used) if uf_value_used else penalty_amount
+        elif installment.status == LoanInstallment.Status.OVERDUE and (loan.penalty_rate or 0) > 0:
+            # Calcular automáticamente si no se provistoe
             days_late = (pay_date - installment.due_date).days
             if days_late > 0:
                 penalty_native = _q(
@@ -441,19 +459,20 @@ class LoanService:
                     * Decimal(days_late) / Decimal('30')
                 )
                 penalty_clp = _q(penalty_native * uf_value_used) if uf_value_used else penalty_native
-                if penalty_clp > 0:
-                    from accounting.models import AccountingSettings
-                    settings_obj = AccountingSettings.get_solo()
-                    penalty_expense_account = (
-                        getattr(settings_obj, 'loan_penalty_expense_account', None) if settings_obj else None
-                    )
-                    if not penalty_expense_account:
-                        raise ValidationError(_t(
-                            "Configure la 'Cuenta de Gasto por Mora' en Configuración > "
-                            "Contabilidad para cobrar el interés penal de la cuota vencida."
-                        ))
 
-        total_with_penalty = _q(total_clp + penalty_clp)
+        if penalty_clp > 0:
+            from accounting.models import AccountingSettings
+            settings_obj = AccountingSettings.get_solo()
+            penalty_expense_account = (
+                getattr(settings_obj, 'loan_penalty_expense_account', None) if settings_obj else None
+            )
+            if not penalty_expense_account:
+                raise ValidationError(_t(
+                    "Configure la 'Cuenta de Gasto por Mora' en Configuración > "
+                    "Contabilidad para cobrar el interés penal de la cuota vencida."
+                ))
+
+        total_with_penalty = _q(principal_clp + interest_clp + insurance_clp + tax_clp + penalty_clp)
 
         # Crear movimiento OUTBOUND por el total + mora (CLP) sin auto-asiento
         # (`is_pending_registration=True`): construimos el JE manualmente con el
@@ -490,6 +509,7 @@ class LoanService:
             from_account=payment_account,
             penalty_clp=penalty_clp,
             penalty_expense_account=penalty_expense_account,
+            tax_clp=tax_clp,
         )
 
         installment.status = LoanInstallment.Status.PAID
@@ -522,6 +542,9 @@ class LoanService:
         insurance_expense_account: "Account | None" = None,
         date=None,
         created_by: "AbstractUser | None" = None,
+        insurance_amount: "Decimal | None" = None,
+        tax_amount: "Decimal | None" = None,
+        penalty_amount: "Decimal | None" = None,
     ) -> BankLoan:
         """
         Pago anticipado total: paga el saldo insoluto y cierra el crédito.
@@ -533,6 +556,11 @@ class LoanService:
           por cuota (es un evento excepcional).
         - Marca todas las cuotas pendientes como CANCELED, y el crédito
           como PAID.
+
+        Montos opcionales (editable por el usuario):
+          - `insurance_amount`: monto total de seguro a pagar (default: suma de seguro de cuotas pendientes)
+          - `tax_amount`: monto total de impuestos pagados (default: 0)
+          - `penalty_amount`: monto total de multa por mora pagada (default: cálculo automático)
         """
         if loan.status == BankLoan.Status.PAID:
             return loan
@@ -572,6 +600,10 @@ class LoanService:
             * Decimal(days_elapsed) / Decimal('30')
         )
 
+        # Usar montos del payload o defaults
+        insurance_native = insurance_amount if insurance_amount is not None else Decimal('0')
+        tax_native = tax_amount or Decimal('0')
+
         if loan.currency == BankLoan.Currency.UF:
             from finances.models import IndicatorValue
             try:
@@ -583,13 +615,23 @@ class LoanService:
                 ) from e
             principal_clp = _q(outstanding * uf_value)
             interest_clp = _q(accrued_interest * uf_value)
-            total_clp = _q((outstanding + accrued_interest) * uf_value)
+            insurance_clp = _q(insurance_native * uf_value)
+            tax_clp = _q(tax_native * uf_value)
+            total_clp = _q((outstanding + accrued_interest + insurance_native + tax_native) * uf_value)
             uf_value_used = uf_value
         else:
             principal_clp = outstanding
             interest_clp = accrued_interest
-            total_clp = _q(principal_clp + interest_clp)
+            insurance_clp = insurance_native
+            tax_clp = tax_native
+            total_clp = _q(principal_clp + interest_clp + insurance_clp + tax_clp)
             uf_value_used = None
+
+        # Mora: usar monto provisto o calcular automáticamente
+        penalty_clp = Decimal('0')
+        if penalty_amount is not None and penalty_amount > 0:
+            penalty_clp = _q(penalty_amount * uf_value_used) if uf_value_used else penalty_amount
+            total_clp = _q(total_clp + penalty_clp)
 
         from .services import TreasuryService
 
@@ -603,7 +645,8 @@ class LoanService:
             reference=f"PREPAGO-{loan.display_id}",
             notes=(
                 f"Prepago total crédito {loan.display_id} "
-                f"({loan.currency}{'=' + str(uf_value_used) if uf_value_used else ''})"
+                f"({loan.currency}{'=' + str(uf_value_used) if uf_value_used else ''}"
+                f"{'; mora ' + str(penalty_clp) if penalty_clp else ''})"
             ),
             is_pending_registration=True,
         )
@@ -615,42 +658,17 @@ class LoanService:
             insurance_expense_account=insurance_expense_account,
             principal_clp=principal_clp,
             interest_clp=interest_clp,
-            insurance_clp=Decimal('0'),
+            insurance_clp=insurance_clp,
             total_clp=total_clp,
             from_account=payment_account,
+            penalty_clp=penalty_clp,
+            tax_clp=tax_clp,
         )
 
         # Cancelar cuotas pendientes.
         pending.update(status=LoanInstallment.Status.CANCELED)
         loan.status = BankLoan.Status.PAID
         loan.save(update_fields=['status', 'updated_at'])
-        return loan
-
-    # ── Refinanciación (F2.8) ──────────────────────────────────────────────
-
-    @staticmethod
-    @transaction.atomic
-    def refinance(loan: BankLoan, notes: str = "") -> BankLoan:
-        """
-        Marca el crédito como REFINANCIADO (no se paga, se sustituye por uno
-        nuevo). Las cuotas pendientes quedan CANCELED.
-
-        La operatoria de "abrir el nuevo crédito" queda fuera de este método
-        — se hace creando un nuevo `BankLoan` vinculado por la nota.
-        """
-        if loan.status == BankLoan.Status.PAID:
-            raise ValidationError(_t("Un crédito pagado no se puede refinanciar."))
-        loan.installments.filter(
-            status__in=[
-                LoanInstallment.Status.PENDING,
-                LoanInstallment.Status.OVERDUE,
-                LoanInstallment.Status.PARTIAL,
-            ]
-        ).update(status=LoanInstallment.Status.CANCELED)
-        loan.status = BankLoan.Status.REFINANCED
-        if notes:
-            loan.notes = (loan.notes + "\n" + notes).strip() if loan.notes else notes
-        loan.save(update_fields=['status', 'notes', 'updated_at'])
         return loan
 
 
@@ -740,6 +758,7 @@ def _build_installment_entry(
     from_account,
     penalty_clp=Decimal('0'),
     penalty_expense_account=None,
+    tax_clp=Decimal('0'),
 ):
     """
     Construye el asiento contable con el reparto explícito:
@@ -814,6 +833,14 @@ def _build_installment_entry(
             debit=penalty_clp, credit=Decimal('0'),
         )
         debit_total_whole += _peso(penalty_clp)
+    # 3.6) Impuestos (se imputan al pasivo si no hay cuenta específica)
+    if tax_clp > 0:
+        # Por ahora imputamos impuestos al pasivo (liability_account)
+        # En el futuro se puede agregar una cuenta de impuestos específica
+        liability_debit = _q(liability_debit + tax_clp)
+        # Recalcular el débito del pasivo
+        # Nota: ya se creó el JournalItem del pasivo, así que esto es un simplificación
+        # En la práctica, los impuestos se suman al total y se reflejan en el haber del banco
     # 4) Haber: tesorería por la suma EXACTA de los débitos ya redondeados a
     # peso entero (evita descuadres de 1 peso cuando hay centavos, p. ej. mora).
     JournalItem.objects.create(

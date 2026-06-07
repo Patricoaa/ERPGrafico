@@ -1,4 +1,4 @@
-export type BankLoanStatus = 'DRAFT' | 'ACTIVE' | 'PAID' | 'REFINANCED' | 'DEFAULTED'
+export type BankLoanStatus = 'DRAFT' | 'ACTIVE' | 'PAID' | 'DEFAULTED'
 export type BankLoanCurrency = 'CLP' | 'UF'
 export type BankLoanAmortizationSystem = 'FRENCH' | 'LINEAR'
 export type BankLoanRateBasis = 'MONTHLY' | 'ANNUAL'
@@ -92,6 +92,11 @@ export interface BankLoanCreatePayload {
 export interface PayInstallmentPayload {
     payment_account: number
     date?: string
+    principal_amount?: string
+    interest_amount?: string
+    insurance_amount?: string
+    tax_amount?: string
+    penalty_amount?: string
     interest_expense_account?: number | null
     insurance_expense_account?: number | null
 }
@@ -99,12 +104,11 @@ export interface PayInstallmentPayload {
 export interface PrepayLoanPayload {
     payment_account: number
     date?: string
+    insurance_amount?: string
+    tax_amount?: string
+    penalty_amount?: string
     interest_expense_account?: number | null
     insurance_expense_account?: number | null
-}
-
-export interface RefinanceLoanPayload {
-    notes?: string
 }
 
 export interface DisburseLoanPayload {
