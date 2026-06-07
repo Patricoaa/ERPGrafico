@@ -90,6 +90,23 @@ export function PrepayLoanModal({ loan, open, onOpenChange }: Props) {
                 </div>
             }
             subtitle={`${loan.display_id} · Saldo insoluto de ${pendingInstallments.length} cuota(s)`}
+            footer={
+                <FormFooter
+                    actions={
+                        <>
+                            <CancelButton onClick={() => onOpenChange(false)} />
+                            <ActionSlideButton
+                                variant="destructive"
+                                onClick={handlePrepay}
+                                loading={isPrepaying}
+                                disabled={isPrepaying || !paymentAccount}
+                            >
+                                Confirmar Prepago Total
+                            </ActionSlideButton>
+                        </>
+                    }
+                />
+            }
         >
             <div className="space-y-5">
                 {/* Resumen del saldo insoluto */}
@@ -138,21 +155,21 @@ export function PrepayLoanModal({ loan, open, onOpenChange }: Props) {
                             label="Seguro (editable)"
                             type="number"
                             value={insuranceAmount}
-                            onChange={(v) => setInsuranceAmount(String(v))}
+                            onChange={(e) => setInsuranceAmount(e.target.value)}
                             placeholder="0"
                         />
                         <LabeledInput
                             label="Impuestos (editable)"
                             type="number"
                             value={taxAmount}
-                            onChange={(v) => setTaxAmount(String(v))}
+                            onChange={(e) => setTaxAmount(e.target.value)}
                             placeholder="0"
                         />
                         <LabeledInput
                             label="Multa por mora (editable)"
                             type="number"
                             value={penaltyAmount}
-                            onChange={(v) => setPenaltyAmount(String(v))}
+                            onChange={(e) => setPenaltyAmount(e.target.value)}
                             placeholder="0"
                         />
                         <div className="flex justify-between font-bold border-t border-border pt-2 text-sm">
@@ -193,26 +210,10 @@ export function PrepayLoanModal({ loan, open, onOpenChange }: Props) {
                         label="Fecha de Pago"
                         type="date"
                         value={payDate}
-                        onChange={(v) => setPayDate(String(v))}
+                        onChange={(e) => setPayDate(e.target.value)}
                     />
                 </div>
             </div>
-
-            <FormFooter
-                actions={
-                    <>
-                        <CancelButton onClick={() => onOpenChange(false)} />
-                        <ActionSlideButton
-                            variant="destructive"
-                            onClick={handlePrepay}
-                            loading={isPrepaying}
-                            disabled={isPrepaying || !paymentAccount}
-                        >
-                            Confirmar Prepago Total
-                        </ActionSlideButton>
-                    </>
-                }
-            />
         </BaseModal>
     )
 }

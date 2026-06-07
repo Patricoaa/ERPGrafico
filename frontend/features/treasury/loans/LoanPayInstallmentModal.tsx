@@ -98,6 +98,22 @@ export function LoanPayInstallmentModal({ installment, loanCurrency, penaltyRate
                 </div>
             }
             subtitle={`${installment.loan_display_id} · Vence ${new Date(installment.due_date).toLocaleDateString('es-CL')}`}
+            footer={
+                <FormFooter
+                    actions={
+                        <>
+                            <CancelButton onClick={() => onOpenChange(false)} />
+                            <ActionSlideButton
+                                onClick={handlePay}
+                                loading={isPaying}
+                                disabled={isPaying || !paymentAccount}
+                            >
+                                Registrar Pago
+                            </ActionSlideButton>
+                        </>
+                    }
+                />
+            }
         >
             <div className="space-y-5">
                 {/* Desglose editable de la cuota */}
@@ -111,32 +127,32 @@ export function LoanPayInstallmentModal({ installment, loanCurrency, penaltyRate
                             label="Capital"
                             type="number"
                             value={principalAmount}
-                            onChange={(v) => setPrincipalAmount(String(v))}
+                            onChange={(e) => setPrincipalAmount(e.target.value)}
                         />
                         <LabeledInput
                             label="Interés"
                             type="number"
                             value={interestAmount}
-                            onChange={(v) => setInterestAmount(String(v))}
+                            onChange={(e) => setInterestAmount(e.target.value)}
                         />
                         <LabeledInput
                             label="Seguro"
                             type="number"
                             value={insuranceAmount}
-                            onChange={(v) => setInsuranceAmount(String(v))}
+                            onChange={(e) => setInsuranceAmount(e.target.value)}
                         />
                         <LabeledInput
                             label="Impuestos"
                             type="number"
                             value={taxAmount}
-                            onChange={(v) => setTaxAmount(String(v))}
+                            onChange={(e) => setTaxAmount(e.target.value)}
                             placeholder="0"
                         />
                         <LabeledInput
                             label="Multa por mora"
                             type="number"
                             value={penaltyAmount}
-                            onChange={(v) => setPenaltyAmount(String(v))}
+                            onChange={(e) => setPenaltyAmount(e.target.value)}
                             placeholder="0"
                         />
                         <div className="flex justify-between font-bold border-t border-border pt-2 text-sm">
@@ -217,25 +233,10 @@ export function LoanPayInstallmentModal({ installment, loanCurrency, penaltyRate
                         label="Fecha de Pago"
                         type="date"
                         value={payDate}
-                        onChange={(v) => setPayDate(String(v))}
+                        onChange={(e) => setPayDate(e.target.value)}
                     />
                 </div>
             </div>
-
-            <FormFooter
-                actions={
-                    <>
-                        <CancelButton onClick={() => onOpenChange(false)} />
-                        <ActionSlideButton
-                            onClick={handlePay}
-                            loading={isPaying}
-                            disabled={isPaying || !paymentAccount}
-                        >
-                            Registrar Pago
-                        </ActionSlideButton>
-                    </>
-                }
-            />
         </BaseModal>
     )
 }
