@@ -763,7 +763,7 @@ def _build_installment_entry(
     """
     Construye el asiento contable con el reparto explícito:
 
-      Debe  `liability_account`            (amortización de capital)
+      Debe  `liability_account`            (amortización de capital + impuestos)
       Debe  `interest_expense_account`     (gasto interés, si > 0 y cuenta dada)
       Debe  `insurance_expense_account`    (gasto seguro, si > 0 y cuenta dada)
       Debe  `penalty_expense_account`      (gasto mora, si > 0 — cuenta obligatoria)
@@ -772,6 +772,9 @@ def _build_installment_entry(
     `total_clp` ya incluye la mora cuando la hay. Si no se pasan las cuentas de
     gasto de interés/seguro, su línea se omite y la diferencia se imputa a la
     `liability_account` para no perder la cuadratura.
+
+    Los impuestos (`tax_clp`) se imputan al `liability_account` ya que no hay
+    una cuenta de impuestos específica configurada.
 
     El movimiento se crea con `is_pending_registration=True` para que
     TreasuryService NO genere un asiento estándar (que no conoce la
@@ -801,12 +804,15 @@ def _build_installment_entry(
         liability_debit = _q(liability_debit + interest_clp)
     if insurance_clp and not insurance_expense_account:
         liability_debit = _q(liability_debit + insurance_clp)
+    # Impuestos se imputan al pasivo (no hay cuenta específica de impuestos aún)
+    if tax_clp > 0:
+        liability_debit = _q(liability_debit + tax_clp)
 
     # Acumulamos el total de débitos redondeado a peso entero (como los lee el
     # libro mayor), para que la línea de cuadre (banco) cuadre exactamente.
     debit_total_whole = Decimal('0')
 
-    # 1) Debe: pasivo (amortización de capital — más interés/seguro si no hay cuentas)
+    # 1) Debe: pasivo (amortización de capital — más interés/seguro si no hay cuentas + impuestos)
     JournalItem.objects.create(
         entry=entry, account=liability_account,
         debit=liability_debit, credit=Decimal('0'),
@@ -833,14 +839,6 @@ def _build_installment_entry(
             debit=penalty_clp, credit=Decimal('0'),
         )
         debit_total_whole += _peso(penalty_clp)
-    # 3.6) Impuestos (se imputan al pasivo si no hay cuenta específica)
-    if tax_clp > 0:
-        # Por ahora imputamos impuestos al pasivo (liability_account)
-        # En el futuro se puede agregar una cuenta de impuestos específica
-        liability_debit = _q(liability_debit + tax_clp)
-        # Recalcular el débito del pasivo
-        # Nota: ya se creó el JournalItem del pasivo, así que esto es un simplificación
-        # En la práctica, los impuestos se suman al total y se reflejan en el haber del banco
     # 4) Haber: tesorería por la suma EXACTA de los débitos ya redondeados a
     # peso entero (evita descuadres de 1 peso cuando hay centavos, p. ej. mora).
     JournalItem.objects.create(
