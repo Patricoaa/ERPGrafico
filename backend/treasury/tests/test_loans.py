@@ -1,6 +1,6 @@
 """
 Tests del LoanService: generate_schedule (francés/lineal), disburse,
-pay_installment (CLP y UF), prepay, refinance.
+pay_installment (CLP y UF), prepay.
 
 Cubre:
   - Sistema francés: 12 cuotas, suma de capital = principal, saldo final 0.
@@ -472,21 +472,3 @@ def test_prepay_uf_converts_with_uf_value(base):
     )
     loan.refresh_from_db()
     assert loan.status == BankLoan.Status.PAID
-
-
-@pytest.mark.django_db
-def test_refinance_marks_status_and_cancels_pending(base):
-    loan = _make_loan(base, term_months=3)
-    LoanService.disburse(loan, created_by=base['user'])
-    LoanService.refinance(loan, notes='Renegociado con Banco X')
-    loan.refresh_from_db()
-    assert loan.status == BankLoan.Status.REFINANCED
-    assert 'Renegociado' in loan.notes
-    assert loan.installments.filter(status=LoanInstallment.Status.CANCELED).count() == 3
-
-
-@pytest.mark.django_db
-def test_refinance_paid_loan_raises(base):
-    loan = _make_loan(base, status=BankLoan.Status.PAID)
-    with pytest.raises(ValidationError):
-        LoanService.refinance(loan)

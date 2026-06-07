@@ -3,7 +3,7 @@ test_loans_api.py — Tests de la API REST de créditos bancarios (F2.11).
 
 Cubre:
   - CRUD básico de BankLoan.
-  - Acciones custom: disburse, pay, prepay, refinance.
+  - Acciones custom: disburse, pay, prepay.
   - Endpoints auxiliares: schedule, amortization_table.
   - Validación: liability_account debe ser LOAN.
   - Permisos: solo autenticados.
@@ -381,29 +381,6 @@ def test_prepay_action_marks_all_canceled(
     assert BankLoan.objects.get(pk=loan_id).installments.filter(
         status=LoanInstallment.Status.CANCELED
     ).count() == 6
-
-
-@pytest.mark.django_db
-def test_refinance_action_marks_refinanced(
-    auth_client, bank, checking_account, liability_accounting,
-):
-    create = auth_client.post(
-        '/api/treasury/loans/',
-        _make_payload(bank, checking_account, liability_accounting, term_months=3),
-        format='json',
-    )
-    loan_id = create.json()['id']
-    auth_client.post(f'/api/treasury/loans/{loan_id}/disburse/')
-
-    r = auth_client.post(
-        f'/api/treasury/loans/{loan_id}/refinance/',
-        {'notes': 'Refinanciado con Banco Santander'},
-        format='json',
-    )
-    assert r.status_code == 200, r.json()
-    data = r.json()
-    assert data['status'] == 'REFINANCED'
-    assert 'Refinanciado con Banco Santander' in data['notes']
 
 
 @pytest.mark.django_db

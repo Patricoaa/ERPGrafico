@@ -892,6 +892,26 @@ class PayInstallmentActionSerializer(serializers.Serializer):
         help_text="ID de la TreasuryAccount desde donde se paga.",
     )
     date = serializers.DateField(required=False)
+    principal_amount = serializers.DecimalField(
+        max_digits=18, decimal_places=2, required=False,
+        help_text="Monto de capital a pagar (default: monto de la cuota).",
+    )
+    interest_amount = serializers.DecimalField(
+        max_digits=18, decimal_places=2, required=False,
+        help_text="Monto de interés a pagar (default: monto de la cuota).",
+    )
+    insurance_amount = serializers.DecimalField(
+        max_digits=18, decimal_places=2, required=False,
+        help_text="Monto de seguro a pagar (default: monto de la cuota).",
+    )
+    tax_amount = serializers.DecimalField(
+        max_digits=18, decimal_places=2, required=False,
+        help_text="Monto de impuestos pagados (default: 0).",
+    )
+    penalty_amount = serializers.DecimalField(
+        max_digits=18, decimal_places=2, required=False,
+        help_text="Monto de multa por mora pagada (default: cálculo automático si aplica).",
+    )
     interest_expense_account = serializers.IntegerField(required=False, allow_null=True)
     insurance_expense_account = serializers.IntegerField(required=False, allow_null=True)
 
@@ -900,13 +920,20 @@ class PrepayLoanActionSerializer(serializers.Serializer):
     """Payload para la acción `prepay` de BankLoanViewSet."""
     payment_account = serializers.IntegerField()
     date = serializers.DateField(required=False)
+    insurance_amount = serializers.DecimalField(
+        max_digits=18, decimal_places=2, required=False,
+        help_text="Monto total de seguro a pagar (default: suma de seguro de cuotas pendientes).",
+    )
+    tax_amount = serializers.DecimalField(
+        max_digits=18, decimal_places=2, required=False,
+        help_text="Monto total de impuestos pagados (default: 0).",
+    )
+    penalty_amount = serializers.DecimalField(
+        max_digits=18, decimal_places=2, required=False,
+        help_text="Monto total de multa por mora pagada (default: cálculo automático).",
+    )
     interest_expense_account = serializers.IntegerField(required=False, allow_null=True)
     insurance_expense_account = serializers.IntegerField(required=False, allow_null=True)
-
-
-class RefinanceLoanActionSerializer(serializers.Serializer):
-    """Payload para la acción `refinance` de BankLoanViewSet."""
-    notes = serializers.CharField(required=False, allow_blank=True, default='')
 
 
 class DisburseLoanActionSerializer(serializers.Serializer):

@@ -21,7 +21,7 @@ from .serializers import (
     PaymentTerminalProviderSerializer, PaymentTerminalDeviceSerializer,
     BankLoanSerializer, BankLoanWriteSerializer, LoanInstallmentSerializer,
     PayInstallmentActionSerializer, PrepayLoanActionSerializer,
-    RefinanceLoanActionSerializer, DisburseLoanActionSerializer,
+    DisburseLoanActionSerializer,
     CreditCardStatementSerializer, CreditCardStatementWriteSerializer,
     PayStatementActionSerializer, ApplyChargesActionSerializer,
 )
@@ -2160,20 +2160,10 @@ class BankLoanViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                 insurance_expense_account=insurance_exp,
                 date=v.get('date'),
                 created_by=request.user,
+                insurance_amount=v.get('insurance_amount'),
+                tax_amount=v.get('tax_amount'),
+                penalty_amount=v.get('penalty_amount'),
             )
-        except ValidationError as e:
-            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        loan.refresh_from_db()
-        return Response(self.get_serializer(loan).data)
-
-    @action(detail=True, methods=['post'])
-    def refinance(self, request, pk=None):
-        from .loan_service import LoanService
-        loan = self.get_object()
-        payload = RefinanceLoanActionSerializer(data=request.data)
-        payload.is_valid(raise_exception=True)
-        try:
-            loan = LoanService.refinance(loan, notes=payload.validated_data.get('notes', ''))
         except ValidationError as e:
             return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         loan.refresh_from_db()
@@ -2292,6 +2282,11 @@ class LoanInstallmentViewSet(viewsets.ModelViewSet):
                 insurance_expense_account=insurance_exp,
                 date=v.get('date'),
                 created_by=request.user,
+                principal_amount=v.get('principal_amount'),
+                interest_amount=v.get('interest_amount'),
+                insurance_amount=v.get('insurance_amount'),
+                tax_amount=v.get('tax_amount'),
+                penalty_amount=v.get('penalty_amount'),
             )
         except ValidationError as e:
             return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)

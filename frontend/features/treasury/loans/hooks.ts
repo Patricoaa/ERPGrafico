@@ -4,7 +4,7 @@ import { showApiError } from '@/lib/errors'
 import { loansApi } from './api'
 import type {
     BankLoanCreatePayload, PayInstallmentPayload, PrepayLoanPayload,
-    RefinanceLoanPayload, DisburseLoanPayload,
+    DisburseLoanPayload,
 } from './types'
 
 const LOANS_KEYS = {
@@ -78,13 +78,6 @@ export function useLoanMutations() {
         onError: (e: Error) => showApiError(e, 'Error al prepagar crédito'),
     })
 
-    const refinance = useMutation({
-        mutationFn: ({ id, payload }: { id: number; payload: RefinanceLoanPayload }) =>
-            loansApi.refinance(id, payload),
-        onSuccess: () => { invalidate(); toast.success('Crédito marcado como refinanciado') },
-        onError: (e: Error) => showApiError(e, 'Error al refinanciar crédito'),
-    })
-
     const payInstallment = useMutation({
         mutationFn: ({ id, payload }: { id: number; payload: PayInstallmentPayload }) =>
             loansApi.payInstallment(id, payload),
@@ -96,12 +89,10 @@ export function useLoanMutations() {
         create: create.mutateAsync,
         disburse: disburse.mutateAsync,
         prepay: prepay.mutateAsync,
-        refinance: refinance.mutateAsync,
         payInstallment: payInstallment.mutateAsync,
         isCreating: create.isPending,
         isDisbursing: disburse.isPending,
         isPrepaying: prepay.isPending,
-        isRefinancing: refinance.isPending,
         isPaying: payInstallment.isPending,
     }
 }

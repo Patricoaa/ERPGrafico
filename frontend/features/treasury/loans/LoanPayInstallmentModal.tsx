@@ -24,10 +24,46 @@ export function LoanPayInstallmentModal({ installment, loanCurrency, penaltyRate
 
     const [paymentAccount, setPaymentAccount] = useState('')
     const [payDate, setPayDate] = useState(new Date().toISOString().slice(0, 10))
+    const [principalAmount, setPrincipalAmount] = useState(installment.principal_amount)
+    const [interestAmount, setInterestAmount] = useState(installment.interest_amount)
+    const [insuranceAmount, setInsuranceAmount] = useState(installment.insurance_amount)
+    const [taxAmount, setTaxAmount] = useState('0')
+    const [penaltyAmount, setPenaltyAmount] = useState(
+        installment.status === 'OVERDUE' && parseFloat(penaltyRate || '0') > 0
+            ? (() => {
+                const days = Math.max(0, Math.floor(
+                    (new Date().getTime() - new Date(installment.due_date).getTime()) / 86_400_000,
+                ))
+                return days > 0
+                    ? (parseFloat(installment.total_amount) * (parseFloat(penaltyRate || '0') / 100) * (days / 30)).toFixed(2)
+                    : '0'
+            })()
+            : '0'
+    )
 
     const disbursementAccounts = (accounts ?? []).filter(
         (a) => a.account_type === 'CHECKING' || a.account_type === 'CASH',
     )
+
+    const principalEdit = parseFloat(principalAmount) || 0
+    const interestEdit = parseFloat(interestAmount) || 0
+    const insuranceEdit = parseFloat(insuranceAmount) || 0
+    const taxEdit = parseFloat(taxAmount) || 0
+    const penaltyEdit = parseFloat(penaltyAmount) || 0
+    const totalPayment = principalEdit + interestEdit + insuranceEdit + taxEdit + penaltyEdit
+
+    const isUF = loanCurrency === 'UF'
+    const hasUfInfo = installment.uf_value_used != null
+
+    // Mora estimada (solo cuotas vencidas). Replica el cálculo del backend:
+    // cuota_total × tasa/100 × días_atraso/30.
+    const penaltyRateNum = parseFloat(penaltyRate || '0')
+    const daysLate = Math.max(0, Math.floor(
+        (new Date(payDate).getTime() - new Date(installment.due_date).getTime()) / 86_400_000,
+    ))
+    const estimatedPenalty = installment.status === 'OVERDUE' && penaltyRateNum > 0 && daysLate > 0
+        ? parseFloat(installment.total_amount) * (penaltyRateNum / 100) * (daysLate / 30)
+        : 0
 
     const handlePay = async () => {
         if (!paymentAccount) {
@@ -39,27 +75,17 @@ export function LoanPayInstallmentModal({ installment, loanCurrency, penaltyRate
             payload: {
                 payment_account: parseInt(paymentAccount),
                 date: payDate,
+                principal_amount: principalAmount !== installment.principal_amount ? principalAmount : undefined,
+                interest_amount: interestAmount !== installment.interest_amount ? interestAmount : undefined,
+                insurance_amount: insuranceAmount !== installment.insurance_amount ? insuranceAmount : undefined,
+                tax_amount: taxEdit > 0 ? taxAmount : undefined,
+                penalty_amount: penaltyEdit > 0 ? penaltyAmount : undefined,
             },
         })
         onOpenChange(false)
     }
 
     if (!open) return null
-
-    const isUF = loanCurrency === 'UF'
-    const hasUfInfo = installment.uf_value_used != null
-
-    // Mora estimada (solo cuotas vencidas). Replica el cálculo del backend:
-    // cuota_total × tasa/100 × días_atraso/30. El monto definitivo se calcula
-    // al registrar el pago (y, en UF, se convierte a CLP con el valor del día).
-    const penaltyRateNum = parseFloat(penaltyRate || '0')
-    const daysLate = Math.max(0, Math.floor(
-        (new Date(payDate).getTime() - new Date(installment.due_date).getTime()) / 86_400_000,
-    ))
-    const estimatedPenalty = installment.status === 'OVERDUE' && penaltyRateNum > 0 && daysLate > 0
-        ? parseFloat(installment.total_amount) * (penaltyRateNum / 100) * (daysLate / 30)
-        : 0
-    const totalWithPenalty = parseFloat(installment.total_amount) + estimatedPenalty
 
     return (
         <BaseModal
@@ -74,34 +100,54 @@ export function LoanPayInstallmentModal({ installment, loanCurrency, penaltyRate
             subtitle={`${installment.loan_display_id} · Vence ${new Date(installment.due_date).toLocaleDateString('es-CL')}`}
         >
             <div className="space-y-5">
-                {/* Desglose de la cuota */}
-                <div className="rounded-lg border border-border p-4 space-y-2">
+                {/* Desglose editable de la cuota */}
+                <div className="rounded-lg border border-border p-4 space-y-3">
                     <h3 className="text-sm font-semibold flex items-center gap-2">
                         <Coins className="h-4 w-4" />
                         Desglose de la cuota
                     </h3>
-                    <div className="grid grid-cols-2 gap-3 text-sm">
-                        <div className="flex justify-between">
-                            <span className="text-muted-foreground">Capital</span>
-                            <MoneyDisplay amount={parseFloat(installment.principal_amount)} />
-                        </div>
-                        <div className="flex justify-between">
-                            <span className="text-muted-foreground">Interés</span>
-                            <MoneyDisplay amount={parseFloat(installment.interest_amount)} />
-                        </div>
-                        <div className="flex justify-between">
-                            <span className="text-muted-foreground">Seguro</span>
-                            <MoneyDisplay amount={parseFloat(installment.insurance_amount)} />
-                        </div>
-                        <div className="flex justify-between font-bold border-t border-border pt-2">
+                    <div className="space-y-3">
+                        <LabeledInput
+                            label="Capital"
+                            type="number"
+                            value={principalAmount}
+                            onChange={(v) => setPrincipalAmount(String(v))}
+                        />
+                        <LabeledInput
+                            label="Interés"
+                            type="number"
+                            value={interestAmount}
+                            onChange={(v) => setInterestAmount(String(v))}
+                        />
+                        <LabeledInput
+                            label="Seguro"
+                            type="number"
+                            value={insuranceAmount}
+                            onChange={(v) => setInsuranceAmount(String(v))}
+                        />
+                        <LabeledInput
+                            label="Impuestos"
+                            type="number"
+                            value={taxAmount}
+                            onChange={(v) => setTaxAmount(String(v))}
+                            placeholder="0"
+                        />
+                        <LabeledInput
+                            label="Multa por mora"
+                            type="number"
+                            value={penaltyAmount}
+                            onChange={(v) => setPenaltyAmount(String(v))}
+                            placeholder="0"
+                        />
+                        <div className="flex justify-between font-bold border-t border-border pt-2 text-sm">
                             <span>Total {isUF ? '(UF)' : ''}</span>
-                            <MoneyDisplay amount={parseFloat(installment.total_amount)} />
+                            <MoneyDisplay amount={totalPayment} />
                         </div>
                     </div>
                 </div>
 
                 {/* Mora estimada (cuota vencida) */}
-                {estimatedPenalty > 0 && (
+                {estimatedPenalty > 0 && penaltyEdit === 0 && (
                     <div className="rounded-lg border border-warning/30 bg-warning/5 p-4 space-y-2">
                         <div className="flex items-center gap-2 text-sm font-semibold text-warning">
                             <AlertTriangle className="h-4 w-4" />
@@ -115,10 +161,6 @@ export function LoanPayInstallmentModal({ installment, loanCurrency, penaltyRate
                             <div className="flex justify-between">
                                 <span className="text-muted-foreground">Mora estimada {isUF ? '(UF)' : ''}</span>
                                 <MoneyDisplay amount={estimatedPenalty} />
-                            </div>
-                            <div className="col-span-2 flex justify-between font-bold border-t border-border pt-2">
-                                <span>Total con mora {isUF ? '(UF)' : ''}</span>
-                                <MoneyDisplay amount={totalWithPenalty} />
                             </div>
                         </div>
                         <p className="text-[11px] text-muted-foreground">
