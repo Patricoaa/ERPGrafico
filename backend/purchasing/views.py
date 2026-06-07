@@ -214,6 +214,9 @@ class PurchaseOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             
             # Check-specific params (paymentMethodCardSelector sends check# as transaction_number)
             check_number = request.data.get('check_number') or request.data.get('transaction_number')
+            check_bank_id = request.data.get('check_bank_id')
+            if check_bank_id:
+                check_bank_id = int(check_bank_id)
             check_issue_date = request.data.get('check_issue_date')
             check_due_date = request.data.get('check_due_date')
             checkbook_id = request.data.get('checkbook_id')
@@ -231,6 +234,7 @@ class PurchaseOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                 payment_is_pending=request.data.get('payment_is_pending', 'false').lower() == 'true',
                 payment_method_id=request.data.get('payment_method_id'),
                 check_number=check_number,
+                check_bank_id=check_bank_id,
                 check_issue_date=check_issue_date,
                 check_due_date=check_due_date,
                 checkbook_id=checkbook_id,

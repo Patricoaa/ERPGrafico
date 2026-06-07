@@ -85,6 +85,18 @@ class CheckService:
         """
         portfolio_account = portfolio_account or CheckService._get_portfolio_account()
 
+        if due_date < issue_date:
+            raise ValidationError(
+                _t("La fecha de vencimiento no puede ser anterior a la fecha de emisión.")
+            )
+
+        if Check.objects.filter(
+            bank_id=bank_id, check_number=check_number, direction=Check.Direction.RECEIVED
+        ).exists():
+            raise ValidationError(
+                _t(f"El cheque {check_number} ya existe para este banco.")
+            )
+
         from .services import TreasuryService
 
         movement = TreasuryService.create_movement(
@@ -297,6 +309,11 @@ class CheckService:
             )
         if issued_check_account is None:
             issued_check_account = CheckService.ensure_issued_checks_account()
+
+        if due_date < issue_date:
+            raise ValidationError(
+                _t("La fecha de vencimiento no puede ser anterior a la fecha de emisión.")
+            )
 
         # Folio: automático desde chequera o manual
         if checkbook is not None and check_number is None:
