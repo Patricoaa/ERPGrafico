@@ -268,6 +268,16 @@ export function PurchaseCheckoutWizard({
                 toast.error("Debe ingresar el número de transferencia o marcar como pendiente.")
                 return false
             }
+            if (paymentData.method === 'CHECK') {
+                if (!paymentData.transactionNumber) {
+                    toast.error("Debe ingresar el número de cheque.")
+                    return false
+                }
+                if (!paymentData.checkBankId) {
+                    toast.error("Debe seleccionar el banco emisor del cheque.")
+                    return false
+                }
+            }
         }
         return true
     }
@@ -329,6 +339,8 @@ export function PurchaseCheckoutWizard({
                 if (paymentData.transactionNumber) formData.append('transaction_number', paymentData.transactionNumber)
                 if (paymentData.treasuryAccountId) formData.append('treasury_account_id', paymentData.treasuryAccountId)
                 if (paymentData.paymentMethodId) formData.append('payment_method_id', paymentData.paymentMethodId.toString())
+                if (paymentData.method === 'CHECK' && paymentData.checkBankId) formData.append('check_bank_id', paymentData.checkBankId.toString())
+                if (paymentData.method === 'CHECK' && paymentData.checkDueDate) formData.append('check_due_date', paymentData.checkDueDate)
                 formData.append('payment_type', 'OUTBOUND')
             } else {
                 // Implicit credit - no payment

@@ -679,7 +679,7 @@ class CheckSerializer(serializers.ModelSerializer):
             'created_at', 'created_by',
         ]
         read_only_fields = [
-            'display_id', 'status', 'is_overdue',
+            'display_id', 'direction', 'status', 'is_overdue',
             'portfolio_account', 'deposit_account',
             'receipt_movement', 'settlement_movement',
             'deposited_at', 'cleared_at', 'bounced_at',

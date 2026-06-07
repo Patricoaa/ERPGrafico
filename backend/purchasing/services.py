@@ -970,7 +970,7 @@ class PurchasingService:
                          payment_method='CREDIT', amount=None, treasury_account_id=None, transaction_number=None,
                          payment_is_pending=False, receipt_type='IMMEDIATE', receipt_data=None, user=None,
                          payment_method_id=None,
-                         check_number=None, check_issue_date=None, check_due_date=None, checkbook_id=None):
+                         check_number=None, check_bank_id=None, check_issue_date=None, check_due_date=None, checkbook_id=None):
         """
         Complete Purchase checkout: Create Order -> Register Bill -> Payment -> Receipt.
         
@@ -1055,6 +1055,7 @@ class PurchasingService:
                     date=document_date or timezone.now().date(),
                     created_by=user,
                     check_number=check_number,
+                    check_bank_id=check_bank_id,
                     check_issue_date=check_issue_date,
                     check_due_date=check_due_date,
                     checkbook_id=checkbook_id,
