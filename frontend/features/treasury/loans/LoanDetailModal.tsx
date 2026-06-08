@@ -26,6 +26,7 @@ export function LoanDetailModal({ loanId, open, onOpenChange }: Props) {
     const [payingInst, setPayingInst] = useState<LoanInstallment | null>(null)
     const [viewingInst, setViewingInst] = useState<LoanInstallment | null>(null)
     const [showPrepayModal, setShowPrepayModal] = useState(false)
+    const [showFeeDetail, setShowFeeDetail] = useState(false)
 
     if (!open) return null
     if (isLoading) return (
@@ -99,7 +100,7 @@ export function LoanDetailModal({ loanId, open, onOpenChange }: Props) {
             >
                 <div className="space-y-6">
                     {/* KPIs */}
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                         <StatCard label="Capital" value={fmt(loan.principal)} icon={Banknote} accent="info" />
                         <StatCard label="Saldo Insoluto" value={fmt(loan.outstanding_balance)} icon={TrendingDown} accent="warning" />
                         <StatCard label="Cuotas Pagadas" value={`${loan.paid_installments_count} / ${loan.installments_count}`} icon={Calendar} accent="success" />
@@ -111,6 +112,7 @@ export function LoanDetailModal({ loanId, open, onOpenChange }: Props) {
                             icon={Calendar}
                             accent="info"
                         />
+                        <StatCard label="Total Desembolsado" value={fmt(loan.total_disbursed || '0')} icon={DollarSign} accent="info" />
                     </div>
 
                     {/* Amortization table */}
@@ -122,6 +124,37 @@ export function LoanDetailModal({ loanId, open, onOpenChange }: Props) {
                             </h3>
                         </div>
                         {(() => {
+                            const openingFee = parseFloat(loan.opening_fee)
+                            const stampTax = parseFloat(loan.stamp_tax)
+                            const feeTotal = openingFee + stampTax
+
+                            const syntheticFeeRow: LoanInstallment | null = feeTotal > 0 ? {
+                                id: -1,
+                                display_id: '',
+                                loan: loan.id,
+                                loan_display_id: loan.display_id,
+                                number: 0,
+                                due_date: loan.start_date,
+                                principal_amount: '0',
+                                interest_amount: '0',
+                                insurance_amount: '0',
+                                total_amount: feeTotal.toFixed(2),
+                                outstanding_balance: loan.principal,
+                                status: 'PAID',
+                                status_display: 'Pagado',
+                                is_overdue: false,
+                                paid_at: null,
+                                payment_movement: null,
+                                uf_value_used: null,
+                                clp_amount_paid: null,
+                                penalty_paid: '0',
+                                notes: '',
+                            } : null
+
+                            const tableData = syntheticFeeRow
+                                ? [syntheticFeeRow, ...loan.installments]
+                                : loan.installments
+
                             const columns: ColumnDef<LoanInstallment>[] = [
                                 {
                                     accessorKey: 'number',
@@ -136,32 +169,35 @@ export function LoanDetailModal({ loanId, open, onOpenChange }: Props) {
                                 {
                                     accessorKey: 'principal_amount',
                                     header: ({ column }) => <DataTableColumnHeader column={column} title="Capital" />,
-                                    cell: ({ row }) => <DataCell.Currency value={row.original.principal_amount} digits={2} />,
+                                    cell: ({ row }) => <DataCell.Currency value={row.original.principal_amount} digits={0} />,
                                 },
                                 {
                                     accessorKey: 'interest_amount',
                                     header: ({ column }) => <DataTableColumnHeader column={column} title="Interés" />,
-                                    cell: ({ row }) => <DataCell.Currency value={row.original.interest_amount} digits={2} />,
+                                    cell: ({ row }) => <DataCell.Currency value={row.original.interest_amount} digits={0} />,
                                 },
                                 {
                                     id: 'others',
                                     header: ({ column }) => <DataTableColumnHeader column={column} title="Otros" />,
                                     cell: ({ row }) => {
+                                        if (row.original.number === 0) {
+                                            return <DataCell.Currency value={feeTotal.toFixed(2)} digits={0} />
+                                        }
                                         const insurance = parseFloat(row.original.insurance_amount)
                                         const penalty = parseFloat(row.original.penalty_paid)
-                                        return <DataCell.Currency value={(insurance + penalty).toFixed(2)} digits={2} />
+                                        return <DataCell.Currency value={(insurance + penalty).toFixed(2)} digits={0} />
                                     },
                                 },
                                 {
                                     accessorKey: 'total_amount',
                                     header: ({ column }) => <DataTableColumnHeader column={column} title="Total" />,
-                                    cell: ({ row }) => <DataCell.Currency value={row.original.total_amount} digits={2} />,
+                                    cell: ({ row }) => <DataCell.Currency value={row.original.total_amount} digits={0} />,
                                 },
                                 {
                                     accessorKey: 'outstanding_balance',
                                     header: ({ column }) => <DataTableColumnHeader column={column} title="Saldo" />,
                                     cell: ({ row }) => (
-                                        <DataCell.Currency value={row.original.outstanding_balance} digits={2} />
+                                        <DataCell.Currency value={row.original.outstanding_balance} digits={0} />
                                     ),
                                 },
                                 {
@@ -174,6 +210,13 @@ export function LoanDetailModal({ loanId, open, onOpenChange }: Props) {
                                     header: '',
                                     cell: ({ row }) => {
                                         const inst = row.original
+                                        if (inst.number === 0) {
+                                            return (
+                                                <Button size="sm" variant="outline" onClick={() => setShowFeeDetail(true)} title="Ver detalle">
+                                                    <Eye className="h-3.5 w-3.5" />
+                                                </Button>
+                                            )
+                                        }
                                         if (inst.status === 'PENDING' || inst.status === 'OVERDUE') {
                                             return (
                                                 <Button size="sm" variant="outline" onClick={() => setPayingInst(inst)} title="Pagar">
@@ -195,7 +238,7 @@ export function LoanDetailModal({ loanId, open, onOpenChange }: Props) {
                             return (
                                 <DataTable
                                     columns={columns}
-                                    data={loan.installments}
+                                    data={tableData}
                                     variant="minimal"
                                     noBorder
                                     hidePagination
@@ -244,6 +287,34 @@ export function LoanDetailModal({ loanId, open, onOpenChange }: Props) {
                     open={true}
                     onOpenChange={(o) => { if (!o) setViewingInst(null) }}
                 />
+            )}
+
+            {showFeeDetail && (
+                <BaseModal
+                    open={true}
+                    onOpenChange={(o) => { if (!o) setShowFeeDetail(false) }}
+                    title="Detalle de Cargos Iniciales"
+                >
+                    <div className="space-y-4 p-4">
+                        <div className="flex justify-between items-center">
+                            <span className="text-sm text-muted-foreground">Capital del crédito</span>
+                            <span className="font-semibold">{fmt(loan.principal)}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-destructive">
+                            <span className="text-sm">Comisión de apertura</span>
+                            <span>-{fmt(loan.opening_fee)}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-destructive">
+                            <span className="text-sm">Impuesto de timbres</span>
+                            <span>-{fmt(loan.stamp_tax)}</span>
+                        </div>
+                        <hr className="border-border" />
+                        <div className="flex justify-between items-center">
+                            <span className="text-sm font-semibold">Total desembolsado</span>
+                            <span className="font-bold">{fmt((parseFloat(loan.principal) - parseFloat(loan.opening_fee) - parseFloat(loan.stamp_tax)).toFixed(2))}</span>
+                        </div>
+                    </div>
+                </BaseModal>
             )}
         </>
     )
