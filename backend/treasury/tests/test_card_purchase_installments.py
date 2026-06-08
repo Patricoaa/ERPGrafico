@@ -16,7 +16,7 @@ Cubre:
   - API: POST /card-purchase/ con payload discriminado.
 """
 import pytest
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
@@ -184,6 +184,61 @@ def test_card_purchase_dates_distributed_30_days_apart(env):
     assert movements[0].date == date(2026, 6, 15)
     assert movements[1].date == date(2026, 7, 15)
     assert movements[2].date == date(2026, 8, 14)  # + 60 días
+
+
+@pytest.mark.django_db
+def test_card_purchase_accepts_string_date(env):
+    """Regresión: el checkout de compras/ventas pasa `date` como
+    string ISO (`request.data.get('document_date')`). El guard
+    `if not date` no lo atrapa (string no vacío es truthy) y la
+    aritmética de cuotas `date + timedelta` reventaba con
+    `TypeError: can only concatenate str (not "datetime.timedelta")`.
+
+    `create_card_purchase` debe normalizar el string a un `date`
+    real, distribuir las cuotas cada 30 días y persistir
+    `first_installment_date` como objeto `date`.
+    """
+    group = TreasuryService.create_card_purchase(
+        amount=Decimal('30000'),
+        card_account=env['card_ta'],
+        installments=3,
+        date='2026-06-15',  # ← string, como llega del request
+        client_reference='CP-STR-DATE-001',
+        created_by=env['user'],
+    )
+
+    # No crashea y persiste una fecha real (no el string).
+    assert group.first_installment_date == date(2026, 6, 15)
+
+    movements = list(
+        group.movements.filter(is_installment_interest=False)
+        .order_by('installment_number')
+    )
+    assert movements[0].date == date(2026, 6, 15)
+    assert movements[1].date == date(2026, 7, 15)
+    assert movements[2].date == date(2026, 8, 14)  # + 60 días
+
+
+@pytest.mark.django_db
+def test_card_purchase_accepts_datetime_date(env):
+    """Si llega un `datetime` (no `date`), se normaliza a su
+    componente fecha antes de la aritmética de cuotas."""
+    group = TreasuryService.create_card_purchase(
+        amount=Decimal('20000'),
+        card_account=env['card_ta'],
+        installments=2,
+        date=datetime(2026, 6, 15, 14, 30, 0),  # ← datetime con hora
+        client_reference='CP-DT-DATE-001',
+        created_by=env['user'],
+    )
+
+    assert group.first_installment_date == date(2026, 6, 15)
+    movements = list(
+        group.movements.filter(is_installment_interest=False)
+        .order_by('installment_number')
+    )
+    assert movements[0].date == date(2026, 6, 15)
+    assert movements[1].date == date(2026, 7, 15)
 
 
 @pytest.mark.django_db
