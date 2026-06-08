@@ -1,18 +1,20 @@
 "use client"
 
 import React, { useEffect, useMemo } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import type { Resolver } from 'react-hook-form'
 import * as z from 'zod'
+import type { ColumnDef } from '@tanstack/react-table'
 import { Form, FormField } from '@/components/ui/form'
 import {
     Drawer, LabeledInput, LabeledSelect, FormSection, FormFooter,
     CancelButton, ActionSlideButton,
+    DataCell, DataTableColumnHeader, DataTable,
 } from '@/components/shared'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
-import { Banknote } from 'lucide-react'
+import { Banknote, Calculator } from 'lucide-react'
 import { useBanks } from '../hooks/useMasterData'
 import { useTreasuryAccounts } from '../hooks/useTreasuryAccounts'
 import { useLoanMutations } from './hooks'
@@ -91,6 +93,95 @@ export function LoanRegisterDrawer({ open, onOpenChange, bankId }: Props) {
         [accounts, bankId],
     )
 
+    // ── Amortización proyectada (cálculo local) ────────────────────────
+    const formValues = useWatch({ control: form.control })
+
+    const scheduleData = useMemo(() => {
+        const P = parseFloat(formValues.principal ?? '0') || 0
+        const rateRaw = parseFloat(formValues.interest_rate ?? '0') || 0
+        const n = parseInt(formValues.term_months ?? '0') || 0
+        const insurance = parseFloat(formValues.insurance_monthly ?? '0') || 0
+        const firstDue = formValues.first_due_date
+
+        if (P <= 0 || rateRaw <= 0 || n <= 0 || !firstDue) return []
+
+        let i = rateRaw / 100
+        if (formValues.rate_basis === 'ANNUAL') {
+            i = i / 12
+        }
+
+        const system = formValues.amortization_system || 'FRENCH'
+        let balance = P
+        const rows: Array<{
+            number: number
+            due_date: string
+            principal_amount: string
+            interest_amount: string
+            insurance_amount: string
+            total_amount: string
+            outstanding_balance: string
+        }> = []
+
+        if (system === 'FRENCH') {
+            let C = 0
+            if (i === 0) {
+                C = P / n
+            } else {
+                const factor = Math.pow(1 + i, n)
+                C = P * i * factor / (factor - 1)
+            }
+            for (let k = 1; k <= n; k++) {
+                const interest = balance * i
+                let principal = C - interest - insurance
+                if (principal < 0) principal = 0
+                if (k === n) {
+                    principal = balance
+                    C = principal + interest + insurance
+                }
+                const total = principal + interest + insurance
+                balance = balance - principal
+                rows.push({
+                    number: k,
+                    due_date: addMonths(firstDue, k - 1),
+                    principal_amount: principal.toFixed(2),
+                    interest_amount: interest.toFixed(2),
+                    insurance_amount: insurance.toFixed(2),
+                    total_amount: total.toFixed(2),
+                    outstanding_balance: Math.max(balance, 0).toFixed(2),
+                })
+            }
+        } else {
+            const capitalConst = P / n
+            for (let k = 1; k <= n; k++) {
+                const interest = balance * i
+                const principal = k === n ? balance : capitalConst
+                const total = principal + interest + insurance
+                balance = balance - principal
+                rows.push({
+                    number: k,
+                    due_date: addMonths(firstDue, k - 1),
+                    principal_amount: principal.toFixed(2),
+                    interest_amount: interest.toFixed(2),
+                    insurance_amount: insurance.toFixed(2),
+                    total_amount: total.toFixed(2),
+                    outstanding_balance: Math.max(balance, 0).toFixed(2),
+                })
+            }
+        }
+
+        return rows
+    }, [formValues])
+
+    const scheduleColumns: ColumnDef<typeof scheduleData[number]>[] = [
+        { accessorKey: 'number', header: '#', cell: ({ row }) => <DataCell.Text>{row.original.number}</DataCell.Text> },
+        { accessorKey: 'due_date', header: 'Vencimiento', cell: ({ row }) => <DataCell.Date value={row.original.due_date} /> },
+        { accessorKey: 'principal_amount', header: ({ column }) => <DataTableColumnHeader column={column} title="Capital" />, cell: ({ row }) => <DataCell.Currency value={row.original.principal_amount} digits={0} /> },
+        { accessorKey: 'interest_amount', header: ({ column }) => <DataTableColumnHeader column={column} title="Interés" />, cell: ({ row }) => <DataCell.Currency value={row.original.interest_amount} digits={0} /> },
+        { accessorKey: 'insurance_amount', header: ({ column }) => <DataTableColumnHeader column={column} title="Seguro" />, cell: ({ row }) => <DataCell.Currency value={row.original.insurance_amount} digits={0} /> },
+        { accessorKey: 'total_amount', header: ({ column }) => <DataTableColumnHeader column={column} title="Total" />, cell: ({ row }) => <DataCell.Currency value={row.original.total_amount} digits={0} /> },
+        { accessorKey: 'outstanding_balance', header: ({ column }) => <DataTableColumnHeader column={column} title="Saldo" />, cell: ({ row }) => <DataCell.Currency value={row.original.outstanding_balance} digits={0} /> },
+    ]
+
     const onSubmit = async (values: FormValues) => {
         await create({
             lender: parseInt(values.lender),
@@ -120,9 +211,9 @@ export function LoanRegisterDrawer({ open, onOpenChange, bankId }: Props) {
             open={open}
             onOpenChange={onOpenChange}
             side="left"
-            defaultSize="720px"
-            minSize="560px"
-            maxSize="960px"
+            defaultSize="960px"
+            minSize="720px"
+            maxSize="1280px"
             resizable
             title={
                 <div className="flex items-center gap-3">
@@ -418,6 +509,30 @@ export function LoanRegisterDrawer({ open, onOpenChange, bankId }: Props) {
                     />
                 </form>
             </Form>
+
+            {scheduleData.length > 0 && (
+                <div className="border-t border-border mt-4 pt-4 px-4 pb-4">
+                    <div className="flex items-center gap-2 mb-3">
+                        <Calculator className="h-4 w-4 text-muted-foreground" />
+                        <h3 className="text-sm font-semibold">Tabla de Amortización Proyectada</h3>
+                    </div>
+                    <DataTable
+                        columns={scheduleColumns}
+                        data={scheduleData}
+                        variant="minimal"
+                        noBorder
+                        hidePagination
+                    />
+                </div>
+            )}
         </Drawer>
     )
+}
+
+function addMonths(start: string, k: number): string {
+    const date = new Date(start)
+    const year = date.getFullYear() + Math.floor((date.getMonth() + k) / 12)
+    const month = (date.getMonth() + k) % 12
+    const day = Math.min(date.getDate(), new Date(year, month + 1, 0).getDate())
+    return new Date(year, month, day).toISOString().split('T')[0]
 }
