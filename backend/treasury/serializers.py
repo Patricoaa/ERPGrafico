@@ -754,13 +754,16 @@ class BankLoanSerializer(serializers.ModelSerializer):
     installments = LoanInstallmentSerializer(many=True, read_only=True)
 
     def get_outstanding_balance(self, obj):
-        # Suma del principal pendiente de cuotas aún no pagadas.
+        # Saldo insoluto real: principal original menos capital pagado real.
+        # Los PAID installments ya tienen su principal_amount actualizado al
+        # valor real si hubo override en el pago.
         from django.db.models import Sum
+        from decimal import Decimal
         from .models import LoanInstallment
-        agg = obj.installments.exclude(
-            status__in=[LoanInstallment.Status.PAID, LoanInstallment.Status.CANCELED]
-        ).aggregate(s=Sum('principal_amount'))
-        return agg['s'] or 0
+        paid_principal = obj.installments.filter(
+            status=LoanInstallment.Status.PAID,
+        ).aggregate(s=Sum('principal_amount'))['s'] or Decimal('0')
+        return (obj.principal - paid_principal).quantize(Decimal('0.01'))
 
     def get_next_due_date(self, obj):
         from .models import LoanInstallment
