@@ -427,6 +427,9 @@ class TreasuryService:
         monthly_rate=Decimal('0'),
         date=None,
         partner=None,
+        invoice=None,
+        sale_order=None,
+        purchase_order=None,
         client_reference: str = '',
         notes: str = '',
         created_by=None,
@@ -443,6 +446,9 @@ class TreasuryService:
           separado del principal.
         - `date`: fecha de la primera cuota (las siguientes se
           distribuyen a 30 días cada una).
+        - `invoice`: facturavinculada (opcional, para asiento contable).
+        - `sale_order`: orden de venta vinculada (opcional).
+        - `purchase_order`: orden de compra vinculada (opcional).
         - `client_reference`: id externo opcional para idempotencia.
           Si llega un segundo POST con la misma
           `client_reference`, retorna el grupo existente.
@@ -548,6 +554,9 @@ class TreasuryService:
                 created_by=created_by,
                 from_account=card_account,
                 partner=partner,
+                invoice=invoice,
+                sale_order=sale_order,
+                purchase_order=purchase_order,
                 reference=base_reference,
                 notes=(
                     f"Cuota {i + 1}/{installments} "
@@ -571,6 +580,9 @@ class TreasuryService:
                     created_by=created_by,
                     from_account=card_account,
                     partner=partner,
+                    invoice=invoice,
+                    sale_order=sale_order,
+                    purchase_order=purchase_order,
                     reference=f"{base_reference}-INT",
                     notes=(
                         f"Interés de cuota {i + 1}/{installments} "

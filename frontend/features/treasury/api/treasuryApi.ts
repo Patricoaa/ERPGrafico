@@ -238,6 +238,9 @@ export const treasuryApi = {
         monthly_rate?: number
         date?: string
         partner?: number
+        invoice?: number
+        sale_order?: number
+        purchase_order?: number
         client_reference?: string
         notes?: string
     }): Promise<any> => {
