@@ -303,6 +303,9 @@ export const ActionCategory = forwardRef(({
                     from_account: fromAccountId,
                     installments: installments,
                     partner: partnerId || undefined,
+                    invoice: isInvoice ? order.id : undefined,
+                    sale_order: !isInvoice && isSale ? order?.id : undefined,
+                    purchase_order: !isInvoice && !isSale ? order?.id : undefined,
                     client_reference: `ORDER-${order?.id}`,
                 })
             } else {

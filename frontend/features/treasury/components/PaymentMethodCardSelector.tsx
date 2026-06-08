@@ -395,9 +395,9 @@ export function PaymentMethodCardSelector({
                                             </>
                                         )}
 
-                                        {methodsForType.filter(m => m.treasury_account != null).length > 1 && (
+                                        {(paymentData.method === 'CREDIT_CARD' || methodsForType.filter(m => m.treasury_account != null).length > 1) && (
                                             <LabeledSelect
-                                                label={paymentData.method === 'TRANSFER' ? 'Banco / Cuenta' : 'Cuenta'}
+                                                label={paymentData.method === 'TRANSFER' ? 'Banco / Cuenta' : paymentData.method === 'CREDIT_CARD' ? 'Tarjeta de Crédito' : 'Cuenta'}
                                                 value={paymentData.treasuryAccountId || ""}
                                                 onChange={(val) => {
                                                     const selectedMethod = methodsForType.find(m => String(m.treasury_account) === val)

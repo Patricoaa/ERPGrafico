@@ -655,6 +655,25 @@ class TreasuryMovementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                 from datetime import date as _date
                 date_value = _date.fromisoformat(date_value)
 
+            # Resolve invoice / sale_order / purchase_order for accounting entries
+            invoice = None
+            invoice_id = data.get('invoice')
+            if invoice_id:
+                from billing.models import Invoice
+                invoice = Invoice.objects.filter(pk=invoice_id).first()
+
+            sale_order = None
+            sale_order_id = data.get('sale_order')
+            if sale_order_id:
+                from sales.models import SaleOrder
+                sale_order = SaleOrder.objects.filter(pk=sale_order_id).first()
+
+            purchase_order = None
+            purchase_order_id = data.get('purchase_order')
+            if purchase_order_id:
+                from purchasing.models import PurchaseOrder
+                purchase_order = PurchaseOrder.objects.filter(pk=purchase_order_id).first()
+
             group = TreasuryService.create_card_purchase(
                 amount=amount,
                 card_account=from_account,
@@ -662,6 +681,9 @@ class TreasuryMovementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                 monthly_rate=monthly_rate,
                 date=date_value,
                 partner=partner,
+                invoice=invoice,
+                sale_order=sale_order,
+                purchase_order=purchase_order,
                 client_reference=data.get('client_reference', '') or '',
                 notes=data.get('notes', '') or '',
                 created_by=request.user,
