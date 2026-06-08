@@ -28,8 +28,6 @@ export interface PaymentData {
     checkDueDate?: string
     /** CREDIT_CARD: cantidad de cuotas (default 1 = pago único) */
     installments?: number
-    /** CREDIT_CARD: tasa de interés mensual (0 = sin interés) */
-    monthlyRate?: number
 }
 
 interface PaymentMethodCardSelectorProps {
@@ -360,7 +358,6 @@ export function PaymentMethodCardSelector({
                                         )}
 
                                         {m.id === 'CREDIT_CARD' && (
-                                            <>
                                                 <LabeledInput
                                                     label="N° de Cuotas"
                                                     type="number"
@@ -373,20 +370,6 @@ export function PaymentMethodCardSelector({
                                                     }}
                                                     placeholder="1"
                                                 />
-                                                <LabeledInput
-                                                    label="Tasa Mensual (%)"
-                                                    type="number"
-                                                    min={0}
-                                                    max={100}
-                                                    step={0.01}
-                                                    value={(paymentData.monthlyRate || 0).toString()}
-                                                    onChange={(e) => {
-                                                        const val = parseFloat(e.target.value) || 0
-                                                        onPaymentDataChange({ ...paymentData, monthlyRate: Math.max(0, val) })
-                                                    }}
-                                                    placeholder="0"
-                                                />
-                                            </>
                                         )}
 
                                         {m.id === 'CHECK' && (
