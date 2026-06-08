@@ -26,6 +26,10 @@ export interface PaymentData {
     checkBankId?: number | null
     /** CHECK: fecha de vencimiento (ISO date string) */
     checkDueDate?: string
+    /** CREDIT_CARD: cantidad de cuotas (default 1 = pago único) */
+    installments?: number
+    /** CREDIT_CARD: tasa de interés mensual (0 = sin interés) */
+    monthlyRate?: number
 }
 
 interface PaymentMethodCardSelectorProps {
@@ -353,6 +357,36 @@ export function PaymentMethodCardSelector({
                                                 onChange={(e) => onPaymentDataChange({ ...paymentData, transactionNumber: e.target.value })}
                                                 disabled={paymentData.isPending}
                                             />
+                                        )}
+
+                                        {m.id === 'CREDIT_CARD' && (
+                                            <>
+                                                <LabeledInput
+                                                    label="N° de Cuotas"
+                                                    type="number"
+                                                    min={1}
+                                                    max={36}
+                                                    value={(paymentData.installments || 1).toString()}
+                                                    onChange={(e) => {
+                                                        const val = parseInt(e.target.value) || 1
+                                                        onPaymentDataChange({ ...paymentData, installments: Math.max(1, Math.min(36, val)) })
+                                                    }}
+                                                    placeholder="1"
+                                                />
+                                                <LabeledInput
+                                                    label="Tasa Mensual (%)"
+                                                    type="number"
+                                                    min={0}
+                                                    max={100}
+                                                    step={0.01}
+                                                    value={(paymentData.monthlyRate || 0).toString()}
+                                                    onChange={(e) => {
+                                                        const val = parseFloat(e.target.value) || 0
+                                                        onPaymentDataChange({ ...paymentData, monthlyRate: Math.max(0, val) })
+                                                    }}
+                                                    placeholder="0"
+                                                />
+                                            </>
                                         )}
 
                                         {m.id === 'CHECK' && (

@@ -29,7 +29,9 @@ interface PaymentModalProps {
         payment_method_new?: string | null,
         documentReference?: string,
         documentDate?: string,
-        documentAttachment?: File | null
+        documentAttachment?: File | null,
+        installments?: number,
+        monthlyRate?: number
     }) => void
     showDteSelector?: boolean
     hideDteFields?: boolean
@@ -144,7 +146,9 @@ export function PaymentModal({
                             transaction_number: paymentData.amount === 0 ? undefined : paymentData.transactionNumber,
                             is_pending_registration: paymentData.isPending,
                             treasury_account_id: paymentData.amount === 0 ? null : paymentData.treasuryAccountId,
-                            payment_method_new: paymentData.amount === 0 ? null : paymentData.paymentMethodId?.toString()
+                            payment_method_new: paymentData.amount === 0 ? null : paymentData.paymentMethodId?.toString(),
+                            installments: paymentData.method === 'CREDIT_CARD' ? (paymentData.installments || 1) : undefined,
+                            monthlyRate: paymentData.method === 'CREDIT_CARD' ? (paymentData.monthlyRate || 0) : undefined
                         })}
                         disabled={
                             (paymentData.amount < 0) ||
