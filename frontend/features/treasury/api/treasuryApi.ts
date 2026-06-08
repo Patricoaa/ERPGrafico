@@ -231,6 +231,20 @@ export const treasuryApi = {
         return data
     },
 
+    createCardPurchase: async (payload: {
+        amount: string | number
+        from_account: number
+        installments?: number
+        monthly_rate?: number
+        date?: string
+        partner?: number
+        client_reference?: string
+        notes?: string
+    }): Promise<any> => {
+        const { data } = await api.post('/treasury/movements/card-purchase/', payload)
+        return data
+    },
+
     updatePayment: async (id: number, payload: PaymentUpdatePayload): Promise<any> => {
         const { data } = await api.patch(`/treasury/payments/${id}/`, payload)
         return data

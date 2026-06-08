@@ -289,22 +289,43 @@ export const ActionCategory = forwardRef(({
         setIsProcessing(true)
         try {
             const isInvoice = !!order?.dte_type
-            const payload = {
-                ...data,
-                payment_type: isSale ?
-                    (isInvoice && order.dte_type === 'NOTA_CREDITO' ? 'OUTBOUND' : 'INBOUND') :
-                    (isInvoice && order.dte_type === 'NOTA_CREDITO' ? 'INBOUND' : 'OUTBOUND'),
-                partner: (order?.customer || order?.supplier)?.id || (isSale ? order?.customer_id : order?.supplier_id),
-                ...(posSessionId ? { pos_session_id: posSessionId } : {})
-            }
+            const installments = data.installments as number | undefined
+            const isCardPurchase = data.paymentMethod === 'CREDIT_CARD' && installments && installments > 1
 
-            if (isInvoice) {
-                (payload as Record<string, unknown>).invoice = order.id
+            if (isCardPurchase) {
+                // Call card-purchase endpoint for credit card installments
+                const { treasuryApi } = await import("@/features/treasury/api/treasuryApi")
+                const fromAccountId = parseInt(data.treasury_account_id as string)
+                const partnerId = (order?.customer || order?.supplier)?.id || (isSale ? order?.customer_id : order?.supplier_id)
+                
+                await treasuryApi.createCardPurchase({
+                    amount: data.amount as string | number,
+                    from_account: fromAccountId,
+                    installments: installments,
+                    monthly_rate: (data.monthlyRate as number) || 0,
+                    partner: partnerId || undefined,
+                    client_reference: `ORDER-${order?.id}`,
+                })
             } else {
-                (payload as Record<string, unknown>)[isSale ? 'sale_order' : 'purchase_order'] = order?.id
+                // Standard payment flow
+                const payload = {
+                    ...data,
+                    payment_type: isSale ?
+                        (isInvoice && order.dte_type === 'NOTA_CREDITO' ? 'OUTBOUND' : 'INBOUND') :
+                        (isInvoice && order.dte_type === 'NOTA_CREDITO' ? 'INBOUND' : 'OUTBOUND'),
+                    partner: (order?.customer || order?.supplier)?.id || (isSale ? order?.customer_id : order?.supplier_id),
+                    ...(posSessionId ? { pos_session_id: posSessionId } : {})
+                }
+
+                if (isInvoice) {
+                    (payload as Record<string, unknown>).invoice = order.id
+                } else {
+                    (payload as Record<string, unknown>)[isSale ? 'sale_order' : 'purchase_order'] = order?.id
+                }
+
+                await registerPaymentMovement.mutateAsync(payload)
             }
 
-            await registerPaymentMovement.mutateAsync(payload)
             closeModal()
             onActionSuccess?.()
         } catch (error: unknown) {
