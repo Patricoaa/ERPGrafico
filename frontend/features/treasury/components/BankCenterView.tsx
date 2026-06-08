@@ -1,7 +1,6 @@
 "use client"
 
-import React from 'react'
-import { useRouter, usePathname } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
 import { Landmark, Banknote, CreditCard, CheckSquare, Calendar, AlertTriangle } from 'lucide-react'
 import {
@@ -9,12 +8,11 @@ import {
 } from '@/components/shared'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { treasuryApi } from '../api/treasuryApi'
 import { BANKS_KEYS } from '../hooks/queryKeys'
 import { ChecksView } from '../checks/ChecksView'
 import { LoansView } from '../loans/LoansView'
-import { StatementsView } from '../card-statements/StatementsView'
+import { CardChargesView } from '../card-statements/CardChargesView'
 import { StatementsList } from '@/features/finance/bank-reconciliation/components'
 
 interface MaturityItem {
@@ -34,6 +32,7 @@ interface BankOverviewData {
         account_type: string
         account_type_display: string
         current_balance: number
+        currency: string
     }>
     summary: {
         total_accounts: number
@@ -55,15 +54,14 @@ function useBankOverview(bankId: number | null) {
 }
 
 export function BankCenterView({ bankId }: { bankId: number }) {
-    const router = useRouter()
     const pathname = usePathname()
     const segments = pathname.split('/').filter(Boolean)
     const activeTab = segments[3] || 'overview'
     const { data, isLoading, isError } = useBankOverview(bankId)
 
-    const handleTabChange = (tab: string) => {
-        router.push(`/treasury/centro-bancos/${bankId}/${tab}`, { scroll: false })
-    }
+    const creditCardAccounts = data?.accounts?.filter(
+        (acc: { account_type: string }) => acc.account_type === 'CREDIT_CARD'
+    ) || []
 
     if (isLoading) {
         return (
@@ -95,17 +93,10 @@ export function BankCenterView({ bankId }: { bankId: number }) {
     }
 
     return (
-        <Tabs value={activeTab} onValueChange={handleTabChange} className="h-full flex flex-col">
-            <TabsList className="shrink-0">
-                <TabsTrigger value="overview">Resumen</TabsTrigger>
-                <TabsTrigger value="checks">Cheques Girados</TabsTrigger>
-                <TabsTrigger value="loans">Préstamos</TabsTrigger>
-                <TabsTrigger value="cards">Tarjetas</TabsTrigger>
-                <TabsTrigger value="reconciliation">Conciliación</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="overview" className="mt-6 overflow-y-auto data-[state=inactive]:hidden custom-scrollbar">
-                <div className="space-y-6">
+        <div className="flex-1 flex flex-col min-h-0">
+            {activeTab === 'overview' && (
+                <div className="overflow-y-auto custom-scrollbar flex-1">
+                    <div className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
                         <StatCard
                             label="Cuentas"
@@ -225,30 +216,39 @@ export function BankCenterView({ bankId }: { bankId: number }) {
                         </CardContent>
                     </Card>
                 </div>
-            </TabsContent>
+                </div>
+            )}
 
-            <TabsContent value="checks" className="mt-6 flex-1 min-h-0 data-[state=inactive]:hidden">
-                <ChecksView bankId={bankId} direction="ISSUED" />
-            </TabsContent>
+            {activeTab === 'checks' && (
+                <div className="flex-1 min-h-0">
+                    <ChecksView bankId={bankId} direction="ISSUED" />
+                </div>
+            )}
 
-            <TabsContent value="loans" className="mt-6 flex-1 min-h-0 data-[state=inactive]:hidden">
-                <LoansView bankId={bankId} />
-            </TabsContent>
+            {activeTab === 'loans' && (
+                <div className="flex-1 min-h-0">
+                    <LoansView bankId={bankId} />
+                </div>
+            )}
 
-            <TabsContent value="cards" className="mt-6 flex-1 min-h-0 data-[state=inactive]:hidden">
-                <StatementsView bankId={bankId} />
-            </TabsContent>
+            {activeTab === 'cards' && (
+                <div className="flex-1 min-h-0 flex flex-col">
+                    <CardChargesView bankId={bankId} creditCardAccounts={creditCardAccounts} />
+                </div>
+            )}
 
-            <TabsContent value="reconciliation" className="mt-6 flex-1 min-h-0 data-[state=inactive]:hidden">
-                <StatementsList
-                    bankId={bankId}
-                    detailBasePath={`/treasury/centro-bancos/${bankId}/reconciliation`}
-                    accounts={accounts
-                        .filter(acc => acc.account_type === 'CHECKING')
-                        .map(acc => ({ id: acc.id, name: acc.name }))
-                    }
-                />
-            </TabsContent>
-        </Tabs>
+            {activeTab === 'reconciliation' && (
+                <div className="flex-1 min-h-0">
+                    <StatementsList
+                        bankId={bankId}
+                        detailBasePath={`/treasury/centro-bancos/${bankId}/reconciliation`}
+                        accounts={accounts
+                            .filter((acc: { account_type: string }) => acc.account_type === 'CHECKING')
+                            .map((acc: { id: number; name: string }) => ({ id: acc.id, name: acc.name }))
+                        }
+                    />
+                </div>
+            )}
+        </div>
     )
 }

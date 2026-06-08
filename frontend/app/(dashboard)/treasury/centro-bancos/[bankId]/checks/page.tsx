@@ -5,7 +5,7 @@ export default async function BankChecksPage({ params }: { params: Promise<{ ban
     const id = Number(bankId)
     return (
         <div className="flex-1 flex flex-col min-h-0">
-            <BankPageHeader bankId={id} breadcrumbs={[{ label: "Cheques Girados" }]} />
+            <BankPageHeader bankId={id} />
             <BankCenterView bankId={id} />
         </div>
     )

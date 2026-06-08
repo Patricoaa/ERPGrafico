@@ -292,4 +292,45 @@ export const treasuryApi = {
         const response = await api.get(`/treasury/statements/${id}/`)
         return response.data
     },
+
+    // ========== Unbilled Charges (Credit Card) ==========
+
+    getUnbilledCharges: async (cardAccountId: number): Promise<{
+        charges: TreasuryMovement[]
+        summary: {
+            total: number
+            count: number
+            purchases: number
+            charges: number
+        }
+    }> => {
+        const response = await api.get('/treasury/card-statements/unbilled-charges/', {
+            params: { card_account: cardAccountId }
+        })
+        return response.data
+    },
+
+    addUnbilledCharge: async (payload: {
+        card_account: number
+        amount: number | string
+        charge_type?: string
+        description?: string
+        date?: string
+    }): Promise<TreasuryMovement> => {
+        const { data } = await api.post('/treasury/card-statements/add-charge/', payload)
+        return data
+    },
+
+    billUnbilledCharges: async (payload: {
+        card_account: number
+        period_year: number
+        period_month: number
+        cut_off_date: string
+        due_date: string
+        minimum_payment?: number | string
+        notes?: string
+    }): Promise<import('@/features/treasury/card-statements/types').BillChargesResponse> => {
+        const { data } = await api.post('/treasury/card-statements/bill-charges/', payload)
+        return data
+    },
 }

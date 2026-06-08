@@ -11,9 +11,17 @@ import { useCardStatements } from './hooks'
 import { StatementDetailModal } from './StatementDetailModal'
 import type { CreditCardStatement } from './types'
 
-export function StatementsView({ bankId }: { bankId?: number } = {}) {
+interface StatementsViewProps {
+    bankId?: number
+    cardAccountId?: number | null
+}
+
+export function StatementsView({ bankId, cardAccountId }: StatementsViewProps = {}) {
+    const params: Record<string, string> = {}
+    if (bankId) params.bank = String(bankId)
+    if (cardAccountId) params.card_account = String(cardAccountId)
     const { data: statements = [], isLoading, isError } = useCardStatements(
-        bankId ? { bank: String(bankId) } : undefined,
+        Object.keys(params).length > 0 ? params : undefined,
     )
     const [selectedId, setSelectedId] = useState<number | null>(null)
 
@@ -102,7 +110,7 @@ export function StatementsView({ bankId }: { bankId?: number } = {}) {
     }
 
     return (
-        <div className="h-full flex flex-col">
+        <div className="flex-1 flex flex-col">
             <div className="flex-1 min-h-0">
                 <DataTableView
                     entityLabel="treasury.creditcardstatement"

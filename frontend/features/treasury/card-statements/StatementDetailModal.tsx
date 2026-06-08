@@ -1,13 +1,16 @@
 "use client"
 
 import React, { useState } from 'react'
-import { CreditCard, Banknote, CheckCircle, XCircle } from 'lucide-react'
+import { CreditCard, Banknote, CheckCircle, XCircle, ShoppingCart } from 'lucide-react'
+import type { ColumnDef } from '@tanstack/react-table'
 import {
     BaseModal, MoneyDisplay, StatCard, StatusBadge, Skeleton,
+    DataTableView, DataTableColumnHeader, DataCell,
 } from '@/components/shared'
 import { Button } from '@/components/ui/button'
-import { useCardStatement, useCardStatementMutations } from './hooks'
+import { useCardStatement, useStatementCharges, useCardStatementMutations } from './hooks'
 import { PayStatementModal } from './PayStatementModal'
+import type { TreasuryMovement } from '../types'
 interface StatementDetailModalProps {
     statementId: number | null
     open: boolean
@@ -16,6 +19,7 @@ interface StatementDetailModalProps {
 
 export function StatementDetailModal({ statementId, open, onOpenChange }: StatementDetailModalProps) {
     const { data: stmt, isLoading } = useCardStatement(statementId)
+    const { data: charges = [], isLoading: chargesLoading } = useStatementCharges(statementId)
     const { cancel, isCanceling } = useCardStatementMutations()
     const [payOpen, setPayOpen] = useState(false)
 
@@ -27,6 +31,94 @@ export function StatementDetailModal({ statementId, open, onOpenChange }: Statem
             await cancel({ id: stmt.id, notes: 'Anulado desde la UI' })
         }
     }
+
+    const chargesColumns: ColumnDef<TreasuryMovement>[] = [
+        {
+            accessorKey: 'date',
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Fecha" className="justify-center" />
+            ),
+            cell: ({ row }) => (
+                <div className="flex justify-center">
+                    <DataCell.Date value={row.original.date} />
+                </div>
+            ),
+        },
+        {
+            accessorKey: 'reference',
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Referencia" />
+            ),
+            cell: ({ row }) => (
+                <span className="text-xs font-medium">
+                    {row.original.reference || `Movimiento #${row.original.id}`}
+                </span>
+            ),
+        },
+        {
+            id: 'cuota',
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Cuota" className="justify-center" />
+            ),
+            cell: ({ row }) => {
+                const mv = row.original
+                const group = mv.card_purchase_group_detail
+                if (!group || !mv.installment_number) return null
+                return (
+                    <div className="flex justify-center text-xs font-medium tabular-nums">
+                        {mv.installment_number}/{group.installments}
+                    </div>
+                )
+            },
+        },
+        {
+            id: 'compra',
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Compra" className="justify-center" />
+            ),
+            cell: ({ row }) => {
+                const group = row.original.card_purchase_group_detail
+                if (!group) return null
+                return (
+                    <div className="flex flex-col items-start">
+                        <span className="text-xs font-medium truncate max-w-[160px]">
+                            {group.client_reference || `Compra #${group.id}`}
+                        </span>
+                        {group.partner_name && (
+                            <span className="text-[10px] text-muted-foreground truncate max-w-[160px]">
+                                {group.partner_name}
+                            </span>
+                        )}
+                    </div>
+                )
+            },
+        },
+        {
+            accessorKey: 'amount',
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Monto" className="justify-end" />
+            ),
+            cell: ({ row }) => (
+                <div className="flex justify-end">
+                    <MoneyDisplay amount={row.original.amount} />
+                </div>
+            ),
+        },
+        {
+            accessorKey: 'movement_type_display',
+            header: ({ column }) => (
+                <DataTableColumnHeader column={column} title="Tipo" className="justify-center" />
+            ),
+            cell: ({ row }) => (
+                <div className="flex justify-center">
+                    <StatusBadge
+                        status={row.original.movement_type}
+                        label={row.original.movement_type_display}
+                    />
+                </div>
+            ),
+        },
+    ]
 
     return (
         <>
@@ -114,6 +206,32 @@ export function StatementDetailModal({ statementId, open, onOpenChange }: Statem
                                 {stmt.notes}
                             </div>
                         )}
+
+                        {/* Cargos Facturados del Statement */}
+                        <div>
+                            <div className="flex items-center gap-2 mb-3">
+                                <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+                                <h3 className="text-sm font-semibold">Cargos Facturados</h3>
+                                <span className="text-xs text-muted-foreground">
+                                    ({charges.length} movimientos)
+                                </span>
+                            </div>
+                            <DataTableView
+                                entityLabel="treasury.treasurymovement"
+                                columns={chargesColumns}
+                                data={charges}
+                                isLoading={chargesLoading}
+                                variant="embedded"
+                                filterColumn="reference"
+                                searchPlaceholder="Buscar cargo..."
+                                emptyState={{
+                                    context: 'treasury',
+                                    icon: ShoppingCart,
+                                    title: 'Sin cargos',
+                                    description: 'No hay movimientos vinculados a este statement.',
+                                }}
+                            />
+                        </div>
 
                         <div className="flex justify-end gap-2">
                             {(stmt.status === 'OPEN' || stmt.status === 'OVERDUE') && (

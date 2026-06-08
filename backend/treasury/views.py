@@ -63,6 +63,7 @@ class BankViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                 'account_type': acc.account_type,
                 'account_type_display': acc.get_account_type_display(),
                 'current_balance': float(acc.current_balance),
+                'currency': acc.currency,
             })
 
         # Tarjetas de crédito del banco (cuentas CREDIT_CARD)
@@ -2496,6 +2497,188 @@ class CreditCardStatementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         stmt.refresh_from_db()
         return Response(self.get_serializer(stmt).data)
+
+    @action(detail=False, methods=['get'], url_path='unbilled-charges')
+    def unbilled_charges(self, request):
+        """Lista cargos no facturados de una tarjeta de crédito."""
+        from .card_service import CardService
+        from .models import TreasuryAccount, TreasuryMovement
+
+        card_account_id = request.query_params.get('card_account')
+        if not card_account_id:
+            return Response(
+                {'detail': 'card_account es requerido.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        try:
+            card_account = TreasuryAccount.objects.get(pk=card_account_id)
+        except TreasuryAccount.DoesNotExist:
+            return Response(
+                {'detail': 'card_account no existe.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if card_account.account_type != TreasuryAccount.Type.CREDIT_CARD:
+            return Response(
+                {'detail': 'La cuenta debe ser de tipo Tarjeta de Crédito.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        charges = CardService.get_unbilled_charges(card_account)
+        summary = CardService.get_unbilled_summary(card_account)
+
+        # Serializar los movimientos
+        from .serializers import TreasuryMovementSerializer
+        data = TreasuryMovementSerializer(charges, many=True).data
+
+        return Response({
+            'charges': data,
+            'summary': summary,
+        })
+
+    @action(detail=False, methods=['post'], url_path='add-charge')
+    def add_charge(self, request):
+        """Agrega un cargo no facturado a una tarjeta de crédito."""
+        from .card_service import CardService
+        from .models import TreasuryAccount
+        from datetime import date as _date
+
+        card_account_id = request.data.get('card_account')
+        amount = request.data.get('amount')
+        charge_type = request.data.get('charge_type', 'OTHER')
+        description = request.data.get('description', '')
+        date_str = request.data.get('date')
+
+        if not card_account_id:
+            return Response(
+                {'detail': 'card_account es requerido.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if not amount:
+            return Response(
+                {'detail': 'amount es requerido.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            card_account = TreasuryAccount.objects.get(pk=card_account_id)
+        except TreasuryAccount.DoesNotExist:
+            return Response(
+                {'detail': 'card_account no existe.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        charge_date = None
+        if date_str:
+            from datetime import date as _date_type
+            try:
+                charge_date = _date_type.fromisoformat(date_str)
+            except ValueError:
+                return Response(
+                    {'detail': 'Formato de fecha inválido. Use YYYY-MM-DD.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        try:
+            movement = CardService.add_unbilled_charge(
+                card_account=card_account,
+                amount=Decimal(str(amount)),
+                charge_type=charge_type,
+                description=description,
+                date=charge_date,
+                created_by=request.user,
+            )
+        except ValidationError as e:
+            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        from .serializers import TreasuryMovementSerializer
+        return Response(
+            TreasuryMovementSerializer(movement).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+    @action(detail=False, methods=['post'], url_path='bill-charges')
+    def bill_charges(self, request):
+        """Factura los cargos no facturados de una tarjeta de crédito."""
+        from .card_service import CardService
+        from .models import TreasuryAccount
+        from datetime import date as _date_type
+
+        card_account_id = request.data.get('card_account')
+        period_year = request.data.get('period_year')
+        period_month = request.data.get('period_month')
+        cut_off_date_str = request.data.get('cut_off_date')
+        due_date_str = request.data.get('due_date')
+        minimum_payment = request.data.get('minimum_payment', '0')
+        notes = request.data.get('notes', '')
+
+        if not card_account_id:
+            return Response(
+                {'detail': 'card_account es requerido.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if not period_year or not period_month:
+            return Response(
+                {'detail': 'period_year y period_month son requeridos.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if not cut_off_date_str or not due_date_str:
+            return Response(
+                {'detail': 'cut_off_date y due_date son requeridos.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            card_account = TreasuryAccount.objects.get(pk=card_account_id)
+        except TreasuryAccount.DoesNotExist:
+            return Response(
+                {'detail': 'card_account no existe.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            cut_off_date = _date_type.fromisoformat(cut_off_date_str)
+            due_date = _date_type.fromisoformat(due_date_str)
+        except ValueError:
+            return Response(
+                {'detail': 'Formato de fecha inválido. Use YYYY-MM-DD.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            statement = CardService.bill_unbilled_charges(
+                card_account=card_account,
+                period_year=int(period_year),
+                period_month=int(period_month),
+                cut_off_date=cut_off_date,
+                due_date=due_date,
+                minimum_payment=Decimal(str(minimum_payment)),
+                notes=notes,
+                created_by=request.user,
+            )
+        except ValidationError as e:
+            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        from .serializers import CreditCardStatementSerializer
+        result = CreditCardStatementSerializer(statement).data
+        # Incluir desglose por grupo de compra si está disponible
+        breakdown = getattr(statement, '_purchase_group_breakdown', None)
+        if breakdown:
+            result['purchase_group_breakdown'] = breakdown
+        return Response(
+            result,
+            status=status.HTTP_201_CREATED,
+        )
+
+    @action(detail=True, methods=['get'], url_path='charges')
+    def charges(self, request, pk=None):
+        """Retorna los movimientos (cargos) facturados en este statement."""
+        from .models import TreasuryMovement
+        from .serializers import TreasuryMovementSerializer
+        stmt = self.get_object()
+        movements = TreasuryMovement.objects.filter(
+            billed_in_statement=stmt,
+        ).order_by('-date', '-id')
+        return Response(TreasuryMovementSerializer(movements, many=True).data)
 
     @action(detail=True, methods=['post'], url_path='reverse')
     def reverse(self, request, pk=None):
