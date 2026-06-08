@@ -2,7 +2,11 @@ export { StatementsView } from './StatementsView'
 export { StatementsClientView } from './StatementsClientView'
 export { StatementDetailModal } from './StatementDetailModal'
 export { PayStatementModal } from './PayStatementModal'
-export { useCardStatements, useCardStatement, useCardStatementMutations } from './hooks'
+export { CardChargesView } from './CardChargesView'
+export { UnbilledChargesView } from './UnbilledChargesView'
+export { AddChargeModal } from './AddChargeModal'
+export { BillChargesModal } from './BillChargesModal'
+export { useCardStatements, useCardStatement, useStatementCharges, useCardStatementMutations } from './hooks'
 export { cardStatementsApi } from './api'
 export type {
     CreditCardStatement, CreditCardStatementStatus,

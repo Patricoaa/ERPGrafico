@@ -150,7 +150,7 @@ class TreasuryService:
         targets = []
         if invoice: targets.append(invoice)
         if sale_order and not invoice: targets.append(sale_order)
-        if purchase_order and not invoice: targets.append(purchase_order)
+        if purchase_order: targets.append(purchase_order)
         if payroll: targets.append(payroll)
         
         # If arguments are missing, try to resolve from movement's GFK allocated_to.

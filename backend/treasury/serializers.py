@@ -288,6 +288,7 @@ class TreasuryMovementSerializer(serializers.ModelSerializer):
     sale_order_display_id = serializers.SerializerMethodField()
     purchase_order_display_id = serializers.SerializerMethodField()
     journal_entry_display_id = serializers.SerializerMethodField()
+    card_purchase_group_detail = serializers.SerializerMethodField()
 
     class Meta:
         model = TreasuryMovement
@@ -305,6 +306,24 @@ class TreasuryMovementSerializer(serializers.ModelSerializer):
 
     def get_journal_entry_display_id(self, obj):
         return obj.journal_entry.display_id if obj.journal_entry else None
+
+    def get_card_purchase_group_detail(self, obj):
+        if not obj.card_purchase_group:
+            return None
+        group = obj.card_purchase_group
+        return {
+            'id': group.id,
+            'uuid': str(group.uuid),
+            'total_amount': str(group.total_amount),
+            'installments': group.installments,
+            'monthly_rate': str(group.monthly_rate),
+            'principal_per_installment': str(group.principal_per_installment),
+            'first_installment_date': group.first_installment_date.isoformat() if group.first_installment_date else None,
+            'partner_name': group.partner.name if group.partner else None,
+            'partner_id': group.partner.id if group.partner else None,
+            'client_reference': group.client_reference,
+            'notes': group.notes,
+        }
 
     def get_journal_name(self, obj):
         # Return the name of the primary treasury account involved

@@ -314,6 +314,28 @@ class TreasuryMovement(models.Model):
             "todos los pagos de un statement via payment_movements.all()."
         ),
     )
+    # ── Billing flag (Onda 4) ────────────────────────────────────────────
+    # Marca si este cargo ya fue facturado en un CreditCardStatement.
+    # Solo aplica a movimientos OUTBOUND/ADJUSTMENT en cuentas CREDIT_CARD.
+    # Cuando se crea un statement, se marca True y se suma al billed_amount.
+    is_billed = models.BooleanField(
+        _("Facturado"),
+        default=False,
+        db_index=True,
+        help_text=_(
+            "True si este cargo ya fue incluido en un CreditCardStatement. "
+            "Movimientos no facturados aparecen en la vista de 'Cargos Pendientes'."
+        ),
+    )
+    billed_in_statement = models.ForeignKey(
+        'CreditCardStatement', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='billed_charges',
+        verbose_name=_("Facturado en Statement"),
+        help_text=_(
+            "FK al CreditCardStatement en el que se facturó este cargo. "
+            "Permite listar todos los movimientos que componen un statement."
+        ),
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(

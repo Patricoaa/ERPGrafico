@@ -1056,6 +1056,7 @@ class PurchasingService:
                     reference=f"OCS-{order.number}",
                     partner=order.supplier,
                     invoice=invoice,
+                    purchase_order=order,
                     date=document_date or timezone.now().date(),
                     created_by=user,
                     check_number=check_number,

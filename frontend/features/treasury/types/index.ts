@@ -164,6 +164,20 @@ export interface TerminalBatch {
     transaction_count: number
 }
 
+export interface CardPurchaseGroup {
+    id: number
+    uuid: string
+    total_amount: string
+    installments: number
+    monthly_rate: string
+    principal_per_installment: string
+    first_installment_date: string | null
+    partner_name: string | null
+    partner_id: number | null
+    client_reference: string
+    notes: string
+}
+
 export interface TreasuryMovement {
     id: number
     display_id: string
@@ -198,6 +212,12 @@ export interface TreasuryMovement {
         number: string | null
         label: string | null
     } | null
+    card_purchase_group?: number | null
+    card_purchase_group_detail?: CardPurchaseGroup | null
+    installment_number?: number | null
+    is_installment_interest?: boolean
+    is_billed?: boolean
+    billed_in_statement?: number | null
 }
 
 export interface TreasuryMovementFilters {

@@ -1,5 +1,6 @@
 "use client"
 
+import { usePathname } from "next/navigation"
 import { PageHeader } from "@/components/shared"
 import { useBanks } from "@/features/treasury"
 import type { PageHeaderStatus } from "@/components/shared"
@@ -13,8 +14,19 @@ interface BankPageHeaderProps {
     titleActions?: React.ReactNode
 }
 
+const SUB_VIEWS = [
+    { value: "overview", label: "Resumen", iconName: "layout-dashboard" },
+    { value: "checks", label: "Cheques Girados", iconName: "file-check" },
+    { value: "loans", label: "Préstamos", iconName: "banknote" },
+    { value: "cards", label: "Tarjetas", iconName: "credit-card" },
+    { value: "reconciliation", label: "Conciliación", iconName: "arrow-left-right" },
+]
+
 export function BankPageHeader({ bankId, breadcrumbs, title = "", description, status, titleActions }: BankPageHeaderProps) {
     const { banks } = useBanks()
+    const pathname = usePathname()
+    const segments = pathname.split('/').filter(Boolean)
+    const subSubActiveValue = segments[3] || 'overview'
 
     const bankSubTabs = [
         { value: "all", label: "Todos", iconName: "layout-grid", href: "/treasury/centro-bancos" },
@@ -25,6 +37,12 @@ export function BankPageHeader({ bankId, breadcrumbs, title = "", description, s
                 label: bank.name,
                 iconName: "landmark" as string,
                 href: `/treasury/centro-bancos/${bank.id}`,
+                subTabs: SUB_VIEWS.map(sv => ({
+                    value: sv.value,
+                    label: sv.label,
+                    iconName: sv.iconName,
+                    href: `/treasury/centro-bancos/${bank.id}/${sv.value}`,
+                })),
             })),
     ]
 
@@ -49,6 +67,7 @@ export function BankPageHeader({ bankId, breadcrumbs, title = "", description, s
         ],
         activeValue: "centro-bancos",
         subActiveValue: `bank-${bankId}`,
+        subSubActiveValue,
         breadcrumbs,
     }
 

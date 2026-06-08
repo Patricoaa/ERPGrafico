@@ -5,7 +5,7 @@ export default async function BankReconciliationPage({ params }: { params: Promi
     const id = Number(bankId)
     return (
         <div className="flex-1 flex flex-col min-h-0">
-            <BankPageHeader bankId={id} breadcrumbs={[{ label: "Conciliación" }]} />
+            <BankPageHeader bankId={id} />
             <BankCenterView bankId={id} />
         </div>
     )

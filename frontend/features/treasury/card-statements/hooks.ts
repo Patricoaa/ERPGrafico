@@ -30,6 +30,15 @@ export function useCardStatement(id: number | null) {
     })
 }
 
+export function useStatementCharges(statementId: number | null) {
+    return useQuery({
+        queryKey: [...STMT_KEYS.detail(statementId ?? 0), 'charges'],
+        queryFn: () => cardStatementsApi.getCharges(statementId as number),
+        enabled: statementId != null,
+        staleTime: 60 * 1000,
+    })
+}
+
 export function useCardStatementMutations() {
     const queryClient = useQueryClient()
 

@@ -1,4 +1,5 @@
 import api from '@/lib/api'
+import type { TreasuryMovement } from '../types'
 import type {
     CreditCardStatement, CreditCardStatementCreatePayload,
     PayStatementPayload, ApplyChargesPayload,
@@ -37,6 +38,11 @@ export const cardStatementsApi = {
 
     cancel: async (id: number, notes?: string): Promise<CreditCardStatement> => {
         const { data } = await api.post<CreditCardStatement>(`/treasury/card-statements/${id}/cancel/`, { notes: notes || '' })
+        return data
+    },
+
+    getCharges: async (id: number): Promise<TreasuryMovement[]> => {
+        const { data } = await api.get<TreasuryMovement[]>(`/treasury/card-statements/${id}/charges/`)
         return data
     },
 }
