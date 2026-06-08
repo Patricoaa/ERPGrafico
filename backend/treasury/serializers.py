@@ -788,6 +788,14 @@ class BankLoanSerializer(serializers.ModelSerializer):
         from .models import LoanInstallment
         return obj.installments.filter(status=LoanInstallment.Status.PAID).count()
 
+    total_disbursed = serializers.SerializerMethodField()
+
+    def get_total_disbursed(self, obj):
+        from decimal import Decimal
+        from django.db.models import Sum
+        result = obj.installments.aggregate(s=Sum('total_amount'))['s']
+        return (result or Decimal('0')).quantize(Decimal('0.01'))
+
     class Meta:
         from .models import BankLoan
         model = BankLoan
@@ -803,6 +811,7 @@ class BankLoanSerializer(serializers.ModelSerializer):
             'status', 'status_display', 'notes', 'collateral_notes',
             'outstanding_balance', 'next_due_date', 'next_installment_amount',
             'installments_count', 'paid_installments_count',
+            'total_disbursed',
             'installments',
             'created_at', 'updated_at', 'created_by', 'created_by_name',
         ]

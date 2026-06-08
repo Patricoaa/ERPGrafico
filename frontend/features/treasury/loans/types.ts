@@ -57,6 +57,7 @@ export interface BankLoan {
     notes: string
     collateral_notes: string
     outstanding_balance: string
+    total_disbursed: string
     next_due_date: string | null
     next_installment_amount: string | null
     installments_count: number
