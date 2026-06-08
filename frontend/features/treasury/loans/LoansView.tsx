@@ -52,16 +52,6 @@ export function LoansView({ bankId }: { bankId?: number } = {}) {
             cell: ({ row }) => <DataCell.Code>{row.original.display_id}</DataCell.Code>,
         },
         {
-            accessorKey: 'loan_number',
-            header: ({ column }) => <DataTableColumnHeader column={column} title="N° Operación" />,
-            cell: ({ row }) => <DataCell.Text>{row.original.loan_number || '—'}</DataCell.Text>,
-        },
-        {
-            accessorKey: 'lender_name',
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Banco" />,
-            cell: ({ row }) => <DataCell.Text>{row.original.lender_name}</DataCell.Text>,
-        },
-        {
             accessorKey: 'currency',
             header: ({ column }) => <DataTableColumnHeader column={column} title="Moneda" />,
             cell: ({ row }) => (
@@ -80,20 +70,11 @@ export function LoansView({ bankId }: { bankId?: number } = {}) {
             ),
         },
         {
-            id: 'total_disbursed',
-            header: ({ column }) => <DataTableColumnHeader column={column} title="Desembolso Real" className="justify-end" />,
-            cell: ({ row }) => (
-                <div className="flex justify-end">
-                    <MoneyDisplay amount={parseFloat(row.original.total_disbursed || '0')} />
-                </div>
-            ),
-        },
-        {
             accessorKey: 'interest_rate',
             header: ({ column }) => <DataTableColumnHeader column={column} title="Tasa" className="justify-end" />,
             cell: ({ row }) => (
                 <DataCell.Text>
-                    {row.original.interest_rate}% {row.original.rate_basis_display.toLowerCase()}
+                    {parseFloat(row.original.interest_rate).toFixed(2)}% {row.original.rate_basis_display.toLowerCase()}
                 </DataCell.Text>
             ),
         },
@@ -190,10 +171,6 @@ export function LoansView({ bankId }: { bankId?: number } = {}) {
                                     value={<MoneyDisplay amount={parseFloat(loan.principal)} />}
                                 />
                                 <EntityCard.Field
-                                    label="Desembolso Real"
-                                    value={<MoneyDisplay amount={parseFloat(loan.total_disbursed || '0')} />}
-                                />
-                                <EntityCard.Field
                                     label="Saldo Insoluto"
                                     value={
                                         <MoneyDisplay
@@ -204,7 +181,7 @@ export function LoansView({ bankId }: { bankId?: number } = {}) {
                                 />
                                 <EntityCard.Field
                                     label="Tasa"
-                                    value={`${loan.interest_rate}% ${loan.rate_basis_display.toLowerCase()}`}
+                                    value={`${parseFloat(loan.interest_rate).toFixed(2)}% ${loan.rate_basis_display.toLowerCase()}`}
                                 />
                                 <EntityCard.Field label="Plazo" value={`${loan.term_months} meses`} />
                                 <EntityCard.Field

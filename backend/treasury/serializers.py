@@ -792,8 +792,11 @@ class BankLoanSerializer(serializers.ModelSerializer):
 
     def get_total_disbursed(self, obj):
         from decimal import Decimal
-        from django.db.models import Sum
-        result = obj.installments.aggregate(s=Sum('total_amount'))['s']
+        from django.db.models import Sum, Q
+        from .models import LoanInstallment
+        result = obj.installments.filter(
+            status=LoanInstallment.Status.PAID,
+        ).aggregate(s=Sum('total_amount'))['s']
         return (result or Decimal('0')).quantize(Decimal('0.01'))
 
     class Meta:
