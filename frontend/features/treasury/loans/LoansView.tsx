@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
-import { FileText, AlertTriangle, Plus, Eye, Send } from 'lucide-react'
+import { FileText, AlertTriangle, Plus, Eye, Send, ClipboardList } from 'lucide-react'
 import {
     DataTableView, DataTableColumnHeader, DataCell,
     createActionsColumn, StatusBadge, MoneyDisplay, Skeleton, EmptyState, EntityCard,
@@ -10,6 +10,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { useLoans } from './hooks'
 import { LoanRegisterDrawer } from './LoanRegisterDrawer'
+import { LoanViewDrawer } from './LoanViewDrawer'
 import { LoanDisburseDrawer } from './LoanDisburseDrawer'
 import { LoanDetailModal } from './LoanDetailModal'
 import type { BankLoan } from './types'
@@ -22,7 +23,8 @@ export function LoansView({ bankId }: { bankId?: number } = {}) {
     const [registerOpen, setRegisterOpen] = useState(false)
     const [disburseOpen, setDisburseOpen] = useState(false)
     const [disburseLoan, setDisburseLoan] = useState<BankLoan | null>(null)
-    const [selectedId, setSelectedId] = useState<number | null>(null)
+    const [viewLoanId, setViewLoanId] = useState<number | null>(null)
+    const [amortizationLoanId, setAmortizationLoanId] = useState<number | null>(null)
 
     if (isLoading) {
         return <Skeleton className="h-full" />
@@ -124,8 +126,15 @@ export function LoansView({ bankId }: { bankId?: number } = {}) {
                 <DataCell.Action
                     icon={Eye}
                     title="Ver detalle"
-                    onClick={() => setSelectedId(loan.id)}
+                    onClick={() => setViewLoanId(loan.id)}
                 />
+                {loan.status !== 'DRAFT' && (
+                    <DataCell.Action
+                        icon={ClipboardList}
+                        title="Tabla de amortización"
+                        onClick={() => setAmortizationLoanId(loan.id)}
+                    />
+                )}
                 {loan.status === 'DRAFT' && (
                     <DataCell.Action
                         icon={Send}
@@ -149,7 +158,7 @@ export function LoansView({ bankId }: { bankId?: number } = {}) {
                     data={loans}
                     variant="embedded"
                     filterColumn="display_id"
-                    searchPlaceholder="Buscar por crédito o número..."
+                    searchPlaceholder="Buscar por crédito…"
                     createAction={registerAction}
                     emptyState={{
                         context: 'treasury',
@@ -204,6 +213,11 @@ export function LoansView({ bankId }: { bankId?: number } = {}) {
                 onOpenChange={setRegisterOpen}
                 bankId={bankId}
             />
+            <LoanViewDrawer
+                loanId={viewLoanId}
+                open={viewLoanId != null}
+                onOpenChange={(open) => { if (!open) setViewLoanId(null) }}
+            />
             <LoanDisburseDrawer
                 open={disburseOpen}
                 onOpenChange={(open) => {
@@ -213,9 +227,9 @@ export function LoansView({ bankId }: { bankId?: number } = {}) {
                 loan={disburseLoan}
             />
             <LoanDetailModal
-                loanId={selectedId}
-                open={selectedId != null}
-                onOpenChange={(open) => { if (!open) setSelectedId(null) }}
+                loanId={amortizationLoanId}
+                open={amortizationLoanId != null}
+                onOpenChange={(open) => { if (!open) setAmortizationLoanId(null) }}
             />
         </div>
     )
