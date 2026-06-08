@@ -4,7 +4,7 @@ from django.db import transaction
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.contrib.contenttypes.models import ContentType
-from datetime import timedelta
+from datetime import datetime, timedelta
 from decimal import Decimal, ROUND_HALF_UP
 from .models import TreasuryMovement, TreasuryAccount, TerminalBatch, PaymentMethod
 from accounting.models import JournalEntry, JournalItem, AccountingSettings
@@ -484,6 +484,18 @@ class TreasuryService:
             raise ValidationError(
                 f"La tasa mensual debe estar en [0, 1) (recibido: {monthly_rate})."
             )
+        # Normalizar `date`: los callers que parten de un request
+        # (purchase/sales checkout) pueden pasar un string ISO. La
+        # aritmética de cuotas (`date + timedelta`) exige un date real.
+        if isinstance(date, str):
+            from django.utils.dateparse import parse_datetime, parse_date
+            parsed = parse_date(date)
+            if parsed is None:
+                dt = parse_datetime(date)
+                parsed = dt.date() if dt is not None else None
+            date = parsed
+        elif isinstance(date, datetime):
+            date = date.date()
         if not date:
             date = timezone.now().date()
 
