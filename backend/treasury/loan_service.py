@@ -512,6 +512,25 @@ class LoanService:
             tax_clp=tax_clp,
         )
 
+        # Recalcular outstanding_balance si el capital pagado difiere del programado.
+        balance_diff = installment.principal_amount - principal_native
+        if balance_diff != 0:
+            # Actualizar outstanding_balance de la cuota pagada
+            installment.outstanding_balance = _q(installment.outstanding_balance + balance_diff)
+            # Cascadear a cuotas siguientes no pagadas ni anuladas
+            subsequent = loan.installments.filter(
+                number__gt=installment.number,
+            ).exclude(
+                status__in=[LoanInstallment.Status.PAID, LoanInstallment.Status.CANCELED],
+            ).order_by('number').select_for_update()
+            for inst in subsequent:
+                inst.outstanding_balance = _q(inst.outstanding_balance + balance_diff)
+                LoanInstallment.objects.filter(pk=inst.pk).update(outstanding_balance=inst.outstanding_balance)
+
+        # Actualizar montos reales pagados en la cuota
+        installment.principal_amount = principal_native
+        installment.interest_amount = interest_native
+        installment.insurance_amount = insurance_native
         installment.status = LoanInstallment.Status.PAID
         installment.paid_at = timezone.now()
         installment.payment_movement = movement
@@ -584,11 +603,14 @@ class LoanService:
 
         pay_date = date or timezone.now().date()
 
-        # Saldo insoluto en CLP.
-        outstanding = sum(
-            (i.principal_amount for i in pending),
-            Decimal('0'),
-        )
+        # Saldo insoluto real: principal original menos capital pagado real.
+        # (Los installments PAID ya tienen su principal_amount actualizado al
+        # valor real si hubo override; el resto suma cero correctamente).
+        from django.db.models import Sum
+        paid_principal = loan.installments.filter(
+            status=LoanInstallment.Status.PAID,
+        ).aggregate(s=Sum('principal_amount'))['s'] or Decimal('0')
+        outstanding = _q(loan.principal - paid_principal)
         # Interés acumulado del mes en curso sobre el saldo pendiente.
         # Para prepago, asumimos que el interés es proporcional al mes
         # en curso (1/30 por día). Esto es un cálculo conservador — los

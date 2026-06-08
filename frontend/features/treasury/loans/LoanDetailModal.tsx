@@ -1,14 +1,17 @@
 "use client"
 
 import React, { useState } from 'react'
-import { Banknote, AlertCircle, Calendar, TrendingDown } from 'lucide-react'
+import type { ColumnDef } from '@tanstack/react-table'
+import { Banknote, AlertCircle, Calendar, TrendingDown, DollarSign, Eye, FileQuestion } from 'lucide-react'
 import {
-    BaseModal, FormFooter, ActionSlideButton, MoneyDisplay, StatusBadge, StatCard, Skeleton, EmptyState,
+    BaseModal, FormFooter, ActionSlideButton, StatCard,
+    Skeleton, EmptyState, DataTable, DataTableColumnHeader, DataCell,
 } from '@/components/shared'
 import { Button } from '@/components/ui/button'
 import { useLoan } from './hooks'
 import { LoanPayInstallmentModal } from './LoanPayInstallmentModal'
 import { PrepayLoanModal } from './PrepayLoanModal'
+import { LoanInstallmentReadonlyModal } from './LoanInstallmentReadonlyModal'
 import type { LoanInstallment } from './types'
 
 interface Props {
@@ -21,6 +24,7 @@ export function LoanDetailModal({ loanId, open, onOpenChange }: Props) {
     const { data: loan, isLoading, isError } = useLoan(loanId)
 
     const [payingInst, setPayingInst] = useState<LoanInstallment | null>(null)
+    const [viewingInst, setViewingInst] = useState<LoanInstallment | null>(null)
     const [showPrepayModal, setShowPrepayModal] = useState(false)
 
     if (!open) return null
@@ -42,8 +46,16 @@ export function LoanDetailModal({ loanId, open, onOpenChange }: Props) {
         </BaseModal>
     )
 
-    const canPay = (inst: LoanInstallment) =>
-        loan.status === 'ACTIVE' && (inst.status === 'PENDING' || inst.status === 'OVERDUE')
+    const fmt = (val: string) => {
+        const n = parseFloat(val)
+        if (loan.currency === 'UF') {
+            return `${Math.round(n).toLocaleString('es-CL')} UF`
+        }
+        return new Intl.NumberFormat('es-CL', {
+            style: 'currency', currency: 'CLP',
+            minimumFractionDigits: 0, maximumFractionDigits: 0,
+        }).format(n)
+    }
 
     return (
         <>
@@ -55,9 +67,17 @@ export function LoanDetailModal({ loanId, open, onOpenChange }: Props) {
                         <Banknote className="h-5 w-5 text-muted-foreground" />
                         <div className="flex flex-col">
                             <span>{loan.display_id} · {loan.lender_name}</span>
-                            <span className="text-xs text-muted-foreground font-normal">
-                                {loan.loan_number || 'Sin N° operación'} · {loan.amortization_system_display}
-                            </span>
+                            <div className="flex items-center gap-1.5 mt-1">
+                                <span className="inline-flex items-center rounded-full border border-border bg-muted/60 px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
+                                    {loan.liability_account_name}
+                                </span>
+                                <span className="inline-flex items-center rounded-full border border-border bg-muted/60 px-2 py-0.5 text-[10px] font-semibold">
+                                    {loan.currency}
+                                </span>
+                                <span className="inline-flex items-center rounded-full border border-border bg-muted/60 px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
+                                    {loan.interest_rate}% {loan.rate_basis_display.toLowerCase()}
+                                </span>
+                            </div>
                         </div>
                     </div>
                 }
@@ -78,21 +98,10 @@ export function LoanDetailModal({ loanId, open, onOpenChange }: Props) {
                 }
             >
                 <div className="space-y-6">
-                    {/* Status + meta */}
-                    <div className="flex items-center gap-3">
-                        <StatusBadge status={loan.status} />
-                        <span className="inline-flex items-center rounded-full border border-border bg-muted px-2 py-0.5 text-xs font-semibold">
-                            {loan.currency}
-                        </span>
-                        <span className="text-sm text-muted-foreground">
-                            {loan.interest_rate}% {loan.rate_basis_display.toLowerCase()} · {loan.term_months} meses
-                        </span>
-                    </div>
-
                     {/* KPIs */}
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <StatCard label="Capital" value={loan.principal} icon={Banknote} accent="info" />
-                        <StatCard label="Saldo Insoluto" value={loan.outstanding_balance} icon={TrendingDown} accent="warning" />
+                        <StatCard label="Capital" value={fmt(loan.principal)} icon={Banknote} accent="info" />
+                        <StatCard label="Saldo Insoluto" value={fmt(loan.outstanding_balance)} icon={TrendingDown} accent="warning" />
                         <StatCard label="Cuotas Pagadas" value={`${loan.paid_installments_count} / ${loan.installments_count}`} icon={Calendar} accent="success" />
                         <StatCard
                             label="Próx. Vencimiento"
@@ -105,82 +114,99 @@ export function LoanDetailModal({ loanId, open, onOpenChange }: Props) {
                     </div>
 
                     {/* Amortization table */}
-                    <div className="rounded-lg border border-border overflow-hidden">
-                        <div className="px-4 py-3 border-b border-border bg-muted/50">
+                    <div className="overflow-hidden">
+                        <div className="px-4 py-3 bg-muted/50">
                             <h3 className="text-sm font-semibold flex items-center gap-2">
                                 <Calendar className="h-4 w-4" />
                                 Tabla de Amortización
                             </h3>
                         </div>
-                        {loan.installments.length === 0 ? (
-                            <div className="p-8 text-center text-sm text-muted-foreground">
-                                <AlertCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                                Tabla aún no generada. Desembolsa el crédito para crearla.
-                            </div>
-                        ) : (
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-sm">
-                                    <thead className="bg-muted/30 text-xs uppercase text-muted-foreground">
-                                        <tr>
-                                            <th className="px-3 py-2 text-center">#</th>
-                                            <th className="px-3 py-2 text-left">Vencimiento</th>
-                                            <th className="px-3 py-2 text-right">Capital</th>
-                                            <th className="px-3 py-2 text-right">Interés</th>
-                                            <th className="px-3 py-2 text-right">Seguro</th>
-                                            <th className="px-3 py-2 text-right">Total</th>
-                                            <th className="px-3 py-2 text-right">Saldo</th>
-                                            <th className="px-3 py-2 text-center">Estado</th>
-                                            <th className="px-3 py-2 text-center">Acción</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {loan.installments.map((inst) => (
-                                            <tr key={inst.id} className="border-t border-border hover:bg-muted/20">
-                                                <td className="px-3 py-2 text-center font-mono text-xs">
-                                                    {inst.number}
-                                                </td>
-                                                <td className="px-3 py-2 text-xs">
-                                                    {new Date(inst.due_date).toLocaleDateString('es-CL')}
-                                                </td>
-                                                <td className="px-3 py-2 text-right">
-                                                    <MoneyDisplay amount={parseFloat(inst.principal_amount)} />
-                                                </td>
-                                                <td className="px-3 py-2 text-right">
-                                                    <MoneyDisplay amount={parseFloat(inst.interest_amount)} />
-                                                </td>
-                                                <td className="px-3 py-2 text-right">
-                                                    <MoneyDisplay amount={parseFloat(inst.insurance_amount)} />
-                                                </td>
-                                                <td className="px-3 py-2 text-right font-semibold">
-                                                    <MoneyDisplay amount={parseFloat(inst.total_amount)} />
-                                                </td>
-                                                <td className="px-3 py-2 text-right text-muted-foreground">
-                                                    <MoneyDisplay amount={parseFloat(inst.outstanding_balance)} />
-                                                </td>
-                                                <td className="px-3 py-2 text-center">
-                                                    <StatusBadge status={inst.status} />
-                                                </td>
-                                                <td className="px-3 py-2 text-center">
-                                                    {canPay(inst) ? (
-                                                        <Button
-                                                            size="sm"
-                                                            variant="outline"
-                                                            onClick={() => setPayingInst(inst)}
-                                                        >
-                                                            Pagar
-                                                        </Button>
-                                                    ) : inst.uf_value_used ? (
-                                                        <span className="text-xs text-muted-foreground">
-                                                            UF {inst.uf_value_used}
-                                                        </span>
-                                                    ) : null}
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        )}
+                        {(() => {
+                            const columns: ColumnDef<LoanInstallment>[] = [
+                                {
+                                    accessorKey: 'number',
+                                    header: '#',
+                                    cell: ({ row }) => <DataCell.Text>{row.original.number}</DataCell.Text>,
+                                },
+                                {
+                                    accessorKey: 'due_date',
+                                    header: 'Vencimiento',
+                                    cell: ({ row }) => <DataCell.Date value={row.original.due_date} />,
+                                },
+                                {
+                                    accessorKey: 'principal_amount',
+                                    header: ({ column }) => <DataTableColumnHeader column={column} title="Capital" />,
+                                    cell: ({ row }) => <DataCell.Currency value={row.original.principal_amount} digits={2} />,
+                                },
+                                {
+                                    accessorKey: 'interest_amount',
+                                    header: ({ column }) => <DataTableColumnHeader column={column} title="Interés" />,
+                                    cell: ({ row }) => <DataCell.Currency value={row.original.interest_amount} digits={2} />,
+                                },
+                                {
+                                    id: 'others',
+                                    header: ({ column }) => <DataTableColumnHeader column={column} title="Otros" />,
+                                    cell: ({ row }) => {
+                                        const insurance = parseFloat(row.original.insurance_amount)
+                                        const penalty = parseFloat(row.original.penalty_paid)
+                                        return <DataCell.Currency value={(insurance + penalty).toFixed(2)} digits={2} />
+                                    },
+                                },
+                                {
+                                    accessorKey: 'total_amount',
+                                    header: ({ column }) => <DataTableColumnHeader column={column} title="Total" />,
+                                    cell: ({ row }) => <DataCell.Currency value={row.original.total_amount} digits={2} />,
+                                },
+                                {
+                                    accessorKey: 'outstanding_balance',
+                                    header: ({ column }) => <DataTableColumnHeader column={column} title="Saldo" />,
+                                    cell: ({ row }) => (
+                                        <DataCell.Currency value={row.original.outstanding_balance} digits={2} />
+                                    ),
+                                },
+                                {
+                                    accessorKey: 'status',
+                                    header: 'Estado',
+                                    cell: ({ row }) => <DataCell.Status status={row.original.status} />,
+                                },
+                                {
+                                    id: 'actions',
+                                    header: '',
+                                    cell: ({ row }) => {
+                                        const inst = row.original
+                                        if (inst.status === 'PENDING' || inst.status === 'OVERDUE') {
+                                            return (
+                                                <Button size="sm" variant="outline" onClick={() => setPayingInst(inst)} title="Pagar">
+                                                    <DollarSign className="h-3.5 w-3.5" />
+                                                </Button>
+                                            )
+                                        }
+                                        if (inst.status === 'PAID') {
+                                            return (
+                                                <Button size="sm" variant="outline" onClick={() => setViewingInst(inst)} title="Ver detalle">
+                                                    <Eye className="h-3.5 w-3.5" />
+                                                </Button>
+                                            )
+                                        }
+                                        return null
+                                    },
+                                },
+                            ]
+                            return (
+                                <DataTable
+                                    columns={columns}
+                                    data={loan.installments}
+                                    variant="minimal"
+                                    noBorder
+                                    hidePagination
+                                    emptyState={{
+                                        title: 'Tabla aún no generada',
+                                        description: 'Desembolsa el crédito para crearla.',
+                                        icon: FileQuestion,
+                                    }}
+                                />
+                            )
+                        })()}
                     </div>
 
                     {loan.notes && (
@@ -207,6 +233,16 @@ export function LoanDetailModal({ loanId, open, onOpenChange }: Props) {
                     loan={loan}
                     open={true}
                     onOpenChange={(o) => { if (!o) setShowPrepayModal(false) }}
+                />
+            )}
+
+            {viewingInst && (
+                <LoanInstallmentReadonlyModal
+                    installment={viewingInst}
+                    loanDisplayId={loan.display_id}
+                    loanCurrency={loan.currency}
+                    open={true}
+                    onOpenChange={(o) => { if (!o) setViewingInst(null) }}
                 />
             )}
         </>
