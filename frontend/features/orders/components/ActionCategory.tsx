@@ -302,7 +302,6 @@ export const ActionCategory = forwardRef(({
                     amount: data.amount as string | number,
                     from_account: fromAccountId,
                     installments: installments,
-                    monthly_rate: (data.monthlyRate as number) || 0,
                     partner: partnerId || undefined,
                     client_reference: `ORDER-${order?.id}`,
                 })
