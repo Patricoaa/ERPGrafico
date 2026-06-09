@@ -459,7 +459,7 @@
  *      docs/10-architecture/design-system.md (Radius Hierarchy)
  */
 @utility panel-surface {
-  @apply rounded-xl border! border-border/10! shadow-2xl! bg-card;
+  @apply rounded-xl border! border-border/15! shadow-2xl! bg-card;
 }
 
 /*
@@ -1285,4 +1285,12 @@ table [data-notched-field] {
 .hover\:bg-warning:hover .text-muted-foreground,
 .bg-warning .text-muted-foreground {
   color: inherit;
+}
+
+/*
+ * TEXT HIERARCHY — Secondary foreground for displayed data (not titles, not muted)
+ * Creates a third step: title (foreground) → data (foreground-secondary) → label (muted-foreground)
+ */
+.text-foreground-secondary {
+  color: oklch(var(--foreground-raw) / 0.85);
 }
