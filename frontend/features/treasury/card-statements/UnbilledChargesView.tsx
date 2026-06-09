@@ -199,10 +199,10 @@ export function UnbilledChargesView({
     ]
 
     const rightButtonGroupAction = (
-        <div className="flex items-center gap-2">
+        <>
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm">
+                    <Button variant="ghost" className="h-full px-3 rounded-none text-xs font-semibold">
                         {filterMode === 'month' ? 'Cargos del mes' : 'Todos los cargos'}
                         <ChevronDown className="ml-1 h-3 w-3" />
                     </Button>
@@ -215,19 +215,23 @@ export function UnbilledChargesView({
                 </DropdownMenuContent>
             </DropdownMenu>
             <Button
-                variant="outline"
-                size="sm"
+                variant="ghost"
+                className="h-full px-3 rounded-none text-xs font-semibold"
                 disabled={!summary || summary.count === 0}
                 onClick={() => setShowBillCharges(true)}
             >
                 <Receipt className="mr-2 h-4 w-4" />
                 Facturar Cargos
             </Button>
-            <Button size="sm" onClick={() => setShowAddCharge(true)}>
+            <Button
+                variant="ghost"
+                className="h-full px-3 rounded-none text-xs font-semibold"
+                onClick={() => setShowAddCharge(true)}
+            >
                 <Plus className="mr-2 h-4 w-4" />
                 Agregar Cargo
             </Button>
-        </div>
+        </>
     )
 
     if (isLoading) {
@@ -287,7 +291,7 @@ export function UnbilledChargesView({
                     data={mergedRows}
                     isLoading={isLoading}
                     variant="embedded"
-                    createAction={rightButtonGroupAction}
+                    rightButtonGroupAction={rightButtonGroupAction}
                     filterColumn="reference"
                     searchPlaceholder="Buscar por referencia..."
                     emptyState={{
