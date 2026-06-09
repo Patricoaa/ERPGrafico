@@ -7,7 +7,7 @@ import {
     SheetHeader,
     SheetTitle,
 } from "@/components/ui/sheet"
-import { SheetCloseButton } from '@/components/shared'
+
 import { cn } from "@/lib/utils"
 import { PanelHeader, type PanelBaseProps } from "./PanelHeader"
 
@@ -237,17 +237,12 @@ export function Drawer({
                     )} />
                 )}
 
-                <SheetCloseButton
-                    onClick={() => onOpenChange(false)}
-                    className="absolute top-4 right-4 z-[60]"
-                />
-
                 {(title || subtitle || description || headerActions || icon) && (
-                    <SheetHeader className={cn("px-8 pb-4 pt-8 border-b shrink-0", headerClassName)}>
+                    <SheetHeader className={cn("px-6 py-3 border-b shrink-0", headerClassName)}>
                         <PanelHeader
                             icon={iconElement}
                             title={
-                                <SheetTitle className={cn("text-xl font-black tracking-tight text-foreground leading-none pr-8", titleClassName)}>
+                                <SheetTitle className={cn("text-xl font-black tracking-tight text-foreground leading-none", titleClassName)}>
                                     {title}
                                 </SheetTitle>
                             }
@@ -257,21 +252,18 @@ export function Drawer({
                                     {description}
                                 </span>
                             ) : undefined}
-                            headerActions={headerActions && (
-                                <div className="pr-8">
-                                    {headerActions}
-                                </div>
-                            )}
+                            headerActions={headerActions}
+                            onClose={() => onOpenChange(false)}
                         />
                     </SheetHeader>
                 )}
 
-                <div className={cn("flex-1 flex flex-col overflow-y-auto px-8 pb-8 scrollbar-thin scrollbar-thumb-primary/10 scrollbar-track-transparent", contentClassName)}>
+                <div className={cn("flex-1 flex flex-col overflow-y-auto px-6 pb-6 scrollbar-thin scrollbar-thumb-primary/10 scrollbar-track-transparent", contentClassName)}>
                     {children}
                 </div>
 
                 {footer && (
-                    <div className={cn("border-t px-8 py-4 flex-shrink-0", footerClassName)}>
+                    <div className={cn("border-t px-6 py-3 flex-shrink-0", footerClassName)}>
                         {footer}
                     </div>
                 )}
