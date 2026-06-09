@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { Plus, Receipt, CreditCard, ChevronDown } from 'lucide-react'
+import { Plus, Receipt, CreditCard, ChevronDown, Calendar } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
     DropdownMenu,
@@ -198,40 +198,39 @@ export function UnbilledChargesView({
         },
     ]
 
-    const rightButtonGroupAction = (
-        <>
-            <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="h-full px-3 rounded-none text-xs font-semibold">
-                        {filterMode === 'month' ? 'Cargos del mes' : 'Todos los cargos'}
-                        <ChevronDown className="ml-1 h-3 w-3" />
-                    </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                    <DropdownMenuRadioGroup value={filterMode} onValueChange={(v) => setFilterMode(v as 'month' | 'all')}>
-                        <DropdownMenuRadioItem value="month">Cargos del mes</DropdownMenuRadioItem>
-                        <DropdownMenuRadioItem value="all">Todos los cargos</DropdownMenuRadioItem>
-                    </DropdownMenuRadioGroup>
-                </DropdownMenuContent>
-            </DropdownMenu>
+    const filterDropdown = (
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="h-full px-3 rounded-none text-[10px] font-black uppercase tracking-widest hover:bg-muted/50 transition-all border-0 ring-0 focus-visible:ring-0">
+                    <Calendar className="h-3.5 w-3.5 mr-2 opacity-50" />
+                    {filterMode === 'month' ? 'Cargos del mes' : 'Todos los cargos'}
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+                <DropdownMenuRadioGroup value={filterMode} onValueChange={(v) => setFilterMode(v as 'month' | 'all')}>
+                    <DropdownMenuRadioItem value="month">Cargos del mes</DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="all">Todos los cargos</DropdownMenuRadioItem>
+                </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+        </DropdownMenu>
+    )
+
+    const actionButtons = (
+        <div className="flex items-center gap-2">
             <Button
-                variant="ghost"
-                className="h-full px-3 rounded-none text-xs font-semibold"
+                variant="outline"
+                size="sm"
                 disabled={!summary || summary.count === 0}
                 onClick={() => setShowBillCharges(true)}
             >
                 <Receipt className="mr-2 h-4 w-4" />
                 Facturar Cargos
             </Button>
-            <Button
-                variant="ghost"
-                className="h-full px-3 rounded-none text-xs font-semibold"
-                onClick={() => setShowAddCharge(true)}
-            >
+            <Button size="sm" onClick={() => setShowAddCharge(true)}>
                 <Plus className="mr-2 h-4 w-4" />
                 Agregar Cargo
             </Button>
-        </>
+        </div>
     )
 
     if (isLoading) {
@@ -291,7 +290,8 @@ export function UnbilledChargesView({
                     data={mergedRows}
                     isLoading={isLoading}
                     variant="embedded"
-                    rightButtonGroupAction={rightButtonGroupAction}
+                    rightButtonGroupAction={filterDropdown}
+                    createAction={actionButtons}
                     filterColumn="reference"
                     searchPlaceholder="Buscar por referencia..."
                     emptyState={{
