@@ -39,7 +39,12 @@ from django.db import models as dj_models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _t
 
-from .models import CreditCardStatement, TreasuryAccount, TreasuryMovement
+from .models import (
+    CardPurchaseInstallment,
+    CreditCardStatement,
+    TreasuryAccount,
+    TreasuryMovement,
+)
 
 if TYPE_CHECKING:
     from accounting.models import Account
@@ -796,6 +801,43 @@ class CardService:
             statement.paid_at = None
             statement.amount_paid = Decimal('0')
 
+        # 2.5) Des-facturar cuotas del cronograma y cargos (ADR-0046), y
+        # reversar el asiento de cargos diferidos si existe. Así las cuotas
+        # y los cargos vuelven a "pendiente" y se pueden re-facturar.
+        from django.contrib.contenttypes.models import ContentType as _CT
+        ct_stmt = _CT.objects.get_for_model(CreditCardStatement)
+        billing_entries = JournalEntryModel.objects.filter(
+            source_content_type=ct_stmt,
+            source_object_id=statement.id,
+            reference=statement.display_id,
+            status__in=reversible_statuses,
+        )
+        for je in billing_entries:
+            try:
+                JournalEntryService.reverse_entry(
+                    je,
+                    description=(
+                        f"REVERSO facturación {statement.display_id} "
+                        f"(anulación de statement)"
+                    ),
+                )
+                reversal_lines.append(f"Facturación {statement.display_id} reversada")
+            except ValidationError:
+                pass
+        # Soltar el FK de asiento en los cargos diferidos para permitir
+        # re-postear si se re-factura.
+        TreasuryMovement.objects.filter(
+            billed_in_statement=statement,
+            journal_entry__reference=statement.display_id,
+        ).update(journal_entry=None)
+        # Volver a "no facturado": movimientos + cuotas del cronograma.
+        TreasuryMovement.objects.filter(billed_in_statement=statement).update(
+            is_billed=False, billed_in_statement=None,
+        )
+        CardPurchaseInstallment.objects.filter(billed_in_statement=statement).update(
+            is_billed=False, billed_in_statement=None,
+        )
+
         # 3) Marcar CANCELED.
         statement.status = CreditCardStatement.Status.CANCELED
         log_lines = [f"[REVERSAL] {timestamp}"]
@@ -851,7 +893,12 @@ class CardService:
                 % {'co': period_end.isoformat(), 'ps': period_start.isoformat()}
             )
 
-        # OUTBOUND de compras del período (gasto real con la tarjeta).
+        # OUTBOUND de cargos directos del período (gasto ad-hoc con la
+        # tarjeta). Se EXCLUYE el OUTBOUND del uso de una compra en cuotas
+        # (ADR-0046: `card_purchase_group` set + `installment_number` NULL),
+        # porque ese pasivo se factura cuota a cuota vía el cronograma, no
+        # por su monto total en el período. Las cuotas legacy
+        # (`installment_number` set) sí se cuentan.
         outbound_sum = (
             TreasuryMovement.objects
             .filter(
@@ -860,7 +907,19 @@ class CardService:
                 date__gte=period_start,
                 date__lte=period_end,
             )
+            .exclude(
+                card_purchase_group__isnull=False,
+                installment_number__isnull=True,
+            )
             .aggregate(total=dj_models.Sum('amount'))['total']
+            or Decimal('0')
+        )
+
+        # Cuotas del cronograma (ADR-0046) facturadas en ESTE statement.
+        schedule_sum = (
+            CardPurchaseInstallment.objects
+            .filter(billed_in_statement=statement)
+            .aggregate(total=dj_models.Sum('principal_amount'))['total']
             or Decimal('0')
         )
 
@@ -878,7 +937,11 @@ class CardService:
             or Decimal('0')
         )
 
-        new_amount = (outbound_sum or Decimal('0')) + (charges_sum or Decimal('0'))
+        new_amount = (
+            (outbound_sum or Decimal('0'))
+            + (schedule_sum or Decimal('0'))
+            + (charges_sum or Decimal('0'))
+        )
         if not commit:
             return new_amount
 
@@ -888,7 +951,7 @@ class CardService:
             note = (
                 f"[RECALC] billed_amount {old_amount} → {new_amount} "
                 f"el {timezone.now().date().isoformat()} "
-                f"(OUTBOUND={outbound_sum}, CHARGES={charges_sum})"
+                f"(OUTBOUND={outbound_sum}, SCHEDULE={schedule_sum}, CHARGES={charges_sum})"
             )
             statement.notes = (
                 (statement.notes + "\n" + note) if statement.notes else note
@@ -928,13 +991,31 @@ class CardService:
         return qs.order_by('-date', '-id')
 
     @staticmethod
+    def get_unbilled_installments(
+        card_account: TreasuryAccount,
+        cut_off_date: _date | None = None,
+    ):
+        """
+        Cuotas del cronograma (ADR-0046) aún no facturadas de una TC.
+        Si se pasa `cut_off_date`, solo las que vencen hasta esa fecha.
+        """
+        qs = CardPurchaseInstallment.objects.filter(
+            card_purchase_group__card_account=card_account,
+            is_billed=False,
+        ).select_related('card_purchase_group', 'card_purchase_group__partner')
+        if cut_off_date:
+            qs = qs.filter(due_date__lte=cut_off_date)
+        return qs.order_by('due_date', 'number', 'id')
+
+    @staticmethod
     def get_unbilled_summary(card_account: TreasuryAccount) -> dict:
         """
         Retorna resumen de cargos no facturados:
-        - total: suma de todos los cargos no facturados
+        - total: suma de todos los cargos no facturados (movimientos + cuotas)
         - count: cantidad de cargos
-        - purchases: suma de compras (OUTBOUND)
+        - purchases: suma de cargos directos/legacy (OUTBOUND)
         - charges: suma de cargos financieros (ADJUSTMENT)
+        - installments: suma del principal de cuotas pendientes (cronograma)
         """
         from django.db import models as dj_models
 
@@ -950,13 +1031,19 @@ class CardService:
             .aggregate(total=dj_models.Sum('amount'))['total']
             or Decimal('0')
         )
-        count = qs.count()
+        sched_qs = CardService.get_unbilled_installments(card_account)
+        installments = (
+            sched_qs.aggregate(total=dj_models.Sum('principal_amount'))['total']
+            or Decimal('0')
+        )
+        count = qs.count() + sched_qs.count()
 
         return {
-            'total': purchases + charges,
+            'total': purchases + charges + installments,
             'count': count,
             'purchases': purchases,
             'charges': charges,
+            'installments': installments,
         }
 
     @staticmethod
@@ -1029,50 +1116,84 @@ class CardService:
         created_by: "AbstractUser | None" = None,
     ) -> CreditCardStatement:
         """
-        Factura los cargos no facturados de una tarjeta.
+        Factura los cargos pendientes de una TC en un statement mensual
+        (ADR-0046).
 
-        1. Obtiene los movimientos no facturados con date <= cut_off_date
-        2. Crea un CreditCardStatement con billed_amount = suma de cargos
-        3. Marca los movimientos como is_billed=True y los vincula al statement
-        4. Genera el asiento contable desglosado por grupo de compra (si aplica)
+        Dos fuentes:
+          1. Cuotas del cronograma (`CardPurchaseInstallment`) con
+             `due_date <= cut_off_date` aún no facturadas. El uso de la
+             tarjeta ya se contabilizó al comprar; acá NO se postea
+             principal.
+          2. Cargos en movimientos (`get_unbilled_charges`): comisiones/
+             impuestos de `add_unbilled_charge` (diferidos, sin asiento) y
+             cargos directos/legacy. Solo los diferidos se contabilizan al
+             facturar (el resto ya posteó al crearse).
 
-        Retorna el statement creado.
+        Marca ambas fuentes como facturadas, arma el desglose por grupo de
+        compra y retorna el statement.
         """
-        # Obtener cargos no facturados dentro del período
-        unbilled = CardService.get_unbilled_charges(card_account, cut_off_date=cut_off_date)
-        total = unbilled.aggregate(
-            total=dj_models.Sum('amount')
-        )['total'] or Decimal('0')
+        # 1) Cuotas del cronograma que vencen hasta el cierre.
+        schedule_rows = list(
+            CardPurchaseInstallment.objects.filter(
+                card_purchase_group__card_account=card_account,
+                is_billed=False,
+                due_date__lte=cut_off_date,
+            ).select_related('card_purchase_group', 'card_purchase_group__partner')
+        )
+        schedule_total = sum((r.principal_amount for r in schedule_rows), Decimal('0'))
 
+        # 2) Cargos sueltos / legacy en movimientos. El OUTBOUND del uso
+        #    (ADR-0046) es is_billed=True, así que no entra acá.
+        unbilled = CardService.get_unbilled_charges(card_account, cut_off_date=cut_off_date)
+        movement_rows = list(
+            unbilled.select_related('card_purchase_group', 'card_purchase_group__partner')
+        )
+        movement_total = sum((m.amount for m in movement_rows), Decimal('0'))
+
+        total = schedule_total + movement_total
         if total <= 0:
             raise ValidationError(
                 _t("No hay cargos no facturados para facturar en este período.")
             )
 
-        # Agrupar por card_purchase_group para el desglose
-        # Los movimientos sin grupo (card_purchase_group=None) van en "Sin compra"
-        groups_data = {}
-        standalone_movements = []
+        # ── Desglose por grupo de compra (cronograma + movimientos) ───
+        groups_data: dict = {}
+        standalone_charges: list = []
 
-        for m in unbilled.select_related('card_purchase_group').iterator():
-            group = m.card_purchase_group
+        def _add_charge(group, charge):
             if group is None:
-                standalone_movements.append(m)
-                continue
+                standalone_charges.append(charge)
+                return
+            bucket = groups_data.setdefault(group.id, {'group': group, 'charges': []})
+            bucket['charges'].append(charge)
 
-            if group.id not in groups_data:
-                groups_data[group.id] = {
-                    'group': group,
-                    'movements': [],
-                }
-            groups_data[group.id]['movements'].append(m)
+        for r in schedule_rows:
+            g = r.card_purchase_group
+            _add_charge(g, {
+                'id': r.id,
+                'amount': str(r.principal_amount),
+                'installment_number': r.number,
+                'is_installment_interest': False,
+                'movement_type': TreasuryMovement.Type.OUTBOUND,
+                'reference': f"CP-{g.uuid}-i{r.number}",
+                'date': str(r.due_date),
+            })
+        for m in movement_rows:
+            _add_charge(m.card_purchase_group, {
+                'id': m.id,
+                'amount': str(m.amount),
+                'installment_number': m.installment_number,
+                'is_installment_interest': m.is_installment_interest,
+                'movement_type': m.movement_type,
+                'reference': m.reference,
+                'date': str(m.date),
+            })
 
-        # Crear breakdown estructurado
         purchase_group_breakdown = []
-        for gid, gd in groups_data.items():
+        for _gid, gd in groups_data.items():
             group = gd['group']
-            movements = gd['movements']
-            subtotal = sum(m.amount for m in movements)
+            charges = sorted(gd['charges'], key=lambda c: (c['installment_number'] or 0, c['id']))
+            subtotal = sum((Decimal(c['amount']) for c in charges), Decimal('0'))
             purchase_group_breakdown.append({
                 'id': group.id,
                 'uuid': str(group.uuid),
@@ -1085,49 +1206,21 @@ class CardService:
                 'partner_id': group.partner_id,
                 'client_reference': group.client_reference,
                 'subtotal': str(subtotal),
-                'charges': [
-                    {
-                        'id': m.id,
-                        'amount': str(m.amount),
-                        'installment_number': m.installment_number,
-                        'is_installment_interest': m.is_installment_interest,
-                        'movement_type': m.movement_type,
-                        'reference': m.reference,
-                        'date': str(m.date),
-                    }
-                    for m in sorted(movements, key=lambda x: (x.installment_number or 0, x.id))
-                ],
+                'charges': charges,
             })
-
-        standalone_subtotal = sum(m.amount for m in standalone_movements)
-        if standalone_movements:
+        if standalone_charges:
+            standalone_subtotal = sum((Decimal(c['amount']) for c in standalone_charges), Decimal('0'))
             purchase_group_breakdown.append({
-                'id': None,
-                'uuid': None,
-                'total_amount': None,
-                'installments': None,
-                'monthly_rate': None,
-                'principal_per_installment': None,
-                'first_installment_date': None,
-                'partner_name': None,
-                'partner_id': None,
+                'id': None, 'uuid': None, 'total_amount': None,
+                'installments': None, 'monthly_rate': None,
+                'principal_per_installment': None, 'first_installment_date': None,
+                'partner_name': None, 'partner_id': None,
                 'client_reference': 'Sin compra asociada',
                 'subtotal': str(standalone_subtotal),
-                'charges': [
-                    {
-                        'id': m.id,
-                        'amount': str(m.amount),
-                        'installment_number': m.installment_number,
-                        'is_installment_interest': m.is_installment_interest,
-                        'movement_type': m.movement_type,
-                        'reference': m.reference,
-                        'date': str(m.date),
-                    }
-                    for m in standalone_movements
-                ],
+                'charges': standalone_charges,
             })
 
-        # Crear el statement
+        # Crear el statement.
         statement = CardService.open_statement(
             card_account=card_account,
             period_year=period_year,
@@ -1141,148 +1234,83 @@ class CardService:
             created_by=created_by,
         )
 
-        # Marcar movimientos como facturados y vincular al statement
-        unbilled.update(is_billed=True, billed_in_statement=statement)
+        # Marcar facturado: cuotas del cronograma + movimientos.
+        if schedule_rows:
+            CardPurchaseInstallment.objects.filter(
+                id__in=[r.id for r in schedule_rows],
+            ).update(is_billed=True, billed_in_statement=statement)
+        if movement_rows:
+            TreasuryMovement.objects.filter(
+                id__in=[m.id for m in movement_rows],
+            ).update(is_billed=True, billed_in_statement=statement)
 
-        # Generar asiento contable con el desglose por grupo de compra
-        CardService._create_billing_entry(
-            statement=statement,
-            total=total,
-            unbilled_queryset=unbilled,
-            purchase_group_breakdown=purchase_group_breakdown,
-            created_by=created_by,
-        )
+        # Asiento: SOLO cargos diferidos (sin asiento previo). El uso, los
+        # cargos directos y el cronograma ya están contabilizados o no
+        # requieren asiento (ADR-0046 D-3: sin doble conteo).
+        CardService._create_billing_entry(statement, movement_rows=movement_rows)
 
-        # Adjuntar breakdown al statement para la respuesta
         statement._purchase_group_breakdown = purchase_group_breakdown
-
         return statement
 
     @staticmethod
-    def _create_billing_entry(
-        statement: CreditCardStatement,
-        total: Decimal,
-        unbilled_queryset=None,
-        purchase_group_breakdown=None,
-        created_by=None,
-    ):
+    def _create_billing_entry(statement: CreditCardStatement, *, movement_rows=None):
         """
-        Genera el asiento contable al facturar cargos:
-          D: Gasto / Proveedor (según tipo de movimiento o grupo de compra)
-          H: Pasivo tarjeta de crédito
+        Postea el asiento de facturación SOLO para los cargos **diferidos**
+        (sin asiento previo, p.ej. los de `add_unbilled_charge`):
+          D: Gasto financiero  /  H: Pasivo tarjeta de crédito
 
-        Si se proporciona purchase_group_breakdown, crea items de debe
-        segmentados por cada grupo de compra (uno por grupo). De lo contrario
-        usa la agrupación legacy por tipo de movimiento (OUTBOUND vs ADJUSTMENT).
+        El uso de la TC, los cargos directos (`create_movement`) y las
+        cuotas legacy ya postearon su asiento al crearse; el cronograma
+        (`CardPurchaseInstallment`) no requiere asiento. Re-acreditar el
+        pasivo por ellos era el doble conteo que corrige ADR-0046 D-3.
+        Por eso solo se contabilizan los movimientos con
+        `journal_entry IS NULL`.
         """
         from accounting.models import JournalEntry, JournalItem, AccountingSettings
+        from accounting.services import JournalEntryService
         from django.contrib.contenttypes.models import ContentType
+
+        rows = movement_rows or []
+        deferred = [m for m in rows if m.journal_entry_id is None]
+        total = sum((m.amount for m in deferred), Decimal('0'))
+        if total <= 0:
+            return
 
         settings = AccountingSettings.get_solo()
         liability_account = statement.card_account.account
-
-        if not liability_account:
+        expense_account = None
+        if settings:
+            expense_account = (
+                settings.bank_commission_account
+                or settings.interest_expense_account
+            )
+        if not liability_account or not expense_account or expense_account == liability_account:
+            # Sin cuenta de gasto válida no posteamos: evita un asiento que
+            # se auto-cancela (D=pasivo / H=pasivo) y deja el cargo sin
+            # imputar al gasto. El operador debe configurar la cuenta.
             return
 
-        # Crear JournalEntry
         entry = JournalEntry.objects.create(
             date=statement.cut_off_date,
-            description=f"Facturación TC {statement.card_account.name} - Período {statement.period_year}-{statement.period_month:02d}",
+            description=(
+                f"Cargos TC {statement.card_account.name} - "
+                f"{statement.period_year}-{statement.period_month:02d}"
+            ),
             reference=statement.display_id,
             status=JournalEntry.State.DRAFT,
             source_content_type=ContentType.objects.get_for_model(CreditCardStatement),
             source_object_id=statement.id,
         )
-
-        # Haber: pasivo tarjeta de crédito
         JournalItem.objects.create(
-            entry=entry,
-            account=liability_account,
-            debit=0,
-            credit=total,
+            entry=entry, account=liability_account, debit=Decimal('0'), credit=total,
         )
+        JournalItem.objects.create(
+            entry=entry, account=expense_account, debit=total, credit=Decimal('0'),
+        )
+        JournalEntryService.post_entry(entry)
 
-        # ── Debe: segmentado por grupo de compra ──────────────────────
-        if purchase_group_breakdown:
-            for group_data in purchase_group_breakdown:
-                subtotal = Decimal(group_data['subtotal'])
-                if subtotal <= 0:
-                    continue
-
-                # Separar principal (OUTBOUND) vs interés (ADJUSTMENT)
-                group_outbound = sum(
-                    Decimal(c['amount'])
-                    for c in group_data['charges']
-                    if c['movement_type'] == TreasuryMovement.Type.OUTBOUND
-                )
-                group_adjustments = sum(
-                    Decimal(c['amount'])
-                    for c in group_data['charges']
-                    if c['movement_type'] == TreasuryMovement.Type.ADJUSTMENT
-                )
-
-                # Item para principal de la compra
-                if group_outbound > 0:
-                    purchase_account = settings.bank_commission_account or liability_account
-                    JournalItem.objects.create(
-                        entry=entry,
-                        account=purchase_account,
-                        debit=group_outbound,
-                        credit=0,
-                    )
-
-                # Item para intereses / ajustes
-                if group_adjustments > 0:
-                    expense_account = settings.interest_expense_account or liability_account
-                    JournalItem.objects.create(
-                        entry=entry,
-                        account=expense_account,
-                        debit=group_adjustments,
-                        credit=0,
-                    )
-
-        else:
-            # ── Fallback legacy: agrupar por tipo de movimiento ───────
-            if unbilled_queryset is None:
-                unbilled_queryset = CardService.get_unbilled_charges(statement.card_account)
-
-            purchases = unbilled_queryset.filter(
-                movement_type=TreasuryMovement.Type.OUTBOUND
-            ).aggregate(total=dj_models.Sum('amount'))['total'] or Decimal('0')
-            adjustments = unbilled_queryset.filter(
-                movement_type=TreasuryMovement.Type.ADJUSTMENT
-            ).aggregate(total=dj_models.Sum('amount'))['total'] or Decimal('0')
-
-            if purchases > 0:
-                purchase_account = settings.bank_commission_account or liability_account
-                JournalItem.objects.create(
-                    entry=entry,
-                    account=purchase_account,
-                    debit=purchases,
-                    credit=0,
-                )
-
-            if adjustments > 0:
-                expense_account = settings.interest_expense_account or liability_account
-                JournalItem.objects.create(
-                    entry=entry,
-                    account=expense_account,
-                    debit=adjustments,
-                    credit=0,
-                )
-
-            if purchases == 0 and adjustments == 0 and total > 0:
-                expense_account = settings.interest_expense_account or liability_account
-                JournalItem.objects.create(
-                    entry=entry,
-                    account=expense_account,
-                    debit=total,
-                    credit=0,
-                )
-
-        # Publicar asiento si tiene >= 2 items
-        if entry.items.count() >= 2:
-            from accounting.services import JournalEntryService
-            JournalEntryService.post_entry(entry)
-            statement.charges_movement = None
-            statement.save(update_fields=['updated_at'])
+        # Vincular el asiento a los cargos diferidos (quedan "posteados",
+        # idempotencia ante una segunda facturación accidental).
+        for m in deferred:
+            m.journal_entry = entry
+            m.save(update_fields=['journal_entry'])

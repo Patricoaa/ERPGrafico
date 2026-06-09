@@ -74,8 +74,8 @@ def _url():
 
 @pytest.mark.django_db
 def test_card_purchase_action_creates_group(auth_client, card_account, supplier):
-    """POST /card-purchase/ con 3 cuotas sin interés crea el grupo
-    con 3 OUTBOUNDs."""
+    """POST /card-purchase/ con 3 cuotas sin interés crea el grupo con
+    1 movimiento de uso + un cronograma de 3 cuotas (ADR-0046)."""
     resp = auth_client.post(
         _url(),
         {
@@ -94,15 +94,21 @@ def test_card_purchase_action_creates_group(auth_client, card_account, supplier)
     assert data['group']['installments'] == 3
     assert data['group']['total_amount'] == '90000.00'
     assert data['group']['client_reference'] == 'API-CP-001'
+    # `movement` es el uso (1 OUTBOUND por el total).
+    assert data['movement'] is not None
+    assert Decimal(data['movement']['amount']) == Decimal('90000.00')
+    # `installments` es ahora el cronograma (filas planas).
     assert len(data['installments']) == 3
-    amounts = [Decimal(i['amount']) for i in data['installments']]
+    amounts = [Decimal(i['principal_amount']) for i in data['installments']]
     assert sum(amounts) == Decimal('90000.00')
+    assert [i['due_date'] for i in data['installments']] == [
+        '2026-06-15', '2026-07-15', '2026-08-15',
+    ]
 
 
 @pytest.mark.django_db
-def test_card_purchase_action_with_interest(auth_client, card_account, supplier):
-    """POST /card-purchase/ con 3 cuotas y 1.5% mensual genera
-    3 OUTBOUNDs + 3 ADJUSTMENTs."""
+def test_card_purchase_action_rejects_interest(auth_client, card_account, supplier):
+    """POST /card-purchase/ con `monthly_rate > 0` → 400 (diferido)."""
     resp = auth_client.post(
         _url(),
         {
@@ -115,17 +121,8 @@ def test_card_purchase_action_with_interest(auth_client, card_account, supplier)
         },
         format='json',
     )
-    assert resp.status_code == 201, resp.json()
-    data = resp.json()
-    # Cuota francesa: 60k @ 1.5% × 3 cuotas.
-    #   Cuota 1: 60000 × 0.015 = 900
-    #   Cuota 2: 40000 × 0.015 = 600
-    #   Cuota 3: 20000 × 0.015 = 300
-    # Total interés: 1800. Total a pagar: 61800.
-    assert Decimal(data['group']['total_interest']) == Decimal('1800.00')
-    assert Decimal(data['group']['total_payable']) == Decimal('61800.00')
-    # 6 movimientos: 3 OUTBOUNDs + 3 ADJUSTMENTs.
-    assert len(data['installments']) == 6
+    assert resp.status_code == 400
+    assert 'soportad' in resp.json()['error']
 
 
 @pytest.mark.django_db

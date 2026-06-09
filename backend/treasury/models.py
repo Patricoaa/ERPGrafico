@@ -570,6 +570,74 @@ class CardPurchaseGroup(models.Model):
         return self.total_amount + self.total_interest
 
 
+class CardPurchaseInstallment(models.Model):
+    """
+    Cuota del cronograma de una compra con TC en N cuotas (ADR-0046).
+
+    A diferencia del modelo anterior (ADR-0043), las cuotas **no** son
+    `TreasuryMovement` ni generan asiento: el uso de la tarjeta se
+    contabiliza una sola vez como un `OUTBOUND` por el total (pasivo
+    completo en la fecha de compra). Esta tabla es solo el cronograma:
+    define cuánto principal se factura en cada statement mensual.
+
+    Estado por cuota:
+    - `is_billed` / `billed_in_statement`: la cuota ya entró en el
+      `billed_amount` de un statement (cuando `due_date <= cut_off_date`).
+    El pago se hace a nivel statement (`pay_statement`), no por cuota.
+    """
+
+    card_purchase_group = models.ForeignKey(
+        'CardPurchaseGroup', on_delete=models.CASCADE,
+        related_name='schedule',
+        verbose_name=_("Grupo de Compra"),
+    )
+    number = models.PositiveSmallIntegerField(
+        _("Número de Cuota"),
+        validators=[MinValueValidator(1)],
+        help_text=_("Posición de la cuota dentro del grupo (1..N)."),
+    )
+    due_date = models.DateField(
+        _("Fecha de Vencimiento"),
+        help_text=_("Mes en que la cuota se factura en el statement."),
+    )
+    principal_amount = models.DecimalField(
+        _("Principal de la Cuota"),
+        max_digits=18, decimal_places=2,
+        validators=[MinValueValidator(Decimal('0.01'))],
+    )
+    is_billed = models.BooleanField(
+        _("Facturada"),
+        default=False, db_index=True,
+        help_text=_(
+            "True si la cuota ya fue incluida en el billed_amount de un "
+            "CreditCardStatement."
+        ),
+    )
+    billed_in_statement = models.ForeignKey(
+        'CreditCardStatement', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='installment_charges',
+        verbose_name=_("Facturada en Statement"),
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = _("Cuota de Compra TC")
+        verbose_name_plural = _("Cuotas de Compra TC")
+        ordering = ['card_purchase_group', 'number']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['card_purchase_group', 'number'],
+                name='uniq_card_purchase_installment_number',
+            ),
+        ]
+        indexes = [
+            models.Index(fields=['is_billed', 'due_date']),
+        ]
+
+    def __str__(self):
+        return f"CPI-{self.card_purchase_group_id}-{self.number}"
+
+
 class TreasuryAccountManager(models.Manager):
     """Custom manager with query helpers for filtering by payment methods."""
     

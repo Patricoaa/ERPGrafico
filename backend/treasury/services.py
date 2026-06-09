@@ -4,7 +4,8 @@ from django.db import transaction
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.contrib.contenttypes.models import ContentType
-from datetime import datetime, timedelta
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
 from decimal import Decimal, ROUND_HALF_UP
 from .models import TreasuryMovement, TreasuryAccount, TerminalBatch, PaymentMethod
 from accounting.models import JournalEntry, JournalItem, AccountingSettings
@@ -435,36 +436,31 @@ class TreasuryService:
         created_by=None,
     ) -> "CardPurchaseGroup":
         """
-        Crea una compra con tarjeta de crédito propia en N cuotas
-        con interés explícito opcional (Onda 2, ADR-0043).
+        Registra una compra con tarjeta de crédito propia en N cuotas
+        (ADR-0046; supersede el modelo de N movimientos de ADR-0043).
 
-        - `amount`: monto total de la compra (sin interés).
+        - `amount`: monto total de la compra.
         - `card_account`: `TreasuryAccount` con `account_type=CREDIT_CARD`.
         - `installments`: cantidad de cuotas (1 a 36).
-        - `monthly_rate`: tasa mensual decimal (0 = sin interés, 0.015
-          = 1.5%/mes). El interés se imputa como ADJUSTMENT
-          separado del principal.
-        - `date`: fecha de la primera cuota (las siguientes se
-          distribuyen a 30 días cada una).
-        - `invoice`: facturavinculada (opcional, para asiento contable).
-        - `sale_order`: orden de venta vinculada (opcional).
-        - `purchase_order`: orden de compra vinculada (opcional).
+        - `monthly_rate`: solo `0` en esta onda. `> 0` → ValidationError
+          (la ruta con interés está diferida, ADR-0046 D-5).
+        - `date`: fecha de compra (= primera cuota; las siguientes
+          vencen un mes calendario después cada una).
+        - `invoice` / `sale_order` / `purchase_order`: documentos
+          vinculados (opcional, para el asiento del uso).
         - `client_reference`: id externo opcional para idempotencia.
-          Si llega un segundo POST con la misma
-          `client_reference`, retorna el grupo existente.
+          Un segundo POST con la misma `client_reference` retorna el
+          grupo existente.
         - `notes`: notas adicionales.
 
-        Genera `installments` movimientos `OUTBOUND` (uno por cuota
-        de principal) más, si `monthly_rate > 0`, `installments`
-        movimientos `ADJUSTMENT` (uno por cuota de interés). Cada
-        par principal+interés cae en el mismo mes (mismo `date`),
-        separados 30 días de la cuota anterior.
-
-        El asiento contable es el estándar de `OUTBOUND`/`ADJUSTMENT`
-        con la cuenta de tarjeta como origen: D=proveedor/gasto /
-        H=pasivo tarjeta.
+        Genera **un solo** `OUTBOUND` por el total (el uso de la TC),
+        posteado con el asiento estándar `D=proveedor / H=pasivo
+        tarjeta` en la fecha de compra, más **N** filas de cronograma
+        (`CardPurchaseInstallment`) que definen cuánto principal factura
+        cada statement mensual. Las cuotas NO son movimientos ni generan
+        asiento; el pago se hace a nivel statement (`pay_statement`).
         """
-        from .models import CardPurchaseGroup
+        from .models import CardPurchaseGroup, CardPurchaseInstallment
 
         amount = Decimal(str(amount))
         monthly_rate = Decimal(str(monthly_rate))
@@ -484,9 +480,16 @@ class TreasuryService:
             raise ValidationError(
                 f"La tasa mensual debe estar en [0, 1) (recibido: {monthly_rate})."
             )
+        if monthly_rate > 0:
+            # ADR-0046 D-5: la ruta con interés (devengo por período) está
+            # diferida. El checkout ya pasa monthly_rate=0.
+            raise ValidationError(
+                "Las compras en cuotas con interés no están soportadas por "
+                "ahora (use monthly_rate=0)."
+            )
         # Normalizar `date`: los callers que parten de un request
-        # (purchase/sales checkout) pueden pasar un string ISO. La
-        # aritmética de cuotas (`date + timedelta`) exige un date real.
+        # (purchase/sales checkout) pueden pasar un string ISO. El
+        # cronograma (`date + relativedelta`) exige un date real.
         if isinstance(date, str):
             from django.utils.dateparse import parse_datetime, parse_date
             parsed = parse_date(date)
@@ -518,34 +521,13 @@ class TreasuryService:
         principals: list[Decimal] = [principal_base] * (installments - 1)
         principals.append(amount - sum(principals))
 
-        # Calcular intereses (cuota francesa): interest_i = balance_i * monthly_rate
-        # donde balance_i es el capital vivo al inicio del periodo i.
-        # El interés se redondea a 2 decimales por cuota; el residuo
-        # se asigna a la última cuota de interés (si hay).
-        if monthly_rate > 0:
-            interests: list[Decimal] = []
-            balance = amount
-            for i in range(installments):
-                interest_i = (balance * monthly_rate).quantize(
-                    Decimal('0.01'), rounding=ROUND_HALF_UP,
-                )
-                interests.append(interest_i)
-                balance -= principals[i]
-            # Ajuste de residuo en la última cuota de interés: el
-            # total a pagar (Σ principal + Σ interest) puede diferir
-            # del interés teórico acumulado por redondeos. Para
-            # mantener la congruencia contable, NO ajustamos: la
-            # diferencia de centavos queda en la última cuota.
-        else:
-            interests = [Decimal('0')] * installments
-
-        # Crear el grupo y los N pares de movimientos.
+        # Crear el grupo (agrupador lógico; sin interés en esta onda).
         group = CardPurchaseGroup.objects.create(
             card_account=card_account,
             partner=partner,
             total_amount=amount,
             installments=installments,
-            monthly_rate=monthly_rate,
+            monthly_rate=Decimal('0'),
             principal_per_installment=principal_base,
             first_installment_date=date,
             client_reference=client_reference or '',
@@ -553,60 +535,45 @@ class TreasuryService:
             created_by=created_by,
         )
 
-        for i in range(installments):
-            installment_date = date + timedelta(days=30 * i)
-            base_reference = f"CP-{group.uuid}-i{i + 1}"
+        # ── Uso de la TC: 1 OUTBOUND por el total (ADR-0046 D-1) ──────
+        # El pasivo (H=tarjeta) y la liquidación del proveedor (D) se
+        # reconocen completos en la fecha de compra, una sola vez.
+        # `is_billed=True`: es el uso, no un cargo pendiente de facturar
+        # (lo que se factura por mes vive en el cronograma, abajo).
+        purchase_mv = TreasuryService.create_movement(
+            amount=amount,
+            movement_type=TreasuryMovement.Type.OUTBOUND,
+            payment_method=TreasuryMovement.Method.CARD,
+            date=date,
+            created_by=created_by,
+            from_account=card_account,
+            partner=partner,
+            invoice=invoice,
+            sale_order=sale_order,
+            purchase_order=purchase_order,
+            reference=f"CP-{group.uuid}",
+            notes=(
+                f"Compra TC {group.display_id} en {installments} cuota(s) "
+                f"{notes}".strip()
+            ),
+        )
+        purchase_mv.card_purchase_group = group
+        purchase_mv.is_billed = True
+        purchase_mv.save(update_fields=['card_purchase_group', 'is_billed'])
 
-            # 1) OUTBOUND por principal.
-            principal_mv = TreasuryService.create_movement(
-                amount=principals[i],
-                movement_type=TreasuryMovement.Type.OUTBOUND,
-                payment_method=TreasuryMovement.Method.CARD,
-                date=installment_date,
-                created_by=created_by,
-                from_account=card_account,
-                partner=partner,
-                invoice=invoice,
-                sale_order=sale_order,
-                purchase_order=purchase_order,
-                reference=base_reference,
-                notes=(
-                    f"Cuota {i + 1}/{installments} "
-                    f"(principal) de {group.display_id} {notes}".strip()
-                ),
+        # ── Cronograma: N cuotas (ADR-0046 D-2) ──────────────────────
+        # Filas planas, sin contabilidad. Definen cuánto principal entra
+        # en el billed_amount de cada statement mensual. El vencimiento
+        # avanza por mes calendario desde la fecha de compra.
+        CardPurchaseInstallment.objects.bulk_create([
+            CardPurchaseInstallment(
+                card_purchase_group=group,
+                number=i + 1,
+                due_date=date + relativedelta(months=i),
+                principal_amount=principals[i],
             )
-            principal_mv.card_purchase_group = group
-            principal_mv.installment_number = i + 1
-            principal_mv.is_installment_interest = False
-            principal_mv.save(update_fields=[
-                'card_purchase_group', 'installment_number', 'is_installment_interest',
-            ])
-
-            # 2) ADJUSTMENT por interés, si aplica.
-            if interests[i] > 0:
-                interest_mv = TreasuryService.create_movement(
-                    amount=interests[i],
-                    movement_type=TreasuryMovement.Type.ADJUSTMENT,
-                    payment_method=TreasuryMovement.Method.CARD,
-                    date=installment_date,
-                    created_by=created_by,
-                    from_account=card_account,
-                    partner=partner,
-                    invoice=invoice,
-                    sale_order=sale_order,
-                    purchase_order=purchase_order,
-                    reference=f"{base_reference}-INT",
-                    notes=(
-                        f"Interés de cuota {i + 1}/{installments} "
-                        f"de {group.display_id}".strip()
-                    ),
-                )
-                interest_mv.card_purchase_group = group
-                interest_mv.installment_number = i + 1
-                interest_mv.is_installment_interest = True
-                interest_mv.save(update_fields=[
-                    'card_purchase_group', 'installment_number', 'is_installment_interest',
-                ])
+            for i in range(installments)
+        ])
 
         return group
 
