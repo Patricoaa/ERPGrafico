@@ -672,7 +672,7 @@ table [data-notched-field] {
     border: 1px solid var(--border);
     border-radius: var(--radius);
     padding: var(--notched-pad-top) var(--notched-pad-x) 0.5rem;
-    background: var(--background);
+    background: var(--muted);
     transition:
       border-color var(--duration-fast) var(--ease-micro),
       box-shadow var(--duration-fast) var(--ease-micro);
@@ -741,10 +741,7 @@ table [data-notched-field] {
 
   /* Disabled state */
   fieldset.notched-field[data-disabled="true"] {
-    opacity: 0.5;
     cursor: not-allowed;
-    background: oklch(var(--muted-raw));
-    pointer-events: none;
   }
 
   [data-slot="badge"] button {
