@@ -350,7 +350,7 @@ export function PhaseCard({
                                             ))}
 
                                             <DataCell.Action
-                                                action="view"
+                                                action="detail"
                                                 title="Ver Detalles"
                                                 disabled={doc.disabled}
                                                 onClick={(e) => {
