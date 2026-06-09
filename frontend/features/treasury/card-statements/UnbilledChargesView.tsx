@@ -3,8 +3,15 @@
 import { useMemo, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { Plus, Receipt, CreditCard } from 'lucide-react'
+import { Plus, Receipt, CreditCard, ChevronDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import {
+    DropdownMenu,
+    DropdownMenuTrigger,
+    DropdownMenuContent,
+    DropdownMenuRadioGroup,
+    DropdownMenuRadioItem,
+} from '@/components/ui/dropdown-menu'
 import { ColumnDef } from '@tanstack/react-table'
 import {
     DataTableView,
@@ -45,13 +52,15 @@ export function UnbilledChargesView({
 }: UnbilledChargesViewProps) {
     const [showAddCharge, setShowAddCharge] = useState(false)
     const [showBillCharges, setShowBillCharges] = useState(false)
+    const [filterMode, setFilterMode] = useState<'month' | 'all'>('month')
     const queryClient = useQueryClient()
 
     const today = new Date().toISOString().split('T')[0]
+    const cutOffDate = filterMode === 'month' ? today : undefined
 
     const { data: result, isLoading } = useQuery({
-        queryKey: ['unbilled-charges', cardAccountId, today],
-        queryFn: () => treasuryApi.getUnbilledCharges(cardAccountId, today),
+        queryKey: ['unbilled-charges', cardAccountId, cutOffDate ?? 'all'],
+        queryFn: () => treasuryApi.getUnbilledCharges(cardAccountId, cutOffDate),
         enabled: !!cardAccountId,
     })
 
@@ -191,6 +200,20 @@ export function UnbilledChargesView({
 
     const rightButtonGroupAction = (
         <div className="flex items-center gap-2">
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm">
+                        {filterMode === 'month' ? 'Cargos del mes' : 'Todos los cargos'}
+                        <ChevronDown className="ml-1 h-3 w-3" />
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                    <DropdownMenuRadioGroup value={filterMode} onValueChange={(v) => setFilterMode(v as 'month' | 'all')}>
+                        <DropdownMenuRadioItem value="month">Cargos del mes</DropdownMenuRadioItem>
+                        <DropdownMenuRadioItem value="all">Todos los cargos</DropdownMenuRadioItem>
+                    </DropdownMenuRadioGroup>
+                </DropdownMenuContent>
+            </DropdownMenu>
             <Button
                 variant="outline"
                 size="sm"
