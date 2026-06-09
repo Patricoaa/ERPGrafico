@@ -300,6 +300,21 @@ class TreasuryService:
                 elif movement.movement_type == TreasuryMovement.Type.OUTBOUND:
                     from_acc = pool_acc
 
+        # Resolve the related business document used to pick the counterpart
+        # account. The `allocated_to` GFK is only backfilled for historical
+        # movements (migration 0046); movements created via create_movement
+        # leave it null, which used to make the default-account fallbacks
+        # below unreachable and silently drop the entry (E1). Fall back to the
+        # legacy document FKs, preferring the order (unambiguous sale/purchase
+        # direction) over the invoice (whose direction depends on source_order).
+        allocated = getattr(movement, 'allocated_to', None)
+        if allocated is None:
+            allocated = (
+                movement.purchase_order
+                or movement.sale_order
+                or movement.invoice
+            )
+
         # 1. TRANSFER (Internal)
         if movement.movement_type == TreasuryMovement.Type.TRANSFER:
              if from_acc and to_acc:
@@ -345,7 +360,6 @@ class TreasuryService:
                     source_acc = partner.partner_contribution_account or settings.partner_capital_contribution_account
 
             if not source_acc:
-                allocated = getattr(movement, 'allocated_to', None)
                 if allocated is not None and allocated._meta.model_name in ('invoice', 'saleorder'):
                     # Resolve customer from the document itself, not movement.contact —
                     # they can diverge in some flows (e.g. POS guest sales) and any
@@ -359,7 +373,7 @@ class TreasuryService:
                     source_acc = TreasuryService._get_reason_account(settings, movement.justify_reason, 'IN')
             
             if not source_acc and movement.contact:
-                source_acc = movement.contact.account_receivable
+                source_acc = movement.contact.account_receivable or settings.default_receivable_account
 
             if source_acc:
                 JournalItem.objects.create(entry=entry, account=source_acc, debit=0, credit=movement.amount)
@@ -381,7 +395,6 @@ class TreasuryService:
                       target_acc = partner.partner_provisional_withdrawal_account or settings.partner_withdrawal_account or settings.pos_partner_withdrawal_account
 
              if not target_acc:
-                 allocated = getattr(movement, 'allocated_to', None)
                  if allocated is not None:
                       if allocated.is_sale_document():
                           target_acc = (movement.contact.account_receivable if movement.contact else None) or settings.default_receivable_account
@@ -392,7 +405,7 @@ class TreasuryService:
                       target_acc = TreasuryService._get_reason_account(settings, movement.justify_reason, 'OUT')
              
              if not target_acc and movement.contact:
-                  target_acc = movement.contact.account_payable
+                  target_acc = movement.contact.account_payable or settings.default_payable_account
 
              if not target_acc and movement.payroll:
                   from hr.models import GlobalHRSettings
@@ -408,7 +421,14 @@ class TreasuryService:
              if target_acc:
                   JournalItem.objects.create(entry=entry, account=target_acc, debit=movement.amount, credit=0)
 
-        # Post if valid
+        # Post if valid. The E1 fix above (allocated revival + default-account
+        # fallbacks) makes the counterpart resolvable whenever it is
+        # configured, so well-formed movements now produce a balanced entry
+        # instead of being silently dropped. We keep the soft delete for the
+        # residual <2-leg cases (e.g. ADJUSTMENT, whose entry is built
+        # elsewhere) to avoid a fail-closed regression on under-configured
+        # flows (check reception, cash sales). Callers that REQUIRE the entry
+        # to exist — like create_card_purchase — assert it as a post-condition.
         if entry.items.count() >= 2:
              JournalEntryService.post_entry(entry)
              movement.journal_entry = entry
@@ -560,6 +580,22 @@ class TreasuryService:
         purchase_mv.card_purchase_group = group
         purchase_mv.is_billed = True
         purchase_mv.save(update_fields=['card_purchase_group', 'is_billed'])
+
+        # E4: el asiento del uso (D=proveedor / H=pasivo tarjeta) es el pilar
+        # de ADR-0046 (pasivo completo el día de la compra). Si no se posteó
+        # —p.ej. el proveedor no tiene cuenta por pagar ni hay
+        # `default_payable_account` configurada— `_create_accounting_entry`
+        # descarta el asiento en silencio. Verificamos la post-condición y
+        # abortamos: como todo el método es @transaction.atomic, el grupo, el
+        # movimiento y el cronograma se revierten en bloque (sin pasivo
+        # fantasma ni cuotas que facturen una deuda nunca registrada).
+        if purchase_mv.journal_entry_id is None:
+            raise ValidationError(
+                "No se pudo contabilizar el uso de la tarjeta de crédito "
+                f"(${amount}): no se resolvió la cuenta de contrapartida. "
+                "Verifique que el proveedor tenga cuenta por pagar o configure "
+                "`default_payable_account` en Configuración Contable."
+            )
 
         # ── Cronograma: N cuotas (ADR-0046 D-2) ──────────────────────
         # Filas planas, sin contabilidad. Definen cuánto principal entra

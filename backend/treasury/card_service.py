@@ -870,9 +870,11 @@ class CardService:
 
         - `period_start` = primer día del mes del período.
         - `period_end`   = `cut_off_date` del statement.
-        - Se incluyen también los `ADJUSTMENT` previos del propio statement
-          (interest/fees que ya se aplicaron) para que el `billed_amount`
-          refleje el "total facturado" cargado al cierre.
+        - E3: `billed_amount` representa SOLO el principal facturado
+          (compras directas + cuotas del cronograma). El interés y las
+          comisiones del statement viven en `interest_charged` /
+          `fees_charged` y `total_to_pay` los suma aparte; NO se incluyen
+          acá (incluirlos contaría el cargo financiero dos veces).
 
         Si difiere del valor actual y `commit=True`, actualiza y registra
         la fecha del recálculo en `notes`. Idempotente: una segunda llamada
@@ -923,24 +925,14 @@ class CardService:
             or Decimal('0')
         )
 
-        # ADJUSTMENT previo del propio statement (interés + comisiones
-        # ya aplicados vía `apply_charges`). Sumarlos evita que el
-        # `billed_amount` se "pierda" el cargo financiero al recalcular.
-        charges_sum = (
-            TreasuryMovement.objects
-            .filter(
-                from_account=statement.card_account,
-                movement_type=TreasuryMovement.Type.ADJUSTMENT,
-                reference=statement.display_id,
-            )
-            .aggregate(total=dj_models.Sum('amount'))['total']
-            or Decimal('0')
-        )
-
+        # E3: NO se suman los `ADJUSTMENT` de interés/comisiones de
+        # `apply_charges`. Esos cargos financieros se reflejan en
+        # `interest_charged` / `fees_charged` y `total_to_pay` los agrega
+        # aparte; incluirlos en `billed_amount` los contaría dos veces
+        # (inflando el total a pagar).
         new_amount = (
             (outbound_sum or Decimal('0'))
             + (schedule_sum or Decimal('0'))
-            + (charges_sum or Decimal('0'))
         )
         if not commit:
             return new_amount
@@ -951,7 +943,7 @@ class CardService:
             note = (
                 f"[RECALC] billed_amount {old_amount} → {new_amount} "
                 f"el {timezone.now().date().isoformat()} "
-                f"(OUTBOUND={outbound_sum}, SCHEDULE={schedule_sum}, CHARGES={charges_sum})"
+                f"(OUTBOUND={outbound_sum}, SCHEDULE={schedule_sum})"
             )
             statement.notes = (
                 (statement.notes + "\n" + note) if statement.notes else note

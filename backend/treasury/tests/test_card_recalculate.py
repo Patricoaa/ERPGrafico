@@ -3,7 +3,8 @@ Tests: CardService.recalculate_billed_amount (Gap 1.2, ADR-0037).
 
 Cubre:
   - Suma OUTBOUND sobre la card_account dentro del período.
-  - Incluye los ADJUSTMENT del propio statement (interés + comisiones).
+  - NO incluye los ADJUSTMENT de interés/comisiones (E3): viven en
+    interest_charged/fees_charged y total_to_pay los suma aparte.
   - No incluye OUTBOUND fuera del período (antes del period_start
     o después del cut_off_date).
   - Idempotente: una segunda llamada no duplica el monto.
@@ -122,8 +123,10 @@ def test_recalculate_excludes_outbound_outside_period(env):
 
 
 @pytest.mark.django_db
-def test_recalculate_includes_previous_charges_movement(env):
-    """Si el statement ya tiene interest/fees aplicados, también se suman."""
+def test_recalculate_excludes_interest_and_fees(env):
+    """E3: el interés/comisiones aplicados (apply_charges) NO se suman a
+    `billed_amount` — viven en interest_charged/fees_charged y `total_to_pay`
+    los agrega aparte. Incluirlos en `billed_amount` los contaría dos veces."""
     stmt = CreditCardStatement.objects.create(
         card_account=env['card_ta'],
         period_year=2026, period_month=6,
@@ -148,8 +151,12 @@ def test_recalculate_includes_previous_charges_movement(env):
     _purchase(env, Decimal('30000'), date(2026, 6, 10))
 
     new_amount = CardService.recalculate_billed_amount(stmt)
-    # 30k compras + 12k cargos
-    assert new_amount == Decimal('42000')
+    # Solo el principal de compras (30k); los 12k de interés+comisiones NO
+    # entran en billed_amount.
+    assert new_amount == Decimal('30000')
+    stmt.refresh_from_db()
+    # total_to_pay cuenta el interés+comisiones UNA sola vez: 30k + 12k.
+    assert stmt.total_to_pay == Decimal('42000')
 
 
 @pytest.mark.django_db
