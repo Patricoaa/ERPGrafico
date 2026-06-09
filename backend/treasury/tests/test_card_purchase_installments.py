@@ -198,6 +198,7 @@ def test_card_purchase_monthly_statement_spread(env):
         card_account=env['card_ta'],
         installments=3,
         date=date(2026, 6, 15),
+        partner=env['supplier'],
         client_reference='CP-SPREAD-001',
         created_by=env['user'],
     )
@@ -251,6 +252,7 @@ def test_card_purchase_accepts_string_date(env):
         card_account=env['card_ta'],
         installments=3,
         date='2026-06-15',  # ← string, como llega del request
+        partner=env['supplier'],
         client_reference='CP-STR-DATE-001',
         created_by=env['user'],
     )
@@ -269,6 +271,7 @@ def test_card_purchase_accepts_datetime_date(env):
         card_account=env['card_ta'],
         installments=2,
         date=datetime(2026, 6, 15, 14, 30, 0),  # ← datetime con hora
+        partner=env['supplier'],
         client_reference='CP-DT-DATE-001',
         created_by=env['user'],
     )
@@ -282,11 +285,13 @@ def test_card_purchase_idempotent_by_client_reference(env):
     """Dos llamadas con la misma `client_reference` no duplican."""
     g1 = TreasuryService.create_card_purchase(
         amount=Decimal('30000'), card_account=env['card_ta'], installments=3,
+        partner=env['supplier'],
         client_reference='CP-IDEM-001', date=date(2026, 6, 15),
         created_by=env['user'],
     )
     g2 = TreasuryService.create_card_purchase(
         amount=Decimal('30000'), card_account=env['card_ta'], installments=3,
+        partner=env['supplier'],
         client_reference='CP-IDEM-001', date=date(2026, 6, 15),
         created_by=env['user'],
     )
@@ -324,3 +329,62 @@ def test_card_purchase_validates_amount_positive(env):
         TreasuryService.create_card_purchase(
             amount=Decimal('0'), card_account=env['card_ta'], installments=1,
         )
+
+
+@pytest.mark.django_db
+def test_card_purchase_use_falls_back_to_default_payable(env):
+    """E1: si el proveedor no tiene cuenta por pagar propia pero hay
+    `default_payable_account` configurada, el asiento del uso se postea
+    contra el default (antes el fallback era inalcanzable y el asiento se
+    descartaba en silencio, dejando el pasivo TC sin registrar)."""
+    from accounting.models import AccountingSettings, JournalEntry
+    from contacts.models import Contact
+
+    default_payable = Account.objects.create(
+        code='2.1.01.999', name='Proveedores Varios',
+        account_type=AccountType.LIABILITY,
+    )
+    settings = AccountingSettings.get_solo()
+    settings.default_payable_account = default_payable
+    settings.save(update_fields=['default_payable_account'])
+
+    supplier_no_acc = Contact.objects.create(
+        name='Prov Sin Cuenta', tax_id='77.777.777-7',
+    )
+    group = TreasuryService.create_card_purchase(
+        amount=Decimal('40000'), card_account=env['card_ta'], installments=2,
+        partner=supplier_no_acc, date=date(2026, 6, 15),
+        client_reference='CP-E1-DEFAULT', created_by=env['user'],
+    )
+    mv = group.movements.get()
+    assert mv.journal_entry is not None
+    assert mv.journal_entry.status == JournalEntry.Status.POSTED
+    debits = [it for it in mv.journal_entry.items.all() if it.debit > 0]
+    credits = [it for it in mv.journal_entry.items.all() if it.credit > 0]
+    assert debits[0].account == default_payable      # D contra el default
+    assert credits[0].account == env['card_acc']      # H pasivo tarjeta
+
+
+@pytest.mark.django_db
+def test_card_purchase_aborts_when_use_unbookable(env):
+    """E4: si el uso no se puede contabilizar (proveedor sin cuenta por
+    pagar y sin `default_payable_account`), create_card_purchase aborta con
+    ValidationError y, por ser atómico, no persiste grupo/movimiento/cuotas
+    (no quedan pasivos fantasma ni cuotas facturando deuda no registrada)."""
+    from contacts.models import Contact
+
+    supplier_no_acc = Contact.objects.create(
+        name='Prov Sin Cuenta', tax_id='78.888.888-8',
+    )
+    with pytest.raises(ValidationError, match='contabilizar el uso'):
+        TreasuryService.create_card_purchase(
+            amount=Decimal('40000'), card_account=env['card_ta'], installments=2,
+            partner=supplier_no_acc, date=date(2026, 6, 15),
+            client_reference='CP-E4-ABORT', created_by=env['user'],
+        )
+
+    assert not CardPurchaseGroup.objects.filter(
+        client_reference='CP-E4-ABORT'
+    ).exists()
+    assert CardPurchaseInstallment.objects.count() == 0
+    assert not TreasuryMovement.objects.filter(reference__startswith='CP-').exists()
