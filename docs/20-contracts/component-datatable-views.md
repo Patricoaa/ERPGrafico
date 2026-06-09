@@ -415,6 +415,48 @@ import { ExpandableTableRow } from "@/components/shared"
 
 ---
 
+---
+## 10. Toolbar Border, Shadow & Radius Contract
+
+El toolbar del DataTable sigue una jerarquía visual consistente con el [design system](../10-architecture/design-system.md). Todos los elementos del toolbar deben respetar los siguientes niveles:
+
+### 10.1 Border opacities
+
+| Nivel | Clase | Opacidad efectiva | Elementos |
+|-------|-------|-------------------|-----------|
+| Container/Group | `border-border/50` | 7.5% | Button group container, separadores internos, botón "Limpiar" |
+| Input/Trigger | `border-border/40` | 6% | Inputs de búsqueda, SelectTrigger de paginación |
+| Overlay (dropdown/popover) | `border-border/80` | 12% | DropdownMenuContent, PopoverContent |
+
+**Regla:** Usar siempre la opacidad del nivel correspondiente. No inventar opacidades intermedias (`/60`).
+
+### 10.2 Shadow tokens
+
+| Nivel | Token | Elementos |
+|-------|-------|-----------|
+| Card/surface | `shadow-card` | Button group container, ToolbarCreateButton, TableHeader |
+| Floating/overlay | `shadow-floating` | DropdownMenuContent, PopoverContent |
+
+**Regla:** Usar siempre los tokens semánticos del elevation system (`shadow-card`, `shadow-floating`), nunca Tailwind defaults (`shadow-sm`, `shadow-xl`, `shadow-md`).
+
+### 10.3 Radius hierarchy
+
+| Nivel | Clase | Tamaño | Elementos |
+|-------|-------|--------|-----------|
+| Contenedor toolbar | `rounded-md` | 12px | Button group container, ToolbarCreateButton, inputs de búsqueda, SelectTrigger, botones de paginación |
+| Overlay (dropdown/popover) | `rounded-lg` | 16px | DropdownMenuContent, PopoverContent (heredado del base `ui/` component) |
+| Atomic (items internos) | `rounded-sm` | 8px | DropdownMenuItem, checkbox, option items |
+| Pill | `rounded-full` | ∞ | Badge de filtros activos, skeleton shapes |
+
+**Regla:** No sobreescribir `rounded-lg` por `rounded-md` en overlays del toolbar. Los DropdownMenuContent y PopoverContent heredan el radius del componente base (`rounded-lg`).
+
+### 10.4 Segmented button group
+
+El grupo de botones del toolbar (Sort, Columnas, Vista, Acciones) usa el patrón de **segmented control**:
+- Contenedor: `rounded-md border border-border/50 shadow-card divide-x divide-border/50`
+- Botones internos: `rounded-none border-0`
+- El `divide-x` reemplaza `border-r last:border-r-0` en cada hijo
+
 ## Checklist de PR
 
 Cada PR que toque `DataTable` o sus consumidores debe verificar:

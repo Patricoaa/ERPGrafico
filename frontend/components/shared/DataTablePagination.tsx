@@ -64,7 +64,7 @@ export function DataTablePagination<TData>({
                 <div className="flex items-center space-x-2">
                     <Button
                         variant="outline"
-                        className="hidden h-9 w-9 p-0 lg:flex rounded-md border-border/60 hover:bg-muted/50 hover:text-primary transition-all"
+                        className="hidden h-9 w-9 p-0 lg:flex rounded-md border-border/50 hover:bg-muted/50 hover:text-primary transition-all"
                         onClick={() => table.setPageIndex(0)}
                         disabled={!table.getCanPreviousPage()}
                     >
@@ -73,7 +73,7 @@ export function DataTablePagination<TData>({
                     </Button>
                     <Button
                         variant="outline"
-                        className="h-9 w-9 p-0 rounded-md border-border/60 hover:bg-muted/50 hover:text-primary transition-all"
+                        className="h-9 w-9 p-0 rounded-md border-border/50 hover:bg-muted/50 hover:text-primary transition-all"
                         onClick={() => table.previousPage()}
                         disabled={!table.getCanPreviousPage()}
                     >
@@ -82,7 +82,7 @@ export function DataTablePagination<TData>({
                     </Button>
                     <Button
                         variant="outline"
-                        className="h-9 w-9 p-0 rounded-md border-border/60 hover:bg-muted/50 hover:text-primary transition-all"
+                        className="h-9 w-9 p-0 rounded-md border-border/50 hover:bg-muted/50 hover:text-primary transition-all"
                         onClick={() => table.nextPage()}
                         disabled={!table.getCanNextPage()}
                     >
@@ -91,7 +91,7 @@ export function DataTablePagination<TData>({
                     </Button>
                     <Button
                         variant="outline"
-                        className="hidden h-9 w-9 p-0 lg:flex rounded-md border-border/60 hover:bg-muted/50 hover:text-primary transition-all"
+                        className="hidden h-9 w-9 p-0 lg:flex rounded-md border-border/50 hover:bg-muted/50 hover:text-primary transition-all"
                         onClick={() => table.setPageIndex(table.getPageCount() - 1)}
                         disabled={!table.getCanNextPage()}
                     >
