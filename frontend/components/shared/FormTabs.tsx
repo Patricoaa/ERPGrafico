@@ -165,8 +165,10 @@ export function FormTabs({
 
         if (isUnderline) {
             return (
-                <div className={cn("flex items-end justify-start w-full border-b border-border/20 px-6 h-12 bg-transparent", headerClassName)}>
-                    {list}
+                <div className={cn("flex items-end justify-start w-full px-6 h-12 bg-transparent", headerClassName)}>
+                    <div className="border-b border-border/20 w-fit">
+                        {list}
+                    </div>
                 </div>
             )
         }
