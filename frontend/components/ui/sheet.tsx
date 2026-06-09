@@ -103,15 +103,15 @@ function SheetContent({
       <SheetPrimitive.Content
         data-slot="sheet-content"
         className={cn(
-          "bg-background data-[state=open]:animate-in data-[state=closed]:animate-out fixed z-50 flex flex-col ease-[cubic-bezier(0.16,1,0.3,1)] duration-500",
+          "bg-card text-card-foreground rounded-xl border border-border/10 shadow-2xl data-[state=open]:animate-in data-[state=closed]:animate-out fixed z-50 flex flex-col ease-[cubic-bezier(0.16,1,0.3,1)] duration-500",
           side === "right" &&
-            "data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right top-[var(--page-padding-top)] bottom-[var(--page-gap-bottom)] right-4 h-[calc(100vh-var(--page-padding-top)-var(--page-gap-bottom))] w-3/4 border border-border rounded-lg sm:max-w-sm",
+            "data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right top-[var(--page-padding-top)] bottom-[var(--page-gap-bottom)] right-4 h-[calc(100vh-var(--page-padding-top)-var(--page-gap-bottom))] w-3/4 sm:max-w-sm",
           side === "left" &&
-            "data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left top-[var(--page-padding-top)] bottom-[var(--page-gap-bottom)] left-4 h-[calc(100vh-var(--page-padding-top)-var(--page-gap-bottom))] w-3/4 border border-border rounded-lg sm:max-w-sm",
+            "data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left top-[var(--page-padding-top)] bottom-[var(--page-gap-bottom)] left-4 h-[calc(100vh-var(--page-padding-top)-var(--page-gap-bottom))] w-3/4 sm:max-w-sm",
           side === "top" &&
-            "data-[state=closed]:slide-out-to-top data-[state=open]:slide-in-from-top inset-x-0 top-0 border-b",
+            "data-[state=closed]:slide-out-to-top data-[state=open]:slide-in-from-top inset-x-0 top-0 border-b border-border/10",
           side === "bottom" &&
-            "data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom inset-x-0 bottom-0 border-t",
+            "data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom inset-x-0 bottom-0 border-t border-border/10",
           className
         )}
         onPointerDownOutside={onPointerDownOutside}

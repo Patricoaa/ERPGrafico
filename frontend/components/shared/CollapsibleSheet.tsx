@@ -125,11 +125,13 @@ export function CollapsibleSheet({
             side={side}
             data-sheet-id={sheetId}
             className={cn(
-                "p-0 flex flex-col panel-surface overflow-visible", // panel-surface = rounded-xl + border-border/10 + shadow-2xl + bg-card
+                "p-0 h-full",
                 "top-[var(--page-padding-top)] bottom-[var(--page-gap-bottom)] right-4 h-[calc(100vh-var(--page-padding-top)-var(--page-gap-bottom))]",
-                // Disable default Radix/Shadcn animations to avoid conflicting with custom high-performance transforms
                 "data-[state=open]:animate-none data-[state=closed]:animate-none duration-0 sm:duration-500",
                 (!open || isCollapsed) ? "border-primary/10" : "translate-x-0",
+                allowOverflow ? "overflow-visible" : "overflow-hidden",
+                ((!open || isCollapsed) && !forceCollapse) ? "opacity-0 pointer-events-none" : "opacity-100",
+                (isHidden && !forceCollapse) && "hidden",
                 className
             )}
             hideOverlay={hideOverlay}
@@ -177,15 +179,7 @@ export function CollapsibleSheet({
                 </div>
             )}
 
-            {/* Standard Wrapper for Content to handle opacity/grayscale */}
-            <div className={cn(
-                "flex flex-col h-full rounded-xl overflow-hidden transition-opacity duration-300 bg-card",
-                allowOverflow ? "overflow-visible" : "overflow-hidden",
-                ((!open || isCollapsed) && !forceCollapse) ? "opacity-0 pointer-events-none" : "opacity-100",
-                (isHidden && !forceCollapse) && "hidden" // Only prune from DOM after 500ms exit transition finishes
-            )}>
-                {children}
-            </div>
+            {children}
         </SheetContent>
         </Sheet>
     )

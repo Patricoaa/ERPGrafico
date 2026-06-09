@@ -203,7 +203,7 @@ export function Drawer({
                     ...(side === "top" ? { left: 0, right: 0, top: 0, width: '100%' } : {})
                 }}
                 className={cn(
-                    "p-0 panel-surface flex flex-col",
+                    "p-0 flex flex-col",
                     boundary === "embedded" ? "!absolute" : "!fixed",
                     sideStyles[side],
                     className
