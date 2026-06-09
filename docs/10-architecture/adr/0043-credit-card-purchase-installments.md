@@ -1,7 +1,7 @@
 ---
 id: 0043
 title: Compras en tarjeta en cuotas (3/6/12) con interés explícito — `CardPurchaseGroup` + schedule francés
-status: Accepted
+status: Superseded by 0046 (D-1/D-6; CardPurchaseGroup + idempotency still apply)
 date: 2026-06-05
 author: core-team
 supersedes: []

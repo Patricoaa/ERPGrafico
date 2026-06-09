@@ -1,19 +1,17 @@
 """
-Tests de Onda 2 (ADR-0043): `TreasuryService.create_card_purchase`.
+Tests de `TreasuryService.create_card_purchase` bajo el modelo ADR-0046:
 
-Cubre:
-  - 1 cuota sin interés → 1 OUTBOUND, monto = amount.
-  - 3/6/12 cuotas sin interés → N OUTBOUNDs iguales (con residuo
-    en la última cuota).
-  - 3/6 cuotas con interés explícito (cuota francesa) → schedule
-    de principal decreciente + interés decreciente.
-  - `billed_amount` del statement de mes 1 ve solo la cuota 1.
-  - Validaciones: installments fuera de rango, monthly_rate >= 1,
-    amount <= 0, cuenta no-CREDIT_CARD.
+  - El **uso** de la TC es 1 `OUTBOUND` por el total + 1 asiento
+    (`D=proveedor / H=pasivo tarjeta`), `is_billed=True`.
+  - Las **cuotas** son filas de cronograma (`CardPurchaseInstallment`),
+    sin contabilidad, con vencimiento por mes calendario.
+  - La **facturación** mensual (`bill_unbilled_charges`) toma las cuotas
+    que vencen hasta el cierre y NO re-postea el pasivo (sin doble
+    conteo).
+  - Las cuotas con interés (`monthly_rate > 0`) están diferidas →
+    `ValidationError`.
+  - Normalización de `date` (string ISO / datetime).
   - Idempotencia por `client_reference`.
-  - Asiento contable: D=proveedor / H=pasivo (principal) +
-    D=gasto_interés / H=pasivo (interés).
-  - API: POST /card-purchase/ con payload discriminado.
 """
 import pytest
 from datetime import date, datetime
@@ -21,10 +19,12 @@ from decimal import Decimal
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 
-from accounting.models import Account, AccountType, JournalEntry
+from accounting.models import Account, AccountType
 from treasury.models import (
-    Bank, CardPurchaseGroup, TreasuryAccount, TreasuryMovement,
+    Bank, CardPurchaseGroup, CardPurchaseInstallment,
+    CreditCardStatement, TreasuryAccount, TreasuryMovement,
 )
+from treasury.card_service import CardService
 from treasury.services import TreasuryService
 
 
@@ -32,8 +32,7 @@ User = get_user_model()
 
 
 def _make_env():
-    """Crea el banco, la tarjeta, un proveedor, las cuentas de
-    gasto y el banco pagador. Devuelve dict con referencias."""
+    """Banco, tarjeta (LIABILITY), proveedor y cuentas."""
     user = User.objects.create_user(username='cp_user', password='x')
     bank = Bank.objects.create(name='Banco Cuotas')
     bank_ta = TreasuryAccount.objects.create(
@@ -57,15 +56,10 @@ def _make_env():
         name='Proveedor Cuotas', tax_id='76.123.456-7',
         account_payable=payable_acc,
     )
-    interest_exp = Account.objects.create(
-        code='6.1.01.20', name='Interés Cuotas',
-        account_type=AccountType.EXPENSE,
-    )
     return {
         'user': user, 'bank': bank, 'bank_ta': bank_ta,
         'card_ta': card_ta, 'card_acc': card_acc,
         'supplier': supplier, 'payable_acc': payable_acc,
-        'interest_exp': interest_exp,
     }
 
 
@@ -75,129 +69,183 @@ def env(db):
 
 
 @pytest.mark.django_db
-def test_card_purchase_single_installment_no_interest(env):
-    """1 cuota sin interés: 1 OUTBOUND por el total."""
+def test_card_purchase_single_installment(env):
+    """1 cuota: 1 OUTBOUND por el total + 1 fila de cronograma."""
     group = TreasuryService.create_card_purchase(
         amount=Decimal('50000'),
         card_account=env['card_ta'],
         installments=1,
-        monthly_rate=Decimal('0'),
         date=date(2026, 6, 15),
         partner=env['supplier'],
         client_reference='CP-SINGLE-001',
         created_by=env['user'],
     )
 
-    assert group.installments == 1
-    assert group.monthly_rate == Decimal('0')
     movements = list(group.movements.all())
     assert len(movements) == 1
     mv = movements[0]
     assert mv.movement_type == TreasuryMovement.Type.OUTBOUND
     assert mv.amount == Decimal('50000')
-    assert mv.is_installment_interest is False
-    assert mv.installment_number == 1
     assert mv.from_account == env['card_ta']
+    assert mv.is_billed is True            # el uso, no un cargo pendiente
+    assert mv.installment_number is None   # ya no es "una cuota"
+    assert mv.card_purchase_group_id == group.id
+
+    schedule = list(group.schedule.order_by('number'))
+    assert len(schedule) == 1
+    assert schedule[0].principal_amount == Decimal('50000')
+    assert schedule[0].due_date == date(2026, 6, 15)
+    assert schedule[0].is_billed is False
 
 
 @pytest.mark.django_db
-def test_card_purchase_three_installments_no_interest(env):
-    """3 cuotas sin interés: 3 OUTBOUNDs iguales, monto total
-    preservado con residuo en la última."""
+def test_card_purchase_three_installments_schedule(env):
+    """3 cuotas: 1 OUTBOUND por el total + 3 filas (residuo en la última)."""
     group = TreasuryService.create_card_purchase(
         amount=Decimal('100000'),
         card_account=env['card_ta'],
         installments=3,
-        monthly_rate=Decimal('0'),
         date=date(2026, 6, 15),
         partner=env['supplier'],
         client_reference='CP-3-001',
         created_by=env['user'],
     )
 
-    assert group.installments == 3
-    movements = list(group.movements.all().order_by('installment_number'))
-    assert len(movements) == 3
-    amounts = [m.amount for m in movements]
-    # 100k / 3 = 33333.33 con residuo en la última (33334.01 - 0).
-    assert sum(amounts) == Decimal('100000')
-    assert amounts[0] == Decimal('33333.33')
-    assert amounts[1] == Decimal('33333.33')
-    assert amounts[2] == Decimal('33333.34')
-    # Sin interés: no hay ADJUSTMENT.
-    assert all(m.is_installment_interest is False for m in movements)
+    # Un solo movimiento de tesorería por el total.
+    movements = list(group.movements.all())
+    assert len(movements) == 1
+    assert movements[0].amount == Decimal('100000')
+
+    # Cronograma: 3 cuotas que suman el total, vencimiento mensual.
+    schedule = list(group.schedule.order_by('number'))
+    assert [s.principal_amount for s in schedule] == [
+        Decimal('33333.33'), Decimal('33333.33'), Decimal('33333.34'),
+    ]
+    assert sum(s.principal_amount for s in schedule) == Decimal('100000')
+    assert [s.due_date for s in schedule] == [
+        date(2026, 6, 15), date(2026, 7, 15), date(2026, 8, 15),
+    ]
 
 
 @pytest.mark.django_db
-def test_card_purchase_six_installments_with_interest(env):
-    """6 cuotas con 1.5% mensual (cuota francesa)."""
+def test_card_purchase_use_posts_one_journal_entry(env):
+    """El uso genera 1 asiento estándar D=proveedor / H=pasivo tarjeta."""
+    from accounting.models import JournalEntry
     group = TreasuryService.create_card_purchase(
-        amount=Decimal('60000'),
+        amount=Decimal('20000'),
         card_account=env['card_ta'],
-        installments=6,
-        monthly_rate=Decimal('0.015'),
-        date=date(2026, 6, 15),
+        installments=3,
         partner=env['supplier'],
-        client_reference='CP-6-001',
+        date=date(2026, 6, 15),
+        client_reference='CP-JE-001',
         created_by=env['user'],
     )
-
-    movements = list(group.movements.all().order_by('installment_number', 'is_installment_interest'))
-    # 6 cuotas × 2 (OUTBOUND + ADJUSTMENT) = 12.
-    assert len(movements) == 12
-
-    # 6 OUTBOUNDs (principal) — suma debe ser 60k exacto.
-    principals = [m for m in movements if not m.is_installment_interest]
-    interests = [m for m in movements if m.is_installment_interest]
-    assert len(principals) == 6
-    assert len(interests) == 6
-    assert sum(m.amount for m in principals) == Decimal('60000')
-
-    # Interés de cuota 1: 60000 × 0.015 = 900.00
-    assert interests[0].amount == Decimal('900.00')
-    # Interés de cuota 2: 50000 × 0.015 = 750.00 (el principal
-    # base es 10000 = 60000/6; primera amortización es 10000 así
-    # que el balance tras cuota 1 ≈ 50000).
-    assert interests[1].amount == Decimal('750.00')
-
-    # Total a pagar > principal por el interés acumulado.
-    assert group.total_interest > Decimal('0')
-    assert group.total_payable == group.total_amount + group.total_interest
+    mv = group.movements.get()
+    assert mv.journal_entry is not None
+    assert mv.journal_entry.status == JournalEntry.Status.POSTED
+    items = list(mv.journal_entry.items.all())
+    debits = [it for it in items if it.debit > 0]
+    credits = [it for it in items if it.credit > 0]
+    assert len(debits) == 1 and len(credits) == 1
+    assert credits[0].account == env['card_acc']      # H pasivo tarjeta
+    assert credits[0].credit == Decimal('20000')
+    assert debits[0].account == env['payable_acc']     # D proveedor
+    assert debits[0].debit == Decimal('20000')
 
 
 @pytest.mark.django_db
-def test_card_purchase_dates_distributed_30_days_apart(env):
-    """Las cuotas se distribuyen cada 30 días a partir de la
-    fecha inicial."""
+def test_card_purchase_liability_rises_once_after_billing(env):
+    """Regresión del doble conteo (ADR-0046 D-3): el pasivo sube `amount`
+    UNA sola vez. Facturar las cuotas NO vuelve a acreditar el pasivo."""
+    initial = env['card_acc'].balance
+
     group = TreasuryService.create_card_purchase(
         amount=Decimal('30000'),
         card_account=env['card_ta'],
         installments=3,
+        partner=env['supplier'],
         date=date(2026, 6, 15),
-        client_reference='CP-DATES-001',
+        client_reference='CP-DBL-001',
         created_by=env['user'],
     )
-    movements = list(
-        group.movements.filter(is_installment_interest=False)
-        .order_by('installment_number')
+    env['card_acc'].refresh_from_db()
+    after_use = env['card_acc'].balance
+    assert after_use == initial + Decimal('30000')
+
+    # Facturar las 3 cuotas (cierre que cubre las tres).
+    stmt = CardService.bill_unbilled_charges(
+        card_account=env['card_ta'],
+        period_year=2026, period_month=8,
+        cut_off_date=date(2026, 8, 31),
+        due_date=date(2026, 9, 20),
+        created_by=env['user'],
     )
-    assert movements[0].date == date(2026, 6, 15)
-    assert movements[1].date == date(2026, 7, 15)
-    assert movements[2].date == date(2026, 8, 14)  # + 60 días
+    assert stmt.billed_amount == Decimal('30000')
+
+    # El pasivo NO se duplica: sigue en +30000 (no +60000).
+    env['card_acc'].refresh_from_db()
+    assert env['card_acc'].balance == initial + Decimal('30000')
+    # Y solo hay un movimiento de tesorería (el uso).
+    assert group.movements.count() == 1
+
+
+@pytest.mark.django_db
+def test_card_purchase_monthly_statement_spread(env):
+    """Cada statement mensual factura solo la cuota que vence en su
+    período (cronograma, ADR-0046)."""
+    TreasuryService.create_card_purchase(
+        amount=Decimal('30000'),
+        card_account=env['card_ta'],
+        installments=3,
+        date=date(2026, 6, 15),
+        client_reference='CP-SPREAD-001',
+        created_by=env['user'],
+    )
+
+    s1 = CardService.bill_unbilled_charges(
+        card_account=env['card_ta'], period_year=2026, period_month=6,
+        cut_off_date=date(2026, 6, 30), due_date=date(2026, 7, 20),
+        created_by=env['user'],
+    )
+    assert s1.billed_amount == Decimal('10000')   # cuota 1
+
+    s2 = CardService.bill_unbilled_charges(
+        card_account=env['card_ta'], period_year=2026, period_month=7,
+        cut_off_date=date(2026, 7, 31), due_date=date(2026, 8, 20),
+        created_by=env['user'],
+    )
+    assert s2.billed_amount == Decimal('10000')   # cuota 2
+
+    s3 = CardService.bill_unbilled_charges(
+        card_account=env['card_ta'], period_year=2026, period_month=8,
+        cut_off_date=date(2026, 8, 31), due_date=date(2026, 9, 20),
+        created_by=env['user'],
+    )
+    assert s3.billed_amount == Decimal('10000')   # cuota 3
+
+    # Todas las cuotas quedaron facturadas exactamente una vez.
+    assert CardPurchaseInstallment.objects.filter(is_billed=False).count() == 0
+
+
+@pytest.mark.django_db
+def test_card_purchase_rejects_interest(env):
+    """`monthly_rate > 0` está diferido → ValidationError."""
+    with pytest.raises(ValidationError, match='soportad'):
+        TreasuryService.create_card_purchase(
+            amount=Decimal('60000'),
+            card_account=env['card_ta'],
+            installments=6,
+            monthly_rate=Decimal('0.015'),
+            date=date(2026, 6, 15),
+            created_by=env['user'],
+        )
 
 
 @pytest.mark.django_db
 def test_card_purchase_accepts_string_date(env):
-    """Regresión: el checkout de compras/ventas pasa `date` como
-    string ISO (`request.data.get('document_date')`). El guard
-    `if not date` no lo atrapa (string no vacío es truthy) y la
-    aritmética de cuotas `date + timedelta` reventaba con
-    `TypeError: can only concatenate str (not "datetime.timedelta")`.
-
-    `create_card_purchase` debe normalizar el string a un `date`
-    real, distribuir las cuotas cada 30 días y persistir
-    `first_installment_date` como objeto `date`.
-    """
+    """Regresión: el checkout pasa `date` como string ISO
+    (`request.data.get('document_date')`). Debe normalizarse a un `date`
+    real y distribuir el cronograma por mes calendario."""
     group = TreasuryService.create_card_purchase(
         amount=Decimal('30000'),
         card_account=env['card_ta'],
@@ -206,23 +254,16 @@ def test_card_purchase_accepts_string_date(env):
         client_reference='CP-STR-DATE-001',
         created_by=env['user'],
     )
-
-    # No crashea y persiste una fecha real (no el string).
     assert group.first_installment_date == date(2026, 6, 15)
-
-    movements = list(
-        group.movements.filter(is_installment_interest=False)
-        .order_by('installment_number')
-    )
-    assert movements[0].date == date(2026, 6, 15)
-    assert movements[1].date == date(2026, 7, 15)
-    assert movements[2].date == date(2026, 8, 14)  # + 60 días
+    schedule = list(group.schedule.order_by('number'))
+    assert [s.due_date for s in schedule] == [
+        date(2026, 6, 15), date(2026, 7, 15), date(2026, 8, 15),
+    ]
 
 
 @pytest.mark.django_db
 def test_card_purchase_accepts_datetime_date(env):
-    """Si llega un `datetime` (no `date`), se normaliza a su
-    componente fecha antes de la aritmética de cuotas."""
+    """Si llega un `datetime`, se normaliza a su componente fecha."""
     group = TreasuryService.create_card_purchase(
         amount=Decimal('20000'),
         card_account=env['card_ta'],
@@ -231,48 +272,35 @@ def test_card_purchase_accepts_datetime_date(env):
         client_reference='CP-DT-DATE-001',
         created_by=env['user'],
     )
-
     assert group.first_installment_date == date(2026, 6, 15)
-    movements = list(
-        group.movements.filter(is_installment_interest=False)
-        .order_by('installment_number')
-    )
-    assert movements[0].date == date(2026, 6, 15)
-    assert movements[1].date == date(2026, 7, 15)
+    schedule = list(group.schedule.order_by('number'))
+    assert [s.due_date for s in schedule] == [date(2026, 6, 15), date(2026, 7, 15)]
 
 
 @pytest.mark.django_db
 def test_card_purchase_idempotent_by_client_reference(env):
-    """Dos POSTs con misma `client_reference` no duplican."""
+    """Dos llamadas con la misma `client_reference` no duplican."""
     g1 = TreasuryService.create_card_purchase(
-        amount=Decimal('30000'),
-        card_account=env['card_ta'],
-        installments=2,
-        client_reference='CP-IDEM-001',
-        date=date(2026, 6, 15),
+        amount=Decimal('30000'), card_account=env['card_ta'], installments=3,
+        client_reference='CP-IDEM-001', date=date(2026, 6, 15),
         created_by=env['user'],
     )
     g2 = TreasuryService.create_card_purchase(
-        amount=Decimal('30000'),
-        card_account=env['card_ta'],
-        installments=2,
-        client_reference='CP-IDEM-001',
-        date=date(2026, 6, 15),
+        amount=Decimal('30000'), card_account=env['card_ta'], installments=3,
+        client_reference='CP-IDEM-001', date=date(2026, 6, 15),
         created_by=env['user'],
     )
     assert g1.id == g2.id
-    # Sólo hay 2 OUTBOUNDs del primer POST, no 4.
-    assert g1.movements.count() == 2
+    assert g1.movements.count() == 1            # un solo uso
+    assert g1.schedule.count() == 3             # cronograma no duplicado
 
 
 @pytest.mark.django_db
 def test_card_purchase_validates_card_account_type(env):
-    """`create_card_purchase` rechaza cuenta no-CREDIT_CARD."""
+    """Rechaza cuenta no-CREDIT_CARD."""
     with pytest.raises(ValidationError, match='CREDIT_CARD'):
         TreasuryService.create_card_purchase(
-            amount=Decimal('10000'),
-            card_account=env['bank_ta'],
-            installments=1,
+            amount=Decimal('10000'), card_account=env['bank_ta'], installments=1,
         )
 
 
@@ -281,34 +309,11 @@ def test_card_purchase_validates_installments_range(env):
     """installments fuera de [1, 36] → ValidationError."""
     with pytest.raises(ValidationError, match='cuotas'):
         TreasuryService.create_card_purchase(
-            amount=Decimal('10000'),
-            card_account=env['card_ta'],
-            installments=0,
+            amount=Decimal('10000'), card_account=env['card_ta'], installments=0,
         )
     with pytest.raises(ValidationError, match='cuotas'):
         TreasuryService.create_card_purchase(
-            amount=Decimal('10000'),
-            card_account=env['card_ta'],
-            installments=37,
-        )
-
-
-@pytest.mark.django_db
-def test_card_purchase_validates_monthly_rate_range(env):
-    """monthly_rate fuera de [0, 1) → ValidationError."""
-    with pytest.raises(ValidationError, match='tasa'):
-        TreasuryService.create_card_purchase(
-            amount=Decimal('10000'),
-            card_account=env['card_ta'],
-            installments=1,
-            monthly_rate=Decimal('-0.01'),
-        )
-    with pytest.raises(ValidationError, match='tasa'):
-        TreasuryService.create_card_purchase(
-            amount=Decimal('10000'),
-            card_account=env['card_ta'],
-            installments=1,
-            monthly_rate=Decimal('1.5'),
+            amount=Decimal('10000'), card_account=env['card_ta'], installments=37,
         )
 
 
@@ -317,118 +322,5 @@ def test_card_purchase_validates_amount_positive(env):
     """amount <= 0 → ValidationError."""
     with pytest.raises(ValidationError, match='monto'):
         TreasuryService.create_card_purchase(
-            amount=Decimal('0'),
-            card_account=env['card_ta'],
-            installments=1,
+            amount=Decimal('0'), card_account=env['card_ta'], installments=1,
         )
-    with pytest.raises(ValidationError, match='monto'):
-        TreasuryService.create_card_purchase(
-            amount=Decimal('-100'),
-            card_account=env['card_ta'],
-            installments=1,
-        )
-
-
-@pytest.mark.django_db
-def test_card_purchase_accounting_entry_principal(env):
-    """El OUTBOUND de principal genera el asiento estándar:
-    D=cuenta contraparte (proveedor si hay) / H=pasivo tarjeta."""
-    group = TreasuryService.create_card_purchase(
-        amount=Decimal('20000'),
-        card_account=env['card_ta'],
-        installments=1,
-        partner=env['supplier'],
-        client_reference='CP-ACC-001',
-        date=date(2026, 6, 15),
-        created_by=env['user'],
-    )
-    mv = group.movements.first()
-    assert mv.journal_entry is not None
-    assert mv.journal_entry.status == JournalEntry.Status.POSTED
-    items = list(mv.journal_entry.items.all())
-    # Debe haber un D y un H.
-    debits = [it for it in items if it.debit > 0]
-    credits = [it for it in items if it.credit > 0]
-    assert len(debits) == 1
-    assert len(credits) == 1
-    # H = pasivo tarjeta.
-    assert credits[0].account == env['card_acc']
-    assert credits[0].credit == Decimal('20000')
-    # D = cuenta de proveedor (configurada en `Contact.account_payable`).
-    assert debits[0].account == env['payable_acc']
-    assert debits[0].debit == Decimal('20000')
-
-
-@pytest.mark.django_db
-def test_card_purchase_increases_liability(env):
-    """Cada cuota de principal sube el pasivo de la tarjeta."""
-    initial = env['card_acc'].balance
-    group = TreasuryService.create_card_purchase(
-        amount=Decimal('30000'),
-        card_account=env['card_ta'],
-        installments=3,
-        partner=env['supplier'],
-        date=date(2026, 6, 15),
-        client_reference='CP-LIAB-001',
-        created_by=env['user'],
-    )
-    env['card_acc'].refresh_from_db()
-    # 30k de principal total sube la deuda.
-    assert env['card_acc'].balance == initial + Decimal('30000')
-    assert group.movements.count() == 3
-
-
-@pytest.mark.django_db
-def test_card_purchase_with_interest_distributes_dates(env):
-    """El interés de cada cuota cae en la misma fecha que el
-    principal de esa cuota."""
-    group = TreasuryService.create_card_purchase(
-        amount=Decimal('12000'),
-        card_account=env['card_ta'],
-        installments=3,
-        monthly_rate=Decimal('0.01'),
-        date=date(2026, 6, 15),
-        client_reference='CP-INT-DATES-001',
-        created_by=env['user'],
-    )
-    movements = list(group.movements.order_by('installment_number', 'is_installment_interest'))
-    # 3 cuotas × 2 = 6 movimientos.
-    assert len(movements) == 6
-    # Cuota 1: principal + interés ambos en 2026-06-15.
-    assert movements[0].date == date(2026, 6, 15)
-    assert movements[1].date == date(2026, 6, 15)
-    # Cuota 2: ambos en 2026-07-15.
-    assert movements[2].date == date(2026, 7, 15)
-    assert movements[3].date == date(2026, 7, 15)
-    # Cuota 3: ambos en 2026-08-14.
-    assert movements[4].date == date(2026, 8, 14)
-    assert movements[5].date == date(2026, 8, 14)
-
-
-@pytest.mark.django_db
-def test_card_purchase_billed_amount_in_statement(env):
-    """El statement del mes 1 ve solo la cuota 1."""
-    from treasury.card_service import CardService
-    from treasury.tests.test_card_service import _open  # type: ignore
-    # Necesitamos una tarjeta válida para abrir el statement.
-    # _open toma env del fixture de test_card_service — lo
-    # replicamos acá con nuestra tarjeta.
-    stmt = CardService.open_statement(
-        card_account=env['card_ta'],
-        period_year=2026, period_month=6,
-        cut_off_date=date(2026, 6, 30),
-        due_date=date(2026, 7, 25),
-        billed_amount=Decimal('0'),
-        created_by=env['user'],
-    )
-    TreasuryService.create_card_purchase(
-        amount=Decimal('30000'),
-        card_account=env['card_ta'],
-        installments=3,
-        date=date(2026, 6, 15),
-        client_reference='CP-STMT-001',
-        created_by=env['user'],
-    )
-    new_total = CardService.recalculate_billed_amount(stmt)
-    # Cuota 1 (10000) cae dentro del periodo (cutoff 30/06).
-    assert new_total == Decimal('10000')

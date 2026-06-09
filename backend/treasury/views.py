@@ -689,11 +689,19 @@ class TreasuryMovementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                 notes=data.get('notes', '') or '',
                 created_by=request.user,
             )
-            # Devolver el grupo + lista de movimientos generados.
-            installments_data = TreasuryMovementSerializer(
-                group.movements.all().order_by('installment_number', 'is_installment_interest'),
-                many=True,
-            ).data
+            # Devolver el grupo + el movimiento del uso + el cronograma
+            # de cuotas (ADR-0046). `installments` es ahora el cronograma
+            # (filas planas), no N movimientos.
+            schedule_data = [
+                {
+                    'number': inst.number,
+                    'due_date': inst.due_date.isoformat(),
+                    'principal_amount': str(inst.principal_amount),
+                    'is_billed': inst.is_billed,
+                }
+                for inst in group.schedule.all().order_by('number')
+            ]
+            use_movement = group.movements.order_by('id').first()
             return Response(
                 {
                     'group': {
@@ -708,7 +716,11 @@ class TreasuryMovementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                         'total_interest': str(group.total_interest),
                         'total_payable': str(group.total_payable),
                     },
-                    'installments': installments_data,
+                    'movement': (
+                        TreasuryMovementSerializer(use_movement).data
+                        if use_movement else None
+                    ),
+                    'installments': schedule_data,
                 },
                 status=status.HTTP_201_CREATED,
             )
@@ -2525,13 +2537,33 @@ class CreditCardStatementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
         charges = CardService.get_unbilled_charges(card_account)
         summary = CardService.get_unbilled_summary(card_account)
+        installments = CardService.get_unbilled_installments(card_account)
 
         # Serializar los movimientos
         from .serializers import TreasuryMovementSerializer
         data = TreasuryMovementSerializer(charges, many=True).data
 
+        # Próximas cuotas del cronograma (ADR-0046): filas planas.
+        installments_data = [
+            {
+                'id': inst.id,
+                'number': inst.number,
+                'due_date': inst.due_date.isoformat(),
+                'principal_amount': str(inst.principal_amount),
+                'group_uuid': str(inst.card_purchase_group.uuid),
+                'group_display_id': inst.card_purchase_group.display_id,
+                'partner_name': (
+                    inst.card_purchase_group.partner.name
+                    if inst.card_purchase_group.partner else None
+                ),
+                'total_installments': inst.card_purchase_group.installments,
+            }
+            for inst in installments
+        ]
+
         return Response({
             'charges': data,
+            'upcoming_installments': installments_data,
             'summary': summary,
         })
 
