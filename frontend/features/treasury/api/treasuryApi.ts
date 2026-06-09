@@ -296,7 +296,10 @@ export const treasuryApi = {
 
     // ========== Unbilled Charges (Credit Card) ==========
 
-    getUnbilledCharges: async (cardAccountId: number): Promise<{
+    getUnbilledCharges: async (
+        cardAccountId: number,
+        cutOffDate?: string,
+    ): Promise<{
         charges: TreasuryMovement[]
         upcoming_installments: UpcomingInstallment[]
         summary: {
@@ -307,9 +310,13 @@ export const treasuryApi = {
             installments: number
         }
     }> => {
-        const response = await api.get('/treasury/card-statements/unbilled-charges/', {
-            params: { card_account: cardAccountId }
-        })
+        const params: Record<string, string | number> = {
+            card_account: cardAccountId,
+        }
+        if (cutOffDate) {
+            params.cut_off_date = cutOffDate
+        }
+        const response = await api.get('/treasury/card-statements/unbilled-charges/', { params })
         return response.data
     },
 

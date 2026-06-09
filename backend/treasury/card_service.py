@@ -1000,7 +1000,10 @@ class CardService:
         return qs.order_by('due_date', 'number', 'id')
 
     @staticmethod
-    def get_unbilled_summary(card_account: TreasuryAccount) -> dict:
+    def get_unbilled_summary(
+        card_account: TreasuryAccount,
+        cut_off_date: _date | None = None,
+    ) -> dict:
         """
         Retorna resumen de cargos no facturados:
         - total: suma de todos los cargos no facturados (movimientos + cuotas)
@@ -1008,10 +1011,13 @@ class CardService:
         - purchases: suma de cargos directos/legacy (OUTBOUND)
         - charges: suma de cargos financieros (ADJUSTMENT)
         - installments: suma del principal de cuotas pendientes (cronograma)
+
+        Si se proporciona cut_off_date, solo incluye cargos/cuotas con
+        date/due_date <= cut_off_date para coincidir con lo facturable.
         """
         from django.db import models as dj_models
 
-        qs = CardService.get_unbilled_charges(card_account)
+        qs = CardService.get_unbilled_charges(card_account, cut_off_date=cut_off_date)
 
         purchases = (
             qs.filter(movement_type=TreasuryMovement.Type.OUTBOUND)
@@ -1023,7 +1029,7 @@ class CardService:
             .aggregate(total=dj_models.Sum('amount'))['total']
             or Decimal('0')
         )
-        sched_qs = CardService.get_unbilled_installments(card_account)
+        sched_qs = CardService.get_unbilled_installments(card_account, cut_off_date=cut_off_date)
         installments = (
             sched_qs.aggregate(total=dj_models.Sum('principal_amount'))['total']
             or Decimal('0')
