@@ -47,7 +47,6 @@ the icon, label, variant and destructiveness of each CRUD-style action.
 
 | key | icon (lucide) | label (es-CL) | intent | typical handler |
 |------|----------------|----------------|--------|-----------------|
-| `view` | `Eye` | "Ver" | read | open inline preview / drawer |
 | `detail` | `FileText` | "Ver detalle" | read | `openEntity(label, id)` — entity drawer en modo `view` (ADR-0028) |
 | `hub` | `LayoutDashboard` | "Abrir HUB" | read | open `CollapsibleSheet` (HUB) |
 | `edit` | `Pencil` | "Editar" | write | navigate to `?selected={id}` (ADR-0020) |
@@ -94,12 +93,12 @@ When multiple actions are present, they MUST be rendered in this order (left →
 left → right or top → bottom in cards):
 
 ```
-view → detail → hub → edit → duplicate → pay → deliver → receive →
+detail → hub → edit → duplicate → pay → deliver → receive →
   download → print → share → archive → restore → lock / unlock → annul → delete
 ```
 
 `annul` and `delete` are **always last**, in that order. `edit` is the visual anchor — if
-present, it should be the first *write* action. Read actions (`view`, `detail`, `hub`) come
+present, it should be the first *write* action. Read actions (`detail`, `hub`) come
 before any write action. Transactional workflow verbs (`pay`, `deliver`, `receive`) sit between
 `duplicate` and the read-only export block (`download`/`print`/`share`).
 
@@ -214,8 +213,8 @@ The hook **`frontend/hooks/useEntityRouteActions.ts`** centralises the query-par
 Mutually exclusive: opening any of the three closes the others. `clearActions()` removes all
 three while preserving every other param (filters, pagination, viewMode, etc).
 
-> `?view=` is **reserved** for the table/card viewMode switch (see `useViewMode`). Do not reuse
-> it for detail/transactional modals.
+> Do not use `?view=` as a param — it is **reserved** for the table/card viewMode switch
+> (see `useViewMode`).
 
 ---
 
@@ -229,7 +228,7 @@ three while preserving every other param (filters, pagination, viewMode, etc).
 | Card with a single hidden `Pencil` reachable only on hover | Explicit `CardActions` row with at minimum `edit` + `delete` visible |
 | `delete` placed before `edit` | Canonical order: `delete` always last |
 | `?id=42` / `?edit=42` / `?modal=42` to open the edit modal | `?selected=42` (ADR-0020) |
-| `?view=42` to open a detail view | `openEntity(label, 42)` (ADR-0028) — `?view=` is the viewMode switch |
+| `?view=42` as a detail/detail param | `openEntity(label, 42)` (ADR-0028) — `?view=` is the viewMode switch |
 | Raw Tailwind colors on a module-specific action icon | Semantic tokens only |
 | Skipping the tooltip "because the icon is obvious" | Tooltip is mandatory (a11y + consistency) |
 

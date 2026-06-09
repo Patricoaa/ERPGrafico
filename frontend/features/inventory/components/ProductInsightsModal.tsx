@@ -433,7 +433,7 @@ function KardexTable({ entries, onOpenWorkOrder, onOpenTransaction }: {
                     <div className="text-right">
                         <DataCell.ActionGroup>
                             <DataCell.Action
-                                action="view"
+                                action="detail"
                                 onClick={() => {
                                     if (m.related_type === 'work_order') {
                                         onOpenWorkOrder(m.related_id)
@@ -495,7 +495,7 @@ function ProductionUsageTable({ entries, onOpenWorkOrder }: {
                 <div className="text-right">
                     <DataCell.ActionGroup>
                         <DataCell.Action
-                            action="view"
+                            action="detail"
                             onClick={() => onOpenWorkOrder(row.original.ot_id)}
                         />
                     </DataCell.ActionGroup>
