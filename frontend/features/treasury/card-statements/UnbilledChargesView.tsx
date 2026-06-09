@@ -17,7 +17,7 @@ import {
     Skeleton,
 } from '@/components/shared'
 import { treasuryApi } from '../api/treasuryApi'
-import type { TreasuryMovement } from '../types'
+import type { TreasuryMovement, UpcomingInstallment } from '../types'
 import { AddChargeModal } from './AddChargeModal'
 import { BillChargesModal } from './BillChargesModal'
 
@@ -33,6 +33,7 @@ interface UnbilledSummary {
     count: number
     purchases: number
     charges: number
+    installments: number
 }
 
 export function UnbilledChargesView({
@@ -52,6 +53,7 @@ export function UnbilledChargesView({
     })
 
     const charges: TreasuryMovement[] = result?.charges ?? []
+    const upcomingInstallments: UpcomingInstallment[] = result?.upcoming_installments ?? []
     const summary: UnbilledSummary | undefined = result?.summary
 
     const handleAddChargeSuccess = () => {
@@ -253,7 +255,7 @@ export function UnbilledChargesView({
     return (
         <div className="flex flex-col flex-1 min-h-0 space-y-4">
             {summary && (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                     <StatCard
                         label="Total"
                         value={<MoneyDisplay amount={summary.total} currency={currency} inline />}
@@ -263,6 +265,12 @@ export function UnbilledChargesView({
                     <StatCard
                         label="Compras"
                         value={<MoneyDisplay amount={summary.purchases} currency={currency} inline />}
+                        icon={CreditCard}
+                        accent="info"
+                    />
+                    <StatCard
+                        label="Cuotas"
+                        value={<MoneyDisplay amount={summary.installments} currency={currency} inline />}
                         icon={CreditCard}
                         accent="info"
                     />
@@ -278,6 +286,38 @@ export function UnbilledChargesView({
                         icon={CreditCard}
                         accent="muted"
                     />
+                </div>
+            )}
+
+            {upcomingInstallments.length > 0 && (
+                <div className="rounded-lg border bg-card">
+                    <div className="flex items-center gap-2 border-b px-4 py-2">
+                        <Receipt className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-xs font-bold uppercase text-muted-foreground">
+                            Próximas cuotas a facturar
+                        </span>
+                    </div>
+                    <ul className="divide-y">
+                        {upcomingInstallments.map((inst) => (
+                            <li
+                                key={inst.id}
+                                className="flex items-center justify-between gap-3 px-4 py-2 text-xs"
+                            >
+                                <span className="font-medium tabular-nums">
+                                    {inst.number}/{inst.total_installments}
+                                </span>
+                                <span className="flex-1 truncate text-muted-foreground">
+                                    {inst.partner_name || inst.group_display_id}
+                                </span>
+                                <DataCell.Date value={inst.due_date} />
+                                <DataCell.Currency
+                                    value={inst.principal_amount}
+                                    currency={currency}
+                                    className="font-bold"
+                                />
+                            </li>
+                        ))}
+                    </ul>
                 </div>
             )}
 

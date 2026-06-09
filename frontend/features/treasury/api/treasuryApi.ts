@@ -27,6 +27,7 @@ import type {
     ContactBrief,
     PartnerCapitalInfo,
     TreasuryMovement,
+    UpcomingInstallment,
 } from '../types'
 
 export const treasuryApi = {
@@ -297,11 +298,13 @@ export const treasuryApi = {
 
     getUnbilledCharges: async (cardAccountId: number): Promise<{
         charges: TreasuryMovement[]
+        upcoming_installments: UpcomingInstallment[]
         summary: {
             total: number
             count: number
             purchases: number
             charges: number
+            installments: number
         }
     }> => {
         const response = await api.get('/treasury/card-statements/unbilled-charges/', {
