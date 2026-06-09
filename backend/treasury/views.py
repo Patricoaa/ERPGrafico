@@ -2515,6 +2515,7 @@ class CreditCardStatementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         """Lista cargos no facturados de una tarjeta de crédito."""
         from .card_service import CardService
         from .models import TreasuryAccount, TreasuryMovement
+        from datetime import date as _date_type
 
         card_account_id = request.query_params.get('card_account')
         if not card_account_id:
@@ -2535,9 +2536,12 @@ class CreditCardStatementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        charges = CardService.get_unbilled_charges(card_account)
-        summary = CardService.get_unbilled_summary(card_account)
-        installments = CardService.get_unbilled_installments(card_account)
+        cut_off_date_str = request.query_params.get('cut_off_date')
+        cut_off_date = _date_type.fromisoformat(cut_off_date_str) if cut_off_date_str else None
+
+        charges = CardService.get_unbilled_charges(card_account, cut_off_date=cut_off_date)
+        summary = CardService.get_unbilled_summary(card_account, cut_off_date=cut_off_date)
+        installments = CardService.get_unbilled_installments(card_account, cut_off_date=cut_off_date)
 
         # Serializar los movimientos
         from .serializers import TreasuryMovementSerializer

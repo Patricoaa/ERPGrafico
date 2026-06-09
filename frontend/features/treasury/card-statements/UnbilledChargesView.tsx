@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { Plus, Receipt, CreditCard } from 'lucide-react'
@@ -17,7 +17,8 @@ import {
     Skeleton,
 } from '@/components/shared'
 import { treasuryApi } from '../api/treasuryApi'
-import type { TreasuryMovement, UpcomingInstallment } from '../types'
+import type { TreasuryMovement, UpcomingInstallment, UnbilledItemRow } from '../types'
+import { mapToUnbilledItemRows } from './utils'
 import { AddChargeModal } from './AddChargeModal'
 import { BillChargesModal } from './BillChargesModal'
 
@@ -46,15 +47,22 @@ export function UnbilledChargesView({
     const [showBillCharges, setShowBillCharges] = useState(false)
     const queryClient = useQueryClient()
 
+    const today = new Date().toISOString().split('T')[0]
+
     const { data: result, isLoading } = useQuery({
-        queryKey: ['unbilled-charges', cardAccountId],
-        queryFn: () => treasuryApi.getUnbilledCharges(cardAccountId),
+        queryKey: ['unbilled-charges', cardAccountId, today],
+        queryFn: () => treasuryApi.getUnbilledCharges(cardAccountId, today),
         enabled: !!cardAccountId,
     })
 
     const charges: TreasuryMovement[] = result?.charges ?? []
     const upcomingInstallments: UpcomingInstallment[] = result?.upcoming_installments ?? []
     const summary: UnbilledSummary | undefined = result?.summary
+
+    const mergedRows = useMemo(
+        () => mapToUnbilledItemRows(charges, upcomingInstallments),
+        [charges, upcomingInstallments],
+    )
 
     const handleAddChargeSuccess = () => {
         setShowAddCharge(false)
@@ -68,69 +76,7 @@ export function UnbilledChargesView({
         toast.success('Cargos facturados exitosamente')
     }
 
-    function renderCuota(charge: TreasuryMovement) {
-        const group = charge.card_purchase_group_detail
-        if (!group || !charge.installment_number) return null
-        return (
-            <span className="text-xs font-medium tabular-nums">
-                {charge.installment_number}/{group.installments}
-            </span>
-        )
-    }
-
-    function renderCompra(charge: TreasuryMovement) {
-        const group = charge.card_purchase_group_detail
-        if (!group) return null
-        return (
-            <div className="flex flex-col items-start gap-0.5">
-                <span className="text-[11px] font-medium text-foreground truncate max-w-[180px]">
-                    {group.client_reference || `Compra #${group.id}`}
-                </span>
-                {group.partner_name && (
-                    <span className="text-[10px] text-muted-foreground truncate max-w-[180px]">
-                        {group.partner_name}
-                    </span>
-                )}
-            </div>
-        )
-    }
-
-    function renderCuotaCompraInfo(charge: TreasuryMovement) {
-        const group = charge.card_purchase_group_detail
-        if (!group) return null
-        return (
-            <div className="flex flex-col gap-2 text-xs">
-                <div className="flex items-center gap-2">
-                    <span className="text-muted-foreground">Cuota:</span>
-                    <span className="font-medium tabular-nums">
-                        {charge.installment_number || '—'}/{group.installments}
-                    </span>
-                </div>
-                <div className="flex items-center gap-2">
-                    <span className="text-muted-foreground">Compra:</span>
-                    <span className="font-medium">
-                        {group.client_reference || `Compra #${group.id}`}
-                    </span>
-                </div>
-                {group.partner_name && (
-                    <div className="flex items-center gap-2">
-                        <span className="text-muted-foreground">Proveedor:</span>
-                        <span className="font-medium">{group.partner_name}</span>
-                    </div>
-                )}
-                <div className="flex items-center gap-2">
-                    <span className="text-muted-foreground">Total:</span>
-                    <MoneyDisplay amount={Number(group.total_amount)} currency={currency} inline />
-                </div>
-                <div className="flex items-center gap-2">
-                    <span className="text-muted-foreground">1ra cuota:</span>
-                    <span className="font-medium">{group.first_installment_date}</span>
-                </div>
-            </div>
-        )
-    }
-
-    const columns: ColumnDef<TreasuryMovement, any>[] = [
+    const columns: ColumnDef<UnbilledItemRow, any>[] = [
         {
             accessorKey: 'date',
             header: ({ column }) => (
@@ -144,21 +90,20 @@ export function UnbilledChargesView({
             sortingFn: 'datetime',
         },
         {
-            accessorKey: 'reference',
+            id: 'referencia',
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Referencia" className="justify-center" />
             ),
             cell: ({ row }) => {
-                const ref = row.original.reference
-                const notes = row.original.notes
+                const item = row.original
                 return (
                     <div className="flex flex-col items-start gap-0.5">
                         <span className="text-xs font-medium text-foreground">
-                            {ref || `Movimiento #${row.original.id}`}
+                            {item.reference || (item.source === 'charge' ? `Movimiento #${item.id}` : item.notes) || '-'}
                         </span>
-                        {notes && (
+                        {item.source === 'charge' && item.notes && (
                             <span className="text-[10px] text-muted-foreground truncate max-w-[200px]">
-                                {notes}
+                                {item.notes}
                             </span>
                         )}
                     </div>
@@ -170,11 +115,17 @@ export function UnbilledChargesView({
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Cuota" className="justify-center" />
             ),
-            cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    {renderCuota(row.original)}
-                </div>
-            ),
+            cell: ({ row }) => {
+                const item = row.original
+                if (!item.installmentNumber || !item.totalInstallments) return null
+                return (
+                    <div className="flex justify-center w-full">
+                        <span className="text-xs font-medium tabular-nums">
+                            {item.installmentNumber}/{item.totalInstallments}
+                        </span>
+                    </div>
+                )
+            },
             enableSorting: false,
         },
         {
@@ -182,11 +133,25 @@ export function UnbilledChargesView({
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Compra" className="justify-center" />
             ),
-            cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    {renderCompra(row.original)}
-                </div>
-            ),
+            cell: ({ row }) => {
+                const item = row.original
+                const group = item.purchaseGroupDetail
+                if (!group) return null
+                return (
+                    <div className="flex justify-center w-full">
+                        <div className="flex flex-col items-start gap-0.5">
+                            <span className="text-[11px] font-medium text-foreground truncate max-w-[180px]">
+                                {group.client_reference || `Compra #${group.id}`}
+                            </span>
+                            {group.partner_name && (
+                                <span className="text-[10px] text-muted-foreground truncate max-w-[180px]">
+                                    {group.partner_name}
+                                </span>
+                            )}
+                        </div>
+                    </div>
+                )
+            },
             enableSorting: false,
         },
         {
@@ -206,18 +171,21 @@ export function UnbilledChargesView({
             sortingFn: 'basic',
         },
         {
-            accessorKey: 'movement_type_display',
+            id: 'tipo',
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Tipo" className="justify-center" />
             ),
-            cell: ({ row }) => (
-                <div className="flex justify-center w-full">
-                    <StatusBadge
-                        status={row.original.movement_type}
-                        label={row.original.movement_type_display}
-                    />
-                </div>
-            ),
+            cell: ({ row }) => {
+                const item = row.original
+                return (
+                    <div className="flex justify-center w-full">
+                        <StatusBadge
+                            status={item.movementType || ''}
+                            label={item.movementTypeDisplay || ''}
+                        />
+                    </div>
+                )
+            },
         },
     ]
 
@@ -289,43 +257,11 @@ export function UnbilledChargesView({
                 </div>
             )}
 
-            {upcomingInstallments.length > 0 && (
-                <div className="rounded-lg border bg-card">
-                    <div className="flex items-center gap-2 border-b px-4 py-2">
-                        <Receipt className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-xs font-bold uppercase text-muted-foreground">
-                            Próximas cuotas a facturar
-                        </span>
-                    </div>
-                    <ul className="divide-y">
-                        {upcomingInstallments.map((inst) => (
-                            <li
-                                key={inst.id}
-                                className="flex items-center justify-between gap-3 px-4 py-2 text-xs"
-                            >
-                                <span className="font-medium tabular-nums">
-                                    {inst.number}/{inst.total_installments}
-                                </span>
-                                <span className="flex-1 truncate text-muted-foreground">
-                                    {inst.partner_name || inst.group_display_id}
-                                </span>
-                                <DataCell.Date value={inst.due_date} />
-                                <DataCell.Currency
-                                    value={inst.principal_amount}
-                                    currency={currency}
-                                    className="font-bold"
-                                />
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-            )}
-
             <div className="flex-1 min-h-0">
                 <DataTableView
-                    entityLabel="treasury.treasurymovement"
+                    entityLabel="treasury.unbilled-charge"
                     columns={columns}
-                    data={charges}
+                    data={mergedRows}
                     isLoading={isLoading}
                     variant="embedded"
                     createAction={rightButtonGroupAction}
@@ -337,47 +273,75 @@ export function UnbilledChargesView({
                         title: 'No hay cargos no facturados',
                         description: 'Los cargos de esta tarjeta de crédito aparecerán aquí antes de ser facturados.',
                     }}
-                    renderCard={(charge: TreasuryMovement) => (
-                    <EntityCard>
-                        <EntityCard.Header
-                            title={charge.reference || `Movimiento #${charge.id}`}
-                            subtitle={charge.date}
-                            trailing={
-                                <StatusBadge
-                                    status={charge.movement_type}
-                                    label={charge.movement_type_display}
-                                />
-                            }
-                        />
-                        <EntityCard.Body>
-                            {charge.notes && (
-                                <EntityCard.Field
-                                    label="Descripción"
-                                    value={charge.notes}
-                                    full
-                                />
-                            )}
-                            {renderCuotaCompraInfo(charge) && (
-                                <EntityCard.Field
-                                    label="Detalle de Compra"
-                                    value={renderCuotaCompraInfo(charge)}
-                                    full
-                                />
-                            )}
-                        </EntityCard.Body>
-                        <EntityCard.Footer className="justify-between items-center border-t bg-muted/10 py-2 px-4">
-                            <span className="text-[10px] font-bold text-muted-foreground uppercase">
-                                Monto
-                            </span>
-                            <DataCell.Currency
-                                value={charge.amount}
-                                currency={currency}
-                                className="font-bold text-base"
+                    renderCard={(item: UnbilledItemRow) => (
+                        <EntityCard>
+                            <EntityCard.Header
+                                title={item.reference || (item.source === 'charge' ? `Movimiento #${item.id}` : `Cuota ${item.installmentNumber}/${item.totalInstallments}`)}
+                                subtitle={item.date}
+                                trailing={
+                                    <StatusBadge
+                                        status={item.movementType || ''}
+                                        label={item.movementTypeDisplay || ''}
+                                    />
+                                }
                             />
-                        </EntityCard.Footer>
-                    </EntityCard>
-                )}
-            />
+                            <EntityCard.Body>
+                                {item.source === 'charge' && item.notes && (
+                                    <EntityCard.Field label="Descripción" value={item.notes} full />
+                                )}
+                                {item.purchaseGroupDetail && (
+                                    <EntityCard.Field
+                                        label="Detalle de Compra"
+                                        value={(() => {
+                                            const group = item.purchaseGroupDetail!
+                                            return (
+                                                <div className="flex flex-col gap-2 text-xs">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-muted-foreground">Cuota:</span>
+                                                        <span className="font-medium tabular-nums">
+                                                            {item.installmentNumber || '—'}/{group.installments}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-muted-foreground">Compra:</span>
+                                                        <span className="font-medium">
+                                                            {group.client_reference || `Compra #${group.id}`}
+                                                        </span>
+                                                    </div>
+                                                    {group.partner_name && (
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-muted-foreground">Proveedor:</span>
+                                                            <span className="font-medium">{group.partner_name}</span>
+                                                        </div>
+                                                    )}
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-muted-foreground">Total:</span>
+                                                        <MoneyDisplay amount={Number(group.total_amount)} currency={currency} inline />
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-muted-foreground">1ra cuota:</span>
+                                                        <span className="font-medium">{group.first_installment_date}</span>
+                                                    </div>
+                                                </div>
+                                            )
+                                        })()}
+                                        full
+                                    />
+                                )}
+                            </EntityCard.Body>
+                            <EntityCard.Footer className="justify-between items-center border-t bg-muted/10 py-2 px-4">
+                                <span className="text-[10px] font-bold text-muted-foreground uppercase">
+                                    Monto
+                                </span>
+                                <DataCell.Currency
+                                    value={item.amount}
+                                    currency={currency}
+                                    className="font-bold text-base"
+                                />
+                            </EntityCard.Footer>
+                        </EntityCard>
+                    )}
+                />
             </div>
 
             {showAddCharge && (
@@ -396,6 +360,7 @@ export function UnbilledChargesView({
                     cardAccountName={cardAccountName}
                     total={summary?.total || 0}
                     charges={charges}
+                    installments={upcomingInstallments}
                     currency={currency}
                     onSuccess={handleBillChargesSuccess}
                     onCancel={() => setShowBillCharges(false)}

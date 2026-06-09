@@ -190,6 +190,32 @@ export interface UpcomingInstallment {
     total_installments: number
 }
 
+export type UnbilledItemSource = 'charge' | 'installment'
+
+/** Fila unificada para la tabla de cargos no facturados.
+ *  Representa tanto un TreasuryMovement (cargo suelto) como una
+ *  cuota del cronograma (CardPurchaseInstallment). */
+export interface UnbilledItemRow {
+    /** Clave única: "charge-{id}" | "installment-{id}" */
+    id: string
+    source: UnbilledItemSource
+    date: string
+    reference: string | null
+    notes: string | null
+    amount: number
+    installmentNumber: number | null
+    totalInstallments: number | null
+    purchaseGroupDetail: CardPurchaseGroup | null
+    partnerName: string | null
+    movementType: string | null
+    movementTypeDisplay: string | null
+    isInstallmentInterest: boolean
+    /** Referencia al TreasuryMovement original (null si es cuota) */
+    originalCharge: TreasuryMovement | null
+    /** Referencia a la cuota original (null si es cargo) */
+    originalInstallment: UpcomingInstallment | null
+}
+
 export interface TreasuryMovement {
     id: number
     display_id: string

@@ -234,6 +234,16 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     detailUrlPattern: '/treasury/operaciones?tab=movements&selected={id}',
     viewPolicy: { availableViews: ['list', 'grid'], defaultView: 'list', cardComponent: 'entity-compact', gridLayout: 'multi-column' },
   },
+  'treasury.unbilled-charge': {
+    label: 'treasury.unbilled-charge',
+    title: 'Cargo no facturado',
+    titlePlural: 'Cargos no facturados',
+    icon: CreditCard,
+    shortTemplate: 'UBC-{id}',
+    listUrl: '/treasury/centro-bancos',
+    detailUrlPattern: '/treasury/centro-bancos',
+    viewPolicy: { availableViews: ['list', 'grid'], defaultView: 'list', cardComponent: 'entity-compact', gridLayout: 'multi-column' },
+  },
   'treasury.treasuryaccount': {
     label: 'treasury.treasuryaccount',
     title: 'Cuenta de Tesorería',
