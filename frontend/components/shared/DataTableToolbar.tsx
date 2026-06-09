@@ -109,10 +109,10 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                         </div>
                     )}
 
-                    <div className="flex h-10 items-center rounded-md border border-border/50 bg-background shadow-sm overflow-hidden">
+                    <div className="flex h-10 items-center rounded-md border border-border/50 bg-background shadow-card divide-x divide-border/50">
 
                         {showToolbarSort && sortableColumns.length > 0 && (
-                            <div className="border-r border-border/50 last:border-r-0 flex items-center h-full">
+                            <div className="flex items-center h-full">
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
                                         <Button variant="ghost" className="h-full px-3 rounded-none text-[10px] font-black uppercase tracking-widest hover:bg-muted/50 transition-all border-0 ring-0 focus-visible:ring-0">
@@ -124,7 +124,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                                             Ordenar
                                         </Button>
                                     </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end" className="w-[200px] rounded-md border-border/80 shadow-xl p-1">
+                                    <DropdownMenuContent align="end" className="w-[200px] border-border/80 shadow-floating p-1">
                                         {sortableColumns.map((column) => (
                                             <DropdownMenuItem
                                                 key={column.id}
@@ -148,7 +148,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                         )}
 
                         {showColumnToggle && (
-                            <div className="border-r border-border/50 last:border-r-0 flex items-center h-full">
+                            <div className="flex items-center h-full">
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
                                         <Button variant="ghost" className="h-full px-3 rounded-none text-[10px] font-black uppercase tracking-widest hover:bg-muted/50 transition-all border-0 ring-0 focus-visible:ring-0">
@@ -156,7 +156,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                                             Columnas
                                         </Button>
                                     </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end" className="w-[180px] rounded-md border-border/80 shadow-xl p-1">
+                                    <DropdownMenuContent align="end" className="w-[180px] border-border/80 shadow-floating p-1">
                                         {table
                                             .getAllColumns()
                                             .filter((column) => column.getCanHide() && !["actions", "select", "hub_trigger", "production_status", "logistics_status", "billing_status", "treasury_status"].includes(column.id))
@@ -180,13 +180,13 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                         )}
 
                         {rightButtonGroupAction && (
-                            <div className="border-r border-border/50 last:border-r-0 flex items-center h-full">
+                            <div className="flex items-center h-full">
                                 {rightButtonGroupAction}
                             </div>
                         )}
 
                         {viewOptions && viewOptions.length > 0 && (
-                            <div className="border-r border-border/50 last:border-r-0 flex items-center h-full">
+                            <div className="flex items-center h-full">
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
                                         <Button
@@ -205,7 +205,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                                             })()}
                                         </Button>
                                     </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end" className="w-[180px] rounded-md border-border/80 shadow-xl p-1">
+                                    <DropdownMenuContent align="end" className="w-[180px] border-border/80 shadow-floating p-1">
                                         {viewOptions.map((option) => (
                                             <DropdownMenuItem
                                                 key={option.value}
@@ -232,7 +232,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                         )}
 
                         {toolbarAction && (
-                            <div className="border-r border-border/50 last:border-r-0 flex items-center h-full">
+                            <div className="flex items-center h-full">
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
                                         <Button variant="ghost" className="h-full px-3 rounded-none text-[10px] font-black uppercase tracking-widest hover:bg-muted/50 transition-all border-0 ring-0 focus-visible:ring-0">
@@ -240,7 +240,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                                             Acciones
                                         </Button>
                                     </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end" className="w-[200px] rounded-md border-border/80 shadow-xl p-1 flex flex-col gap-1">
+                                    <DropdownMenuContent align="end" className="w-[200px] border-border/80 shadow-floating p-1 flex flex-col gap-1">
                                         {toolbarAction}
                                     </DropdownMenuContent>
                                 </DropdownMenu>

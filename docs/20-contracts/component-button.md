@@ -157,7 +157,7 @@ Para el botón **"+ Nueva entidad"** en toolbars de listas.
 <ToolbarCreateButton label="Nuevo Producto" href="/inventory/products/new" />
 ```
 
-> Ya incluye estilos de `h-9`, `uppercase`, `tracking-widest` y `font-bold`. No pasar `className` para sobreescribir estos estilos salvo casos excepcionales.
+> Ya incluye estilos de `h-9`, `uppercase`, `tracking-widest`, `font-bold` y `shadow-card`. No pasar `className` para sobreescribir estos estilos salvo casos excepcionales.
 
 ---
 
