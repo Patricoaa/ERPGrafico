@@ -178,6 +178,18 @@ export interface CardPurchaseGroup {
     notes: string
 }
 
+/** Cuota del cronograma de una compra en cuotas aún no facturada (ADR-0046). */
+export interface UpcomingInstallment {
+    id: number
+    number: number
+    due_date: string
+    principal_amount: string
+    group_uuid: string
+    group_display_id: string
+    partner_name: string | null
+    total_installments: number
+}
+
 export interface TreasuryMovement {
     id: number
     display_id: string
