@@ -11,6 +11,8 @@ import {
 import { cn } from "@/lib/utils"
 import { PanelHeader, type PanelBaseProps } from "./PanelHeader"
 
+type DrawerMode = 'create' | 'edit' | 'view'
+
 export interface DrawerProps extends PanelBaseProps {
     /**
      * Desde qué borde aparece el Drawer
@@ -32,6 +34,12 @@ export interface DrawerProps extends PanelBaseProps {
      * Si se debe mostrar un fondo oscuro difuminado detrás del Drawer.
      */
     showOverlay?: boolean
+
+    /**
+     * Modo visual del drawer: 'create' | 'edit' | 'view'.
+     * En modo 'view' se aplica un fondo distintivo y un badge "Vista".
+     */
+    mode?: DrawerMode
 
     /**
      * Tamaño inicial (ancho si es horizontal, alto si es vertical).
@@ -57,6 +65,7 @@ export function Drawer({
     boundary = "embedded",
     resizable = false,
     showOverlay,
+    mode,
     defaultSize,
     minSize,
     maxSize,
@@ -252,13 +261,26 @@ export function Drawer({
                                     {description}
                                 </span>
                             ) : undefined}
-                            headerActions={headerActions}
+                            headerActions={
+                                <>
+                                    {mode === "view" && (
+                                        <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/50 border border-border/30 rounded-md px-2 py-0.5 select-none">
+                                            Vista
+                                        </span>
+                                    )}
+                                    {headerActions}
+                                </>
+                            }
                             onClose={() => onOpenChange(false)}
                         />
                     </SheetHeader>
                 )}
 
-                <div className={cn("flex-1 flex flex-col overflow-y-auto px-6 pb-6 scrollbar-thin scrollbar-thumb-primary/10 scrollbar-track-transparent", contentClassName)}>
+                <div className={cn(
+                    "flex-1 flex flex-col overflow-y-auto px-6 pb-6 scrollbar-thin scrollbar-thumb-primary/10 scrollbar-track-transparent",
+                    mode === "view" && "bg-muted/5",
+                    contentClassName
+                )}>
                     {children}
                 </div>
 

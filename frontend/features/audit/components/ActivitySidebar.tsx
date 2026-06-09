@@ -89,11 +89,11 @@ export function ActivitySidebar({ entityId, entityType, className = "", title = 
     const getIconColor = (type: string) => {
         switch (type) {
             case '+':
-                return 'bg-success text-success-foreground border-success dark:bg-success dark:text-success-foreground'
+                return 'bg-success text-success-foreground border-success'
             case '~':
-                return 'bg-primary text-primary-foreground border-primary dark:bg-primary dark:text-primary-foreground'
+                return 'bg-primary text-primary-foreground border-primary'
             case '-':
-                return 'bg-destructive text-destructive-foreground border-destructive dark:bg-destructive dark:text-destructive-foreground'
+                return 'bg-destructive text-destructive-foreground border-destructive'
             default:
                 return 'bg-muted text-muted-foreground border-border'
         }
