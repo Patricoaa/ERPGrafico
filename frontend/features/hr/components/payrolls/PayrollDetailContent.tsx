@@ -525,7 +525,7 @@ function PayrollItemDialog({ payrollId, item, concepts, onSaved, onEditCleared, 
                     id="payroll-item-form"
                     onSubmit={form.handleSubmit(onSubmit)}
                     className="space-y-6 px-6 pb-6 pt-6">
-                >
+
                     <FormField control={form.control} name="concept" render={({ field, fieldState }) => (
                         <LabeledSelect
                             label="Concepto de Remuneración"
