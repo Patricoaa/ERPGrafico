@@ -18,7 +18,7 @@ const SUB_VIEWS = [
     { value: "overview", label: "Resumen", iconName: "layout-dashboard" },
     { value: "checks", label: "Cheques Girados", iconName: "file-check" },
     { value: "loans", label: "Préstamos", iconName: "banknote" },
-    { value: "cards", label: "Tarjetas", iconName: "credit-card" },
+    { value: "cards", label: "Tarjeta de crédito", iconName: "credit-card" },
     { value: "reconciliation", label: "Conciliación", iconName: "arrow-left-right" },
 ]
 
@@ -37,12 +37,14 @@ export function BankPageHeader({ bankId, breadcrumbs, title = "", description, s
                 label: bank.name,
                 iconName: "landmark" as string,
                 href: `/treasury/centro-bancos/${bank.id}`,
-                subTabs: SUB_VIEWS.map(sv => ({
-                    value: sv.value,
-                    label: sv.label,
-                    iconName: sv.iconName,
-                    href: `/treasury/centro-bancos/${bank.id}/${sv.value}`,
-                })),
+                                subTabs: SUB_VIEWS.map(sv => ({
+                                    value: sv.value,
+                                    label: sv.label,
+                                    iconName: sv.iconName,
+                                    href: sv.value === 'cards'
+                                        ? `/treasury/centro-bancos/${bank.id}/cards?subtab=unbilled`
+                                        : `/treasury/centro-bancos/${bank.id}/${sv.value}`,
+                                })),
             })),
     ]
 

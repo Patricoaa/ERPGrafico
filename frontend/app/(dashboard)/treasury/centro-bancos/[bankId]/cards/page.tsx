@@ -5,7 +5,7 @@ export default async function BankCardsPage({ params }: { params: Promise<{ bank
     const id = Number(bankId)
     return (
         <div className="flex-1 flex flex-col min-h-0">
-            <BankPageHeader bankId={id} />
+            <BankPageHeader bankId={id} title="Tarjeta de crédito" />
             <BankCenterView bankId={id} />
         </div>
     )
