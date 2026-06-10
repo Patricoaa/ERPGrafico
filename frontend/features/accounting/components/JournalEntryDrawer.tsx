@@ -348,6 +348,7 @@ export function JournalEntryDrawer({
                                         onValidityChange={setIsPeriodValid}
                                         label="Fecha"
                                         required
+                                        disabled={isViewMode}
                                     />
                                 )}
                             />
