@@ -106,8 +106,7 @@ export function MultiSelectTagInput({
                         className={cn(
                             "notched-field transition-all duration-200 cursor-text min-h-[44px] pb-1.5 pt-1",
                             open ? "border-primary ring-1 ring-primary/20" : "group-hover:border-muted-foreground/50",
-                            hasError && "border-destructive ring-destructive/20",
-                            disabled && "opacity-50 cursor-not-allowed pointer-events-none"
+                            hasError && "border-destructive ring-destructive/20"
                         )}
                         data-error={hasError || undefined}
                         data-disabled={disabled || undefined}
@@ -122,7 +121,6 @@ export function MultiSelectTagInput({
                             <legend className={cn(
                                 "px-1.5 text-[10px] font-black uppercase tracking-[0.15em] transition-colors duration-200",
                                 hasError ? "text-destructive" : (open ? "text-primary" : "text-muted-foreground"),
-                                disabled && "text-muted-foreground/50"
                             )}>
                                 {label}
                                 {required && (

@@ -967,7 +967,7 @@ class PurchasingService:
     @staticmethod
     @transaction.atomic
     def _purchase_checkout_internal(order_data, dte_type, document_number='', document_date=None, document_attachment=None,
-                         payment_method='CREDIT', amount=None, treasury_account_id=None, transaction_number=None,
+                         payment_method='CREDIT', amount=None, installments=1, treasury_account_id=None, transaction_number=None,
                          payment_is_pending=False, receipt_type='IMMEDIATE', receipt_data=None, user=None,
                          payment_method_id=None,
                          check_number=None, check_bank_id=None, check_issue_date=None, check_due_date=None, checkbook_id=None):
@@ -1047,7 +1047,34 @@ class PurchasingService:
                 from treasury.models import PaymentMethod as PM
                 payment_method_inst = PM.objects.filter(id=payment_method_id).first()
 
-            if payment_method_inst is not None:
+            # Asegurar que installments sea int
+            if not isinstance(installments, int):
+                try:
+                    installments = int(installments) if installments is not None else 1
+                except (ValueError, TypeError):
+                    installments = 1
+
+            if payment_method_inst is not None and installments > 1 and payment_method_inst.method_type == 'CREDIT_CARD':
+                # ── Pago en cuotas: crear CardPurchaseGroup + N movimientos ──
+                card_account = payment_method_inst.treasury_account
+                if card_account and card_account.account_type == TreasuryAccount.Type.CREDIT_CARD:
+                    TreasuryService.create_card_purchase(
+                        amount=payment_amount,
+                        card_account=card_account,
+                        installments=installments,
+                        monthly_rate=Decimal('0'),
+                        date=document_date or timezone.now().date(),
+                        partner=order.supplier,
+                        invoice=invoice,
+                        purchase_order=order,
+                        client_reference=f"OCS-{order.number}",
+                        created_by=user,
+                    )
+                else:
+                    raise ValidationError(
+                        "La forma de pago CREDIT_CARD no está asociada a una cuenta de tarjeta de crédito."
+                    )
+            elif payment_method_inst is not None:
                 from treasury.orchestrator import PaymentOrchestrator
                 payment = PaymentOrchestrator.create_movement(
                     payment_method_obj=payment_method_inst,

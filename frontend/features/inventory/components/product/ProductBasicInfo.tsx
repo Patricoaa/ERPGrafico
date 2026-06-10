@@ -60,7 +60,7 @@ export function ProductBasicInfo({ form, isEditing, imagePreview, setImagePrevie
                         <LabeledContainer
                             label="ID"
                             disabled
-                            className="w-full opacity-80 bg-muted/30"
+                            className="w-full"
                         >
                             <div className="flex items-center gap-2 h-full px-3">
                                 <span className="text-muted-foreground text-[10px] font-mono">#</span>
@@ -94,7 +94,7 @@ export function ProductBasicInfo({ form, isEditing, imagePreview, setImagePrevie
                                         "h-full transition-all duration-300",
                                         field.value
                                             ? "bg-success/10 border-success/30 shadow-sm ring-1 ring-success/10"
-                                            : "bg-background border-border hover:border-muted-foreground/30 hover:bg-muted/10 shadow-[inset_0_1px_2px_oklch(0.12_0.02_240_/_0.1)] dark:shadow-[inset_0_1px_2px_oklch(1_0_0_/_0.02)]"
+                                            : "bg-transparent border-border hover:border-muted-foreground/30 hover:bg-muted/10 shadow-[inset_0_1px_2px_oklch(0.12_0.02_240_/_0.1)] dark:shadow-[inset_0_1px_2px_oklch(1_0_0_/_0.02)]"
                                     )}
                                 />
                             )}
@@ -120,7 +120,7 @@ export function ProductBasicInfo({ form, isEditing, imagePreview, setImagePrevie
                                         "h-full transition-all duration-300",
                                         field.value
                                             ? "bg-warning/10 border-warning/30 shadow-sm ring-1 ring-warning/10"
-                                            : "bg-background border-border hover:border-muted-foreground/30 hover:bg-muted/10 shadow-[inset_0_1px_2px_oklch(0.12_0.02_240_/_0.1)] dark:shadow-[inset_0_1px_2px_oklch(1_0_0_/_0.02)]"
+                                            : "bg-transparent border-border hover:border-muted-foreground/30 hover:bg-muted/10 shadow-[inset_0_1px_2px_oklch(0.12_0.02_240_/_0.1)] dark:shadow-[inset_0_1px_2px_oklch(1_0_0_/_0.02)]"
                                     )}
                                 />
                             )}
@@ -195,7 +195,7 @@ export function ProductBasicInfo({ form, isEditing, imagePreview, setImagePrevie
                                         "h-full transition-all duration-300",
                                         field.value
                                             ? "bg-primary/10 border-primary/30 shadow-sm ring-1 ring-primary/10"
-                                            : "bg-background border-border hover:border-muted-foreground/30 hover:bg-muted/10 shadow-[inset_0_1px_2px_oklch(0.12_0.02_240_/_0.1)] dark:shadow-[inset_0_1px_2px_oklch(1_0_0_/_0.02)]"
+                                            : "bg-transparent border-border hover:border-muted-foreground/30 hover:bg-muted/10 shadow-[inset_0_1px_2px_oklch(0.12_0.02_240_/_0.1)] dark:shadow-[inset_0_1px_2px_oklch(1_0_0_/_0.02)]"
                                     )}
                                 />
                             )}

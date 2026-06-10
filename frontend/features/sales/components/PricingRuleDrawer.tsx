@@ -13,11 +13,11 @@ import { cn } from "@/lib/utils"
 import { useUoMs } from "@/features/inventory/hooks/useUoMs"
 import { usePricingRuleMutations } from "@/features/inventory"
 import { toast } from "sonner"
-import {Layers, Zap, DollarSign, Calendar, Printer} from "lucide-react"
+import { Layers, Zap, DollarSign, Calendar, Printer } from "lucide-react"
 import { PricingUtils } from '@/features/inventory/utils/pricing'
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { UoMSelector } from "@/components/selectors/UoMSelector"
-import {Drawer, CancelButton, LabeledInput, LabeledSelect, LabeledSwitch, PeriodValidationDateInput, FormSection, FormFooter, FormSplitLayout, SkeletonShell, ActionSlideButton} from "@/components/shared"
+import { Drawer, CancelButton, LabeledInput, LabeledSelect, LabeledSwitch, PeriodValidationDateInput, FormSection, FormFooter, FormSplitLayout, SkeletonShell, ActionSlideButton } from "@/components/shared"
 import { Button } from "@/components/ui/button"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { useReactToPrint } from "react-to-print"
@@ -478,28 +478,28 @@ export function PricingRuleDrawer({ auditSidebar, initialData, onSuccess, open, 
                     />
                 )}
             >
-            <FormSplitLayout
-                showSidebar={!!initialData?.id}
-                sidebar={auditSidebar}
-                className="px-4 pb-4 pt-0"
-            >
-                <SkeletonShell isLoading={isFetchingInitialData} ariaLabel="Cargando formulario de regla de precio" className="flex-1 flex flex-col">
-                    <Form {...form}>
-                        <form id="pricing-rule-form" onSubmit={form.handleSubmit(onSubmit)} className="h-full flex flex-col">
-                            <fieldset disabled={isView} className="contents">
-                            <div className="space-y-6">
-                                {renderValidityTab()}
-                                {renderGeneralTab()}
-                                {renderConditionsTab()}
-                                {renderActionsTab()}
+                <FormSplitLayout
+                    showSidebar={!!initialData?.id}
+                    sidebar={auditSidebar}
+                    className="px-4 pb-4 pt-0"
+                >
+                    <SkeletonShell isLoading={isFetchingInitialData} ariaLabel="Cargando formulario de regla de precio" className="flex-1 flex flex-col">
+                        <Form {...form}>
+                            <form id="pricing-rule-form" onSubmit={form.handleSubmit(onSubmit)} className="h-full flex flex-col">
+                                <fieldset disabled={isView} className="contents">
+                                    <div className="space-y-6">
+                                        {renderValidityTab()}
+                                        {renderGeneralTab()}
+                                        {renderConditionsTab()}
+                                        {renderActionsTab()}
 
-                            </div>
-                            </fieldset>
-                        </form>
-                    </Form>
-                </SkeletonShell>
-            </FormSplitLayout>
-        </Drawer>
+                                    </div>
+                                </fieldset>
+                            </form>
+                        </Form>
+                    </SkeletonShell>
+                </FormSplitLayout>
+            </Drawer>
         </>
     )
 }

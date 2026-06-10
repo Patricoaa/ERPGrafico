@@ -24,7 +24,6 @@ export const NotchedButton = forwardRef<HTMLButtonElement, NotchedButtonProps>(
                 className={cn(
                     "notched-field flex flex-col justify-center cursor-pointer transition-colors",
                     "hover:border-primary/40",
-                    disabled && "opacity-50 cursor-not-allowed pointer-events-none",
                     className
                 )}
                 data-disabled={disabled || undefined}

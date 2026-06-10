@@ -221,6 +221,12 @@ class PurchaseOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             check_due_date = request.data.get('check_due_date')
             checkbook_id = request.data.get('checkbook_id')
 
+            installments_raw = request.data.get('installments', 1)
+            try:
+                installments = int(installments_raw) if installments_raw is not None else 1
+            except (ValueError, TypeError):
+                installments = 1
+
             result = PurchasingService.purchase_checkout(
                 order_data=order_data,
                 dte_type=request.data.get('dte_type', 'FACTURA'),
@@ -229,6 +235,7 @@ class PurchaseOrderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                 document_attachment=request.FILES.get('document_attachment'),
                 payment_method=request.data.get('payment_method', 'CREDIT'),
                 amount=request.data.get('amount'),
+                installments=installments,
                 treasury_account_id=request.data.get('treasury_account_id'),
                 transaction_number=request.data.get('transaction_number'),
                 payment_is_pending=request.data.get('payment_is_pending', 'false').lower() == 'true',

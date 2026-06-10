@@ -3,6 +3,7 @@ import type { TreasuryMovement } from '../types'
 import type {
     CreditCardStatement, CreditCardStatementCreatePayload,
     PayStatementPayload, ApplyChargesPayload,
+    StatementChargesResponse,
 } from './types'
 
 export const cardStatementsApi = {
@@ -41,8 +42,8 @@ export const cardStatementsApi = {
         return data
     },
 
-    getCharges: async (id: number): Promise<TreasuryMovement[]> => {
-        const { data } = await api.get<TreasuryMovement[]>(`/treasury/card-statements/${id}/charges/`)
+    getCharges: async (id: number): Promise<StatementChargesResponse> => {
+        const { data } = await api.get<StatementChargesResponse>(`/treasury/card-statements/${id}/charges/`)
         return data
     },
 }

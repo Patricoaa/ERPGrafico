@@ -83,7 +83,7 @@ export function AccountDrawer({
             parent: (typeof initialData?.parent === 'object' ? (initialData?.parent as any)?.id?.toString() : initialData?.parent?.toString()) || parentId || undefined,
         },
     })
-    
+
     const width = formDrawerWidth("medium", !!initialData?.id)
 
     const isEditMode = !!initialData?.id
@@ -166,7 +166,7 @@ export function AccountDrawer({
 
     const formFields = (
         <Form {...form}>
-            <form id="account-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-4 pb-4 pt-2">
+            <form id="account-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-6 pb-6 pt-6">
                 <FormField
                     control={form.control}
                     name="code"

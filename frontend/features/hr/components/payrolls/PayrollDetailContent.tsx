@@ -32,7 +32,7 @@ import { PayrollCard } from "@/features/hr/components/PayrollCard"
 import { cn } from "@/lib/utils"
 
 import { useConfirmAction } from "@/hooks/useConfirmAction"
-;
+    ;
 
 const itemSchema = z.object({
     concept: z.string().min(1, "Concepto requerido"),
@@ -524,7 +524,7 @@ function PayrollItemDialog({ payrollId, item, concepts, onSaved, onEditCleared, 
                 <form
                     id="payroll-item-form"
                     onSubmit={form.handleSubmit(onSubmit)}
-                    className="space-y-5 text-left py-2"
+                    className="space-y-6 px-6 pb-6 pt-6">
                 >
                     <FormField control={form.control} name="concept" render={({ field, fieldState }) => (
                         <LabeledSelect

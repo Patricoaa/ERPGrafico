@@ -65,7 +65,7 @@ export function SourceDocumentSelector({
 
     return (
         <div className={cn("relative w-full flex flex-col", className)}>
-            <fieldset className="notched-field w-full">
+            <fieldset data-disabled={disabled || undefined} className="notched-field w-full">
                 <legend className="px-1.5 text-[10px] font-black uppercase tracking-[0.15em] text-muted-foreground">
                     Documento Origen
                 </legend>
@@ -77,10 +77,7 @@ export function SourceDocumentSelector({
                                 role="combobox"
                                 aria-expanded={open}
                                 disabled={disabled}
-                                className={cn(
-                                    "w-full justify-between overflow-hidden h-[1.5rem] py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent",
-                                    disabled && "opacity-50 cursor-not-allowed"
-                                )}
+                                className="w-full justify-between overflow-hidden h-[1.5rem] py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent"
                             >
                                 {value ? (
                                     <div className="flex items-center gap-1.5 min-w-0 flex-1">

@@ -262,11 +262,11 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
       {/* Input row */}
       <div
         className={cn(
-          'flex items-center gap-1.5 h-9 px-2 py-1 rounded-lg overflow-x-auto scrollbar-hide',
-          'bg-muted/30 border border-border transition-all',
+          'flex items-center gap-1.5 h-9 px-2 py-1 rounded-md overflow-x-auto scrollbar-hide',
+          'bg-background border border-border/50 transition-all',
           'hover:bg-muted/50 hover:ring-2 hover:ring-primary/10',
           'focus-within:bg-muted/50 focus-within:ring-2 focus-within:ring-primary/20',
-          isOpen && 'bg-muted/50 border-border rounded-b-none ring-2 ring-primary/20',
+          isOpen && 'bg-muted/50 border-border/80 rounded-b-md ring-2 ring-primary/20',
         )}
         onClick={() => {
           inputRef.current?.focus()
@@ -367,7 +367,7 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
         <div
           className={cn(
             'absolute z-50 left-0 right-0 top-full',
-            'bg-background border border-border border-t-0 rounded-b-md shadow-xl',
+            'bg-background border border-border/80 border-t-0 rounded-b-md shadow-xl',
             'overflow-hidden',
           )}
           role="listbox"

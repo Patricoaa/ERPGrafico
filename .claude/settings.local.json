@@ -97,7 +97,23 @@
       "Bash(sed -n '116,125p' /home/pato/Nextcloud/Pato/Aplicaciones/ERPGrafico/frontend/features/treasury/card-statements/StatementsView.tsx)",
       "Bash(sed -n '164,173p' /home/pato/Nextcloud/Pato/Aplicaciones/ERPGrafico/frontend/features/treasury/loans/LoansView.tsx)",
       "Bash(python manage.py migrate --run-syncdb)",
-      "Bash(git *)"
+      "Bash(git *)",
+      "Bash(python -c \"import ast; ast.parse\\(open\\('treasury/services.py'\\).read\\(\\)\\); print\\('OK syntax treasury/services.py'\\)\")",
+      "Bash(python3 -c \"import ast; ast.parse\\(open\\('treasury/services.py'\\).read\\(\\)\\); print\\('OK syntax treasury/services.py'\\)\")",
+      "Bash(ls treasury/tests/)",
+      "Bash(grep -rln \"create_card_purchase\\\\|CardPurchaseGroup\" treasury/tests/)",
+      "Bash(echo \"exit:$?\")",
+      "Bash(python3 -c \"import pytest, django; print\\('pytest', pytest.__version__, 'django', django.get_version\\(\\)\\)\")",
+      "Bash(backend/venv/bin/python -c \"import pytest, django; print\\('pytest', pytest.__version__, 'django', django.get_version\\(\\)\\)\")",
+      "Bash(grep -iA3 \"DJANGO_SETTINGS\\\\|\\\\[tool:pytest\\\\]\\\\|\\\\[pytest\\\\]\")",
+      "Bash(timeout 300 venv/bin/python -m pytest treasury/tests/test_card_purchase_installments.py -v -p no:cacheprovider)",
+      "Bash(grep -nA15 \"^DATABASES\" backend/config/settings.py)",
+      "Bash(grep -iA1 \"card\\\\|statement\\\\|purchase\\\\|bill\\\\|charge\\\\|pay\\\\|reverse\")",
+      "Bash(./venv/bin/python -m pytest treasury/tests/ -q)",
+      "Bash(./venv/bin/python -m pytest treasury/tests/test_orchestrator_check.py::test_orchestrator_transfer_unchanged -q)",
+      "Bash(export DATABASE_URL=\"postgres://postgres:postgres@127.0.0.1:5432/erpgrafico\" TMPDIR=/tmp)",
+      "Bash(./venv/bin/python -m pytest treasury/tests/test_card_recalculate.py treasury/tests/test_card_purchase_installments.py treasury/tests/test_credit_card_purchase.py treasury/tests/test_card_service.py treasury/tests/test_card_statements_api.py treasury/tests/test_credit_card_statement.py treasury/tests/test_card_partial_payments_and_punitory.py treasury/tests/test_card_reverse.py treasury/tests/test_credit_card_liability.py -p no:cacheprovider -q)",
+      "Bash(./venv/bin/python -m pytest treasury/tests billing/test_note_manual.py billing/test_note_workflow.py sales/test_notes.py accounting/test_account_hierarchy.py accounting/tests -p no:cacheprovider -q)"
     ],
     "additionalDirectories": [
       "/home/pato/Nextcloud/Pato/Aplicaciones/ERPGrafico/frontend/features/workflow"

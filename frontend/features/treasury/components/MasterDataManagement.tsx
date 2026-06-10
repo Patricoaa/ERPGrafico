@@ -370,7 +370,7 @@ function BankModal({ open, onOpenChange, bank, onSuccess }: BankModalProps) {
                 }
             >
                 <Form {...form}>
-                    <form id="bank-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-4 pb-4 pt-2">
+                    <form id="bank-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-6 pb-6 pt-6">
                         <div className="grid grid-cols-4 gap-4">
                             <div className="col-span-4">
                                 <FormField
@@ -707,7 +707,7 @@ function PaymentMethodModal({ open, onOpenChange, method, onSuccess }: PaymentMe
                 }
             >
                 <Form {...form}>
-                    <form id="method-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-4 pb-4 pt-2">
+                    <form id="method-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-6 pb-6 pt-6">
                         <div className="grid grid-cols-4 gap-4">
                             <div className="col-span-4">
                                 <FormField

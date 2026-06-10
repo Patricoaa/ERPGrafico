@@ -119,40 +119,40 @@ export function TransactionNumberDrawer({
                     />
                 )}
             >
-            <FormSplitLayout
-              sidebar={paymentId ? (
-                <ActivitySidebar
-                  entityId={paymentId}
-                  entityType="payment"
-                />
-              ) : undefined}
-              showSidebar={!!paymentId}
-            >
-                <Form {...form}>
-                    <form id="transaction-number-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                        <fieldset disabled={isView} className="contents">
-                            <FormField
-                                control={form.control}
-                                name="transaction_number"
-                                render={({ field, fieldState }) => (
-                                    <FormItem>
-                                        <FormControl>
-                                            <LabeledInput
-                                                label="N° de Transacción"
-                                                placeholder="Ex: 543210"
-                                                error={fieldState.error?.message}
-                                                autoFocus
-                                                {...field}
-                                            />
-                                        </FormControl>
-                                    </FormItem>
-                                )}
-                            />
-                        </fieldset>
-                    </form>
-                </Form>
-            </FormSplitLayout>
-        </Drawer>
+                <FormSplitLayout
+                    sidebar={paymentId ? (
+                        <ActivitySidebar
+                            entityId={paymentId}
+                            entityType="payment"
+                        />
+                    ) : undefined}
+                    showSidebar={!!paymentId}
+                >
+                    <Form {...form}>
+                        <form id="transaction-number-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-6 pb-6 pt-6">
+                            <fieldset disabled={isView} className="contents">
+                                <FormField
+                                    control={form.control}
+                                    name="transaction_number"
+                                    render={({ field, fieldState }) => (
+                                        <FormItem>
+                                            <FormControl>
+                                                <LabeledInput
+                                                    label="N° de Transacción"
+                                                    placeholder="Ex: 543210"
+                                                    error={fieldState.error?.message}
+                                                    autoFocus
+                                                    {...field}
+                                                />
+                                            </FormControl>
+                                        </FormItem>
+                                    )}
+                                />
+                            </fieldset>
+                        </form>
+                    </Form>
+                </FormSplitLayout>
+            </Drawer>
         </>
     );
 }

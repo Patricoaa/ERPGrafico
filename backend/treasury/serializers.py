@@ -1035,6 +1035,9 @@ class CreditCardStatementSerializer(serializers.ModelSerializer):
     card_account_name = serializers.CharField(
         source='card_account.name', read_only=True,
     )
+    card_account_bank = serializers.PrimaryKeyRelatedField(
+        source='card_account.bank', read_only=True,
+    )
     payment_movement_id = serializers.PrimaryKeyRelatedField(
         source='payment_movement', read_only=True,
     )
@@ -1066,7 +1069,7 @@ class CreditCardStatementSerializer(serializers.ModelSerializer):
         model = CreditCardStatement
         fields = [
             'id', 'display_id',
-            'card_account', 'card_account_name',
+            'card_account', 'card_account_name', 'card_account_bank',
             'period_year', 'period_month',
             'cut_off_date', 'due_date',
             'billed_amount', 'minimum_payment',

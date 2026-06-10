@@ -341,6 +341,9 @@ export function PurchaseCheckoutWizard({
                 if (paymentData.paymentMethodId) formData.append('payment_method_id', paymentData.paymentMethodId.toString())
                 if (paymentData.method === 'CHECK' && paymentData.checkBankId) formData.append('check_bank_id', paymentData.checkBankId.toString())
                 if (paymentData.method === 'CHECK' && paymentData.checkDueDate) formData.append('check_due_date', paymentData.checkDueDate)
+                if (paymentData.installments && paymentData.installments > 1) {
+                    formData.append('installments', paymentData.installments.toString())
+                }
                 formData.append('payment_type', 'OUTBOUND')
             } else {
                 // Implicit credit - no payment
