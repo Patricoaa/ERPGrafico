@@ -29,7 +29,8 @@ interface PaymentModalProps {
         payment_method_new?: string | null,
         documentReference?: string,
         documentDate?: string,
-        documentAttachment?: File | null
+        documentAttachment?: File | null,
+        installments?: number
     }) => void
     showDteSelector?: boolean
     hideDteFields?: boolean
@@ -144,14 +145,16 @@ export function PaymentModal({
                             transaction_number: paymentData.amount === 0 ? undefined : paymentData.transactionNumber,
                             is_pending_registration: paymentData.isPending,
                             treasury_account_id: paymentData.amount === 0 ? null : paymentData.treasuryAccountId,
-                            payment_method_new: paymentData.amount === 0 ? null : paymentData.paymentMethodId?.toString()
+                            payment_method_new: paymentData.amount === 0 ? null : paymentData.paymentMethodId?.toString(),
+                            installments: paymentData.method === 'CREDIT_CARD' ? (paymentData.installments || 1) : undefined
                         })}
                         disabled={
                             (paymentData.amount < 0) ||
-                            (paymentData.amount > 0 && !paymentData.treasuryAccountId) ||
+                            (paymentData.amount > 0 && !paymentData.treasuryAccountId && paymentData.method !== 'CHECK') ||
                             ((!hideDteFields && isPurchase && (dteType === 'BOLETA' || dteType === 'FACTURA') && !existingInvoice && !documentReference && !isDocumentPending)) ||
                             ((hideDteFields && isPurchase && (dteType === 'BOLETA' || dteType === 'FACTURA') && !!existingInvoice && !documentReference)) ||
                             ((paymentData.method === 'TRANSFER') && !paymentData.isPending && !paymentData.transactionNumber && paymentData.amount > 0) ||
+                            ((paymentData.method === 'CHECK') && !paymentData.transactionNumber && paymentData.amount > 0) ||
                             (!hideDteFields && dteType === 'FACTURA' && !existingInvoice && !isDocumentPending && !documentAttachment) ||
                             ((dteType === 'BOLETA' || dteType === 'FACTURA') && !isPeriodValid)
                         }

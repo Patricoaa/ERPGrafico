@@ -60,6 +60,16 @@ export interface TreasurySettings {
     pos_rounding_adjustment_account: string | null
     pos_cashback_error_account: string | null
     pos_other_outflow_account: string | null
+    // Cheques
+    check_portfolio_account: string | null
+    issued_checks_account: string | null
+    // Financial expense accounts (F5.1)
+    interest_expense_account: string | null
+    insurance_expense_account: string | null
+    interest_payable_account: string | null
+    loan_penalty_expense_account: string | null
+    loan_commission_expense_account: string | null
+    loan_stamp_tax_expense_account: string | null
 }
 
 export type TreasurySettingsUpdatePayload = Partial<TreasurySettings>

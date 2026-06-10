@@ -514,10 +514,12 @@ class BillingService:
     @staticmethod
     @transaction.atomic
     def _pos_checkout_internal(order_data, dte_type, payment_method, transaction_number=None,
-                     is_pending_registration=False, payment_is_pending=False, amount=None, treasury_account_id=None,
+                     is_pending_registration=False, payment_is_pending=False, amount=None,
+                     installments=1, treasury_account_id=None,
                      document_number=None, document_date=None, document_attachment=None,
                      delivery_type='IMMEDIATE', delivery_date=None, immediate_lines=None, payment_type='INBOUND',
-                     line_files=None, pos_session_id=None, user=None, payment_method_id=None, credit_approval_task_id=None, draft_id=None, direct_credit_approval=False):
+                     line_files=None, pos_session_id=None, user=None, payment_method_id=None, credit_approval_task_id=None, draft_id=None, direct_credit_approval=False,
+                     check_number=None, check_bank_id=None, check_issue_date=None, check_due_date=None, checkbook_id=None):
         """
         Complete POS checkout: Create Order -> Confirm -> Invoice -> Payment -> (Optional) Delivery.
         pos_session_id: Optional ID of an open POS session to link the payment to.
@@ -844,7 +846,31 @@ class BillingService:
                 from treasury.models import PaymentMethod as PM
                 payment_method_inst = PM.objects.filter(id=payment_method_id).first()
 
+            # Asegurar que installments sea int
+            if not isinstance(installments, int):
+                try:
+                    installments = int(installments) if installments is not None else 1
+                except (ValueError, TypeError):
+                    installments = 1
+
             if payment_method_inst is not None:
+                # E2: la tarjeta de crédito propia (método CREDIT_CARD) es un
+                # medio de pago de COMPRAS — usarla genera pasivo de TC. NO es
+                # un medio de COBRO de ventas: cobrar una venta con ella crearía
+                # deuda de tarjeta propia (antes esta rama instanciaba
+                # create_card_purchase → un OUTBOUND D=cliente / H=pasivo TC,
+                # contablemente incorrecto). Coincide con el filtro
+                # `allow_for_sales` del frontend, que ya oculta estos métodos en
+                # el checkout de ventas; esto lo hace cumplir también en backend.
+                if (
+                    payment_method_inst.method_type == 'CREDIT_CARD'
+                    and payment_type == TreasuryMovement.Type.INBOUND
+                ):
+                    raise ValidationError(
+                        "La tarjeta de crédito propia no es un medio de cobro de "
+                        "ventas. Para cobros con tarjeta use un medio de tipo "
+                        "Tarjeta o terminal."
+                    )
                 from treasury.orchestrator import PaymentOrchestrator
                 PaymentOrchestrator.create_movement(
                     payment_method_obj=payment_method_inst,
@@ -859,6 +885,12 @@ class BillingService:
                     transaction_number=transaction_number or None,
                     is_pending_registration=payment_is_pending,
                     created_by=user,
+                    # Check-specific params (only used when method_type == 'CHECK')
+                    check_number=check_number,
+                    check_bank_id=check_bank_id,
+                    check_issue_date=check_issue_date,
+                    check_due_date=check_due_date,
+                    checkbook_id=checkbook_id,
                 )
             else:
                 # Fallback legacy path: payment_method_id not provided (non-POS flows).

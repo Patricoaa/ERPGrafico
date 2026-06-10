@@ -284,191 +284,161 @@ export default function StatementDetailPage({ params }: { params: Promise<{ id: 
     const netMovement = totalCredits - totalDebits
 
     const navigation = {
+        moduleName: "Tesorería",
+        moduleHref: "/treasury",
         tabs: [
-            { value: "movements", label: "Movimientos", iconName: "banknote", href: "/treasury?view=movements" },
-            {
-                value: "accounts",
-                label: "Cuentas de tesoreria",
-                iconName: "landmark",
-                href: "/treasury?view=accounts",
-                subTabs: [
-                    { value: "accounts", label: "Cuentas", href: "/treasury?view=accounts&sub=accounts" },
-                    { value: "banks", label: "Bancos", href: "/treasury?view=accounts&sub=banks" },
-                    { value: "methods", label: "Métodos", href: "/treasury?view=accounts&sub=methods" },
-                ]
-            },
-            {
-                value: "reconciliation",
-                label: "Conciliación",
-                iconName: "history",
-                href: "/treasury?view=reconciliation",
-                subTabs: [
-                    { value: "statements", label: "Cartolas", iconName: "file-text", href: "/treasury?view=reconciliation&sub=statements" },
-                    { value: "dashboard", label: "Dashboard", iconName: "bar-chart-3", href: "/treasury?view=reconciliation&sub=dashboard" },
-                    { value: "intelligence", label: "Inteligencia", iconName: "brain", href: "/treasury/reconciliation?tab=intelligence" },
-                ]
-            },
-            {
-                value: "config",
-                label: "Config",
-                iconName: "settings",
-                href: "/treasury?view=config",
-                subTabs: [
-                    { value: "conciliation", label: "Conciliación", href: "/treasury?view=config&tab=conciliation", iconName: "arrow-left-right" },
-                    { value: "audit", label: "Arqueo", href: "/treasury?view=config&tab=audit", iconName: "banknote" },
-                    { value: "movements", label: "Movimientos", href: "/treasury?view=config&tab=movements", iconName: "settings-2" }
-                ]
-            },
+            { value: "operaciones", label: "Operaciones", iconName: "banknote", href: "/treasury/operaciones?tab=movements" },
+            { value: "centro-bancos", label: "Centro de Bancos", iconName: "landmark", href: "/treasury/centro-bancos?tab=all" },
+            { value: "terminal-cobro", label: "Terminal de Cobro", iconName: "cpu", href: "/treasury/terminal-cobro?tab=providers" },
+            { value: "config", label: "Configuración", iconName: "settings", href: "/treasury/settings?tab=conciliation" },
         ],
-        activeValue: "reconciliation",
-        subActiveValue: "statements",
+        activeValue: "centro-bancos",
         breadcrumbs: [
             { label: statement.display_id }
         ]
     }
 
     return (
-        <div className="flex-1 space-y-4 pt-2">
-            <PageHeader
-                title={statement.display_id}
-                description={statement.treasury_account_name}
-                variant="minimal"
-                navigation={navigation}
-                status={{
-                    label: statement.state_display || statement.state,
-                    type: statement.state === 'CONFIRMED' ? 'synced' : 'info'
-                }}
-                titleActions={
-                    statement.state !== 'CONFIRMED' && statement.reconciliation_progress < 100 && (
-                        <Button
-                            onClick={() => router.push(`/treasury/reconciliation/${statement.id}/workbench`)}
-                            className="bg-primary hover:bg-primary/90 shadow-sm"
-                        >
-                            <Activity className="mr-2 h-4 w-4" />
-                            Reconciliar
-                        </Button>
-                    )
-                }
-            />
+        <div className="flex-1 flex flex-col min-h-0">
+            <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar space-y-4 pt-2 pb-4">
+                <PageHeader
+                    title={statement.display_id}
+                    description={statement.treasury_account_name}
+                    variant="minimal"
+                    navigation={navigation}
+                    status={{
+                        label: statement.state_display || statement.state,
+                        type: statement.state === 'CONFIRMED' ? 'synced' : 'info'
+                    }}
+                />
 
-            {/* Summary Grid */}
-            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
-                <Card className="shadow-sm bg-card border">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
-                        <CardTitle className="text-xs font-bold uppercase text-muted-foreground tracking-wider">Apertura</CardTitle>
-                        <Banknote className="h-3.5 w-3.5 text-primary" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-xl font-bold font-mono">
-                            {formatCurrency(statement.opening_balance)}
+                {/* Summary Grid */}
+                <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+                    <Card className="shadow-sm bg-card border">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
+                            <CardTitle className="text-xs font-bold uppercase text-muted-foreground tracking-wider">Apertura</CardTitle>
+                            <Banknote className="h-3.5 w-3.5 text-primary" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-xl font-bold font-mono">
+                                {formatCurrency(statement.opening_balance)}
+                            </div>
+                            <p className="text-[10px] text-muted-foreground mt-0.5 flex items-center gap-1"> {/* intentional: badge density */}
+                                <Calendar className="h-2.5 w-2.5" />
+                                {format(new Date(statement.statement_date), 'dd MMMM yyyy', { locale: es })}
+                            </p>
+                        </CardContent>
+                    </Card>
+
+                    <Card className="shadow-sm bg-card border">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
+                            <CardTitle className="text-xs font-bold uppercase text-muted-foreground tracking-wider">Cierre</CardTitle>
+                            <TrendingUp className="h-3.5 w-3.5 text-success" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-xl font-bold font-mono">
+                                {formatCurrency(statement.closing_balance)}
+                            </div>
+                            <p className={`text-[10px] font-black mt-0.5 flex items-center gap-1 ${netMovement >= 0 ? 'text-income' : 'text-expense'}`}> {/* intentional: badge density */}
+                                {netMovement >= 0 ? <TrendingUp className="h-2.5 w-2.5" /> : <TrendingDown className="h-2.5 w-2.5" />}
+                                {netMovement >= 0 ? 'Excedente' : 'Déficit'}: {formatCurrency(Math.abs(netMovement))}
+                            </p>
+                        </CardContent>
+                    </Card>
+
+                    <Card className="shadow-sm bg-card border">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
+                            <CardTitle className="text-xs font-bold uppercase text-muted-foreground tracking-wider">Cargos (Sale)</CardTitle>
+                            <TrendingDown className="h-3.5 w-3.5 text-destructive" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-xl font-bold font-mono text-expense">
+                                {formatCurrency(totalDebits)}
+                            </div>
+                            <p className="text-[10px] text-muted-foreground mt-0.5"> {/* intentional: badge density */}
+                                {statement.lines.filter(l => parseFloat(l.debit) > 0).length} cargos detectados
+                            </p>
+                        </CardContent>
+                    </Card>
+
+                    <Card className="shadow-sm bg-card border">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
+                            <CardTitle className="text-xs font-bold uppercase text-muted-foreground tracking-wider">Abonos (Entra)</CardTitle>
+                            <TrendingUp className="h-3.5 w-3.5 text-success/50" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-xl font-bold font-mono text-income">
+                                {formatCurrency(totalCredits)}
+                            </div>
+                            <p className="text-[10px] text-muted-foreground mt-0.5"> {/* intentional: badge density */}
+                                {statement.lines.filter(l => parseFloat(l.credit) > 0).length} abonos detectados
+                            </p>
+                        </CardContent>
+                    </Card>
+                </div>
+
+                {/* Progress Bar Container */}
+                <div className="bg-card p-4 rounded-xl border shadow-sm">
+                    <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Estado de la Conciliación</span>
+                            <Info className="h-3 w-3 text-muted-foreground" />
                         </div>
-                        <p className="text-[10px] text-muted-foreground mt-0.5 flex items-center gap-1"> {/* intentional: badge density */}
-                            <Calendar className="h-2.5 w-2.5" />
-                            {format(new Date(statement.statement_date), 'dd MMMM yyyy', { locale: es })}
-                        </p>
-                    </CardContent>
-                </Card>
-
-                <Card className="shadow-sm bg-card border">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
-                        <CardTitle className="text-xs font-bold uppercase text-muted-foreground tracking-wider">Cierre</CardTitle>
-                        <TrendingUp className="h-3.5 w-3.5 text-success" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-xl font-bold font-mono">
-                            {formatCurrency(statement.closing_balance)}
-                        </div>
-                        <p className={`text-[10px] font-black mt-0.5 flex items-center gap-1 ${netMovement >= 0 ? 'text-income' : 'text-expense'}`}> {/* intentional: badge density */}
-                            {netMovement >= 0 ? <TrendingUp className="h-2.5 w-2.5" /> : <TrendingDown className="h-2.5 w-2.5" />}
-                            {netMovement >= 0 ? 'Excedente' : 'Déficit'}: {formatCurrency(Math.abs(netMovement))}
-                        </p>
-                    </CardContent>
-                </Card>
-
-                <Card className="shadow-sm bg-card border">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
-                        <CardTitle className="text-xs font-bold uppercase text-muted-foreground tracking-wider">Cargos (Sale)</CardTitle>
-                        <TrendingDown className="h-3.5 w-3.5 text-destructive" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-xl font-bold font-mono text-expense">
-                            {formatCurrency(totalDebits)}
-                        </div>
-                        <p className="text-[10px] text-muted-foreground mt-0.5"> {/* intentional: badge density */}
-                            {statement.lines.filter(l => parseFloat(l.debit) > 0).length} cargos detectados
-                        </p>
-                    </CardContent>
-                </Card>
-
-                <Card className="shadow-sm bg-card border">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
-                        <CardTitle className="text-xs font-bold uppercase text-muted-foreground tracking-wider">Abonos (Entra)</CardTitle>
-                        <TrendingUp className="h-3.5 w-3.5 text-success/50" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-xl font-bold font-mono text-income">
-                            {formatCurrency(totalCredits)}
-                        </div>
-                        <p className="text-[10px] text-muted-foreground mt-0.5"> {/* intentional: badge density */}
-                            {statement.lines.filter(l => parseFloat(l.credit) > 0).length} abonos detectados
-                        </p>
-                    </CardContent>
-                </Card>
-            </div>
-
-            {/* Progress Bar Container */}
-            <div className="bg-card p-4 rounded-xl border shadow-sm">
-                <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Estado de la Conciliación</span>
-                        <Info className="h-3 w-3 text-muted-foreground" />
+                        <span className="text-sm font-bold text-primary">{statement.reconciliation_progress}% completado</span>
                     </div>
-                    <span className="text-sm font-bold text-primary">{statement.reconciliation_progress}% completado</span>
+                    <Progress value={statement.reconciliation_progress} className="h-2.5 bg-muted" />
+                    <div className="mt-2 text-[10px] text-muted-foreground flex justify-between"> {/* intentional: badge density */}
+                        <span>{statement.reconciled_lines} líneas procesadas</span>
+                        <span>{statement.total_lines - statement.reconciled_lines} sin conciliar</span>
+                    </div>
                 </div>
-                <Progress value={statement.reconciliation_progress} className="h-2.5 bg-muted" />
-                <div className="mt-2 text-[10px] text-muted-foreground flex justify-between"> {/* intentional: badge density */}
-                    <span>{statement.reconciled_lines} líneas procesadas</span>
-                    <span>{statement.total_lines - statement.reconciled_lines} sin conciliar</span>
-                </div>
-            </div>
 
-            <DataTable
-                columns={columns}
-                data={statement.lines}
-                variant="embedded"
-                filterColumn="description"
-                searchPlaceholder="Buscar por descripción o referencia..."
-                facetedFilters={[
-                    {
-                        column: "reconciliation_state",
-                        title: "Estado Reconciliación",
-                        options: [
-                            { label: "Sin Conciliar", value: "UNRECONCILED" },
-                            { label: "Conciliado", value: "RECONCILED" },
-                            { label: "Sugerencia (Match)", value: "MATCHED" },
-                            { label: "Excluido", value: "EXCLUDED" },
-                            { label: "En Disputa", value: "DISPUTED" },
-                        ]
+                <DataTable
+                    columns={columns}
+                    data={statement.lines}
+                    variant="embedded"
+                    filterColumn="description"
+                    searchPlaceholder="Buscar por descripción o referencia..."
+                    facetedFilters={[
+                        {
+                            column: "reconciliation_state",
+                            title: "Estado Reconciliación",
+                            options: [
+                                { label: "Sin Conciliar", value: "UNRECONCILED" },
+                                { label: "Conciliado", value: "RECONCILED" },
+                                { label: "Sugerencia (Match)", value: "MATCHED" },
+                                { label: "Excluido", value: "EXCLUDED" },
+                                { label: "En Disputa", value: "DISPUTED" },
+                            ]
+                        }
+                    ]}
+                    useAdvancedFilter={true}
+                    defaultPageSize={20}
+                    createAction={
+                        statement.state !== 'CONFIRMED' && statement.reconciliation_progress < 100 ? (
+                            <Button onClick={() => router.push(`/treasury/reconciliation/${statement.id}/workbench`)}>
+                                <Activity className="mr-2 h-4 w-4" />
+                                Reconciliar
+                            </Button>
+                        ) : undefined
                     }
-                ]}
-                useAdvancedFilter={true}
-                defaultPageSize={20}
-            />
+                />
 
-            {/* Metadata Footer */}
-            <div className="flex items-center justify-between px-2 pt-2">
-                <div className="flex gap-4">
-                    <div className="flex items-center gap-1 text-[10px] text-muted-foreground"> {/* intentional: badge density */}
-                        <span className="font-semibold uppercase">Importado:</span>
-                        <span>{format(new Date(statement.imported_at), 'dd/MM/yyyy HH:mm', { locale: es })}</span>
+                {/* Metadata Footer */}
+                <div className="flex items-center justify-between px-2 pt-2">
+                    <div className="flex gap-4">
+                        <div className="flex items-center gap-1 text-[10px] text-muted-foreground"> {/* intentional: badge density */}
+                            <span className="font-semibold uppercase">Importado:</span>
+                            <span>{format(new Date(statement.imported_at), 'dd/MM/yyyy HH:mm', { locale: es })}</span>
+                        </div>
+                        <div className="flex items-center gap-1 text-[10px] text-muted-foreground"> {/* intentional: badge density */}
+                            <span className="font-semibold uppercase">Por:</span>
+                            <span>{statement.imported_by_name}</span>
+                        </div>
                     </div>
-                    <div className="flex items-center gap-1 text-[10px] text-muted-foreground"> {/* intentional: badge density */}
-                        <span className="font-semibold uppercase">Por:</span>
-                        <span>{statement.imported_by_name}</span>
+                    <div className="text-[10px] text-muted-foreground/40 italic"> {/* intentional: badge density */}
+                        Referencia del sistema: #{statement.id}
                     </div>
-                </div>
-                <div className="text-[10px] text-muted-foreground/40 italic"> {/* intentional: badge density */}
-                    Referencia del sistema: #{statement.id}
                 </div>
             </div>
 

@@ -478,7 +478,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
 
                             <Button
                                 variant="outline"
-                                className="h-32 flex flex-col items-center justify-center gap-3 border-2 hover:border-primary hover:bg-primary/10 dark:hover:bg-primary/20 group transition-all"
+                                className="h-32 flex flex-col items-center justify-center gap-3 border-2 hover:border-primary hover:bg-primary/10 group transition-all"
                                 disabled={availableSessions.length === 0}
                                 onClick={() => setWizardStep(10)} // 10 is Join Session Flow
                             >
@@ -604,7 +604,7 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
                         </div>
 
                         {hasDiff && (
-                            <div className="bg-warning/10 dark:bg-warning/20 border border-warning/20 dark:border-warning rounded-md p-4 space-y-3">
+                            <div className="bg-warning/10 border border-warning/20 rounded-md p-4 space-y-3">
                                 <div className="flex items-center gap-2 text-warning font-bold">
                                     <AlertTriangle className="h-4 w-4" />
                                     <span>Se detectó una diferencia</span>
@@ -716,10 +716,10 @@ export const SessionControl = forwardRef<SessionControlHandle, SessionControlPro
 
                                         {/* Insufficient funds warning */}
                                         {openingInsufficientFunds && openingSelectedAccount && (
-                                            <div className="bg-destructive/10 dark:bg-destructive/20 border border-destructive/20 dark:border-destructive rounded-md p-3 space-y-1">
+                                            <div className="bg-destructive/10 border border-destructive/20 rounded-md p-3 space-y-1">
                                                 <div className="flex items-start gap-2">
-                                                    <AlertTriangle className="h-4 w-4 text-destructive dark:text-destructive mt-0.5 flex-shrink-0" />
-                                                    <div className="text-sm text-destructive dark:text-destructive/20">
+                                                    <AlertTriangle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
+                                                    <div className="text-sm text-destructive">
                                                         <div className="font-bold">Fondos Insuficientes</div>
                                                         <div className="text-xs mt-1 space-y-0.5">
                                                             <div>Disponible en {openingSelectedAccount.name as string}: {formatCurrency((openingSelectedAccount.current_balance as number) || 0)}</div>

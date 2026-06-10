@@ -43,7 +43,7 @@ export function ProductTypeSelector({
             required={required}
             error={error}
             disabled={isDisabled}
-            containerClassName={cn("w-full", lockedType && "opacity-80")}
+            containerClassName="w-full"
         >
             <Select
                 disabled={isDisabled}

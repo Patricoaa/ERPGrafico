@@ -8,12 +8,13 @@ import { Building2, Settings, Printer } from "lucide-react"
 import { useTerminalProviders, type PaymentTerminalProvider } from "@/features/treasury"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
 import { AdvancedContactSelector } from "@/components/selectors/AdvancedContactSelector"
+import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { Form, FormField } from "@/components/ui/form"
 import { Button } from "@/components/ui/button"
 import { useReactToPrint } from "react-to-print"
 import { PrintableLayout } from "@/features/_shared/transaction-drawer"
 import type { DrawerMode } from "@/features/_shared/drawer/types"
-import { Drawer, CancelButton, ActionSlideButton, LabeledInput, FormSection, FormFooter } from "@/components/shared"
+import { Drawer, CancelButton, ActionSlideButton, LabeledInput, FormSection, FormFooter, FormSplitLayout } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { toast } from "sonner"
 
@@ -24,6 +25,7 @@ const providerSchema = z.object({
     receivable_account: z.string().nullable().optional(),
     commission_expense_account: z.string().nullable().optional(),
     commission_iva_account: z.string().nullable().optional(),
+    commission_product: z.string().nullable().optional(),
 })
 
 type ProviderFormValues = z.infer<typeof providerSchema>
@@ -53,6 +55,7 @@ export function ProviderDrawer({ open, onOpenChange, provider, onSuccess, mode: 
             receivable_account: null,
             commission_expense_account: null,
             commission_iva_account: null,
+            commission_product: null,
         }
     })
 
@@ -67,6 +70,7 @@ export function ProviderDrawer({ open, onOpenChange, provider, onSuccess, mode: 
                         receivable_account: provider.receivable_account?.toString() || null,
                         commission_expense_account: provider.commission_expense_account?.toString() || null,
                         commission_iva_account: provider.commission_iva_account?.toString() || null,
+                        commission_product: provider.commission_product?.toString() || null,
                     })
                 } else {
                     form.reset({
@@ -76,6 +80,7 @@ export function ProviderDrawer({ open, onOpenChange, provider, onSuccess, mode: 
                         receivable_account: null,
                         commission_expense_account: null,
                         commission_iva_account: null,
+                        commission_product: null,
                     })
                 }
             })
@@ -97,6 +102,7 @@ export function ProviderDrawer({ open, onOpenChange, provider, onSuccess, mode: 
                 receivable_account: values.receivable_account ? Number(values.receivable_account) : undefined as any,
                 commission_expense_account: values.commission_expense_account ? Number(values.commission_expense_account) : undefined as any,
                 commission_iva_account: values.commission_iva_account ? Number(values.commission_iva_account) : undefined as any,
+                commission_product: values.commission_product ? Number(values.commission_product) : undefined as any,
                 is_active: true,
             }
 
@@ -129,6 +135,10 @@ export function ProviderDrawer({ open, onOpenChange, provider, onSuccess, mode: 
                             <span>Nombre:</span>
                             <span>{provider?.name ?? '-'}</span>
                         </div>
+                        <div className="flex justify-between">
+                            <span>Cta. Destino Liquidación:</span>
+                            <span>{provider?.bank_treasury_account_name ?? '-'}</span>
+                        </div>
                     </div>
                 </PrintableLayout>
             )}
@@ -137,7 +147,7 @@ export function ProviderDrawer({ open, onOpenChange, provider, onSuccess, mode: 
                 onOpenChange={onOpenChange}
                 side="left"
                 defaultSize={formDrawerWidth("medium", !!provider)}
-                contentClassName="p-0"
+                mode={mode}
                 title={<><span>{drawerTitle}</span>{(mode === 'view' || mode === 'edit') && provider?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}</>}
                 subtitle="Configure las cuentas contables para recaudación y comisiones."
                 footer={isView ? undefined : (
@@ -153,93 +163,106 @@ export function ProviderDrawer({ open, onOpenChange, provider, onSuccess, mode: 
                     />
                 )}
             >
-            <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-2">
-                    <fieldset disabled={isView} className="contents">
-                    <FormSection title="Información General" icon={Building2} />
-                    <div className="space-y-4">
-                        <div className="space-y-2">
-                            <Controller
-                                control={form.control}
-                                name="supplier"
-                                render={({ field }) => (
-                                    <AdvancedContactSelector
-                                        value={field.value || null}
-                                        onChange={(val) => {
-                                            field.onChange(val)
-                                        }}
-                                        onSelectContact={(contact) => {
-                                            const currentName = form.getValues("name")
-                                            if (!currentName) form.setValue("name", contact.name)
-                                        }}
-                                        label="Contacto / Entidad (Proveedor)"
-                                    />
-                                )}
-                            />
-                        </div>
+                <Form {...form}>
+                    <FormSplitLayout>
+                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-6 pb-6 pt-6">
+                            <fieldset disabled={isView} className="contents">
+                                <FormSection title="Información General" icon={Building2} />
+                                <div className="space-y-4">
+                                    <div className="space-y-2">
+                                        <Controller
+                                            control={form.control}
+                                            name="supplier"
+                                            render={({ field }) => (
+                                                <AdvancedContactSelector
+                                                    value={field.value || null}
+                                                    onChange={(val) => {
+                                                        field.onChange(val)
+                                                    }}
+                                                    onSelectContact={(contact) => {
+                                                        const currentName = form.getValues("name")
+                                                        if (!currentName) form.setValue("name", contact.name)
+                                                    }}
+                                                    label="Contacto / Entidad (Proveedor)"
+                                                />
+                                            )}
+                                        />
+                                    </div>
 
-                        <div className="space-y-2">
-                            <FormField
-                                control={form.control}
-                                name="name"
-                                render={({ field }) => (
-                                    <LabeledInput
-                                        label="Nombre / Alias"
-                                        required
-                                        {...field}
-                                        placeholder="Ej: Transbank Local Primary"
-                                    />
-                                )}
-                            />
-                        </div>
-                    </div>
+                                    <div className="space-y-2">
+                                        <FormField
+                                            control={form.control}
+                                            name="name"
+                                            render={({ field }) => (
+                                                <LabeledInput
+                                                    label="Nombre / Alias"
+                                                    required
+                                                    {...field}
+                                                    placeholder="Ej: Transbank Local Primary"
+                                                />
+                                            )}
+                                        />
+                                    </div>
+                                </div>
 
-                    <FormSection title="Configuración Contable" icon={Settings} className="my-4" />
+                                <FormSection title="Configuración Contable" icon={Settings} className="my-4" />
 
-                    <div className="space-y-4">
-                        <div className="space-y-2">
-                            <Controller
-                                control={form.control}
-                                name="receivable_account"
-                                render={({ field }) => (
-                                    <AccountSelector
-                                        value={field.value || null}
-                                        onChange={(v) => field.onChange(v)}
-                                        accountType="ASSET"
-                                        label="Cuenta Puente Recaudación"
+                                <div className="space-y-4">
+                                    <div className="space-y-2">
+                                        <Controller
+                                            control={form.control}
+                                            name="receivable_account"
+                                            render={({ field }) => (
+                                                <AccountSelector
+                                                    value={field.value || null}
+                                                    onChange={(v) => field.onChange(v)}
+                                                    accountType="ASSET"
+                                                    label="Cuenta Puente Recaudación"
+                                                />
+                                            )}
+                                        />
+                                    </div>
+                                    <Controller
+                                        control={form.control}
+                                        name="commission_expense_account"
+                                        render={({ field }) => (
+                                            <AccountSelector
+                                                value={field.value || null}
+                                                onChange={(v) => field.onChange(v)}
+                                                accountType="EXPENSE"
+                                                label="Cuenta Gasto Comisiones"
+                                            />
+                                        )}
                                     />
-                                )}
-                            />
-                        </div>
-                        <Controller
-                            control={form.control}
-                            name="commission_expense_account"
-                            render={({ field }) => (
-                                <AccountSelector
-                                    value={field.value || null}
-                                    onChange={(v) => field.onChange(v)}
-                                    accountType="EXPENSE"
-                                    label="Cuenta Gasto Comisiones"
-                                />
-                            )}
-                        />
-                        <Controller
-                            control={form.control}
-                            name="commission_iva_account"
-                            render={({ field }) => (
-                                <AccountSelector
-                                    value={field.value || null}
-                                    onChange={(v) => field.onChange(v)}
-                                    accountType="ASSET"
-                                    label="Cuenta Puente IVA de Comisiones"
-                                />
-                            )}
-                        />
-                    </div>
-                    </fieldset>
-                </form>
-            </Form>
-        </Drawer>
+                                    <Controller
+                                        control={form.control}
+                                        name="commission_iva_account"
+                                        render={({ field }) => (
+                                            <AccountSelector
+                                                value={field.value || null}
+                                                onChange={(v) => field.onChange(v)}
+                                                accountType="ASSET"
+                                                label="Cuenta Puente IVA de Comisiones"
+                                            />
+                                        )}
+                                    />
+                                    <Controller
+                                        control={form.control}
+                                        name="commission_product"
+                                        render={({ field }) => (
+                                            <ProductSelector
+                                                value={field.value || null}
+                                                onChange={(v) => field.onChange(v)}
+                                                label="Producto Servicio Comisión"
+                                            />
+                                        )}
+                                    />
+                                </div>
+                            </fieldset>
+                        </form>
+                    </FormSplitLayout>
+                </Form>
+            </Drawer>
         </>
     )
 }

@@ -51,7 +51,7 @@ export function AdvanceDrawer({ open, onOpenChange, advance, employees: employee
     const printRef = useRef<HTMLDivElement>(null)
     const handlePrint = useReactToPrint({ contentRef: printRef })
     const [saving, setSaving] = useState(false)
-    
+
     const width = formDrawerWidth("medium", !!advance)
 
     const form = useForm<AdvanceFormValues>({
@@ -139,7 +139,7 @@ export function AdvanceDrawer({ open, onOpenChange, advance, employees: employee
                 icon={WalletCards}
                 title={<><span>{drawerTitle}</span>{(mode === 'view' || mode === 'edit') && advance?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}</>}
                 subtitle={advance ? "Revise y modifique los datos del anticipo solicitado." : "Registre una entrega de dinero a cuenta de la próxima liquidación."}
-                contentClassName="p-0"
+                mode={mode}
                 footer={isView ? undefined : (
                     <FormFooter
                         actions={
@@ -153,159 +153,164 @@ export function AdvanceDrawer({ open, onOpenChange, advance, employees: employee
                     />
                 )}
             >
-            {advance ? (
-                <FormSplitLayout
-                    showSidebar={true}
-                    sidebar={<ActivitySidebar entityId={advance.id} entityType="salaryadvance" title="Historial" />}
-                >
-                    <div className="flex-1 flex flex-col overflow-y-auto p-6 pt-2 scrollbar-thin">
-                        <Form {...form}>
-                            <form id="advance-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pr-1">
-                                <fieldset disabled={isView} className="contents">
-                                <FormField control={form.control} name="employee" render={({ field, fieldState }) => (
-                                    <LabeledSelect
-                                        label="Empleado"
-                                        value={field.value}
-                                        onChange={field.onChange}
-                                        error={fieldState.error?.message}
-                                        placeholder="Seleccionar empleado..."
-                                        options={employees.map(e => ({
-                                            value: e.id.toString(),
-                                            label: e.contact_detail?.name || ""
-                                        }))}
-                                    />
-                                )} />
+                {advance ? (
+                    <FormSplitLayout
+                        showSidebar={true}
+                        sidebar={<ActivitySidebar entityId={advance.id} entityType="salaryadvance" title="Historial" />}
+                    >
+                        <div className="flex-1 flex flex-col overflow-y-auto p-6 pt-2 scrollbar-thin">
+                            <Form {...form}>
+                                <form id="advance-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-6 pb-6 pt-6">
+                                    <fieldset disabled={isView} className="contents">
+                                        <div className="space-y-6">
+                                            <FormField control={form.control} name="employee" render={({ field, fieldState }) => (
+                                                <LabeledSelect
+                                                    label="Empleado"
+                                                    value={field.value}
+                                                    onChange={field.onChange}
+                                                    error={fieldState.error?.message}
+                                                    placeholder="Seleccionar empleado..."
+                                                    options={employees.map(e => ({
+                                                        value: e.id.toString(),
+                                                        label: e.contact_detail?.name || ""
+                                                    }))}
+                                                />
+                                            )} />
 
-                                <FormField control={form.control} name="amount" render={({ field, fieldState }) => (
-                                    <LabeledInput
-                                        label="Monto ($)"
-                                        required
-                                        type="number"
-                                        placeholder="0"
-                                        error={fieldState.error?.message}
-                                        {...field}
-                                    />
-                                )} />
-                                <FormField control={form.control} name="date" render={({ field, fieldState }) => (
-                                    <PeriodValidationDateInput
-                                        label="Fecha Propuesta"
-                                        required
-                                        date={field.value ? new Date(field.value + 'T12:00:00') : undefined}
-                                        onDateChange={(d) => {
-                                            if (!d) {
-                                                field.onChange("")
-                                                return
-                                            }
-                                            field.onChange(d.toISOString().split('T')[0])
-                                        }}
-                                        validationType="accounting"
-                                    />
-                                )} />
+                                            <FormField control={form.control} name="amount" render={({ field, fieldState }) => (
+                                                <LabeledInput
+                                                    label="Monto ($)"
+                                                    required
+                                                    type="number"
+                                                    placeholder="0"
+                                                    error={fieldState.error?.message}
+                                                    {...field}
+                                                />
+                                            )} />
+                                            <FormField control={form.control} name="date" render={({ field, fieldState }) => (
+                                                <PeriodValidationDateInput
+                                                    label="Fecha Propuesta"
+                                                    required
+                                                    date={field.value ? new Date(field.value + 'T12:00:00') : undefined}
+                                                    onDateChange={(d) => {
+                                                        if (!d) {
+                                                            field.onChange("")
+                                                            return
+                                                        }
+                                                        field.onChange(d.toISOString().split('T')[0])
+                                                    }}
+                                                    validationType="accounting"
+                                                />
+                                            )} />
 
-                                <FormField control={form.control} name="payroll" render={({ field, fieldState }) => (
-                                    <LabeledSelect
-                                        label="Vincular a Liquidación (Obligatorio)"
-                                        value={field.value}
-                                        onChange={field.onChange}
-                                        error={fieldState.error?.message}
-                                        placeholder="Seleccionar liquidación..."
-                                        options={employeePayrolls.map(p => ({
-                                            value: p.id.toString(),
-                                            label: `${p.display_id} – ${p.period_label} (${p.status_display})`
-                                        }))}
-                                    />
-                                )} />
+                                            <FormField control={form.control} name="payroll" render={({ field, fieldState }) => (
+                                                <LabeledSelect
+                                                    label="Vincular a Liquidación (Obligatorio)"
+                                                    value={field.value}
+                                                    onChange={field.onChange}
+                                                    error={fieldState.error?.message}
+                                                    placeholder="Seleccionar liquidación..."
+                                                    options={employeePayrolls.map(p => ({
+                                                        value: p.id.toString(),
+                                                        label: `${p.display_id} – ${p.period_label} (${p.status_display})`
+                                                    }))}
+                                                />
+                                            )} />
 
-                                <FormField control={form.control} name="notes" render={({ field }) => (
-                                    <LabeledInput
-                                        as="textarea"
-                                        label="Notas"
-                                        rows={2}
-                                        placeholder="Descripción opcional..."
-                                        {...field}
-                                    />
-                                )} />
-                                </fieldset>
-                            </form>
-                        </Form>
-                    </div>
-                </FormSplitLayout>
-            ) : (
-                <FormSplitLayout>
-                    <div className="flex-1 flex flex-col overflow-y-auto p-6 pt-2 scrollbar-thin">
-                        <Form {...form}>
-                            <form id="advance-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pr-1">
-                                <fieldset disabled={isView} className="contents">
-                                <FormField control={form.control} name="employee" render={({ field, fieldState }) => (
-                                    <LabeledSelect
-                                        label="Empleado"
-                                        value={field.value}
-                                        onChange={field.onChange}
-                                        error={fieldState.error?.message}
-                                        placeholder="Seleccionar empleado..."
-                                        options={employees.map(e => ({
-                                            value: e.id.toString(),
-                                            label: e.contact_detail?.name || ""
-                                        }))}
-                                    />
-                                )} />
+                                            <FormField control={form.control} name="notes" render={({ field }) => (
+                                                <LabeledInput
+                                                    as="textarea"
+                                                    label="Notas"
+                                                    rows={2}
+                                                    placeholder="Descripción opcional..."
+                                                    {...field}
+                                                />
+                                            )} />
+                                        </div>
+                                    </fieldset>
 
-                                <FormField control={form.control} name="amount" render={({ field, fieldState }) => (
-                                    <LabeledInput
-                                        label="Monto ($)"
-                                        required
-                                        type="number"
-                                        placeholder="0"
-                                        error={fieldState.error?.message}
-                                        {...field}
-                                    />
-                                )} />
-                                <FormField control={form.control} name="date" render={({ field, fieldState }) => (
-                                    <PeriodValidationDateInput
-                                        label="Fecha Propuesta"
-                                        required
-                                        date={field.value ? new Date(field.value + 'T12:00:00') : undefined}
-                                        onDateChange={(d) => {
-                                            if (!d) {
-                                                field.onChange("")
-                                                return
-                                            }
-                                            field.onChange(d.toISOString().split('T')[0])
-                                        }}
-                                        validationType="accounting"
-                                    />
-                                )} />
+                                </form>
+                            </Form>
+                        </div>
+                    </FormSplitLayout>
+                ) : (
+                    <FormSplitLayout>
+                        <div className="flex-1 flex flex-col overflow-y-auto p-6 pt-2 scrollbar-thin">
+                            <Form {...form}>
+                                <form id="advance-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-6 pb-6 pt-6">
+                                    <fieldset disabled={isView} className="contents">
+                                        <div className="space-y-6">
+                                            <FormField control={form.control} name="employee" render={({ field, fieldState }) => (
+                                                <LabeledSelect
+                                                    label="Empleado"
+                                                    value={field.value}
+                                                    onChange={field.onChange}
+                                                    error={fieldState.error?.message}
+                                                    placeholder="Seleccionar empleado..."
+                                                    options={employees.map(e => ({
+                                                        value: e.id.toString(),
+                                                        label: e.contact_detail?.name || ""
+                                                    }))}
+                                                />
+                                            )} />
 
-                                <FormField control={form.control} name="payroll" render={({ field, fieldState }) => (
-                                    <LabeledSelect
-                                        label="Vincular a Liquidación (Obligatorio)"
-                                        value={field.value}
-                                        onChange={field.onChange}
-                                        error={fieldState.error?.message}
-                                        placeholder="Seleccionar liquidación..."
-                                        options={employeePayrolls.map(p => ({
-                                            value: p.id.toString(),
-                                            label: `${p.display_id} – ${p.period_label} (${p.status_display})`
-                                        }))}
-                                    />
-                                )} />
+                                            <FormField control={form.control} name="amount" render={({ field, fieldState }) => (
+                                                <LabeledInput
+                                                    label="Monto ($)"
+                                                    required
+                                                    type="number"
+                                                    placeholder="0"
+                                                    error={fieldState.error?.message}
+                                                    {...field}
+                                                />
+                                            )} />
+                                            <FormField control={form.control} name="date" render={({ field, fieldState }) => (
+                                                <PeriodValidationDateInput
+                                                    label="Fecha Propuesta"
+                                                    required
+                                                    date={field.value ? new Date(field.value + 'T12:00:00') : undefined}
+                                                    onDateChange={(d) => {
+                                                        if (!d) {
+                                                            field.onChange("")
+                                                            return
+                                                        }
+                                                        field.onChange(d.toISOString().split('T')[0])
+                                                    }}
+                                                    validationType="accounting"
+                                                />
+                                            )} />
 
-                                <FormField control={form.control} name="notes" render={({ field }) => (
-                                    <LabeledInput
-                                        as="textarea"
-                                        label="Notas"
-                                        rows={2}
-                                        placeholder="Descripción opcional..."
-                                        {...field}
-                                    />
-                                )} />
-                                </fieldset>
-                            </form>
-                        </Form>
-                    </div>
-                </FormSplitLayout>
-            )}
-        </Drawer>
+                                            <FormField control={form.control} name="payroll" render={({ field, fieldState }) => (
+                                                <LabeledSelect
+                                                    label="Vincular a Liquidación (Obligatorio)"
+                                                    value={field.value}
+                                                    onChange={field.onChange}
+                                                    error={fieldState.error?.message}
+                                                    placeholder="Seleccionar liquidación..."
+                                                    options={employeePayrolls.map(p => ({
+                                                        value: p.id.toString(),
+                                                        label: `${p.display_id} – ${p.period_label} (${p.status_display})`
+                                                    }))}
+                                                />
+                                            )} />
+
+                                            <FormField control={form.control} name="notes" render={({ field }) => (
+                                                <LabeledInput
+                                                    as="textarea"
+                                                    label="Notas"
+                                                    rows={2}
+                                                    placeholder="Descripción opcional..."
+                                                    {...field}
+                                                />
+                                            )} />
+                                        </div>
+                                    </fieldset>
+                                </form>
+                            </Form>
+                        </div>
+                    </FormSplitLayout>
+                )}
+            </Drawer >
         </>
     )
 }

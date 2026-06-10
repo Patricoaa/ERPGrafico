@@ -21,7 +21,7 @@ export const MODULE_REGISTRY: Record<string, ModuleConfig> = {
   contacts:    { id: "contacts",    label: "Contactos",     icon: Users,          iconName: "users",          permission: null,                                         defaultUrl: "/contacts" },
   inventory:   { id: "inventory",   label: "Inventario",    icon: Package,        iconName: "package",        permission: "inventory.view_dashboard_inventory",        defaultUrl: "/inventory/products?tab=products" },
   production:  { id: "production",  label: "Producción",    icon: Printer,        iconName: "printer",        permission: "production.view_dashboard_production",       defaultUrl: "/production/orders" },
-  treasury:    { id: "treasury",    label: "Tesorería",     icon: Banknote,       iconName: "banknote",       permission: "treasury.view_dashboard_treasury",          defaultUrl: "/treasury/movements" },
+  treasury:    { id: "treasury",    label: "Tesorería",     icon: Banknote,       iconName: "banknote",       permission: "treasury.view_dashboard_treasury",          defaultUrl: "/treasury/operaciones?tab=movements" },
   purchasing:  { id: "purchasing",  label: "Compras",       icon: ShoppingBag,    iconName: "shopping-bag",    permission: "purchasing.view_dashboard_purchasing",      defaultUrl: "/purchasing/orders?tab=orders" },
   finances:    { id: "finances",    label: "Finanzas",      icon: PieChart,       iconName: "pie-chart",       permission: "finances.view_dashboard_finances",          defaultUrl: "/finances/statements?tab=bs" },
   hr:          { id: "hr",          label: "RRHH",          icon: UserCog,        iconName: "user-cog",        permission: "hr.view_dashboard_hr",                     defaultUrl: "/hr/employees" },

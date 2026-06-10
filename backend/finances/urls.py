@@ -1,4 +1,5 @@
-from django.urls import path
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
 from .views import (
     get_balance_sheet_data,
     get_income_statement_data,
@@ -6,10 +7,16 @@ from .views import (
     get_financial_analysis_data,
     get_bi_analytics_data,
     get_report_status_data,
-    get_trial_balance_data
+    get_trial_balance_data,
+    IndicatorValueViewSet,
 )
 
+router = DefaultRouter()
+router.register(r'indicators', IndicatorValueViewSet, basename='indicator-value')
+
 urlpatterns = [
+    # ViewSet router (CRUD + acciones custom)
+    path('api/', include(router.urls)),
 
     # API Data
     path('api/balance-sheet/', get_balance_sheet_data, name='api-balance-sheet'),
@@ -18,7 +25,7 @@ urlpatterns = [
     path('api/cash-flow/', get_cash_flow_data, name='api-cash-flow'),
     path('api/analysis/', get_financial_analysis_data, name='api-analysis'),
     path('api/bi-analytics/', get_bi_analytics_data, name='api-bi-analytics'),
-    
+
     # Async Status Endpoint
     path('api/report-status/<str:task_id>/', get_report_status_data, name='api-report-status'),
 ]

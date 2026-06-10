@@ -576,7 +576,8 @@ States handled: validating (spinner), period closed (warning alert, isValid=fals
 Single source of truth for money rendering. Tabular, monospace, locale-aware.
 
 ```tsx
-<MoneyDisplay amount={150000} colored />
+<MoneyDisplay amount={150000} />
+<MoneyDisplay amount={-50000} />
 <MoneyDisplay amount={null} showZeroAsDash />
 ```
 
@@ -584,10 +585,10 @@ Single source of truth for money rendering. Tabular, monospace, locale-aware.
 |------|------|----------|---------|-------|
 | `amount` | `number \| string \| null \| undefined` | ✅ | — | null/undefined/NaN → dash |
 | `currency` | `string` | ❌ | `'CLP'` | ISO 4217 |
-| `colored` | `boolean` | ❌ | `false` | Red < 0, green > 0 |
+| `showColor` | `boolean` | ❌ | `true` | Red < 0, green > 0 |
 | `showZeroAsDash` | `boolean` | ❌ | `false` | 0 renders as `—` |
 | `className` | `string` | ❌ | — | |
-| `digits` | `number` | ❌ | locale default | Decimal places override |
+| `digits` | `number` | ❌ | `0` | Decimal places override |
 | `inline` | `boolean` | ❌ | `false` | `display: inline` vs `inline-block` |
 
 Font: always `font-mono font-bold tabular-nums`. Do NOT render currency with raw JS `.toLocaleString()` outside this component.

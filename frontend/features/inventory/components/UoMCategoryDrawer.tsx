@@ -111,24 +111,24 @@ export function UoMCategoryDrawer({ open: openProp, onOpenChange, initialData, o
             <form
                 id="uom-category-form"
                 onSubmit={form.handleSubmit(onSubmit)}
-                className={initialData?.id ? "space-y-6 px-4 pb-4 pt-2" : "space-y-6"}
+                className="space-y-6 px-6 pb-6 pt-6"
             >
                 <fieldset disabled={isView} className="contents">
-                <div className="space-y-6">
-                    <FormField
-                        control={form.control}
-                        name="name"
-                        render={({ field, fieldState }) => (
-                            <LabeledInput
-                                label="Nombre"
-                                required
-                                placeholder="Ej: Peso, Volumen, Unidades"
-                                error={fieldState.error?.message}
-                                {...field}
-                            />
-                        )}
-                    />
-                </div>
+                    <div className="space-y-6">
+                        <FormField
+                            control={form.control}
+                            name="name"
+                            render={({ field, fieldState }) => (
+                                <LabeledInput
+                                    label="Nombre"
+                                    required
+                                    placeholder="Ej: Peso, Volumen, Unidades"
+                                    error={fieldState.error?.message}
+                                    {...field}
+                                />
+                            )}
+                        />
+                    </div>
                 </fieldset>
             </form>
         </Form>
@@ -161,7 +161,7 @@ export function UoMCategoryDrawer({ open: openProp, onOpenChange, initialData, o
                 onOpenChange={setOpen}
                 side="left"
                 defaultSize={width}
-                contentClassName="p-0"
+                mode={mode}
                 icon={Ruler}
                 title={<><span>{drawerTitle}</span>{(mode === 'view' || mode === 'edit') && initialData?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}</>}
                 subtitle={initialData?.id ? "Modifique el nombre de la categoría y consulte el historial." : "Define un agrupador para unidades del mismo tipo."}
@@ -178,22 +178,22 @@ export function UoMCategoryDrawer({ open: openProp, onOpenChange, initialData, o
                     />
                 )}
             >
-            {initialData?.id ? (
-                <FormSplitLayout
-                    sidebar={
-                        <ActivitySidebar
-                            entityId={initialData.id}
-                            entityType="uom_category"
-                        />
-                    }
-                    showSidebar={true}
-                >
-                    {formContent}
-                </FormSplitLayout>
-            ) : (
-                formContent
-            )}
-        </Drawer>
+                {initialData?.id ? (
+                    <FormSplitLayout
+                        sidebar={
+                            <ActivitySidebar
+                                entityId={initialData.id}
+                                entityType="uom_category"
+                            />
+                        }
+                        showSidebar={true}
+                    >
+                        {formContent}
+                    </FormSplitLayout>
+                ) : (
+                    formContent
+                )}
+            </Drawer>
         </>
     )
 }

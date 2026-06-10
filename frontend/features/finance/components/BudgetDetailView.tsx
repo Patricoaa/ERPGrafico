@@ -152,17 +152,17 @@ export function BudgetDetailView({ budgetId }: BudgetDetailViewProps) {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <StatCard
                     label="Presupuestado"
-                    value={<MoneyDisplay amount={executionData.summary.total_budgeted} digits={0} />}
+                    value={<MoneyDisplay amount={executionData.summary.total_budgeted} />}
                     accent="muted"
                 />
                 <StatCard
                     label="Ejecutado"
-                    value={<MoneyDisplay amount={executionData.summary.total_actual} digits={0} />}
+                    value={<MoneyDisplay amount={executionData.summary.total_actual} />}
                     accent="muted"
                 />
                 <StatCard
                     label="Desviación"
-                    value={<MoneyDisplay amount={executionData.summary.total_variance} digits={0} showColor />}
+                    value={<MoneyDisplay amount={executionData.summary.total_variance} />}
                     accent="muted"
                 />
             </div>

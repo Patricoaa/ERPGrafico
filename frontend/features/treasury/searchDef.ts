@@ -16,11 +16,10 @@ export const treasuryAccountSearchDef: SearchDefinition = {
       options: [
         { label: 'Caja Física (Efectivo)', value: 'CASH' },
         { label: 'Cuenta Bancaria', value: 'CHECKING' },
-        { label: 'T. Débito Empresa', value: 'DEBIT_CARD' },
         { label: 'T. Crédito Empresa', value: 'CREDIT_CARD' },
-        { label: 'Chequera / Instr.', value: 'CHECKBOOK' },
+        { label: 'Préstamo Bancario', value: 'LOAN' },
         { label: 'Puente', value: 'BRIDGE' },
-        { label: 'Cta. Recaudadora', value: 'MERCHANT' },
+        { label: 'Cheques en Cartera', value: 'CHECK_PORTFOLIO' },
       ],
     },
   ],

@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils"
 import { type VariantProps } from "class-variance-authority"
 import { dialogContentVariants } from "@/components/ui/dialog"
 import * as DialogPrimitive from "@radix-ui/react-dialog"
-import { SheetCloseButton } from "./SheetCloseButton"
+
 import { PanelHeader, type PanelBaseProps } from "./PanelHeader"
 
 export type BaseModalVariant = "default" | "transaction" | "wizard" | "form-tabs" | "raw"
@@ -55,7 +55,7 @@ export function BaseModal({
     const isRaw = variant === "raw"
 
     const headerStyles = cn(
-        "px-6 py-4 flex-shrink-0",
+        "px-6 py-3 flex-shrink-0",
         isTransaction && "bg-primary text-primary-foreground border-b-0",
         isWizard && "border-b pb-2",
         isFormTabs && "border-b bg-background/50 backdrop-blur-sm",
@@ -74,7 +74,7 @@ export function BaseModal({
     )
 
     const footerStyles = cn(
-        "px-6 py-4 flex-shrink-0",
+        "px-6 py-3 flex-shrink-0",
         !isRaw && "border-t",
         footerClassName
     )
@@ -100,12 +100,6 @@ export function BaseModal({
                 )}
                 {...props}
             >
-                {showCloseButton && (
-                    <SheetCloseButton
-                        onClick={() => onOpenChange(false)}
-                        className="absolute top-4 right-4 z-[60]"
-                    />
-                )}
                 {!title && (
                     <DialogTitle className="sr-only">
                         Modal Window
@@ -129,6 +123,8 @@ export function BaseModal({
                                 </DialogDescription>
                             ) : undefined}
                             headerActions={headerActions}
+                            onClose={showCloseButton ? () => onOpenChange(false) : undefined}
+                            closeButtonClassName={isTransaction ? "text-primary-foreground hover:text-primary-foreground" : undefined}
                         />
                     </DialogHeader>
                 )}
@@ -143,7 +139,7 @@ export function BaseModal({
                         {children}
                     </div>
                 ) : (
-                    <ScrollArea className={cn("flex-1 p-6", contentClassName)}>
+                    <ScrollArea className={cn("flex-1 p-5", contentClassName)}>
                         {children}
                     </ScrollArea>
                 )}

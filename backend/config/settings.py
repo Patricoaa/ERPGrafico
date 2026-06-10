@@ -313,14 +313,25 @@ def fix_redis_url(url, db_index):
     return url
 
 # Django Cache Framework — backed by Redis DB 2 (or 0 in cloud)
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
-        'LOCATION': fix_redis_url(REDIS_URL, 2),
-        'KEY_PREFIX': 'erp',
-        'TIMEOUT': 300,  # 5 min default TTL
+# Falls back to LocMemCache if Redis is unreachable (useful for local dev without Docker)
+_CACHE_BACKEND = os.environ.get('CACHE_BACKEND', 'redis')
+if _CACHE_BACKEND == 'locmem':
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'KEY_PREFIX': 'erp',
+            'TIMEOUT': 300,
+        }
     }
-}
+else:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+            'LOCATION': fix_redis_url(REDIS_URL, 2),
+            'KEY_PREFIX': 'erp',
+            'TIMEOUT': 300,  # 5 min default TTL
+        }
+    }
 
 # Channels Channel Layer
 CHANNEL_LAYERS = {
@@ -342,6 +353,9 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = TIME_ZONE
 CELERY_WORKER_CONCURRENCY = int(os.environ.get('CELERY_WORKER_CONCURRENCY', 2))
+if _CACHE_BACKEND == 'locmem':
+    CELERY_TASK_ALWAYS_EAGER = True
+    CELERY_TASK_EAGER_PROPAGATES = False
 
 # Celery Beat
 # Using the default PersistentScheduler since all schedules are defined in
@@ -412,6 +426,38 @@ CELERY_BEAT_SCHEDULE = {
     'observability_healthcheck_ping': {
         'task': 'core.tasks.ping_healthcheck',
         'schedule': crontab(minute='*/5'),       # Every 5 minutes
+    },
+
+    # ── Treasury / Loans (Fase 2 — F2.10) ──────────────────────────────────
+    # Marca OVERDUE las cuotas vencidas y notifica las próximas a vencer.
+    'mark_overdue_loan_installments_daily': {
+        'task': 'treasury.tasks.mark_overdue_loan_installments',
+        'schedule': crontab(hour=8, minute=0),   # Diario a las 08:00
+    },
+
+    # ── Treasury / Tarjeta de crédito propia (Fase 3 — F3.7, ADR-0037) ───
+    # Marca OVERDUE los estados de cuenta vencidos y notifica los próximos
+    # a vencer (cierra el gap A: estado OVERDUE persistido).
+    'mark_overdue_credit_card_statements_daily': {
+        'task': 'treasury.tasks.mark_overdue_credit_card_statements',
+        'schedule': crontab(hour=8, minute=5),   # Diario a las 08:05
+    },
+
+    # ── Treasury / Tarjeta — Onda 3 (ADR-0044) ─────────────────────────────
+    # Calcula e imputa el interés punitorio mensual sobre saldos impagos
+    # vencidos. Idempotente por mes. No-op si
+    # `card_punitory_monthly_rate == 0` en AccountingSettings.
+    'compute_overdue_card_interest_monthly': {
+        'task': 'treasury.tasks.compute_overdue_card_interest',
+        'schedule': crontab(hour=9, minute=0, day_of_month=1),  # 1° de cada mes
+    },
+
+    # ── Treasury / Loans (Fase 2 — F2.9, opt-in) ───────────────────────────
+    # Devenga el interés del mes para créditos ACTIVE. No-op si no hay
+    # cuentas de gasto/pasivo configuradas en AccountingSettings (F5.1).
+    'accrue_monthly_loan_interest': {
+        'task': 'treasury.tasks.accrue_monthly_loan_interest',
+        'schedule': crontab(hour=7, minute=0, day_of_month=1),  # Día 1 de cada mes
     },
 }
 

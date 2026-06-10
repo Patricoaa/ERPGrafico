@@ -1,11 +1,17 @@
+import logging
+
 from django.db import transaction
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.contrib.contenttypes.models import ContentType
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
+from decimal import Decimal, ROUND_HALF_UP
 from .models import TreasuryMovement, TreasuryAccount, TerminalBatch, PaymentMethod
 from accounting.models import JournalEntry, JournalItem, AccountingSettings
 from accounting.services import JournalEntryService
-from decimal import Decimal
+
+logger = logging.getLogger(__name__)
 
 class TreasuryService:
     @staticmethod
@@ -145,7 +151,7 @@ class TreasuryService:
         targets = []
         if invoice: targets.append(invoice)
         if sale_order and not invoice: targets.append(sale_order)
-        if purchase_order and not invoice: targets.append(purchase_order)
+        if purchase_order: targets.append(purchase_order)
         if payroll: targets.append(payroll)
         
         # If arguments are missing, try to resolve from movement's GFK allocated_to.
@@ -244,6 +250,11 @@ class TreasuryService:
                      pos_session.total_transfer_sales += amount
                  elif movement.payment_method == TreasuryMovement.Method.CREDIT:
                      pos_session.total_credit_sales += amount
+                 elif movement.payment_method == TreasuryMovement.Method.OTHER:
+                     if 'CHEQUE' in (movement.reference or '').upper() or movement.payment_method_new_id is None:
+                         pos_session.total_check_sales += amount
+                     else:
+                         pos_session.total_other_cash_inflow += amount
              else:
                  pos_session.total_other_cash_inflow += amount
 
@@ -288,6 +299,21 @@ class TreasuryService:
                     to_acc = pool_acc
                 elif movement.movement_type == TreasuryMovement.Type.OUTBOUND:
                     from_acc = pool_acc
+
+        # Resolve the related business document used to pick the counterpart
+        # account. The `allocated_to` GFK is only backfilled for historical
+        # movements (migration 0046); movements created via create_movement
+        # leave it null, which used to make the default-account fallbacks
+        # below unreachable and silently drop the entry (E1). Fall back to the
+        # legacy document FKs, preferring the order (unambiguous sale/purchase
+        # direction) over the invoice (whose direction depends on source_order).
+        allocated = getattr(movement, 'allocated_to', None)
+        if allocated is None:
+            allocated = (
+                movement.purchase_order
+                or movement.sale_order
+                or movement.invoice
+            )
 
         # 1. TRANSFER (Internal)
         if movement.movement_type == TreasuryMovement.Type.TRANSFER:
@@ -334,7 +360,6 @@ class TreasuryService:
                     source_acc = partner.partner_contribution_account or settings.partner_capital_contribution_account
 
             if not source_acc:
-                allocated = getattr(movement, 'allocated_to', None)
                 if allocated is not None and allocated._meta.model_name in ('invoice', 'saleorder'):
                     # Resolve customer from the document itself, not movement.contact —
                     # they can diverge in some flows (e.g. POS guest sales) and any
@@ -348,7 +373,7 @@ class TreasuryService:
                     source_acc = TreasuryService._get_reason_account(settings, movement.justify_reason, 'IN')
             
             if not source_acc and movement.contact:
-                source_acc = movement.contact.account_receivable
+                source_acc = movement.contact.account_receivable or settings.default_receivable_account
 
             if source_acc:
                 JournalItem.objects.create(entry=entry, account=source_acc, debit=0, credit=movement.amount)
@@ -370,7 +395,6 @@ class TreasuryService:
                       target_acc = partner.partner_provisional_withdrawal_account or settings.partner_withdrawal_account or settings.pos_partner_withdrawal_account
 
              if not target_acc:
-                 allocated = getattr(movement, 'allocated_to', None)
                  if allocated is not None:
                       if allocated.is_sale_document():
                           target_acc = (movement.contact.account_receivable if movement.contact else None) or settings.default_receivable_account
@@ -381,7 +405,7 @@ class TreasuryService:
                       target_acc = TreasuryService._get_reason_account(settings, movement.justify_reason, 'OUT')
              
              if not target_acc and movement.contact:
-                  target_acc = movement.contact.account_payable
+                  target_acc = movement.contact.account_payable or settings.default_payable_account
 
              if not target_acc and movement.payroll:
                   from hr.models import GlobalHRSettings
@@ -397,13 +421,197 @@ class TreasuryService:
              if target_acc:
                   JournalItem.objects.create(entry=entry, account=target_acc, debit=movement.amount, credit=0)
 
-        # Post if valid
+        # Post if valid. The E1 fix above (allocated revival + default-account
+        # fallbacks) makes the counterpart resolvable whenever it is
+        # configured, so well-formed movements now produce a balanced entry
+        # instead of being silently dropped. We keep the soft delete for the
+        # residual <2-leg cases (e.g. ADJUSTMENT, whose entry is built
+        # elsewhere) to avoid a fail-closed regression on under-configured
+        # flows (check reception, cash sales). Callers that REQUIRE the entry
+        # to exist — like create_card_purchase — assert it as a post-condition.
         if entry.items.count() >= 2:
              JournalEntryService.post_entry(entry)
              movement.journal_entry = entry
              movement.save()
         else:
              entry.delete()
+
+    # ── Compras en tarjeta en cuotas (Onda 2, ADR-0043) ─────────────
+
+    @staticmethod
+    @transaction.atomic
+    def create_card_purchase(
+        amount,
+        card_account: "TreasuryAccount",
+        *,
+        installments: int = 1,
+        monthly_rate=Decimal('0'),
+        date=None,
+        partner=None,
+        invoice=None,
+        sale_order=None,
+        purchase_order=None,
+        client_reference: str = '',
+        notes: str = '',
+        created_by=None,
+    ) -> "CardPurchaseGroup":
+        """
+        Registra una compra con tarjeta de crédito propia en N cuotas
+        (ADR-0046; supersede el modelo de N movimientos de ADR-0043).
+
+        - `amount`: monto total de la compra.
+        - `card_account`: `TreasuryAccount` con `account_type=CREDIT_CARD`.
+        - `installments`: cantidad de cuotas (1 a 36).
+        - `monthly_rate`: solo `0` en esta onda. `> 0` → ValidationError
+          (la ruta con interés está diferida, ADR-0046 D-5).
+        - `date`: fecha de compra (= primera cuota; las siguientes
+          vencen un mes calendario después cada una).
+        - `invoice` / `sale_order` / `purchase_order`: documentos
+          vinculados (opcional, para el asiento del uso).
+        - `client_reference`: id externo opcional para idempotencia.
+          Un segundo POST con la misma `client_reference` retorna el
+          grupo existente.
+        - `notes`: notas adicionales.
+
+        Genera **un solo** `OUTBOUND` por el total (el uso de la TC),
+        posteado con el asiento estándar `D=proveedor / H=pasivo
+        tarjeta` en la fecha de compra, más **N** filas de cronograma
+        (`CardPurchaseInstallment`) que definen cuánto principal factura
+        cada statement mensual. Las cuotas NO son movimientos ni generan
+        asiento; el pago se hace a nivel statement (`pay_statement`).
+        """
+        from .models import CardPurchaseGroup, CardPurchaseInstallment
+
+        amount = Decimal(str(amount))
+        monthly_rate = Decimal(str(monthly_rate))
+
+        if card_account.account_type != TreasuryAccount.Type.CREDIT_CARD:
+            raise ValidationError(
+                f"create_card_purchase requiere una cuenta CREDIT_CARD "
+                f"(recibida: {card_account.get_account_type_display()})."
+            )
+        if amount <= 0:
+            raise ValidationError("El monto de la compra debe ser mayor a cero.")
+        if not isinstance(installments, int) or installments < 1 or installments > 36:
+            raise ValidationError(
+                f"La cantidad de cuotas debe estar entre 1 y 36 (recibido: {installments})."
+            )
+        if monthly_rate < 0 or monthly_rate >= 1:
+            raise ValidationError(
+                f"La tasa mensual debe estar en [0, 1) (recibido: {monthly_rate})."
+            )
+        if monthly_rate > 0:
+            # ADR-0046 D-5: la ruta con interés (devengo por período) está
+            # diferida. El checkout ya pasa monthly_rate=0.
+            raise ValidationError(
+                "Las compras en cuotas con interés no están soportadas por "
+                "ahora (use monthly_rate=0)."
+            )
+        # Normalizar `date`: los callers que parten de un request
+        # (purchase/sales checkout) pueden pasar un string ISO. El
+        # cronograma (`date + relativedelta`) exige un date real.
+        if isinstance(date, str):
+            from django.utils.dateparse import parse_datetime, parse_date
+            parsed = parse_date(date)
+            if parsed is None:
+                dt = parse_datetime(date)
+                parsed = dt.date() if dt is not None else None
+            date = parsed
+        elif isinstance(date, datetime):
+            date = date.date()
+        if not date:
+            date = timezone.now().date()
+
+        # Idempotencia por client_reference.
+        if client_reference:
+            existing = (
+                CardPurchaseGroup.objects
+                .filter(client_reference=client_reference)
+                .first()
+            )
+            if existing is not None:
+                return existing
+
+        # Calcular principal por cuota (residuo en la última).
+        # `quantize(Decimal('0.01'))` aplica redondeo bancario a 2
+        # decimales; la última cuota recibe el ajuste.
+        principal_base = (amount / installments).quantize(
+            Decimal('0.01'), rounding=ROUND_HALF_UP,
+        )
+        principals: list[Decimal] = [principal_base] * (installments - 1)
+        principals.append(amount - sum(principals))
+
+        # Crear el grupo (agrupador lógico; sin interés en esta onda).
+        group = CardPurchaseGroup.objects.create(
+            card_account=card_account,
+            partner=partner,
+            total_amount=amount,
+            installments=installments,
+            monthly_rate=Decimal('0'),
+            principal_per_installment=principal_base,
+            first_installment_date=date,
+            client_reference=client_reference or '',
+            notes=notes or '',
+            created_by=created_by,
+        )
+
+        # ── Uso de la TC: 1 OUTBOUND por el total (ADR-0046 D-1) ──────
+        # El pasivo (H=tarjeta) y la liquidación del proveedor (D) se
+        # reconocen completos en la fecha de compra, una sola vez.
+        # `is_billed=True`: es el uso, no un cargo pendiente de facturar
+        # (lo que se factura por mes vive en el cronograma, abajo).
+        purchase_mv = TreasuryService.create_movement(
+            amount=amount,
+            movement_type=TreasuryMovement.Type.OUTBOUND,
+            payment_method=TreasuryMovement.Method.CARD,
+            date=date,
+            created_by=created_by,
+            from_account=card_account,
+            partner=partner,
+            invoice=invoice,
+            sale_order=sale_order,
+            purchase_order=purchase_order,
+            reference=f"CP-{group.uuid}",
+            notes=(
+                f"Compra TC {group.display_id} en {installments} cuota(s) "
+                f"{notes}".strip()
+            ),
+        )
+        purchase_mv.card_purchase_group = group
+        purchase_mv.is_billed = True
+        purchase_mv.save(update_fields=['card_purchase_group', 'is_billed'])
+
+        # E4: el asiento del uso (D=proveedor / H=pasivo tarjeta) es el pilar
+        # de ADR-0046 (pasivo completo el día de la compra). Si no se posteó
+        # —p.ej. el proveedor no tiene cuenta por pagar ni hay
+        # `default_payable_account` configurada— `_create_accounting_entry`
+        # descarta el asiento en silencio. Verificamos la post-condición y
+        # abortamos: como todo el método es @transaction.atomic, el grupo, el
+        # movimiento y el cronograma se revierten en bloque (sin pasivo
+        # fantasma ni cuotas que facturen una deuda nunca registrada).
+        if purchase_mv.journal_entry_id is None:
+            raise ValidationError(
+                "No se pudo contabilizar el uso de la tarjeta de crédito "
+                f"(${amount}): no se resolvió la cuenta de contrapartida. "
+                "Verifique que el proveedor tenga cuenta por pagar o configure "
+                "`default_payable_account` en Configuración Contable."
+            )
+
+        # ── Cronograma: N cuotas (ADR-0046 D-2) ──────────────────────
+        # Filas planas, sin contabilidad. Definen cuánto principal entra
+        # en el billed_amount de cada statement mensual. El vencimiento
+        # avanza por mes calendario desde la fecha de compra.
+        CardPurchaseInstallment.objects.bulk_create([
+            CardPurchaseInstallment(
+                card_purchase_group=group,
+                number=i + 1,
+                due_date=date + relativedelta(months=i),
+                principal_amount=principals[i],
+            )
+            for i in range(installments)
+        ])
+
+        return group
 
     @staticmethod
     def _get_reason_account(settings, reason, direction):
@@ -845,3 +1053,31 @@ class TerminalBatchService:
         JournalEntryService.post_entry(bridge_entry)
 
         return invoice
+
+
+class ProviderAccountService:
+    """Gestión automática de cuentas contables para proveedores de terminal."""
+
+    @staticmethod
+    def ensure_bridge_account(provider_name: str) -> 'TreasuryAccount':
+        """
+        Garantiza que exista una TreasuryAccount de tipo BRIDGE para el
+        proveedor de terminal. Idempotente: si ya existe una con ese nombre,
+        la reusa.
+
+        Sigue el patrón de CheckService.ensure_portfolio_account().
+        """
+        from django.utils.text import slugify
+
+        code_base = slugify(provider_name)[:8].upper() or "PROVIDER"
+        bridge, created = TreasuryAccount.objects.get_or_create(
+            account_type=TreasuryAccount.Type.BRIDGE,
+            name=f"Puente {provider_name}",
+            defaults={
+                'currency': 'CLP',
+                'code': f"BRIDGE-{code_base}",
+            },
+        )
+        if created:
+            logger.info(f"Auto-creada TreasuryAccount BRIDGE: {bridge.name} (code={bridge.code})")
+        return bridge

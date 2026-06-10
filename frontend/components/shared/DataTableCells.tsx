@@ -317,7 +317,7 @@ export const DataCell = {
                         </div>
                     </TooltipTrigger>
                     {title && (
-                        <TooltipContent side="top" className="text-[9px] font-black uppercase tracking-[0.2em] px-2 py-1 shadow-xl rounded-none animate-in fade-in zoom-in-95 duration-200">
+                        <TooltipContent side="top" className="text-[9px] font-black uppercase tracking-[0.2em] px-2 py-1 shadow-floating rounded-none animate-in fade-in zoom-in-95 duration-200">
                             {title}
                         </TooltipContent>
                     )}
@@ -409,7 +409,7 @@ export const DataCell = {
                         })}
                     </DropdownMenuContent>
                 </DropdownMenu>
-                <TooltipContent side="top" className="text-[9px] font-black uppercase tracking-[0.2em] px-2 py-1 shadow-xl rounded-none animate-in fade-in zoom-in-95 duration-200">
+                <TooltipContent side="top" className="text-[9px] font-black uppercase tracking-[0.2em] px-2 py-1 shadow-floating rounded-none animate-in fade-in zoom-in-95 duration-200">
                     {title}
                 </TooltipContent>
             </Tooltip>

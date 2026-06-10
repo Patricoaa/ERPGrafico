@@ -137,6 +137,12 @@ export interface CheckoutPaymentData {
     paymentMethodId?: number
     /** true cuando el método es CARD_TERMINAL — activa flujo TUU automatizado */
     isTerminalIntegration?: boolean
+    /** Número de cuotas para pagos con tarjeta de crédito */
+    installments?: number
+    /** CHECK: banco emisor del cheque (obligatorio para registrar) */
+    checkBankId?: number | null
+    /** CHECK: fecha de vencimiento del cheque (ISO date string) */
+    checkDueDate?: string
 }
 
 export interface CheckoutDeliveryData {

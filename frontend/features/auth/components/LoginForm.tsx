@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { useState } from "react"
 import { motion } from "framer-motion"
-import {ArrowRight} from "lucide-react"
+import { ArrowRight } from "lucide-react"
 
 import { useAuthLogin } from '../hooks/useAuthLogin'
 
@@ -69,7 +69,7 @@ export function LoginForm() {
 
             {/* Form */}
             <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-6 pb-6 pt-6">
                     <FormField
                         control={form.control}
                         name="username"

@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button"
 import { useReactToPrint } from "react-to-print"
 import { PrintableLayout } from "@/features/_shared/transaction-drawer"
 import type { DrawerMode } from "@/features/_shared/drawer/types"
-import { Drawer, CancelButton, ActionSlideButton, LabeledInput, LabeledSelect, FormSection, FormFooter, MultiSelectTagInput } from "@/components/shared"
+import { Drawer, CancelButton, ActionSlideButton, LabeledInput, LabeledSelect, FormSection, FormFooter, FormSplitLayout, MultiSelectTagInput } from "@/components/shared"
 import { formDrawerWidth } from "@/lib/form-widths"
 import { toast } from "sonner"
 
@@ -133,7 +133,7 @@ export function DeviceDrawer({ open, onOpenChange, device, providers: providersP
                 onOpenChange={onOpenChange}
                 side="left"
                 defaultSize={formDrawerWidth("medium", !!device)}
-                contentClassName="p-0"
+                mode={mode}
                 title={<><span>{drawerTitle}</span>{(mode === 'view' || mode === 'edit') && device?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}</>}
                 subtitle="Vincule una terminal física con un proveedor de servicios."
                 footer={isView ? undefined : (
@@ -149,85 +149,87 @@ export function DeviceDrawer({ open, onOpenChange, device, providers: providersP
                     />
                 )}
             >
-            <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-2">
-                    <fieldset disabled={isView} className="contents">
-                    <FormSection title="Información General" icon={Smartphone} />
-                    <FormField
-                        control={form.control}
-                        name="name"
-                        render={({ field }) => (
-                            <LabeledInput
-                                label="Nombre descriptivo"
-                                required
-                                {...field}
-                                placeholder="Ej: Maquinita TUU 01"
-                            />
-                        )}
-                    />
-
-                    <FormField
-                        control={form.control}
-                        name="provider"
-                        render={({ field }) => (
-                            <LabeledSelect
-                                label="Proveedor"
-                                required
-                                value={field.value || ""}
-                                onChange={(v) => field.onChange(v)}
-                                placeholder="Seleccione..."
-                                options={providers.map(p => ({ value: p.id.toString(), label: p.name }))}
-                            />
-                        )}
-                    />
-                    <FormField
-                        control={form.control}
-                        name="serial_number"
-                        render={({ field }) => (
-                            <LabeledInput
-                                label="Número de Serie / TID"
-                                required
-                                {...field}
-                                placeholder="Número serie físico"
-                            />
-                        )}
-                    />
-
-                    <FormField
-                        control={form.control}
-                        name="model"
-                        render={({ field }) => (
-                            <LabeledInput
-                                label="Modelo (Opcional)"
-                                {...field}
-                                placeholder="Ej: Pax A920"
-                            />
-                        )}
-                    />
-
-                    <div className="space-y-3 pt-2">
-                        <Controller
-                            control={form.control}
-                            name="supported_payment_methods"
-                            render={({ field }) => (
-                                <MultiSelectTagInput
-                                    label="Capacidades del Hardware"
-                                    options={[
-                                        { label: "DÉBITO", value: "2" },
-                                        { label: "CRÉDITO", value: "1" }
-                                    ]}
-                                    value={field.value || []}
-                                    onChange={field.onChange}
-                                    placeholder="Seleccione capacidades..."
-                                    hint="Marque solo los métodos que su terminal física permite procesar."
+                <Form {...form}>
+                    <FormSplitLayout>
+                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-6 pb-6 pt-6">
+                            <fieldset disabled={isView} className="contents">
+                                <FormSection title="Información General" icon={Smartphone} />
+                                <FormField
+                                    control={form.control}
+                                    name="name"
+                                    render={({ field }) => (
+                                        <LabeledInput
+                                            label="Nombre descriptivo"
+                                            required
+                                            {...field}
+                                            placeholder="Ej: Maquinita TUU 01"
+                                        />
+                                    )}
                                 />
-                            )}
-                        />
-                    </div>
-                    </fieldset>
-                </form>
-            </Form>
-        </Drawer>
+
+                                <FormField
+                                    control={form.control}
+                                    name="provider"
+                                    render={({ field }) => (
+                                        <LabeledSelect
+                                            label="Proveedor"
+                                            required
+                                            value={field.value || ""}
+                                            onChange={(v) => field.onChange(v)}
+                                            placeholder="Seleccione..."
+                                            options={providers.map(p => ({ value: p.id.toString(), label: p.name }))}
+                                        />
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="serial_number"
+                                    render={({ field }) => (
+                                        <LabeledInput
+                                            label="Número de Serie / TID"
+                                            required
+                                            {...field}
+                                            placeholder="Número serie físico"
+                                        />
+                                    )}
+                                />
+
+                                <FormField
+                                    control={form.control}
+                                    name="model"
+                                    render={({ field }) => (
+                                        <LabeledInput
+                                            label="Modelo (Opcional)"
+                                            {...field}
+                                            placeholder="Ej: Pax A920"
+                                        />
+                                    )}
+                                />
+
+                                <div className="space-y-3 pt-2">
+                                    <Controller
+                                        control={form.control}
+                                        name="supported_payment_methods"
+                                        render={({ field }) => (
+                                            <MultiSelectTagInput
+                                                label="Capacidades del Hardware"
+                                                options={[
+                                                    { label: "DÉBITO", value: "2" },
+                                                    { label: "CRÉDITO", value: "1" }
+                                                ]}
+                                                value={field.value || []}
+                                                onChange={field.onChange}
+                                                placeholder="Seleccione capacidades..."
+                                                hint="Marque solo los métodos que su terminal física permite procesar."
+                                            />
+                                        )}
+                                    />
+                                </div>
+                            </fieldset>
+                        </form>
+                    </FormSplitLayout>
+                </Form>
+            </Drawer>
         </>
     )
 }

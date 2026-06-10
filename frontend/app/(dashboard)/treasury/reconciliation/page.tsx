@@ -1,8 +1,6 @@
-import React from "react"
 import { Metadata } from "next"
-import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { ToolbarCreateButton, FadeIn } from "@/components/shared"
-import { StatementsList, ReconciliationDashboard, ReconciliationIntelligence } from "@/features/finance"
+import { StatementsList } from "@/features/finance"
 
 export const metadata: Metadata = {
     title: "Conciliación Bancaria | ERPGrafico",
@@ -10,41 +8,24 @@ export const metadata: Metadata = {
 }
 
 interface PageProps {
-    searchParams: Promise<{ tab?: string; modal?: string }>
+    searchParams: Promise<{ modal?: string }>
 }
 
 export default async function ReconciliationPage({ searchParams }: PageProps) {
     const resolvedParams = await searchParams
-    const activeTab = resolvedParams.tab || "statements"
     const modalOpen = resolvedParams.modal === "import"
 
-    const statementsCreateAction = (
+    const createAction = (
         <ToolbarCreateButton
             label="Importar Cartola"
             iconName="upload"
-            href="/treasury/reconciliation?tab=statements&modal=import"
+            href="/treasury/reconciliation?modal=import"
         />
     )
 
     return (
-        <div className="pt-2 flex-1 min-h-0 flex flex-col">
-            <Tabs value={activeTab} className="space-y-4 h-full flex flex-col">
-                <TabsContent value="statements" className="mt-0 outline-none flex-1 min-h-0">
-                    <FadeIn>
-                        <StatementsList externalOpen={modalOpen} createAction={statementsCreateAction} />
-                    </FadeIn>
-                </TabsContent>
-                <TabsContent value="dashboard" className="mt-0 outline-none">
-                    <FadeIn>
-                        <ReconciliationDashboard />
-                    </FadeIn>
-                </TabsContent>
-                <TabsContent value="intelligence" className="mt-0 outline-none">
-                    <FadeIn>
-                        <ReconciliationIntelligence externalOpen={resolvedParams.modal === "new-rule"} />
-                    </FadeIn>
-                </TabsContent>
-            </Tabs>
-        </div>
+        <FadeIn>
+            <StatementsList externalOpen={modalOpen} createAction={createAction} />
+        </FadeIn>
     )
 }

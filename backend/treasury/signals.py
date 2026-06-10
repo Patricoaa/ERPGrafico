@@ -18,6 +18,17 @@ def _capture_provider_previous_bridge(sender, instance, **kwargs):
         instance._prev_bridge_id = None
 
 
+@receiver(pre_save, sender='treasury.PaymentTerminalProvider')
+def _ensure_provider_bridge_account(sender, instance, **kwargs):
+    """Auto-crea TreasuryAccount BRIDGE si el proveedor nuevo no tiene una asignada."""
+    if instance.pk or instance.bank_treasury_account_id:
+        return  # Solo para nuevos providers
+    from treasury.services import ProviderAccountService
+    instance.bank_treasury_account = ProviderAccountService.ensure_bridge_account(
+        provider_name=instance.name,
+    )
+
+
 @receiver(post_save, sender='treasury.PaymentTerminalProvider')
 def sync_settlement_on_provider_bridge_change(sender, instance, **kwargs):
     """
@@ -164,3 +175,45 @@ def handle_treasury_movement_cache_invalidation(sender, instance, **kwargs):
     from core.cache import invalidate_report_cache
     invalidate_report_cache('treasury')
     invalidate_report_cache('contacts')
+
+
+# ─── AccountingSettings → cuenta puente Cheques en Cartera ─────────────────
+
+@receiver(pre_save, sender='accounting.AccountingSettings')
+def _capture_settings_previous_check_portfolio(sender, instance, **kwargs):
+    """
+    Captura el valor previo de check_portfolio_account_id para que el
+    post_save detecte transiciones None→algo y reasignaciones.
+    """
+    if instance.pk:
+        try:
+            from accounting.models import AccountingSettings
+            prev = AccountingSettings.objects.filter(pk=instance.pk).values_list(
+                'check_portfolio_account_id', flat=True
+            ).first()
+            instance._prev_check_portfolio_id = prev
+        except Exception:
+            instance._prev_check_portfolio_id = None
+    else:
+        instance._prev_check_portfolio_id = None
+
+
+@receiver(post_save, sender='accounting.AccountingSettings')
+def ensure_check_portfolio_treasury_account(sender, instance, **kwargs):
+    """
+    Cuando se asigna o cambia AccountingSettings.check_portfolio_account,
+    asegura que exista la TreasuryAccount puente (CHECK_PORTFOLIO) vinculada.
+
+    Evita registrar cheques con un error de 'cuenta no configurada': la
+    cuenta puente queda lista en cuanto el operador guarda la configuración.
+    """
+    new_account_id = instance.check_portfolio_account_id
+    if not new_account_id:
+        return  # Nada que asegurar
+
+    prev_id = getattr(instance, '_prev_check_portfolio_id', None)
+    if prev_id == new_account_id:
+        return  # Sin cambio respecto al estado previo
+
+    from treasury.check_service import CheckService
+    CheckService.ensure_portfolio_account(account=instance.check_portfolio_account)

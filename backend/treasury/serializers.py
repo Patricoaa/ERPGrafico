@@ -1,8 +1,8 @@
 from rest_framework import serializers
-from .models import (TreasuryMovement, TreasuryAccount, BankStatement, BankStatementLine,  
-                     ReconciliationSettings, POSTerminal, 
+from .models import (TreasuryMovement, TreasuryAccount, BankStatement, BankStatementLine,
+                     ReconciliationSettings, POSTerminal,
                      POSSessionAudit, Bank, PaymentMethod,
-                     PaymentTerminalProvider, PaymentTerminalDevice)
+                     PaymentTerminalProvider, PaymentTerminalDevice, Check)
 # Remove top-level import to avoid circular dependency
 # from accounting.serializers import JournalEntrySerializer
 
@@ -49,9 +49,27 @@ class TreasuryAccountSerializer(serializers.ModelSerializer):
 
     current_balance = serializers.DecimalField(max_digits=20, decimal_places=0, read_only=True)
     payment_methods = PaymentMethodSerializer(many=True, read_only=True)
+    terminal_providers = serializers.SerializerMethodField()
 
     def get_is_system_managed(self, obj):
         return obj.account_type in TreasuryAccount._NON_CASH_EQUIVALENT_TYPES
+
+    def get_terminal_providers(self, obj):
+        return [
+            {
+                'id': p.id,
+                'name': p.name,
+                'provider_type': p.provider_type,
+                'provider_type_display': p.get_provider_type_display(),
+                'supplier': p.supplier_id,
+                'receivable_account': p.receivable_account_id,
+                'commission_expense_account': p.commission_expense_account_id,
+                'commission_iva_account': p.commission_iva_account_id,
+                'bank_treasury_account': p.bank_treasury_account_id,
+                'bank_treasury_account_name': p.bank_treasury_account.name if p.bank_treasury_account_id else None,
+            }
+            for p in obj.terminal_providers.all()
+        ]
 
     reconciliation_settings = serializers.SerializerMethodField()
 
@@ -65,7 +83,8 @@ class TreasuryAccountSerializer(serializers.ModelSerializer):
         model = TreasuryAccount
         fields = ['id', 'name', 'code', 'currency', 'account', 'account_name', 'account_code', 'account_type', 'account_type_display',
                   'bank', 'bank_name', 'account_number', 'allows_cash', 'allows_card', 'allows_transfer', 'allows_check',
-                  'is_system_managed', 'current_balance', 'payment_methods', 'default_bank_format', 'reconciliation_settings']
+                  'is_system_managed', 'current_balance', 'payment_methods', 'default_bank_format', 'reconciliation_settings',
+                  'terminal_providers']
 
 
 class POSTerminalSerializer(serializers.ModelSerializer):
@@ -129,7 +148,7 @@ class POSTerminalSerializer(serializers.ModelSerializer):
         model = POSTerminal
         fields = [
             'id', 'name', 'code', 'location', 'is_active',
-            'default_treasury_account', 'default_treasury_account_name', 
+            'default_treasury_account', 'default_treasury_account_name',
             'default_treasury_account_code', 'default_treasury_account_balance',
             'allowed_treasury_accounts',  # Read (full objects)
             'allowed_treasury_account_ids',  # Write (only IDs)
@@ -269,6 +288,7 @@ class TreasuryMovementSerializer(serializers.ModelSerializer):
     sale_order_display_id = serializers.SerializerMethodField()
     purchase_order_display_id = serializers.SerializerMethodField()
     journal_entry_display_id = serializers.SerializerMethodField()
+    card_purchase_group_detail = serializers.SerializerMethodField()
 
     class Meta:
         model = TreasuryMovement
@@ -286,6 +306,24 @@ class TreasuryMovementSerializer(serializers.ModelSerializer):
 
     def get_journal_entry_display_id(self, obj):
         return obj.journal_entry.display_id if obj.journal_entry else None
+
+    def get_card_purchase_group_detail(self, obj):
+        if not obj.card_purchase_group:
+            return None
+        group = obj.card_purchase_group
+        return {
+            'id': group.id,
+            'uuid': str(group.uuid),
+            'total_amount': str(group.total_amount),
+            'installments': group.installments,
+            'monthly_rate': str(group.monthly_rate),
+            'principal_per_installment': str(group.principal_per_installment),
+            'first_installment_date': group.first_installment_date.isoformat() if group.first_installment_date else None,
+            'partner_name': group.partner.name if group.partner else None,
+            'partner_id': group.partner.id if group.partner else None,
+            'client_reference': group.client_reference,
+            'notes': group.notes,
+        }
 
     def get_journal_name(self, obj):
         # Return the name of the primary treasury account involved
@@ -629,3 +667,482 @@ class TerminalBatchSerializer(serializers.ModelSerializer):
                 'status': obj.supplier_invoice.status
             }
         return None
+
+
+
+class CheckSerializer(serializers.ModelSerializer):
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    direction_display = serializers.CharField(source='get_direction_display', read_only=True)
+    display_id = serializers.CharField(read_only=True)
+    is_overdue = serializers.BooleanField(read_only=True)
+    bank_name = serializers.CharField(source='bank.name', read_only=True)
+    counterparty_name = serializers.SerializerMethodField()
+
+    def get_counterparty_name(self, obj):
+        if obj.counterparty:
+            return obj.counterparty.name
+        return obj.drawer_name or None
+
+    class Meta:
+        model = Check
+        fields = [
+            'id', 'display_id', 'direction', 'direction_display',
+            'status', 'status_display', 'is_overdue',
+            'bank', 'bank_name', 'check_number', 'amount',
+            'issue_date', 'due_date',
+            'counterparty', 'counterparty_name', 'drawer_name',
+            'portfolio_account', 'deposit_account',
+            'receipt_movement', 'settlement_movement',
+            'invoice', 'sale_order',
+            'notes', 'deposited_at', 'cleared_at', 'bounced_at',
+            'created_at', 'created_by',
+        ]
+        read_only_fields = [
+            'display_id', 'direction', 'status', 'is_overdue',
+            'portfolio_account', 'deposit_account',
+            'receipt_movement', 'settlement_movement',
+            'deposited_at', 'cleared_at', 'bounced_at',
+            'created_at', 'created_by',
+        ]
+
+
+# ── F2.11: Créditos bancarios (BankLoan + LoanInstallment) ──────────────────
+
+
+class LoanInstallmentSerializer(serializers.ModelSerializer):
+    """Serializer para `LoanInstallment` (cuota individual)."""
+    display_id = serializers.CharField(read_only=True)
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    loan_display_id = serializers.CharField(source='loan.display_id', read_only=True)
+    is_overdue = serializers.BooleanField(read_only=True)
+
+    class Meta:
+        from .models import LoanInstallment
+        model = LoanInstallment
+        fields = [
+            'id', 'display_id', 'loan', 'loan_display_id',
+            'number', 'due_date',
+            'principal_amount', 'interest_amount', 'insurance_amount',
+            'total_amount', 'outstanding_balance',
+            'status', 'status_display', 'is_overdue',
+            'paid_at', 'payment_movement',
+            'uf_value_used', 'clp_amount_paid', 'penalty_paid',
+            'notes',
+        ]
+        read_only_fields = [
+            'display_id', 'status', 'is_overdue', 'outstanding_balance',
+            'paid_at', 'payment_movement',
+            'uf_value_used', 'clp_amount_paid', 'penalty_paid',
+        ]
+
+
+class BankLoanSerializer(serializers.ModelSerializer):
+    """Serializer para `BankLoan` (crédito bancario).
+
+    Incluye campos derivados (display_id, status_display), referencias a
+    entidades relacionadas (nombres legibles) y la lista anidada de cuotas.
+    Para escribir se usan IDs (FK). Validación de `liability_account` se
+    delega al `clean()` del modelo (LIABILITY en taxonomía = CREDIT_CARD).
+    """
+    display_id = serializers.CharField(read_only=True)
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    currency_display = serializers.CharField(source='get_currency_display', read_only=True)
+    rate_basis_display = serializers.CharField(source='get_rate_basis_display', read_only=True)
+    amortization_system_display = serializers.CharField(
+        source='get_amortization_system_display', read_only=True,
+    )
+
+    lender_name = serializers.CharField(source='lender.name', read_only=True)
+    disbursement_account_name = serializers.CharField(
+        source='disbursement_account.name', read_only=True,
+    )
+    liability_account_name = serializers.CharField(
+        source='liability_account.name', read_only=True,
+    )
+    created_by_name = serializers.CharField(
+        source='created_by.username', read_only=True, allow_null=True,
+    )
+
+    # Indicadores agregados útiles para UI.
+    outstanding_balance = serializers.SerializerMethodField()
+    next_due_date = serializers.SerializerMethodField()
+    next_installment_amount = serializers.SerializerMethodField()
+    installments_count = serializers.SerializerMethodField()
+    paid_installments_count = serializers.SerializerMethodField()
+
+    installments = LoanInstallmentSerializer(many=True, read_only=True)
+
+    def get_outstanding_balance(self, obj):
+        # Saldo insoluto real: principal original menos capital pagado real.
+        # Los PAID installments ya tienen su principal_amount actualizado al
+        # valor real si hubo override en el pago.
+        from django.db.models import Sum
+        from decimal import Decimal
+        from .models import LoanInstallment
+        paid_principal = obj.installments.filter(
+            status=LoanInstallment.Status.PAID,
+        ).aggregate(s=Sum('principal_amount'))['s'] or Decimal('0')
+        return (obj.principal - paid_principal).quantize(Decimal('0.01'))
+
+    def get_next_due_date(self, obj):
+        from .models import LoanInstallment
+        nxt = obj.installments.filter(
+            status=LoanInstallment.Status.PENDING,
+        ).order_by('due_date').values_list('due_date', flat=True).first()
+        return nxt
+
+    def get_next_installment_amount(self, obj):
+        from .models import LoanInstallment
+        nxt = obj.installments.filter(
+            status=LoanInstallment.Status.PENDING,
+        ).order_by('due_date').first()
+        if not nxt:
+            return None
+        return nxt.total_amount
+
+    def get_installments_count(self, obj):
+        return obj.installments.count()
+
+    def get_paid_installments_count(self, obj):
+        from .models import LoanInstallment
+        return obj.installments.filter(status=LoanInstallment.Status.PAID).count()
+
+    total_disbursed = serializers.SerializerMethodField()
+
+    def get_total_disbursed(self, obj):
+        from decimal import Decimal
+        from django.db.models import Sum, Q
+        from .models import LoanInstallment
+        result = obj.installments.filter(
+            status=LoanInstallment.Status.PAID,
+        ).aggregate(s=Sum('total_amount'))['s']
+        return (result or Decimal('0')).quantize(Decimal('0.01'))
+
+    class Meta:
+        from .models import BankLoan
+        model = BankLoan
+        fields = [
+            'id', 'display_id', 'lender', 'lender_name', 'loan_number',
+            'currency', 'currency_display',
+            'principal', 'interest_rate', 'rate_basis', 'rate_basis_display',
+            'amortization_system', 'amortization_system_display',
+            'term_months', 'start_date', 'first_due_date',
+            'insurance_monthly', 'opening_fee', 'stamp_tax', 'penalty_rate',
+            'disbursement_account', 'disbursement_account_name',
+            'liability_account', 'liability_account_name',
+            'status', 'status_display', 'notes', 'collateral_notes',
+            'outstanding_balance', 'next_due_date', 'next_installment_amount',
+            'installments_count', 'paid_installments_count',
+            'total_disbursed',
+            'installments',
+            'created_at', 'updated_at', 'created_by', 'created_by_name',
+        ]
+        read_only_fields = [
+            'display_id', 'status', 'created_at', 'updated_at', 'created_by',
+        ]
+
+
+class BankLoanWriteSerializer(serializers.ModelSerializer):
+    """
+    Serializer de escritura más liviano (omite campos derivados).
+
+    `liability_account` recibe el ID de una **cuenta contable** (Account)
+    de tipo LIABILITY, NO de una TreasuryAccount. El backend resuelve
+    (o crea) la TreasuryAccount tipo LOAN correspondiente en
+    `BankLoanViewSet.perform_create`, vía
+    `loan_provisioning.get_or_create_loan_treasury_account`. Esto evita que
+    el operador tenga que crear manualmente el wrapper de tesorería para el
+    pasivo del préstamo (ADR-0041).
+    """
+
+    class Meta:
+        from .models import BankLoan
+        from accounting.models import Account
+        model = BankLoan
+        fields = [
+            'lender', 'loan_number',
+            'currency', 'principal', 'interest_rate', 'rate_basis',
+            'amortization_system', 'term_months', 'start_date', 'first_due_date',
+            'insurance_monthly', 'opening_fee', 'stamp_tax', 'penalty_rate',
+            'disbursement_account', 'liability_account',
+            'notes', 'collateral_notes',
+        ]
+        extra_kwargs = {
+            # Truco: la FK del modelo apunta a TreasuryAccount, pero acá
+            # sobreescribimos el queryset para que el campo acepte el ID
+            # de la `Account` contable. En `BankLoanViewSet.perform_create`
+            # extraemos `validated_data['liability_account']` (un Account)
+            # y lo reemplazamos por la TreasuryAccount resuelta ANTES del
+            # save, para satisfacer la FK del modelo.
+            'liability_account': {
+                'queryset': Account.objects.all(),
+                'help_text': (
+                    "ID de la cuenta contable de PASIVO (Account.account_type=LIABILITY, "
+                    "hoja) que materializa la deuda. El backend crea/vincula la "
+                    "TreasuryAccount tipo LOAN correspondiente."
+                ),
+            },
+        }
+
+    def validate_liability_account(self, value):
+        """Valida que la cuenta contable de pasivo sea apta."""
+        from accounting.models import AccountType
+        if value.account_type != AccountType.LIABILITY:
+            raise serializers.ValidationError(
+                'La cuenta contable debe ser de tipo PASIVO (LIABILITY).'
+            )
+        if not getattr(value, 'is_selectable', True):
+            raise serializers.ValidationError(
+                'La cuenta contable debe ser una cuenta auxiliar (hoja).'
+            )
+        return value
+
+    def validate(self, attrs):
+        # Validar que first_due_date >= start_date (delegable al clean() del modelo).
+        start = attrs.get('start_date')
+        first_due = attrs.get('first_due_date')
+        if start and first_due and first_due < start:
+            raise serializers.ValidationError({
+                'first_due_date': 'El primer vencimiento no puede ser anterior al inicio.',
+            })
+        disbursement = attrs.get('disbursement_account')
+        if disbursement and disbursement.account_type in (
+            TreasuryAccount.Type.CREDIT_CARD,
+            TreasuryAccount.Type.LOAN,
+            TreasuryAccount.Type.CHECK_PORTFOLIO,
+        ):
+            raise serializers.ValidationError({
+                'disbursement_account': (
+                    'La cuenta de desembolso debe ser una cuenta bancaria (CHECKING) o '
+                    'caja (CASH); no puede ser de pasivo ni puente.'
+                )
+            })
+        return attrs
+
+
+class PayInstallmentActionSerializer(serializers.Serializer):
+    """Payload para la acción `pay` de LoanInstallmentViewSet."""
+    payment_account = serializers.IntegerField(
+        help_text="ID de la TreasuryAccount desde donde se paga.",
+    )
+    date = serializers.DateField(required=False)
+    principal_amount = serializers.DecimalField(
+        max_digits=18, decimal_places=2, required=False,
+        help_text="Monto de capital a pagar (default: monto de la cuota).",
+    )
+    interest_amount = serializers.DecimalField(
+        max_digits=18, decimal_places=2, required=False,
+        help_text="Monto de interés a pagar (default: monto de la cuota).",
+    )
+    insurance_amount = serializers.DecimalField(
+        max_digits=18, decimal_places=2, required=False,
+        help_text="Monto de seguro a pagar (default: monto de la cuota).",
+    )
+    tax_amount = serializers.DecimalField(
+        max_digits=18, decimal_places=2, required=False,
+        help_text="Monto de impuestos pagados (default: 0).",
+    )
+    penalty_amount = serializers.DecimalField(
+        max_digits=18, decimal_places=2, required=False,
+        help_text="Monto de multa por mora pagada (default: cálculo automático si aplica).",
+    )
+    interest_expense_account = serializers.IntegerField(required=False, allow_null=True)
+    insurance_expense_account = serializers.IntegerField(required=False, allow_null=True)
+
+
+class PrepayLoanActionSerializer(serializers.Serializer):
+    """Payload para la acción `prepay` de BankLoanViewSet."""
+    payment_account = serializers.IntegerField()
+    date = serializers.DateField(required=False)
+    insurance_amount = serializers.DecimalField(
+        max_digits=18, decimal_places=2, required=False,
+        help_text="Monto total de seguro a pagar (default: suma de seguro de cuotas pendientes).",
+    )
+    tax_amount = serializers.DecimalField(
+        max_digits=18, decimal_places=2, required=False,
+        help_text="Monto total de impuestos pagados (default: 0).",
+    )
+    penalty_amount = serializers.DecimalField(
+        max_digits=18, decimal_places=2, required=False,
+        help_text="Monto total de multa por mora pagada (default: cálculo automático).",
+    )
+    interest_expense_account = serializers.IntegerField(required=False, allow_null=True)
+    insurance_expense_account = serializers.IntegerField(required=False, allow_null=True)
+
+
+class DisburseLoanActionSerializer(serializers.Serializer):
+    """
+    Payload para la acción `disburse` de BankLoanViewSet.
+
+    Los cargos (`opening_fee`, `stamp_tax`) son **overrides one-shot**: el
+    `BankLoan` conserva los valores del contrato tal como fueron registrados
+    originalmente. Los overrides se usan exclusivamente para construir el
+    asiento del desembolso. La diferencia (si la hay) se documenta en las
+    `notes` del `TreasuryMovement` para trazabilidad contable.
+
+    Las cuentas de gasto (`commission_expense_account`, `stamp_tax_expense_account`)
+    son **overrides opcionales** del `AccountingSettings`. Si vienen en el
+    payload, ganan sobre los settings; si no, caen a:
+      - `settings.loan_commission_expense_account`
+      - `settings.loan_stamp_tax_expense_account`
+
+    Esto permite al operador configurar el asiento "in-line" cuando los
+    settings no están definidos a nivel empresa (escape híbrido).
+    """
+    from accounting.models import Account
+    date = serializers.DateField(required=False)
+    opening_fee = serializers.DecimalField(
+        max_digits=18, decimal_places=2, required=False, allow_null=True, min_value=0,
+    )
+    stamp_tax = serializers.DecimalField(
+        max_digits=18, decimal_places=2, required=False, allow_null=True, min_value=0,
+    )
+    commission_expense_account = serializers.PrimaryKeyRelatedField(
+        queryset=Account.objects.all(), required=False, allow_null=True,
+    )
+    stamp_tax_expense_account = serializers.PrimaryKeyRelatedField(
+        queryset=Account.objects.all(), required=False, allow_null=True,
+    )
+
+    def validate_commission_expense_account(self, value):
+        from accounting.models import AccountType
+        if value is None:
+            return value
+        if value.account_type != AccountType.EXPENSE:
+            raise serializers.ValidationError(
+                'La cuenta de gasto por comisión debe ser de tipo GASTO (EXPENSE).'
+            )
+        return value
+
+    def validate_stamp_tax_expense_account(self, value):
+        from accounting.models import AccountType
+        if value is None:
+            return value
+        if value.account_type != AccountType.EXPENSE:
+            raise serializers.ValidationError(
+                'La cuenta de gasto por ITE debe ser de tipo GASTO (EXPENSE).'
+            )
+        return value
+
+
+# ── F3.5: Tarjeta de crédito — estados de cuenta ────────────────────────────
+
+
+class CreditCardStatementSerializer(serializers.ModelSerializer):
+    """Serializer de lectura para `CreditCardStatement`."""
+    display_id = serializers.CharField(read_only=True)
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    card_account_name = serializers.CharField(
+        source='card_account.name', read_only=True,
+    )
+    card_account_bank = serializers.PrimaryKeyRelatedField(
+        source='card_account.bank', read_only=True,
+    )
+    payment_movement_id = serializers.PrimaryKeyRelatedField(
+        source='payment_movement', read_only=True,
+    )
+    payment_account_name = serializers.CharField(
+        source='payment_account.name', read_only=True, allow_null=True,
+    )
+    charges_movement_id = serializers.PrimaryKeyRelatedField(
+        source='charges_movement', read_only=True,
+    )
+    created_by_name = serializers.CharField(
+        source='created_by.username', read_only=True, allow_null=True,
+    )
+    total_to_pay = serializers.SerializerMethodField()
+    is_overdue = serializers.BooleanField(read_only=True)
+    # Onda 3 (ADR-0044): campos de pagos parciales.
+    amount_paid = serializers.DecimalField(
+        max_digits=14, decimal_places=2, read_only=True,
+    )
+    outstanding_balance = serializers.SerializerMethodField()
+
+    def get_total_to_pay(self, obj):
+        return str(obj.total_to_pay)
+
+    def get_outstanding_balance(self, obj):
+        return str(obj.outstanding_balance)
+
+    class Meta:
+        from .models import CreditCardStatement
+        model = CreditCardStatement
+        fields = [
+            'id', 'display_id',
+            'card_account', 'card_account_name', 'card_account_bank',
+            'period_year', 'period_month',
+            'cut_off_date', 'due_date',
+            'billed_amount', 'minimum_payment',
+            'interest_charged', 'fees_charged',
+            'credit_limit',
+            'status', 'status_display', 'is_overdue',
+            'total_to_pay', 'amount_paid', 'outstanding_balance',
+            'paid_at', 'payment_movement', 'payment_movement_id',
+            'payment_account', 'payment_account_name',
+            'charges_movement', 'charges_movement_id',
+            'notes',
+            'created_at', 'updated_at', 'created_by', 'created_by_name',
+        ]
+        read_only_fields = [
+            'display_id', 'status', 'is_overdue',
+            'total_to_pay', 'amount_paid', 'outstanding_balance',
+            'paid_at', 'payment_movement', 'payment_account',
+            'charges_movement',
+            'created_at', 'updated_at', 'created_by',
+        ]
+
+
+class CreditCardStatementWriteSerializer(serializers.ModelSerializer):
+    """Serializer de escritura para `CreditCardStatement`."""
+
+    class Meta:
+        from .models import CreditCardStatement
+        model = CreditCardStatement
+        fields = [
+            'card_account', 'period_year', 'period_month',
+            'cut_off_date', 'due_date',
+            'billed_amount', 'minimum_payment',
+            'interest_charged', 'fees_charged',
+            'credit_limit', 'notes',
+        ]
+
+    def validate(self, attrs):
+        from .models import CreditCardStatement
+        card_account = attrs.get('card_account')
+        if card_account and card_account.account_type != TreasuryAccount.Type.CREDIT_CARD:
+            raise serializers.ValidationError({
+                'card_account': 'La cuenta debe ser de tipo Tarjeta de Crédito (CREDIT_CARD).',
+            })
+        due_date = attrs.get('due_date')
+        cut_off = attrs.get('cut_off_date')
+        if due_date and cut_off and due_date < cut_off:
+            raise serializers.ValidationError({
+                'due_date': 'La fecha de vencimiento no puede ser anterior al cierre.',
+            })
+        return attrs
+
+
+class PayStatementActionSerializer(serializers.Serializer):
+    """Payload para la acción `pay` de CreditCardStatementViewSet."""
+    payment_account = serializers.IntegerField(
+        help_text="ID de la TreasuryAccount bancaria desde donde se paga.",
+    )
+    date = serializers.DateField(required=False)
+    # Onda 3 (ADR-0044): pago parcial opcional. Si se omite o es
+    # >= outstanding_balance, se paga el total.
+    amount = serializers.DecimalField(
+        max_digits=14, decimal_places=2, required=False, allow_null=True,
+        help_text=(
+            "Monto a pagar. Si se omite o es >= outstanding_balance, "
+            "se paga el total. Para pago parcial, enviar el monto "
+            "deseado (sujeto a card_minimum_payment_block si está "
+            "activo)."
+        ),
+    )
+
+
+class ApplyChargesActionSerializer(serializers.Serializer):
+    """Payload para la acción `apply_charges` de CreditCardStatementViewSet."""
+    interest_expense_account = serializers.IntegerField(required=False, allow_null=True)
+    fees_expense_account = serializers.IntegerField(required=False, allow_null=True)
+

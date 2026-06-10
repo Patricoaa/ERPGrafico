@@ -315,7 +315,7 @@ export function JournalEntryDrawer({
 
     const journalFormFields = (
         <Form {...form}>
-            <form id="journal-entry-form" onSubmit={form.handleSubmit(onSubmit)}>
+            <form id="journal-entry-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-6 pb-6 pt-6">
                 <fieldset disabled={isViewMode} className="contents">
                     <div className="grid grid-cols-12 gap-4 ">
                         <div className="col-span-3">
@@ -348,6 +348,7 @@ export function JournalEntryDrawer({
                                         onValidityChange={setIsPeriodValid}
                                         label="Fecha"
                                         required
+                                        disabled={isViewMode}
                                     />
                                 )}
                             />
@@ -518,7 +519,7 @@ export function JournalEntryDrawer({
                 onOpenChange={setOpen}
                 side="left"
                 defaultSize={width}
-                contentClassName="p-0"
+                mode={mode}
                 icon={BookOpen}
                 title={<><span>{drawerTitle}</span>{showPrintable && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}</>}
                 subtitle={drawerSubtitle}

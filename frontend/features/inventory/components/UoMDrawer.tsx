@@ -64,7 +64,7 @@ export function UoMDrawer({ open: openProp, onOpenChange, initialData, onSuccess
             ratio: undefined,
         },
     })
-    
+
     const width = formDrawerWidth("simple", !!initialData?.id)
 
     const lastResetId = useRef<number | undefined>(undefined)
@@ -162,7 +162,7 @@ export function UoMDrawer({ open: openProp, onOpenChange, initialData, onSuccess
                 onOpenChange={setOpen}
                 side="left"
                 defaultSize={width}
-                contentClassName="p-0"
+                mode={mode}
                 icon={Ruler}
                 title={<><span>{drawerTitle}</span>{(mode === 'view' || mode === 'edit') && initialData?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}</>}
                 subtitle={initialData?.id ? "Modifique los parámetros de conversión y consulte el historial." : "Configure el nombre, categoría y ratio de conversión."}
@@ -193,196 +193,196 @@ export function UoMDrawer({ open: openProp, onOpenChange, initialData, onSuccess
                             <form
                                 id="uom-form"
                                 onSubmit={form.handleSubmit(onSubmit)}
-                                className="space-y-6 px-4 pb-4 pt-2"
+                                className="space-y-6 px-6 pb-6 pt-6"
                             >
                                 <fieldset disabled={isView} className="contents">
-                                <div className="space-y-6">
-                                    <FormField
-                                        control={form.control}
-                                        name="name"
-                                        render={({ field, fieldState }) => (
-                                            <LabeledInput
-                                                label="Nombre de Unidad"
-                                                required
-                                                placeholder="Ej: Kilogramo, Metro, Litro"
-                                                error={fieldState.error?.message}
-                                                {...field}
-                                            />
-                                        )}
-                                    />
+                                    <div className="space-y-6">
+                                        <FormField
+                                            control={form.control}
+                                            name="name"
+                                            render={({ field, fieldState }) => (
+                                                <LabeledInput
+                                                    label="Nombre de Unidad"
+                                                    required
+                                                    placeholder="Ej: Kilogramo, Metro, Litro"
+                                                    error={fieldState.error?.message}
+                                                    {...field}
+                                                />
+                                            )}
+                                        />
 
-                                    <FormField
-                                        control={form.control}
-                                        name="category"
-                                        render={({ field, fieldState }) => (
-                                            <LabeledContainer
-                                                label="Categoría"
-                                                required
-                                                error={fieldState.error?.message}
-                                                suffix={<ChevronDown className="h-4 w-4 opacity-50" />}
-                                            >
-                                                <Popover>
-                                                    <PopoverTrigger asChild>
-                                                        <Button
-                                                            variant="ghost"
-                                                            role="combobox"
-                                                            className={cn("w-full justify-between font-normal text-sm h-[1.5rem] py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent", !field.value && "text-muted-foreground")}
-                                                        >
-                                                            {field.value
-                                                                ? categories?.find(cat => cat.id === field.value)?.name
-                                                                : "Seleccionar categoría..."}
-                                                        </Button>
-                                                    </PopoverTrigger>
-                                                    <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
-                                                        <div className="p-2">
-                                                            <div className="flex items-center gap-2 mb-2">
-                                                                <div className="flex-1 flex items-center px-3 border rounded-md bg-background">
-                                                                    <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-                                                                    <input
-                                                                        className="flex h-9 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
-                                                                        placeholder="Buscar categoría..."
-                                                                        onChange={(e) => {
-                                                                            const val = e.target.value.toLowerCase()
-                                                                            const items = document.querySelectorAll('.category-item')
-                                                                            items.forEach((el) => {
-                                                                                if (el.textContent?.toLowerCase().includes(val)) {
-                                                                                    (el as HTMLElement).style.display = 'flex'
-                                                                                } else {
-                                                                                    (el as HTMLElement).style.display = 'none'
-                                                                                }
-                                                                            })
-                                                                        }}
-                                                                    />
+                                        <FormField
+                                            control={form.control}
+                                            name="category"
+                                            render={({ field, fieldState }) => (
+                                                <LabeledContainer
+                                                    label="Categoría"
+                                                    required
+                                                    error={fieldState.error?.message}
+                                                    suffix={<ChevronDown className="h-4 w-4 opacity-50" />}
+                                                >
+                                                    <Popover>
+                                                        <PopoverTrigger asChild>
+                                                            <Button
+                                                                variant="ghost"
+                                                                role="combobox"
+                                                                className={cn("w-full justify-between font-normal text-sm h-[1.5rem] py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent", !field.value && "text-muted-foreground")}
+                                                            >
+                                                                {field.value
+                                                                    ? categories?.find(cat => cat.id === field.value)?.name
+                                                                    : "Seleccionar categoría..."}
+                                                            </Button>
+                                                        </PopoverTrigger>
+                                                        <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
+                                                            <div className="p-2">
+                                                                <div className="flex items-center gap-2 mb-2">
+                                                                    <div className="flex-1 flex items-center px-3 border rounded-md bg-background">
+                                                                        <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+                                                                        <input
+                                                                            className="flex h-9 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
+                                                                            placeholder="Buscar categoría..."
+                                                                            onChange={(e) => {
+                                                                                const val = e.target.value.toLowerCase()
+                                                                                const items = document.querySelectorAll('.category-item')
+                                                                                items.forEach((el) => {
+                                                                                    if (el.textContent?.toLowerCase().includes(val)) {
+                                                                                        (el as HTMLElement).style.display = 'flex'
+                                                                                    } else {
+                                                                                        (el as HTMLElement).style.display = 'none'
+                                                                                    }
+                                                                                })
+                                                                            }}
+                                                                        />
+                                                                    </div>
+                                                                    <TooltipProvider>
+                                                                        <Tooltip>
+                                                                            <TooltipTrigger asChild>
+                                                                                <Button
+                                                                                    type="button"
+                                                                                    variant="outline"
+                                                                                    size="icon"
+                                                                                    className="h-9 w-9 shrink-0 border-dashed border-primary/50 text-primary hover:bg-primary/10 hover:border-primary transition-colors"
+                                                                                    onClick={() => {
+                                                                                        document.body.click()
+                                                                                        setIsCreateCategoryOpen(true)
+                                                                                    }}
+                                                                                >
+                                                                                    <Plus className="h-4 w-4" />
+                                                                                </Button>
+                                                                            </TooltipTrigger>
+                                                                            <TooltipContent>
+                                                                                <p>Crear nueva categoría</p>
+                                                                            </TooltipContent>
+                                                                        </Tooltip>
+                                                                    </TooltipProvider>
                                                                 </div>
-                                                                <TooltipProvider>
-                                                                    <Tooltip>
-                                                                        <TooltipTrigger asChild>
-                                                                            <Button
-                                                                                type="button"
-                                                                                variant="outline"
-                                                                                size="icon"
-                                                                                className="h-9 w-9 shrink-0 border-dashed border-primary/50 text-primary hover:bg-primary/10 hover:border-primary transition-colors"
-                                                                                onClick={() => {
-                                                                                    document.body.click()
-                                                                                    setIsCreateCategoryOpen(true)
-                                                                                }}
-                                                                            >
-                                                                                <Plus className="h-4 w-4" />
-                                                                            </Button>
-                                                                        </TooltipTrigger>
-                                                                        <TooltipContent>
-                                                                            <p>Crear nueva categoría</p>
-                                                                        </TooltipContent>
-                                                                    </Tooltip>
-                                                                </TooltipProvider>
+                                                                <div className="max-h-[200px] overflow-y-auto space-y-1">
+                                                                    {categories?.map((cat) => (
+                                                                        <div
+                                                                            key={cat.id}
+                                                                            className={cn(
+                                                                                "category-item relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
+                                                                                field.value === cat.id && "bg-accent"
+                                                                            )}
+                                                                            onClick={() => {
+                                                                                field.onChange(cat.id)
+                                                                                document.body.click()
+                                                                            }}
+                                                                        >
+                                                                            <span>{cat.name}</span>
+                                                                            {field.value === cat.id && (
+                                                                                <Check className="ml-auto h-4 w-4 opacity-100" />
+                                                                            )}
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
                                                             </div>
-                                                            <div className="max-h-[200px] overflow-y-auto space-y-1">
-                                                                {categories?.map((cat) => (
-                                                                    <div
-                                                                        key={cat.id}
-                                                                        className={cn(
-                                                                            "category-item relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
-                                                                            field.value === cat.id && "bg-accent"
-                                                                        )}
-                                                                        onClick={() => {
-                                                                            field.onChange(cat.id)
-                                                                            document.body.click()
-                                                                        }}
-                                                                    >
-                                                                        <span>{cat.name}</span>
-                                                                        {field.value === cat.id && (
-                                                                            <Check className="ml-auto h-4 w-4 opacity-100" />
-                                                                        )}
-                                                                    </div>
-                                                                ))}
-                                                            </div>
-                                                        </div>
-                                                    </PopoverContent>
-                                                </Popover>
-                                            </LabeledContainer>
-                                        )}
-                                    />
+                                                        </PopoverContent>
+                                                    </Popover>
+                                                </LabeledContainer>
+                                            )}
+                                        />
 
-                                    <FormField
-                                        control={form.control}
-                                        name="uom_type"
-                                        render={({ field, fieldState }) => (
-                                            <LabeledContainer
-                                                label="Tipo de Unidad"
-                                                required
-                                                error={fieldState.error?.message}
-                                                suffix={<ChevronDown className="h-4 w-4 opacity-50" />}
-                                            >
-                                                <Popover>
-                                                    <PopoverTrigger asChild>
-                                                        <Button
-                                                            variant="ghost"
-                                                            role="combobox"
-                                                            className={cn("w-full justify-between font-normal text-sm h-[1.5rem] py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent", !field.value && "text-muted-foreground")}
-                                                        >
-                                                            {field.value === 'REFERENCE' ? 'Referencia (Base)' :
-                                                                field.value === 'BIGGER' ? 'Más Grande que base' :
-                                                                    field.value === 'SMALLER' ? 'Más Pequeña que base' :
-                                                                        "Seleccionar tipo..."}
-                                                        </Button>
-                                                    </PopoverTrigger>
-                                                    <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
-                                                        <div className="p-2">
-                                                            <div className="max-h-[200px] overflow-y-auto space-y-1">
-                                                                {[
-                                                                    { value: 'REFERENCE', label: 'Referencia (Base de la categoría)' },
-                                                                    { value: 'BIGGER', label: 'Más Grande que la base' },
-                                                                    { value: 'SMALLER', label: 'Más Pequeña que la base' }
-                                                                ].map((opt) => (
-                                                                    <div
-                                                                        key={opt.value}
-                                                                        className={cn(
-                                                                            "type-item relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
-                                                                            field.value === opt.value && "bg-accent"
-                                                                        )}
-                                                                        onClick={() => {
-                                                                            field.onChange(opt.value)
-                                                                            document.body.click()
-                                                                        }}
-                                                                    >
-                                                                        <span>{opt.label}</span>
-                                                                        {field.value === opt.value && (
-                                                                            <Check className="ml-auto h-4 w-4 opacity-100" />
-                                                                        )}
-                                                                    </div>
-                                                                ))}
+                                        <FormField
+                                            control={form.control}
+                                            name="uom_type"
+                                            render={({ field, fieldState }) => (
+                                                <LabeledContainer
+                                                    label="Tipo de Unidad"
+                                                    required
+                                                    error={fieldState.error?.message}
+                                                    suffix={<ChevronDown className="h-4 w-4 opacity-50" />}
+                                                >
+                                                    <Popover>
+                                                        <PopoverTrigger asChild>
+                                                            <Button
+                                                                variant="ghost"
+                                                                role="combobox"
+                                                                className={cn("w-full justify-between font-normal text-sm h-[1.5rem] py-0 px-3 border-none shadow-none focus-visible:ring-0 bg-transparent hover:bg-transparent", !field.value && "text-muted-foreground")}
+                                                            >
+                                                                {field.value === 'REFERENCE' ? 'Referencia (Base)' :
+                                                                    field.value === 'BIGGER' ? 'Más Grande que base' :
+                                                                        field.value === 'SMALLER' ? 'Más Pequeña que base' :
+                                                                            "Seleccionar tipo..."}
+                                                            </Button>
+                                                        </PopoverTrigger>
+                                                        <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
+                                                            <div className="p-2">
+                                                                <div className="max-h-[200px] overflow-y-auto space-y-1">
+                                                                    {[
+                                                                        { value: 'REFERENCE', label: 'Referencia (Base de la categoría)' },
+                                                                        { value: 'BIGGER', label: 'Más Grande que la base' },
+                                                                        { value: 'SMALLER', label: 'Más Pequeña que la base' }
+                                                                    ].map((opt) => (
+                                                                        <div
+                                                                            key={opt.value}
+                                                                            className={cn(
+                                                                                "type-item relative flex cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
+                                                                                field.value === opt.value && "bg-accent"
+                                                                            )}
+                                                                            onClick={() => {
+                                                                                field.onChange(opt.value)
+                                                                                document.body.click()
+                                                                            }}
+                                                                        >
+                                                                            <span>{opt.label}</span>
+                                                                            {field.value === opt.value && (
+                                                                                <Check className="ml-auto h-4 w-4 opacity-100" />
+                                                                            )}
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
                                                             </div>
-                                                        </div>
-                                                    </PopoverContent>
-                                                </Popover>
-                                            </LabeledContainer>
-                                        )}
-                                    />
+                                                        </PopoverContent>
+                                                    </Popover>
+                                                </LabeledContainer>
+                                            )}
+                                        />
 
-                                    {watchType && watchType !== 'REFERENCE' && (
-                                        <div className="animate-in fade-in zoom-in-95 duration-300">
-                                            <FormField
-                                                control={form.control}
-                                                name="ratio"
-                                                render={({ field, fieldState }) => (
-                                                    <LabeledInput
-                                                        label="Ratio de Conversión"
-                                                        required
-                                                        type="number"
-                                                        step="0.00001"
-                                                        error={fieldState.error?.message}
-                                                        className="font-mono text-sm"
-                                                        hint={watchType === 'BIGGER'
-                                                            ? 'Cuántas unidades base equivalen a esta unidad'
-                                                            : 'Cuántas unidades de estas equivalen a la unidad base'}
-                                                        {...field}
-                                                        value={field.value ?? ""}
-                                                    />
-                                                )}
-                                            />
-                                        </div>
-                                    )}
-                                </div>
+                                        {watchType && watchType !== 'REFERENCE' && (
+                                            <div className="animate-in fade-in zoom-in-95 duration-300">
+                                                <FormField
+                                                    control={form.control}
+                                                    name="ratio"
+                                                    render={({ field, fieldState }) => (
+                                                        <LabeledInput
+                                                            label="Ratio de Conversión"
+                                                            required
+                                                            type="number"
+                                                            step="0.00001"
+                                                            error={fieldState.error?.message}
+                                                            className="font-mono text-sm"
+                                                            hint={watchType === 'BIGGER'
+                                                                ? 'Cuántas unidades base equivalen a esta unidad'
+                                                                : 'Cuántas unidades de estas equivalen a la unidad base'}
+                                                            {...field}
+                                                            value={field.value ?? ""}
+                                                        />
+                                                    )}
+                                                />
+                                            </div>
+                                        )}
+                                    </div>
                                 </fieldset>
                             </form>
                         </Form>

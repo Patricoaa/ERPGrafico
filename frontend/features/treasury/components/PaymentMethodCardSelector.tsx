@@ -1,10 +1,11 @@
 "use client"
 
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import {Banknote, CreditCard, Building2, ClipboardList, Wallet} from "lucide-react"
+import { Banknote, CreditCard, Building2, ClipboardList, Wallet } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useAllowedPaymentMethods, PaymentMethod } from "@/hooks/useAllowedPaymentMethods"
+import { useBanks } from '../hooks/useMasterData'
 import { useState, useMemo, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { BaseModal, Numpad } from '@/components/shared'
@@ -13,7 +14,7 @@ import { LabeledInput, LabeledSelect, MoneyDisplay } from "@/components/shared"
 import { formatMoney } from "@/lib/money"
 
 export interface PaymentData {
-    method: 'CASH' | 'CARD' | 'CARD_TERMINAL' | 'TRANSFER' | 'CHECK' | 'CREDIT_BALANCE' | null
+    method: 'CASH' | 'CARD' | 'CARD_TERMINAL' | 'CREDIT_CARD' | 'TRANSFER' | 'CHECK' | 'CREDIT_BALANCE' | null
     amount: number
     treasuryAccountId: string | null
     paymentMethodId: number | null
@@ -21,6 +22,12 @@ export interface PaymentData {
     isPending?: boolean
     /** true cuando el método es CARD_TERMINAL — activa flujo TUU automatizado */
     isTerminalIntegration?: boolean
+    /** CHECK: banco emisor del cheque */
+    checkBankId?: number | null
+    /** CHECK: fecha de vencimiento (ISO date string) */
+    checkDueDate?: string
+    /** CREDIT_CARD: cantidad de cuotas (default 1 = pago único) */
+    installments?: number
 }
 
 interface PaymentMethodCardSelectorProps {
@@ -71,6 +78,8 @@ export function PaymentMethodCardSelector({
         enabled: true
     })
 
+    const { banks } = useBanks()
+
     const isMethodAllowed = (methodId: string) => {
         if (loadingMethods) return true
         if (!allowedMethods.length) return false
@@ -81,6 +90,8 @@ export function PaymentMethodCardSelector({
             case 'CARD':
                 // Solo métodos CARD genéricos (no CARD_TERMINAL, no DEBIT_CARD/CREDIT_CARD ya filtrados por allow_for_sales)
                 return allowedMethods.some(m => m.method_type === 'CARD')
+            case 'CREDIT_CARD':
+                return allowedMethods.some(m => m.method_type === 'CREDIT_CARD')
             case 'CARD_TERMINAL':
                 return allowedMethods.some(m => m.method_type === 'CARD_TERMINAL' && m.is_terminal_integration)
             case 'TRANSFER':
@@ -145,6 +156,7 @@ export function PaymentMethodCardSelector({
         return allowedMethods.filter(m => {
             if (paymentData.method === 'CASH') return m.method_type === 'CASH'
             if (paymentData.method === 'CARD') return m.method_type === 'CARD'
+            if (paymentData.method === 'CREDIT_CARD') return m.method_type === 'CREDIT_CARD'
             if (paymentData.method === 'CARD_TERMINAL') return m.method_type === 'CARD_TERMINAL'
             if (paymentData.method === 'TRANSFER') return m.method_type === 'TRANSFER'
             if (paymentData.method === 'CHECK') return m.method_type === 'CHECK'
@@ -158,18 +170,19 @@ export function PaymentMethodCardSelector({
         if (methodsForType.length >= 1) {
             const currentAccountId = paymentData.treasuryAccountId?.toString();
             // If the current account ID is not associated with any of the allowed methods for this type, select the first one
-            const isValid = methodsForType.some(m => m.treasury_account.toString() === currentAccountId);
+            const isValid = methodsForType.some(m => m.treasury_account?.toString() === currentAccountId);
 
             if (!isValid) {
+                const first = methodsForType[0]
                 requestAnimationFrame(() => {
                     onPaymentDataChange({
                         ...paymentData,
-                        treasuryAccountId: methodsForType[0].treasury_account.toString(),
-                        paymentMethodId: methodsForType[0].id
+                        treasuryAccountId: first.treasury_account?.toString() ?? null,
+                        paymentMethodId: first.id
                     });
                 })
             }
-        } else if (methodsForType.length === 0 && paymentData.treasuryAccountId) {
+        } else if (methodsForType.length === 0 && (paymentData.treasuryAccountId || paymentData.paymentMethodId)) {
             requestAnimationFrame(() => {
                 onPaymentDataChange({ ...paymentData, treasuryAccountId: null, paymentMethodId: null });
             })
@@ -191,6 +204,13 @@ export function PaymentMethodCardSelector({
                 icon: CreditCard,
                 color: 'text-primary',
                 isAllowed: isMethodAllowed('CARD')
+            },
+            {
+                id: 'CREDIT_CARD',
+                label: 'T. Crédito',
+                icon: CreditCard,
+                color: 'text-primary',
+                isAllowed: isMethodAllowed('CREDIT_CARD')
             },
             {
                 id: 'CARD_TERMINAL',
@@ -327,7 +347,7 @@ export function PaymentMethodCardSelector({
 
                                 {paymentData.method === m.id && (
                                     <div className="mt-2 space-y-3 pt-3 border-t w-full animate-in fade-in slide-in-from-top-2" onClick={(e) => e.stopPropagation()}>
-                                        {(m.id === 'TRANSFER' || m.id === 'CHECK') && (
+                                                        {(m.id === 'TRANSFER' || m.id === 'CHECK') && (
                                             <LabeledInput
                                                 label={m.id === 'CHECK' ? 'N° de Cheque' : 'N° Operación / Folio'}
                                                 placeholder={m.id === 'CHECK' ? "Ej: 000123" : "Ej: 123456"}
@@ -337,20 +357,58 @@ export function PaymentMethodCardSelector({
                                             />
                                         )}
 
-                                        {methodsForType.length > 1 && (
+                                        {m.id === 'CREDIT_CARD' && (
+                                                <LabeledInput
+                                                    label="N° de Cuotas"
+                                                    type="number"
+                                                    min={1}
+                                                    max={36}
+                                                    value={(paymentData.installments || 1).toString()}
+                                                    onChange={(e) => {
+                                                        const val = parseInt(e.target.value) || 1
+                                                        onPaymentDataChange({ ...paymentData, installments: Math.max(1, Math.min(36, val)) })
+                                                    }}
+                                                    placeholder="1"
+                                                />
+                                        )}
+
+                                        {m.id === 'CHECK' && (
+                                            <>
+                                                <LabeledSelect
+                                                    label="Banco Emisor"
+                                                    placeholder="Seleccione banco..."
+                                                    value={paymentData.checkBankId?.toString() || ""}
+                                                    onChange={(val) => onPaymentDataChange({
+                                                        ...paymentData,
+                                                        checkBankId: val ? parseInt(val) : null
+                                                    })}
+                                                    options={banks
+                                                        .filter(b => b.is_active)
+                                                        .map(b => ({ value: b.id.toString(), label: b.name }))}
+                                                />
+                                                <LabeledInput
+                                                    label="Fecha Vencimiento"
+                                                    type="date"
+                                                    value={paymentData.checkDueDate || ""}
+                                                    onChange={(e) => onPaymentDataChange({ ...paymentData, checkDueDate: e.target.value })}
+                                                />
+                                            </>
+                                        )}
+
+                                        {(paymentData.method === 'CREDIT_CARD' || methodsForType.filter(m => m.treasury_account != null).length > 1) && (
                                             <LabeledSelect
-                                                label={paymentData.method === 'TRANSFER' ? 'Banco / Cuenta' : 'Cuenta'}
+                                                label={paymentData.method === 'TRANSFER' ? 'Banco / Cuenta' : paymentData.method === 'CREDIT_CARD' ? 'Tarjeta de Crédito' : 'Cuenta'}
                                                 value={paymentData.treasuryAccountId || ""}
                                                 onChange={(val) => {
-                                                    const selectedMethod = methodsForType.find(m => m.treasury_account.toString() === val)
+                                                    const selectedMethod = methodsForType.find(m => String(m.treasury_account) === val)
                                                     onPaymentDataChange({
                                                         ...paymentData,
                                                         treasuryAccountId: val,
-                                                        paymentMethodId: selectedMethod?.id || null
+                                                        paymentMethodId: selectedMethod?.id ?? null
                                                     })
                                                 }}
-                                                options={methodsForType.map((m) => ({
-                                                    value: m.treasury_account.toString(),
+                                                options={methodsForType.filter(m => m.treasury_account != null).map((m) => ({
+                                                    value: String(m.treasury_account),
                                                     label: `${m.name} (${m.treasury_account_name})`
                                                 }))}
                                             />

@@ -79,6 +79,7 @@
 | "backup Postgres", "pg_dump", "restore", "subir backup a R2", "test mensual de backup" | [backup-and-restore-postgres.md](30-playbooks/backup-and-restore-postgres.md) | 30 |
 | "disaster recovery", "el ERP no levanta", "runbook incidente", "DB corrupta", "host caído", "restore en emergencia" | [disaster-recovery-pyme.md](30-playbooks/disaster-recovery-pyme.md) | 30 |
 | "aggregator", "features/orders", "feature sin barrel root", "hub de visualización", "agregar varias entities" | [frontend-fsd.md#aggregator-pattern](10-architecture/frontend-fsd.md#aggregator-pattern-read-only-feature-without-root-barrel) | 10 |
+| "créditos bancarios", "préstamos", "cuotas", "amortización", "UF", "tarjeta de crédito estado/pago", "cheques propios/girados", "endoso", "Centro de Bancos", "roadmap bancos", "pendientes de tesorería" | [50-audit/bancos/README.md](50-audit/bancos/README.md) | 50 |
 
 ## Global invariants (violate = PR rejected)
 

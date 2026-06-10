@@ -15,13 +15,11 @@ import {
 } from "lucide-react"
 import { useHubPanel } from "@/components/providers/HubPanelProvider"
 import { Button } from "@/components/ui/button"
-import { SkeletonShell, ActionConfirmModal, DataCell, EntityBadge } from "@/components/shared"
+import { SkeletonShell, ActionConfirmModal, DataCell, EntityBadge, MoneyDisplay } from "@/components/shared"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { DataTable } from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
-
-const fmt = (v: string | number | undefined) =>
-    Number(v || 0).toLocaleString("es-CL", { style: "currency", currency: "CLP", maximumFractionDigits: 0 })
+import { formatMoney } from "@/lib/money"
 
 const agingLabel: Record<string, string> = {
     current: "Al día",
@@ -60,7 +58,7 @@ function AgingBar({ aging }: { aging: CreditContact["credit_aging"] }) {
                         <TooltipTrigger asChild>
                             <div className={cn("h-full", colors[i])} style={{ width: `${pct}%` }} />
                         </TooltipTrigger>
-                        <TooltipContent side="top">{agingLabel[k]}: {fmt(aging[k])}</TooltipContent>
+                        <TooltipContent side="top">{agingLabel[k]}: <MoneyDisplay amount={aging[k]} inline /></TooltipContent>
                     </Tooltip>
                 ) : null
             })}
@@ -101,7 +99,7 @@ function PortfolioContactPanel({ contact, onRefresh }: { contact: CreditContact,
         setWritingOff(true)
         try {
             const res = await writeOffDebt(contact.id)
-            toast.success(`Deuda castigada: ${res.journal_entry} por ${fmt(res.amount)}`)
+            toast.success(`Deuda castigada: ${res.journal_entry} por ${formatMoney(res.amount)}`)
             onRefresh()
         } catch (error) {
             const e = error as { response?: { data?: { error?: string } }; message?: string }
@@ -116,7 +114,7 @@ function PortfolioContactPanel({ contact, onRefresh }: { contact: CreditContact,
         setWritingOffDocId(saleOrderId)
         try {
             const res = await writeOffSaleOrder(saleOrderId)
-            toast.success(`Documento castigado: ${res.journal_entry} por ${fmt(res.amount)}`)
+            toast.success(`Documento castigado: ${res.journal_entry} por ${formatMoney(res.amount)}`)
             setLedger(null)
             onRefresh()
         } catch (error) {
@@ -141,7 +139,7 @@ function PortfolioContactPanel({ contact, onRefresh }: { contact: CreditContact,
                     {agingBuckets.map((k) => (
                         Number(aging[k]) > 0 && (
                             <span key={k} className={cn("text-[11px] font-bold px-2.5 py-1 rounded-md border", agingBg[k])}>
-                                {agingLabel[k]} {fmt(aging[k])}
+                                {agingLabel[k]} <MoneyDisplay amount={aging[k]} inline />
                             </span>
                         )
                     ))}
@@ -172,7 +170,7 @@ function PortfolioContactPanel({ contact, onRefresh }: { contact: CreditContact,
                     <div className="space-y-3 pt-1 text-sm leading-relaxed">
                         <p>Esta acción es <strong>irreversible</strong> y tiene las siguientes consecuencias:</p>
                         <ul className="list-disc list-inside space-y-1 font-medium text-muted-foreground">
-                            <li>Se generará un asiento contable de pérdida por <span className="text-foreground font-bold">{fmt(totalDebt)}</span>.</li>
+                            <li>Se generará un asiento contable de pérdida por <span className="text-foreground font-bold"><MoneyDisplay amount={totalDebt} inline /></span>.</li>
                             <li>El cliente quedará bloqueado permanentemente.</li>
                             <li>La clasificación de riesgo pasará a <span className="text-destructive font-bold uppercase tracking-wider text-[10px]">Crítico</span>.</li>
                             <li>Se realizarán ajustes técnicos en tesorería para saldar los documentos pendientes.</li>
@@ -293,7 +291,7 @@ function PortfolioContactPanel({ contact, onRefresh }: { contact: CreditContact,
                 title={`¿Castigar Documento NV-${showWriteOffDocDialog?.number}?`}
                 description={
                     <div className="space-y-3 pt-1 text-sm leading-relaxed">
-                        <p>Se castigará el saldo pendiente de <strong>{fmt(showWriteOffDocDialog?.balance)}</strong> para este documento.</p>
+                        <p>Se castigará el saldo pendiente de <strong><MoneyDisplay amount={showWriteOffDocDialog?.balance} inline /></strong> para este documento.</p>
                     </div>
                 }
                 variant="destructive"

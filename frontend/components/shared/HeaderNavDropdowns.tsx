@@ -25,13 +25,15 @@ interface HeaderNavDropdownsProps {
  *   [Icon] [Active View ▾]  ·  [Active Sub-view ▾]
  */
 export function HeaderNavDropdowns({ navigation, iconName }: HeaderNavDropdownsProps) {
-    const { tabs, activeValue, subActiveValue, breadcrumbs } = navigation
+    const { tabs, activeValue, subActiveValue, subSubActiveValue, breadcrumbs } = navigation
 
     // Separate config tab from regular tabs
     const regularTabs = (tabs || [])
     const activeTab = (tabs || []).find(t => t.value === activeValue)
     const activeSubTabs = activeTab?.subTabs
     const activeSubTab = activeSubTabs?.find(s => s.value === subActiveValue)
+    const activeSubSubTabs = activeSubTab?.subTabs
+    const activeSubSubTab = activeSubSubTabs?.find(s => s.value === subSubActiveValue)
 
     return (
         <div className="flex items-center gap-0 min-w-0">
@@ -152,6 +154,71 @@ export function HeaderNavDropdowns({ navigation, iconName }: HeaderNavDropdownsP
                         >
                             {activeSubTabs.map((sub) => {
                                 const isActive = sub.value === subActiveValue
+                                return (
+                                    <DropdownMenuItem
+                                        key={sub.value}
+                                        className={cn(
+                                            "cursor-pointer rounded-md transition-colors p-0 focus:bg-primary/5",
+                                            isActive && "bg-primary/10"
+                                        )}
+                                    >
+                                        <Link
+                                            href={sub.href}
+                                            className="flex items-center gap-2.5 py-2 px-2.5 w-full"
+                                        >
+                                            {sub.iconName && (
+                                                <DynamicIcon
+                                                    name={sub.iconName}
+                                                    className={cn(
+                                                        "h-4 w-4 shrink-0",
+                                                        isActive ? "text-primary" : "text-muted-foreground"
+                                                    )}
+                                                />
+                                            )}
+                                            <span
+                                                className={cn(
+                                                    "text-xs font-semibold",
+                                                    isActive ? "text-primary" : "text-foreground/80"
+                                                )}
+                                            >
+                                                {sub.label}
+                                            </span>
+                                        </Link>
+                                    </DropdownMenuItem>
+                                )
+                            })}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </>
+            )}
+
+            {/* ── Separator + Tertiary Dropdown: Sub-sub-view Selector ── */}
+            {activeSubSubTabs && activeSubSubTabs.length > 0 && (
+                <>
+                    <span className="text-border/60 mx-1.5 text-sm select-none">/</span>
+
+                    <DropdownMenu>
+                        <DropdownMenuTrigger
+                            className={cn(
+                                "flex items-center gap-1.5 px-2 py-1.5 rounded-md transition-colors",
+                                "text-sm font-medium tracking-tight text-foreground/70",
+                                "hover:bg-muted/50 focus:outline-none focus-visible:ring-1 focus-visible:ring-primary/30",
+                                "data-[state=open]:bg-muted/50"
+                            )}
+                        >
+                            <span className="whitespace-nowrap">
+                                {activeSubSubTab?.label || activeSubSubTabs[0]?.label || "—"}
+                            </span>
+                            <ChevronsUpDown className="h-3.5 w-3.5 text-muted-foreground/60 shrink-0" />
+                        </DropdownMenuTrigger>
+
+                        <DropdownMenuContent
+                            align="start"
+                            sideOffset={8}
+                            className="min-w-[200px] rounded-lg border-border/40 shadow-xl shadow-black/10 bg-popover/95 backdrop-blur-md p-1"
+                        >
+                            {activeSubSubTabs.map((sub) => {
+                                const isActive = sub.value === subSubActiveValue
                                 return (
                                     <DropdownMenuItem
                                         key={sub.value}

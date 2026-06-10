@@ -7,9 +7,11 @@ import {
     SheetHeader,
     SheetTitle,
 } from "@/components/ui/sheet"
-import { SheetCloseButton } from '@/components/shared'
+
 import { cn } from "@/lib/utils"
 import { PanelHeader, type PanelBaseProps } from "./PanelHeader"
+
+type DrawerMode = 'create' | 'edit' | 'view'
 
 export interface DrawerProps extends PanelBaseProps {
     /**
@@ -32,6 +34,12 @@ export interface DrawerProps extends PanelBaseProps {
      * Si se debe mostrar un fondo oscuro difuminado detrás del Drawer.
      */
     showOverlay?: boolean
+
+    /**
+     * Modo visual del drawer: 'create' | 'edit' | 'view'.
+     * En modo 'view' se aplica un fondo distintivo y un badge "Vista".
+     */
+    mode?: DrawerMode
 
     /**
      * Tamaño inicial (ancho si es horizontal, alto si es vertical).
@@ -57,6 +65,7 @@ export function Drawer({
     boundary = "embedded",
     resizable = false,
     showOverlay,
+    mode,
     defaultSize,
     minSize,
     maxSize,
@@ -203,7 +212,7 @@ export function Drawer({
                     ...(side === "top" ? { left: 0, right: 0, top: 0, width: '100%' } : {})
                 }}
                 className={cn(
-                    "p-0 panel-surface flex flex-col",
+                    "p-0 flex flex-col",
                     boundary === "embedded" ? "!absolute" : "!fixed",
                     sideStyles[side],
                     className
@@ -237,17 +246,12 @@ export function Drawer({
                     )} />
                 )}
 
-                <SheetCloseButton
-                    onClick={() => onOpenChange(false)}
-                    className="absolute top-4 right-4 z-[60]"
-                />
-
                 {(title || subtitle || description || headerActions || icon) && (
-                    <SheetHeader className={cn("px-8 pb-4 pt-8 border-b shrink-0", headerClassName)}>
+                    <SheetHeader className={cn("px-6 py-3 border-b shrink-0", headerClassName)}>
                         <PanelHeader
                             icon={iconElement}
                             title={
-                                <SheetTitle className={cn("text-xl font-black tracking-tight text-foreground leading-none pr-8", titleClassName)}>
+                                <SheetTitle className={cn("text-xl font-black tracking-tight text-foreground leading-none", titleClassName)}>
                                     {title}
                                 </SheetTitle>
                             }
@@ -257,21 +261,31 @@ export function Drawer({
                                     {description}
                                 </span>
                             ) : undefined}
-                            headerActions={headerActions && (
-                                <div className="pr-8">
+                            headerActions={
+                                <>
+                                    {mode === "view" && (
+                                        <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/50 border border-border/30 rounded-md px-2 py-0.5 select-none">
+                                            Vista
+                                        </span>
+                                    )}
                                     {headerActions}
-                                </div>
-                            )}
+                                </>
+                            }
+                            onClose={() => onOpenChange(false)}
                         />
                     </SheetHeader>
                 )}
 
-                <div className={cn("flex-1 flex flex-col overflow-y-auto px-8 pb-8 scrollbar-thin scrollbar-thumb-primary/10 scrollbar-track-transparent", contentClassName)}>
+                <div className={cn(
+                    "flex-1 flex flex-col overflow-y-auto scrollbar-thin scrollbar-thumb-primary/10 scrollbar-track-transparent",
+                    mode === "view" && "bg-muted/30",
+                    contentClassName
+                )}>
                     {children}
                 </div>
 
                 {footer && (
-                    <div className={cn("border-t px-8 py-4 flex-shrink-0", footerClassName)}>
+                    <div className={cn("border-t px-6 py-3 flex-shrink-0", footerClassName)}>
                         {footer}
                     </div>
                 )}

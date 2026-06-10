@@ -4,12 +4,20 @@ import React, { createContext, useContext, useState, useCallback, useMemo } from
 
 import { LucideIcon } from "lucide-react"
  
+export interface SubTabConfig {
+    value: string
+    label: string
+    href: string
+    iconName?: string
+    subTabs?: SubTabConfig[]
+}
+
 export interface NavigationTabConfig {
     value: string
     label: string
     iconName?: string
     href: string
-    subTabs?: { value: string; label: string; href: string; iconName?: string }[]
+    subTabs?: SubTabConfig[]
 }
 
 export interface NavigationConfig {
@@ -20,6 +28,8 @@ export interface NavigationConfig {
     tabs: NavigationTabConfig[]
     activeValue: string
     subActiveValue?: string
+    /** Active value for tertiary (third-level) dropdown */
+    subSubActiveValue?: string
     /** Optional deep breadcrumbs added after the dropdowns */
     breadcrumbs?: { label: string; href?: string }[]
 }

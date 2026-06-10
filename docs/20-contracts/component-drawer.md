@@ -39,7 +39,7 @@ supersedes:
     sidebar={<ActivitySidebar entityId={initialData.id} entityType="category" />}
     showSidebar={!!initialData}
   >
-    <form className="space-y-6 px-4 pb-4 pt-2">{/* fields */}</form>
+    <form className="space-y-6 px-4 pb-4 pt-4">{/* fields */}</form>
   </FormSplitLayout>
 </Drawer>
 ```
@@ -134,7 +134,7 @@ Cuando el formulario tiene modo edición, usar `FormSplitLayout` con `ActivitySi
   sidebar={<ActivitySidebar entityId={entity.id} entityType="product" />}
   showSidebar={!!entity?.id}
 >
-  <form className="space-y-6 px-4 pb-4 pt-2">
+  <form className="space-y-6 px-4 pb-4 pt-4">
     {/* campos */}
   </form>
 </FormSplitLayout>

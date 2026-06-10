@@ -76,7 +76,7 @@ export function DataTableFilters<TData>({
                         </div>
                     </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-[320px] p-0 rounded-md border-border/80 shadow-xl overflow-hidden" align="start">
+                <PopoverContent className="w-[320px] p-0 border-border/80 shadow-floating overflow-hidden" align="start">
                     <div className="flex items-center justify-between px-4 py-3 bg-muted/20 border-b border-border/40">
                         <h4 className="text-[10px] uppercase font-bold font-heading tracking-widest text-foreground/80">Filtrar</h4>
                         <Button

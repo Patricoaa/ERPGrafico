@@ -16,7 +16,6 @@ import {
     Banknote,
     Copy,
     Download,
-    Eye,
     FileText,
     LayoutDashboard,
     Lock,
@@ -31,7 +30,6 @@ import {
 } from "lucide-react"
 
 export type RowActionKey =
-    | "view"
     | "detail"
     | "hub"
     | "edit"
@@ -65,7 +63,6 @@ export interface RowActionDef {
 }
 
 export const ROW_ACTIONS: Record<RowActionKey, RowActionDef> = {
-    view:      { icon: Eye,             label: "Ver",            intent: "read"  },
     detail:    { icon: FileText,        label: "Ver detalle",    intent: "read"  },
     hub:       { icon: LayoutDashboard, label: "Abrir HUB",      intent: "read"  },
     edit:      { icon: Pencil,          label: "Editar",         intent: "write" },
@@ -93,7 +90,6 @@ export const ROW_ACTIONS: Record<RowActionKey, RowActionDef> = {
  *  - `delete` → masters / config (category, warehouse, tag)             — removes the record
  */
 export const ROW_ACTION_ORDER: RowActionKey[] = [
-    "view",
     "detail",
     "hub",
     "edit",

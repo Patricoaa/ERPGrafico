@@ -19,6 +19,7 @@ import { useContact, useContactCreditLedger } from "@/features/contacts"
 import { useAccountingSettings } from "@/features/accounting"
 import { useInvoices } from "@/features/billing"
 import { getTask } from "@/features/workflow"
+import { formatMoney } from "@/lib/money"
 
 import {Check, ChevronRight, ChevronLeft, Loader2, ShoppingCart, AlertCircle, ShieldAlert, CheckCircle2, FileWarning, Truck} from "lucide-react"
 import {User} from "lucide-react"
@@ -406,13 +407,21 @@ export function SalesCheckoutWizardContent({
                             return { isValid: false }
                         }
                     }
+                    if (paymentData.method === 'CHECK' && paymentData.amount > 0 && !paymentData.transactionNumber) {
+                        toast.error("Debe ingresar el N° de Cheque para registrar el pago.")
+                        return { isValid: false }
+                    }
+                    if (paymentData.method === 'CHECK' && paymentData.amount > 0 && !paymentData.checkBankId) {
+                        toast.error("Debe seleccionar el banco emisor del cheque.")
+                        return { isValid: false }
+                    }
                     if (!approvalTaskId && !isApproved) {
                         const amountPaid = paymentData.amount || 0;
                         if (amountPaid < currentTotal) {
                             const requiredCredit = currentTotal - amountPaid;
                             const creditAvailable = Number(selectedCustomer?.credit_available || 0);
                             if (requiredCredit > creditAvailable) {
-                                setCreditApprovalReason(`Crédito insuficiente (Disponible: $${creditAvailable.toLocaleString()}).`);
+                                setCreditApprovalReason(`Crédito insuficiente (Disponible: ${formatMoney(creditAvailable)}).`);
                                 setCreditApprovalRequired(true);
                                 return { isValid: false, requireApproval: true };
                             }
@@ -512,6 +521,11 @@ export function SalesCheckoutWizardContent({
             formData.append('payment_is_pending', paymentData.isPending.toString())
             if (paymentData.transactionNumber && paymentData.amount > 0) formData.append('transaction_number', paymentData.transactionNumber)
             if (paymentData.treasuryAccountId && paymentData.amount > 0) formData.append('treasury_account_id', paymentData.treasuryAccountId.toString())
+            if (paymentData.method === 'CHECK' && paymentData.checkBankId) formData.append('check_bank_id', paymentData.checkBankId.toString())
+            if (paymentData.method === 'CHECK' && paymentData.checkDueDate) formData.append('check_due_date', paymentData.checkDueDate)
+            if (paymentData.installments && paymentData.installments > 1) {
+                formData.append('installments', paymentData.installments.toString())
+            }
             formData.append('payment_type', 'INBOUND')
 
             formData.append('delivery_type', deliveryData.type)

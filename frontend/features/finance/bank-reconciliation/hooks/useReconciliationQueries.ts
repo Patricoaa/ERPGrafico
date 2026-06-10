@@ -3,10 +3,10 @@ import { financeApi } from '../../api/financeApi'
 import type { BankStatement, TreasuryAccount, PaginatedResponse, BankStatementLine } from '../types'
 import { reconciliationKeys } from './queryKeys'
 
-export function useStatementsQuery() {
+export function useStatementsQuery(params?: Record<string, string>) {
     return useQuery({
         queryKey: reconciliationKeys.statements(),
-        queryFn: () => financeApi.getStatements() as Promise<BankStatement[]>,
+        queryFn: () => financeApi.getStatements(params) as Promise<BankStatement[]>,
     })
 }
 

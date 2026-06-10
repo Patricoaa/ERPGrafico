@@ -20,7 +20,7 @@ import {
 import { toast } from "sonner"
 import { ProductSelector } from "@/components/selectors/ProductSelector"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import {Product, UoM} from "@/types/entities"
+import { Product, UoM } from "@/types/entities"
 import { cn } from "@/lib/utils"
 import { validateAccountingPeriod } from '@/features/accounting/actions'
 import { useWarehouses } from "../hooks/useWarehouses"
@@ -28,7 +28,7 @@ import { useUoMs } from "../hooks/useUoMs"
 import { useProduct } from "../hooks/useProducts"
 import { useStockAdjustment } from "../hooks/useStockMoves"
 import { usePartners } from "@/features/contacts"
-import {FormSection, FormTabs, LabeledInput, LabeledSelect, SkeletonShell, type FormTabItem} from '@/components/shared'
+import { FormSection, FormTabs, LabeledInput, LabeledSelect, SkeletonShell, type FormTabItem } from '@/components/shared'
 
 const adjustmentSchema = z.object({
     product_id: z.string().min(1, "Seleccione un producto"),
@@ -253,7 +253,7 @@ export function AdjustmentForm({
     return (
         <SkeletonShell isLoading={isFetchingInitialData} ariaLabel="Cargando formulario de ajuste">
             <Form {...form}>
-                <form id="adjustment-form" onSubmit={form.handleSubmit(onSubmit)} className="flex-1 flex flex-col min-h-0 space-y-0">
+                <form id="adjustment-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-6 pb-6 pt-6">
 
                     {periodStatus?.is_closed && (
                         <Alert variant="destructive" className="bg-destructive/5 border-destructive/20 text-destructive py-2 mb-2">

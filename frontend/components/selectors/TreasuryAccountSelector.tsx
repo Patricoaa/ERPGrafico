@@ -12,8 +12,9 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover"
 import { useTreasuryAccounts, PaymentContext } from "@/hooks/useTreasuryAccounts"
-import { EmptyState } from '@/components/shared'
+import { EmptyState, MoneyDisplay } from '@/components/shared'
 import { Input } from "@/components/ui/input"
+import type { TreasuryAccountType } from "@/features/treasury/types"
 
 interface TreasuryAccountSelectorProps {
     value?: string | number | null
@@ -29,8 +30,18 @@ interface TreasuryAccountSelectorProps {
     // Legacy filter (optional)
     type?: 'BANK' | 'CASH' | 'CHECKING' | 'CREDIT_CARD'
 
+    /**
+     * Restrict to one or more account types. Takes precedence over the legacy
+     * `type` prop when both are provided. Use this for new call sites that
+     * need types other than the legacy four (e.g. BRIDGE).
+     */
+    accountTypes?: TreasuryAccountType[]
+
     // Exclude specific account
     excludeId?: number
+
+    // Restrict to specific account IDs (e.g. accounts belonging to a bank)
+    allowedIds?: number[]
 
     // Optional: Return full account object on select
     onSelect?: (account: any) => void
@@ -47,7 +58,9 @@ export function TreasuryAccountSelector({
     terminalId,
     paymentMethod,
     type,
+    accountTypes,
     excludeId,
+    allowedIds,
     onSelect,
     label,
     error
@@ -61,14 +74,18 @@ export function TreasuryAccountSelector({
         excludeId
     })
 
-    // Filter by search and legacy type
+    // Filter by search, legacy type, accountTypes, and optional allowedIds.
+    // `accountTypes` takes precedence over the legacy `type` prop.
     const filteredAccounts = accounts.filter(a => {
-        const matchesType = !type || a.account_type === type
+        const matchesType = accountTypes
+            ? accountTypes.includes(a.account_type as TreasuryAccountType)
+            : !type || a.account_type === type
+        const matchesAllowed = !allowedIds || allowedIds.includes(a.id)
         const searchLower = search.toLowerCase()
         const matchesSearch = !search ||
             a.name.toLowerCase().includes(searchLower) ||
             a.account_type.toLowerCase().includes(searchLower)
-        return matchesType && matchesSearch
+        return matchesType && matchesAllowed && matchesSearch
     })
 
     const selectedAccount = value && accounts.length > 0
@@ -81,8 +98,7 @@ export function TreasuryAccountSelector({
             case 'CASH': return <Wallet className="h-4 w-4" />
             case 'CREDIT_CARD':
             case 'DEBIT_CARD': return <CreditCard className="h-4 w-4" />
-            case 'BRIDGE':
-            case 'MERCHANT': return <Loader2 className="h-4 w-4" />
+            case 'BRIDGE': return <Loader2 className="h-4 w-4" />
             default: return <Banknote className="h-4 w-4" />
         }
     }
@@ -94,7 +110,6 @@ export function TreasuryAccountSelector({
         'CREDIT_CARD': 'Crédito Empresa',
         'CHECKBOOK': 'Chequera',
         'BRIDGE': 'Puente',
-        'MERCHANT': 'Recaudadora',
     }
 
     const handleSelect = (account: any) => {
@@ -106,15 +121,15 @@ export function TreasuryAccountSelector({
     return (
         <div className="relative w-full flex flex-col group">
             <fieldset
+                data-disabled={disabled || undefined}
                 className={cn(
                     "notched-field w-full group transition-all",
                     open && "focused",
-                    error && "error",
-                    disabled && "opacity-50 cursor-not-allowed bg-muted/10"
+                    error && "error"
                 )}
             >
                 {label && (
-                    <legend className={cn("notched-legend", error && "text-destructive", disabled && "text-muted-foreground/50")}>
+                    <legend className={cn("notched-legend", error && "text-destructive")}>
                         {label}
                     </legend>
                 )}
@@ -183,7 +198,7 @@ export function TreasuryAccountSelector({
                                             </div>
                                             {account.current_balance !== undefined && account.current_balance !== null && (
                                                 <span className="text-xs text-muted-foreground">
-                                                    Disponible: ${Number(account.current_balance).toLocaleString('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                                                    Disponible: <MoneyDisplay amount={account.current_balance} inline className="text-xs" />
                                                 </span>
                                             )}
                                         </div>

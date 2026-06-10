@@ -96,21 +96,21 @@ export const BIAnalyticsView: React.FC<BIAnalyticsViewProps> = ({ date }) => {
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <StatCard
                     label="Ventas Totales"
-                    value={<MoneyDisplay amount={sales.total_sales} digits={0} />}
+                    value={<MoneyDisplay amount={sales.total_sales} />}
                     icon={DollarSign}
                     trend={{ direction: "up", value: `+${sales.growth}% vs período anterior` }}
                     accent="info"
                 />
                 <StatCard
                     label="Ticket Promedio"
-                    value={<MoneyDisplay amount={sales.average_ticket} digits={0} />}
+                    value={<MoneyDisplay amount={sales.average_ticket} />}
                     icon={ShoppingCart}
                     subtext={`${sales.sales_count} ventas realizadas`}
                     accent="success"
                 />
                 <StatCard
                     label="Valor Inventario"
-                    value={<MoneyDisplay amount={inventory.total_value} digits={0} />}
+                    value={<MoneyDisplay amount={inventory.total_value} />}
                     icon={Package}
                     subtext={`${inventory.item_count} productos en stock`}
                     accent="accent"

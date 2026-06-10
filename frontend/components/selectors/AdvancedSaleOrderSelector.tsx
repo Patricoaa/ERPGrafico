@@ -100,18 +100,17 @@ export function AdvancedSaleOrderSelector({
     return (
         <div className={cn("relative w-full flex flex-col group", className)}>
             <fieldset 
+                data-disabled={disabled || undefined}
                 className={cn(
                     "notched-field w-full group transition-all",
                     open && "focused",
-                    error && "error",
-                    disabled && "opacity-50 cursor-not-allowed bg-muted/10"
+                    error && "error"
                 )}
             >
                 {label && (
                     <legend className={cn(
                         "px-1.5 text-[10px] font-black uppercase tracking-[0.15em] transition-colors duration-200 notched-legend",
-                        error ? "text-destructive" : "text-muted-foreground group-focus-within:text-primary",
-                        disabled && "text-muted-foreground/50"
+                        error ? "text-destructive" : "text-muted-foreground group-focus-within:text-primary"
                     )}>
                         {label}
                     </legend>

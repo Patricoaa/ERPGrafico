@@ -10,7 +10,7 @@ import {
     FormMessage,
 } from "@/components/ui/form"
 import { AccountSelector } from "@/components/selectors/AccountSelector"
-import { FormLineItemsTable, IconButton, LabeledInput } from '@/components/shared'
+import { FormLineItemsTable, IconButton, LabeledInput, MoneyDisplay } from '@/components/shared'
 
 import { cn } from "@/lib/utils"
 
@@ -30,10 +30,10 @@ const TotalBalance = ({ control, name }: { control: Control<any>; name: string }
 
     return (
         <div className={cn("flex flex-col items-end text-sm font-medium", isBalanced ? "text-success" : "text-destructive")}>
-            <span>Total Debe: {totalDebit.toLocaleString("es-CL", { style: "currency", currency: "CLP" })}</span>
-            <span>Total Haber: {totalCredit.toLocaleString("es-CL", { style: "currency", currency: "CLP" })}</span>
+            <span>Total Debe: <MoneyDisplay amount={totalDebit} inline /></span>
+            <span>Total Haber: <MoneyDisplay amount={totalCredit} inline /></span>
             {!isBalanced && (
-                <span>Diferencia: {diff.toLocaleString("es-CL", { style: "currency", currency: "CLP" })}</span>
+                <span>Diferencia: <MoneyDisplay amount={diff} inline /></span>
             )}
         </div>
     )
@@ -84,19 +84,20 @@ const COLUMNS = [
  */
 export function AccountingLinesTable({ control, name, isLoading, disabled }: AccountingLinesTableProps) {
     const { fields, append, remove } = useFieldArray({ control, name })
+    const columns = disabled ? COLUMNS.slice(0, -1) : COLUMNS
 
     return (
         <FormLineItemsTable
-            columns={COLUMNS}
+            columns={columns}
             onAdd={() => append({ account: "", label: "", debit: 0, credit: 0 })}
             addButtonText="Agregar Línea"
             footer={<TotalBalance control={control} name={name} />}
             isLoading={isLoading}
-            disabledAdd={disabled}
+            hideAddButton={disabled}
         >
             <TableBody>
                 {fields.map((field, index) => (
-                    <TableRow key={field.id} className="hover:bg-primary/5 transition-colors">
+                    <TableRow key={field.id} className={cn(!disabled && "hover:bg-primary/5 transition-colors")}>
                         {/* Cuenta */}
                         <TableCell className="p-3">
                             <FormField
@@ -173,15 +174,17 @@ export function AccountingLinesTable({ control, name, isLoading, disabled }: Acc
                         </TableCell>
 
                         {/* Delete */}
-                        <TableCell className="p-3 text-center">
-                            <IconButton
-                                onClick={() => remove(index)}
-                                className="h-8 w-8 text-muted-foreground/30 hover:text-destructive"
-                                title="Eliminar línea"
-                            >
-                                <Trash2 className="h-3.5 w-3.5" />
-                            </IconButton>
-                        </TableCell>
+                        {!disabled && (
+                            <TableCell className="p-3 text-center">
+                                <IconButton
+                                    onClick={() => remove(index)}
+                                    className="h-8 w-8 text-muted-foreground/30 hover:text-destructive"
+                                    title="Eliminar línea"
+                                >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                </IconButton>
+                            </TableCell>
+                        )}
                     </TableRow>
                 ))}
             </TableBody>

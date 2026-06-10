@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { toast } from "sonner"
-import { MonitorSmartphone, Banknote, CreditCard, Landmark, Smartphone, Printer } from "lucide-react"
+import { MonitorSmartphone, Banknote, CreditCard, Landmark, Smartphone, Printer, FileCheck } from "lucide-react"
 import { usePaymentMethods, useTerminalDevices, type Terminal } from "@/features/treasury"
 import { treasuryApi } from "@/features/treasury/api/treasuryApi"
 import { cn } from "@/lib/utils"
@@ -174,7 +174,7 @@ export function PosTerminalDrawer({ open, onOpenChange, terminal, onSuccess, mod
         if (!acc[type]) acc[type] = []
         acc[type].push(method)
         return acc
-    }, {} as Record<string, any[]>)
+    }, {} as Record<string, Array<{ id: number; name: string; treasury_account_name: string; method_type: string }>>)
 
     const drawerTitle = isView
         ? `Ficha de Caja POS${terminal?.id ? ` #${terminal.id}` : ""}`
@@ -211,7 +211,7 @@ export function PosTerminalDrawer({ open, onOpenChange, terminal, onSuccess, mod
                 onOpenChange={onOpenChange}
                 side="left"
                 defaultSize={formDrawerWidth("complex", !!terminal)}
-                contentClassName="p-0"
+                mode={mode}
                 title={
                     <div className="flex items-center gap-3">
                         <MonitorSmartphone className="h-5 w-5 text-muted-foreground" />
@@ -247,160 +247,161 @@ export function PosTerminalDrawer({ open, onOpenChange, terminal, onSuccess, mod
                     />
                 )}
             >
-            <FormSplitLayout
-                showSidebar={!!terminal?.id}
-                sidebar={terminal?.id ? (
-                    <ActivitySidebar
-                        entityType="terminal"
-                        entityId={terminal.id}
-                        className="h-full border-none"
-                        title="Historial"
-                    />
-                ) : undefined}
-            >
-                <Form {...form}>
-                    <form id="terminal-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-4 pb-4 pt-2">
-                        <fieldset disabled={isView} className="contents">
-                        <div className="grid grid-cols-2 gap-4">
-                            <FormField
-                                control={form.control}
-                                name="name"
-                                render={({ field }) => (
-                                    <LabeledInput
-                                        label="Nombre"
-                                        required
-                                        {...field}
-                                        placeholder="Ej: Caja 1"
+                <FormSplitLayout
+                    showSidebar={!!terminal?.id}
+                    sidebar={terminal?.id ? (
+                        <ActivitySidebar
+                            entityType="terminal"
+                            entityId={terminal.id}
+                            className="h-full border-none"
+                            title="Historial"
+                        />
+                    ) : undefined}
+                >
+                    <Form {...form}>
+                        <form id="terminal-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-6 pb-6 pt-6">
+                            <fieldset disabled={isView} className="contents">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <FormField
+                                        control={form.control}
+                                        name="name"
+                                        render={({ field }) => (
+                                            <LabeledInput
+                                                label="Nombre"
+                                                required
+                                                {...field}
+                                                placeholder="Ej: Caja 1"
+                                            />
+                                        )}
                                     />
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="code"
-                                render={({ field }) => (
-                                    <LabeledInput
-                                        label="Código"
-                                        required
-                                        {...field}
-                                        placeholder="TERM-01"
-                                        className="uppercase"
+                                    <FormField
+                                        control={form.control}
+                                        name="code"
+                                        render={({ field }) => (
+                                            <LabeledInput
+                                                label="Código"
+                                                required
+                                                {...field}
+                                                placeholder="TERM-01"
+                                                className="uppercase"
+                                            />
+                                        )}
                                     />
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="location"
-                                render={({ field }) => (
-                                    <LabeledInput
-                                        label="Ubicación"
-                                        {...field}
-                                        placeholder="Ej: Entrada"
+                                    <FormField
+                                        control={form.control}
+                                        name="location"
+                                        render={({ field }) => (
+                                            <LabeledInput
+                                                label="Ubicación"
+                                                {...field}
+                                                placeholder="Ej: Entrada"
+                                            />
+                                        )}
                                     />
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="ip_address"
-                                render={({ field }) => (
-                                    <LabeledInput
-                                        label="IP (Opcional)"
-                                        {...field}
-                                        placeholder="192.168.1.100"
+                                    <FormField
+                                        control={form.control}
+                                        name="ip_address"
+                                        render={({ field }) => (
+                                            <LabeledInput
+                                                label="IP (Opcional)"
+                                                {...field}
+                                                placeholder="192.168.1.100"
+                                            />
+                                        )}
                                     />
-                                )}
-                            />
-                        </div>
-
-                        <div className="space-y-2">
-                            <FormField
-                                control={form.control}
-                                name="device_id"
-                                render={({ field }) => (
-                                    <LabeledSelect
-                                        label="Dispositivo de Terminal"
-                                        placeholder="Sin dispositivo integrado"
-                                        value={field.value || ""}
-                                        onChange={field.onChange}
-                                        options={[
-                                            { value: "none", label: "Ninguno (Manual)" },
-                                            ...allDevices.map(dev => ({
-                                                value: dev.id.toString(),
-                                                label: `${dev.name} (${dev.provider_name})`
-                                            }))
-                                        ]}
-                                    />
-                                )}
-                            />
-                        </div>
-
-                        <div className="mt-2">
-                            <FormSection title="Métodos de Pago Permitidos" icon={CreditCard} />
-
-                            <div className="mt-6 px-2 lg:px-6">
-                                <div className="max-h-[500px] overflow-y-auto pr-4 scrollbar-thin space-y-8 py-2">
-                                    {typeOrder.map(type => {
-                                        const groupMethods = methodsGrouped[type] || []
-                                        if (groupMethods.length === 0) return null
-
-                                        return (
-                                            <div key={type} className="space-y-4">
-                                                <div className="flex items-center gap-3 text-muted-foreground/70 pl-1">
-                                                    {type === 'CASH' && <Banknote className="h-4 w-4" />}
-                                                    {type === 'TERMINAL' && <Smartphone className="h-4 w-4" />}
-                                                    {type === 'CARD' && <CreditCard className="h-4 w-4" />}
-                                                    {type === 'TRANSFER' && <Landmark className="h-4 w-4" />}
-                                                    <h4 className="text-[11px] font-black uppercase tracking-[0.2em]">
-                                                        {getTypeLabel(type)}
-                                                    </h4>
-                                                </div>
-
-                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                                    {groupMethods.map((method: any) => {
-                                                        const isSelected = selectedMethodIds.includes(method.id)
-                                                        return (
-                                                            <div
-                                                                key={method.id}
-                                                            onClick={() => toggleMethod(method.id)}
-                                                            className={cn(
-                                                                "flex items-center space-x-3 p-3 rounded-md border transition-all group",
-                                                                isView ? "cursor-default opacity-70" : "cursor-pointer",
-                                                                isSelected
-                                                                        ? "bg-primary/5 border-primary/40 shadow-sm ring-1 ring-primary/20"
-                                                                        : "bg-background hover:bg-muted/30 border-border/60 hover:border-border"
-                                                                )}
-                                                            >
-                                                                <Checkbox
-                                                                    checked={isSelected}
-                                                                    disabled={isView}
-                                                                    onCheckedChange={() => toggleMethod(method.id)}
-                                                                    className={isSelected ? "text-primary border-primary" : "border-muted-foreground/40 group-hover:border-primary/50"}
-                                                                />
-                                                                <div className="flex flex-col">
-                                                                    <span className={cn(
-                                                                        "text-sm font-semibold transition-colors",
-                                                                        isSelected ? "text-foreground" : "text-muted-foreground"
-                                                                    )}>
-                                                                        {method.name}
-                                                                    </span>
-                                                                    <span className="text-[10px] text-muted-foreground/70 font-medium">
-                                                                        Cta: {method.treasury_account_name}
-                                                                    </span>
-                                                                </div>
-                                                            </div>
-                                                        )
-                                                    })}
-                                                </div>
-                                            </div>
-                                        )
-                                    })}
                                 </div>
-                            </div>
-                        </div>
-                    </fieldset>
-                    </form>
-                </Form>
-            </FormSplitLayout>
-        </Drawer>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="col-span-2">
+                                        <FormField
+                                            control={form.control}
+                                            name="device_id"
+                                            render={({ field }) => (
+                                                <LabeledSelect
+                                                    label="Dispositivo de Terminal"
+                                                    placeholder="Sin dispositivo integrado"
+                                                    value={field.value || ""}
+                                                    onChange={field.onChange}
+                                                    options={[
+                                                        { value: "none", label: "Ninguno (Manual)" },
+                                                        ...allDevices.map(dev => ({
+                                                            value: dev.id.toString(),
+                                                            label: `${dev.name} (${dev.provider_name})`
+                                                        }))
+                                                    ]}
+                                                />
+                                            )}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <FormSection title="Métodos de Pago Permitidos" icon={CreditCard} />
+
+                                    <div className="px-2 lg:px-6 space-y-4">
+                                        {typeOrder.map(type => {
+                                            const groupMethods = methodsGrouped[type] || []
+                                            if (groupMethods.length === 0) return null
+
+                                            return (
+                                                <div key={type} className="space-y-4">
+                                                    <div className="flex items-center gap-3 text-muted-foreground/70 pl-1">
+                                                        {type === 'CASH' && <Banknote className="h-4 w-4" />}
+                                                        {type === 'TERMINAL' && <Smartphone className="h-4 w-4" />}
+                                                        {type === 'CARD' && <CreditCard className="h-4 w-4" />}
+                                                        {type === 'TRANSFER' && <Landmark className="h-4 w-4" />}
+                                                        {type === 'CHECK' && <FileCheck className="h-4 w-4" />}
+                                                        <h4 className="text-[11px] font-black uppercase tracking-[0.2em]">
+                                                            {getTypeLabel(type)}
+                                                        </h4>
+                                                    </div>
+
+                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                        {groupMethods.map((method) => {
+                                                            const isSelected = selectedMethodIds.includes(method.id)
+                                                            return (
+                                                                <div
+                                                                    key={method.id}
+                                                                    onClick={() => toggleMethod(method.id)}
+                                                                    className={cn(
+                                                                        "flex items-center space-x-3 p-3 rounded-md border transition-all group",
+                                                                        isView ? "cursor-default opacity-70" : "cursor-pointer",
+                                                                        isSelected
+                                                                            ? "bg-primary/5 border-primary/40 shadow-sm ring-1 ring-primary/20"
+                                                                            : "bg-background hover:bg-muted/30 border-border/60 hover:border-border"
+                                                                    )}
+                                                                >
+                                                                    <Checkbox
+                                                                        checked={isSelected}
+                                                                        disabled={isView}
+                                                                        onCheckedChange={() => toggleMethod(method.id)}
+                                                                        className={isSelected ? "text-primary border-primary" : "border-muted-foreground/40 group-hover:border-primary/50"}
+                                                                    />
+                                                                    <div className="flex flex-col">
+                                                                        <span className={cn(
+                                                                            "text-sm font-semibold transition-colors",
+                                                                            isSelected ? "text-foreground" : "text-muted-foreground"
+                                                                        )}>
+                                                                            {method.name}
+                                                                        </span>
+                                                                        <span className="text-[10px] text-muted-foreground/70 font-medium">
+                                                                            {`Cta: ${method.treasury_account_name}`}
+                                                                        </span>
+                                                                    </div>
+                                                                </div>
+                                                            )
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            )
+                                        })}
+                                    </div>
+                                </div>
+                            </fieldset>
+                        </form>
+                    </Form>
+                </FormSplitLayout>
+            </Drawer>
         </>
     )
 }

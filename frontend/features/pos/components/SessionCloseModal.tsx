@@ -203,10 +203,10 @@ export function SessionCloseModal({
 
                         {/* Right Column: Counter */}
                         <div className="space-y-4">
-                            <div className="md:hidden mb-4 p-3 bg-primary/10 dark:bg-primary/20 rounded-md border border-primary/10 dark:border-primary">
+                            <div className="md:hidden mb-4 p-3 bg-primary/10 rounded-md border border-primary/10">
                                 <div className="flex justify-between text-sm font-bold">
                                     <span>Efectivo Esperado:</span>
-                                    <span className="text-primary dark:text-primary/50">{formatCurrency(session.expected_cash)}</span>
+                                    <span className="text-primary">{formatCurrency(session.expected_cash)}</span>
                                 </div>
                             </div>
 
@@ -250,7 +250,7 @@ export function SessionCloseModal({
                         </div>
 
                         {hasDiff ? (
-                            <div className="bg-warning/10 dark:bg-warning/20 border border-warning/20 dark:border-warning rounded-md p-4 space-y-3">
+                            <div className="bg-warning/10 border border-warning/20 rounded-md p-4 space-y-3">
                                 <div className="flex items-center gap-2 text-warning font-bold">
                                     <AlertTriangle className="h-4 w-4" />
                                     <span>Diferencia Detectada</span>
@@ -315,10 +315,10 @@ export function SessionCloseModal({
 
                                         {/* Insufficient funds warning */}
                                         {insufficientFunds && selectedAccount && (
-                                            <div className="bg-destructive/10 dark:bg-destructive/20 border border-destructive/20 dark:border-destructive rounded-md p-3 space-y-1">
+                                            <div className="bg-destructive/10 border border-destructive/20 rounded-md p-3 space-y-1">
                                                 <div className="flex items-start gap-2">
-                                                    <AlertTriangle className="h-4 w-4 text-destructive dark:text-destructive mt-0.5 flex-shrink-0" />
-                                                    <div className="text-sm text-destructive dark:text-destructive/20">
+                                                    <AlertTriangle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
+                                                    <div className="text-sm text-destructive">
                                                         <div className="font-bold">Fondos Insuficientes</div>
                                                         <div className="text-xs mt-1 space-y-0.5">
                                                             <div>Disponible en {selectedAccount.name as string}: {formatCurrency((selectedAccount.current_balance as number) || 0)}</div>

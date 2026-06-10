@@ -199,6 +199,14 @@ class InvoiceViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         document_date = request.data.get('document_date')
         document_attachment = request.FILES.get('document_attachment')
         amount = request.data.get('amount')
+        installments = request.data.get('installments')
+        if installments is not None:
+            try:
+                installments = int(installments)
+            except (ValueError, TypeError):
+                installments = 1
+        else:
+            installments = 1
         treasury_account_id = request.data.get('treasury_account_id')
         payment_type = request.data.get('payment_type', 'INBOUND')
         pos_session_id = request.data.get('pos_session_id')
@@ -239,6 +247,15 @@ class InvoiceViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         if isinstance(direct_credit_approval, str):
             direct_credit_approval = direct_credit_approval.lower() == 'true'
 
+        # Check-specific params (paymentMethodCardSelector sends check# as transaction_number)
+        check_number = request.data.get('check_number') or transaction_number
+        check_bank_id = request.data.get('check_bank_id')
+        if check_bank_id:
+            check_bank_id = int(check_bank_id)
+        check_issue_date = request.data.get('check_issue_date')
+        check_due_date = request.data.get('check_due_date')
+        checkbook_id = request.data.get('checkbook_id')
+
         try:
             invoice = BillingService.pos_checkout(
                 order_data, dte_type, payment_method,
@@ -246,6 +263,7 @@ class InvoiceViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                 is_pending_registration=is_pending_registration,
                 payment_is_pending=payment_is_pending,
                 amount=amount,
+                installments=installments,
                 treasury_account_id=treasury_account_id,
                 document_number=document_number,
                 document_date=document_date,
@@ -261,6 +279,11 @@ class InvoiceViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                 credit_approval_task_id=request.data.get('credit_approval_task_id'),
                 draft_id=request.data.get('draft_id'),
                 direct_credit_approval=direct_credit_approval,
+                check_number=check_number,
+                check_bank_id=check_bank_id,
+                check_issue_date=check_issue_date,
+                check_due_date=check_due_date,
+                checkbook_id=checkbook_id,
             )
             return Response(InvoiceSerializer(invoice).data, status=status.HTTP_201_CREATED)
         except ValidationError as e:

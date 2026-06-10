@@ -94,16 +94,16 @@ export function AdvancedWorkOrderSelector({
     return (
         <div className={cn("relative w-full group", className)}>
             <fieldset 
+                data-disabled={disabled || undefined}
                 className={cn(
                     "notched-field w-full group transition-all border-dashed",
                     open && "focused",
                     error && "error",
-                    disabled && "opacity-50 cursor-not-allowed bg-muted/10",
                     selectedOrder && "border-primary/20 bg-primary/10/30 border-solid"
                 )}
             >
                 {label && (
-                    <legend className={cn("notched-legend", error && "text-destructive", disabled && "text-muted-foreground/50")}>
+                    <legend className={cn("notched-legend", error && "text-destructive")}>
                         {label}
                         {required && <span className="ml-1 text-destructive">*</span>}
                     </legend>

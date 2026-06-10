@@ -296,7 +296,7 @@ export function TreasuryMovementsClientView({ externalOpen, createAction }: Trea
         },
         createActionsColumn<TreasuryMovement>({
             renderActions: (item) => (
-                <DataCell.Action action="view" onClick={() => handleViewDetails(item.id)} />
+                <DataCell.Action action="detail" onClick={() => handleViewDetails(item.id)} />
             ),
         })
     ], [openEntity, handleViewDetails])
