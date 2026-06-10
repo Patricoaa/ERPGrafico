@@ -23,7 +23,6 @@ interface PaymentModalProps {
         amount: number,
         dteType?: string,
         reference?: string,
-        transaction_number?: string,
         is_pending_registration?: boolean,
         treasury_account_id?: string | null,
         payment_method_new?: string | null,
@@ -85,7 +84,6 @@ export function PaymentModal({
         amount: pendingAmount,
         treasuryAccountId: null,
         paymentMethodId: null,
-        transactionNumber: '',
         isPending: false
     })
 
@@ -101,7 +99,6 @@ export function PaymentModal({
                     amount: pendingAmount,
                     treasuryAccountId: null,
                     paymentMethodId: null,
-                    transactionNumber: '',
                     isPending: false
                 })
                 setDocumentReference(existingInvoice?.number || "")
@@ -142,7 +139,6 @@ export function PaymentModal({
                             documentReference: (dteType !== 'NONE') ? documentReference : undefined,
                             documentDate: (dteType !== 'NONE') ? documentDate : undefined,
                             documentAttachment: (dteType !== 'NONE') ? documentAttachment : undefined,
-                            transaction_number: paymentData.amount === 0 ? undefined : paymentData.transactionNumber,
                             is_pending_registration: paymentData.isPending,
                             treasury_account_id: paymentData.amount === 0 ? null : paymentData.treasuryAccountId,
                             payment_method_new: paymentData.amount === 0 ? null : paymentData.paymentMethodId?.toString(),
@@ -153,8 +149,7 @@ export function PaymentModal({
                             (paymentData.amount > 0 && !paymentData.treasuryAccountId && paymentData.method !== 'CHECK') ||
                             ((!hideDteFields && isPurchase && (dteType === 'BOLETA' || dteType === 'FACTURA') && !existingInvoice && !documentReference && !isDocumentPending)) ||
                             ((hideDteFields && isPurchase && (dteType === 'BOLETA' || dteType === 'FACTURA') && !!existingInvoice && !documentReference)) ||
-                            ((paymentData.method === 'TRANSFER') && !paymentData.isPending && !paymentData.transactionNumber && paymentData.amount > 0) ||
-                            ((paymentData.method === 'CHECK') && !paymentData.transactionNumber && paymentData.amount > 0) ||
+                            (paymentData.method === 'CHECK' && paymentData.amount > 0 && !paymentData.checkNumber) ||
                             (!hideDteFields && dteType === 'FACTURA' && !existingInvoice && !isDocumentPending && !documentAttachment) ||
                             ((dteType === 'BOLETA' || dteType === 'FACTURA') && !isPeriodValid)
                         }

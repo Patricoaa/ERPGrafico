@@ -73,9 +73,9 @@ export interface DTEData {
 export interface PaymentData {
     method: string
     amount: number
-    transactionNumber: string
     treasuryAccountId: number | null
     isPending: boolean
+    checkNumber?: string
 }
 
 export interface ReceiptData {

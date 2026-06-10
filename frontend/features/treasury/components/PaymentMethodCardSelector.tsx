@@ -18,8 +18,8 @@ export interface PaymentData {
     amount: number
     treasuryAccountId: string | null
     paymentMethodId: number | null
-    transactionNumber?: string
     isPending?: boolean
+    checkNumber?: string
     /** true cuando el método es CARD_TERMINAL — activa flujo TUU automatizado */
     isTerminalIntegration?: boolean
     /** CHECK: banco emisor del cheque */
@@ -347,13 +347,12 @@ export function PaymentMethodCardSelector({
 
                                 {paymentData.method === m.id && (
                                     <div className="mt-2 space-y-3 pt-3 border-t w-full animate-in fade-in slide-in-from-top-2" onClick={(e) => e.stopPropagation()}>
-                                                        {(m.id === 'TRANSFER' || m.id === 'CHECK') && (
+                                                        {m.id === 'CHECK' && (
                                             <LabeledInput
-                                                label={m.id === 'CHECK' ? 'N° de Cheque' : 'N° Operación / Folio'}
-                                                placeholder={m.id === 'CHECK' ? "Ej: 000123" : "Ej: 123456"}
-                                                value={paymentData.transactionNumber || ""}
-                                                onChange={(e) => onPaymentDataChange({ ...paymentData, transactionNumber: e.target.value })}
-                                                disabled={paymentData.isPending}
+                                                label="N° de Cheque"
+                                                placeholder="Ej: 000123"
+                                                value={paymentData.checkNumber || ""}
+                                                onChange={(e) => onPaymentDataChange({ ...paymentData, checkNumber: e.target.value })}
                                             />
                                         )}
 
@@ -414,24 +413,7 @@ export function PaymentMethodCardSelector({
                                             />
                                         )}
 
-                                        {m.id === 'TRANSFER' && (
-                                            <div className="flex items-center space-x-2 pt-1">
-                                                <Checkbox
-                                                    id="card-pending"
-                                                    checked={paymentData.isPending || false}
-                                                    onCheckedChange={(checked) => {
-                                                        onPaymentDataChange({
-                                                            ...paymentData,
-                                                            isPending: !!checked,
-                                                            transactionNumber: checked ? "" : paymentData.transactionNumber
-                                                        })
-                                                    }}
-                                                />
-                                                <label htmlFor="card-pending" className="text-xs cursor-pointer font-medium leading-none">
-                                                    Pendiente (Ingresar luego)
-                                                </label>
-                                            </div>
-                                        )}
+                                        
                                     </div>
                                 )}
                             </label>

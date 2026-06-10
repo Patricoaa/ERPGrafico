@@ -147,7 +147,6 @@ export function SalesCheckoutWizardContent({
     const [paymentData, setPaymentData] = useState<CheckoutPaymentData>(initialPaymentData || {
         method: 'CASH',
         amount: 0,
-        transactionNumber: '',
         treasuryAccountId: null,
         isPending: false
     })
@@ -407,7 +406,7 @@ export function SalesCheckoutWizardContent({
                             return { isValid: false }
                         }
                     }
-                    if (paymentData.method === 'CHECK' && paymentData.amount > 0 && !paymentData.transactionNumber) {
+                    if (paymentData.method === 'CHECK' && paymentData.amount > 0 && !paymentData.checkNumber) {
                         toast.error("Debe ingresar el N° de Cheque para registrar el pago.")
                         return { isValid: false }
                     }
@@ -519,8 +518,8 @@ export function SalesCheckoutWizardContent({
             }
             formData.append('amount', paymentData.amount.toString())
             formData.append('payment_is_pending', paymentData.isPending.toString())
-            if (paymentData.transactionNumber && paymentData.amount > 0) formData.append('transaction_number', paymentData.transactionNumber)
             if (paymentData.treasuryAccountId && paymentData.amount > 0) formData.append('treasury_account_id', paymentData.treasuryAccountId.toString())
+            if (paymentData.method === 'CHECK' && paymentData.checkNumber) formData.append('check_number', paymentData.checkNumber)
             if (paymentData.method === 'CHECK' && paymentData.checkBankId) formData.append('check_bank_id', paymentData.checkBankId.toString())
             if (paymentData.method === 'CHECK' && paymentData.checkDueDate) formData.append('check_due_date', paymentData.checkDueDate)
             if (paymentData.installments && paymentData.installments > 1) {

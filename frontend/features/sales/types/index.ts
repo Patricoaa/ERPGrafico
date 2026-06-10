@@ -131,10 +131,10 @@ export interface CheckoutDTEData {
 export interface CheckoutPaymentData {
     method: string | null
     amount: number
-    transactionNumber: string
     treasuryAccountId: number | null
     isPending: boolean
     paymentMethodId?: number
+    checkNumber?: string
     /** true cuando el método es CARD_TERMINAL — activa flujo TUU automatizado */
     isTerminalIntegration?: boolean
     /** Número de cuotas para pagos con tarjeta de crédito */

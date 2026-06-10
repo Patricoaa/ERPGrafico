@@ -176,7 +176,7 @@ export function TaxDeclarationsView({ externalOpen, onExternalOpenChange, create
                 payment_date: data.documentDate || dateString || "",
                 amount: data.amount,
                 payment_method: data.paymentMethod,
-                reference: data.reference || data.transaction_number || '',
+                reference: data.reference || '',
                 treasury_account: data.treasury_account_id,
                 notes: `Pago F29 - ${selectedDeclaration.tax_period_display}`
             })

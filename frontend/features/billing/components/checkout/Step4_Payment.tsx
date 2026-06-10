@@ -46,8 +46,7 @@ export function Step4_Payment({
         method: d.method,
         amount: d.amount,
         treasuryAccountId: d.treasury_account_id || null,
-        paymentMethodId: null, // Not strictly used by logic but part of type
-        transactionNumber: d.transaction_number,
+        paymentMethodId: null,
         isPending: d.is_pending
     }
 
@@ -57,7 +56,6 @@ export function Step4_Payment({
             method: newData.method,
             amount: newData.amount,
             treasury_account_id: newData.treasuryAccountId,
-            transaction_number: newData.transactionNumber,
             is_pending: newData.isPending
         })
     }
