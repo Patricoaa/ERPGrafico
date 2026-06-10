@@ -8,14 +8,14 @@ import { Textarea } from '@/components/ui/textarea'
 import { BaseModal, MoneyDisplay } from '@/components/shared'
 import { toast } from 'sonner'
 import { treasuryApi } from '../api/treasuryApi'
-import type { TreasuryMovement, CardPurchaseGroup, UpcomingInstallment } from '../types'
+import type { PendingChargeRow, UpcomingInstallment } from '../types'
 import { ChevronDown, ChevronRight, ShoppingCart } from 'lucide-react'
 
 interface BillChargesModalProps {
     cardAccountId: number
     cardAccountName: string
     total: number
-    charges: TreasuryMovement[]
+    charges: PendingChargeRow[]
     installments?: UpcomingInstallment[]
     currency?: string
     onSuccess: () => void
@@ -23,47 +23,36 @@ interface BillChargesModalProps {
 }
 
 interface BreakdownItem {
-    group: CardPurchaseGroup | null
     label: string
-    movements: TreasuryMovement[]
+    pendingCharges: PendingChargeRow[]
     installmentRows: UpcomingInstallment[]
     subtotal: number
 }
 
 function groupByPurchase(
-    movements: TreasuryMovement[],
+    charges: PendingChargeRow[],
     installments: UpcomingInstallment[],
 ): BreakdownItem[] {
     const groups = new Map<string, BreakdownItem>()
 
-    for (const m of movements) {
-        const detail = m.card_purchase_group_detail
-        const key = detail?.id != null ? `g-${detail.id}` : 'null'
-        let g = groups.get(key)
-        if (!g) {
-            g = {
-                group: detail ?? null,
-                label: detail
-                    ? `${detail.client_reference || `Compra #${detail.id}`}`
-                    : 'Sin compra asociada',
-                movements: [],
-                installmentRows: [],
-                subtotal: 0,
-            }
-            groups.set(key, g)
-        }
-        g.movements.push(m)
-        g.subtotal += m.amount
+    // Pending charges always go to "Sin compra asociada"
+    if (charges.length > 0) {
+        groups.set('pending', {
+            label: 'Sin compra asociada',
+            pendingCharges: [...charges],
+            installmentRows: [],
+            subtotal: charges.reduce((s, c) => s + Number(c.amount), 0),
+        })
     }
 
+    // Installments grouped by group_uuid
     for (const inst of installments) {
         const key = `uuid-${inst.group_uuid}`
         let g = groups.get(key)
         if (!g) {
             g = {
-                group: null,
                 label: inst.partner_name || inst.group_display_id || 'Compra en cuotas',
-                movements: [],
+                pendingCharges: [],
                 installmentRows: [],
                 subtotal: 0,
             }
@@ -74,13 +63,6 @@ function groupByPurchase(
     }
 
     return Array.from(groups.values())
-}
-
-function formatCuota(m: TreasuryMovement): string {
-    if (m.installment_number && m.card_purchase_group_detail) {
-        return `${m.installment_number}/${m.card_purchase_group_detail.installments}`
-    }
-    return '-'
 }
 
 export function BillChargesModal({
@@ -189,10 +171,8 @@ export function BillChargesModal({
                             </div>
                             <div className="divide-y">
                                 {groupedCharges.map((g, idx) => {
-                                    const key = g.group?.id != null ? String(g.group.id) : `null-${idx}`
+                                    const key = g.label + idx
                                     const isExpanded = expandedGroups.has(key)
-                                    const partnerName = g.group?.partner_name
-                                    const firstDate = g.group?.first_installment_date
                                     return (
                                         <div key={key}>
                                             <button
@@ -211,12 +191,11 @@ export function BillChargesModal({
                                                         {g.label}
                                                     </div>
                                                     <div className="flex gap-3 text-xs text-muted-foreground">
-                                                        {partnerName && <span>{partnerName}</span>}
-                                                        {(g.group?.installments || g.installmentRows.length > 0) && (
-                                                            <span>{g.group?.installments || (g.installmentRows[0]?.total_installments ?? '')} cuotas</span>
+                                                        {g.installmentRows.length > 0 && (
+                                                            <span>{g.installmentRows[0].total_installments} cuotas</span>
                                                         )}
-                                                        {firstDate && (
-                                                            <span>1era cuota: {firstDate}</span>
+                                                        {g.pendingCharges.length > 0 && (
+                                                            <span>{g.pendingCharges.length} cargo(s)</span>
                                                         )}
                                                     </div>
                                                 </div>
@@ -230,7 +209,7 @@ export function BillChargesModal({
                                                     <table className="w-full text-xs">
                                                         <thead>
                                                             <tr className="text-muted-foreground">
-                                                                <th className="text-left py-1 pr-2">Cuota</th>
+                                                                <th className="text-left py-1 pr-2">#</th>
                                                                 <th className="text-left py-1 pr-2">Tipo</th>
                                                                 <th className="text-left py-1 pr-2">Referencia</th>
                                                                 <th className="text-right py-1 pl-2">Monto</th>
@@ -255,23 +234,19 @@ export function BillChargesModal({
                                                                     </td>
                                                                 </tr>
                                                             ))}
-                                                            {g.movements.map(m => (
-                                                                <tr key={m.id} className="border-t border-border/40">
-                                                                    <td className="py-1 pr-2 tabular-nums">{formatCuota(m)}</td>
+                                                            {g.pendingCharges.map(c => (
+                                                                <tr key={c.id} className="border-t border-border/40">
+                                                                    <td className="py-1 pr-2 tabular-nums text-muted-foreground">—</td>
                                                                     <td className="py-1 pr-2">
-                                                                        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-                                                                            m.is_installment_interest
-                                                                                ? 'bg-warning text-warning-foreground'
-                                                                                : 'bg-success text-success-foreground'
-                                                                        }`}>
-                                                                            {m.is_installment_interest ? 'Interés' : 'Capital'}
+                                                                        <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-warning text-warning-foreground">
+                                                                            {c.charge_type_display}
                                                                         </span>
                                                                     </td>
                                                                     <td className="py-1 pr-2 truncate max-w-[180px]">
-                                                                        {m.reference || '-'}
+                                                                        {c.description || c.reference || '-'}
                                                                     </td>
                                                                     <td className="py-1 pl-2 text-right tabular-nums">
-                                                                        <MoneyDisplay amount={m.amount} currency={currency} />
+                                                                        <MoneyDisplay amount={Number(c.amount)} currency={currency} />
                                                                     </td>
                                                                 </tr>
                                                             ))}

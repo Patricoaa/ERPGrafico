@@ -184,19 +184,33 @@ export interface UpcomingInstallment {
     number: number
     due_date: string
     principal_amount: string
+    group_id: number
     group_uuid: string
     group_display_id: string
+    purchase_order_id: number | null
     partner_name: string | null
     total_installments: number
 }
 
-export type UnbilledItemSource = 'charge' | 'installment'
+/** Cargo pendiente de facturar (CardPendingCharge) — comisión, impuesto, etc. */
+export interface PendingChargeRow {
+    id: number
+    amount: string
+    date: string
+    charge_type: string
+    charge_type_display: string
+    description: string
+    reference: string
+    source: 'pending'
+}
+
+export type UnbilledItemSource = 'pending' | 'installment'
 
 /** Fila unificada para la tabla de cargos no facturados.
- *  Representa tanto un TreasuryMovement (cargo suelto) como una
+ *  Representa un CardPendingCharge (cargo pendiente) o una
  *  cuota del cronograma (CardPurchaseInstallment). */
 export interface UnbilledItemRow {
-    /** Clave única: "charge-{id}" | "installment-{id}" */
+    /** Clave única: "pending-{id}" | "installment-{id}" */
     id: string
     source: UnbilledItemSource
     date: string
@@ -207,11 +221,11 @@ export interface UnbilledItemRow {
     totalInstallments: number | null
     purchaseGroupDetail: CardPurchaseGroup | null
     partnerName: string | null
-    movementType: string | null
-    movementTypeDisplay: string | null
+    chargeType: string | null
+    chargeTypeDisplay: string | null
     isInstallmentInterest: boolean
-    /** Referencia al TreasuryMovement original (null si es cuota) */
-    originalCharge: TreasuryMovement | null
+    /** Referencia al PendingChargeRow original (null si es cuota) */
+    originalPendingCharge: PendingChargeRow | null
     /** Referencia a la cuota original (null si es cargo) */
     originalInstallment: UpcomingInstallment | null
 }

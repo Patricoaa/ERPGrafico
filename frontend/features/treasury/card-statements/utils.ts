@@ -1,33 +1,33 @@
 import type {
-    TreasuryMovement,
+    PendingChargeRow,
     UpcomingInstallment,
     UnbilledItemRow,
-    CardPurchaseGroup,
 } from '../types'
 import type {
     StatementInstallment,
     StatementChargeRow,
 } from './types'
+import type { TreasuryMovement } from '../types'
 
 export function mapToUnbilledItemRows(
-    charges: TreasuryMovement[],
+    charges: PendingChargeRow[],
     installments: UpcomingInstallment[],
 ): UnbilledItemRow[] {
     const chargeRows: UnbilledItemRow[] = charges.map(c => ({
-        id: `charge-${c.id}`,
-        source: 'charge' as const,
+        id: `pending-${c.id}`,
+        source: 'pending' as const,
         date: c.date,
-        reference: c.reference,
-        notes: c.notes,
-        amount: c.amount,
-        installmentNumber: c.installment_number ?? null,
-        totalInstallments: c.card_purchase_group_detail?.installments ?? null,
-        purchaseGroupDetail: c.card_purchase_group_detail ?? null,
-        partnerName: c.card_purchase_group_detail?.partner_name ?? null,
-        movementType: c.movement_type,
-        movementTypeDisplay: c.movement_type_display,
-        isInstallmentInterest: c.is_installment_interest ?? false,
-        originalCharge: c,
+        reference: c.reference || null,
+        notes: c.description || null,
+        amount: Number(c.amount),
+        installmentNumber: null,
+        totalInstallments: null,
+        purchaseGroupDetail: null,
+        partnerName: null,
+        chargeType: c.charge_type,
+        chargeTypeDisplay: c.charge_type_display,
+        isInstallmentInterest: false,
+        originalPendingCharge: c,
         originalInstallment: null,
     }))
 
@@ -42,10 +42,10 @@ export function mapToUnbilledItemRows(
         totalInstallments: i.total_installments,
         purchaseGroupDetail: null,
         partnerName: i.partner_name,
-        movementType: 'SCHEDULED',
-        movementTypeDisplay: 'Cuota programada',
+        chargeType: 'SCHEDULED',
+        chargeTypeDisplay: 'Cuota programada',
         isInstallmentInterest: false,
-        originalCharge: null,
+        originalPendingCharge: null,
         originalInstallment: i,
     }))
 

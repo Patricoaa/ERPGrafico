@@ -579,7 +579,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     icon: Landmark,
     shortTemplate: '{name}',
     listUrl: '/treasury/terminals',
-    detailUrlPattern: '/treasury/centro-bancos?bank={id}',
+    detailUrlPattern: '/treasury/centro-bancos/{id}/overview',
   },
   'treasury.paymentmethod': {
     label: 'treasury.paymentmethod',

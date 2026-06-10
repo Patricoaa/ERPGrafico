@@ -2523,6 +2523,7 @@ class CreditCardStatementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         from .card_service import CardService
         from .models import TreasuryAccount, TreasuryMovement
         from datetime import date as _date_type
+        from django.db.models import OuterRef, Subquery, IntegerField
 
         card_account_id = request.query_params.get('card_account')
         if not card_account_id:
@@ -2546,13 +2547,19 @@ class CreditCardStatementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         cut_off_date_str = request.query_params.get('cut_off_date')
         cut_off_date = _date_type.fromisoformat(cut_off_date_str) if cut_off_date_str else None
 
-        charges = CardService.get_unbilled_charges(card_account, cut_off_date=cut_off_date)
+        pending = CardService.get_pending_charges(card_account, cut_off_date=cut_off_date)
         summary = CardService.get_unbilled_summary(card_account, cut_off_date=cut_off_date)
         installments = CardService.get_unbilled_installments(card_account, cut_off_date=cut_off_date)
 
-        # Serializar los movimientos
-        from .serializers import TreasuryMovementSerializer
-        data = TreasuryMovementSerializer(charges, many=True).data
+        # Anotar purchase_order_id desde el TreasuryMovement OUTBOUND asociado.
+        po_subq = Subquery(
+            TreasuryMovement.objects.filter(
+                card_purchase_group=OuterRef('card_purchase_group'),
+                movement_type=TreasuryMovement.Type.OUTBOUND,
+            ).values('purchase_order_id')[:1],
+            output_field=IntegerField(),
+        )
+        installments = installments.annotate(po_id=po_subq)
 
         # Próximas cuotas del cronograma (ADR-0046): filas planas.
         installments_data = [
@@ -2561,8 +2568,10 @@ class CreditCardStatementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                 'number': inst.number,
                 'due_date': inst.due_date.isoformat(),
                 'principal_amount': str(inst.principal_amount),
+                'group_id': inst.card_purchase_group_id,
                 'group_uuid': str(inst.card_purchase_group.uuid),
                 'group_display_id': inst.card_purchase_group.display_id,
+                'purchase_order_id': inst.po_id,
                 'partner_name': (
                     inst.card_purchase_group.partner.name
                     if inst.card_purchase_group.partner else None
@@ -2572,8 +2581,26 @@ class CreditCardStatementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             for inst in installments
         ]
 
+        # Cargos pendientes (CardPendingCharge) serializados.
+        from .serializers import CardPendingChargeSerializer
+        charges_data = []
+
+        for p in CardPendingChargeSerializer(pending, many=True).data:
+            charges_data.append({
+                'id': p['id'],
+                'amount': str(p['amount']),
+                'date': p['date'].isoformat() if hasattr(p['date'], 'isoformat') else p['date'],
+                'charge_type': p['charge_type'],
+                'charge_type_display': p['charge_type_display'],
+                'description': p.get('description', ''),
+                'reference': '',
+                'source': 'pending',
+                'from_account_name': None,
+                'partner_name': None,
+            })
+
         return Response({
-            'charges': data,
+            'charges': charges_data,
             'upcoming_installments': installments_data,
             'summary': summary,
         })
@@ -2633,9 +2660,21 @@ class CreditCardStatementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         except ValidationError as e:
             return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-        from .serializers import TreasuryMovementSerializer
+        from .serializers import CardPendingChargeSerializer
+        p = CardPendingChargeSerializer(movement).data
         return Response(
-            TreasuryMovementSerializer(movement).data,
+            {
+                'id': p['id'],
+                'amount': str(p['amount']),
+                'date': p['date'].isoformat() if hasattr(p['date'], 'isoformat') else p['date'],
+                'charge_type': p['charge_type'],
+                'charge_type_display': p['charge_type_display'],
+                'description': p.get('description', ''),
+                'reference': '',
+                'source': 'pending',
+                'from_account_name': None,
+                'partner_name': None,
+            },
             status=status.HTTP_201_CREATED,
         )
 
@@ -2714,13 +2753,17 @@ class CreditCardStatementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 
     @action(detail=True, methods=['get'], url_path='charges')
     def charges(self, request, pk=None):
-        """Retorna cargos facturados en este statement (movimientos + cuotas)."""
-        from .models import TreasuryMovement, CardPurchaseInstallment
-        from .serializers import TreasuryMovementSerializer
+        """Retorna cargos facturados en este statement (movimientos + cuotas + pendientes)."""
+        from .models import CardPendingCharge, CardPurchaseInstallment, TreasuryMovement
+        from .serializers import CardPendingChargeSerializer, TreasuryMovementSerializer
+
         stmt = self.get_object()
         movements = TreasuryMovement.objects.filter(
             billed_in_statement=stmt,
         ).select_related('card_purchase_group', 'card_purchase_group__partner').order_by('-date', '-id')
+        pending = CardPendingCharge.objects.filter(
+            billed_in_statement=stmt,
+        ).order_by('-date', '-id')
         installments = CardPurchaseInstallment.objects.filter(
             billed_in_statement=stmt,
         ).select_related('card_purchase_group', 'card_purchase_group__partner').order_by('-due_date', '-id')
@@ -2742,6 +2785,7 @@ class CreditCardStatementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         ]
         return Response({
             'movements': TreasuryMovementSerializer(movements, many=True).data,
+            'pending_charges': CardPendingChargeSerializer(pending, many=True).data,
             'installments': installments_data,
         })
 

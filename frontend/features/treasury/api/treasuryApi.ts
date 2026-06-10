@@ -28,6 +28,7 @@ import type {
     PartnerCapitalInfo,
     TreasuryMovement,
     UpcomingInstallment,
+    PendingChargeRow,
 } from '../types'
 
 export const treasuryApi = {
@@ -300,12 +301,11 @@ export const treasuryApi = {
         cardAccountId: number,
         cutOffDate?: string,
     ): Promise<{
-        charges: TreasuryMovement[]
+        charges: PendingChargeRow[]
         upcoming_installments: UpcomingInstallment[]
         summary: {
             total: number
             count: number
-            purchases: number
             charges: number
             installments: number
         }
@@ -326,7 +326,7 @@ export const treasuryApi = {
         charge_type?: string
         description?: string
         date?: string
-    }): Promise<TreasuryMovement> => {
+    }): Promise<PendingChargeRow> => {
         const { data } = await api.post('/treasury/card-statements/add-charge/', payload)
         return data
     },
