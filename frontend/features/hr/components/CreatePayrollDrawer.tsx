@@ -122,7 +122,7 @@ export function CreatePayrollDrawer({ open, onOpenChange, onSaved, trigger }: Cr
                         id="create-payroll-form"
                         onSubmit={form.handleSubmit(onSubmit)}
                         className="space-y-6 px-6 pb-6 pt-6">
-                    >
+
                         <FormField control={form.control} name="employee" render={({ field, fieldState }) => (
                             <LabeledSelect
                                 label="Empleado"
