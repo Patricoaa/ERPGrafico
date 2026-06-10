@@ -109,7 +109,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                         </div>
                     )}
 
-                    <div className="flex h-10 items-center rounded-md bg-background divide-x divide-border/50 overflow-hidden">
+                    <div className="flex h-9 items-center rounded-md bg-background divide-x divide-border/50 overflow-hidden">
 
                         {showToolbarSort && sortableColumns.length > 0 && (
                             <div className="flex items-center h-full">
@@ -249,7 +249,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                     </div>
 
                     {createAction && (
-                        <div className="flex items-center shrink-0 h-10">
+                        <div className="flex items-center shrink-0 h-9">
                             {createAction}
                         </div>
                     )}
