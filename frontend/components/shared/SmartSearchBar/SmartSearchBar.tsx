@@ -263,10 +263,10 @@ export function SmartSearchBar({ searchDef, placeholder = 'Buscar...', className
       <div
         className={cn(
           'flex items-center gap-1.5 h-9 px-2 py-1 rounded-md overflow-x-auto scrollbar-hide',
-          'bg-background border border-border/50 transition-all',
+          'bg-background transition-all',
           'hover:bg-muted/50 hover:ring-2 hover:ring-primary/10',
           'focus-within:bg-muted/50 focus-within:ring-2 focus-within:ring-primary/20',
-          isOpen && 'bg-muted/50 border-border/80 rounded-b-md ring-2 ring-primary/20',
+          isOpen && 'bg-muted/50 rounded-b-md ring-2 ring-primary/20',
         )}
         onClick={() => {
           inputRef.current?.focus()

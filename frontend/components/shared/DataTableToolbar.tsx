@@ -109,13 +109,13 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                         </div>
                     )}
 
-                    <div className="flex h-10 items-center rounded-md border border-border/80 bg-background shadow-card divide-x divide-border/50">
+                    <div className="flex h-10 items-center rounded-md bg-background divide-x divide-border/50 overflow-hidden">
 
                         {showToolbarSort && sortableColumns.length > 0 && (
                             <div className="flex items-center h-full">
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" className="h-full px-3 rounded-none text-[10px] font-black uppercase tracking-widest hover:bg-muted/50 transition-all border border-border/50 ring-0 focus-visible:ring-0">
+                                        <Button variant="ghost" className="h-full px-3 rounded-none text-[10px] uppercase tracking-widest hover:bg-muted/50 transition-all ring-0 focus-visible:ring-0">
                                             {currentSortColumn ? (
                                                 currentSort?.desc ? <ArrowDown className="h-3.5 w-3.5 mr-2 text-primary" /> : <ArrowUp className="h-3.5 w-3.5 mr-2 text-primary" />
                                             ) : (
@@ -131,7 +131,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                                                 onSelect={() => column.toggleSorting(column.getIsSorted() === "asc")}
                                                 className="flex items-center justify-between rounded-sm px-2 py-1.5 focus:bg-primary/10 focus:text-primary transition-colors cursor-pointer"
                                             >
-                                                <span className="text-[10px] uppercase tracking-widest font-black font-heading">
+                                                <span className="text-[10px] uppercase tracking-widest font-heading">
                                                     {(column.columnDef.meta as { title?: string })?.title ||
                                                         translateColumnId(column.id)}
                                                 </span>
@@ -151,7 +151,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                             <div className="flex items-center h-full">
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" className="h-full px-3 rounded-none text-[10px] font-black uppercase tracking-widest hover:bg-muted/50 transition-all border border-border/50 ring-0 focus-visible:ring-0">
+                                        <Button variant="ghost" className="h-full px-3 rounded-none text-[10px] uppercase tracking-widest hover:bg-muted/50 transition-all ring-0 focus-visible:ring-0">
                                             <Settings2 className="h-3.5 w-3.5 mr-2 opacity-50" />
                                             Columnas
                                         </Button>
@@ -168,7 +168,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                                                     onCheckedChange={(value) => column.toggleVisibility(!!value)}
                                                     onSelect={(e) => e.preventDefault()}
                                                 >
-                                                    <span className="text-[10px] uppercase font-black font-heading tracking-widest">
+                                                    <span className="text-[10px] uppercase font-heading tracking-widest">
                                                         {(column.columnDef.meta as { title?: string })?.title ||
                                                             translateColumnId(column.id)}
                                                     </span>
@@ -191,7 +191,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                                     <DropdownMenuTrigger asChild>
                                         <Button
                                             variant="ghost"
-                                            className="h-full px-3 rounded-none text-[10px] font-black uppercase tracking-widest hover:bg-muted/50 transition-all border border-border/50 ring-0 focus-visible:ring-0"
+                                            className="h-full px-3 rounded-none text-[10px] uppercase tracking-widest hover:bg-muted/50 transition-all ring-0 focus-visible:ring-0"
                                         >
                                             {(() => {
                                                 const activeOption = viewOptions.find(opt => opt.value === currentView) || viewOptions[0];
@@ -217,7 +217,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                                             >
                                                 <div className="flex items-center">
                                                     <option.icon className="h-4 w-4 mr-2" />
-                                                    <span className="text-[10px] uppercase font-black font-heading tracking-widest">
+                                                    <span className="text-[10px] uppercase font-heading tracking-widest">
                                                         {option.label}
                                                     </span>
                                                 </div>
@@ -235,7 +235,7 @@ export function DataTableToolbar<TData>(props: DataTableToolbarProps<TData>) {
                             <div className="flex items-center h-full">
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" className="h-full px-3 rounded-none text-[10px] font-black uppercase tracking-widest hover:bg-muted/50 transition-all border border-border/50 ring-0 focus-visible:ring-0">
+                                        <Button variant="ghost" className="h-full px-3 rounded-none text-[10px] uppercase tracking-widest hover:bg-muted/50 transition-all ring-0 focus-visible:ring-0">
                                             <MoreHorizontal className="h-4 w-4 mr-2 opacity-50" />
                                             Acciones
                                         </Button>

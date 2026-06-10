@@ -195,7 +195,7 @@ export function BankManagement({ externalOpen, onOpenChange, createAction }: Ban
                     <DataCell.Action
                         icon={Eye}
                         title="Ver detalles"
-                        onClick={() => router.push(`/treasury/centro-bancos?bank=${item.id}&tab=overview`)}
+                        onClick={() => router.push(`/treasury/centro-bancos/${item.id}/overview`)}
                     />
                     <DataCell.Action action="edit" onClick={() => openEdit(item)} />
                     {item.is_active ? (

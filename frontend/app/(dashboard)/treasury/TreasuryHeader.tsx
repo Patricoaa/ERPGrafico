@@ -53,7 +53,7 @@ export function TreasuryHeader() {
                 value: `bank-${bank.id}`,
                 label: bank.name,
                 iconName: 'landmark' as string,
-                href: `/treasury/centro-bancos/${bank.id}`,
+                href: `/treasury/centro-bancos/${bank.id}/overview`,
             }))
         return [allTab, ...bankTabs]
     }, [banks])
