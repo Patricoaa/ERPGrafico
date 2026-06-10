@@ -84,8 +84,8 @@ export function DomainCard({
                 title={
                     <div className="flex items-center gap-3">
                         <div className={cn(
-                            "w-10 h-10 rounded flex flex-col items-center justify-center border transition-all duration-300 group-hover:scale-105 shrink-0",
-                            iconBg, iconColor, iconBorder
+                            "w-10 h-10 rounded flex flex-col items-center justify-center border shrink-0",
+                            isSelected && isHubOpen ? "bg-primary text-primary-foreground border-primary/30" : cn(iconBg, iconColor, iconBorder)
                         )}>
                             {React.createElement(Icon, { className: "h-4 w-4" })}
                         </div>
