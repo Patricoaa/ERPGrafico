@@ -188,6 +188,7 @@ export interface UpcomingInstallment {
     group_uuid: string
     group_display_id: string
     purchase_order_id: number | null
+    purchase_order_display_id: string | null
     partner_name: string | null
     total_installments: number
 }
