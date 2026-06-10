@@ -19,6 +19,7 @@ import {
     DataCell,
     MoneyDisplay,
     EntityCard,
+    EntityBadge,
     StatCard,
     StatusBadge,
     Skeleton,
@@ -173,9 +174,20 @@ export function UnbilledChargesView({
                                     openHub({ orderId: inst.purchase_order_id, type: 'purchase' })
                                 }
                             }}
-                            className="text-xs font-medium text-foreground hover:underline underline-offset-2 truncate max-w-[180px]"
+                            className="inline-block outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded-md transition-shadow"
                         >
-                            {inst.group_display_id || `Compra #${inst.group_uuid.slice(0, 8)}`}
+                            <EntityBadge
+                                label="treasury.cardpurchasegroup"
+                                data={{
+                                    id: inst.group_id,
+                                    group_display_id: inst.group_display_id,
+                                    partner_name: inst.partner_name,
+                                    group_uuid: inst.group_uuid,
+                                    total_installments: inst.total_installments,
+                                }}
+                                link={false}
+                                size="sm"
+                            />
                         </button>
                     </div>
                 )
