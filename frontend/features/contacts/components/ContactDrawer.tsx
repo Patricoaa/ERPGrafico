@@ -278,6 +278,7 @@ export default function ContactDrawer({ open, onOpenChange, contact, onSuccess, 
                 defaultSize={formDrawerWidth("master", !!c)}
                 className="h-[90vh]"
                 contentClassName="p-0"
+                mode={mode}
                 side="left"
                 footer={isView ? undefined : (
                     <FormFooter

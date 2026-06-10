@@ -96,7 +96,7 @@ export function TransferDrawer({ open, onOpenChange, onSuccess, mode: modeProp }
                 onOpenChange={onOpenChange}
                 side="left"
                 defaultSize={formDrawerWidth("medium", false)}
-                contentClassName="p-0"
+                mode={mode}
                 title={<><span>{drawerTitle}</span></>}
                 subtitle="Mueva fondos entre sus cuentas de tesorería de forma inmediata."
                 footer={isView ? undefined : (

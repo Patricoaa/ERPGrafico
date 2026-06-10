@@ -259,7 +259,7 @@ export function UserDrawer({ auditSidebar, initialData, onSuccess, trigger, open
                 title={<><span>{drawerTitle}</span>{(mode === 'view' || mode === 'edit') && initialData?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}</>}
                 subtitle="Gestión de cuentas, roles y permisos de acceso."
                 defaultSize={width}
-                contentClassName="p-0"
+                mode={mode}
                 side="left"
                 footer={isView ? undefined : (
                     <FormFooter

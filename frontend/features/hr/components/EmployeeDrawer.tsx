@@ -293,7 +293,7 @@ export function EmployeeDrawer({ open, onOpenChange, employee, onSaved, trigger,
             subtitle={employee ? `Ficha de Personal • ${employee.display_id} • ${employee.contact_detail?.name}` : "Ficha de Personal • Recursos Humanos"}
             defaultSize={formDrawerWidth("master", !!employee)}
             className="h-[90vh]"
-            contentClassName="p-0"
+            mode={mode}
             footer={footer}
             side="left"
         >

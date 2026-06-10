@@ -147,7 +147,7 @@ export function AbsenceDrawer({ open, onOpenChange, absence, employees: employee
                 icon={CalendarX2}
                 title={<><span>{drawerTitle}</span>{(mode === 'view' || mode === 'edit') && absence?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}</>}
                 subtitle="Ingrese los detalles de la ausencia del empleado."
-                contentClassName="p-0"
+                mode={mode}
                 footer={footer}
             >
             {absence ? (
