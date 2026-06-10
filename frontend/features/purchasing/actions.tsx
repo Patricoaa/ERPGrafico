@@ -374,27 +374,11 @@ export const purchaseOrderActions: ActionRegistry<any> = {
                 badge: { type: 'warning', label: 'Solo sin folio' }
             },
             {
-                id: 'delete-draft',
-                label: 'Eliminar Borrador',
+                id: 'cancel-order',
+                label: 'Cancelar Orden',
                 icon: Trash2,
                 requiredPermissions: ['billing.delete_invoice'],
-                checkAvailability: (order) => {
-                    // Show only if order is DRAFT and has no physical/financial impact
-                    if (order.status !== 'DRAFT') return false
-
-                    // Check for confirmed receipts (backend will block)
-                    const hasConfirmedReceipts = order.related_documents?.receipts?.some(
-                        (rec: any) => rec.status === 'CONFIRMED'
-                    ) || false
-
-                    // Check for posted payments (backend will block)
-                    const hasPostedPayments = order.related_documents?.payments?.some(
-                        (pay: any) => pay.journal_entry?.state === 'POSTED'
-                    ) || false
-
-                    // Only show if no receipts or payments
-                    return !hasConfirmedReceipts && !hasPostedPayments
-                },
+                checkAvailability: (order) => order.status === 'DRAFT',
                 variant: 'destructive'
             }
         ]

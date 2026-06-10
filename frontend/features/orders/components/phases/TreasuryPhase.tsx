@@ -66,9 +66,9 @@ export function TreasuryPhase({
         if (!isConfirmed) {
             setConfirmModal({
                 open: true,
-                title: "Eliminar/Anular Pago",
+                title: "Cancelar/Anular Pago",
                 variant: "destructive",
-                confirmText: "Eliminar",
+                confirmText: "Cancelar",
                 onConfirm: () => handleDeletePayment(id, true),
                 description: "¿Está seguro de que desea eliminar este pago?"
             })
@@ -136,7 +136,7 @@ export function TreasuryPhase({
                         actions: [
                             ...((p.status !== 'CANCELLED') ? [{
                                 icon: Trash2,
-                                title: 'Eliminar/Anular Pago',
+                                title: 'Cancelar/Anular Pago',
                                 color: 'text-destructive hover:bg-destructive/10',
                                 onClick: () => p.id && handleDeletePayment(Number(p.id))
                             }] : [])

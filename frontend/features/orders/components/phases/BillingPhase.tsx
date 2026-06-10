@@ -70,11 +70,11 @@ export function BillingPhase({
         if (!isConfirmed) {
             setConfirmModal({
                 open: true,
-                title: "Eliminar Borrador",
+                title: "Cancelar Borrador",
                 variant: "destructive",
-                confirmText: "Eliminar Borrador",
+                confirmText: "Cancelar Borrador",
                 onConfirm: () => handleDeleteDraft(id, true),
-                description: "¿Estás seguro de que deseas eliminar este borrador de factura? Esta acción no se puede deshacer."
+                description: "¿Estás seguro de que deseas cancelar este borrador de factura?"
             })
             return
         }
@@ -150,7 +150,7 @@ export function BillingPhase({
                             actions: [
                                 ...((inv.status === 'DRAFT') ? [{
                                     icon: Trash2,
-                                    title: 'Eliminar Borrador',
+                                    title: 'Cancelar Borrador',
                                     color: 'text-destructive hover:bg-destructive/10',
                                     onClick: () => handleDeleteDraft(Number(inv.id))
                                 }] : []),

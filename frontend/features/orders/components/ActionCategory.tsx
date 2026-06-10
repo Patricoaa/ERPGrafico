@@ -189,7 +189,7 @@ export const ActionCategory = forwardRef(({
             case 'annul-document':
                 handleAnnulDocument()
                 break
-            case 'delete-draft':
+            case 'cancel-order':
                 handleDeleteDraft()
                 break
             default:
@@ -265,9 +265,9 @@ export const ActionCategory = forwardRef(({
 
         setConfirmModal({
             open: true,
-            title: "Eliminar Borrador",
+            title: "Cancelar Borrador",
             variant: "destructive",
-            confirmText: "Eliminar",
+            confirmText: "Cancelar",
             onConfirm: async () => {
                 setIsProcessing(true)
                 try {
@@ -276,12 +276,12 @@ export const ActionCategory = forwardRef(({
                     onActionSuccess?.()
                 } catch (error: unknown) {
                     console.error("Error deleting draft:", error)
-                    toast.error("No se pudo eliminar el borrador")
+                    toast.error("No se pudo cancelar el borrador")
                 } finally {
                     setIsProcessing(false)
                 }
             },
-            description: "¿Estás seguro de que deseas eliminar este borrador? Esta acción no se puede deshacer."
+            description: "¿Estás seguro de que deseas cancelar este borrador?"
         })
     }
 
