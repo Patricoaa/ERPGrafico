@@ -19,7 +19,6 @@ import {
     DataCell,
     MoneyDisplay,
     EntityCard,
-    EntityBadge,
     StatCard,
     StatusBadge,
     Skeleton,
@@ -109,28 +108,6 @@ export function UnbilledChargesView({
             sortingFn: 'datetime',
         },
         {
-            id: 'referencia',
-            header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Referencia" className="justify-center" />
-            ),
-            cell: ({ row }) => {
-                const item = row.original
-                const label = item.reference || (item.source === 'pending' ? item.chargeTypeDisplay || 'Cargo' : item.notes) || '-'
-                return (
-                    <div className="flex flex-col items-start gap-0.5">
-                        <span className="text-xs font-medium text-foreground">
-                            {label}
-                        </span>
-                        {item.source === 'pending' && item.notes && (
-                            <span className="text-[10px] text-muted-foreground truncate max-w-[200px]">
-                                {item.notes}
-                            </span>
-                        )}
-                    </div>
-                )
-            },
-        },
-        {
             id: 'cuota',
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title="Cuota" className="justify-center" />
@@ -158,7 +135,7 @@ export function UnbilledChargesView({
         {
             id: 'compra',
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Compra" className="justify-center" />
+                <DataTableColumnHeader column={column} title="Compra asociada" className="justify-center" />
             ),
             cell: ({ row }) => {
                 const item = row.original
@@ -176,17 +153,9 @@ export function UnbilledChargesView({
                             }}
                             className="inline-block outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded-md transition-shadow"
                         >
-                            <EntityBadge
-                                label="treasury.cardpurchasegroup"
-                                data={{
-                                    id: inst.group_id,
-                                    group_display_id: inst.group_display_id,
-                                    partner_name: inst.partner_name,
-                                    group_uuid: inst.group_uuid,
-                                    total_installments: inst.total_installments,
-                                }}
-                                link={false}
-                                size="sm"
+                            <StatusBadge
+                                status={inst.purchase_order_display_id ? 'info' : 'muted'}
+                                label={inst.purchase_order_display_id || 'Sin OC'}
                             />
                         </button>
                     </div>
@@ -321,8 +290,6 @@ export function UnbilledChargesView({
                     variant="embedded"
                     rightButtonGroupAction={filterDropdown}
                     createAction={actionButtons}
-                    filterColumn="reference"
-                    searchPlaceholder="Buscar por referencia..."
                     emptyState={{
                         context: 'treasury',
                         icon: CreditCard,

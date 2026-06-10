@@ -2523,7 +2523,7 @@ class CreditCardStatementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         from .card_service import CardService
         from .models import TreasuryAccount, TreasuryMovement
         from datetime import date as _date_type
-        from django.db.models import OuterRef, Subquery, IntegerField
+        from django.db.models import OuterRef, Subquery, IntegerField, CharField
 
         card_account_id = request.query_params.get('card_account')
         if not card_account_id:
@@ -2551,7 +2551,7 @@ class CreditCardStatementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         summary = CardService.get_unbilled_summary(card_account, cut_off_date=cut_off_date)
         installments = CardService.get_unbilled_installments(card_account, cut_off_date=cut_off_date)
 
-        # Anotar purchase_order_id desde el TreasuryMovement OUTBOUND asociado.
+        # Anotar purchase_order_id y display_id desde el TreasuryMovement OUTBOUND asociado.
         po_subq = Subquery(
             TreasuryMovement.objects.filter(
                 card_purchase_group=OuterRef('card_purchase_group'),
@@ -2559,7 +2559,14 @@ class CreditCardStatementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             ).values('purchase_order_id')[:1],
             output_field=IntegerField(),
         )
-        installments = installments.annotate(po_id=po_subq)
+        po_number_subq = Subquery(
+            TreasuryMovement.objects.filter(
+                card_purchase_group=OuterRef('card_purchase_group'),
+                movement_type=TreasuryMovement.Type.OUTBOUND,
+            ).values('purchase_order__number')[:1],
+            output_field=CharField(max_length=20),
+        )
+        installments = installments.annotate(po_id=po_subq, po_display_number=po_number_subq)
 
         # Próximas cuotas del cronograma (ADR-0046): filas planas.
         installments_data = [
@@ -2572,6 +2579,7 @@ class CreditCardStatementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
                 'group_uuid': str(inst.card_purchase_group.uuid),
                 'group_display_id': inst.card_purchase_group.display_id,
                 'purchase_order_id': inst.po_id,
+                'purchase_order_display_id': f"OCS-{inst.po_display_number}" if inst.po_display_number else None,
                 'partner_name': (
                     inst.card_purchase_group.partner.name
                     if inst.card_purchase_group.partner else None
