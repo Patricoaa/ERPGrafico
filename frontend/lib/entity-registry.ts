@@ -5,6 +5,7 @@ import {
   List, LayoutDashboard, LayoutGrid, Kanban, CalendarDays, ClipboardCheck,
   Building2, Smartphone, CreditCard, Calendar, CalendarX2, Repeat,
   Tag, Percent, Ruler, PieChart, HandCoins, ClipboardList, PackageCheck,
+  CheckSquare, Banknote,
   type LucideIcon 
 } from 'lucide-react';
 
@@ -229,8 +230,18 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     titlePlural: 'Movimientos de Tesorería',
     icon: Landmark,
     shortTemplate: 'TRX-{id}',
-    listUrl: '/treasury/movements',
-    detailUrlPattern: '/treasury/movements/{id}',
+    listUrl: '/treasury/operaciones?tab=movements',
+    detailUrlPattern: '/treasury/operaciones?tab=movements&selected={id}',
+    viewPolicy: { availableViews: ['list', 'grid'], defaultView: 'list', cardComponent: 'entity-compact', gridLayout: 'multi-column' },
+  },
+  'treasury.unbilled-charge': {
+    label: 'treasury.unbilled-charge',
+    title: 'Cargo no facturado',
+    titlePlural: 'Cargos no facturados',
+    icon: CreditCard,
+    shortTemplate: 'UBC-{id}',
+    listUrl: '/treasury/centro-bancos',
+    detailUrlPattern: '/treasury/centro-bancos',
     viewPolicy: { availableViews: ['list', 'grid'], defaultView: 'list', cardComponent: 'entity-compact', gridLayout: 'multi-column' },
   },
   'treasury.treasuryaccount': {
@@ -281,7 +292,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     title: 'Proveedor',
     titlePlural: 'Proveedores',
     icon: Building2,
-    shortTemplate: 'PROV-{id}',
+    shortTemplate: '{name}',
     listUrl: '/treasury/hardware',
     detailUrlPattern: '/treasury/hardware?selected={id}',
     hasDrawer: true,
@@ -295,6 +306,50 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     shortTemplate: 'LIQ-{id}',
     listUrl: '/treasury/terminal-cobro?tab=batches',
     detailUrlPattern: '/treasury/terminal-cobro?tab=batches&selected={id}',
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', gridLayout: 'single-column' },
+  },
+  'treasury.check': {
+    label: 'treasury.check',
+    title: 'Cheque',
+    titlePlural: 'Cheques',
+    icon: CheckSquare,
+    shortTemplate: 'CHQ-{id}',
+    listUrl: '/treasury/checks',
+    detailUrlPattern: '/treasury/checks?selected={id}',
+    partnerField: (data) => data.counterparty_name || data.drawer_name || '---',
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', gridLayout: 'single-column' },
+  },
+  'treasury.bankloan': {
+    label: 'treasury.bankloan',
+    title: 'Crédito Bancario',
+    titlePlural: 'Créditos Bancarios',
+    icon: Banknote,
+    shortTemplate: 'CRE-{id}',
+    listUrl: '/treasury/loans',
+    detailUrlPattern: '/treasury/loans?selected={id}',
+    partnerField: (data) => data.lender_name || '---',
+    viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', gridLayout: 'single-column' },
+  },
+  'treasury.loaninstallment': {
+    label: 'treasury.loaninstallment',
+    title: 'Cuota de Crédito',
+    titlePlural: 'Cuotas de Crédito',
+    icon: Calendar,
+    shortTemplate: 'CUO-{id}',
+    listUrl: '/treasury/loans',
+    detailUrlPattern: '/treasury/loans?selected={loan}&installment={id}',
+    partnerField: (data) => data.loan_display_id || '---',
+    viewPolicy: { availableViews: ['list'], defaultView: 'list', cardComponent: 'entity', gridLayout: 'single-column' },
+  },
+  'treasury.creditcardstatement': {
+    label: 'treasury.creditcardstatement',
+    title: 'Estado de Cuenta Tarjeta',
+    titlePlural: 'Estados de Cuenta Tarjeta',
+    icon: CreditCard,
+    shortTemplate: 'EST-{id}',
+    listUrl: '/treasury/accounts',
+    detailUrlPattern: '/treasury/accounts?tab=credit-cards&statement={id}',
+    partnerField: (data) => data.card_account_name || '---',
     viewPolicy: { availableViews: ['list', 'card'], defaultView: 'list', cardComponent: 'entity', gridLayout: 'single-column' },
   },
   'accounting.fiscalyear': {
@@ -524,7 +579,7 @@ export const ENTITY_REGISTRY: Record<string, EntityMetadata> = {
     icon: Landmark,
     shortTemplate: '{name}',
     listUrl: '/treasury/terminals',
-    detailUrlPattern: '/treasury/terminals?tab=accounts',
+    detailUrlPattern: '/treasury/centro-bancos?bank={id}',
   },
   'treasury.paymentmethod': {
     label: 'treasury.paymentmethod',
@@ -687,6 +742,8 @@ export const LEGACY_TYPE_LABEL_MAP: Record<string, string> = {
   'cash_movement':   'treasury.treasurymovement',
   'terminal_batch':  'treasury.terminalbatch',
   'bank_statement':  'treasury.bankstatement',
+  'check':           'treasury.check',
+  'credit_card_statement': 'treasury.creditcardstatement',
   'pos_session':     'pos.session',
   // Tax
   'f29_declaration': 'tax.f29declaration',
@@ -719,6 +776,10 @@ export function detectEntityLabel(text: string): string | null {
   if (t.includes('USR_') || t.includes('USR-')) return 'core.user';
   if (t.includes('CAR_') || t.includes('CAR-')) return 'treasury.bankstatement';
   if (t.includes('TRX_') || t.includes('TRX-')) return 'treasury.treasurymovement';
+  if (t.includes('CHQ_') || t.includes('CHQ-')) return 'treasury.check';
+  if (t.includes('EST_') || t.includes('EST-')) return 'treasury.creditcardstatement';
+  if (t.includes('CRE_') || t.includes('CRE-')) return 'treasury.bankloan';
+  if (t.includes('CUO_') || t.includes('CUO-')) return 'treasury.loaninstallment';
   if (t.includes('MOV_') || t.includes('MOV-')) return 'inventory.stockmove';
   if (t.includes('AS_') || t.includes('AS-')) return 'accounting.journalentry';
   

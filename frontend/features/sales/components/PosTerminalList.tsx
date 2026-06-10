@@ -3,17 +3,67 @@
 import { useState, useEffect } from "react"
 import { usePosTerminals } from "@/features/sales"
 import type { Terminal } from "@/features/treasury"
+import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 
 import { ActionConfirmModal, DataTableView, EntityCard, IconButton, StatusBadge } from '@/components/shared'
+import { Badge } from "@/components/ui/badge"
 
 import { DataTableColumnHeader } from '@/components/shared'
 import {createActionsColumn, DataCell} from '@/components/shared'
 import { ColumnDef } from "@tanstack/react-table"
-import { Plus, Power, PowerOff, Trash2, Settings, MapPin, Smartphone, Banknote, CreditCard, Landmark } from "lucide-react"
+import { Plus, Power, PowerOff, Trash2, Settings, MapPin, Smartphone, Banknote, CreditCard, Landmark, FileCheck, MoreHorizontal } from "lucide-react"
 
 import { useConfirmAction } from "@/hooks/useConfirmAction"
 import { PosTerminalDrawer } from "./PosTerminalDrawer"
+
+const PAYMENT_TYPE_ORDER = ['CASH', 'CARD', 'CARD_TERMINAL', 'TRANSFER', 'CHECK', 'OTHER'] as const
+
+type PaymentTypeMeta = {
+    label: string
+    Icon: typeof Banknote
+    iconColorClass: string
+    badgeVariant: "default" | "secondary" | "info" | "warning" | "success" | "outline"
+}
+
+const PAYMENT_TYPE_META: Record<string, PaymentTypeMeta> = {
+    CASH: {
+        label: "Efectivo",
+        Icon: Banknote,
+        iconColorClass: "text-success",
+        badgeVariant: "outline",
+    },
+    CARD: {
+        label: "Tarjeta",
+        Icon: CreditCard,
+        iconColorClass: "text-info",
+        badgeVariant: "outline",
+    },
+    CARD_TERMINAL: {
+        label: "Terminal",
+        Icon: Smartphone,
+        iconColorClass: "text-primary",
+        badgeVariant: "outline",
+    },
+    TRANSFER: {
+        label: "Transferencia",
+        Icon: Landmark,
+        iconColorClass: "text-primary",
+        badgeVariant: "outline",
+    },
+    CHECK: {
+        label: "Cheque",
+        Icon: FileCheck,
+        iconColorClass: "text-warning",
+        badgeVariant: "outline",
+    },
+    OTHER: {
+        label: "Otros",
+        Icon: MoreHorizontal,
+        iconColorClass: "text-muted-foreground",
+        badgeVariant: "outline",
+    },
+}
 
 interface PosTerminalListProps {
     externalOpen?: boolean
@@ -145,11 +195,17 @@ export function PosTerminalList({ externalOpen, onExternalOpenChange, createActi
                             {table.getRowModel().rows.map(row => {
                                 const terminal = row.original
                                 const methodsByType = terminal.allowed_payment_methods.reduce((acc, method) => {
-                                    const type = method.method_type
+                                    let type = method.method_type
+                                    if (type === 'DEBIT_CARD' || type === 'CREDIT_CARD') {
+                                        type = 'CARD'
+                                    }
                                     if (!acc[type]) acc[type] = 0
                                     acc[type]++
                                     return acc
                                 }, {} as Record<string, number>)
+
+                                const orderedTypes = PAYMENT_TYPE_ORDER.filter(t => methodsByType[t] !== undefined)
+                                const totalMethods = Object.values(methodsByType).reduce((a, b) => a + b, 0)
 
                                 return (
                                     <EntityCard key={terminal.id} className={!terminal.is_active ? "opacity-70 bg-muted/20" : ""}>
@@ -187,20 +243,31 @@ export function PosTerminalList({ externalOpen, onExternalOpenChange, createActi
                                                 />
                                             )}
                                         </EntityCard.Body>
-                                        <EntityCard.Footer className="justify-between items-center bg-muted/10 px-4 py-2 border-t">
-                                            <div className="flex flex-wrap gap-1">
-                                                {Object.entries(methodsByType).map(([type, count]) => (
-                                                    <div key={type} className="flex items-center gap-1 px-1.5 py-0.5 rounded-sm border bg-muted/30 text-[9px] uppercase font-bold text-foreground/70">
-                                                        {type === 'CASH' && <Banknote className="h-3 w-3 text-primary" />}
-                                                        {type === 'CARD' && <CreditCard className="h-3 w-3 text-info" />}
-                                                        {type === 'TRANSFER' && <Landmark className="h-3 w-3 text-primary" />}
-                                                        {type} <span className="ml-0.5 opacity-60">({count})</span>
-                                                    </div>
-                                                ))}
-                                                {terminal.allowed_payment_methods.length === 0 && (
+                                        <EntityCard.Footer className="justify-between items-center bg-muted/10 px-4 py-2 border-t gap-2">
+                                            <div className="flex flex-wrap items-center gap-1.5">
+                                                {orderedTypes.map(type => {
+                                                    const meta = PAYMENT_TYPE_META[type]
+                                                    const Icon = meta.Icon
+                                                    return (
+                                                        <Badge
+                                                            key={type}
+                                                            variant={meta.badgeVariant}
+                                                            className="h-5 gap-1 rounded-md px-1.5 text-[10px] font-semibold uppercase tracking-wide"
+                                                        >
+                                                            <Icon className={cn("h-3 w-3", meta.iconColorClass)} />
+                                                            {meta.label}
+                                                        </Badge>
+                                                    )
+                                                })}
+                                                {totalMethods === 0 && (
                                                     <span className="text-[10px] text-muted-foreground italic">Sin métodos configurados</span>
                                                 )}
                                             </div>
+                                            {totalMethods > 0 && (
+                                                <span className="text-[10px] font-semibold text-muted-foreground/70 whitespace-nowrap">
+                                                    {totalMethods} {totalMethods === 1 ? "método" : "métodos"}
+                                                </span>
+                                            )}
                                         </EntityCard.Footer>
                                     </EntityCard>
                                 )

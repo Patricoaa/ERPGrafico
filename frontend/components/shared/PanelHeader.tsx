@@ -43,6 +43,8 @@ export interface PanelHeaderProps {
     onClose?: () => void
     /** Tooltip text for the close button (defaults to "Cerrar") */
     closeTooltip?: string
+    /** ClassName for the close button (e.g. to match title color) */
+    closeButtonClassName?: string
 }
 
 export function PanelHeader({
@@ -56,6 +58,7 @@ export function PanelHeader({
     descriptionClassName,
     onClose,
     closeTooltip,
+    closeButtonClassName,
 }: PanelHeaderProps) {
     const resolvedIcon = React.isValidElement(icon)
         ? icon
@@ -87,6 +90,7 @@ export function PanelHeader({
                         onClick={onClose}
                         showTooltip
                         tooltipText={closeTooltip}
+                        className={cn("text-foreground hover:text-foreground", closeButtonClassName)}
                     />
                 )}
             </div>

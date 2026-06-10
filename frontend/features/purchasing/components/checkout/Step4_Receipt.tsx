@@ -354,7 +354,7 @@ export function Step4_Receipt({ receiptData, setReceiptData, orderLines = [] }: 
             )}
 
             {(receiptData.type as string) === 'DEFERRED' && (
-                <div className="flex items-start gap-3 p-4 bg-warning/10 border border-warning/20 rounded-lg text-warning dark:text-warning/50">
+                <div className="flex items-start gap-3 p-4 bg-warning/10 border border-warning/20 rounded-lg text-warning">
                     <div className="p-2 rounded-lg bg-background border border-warning/20">
                         <FileText className="h-5 w-5" />
                     </div>

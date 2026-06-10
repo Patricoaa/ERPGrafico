@@ -65,8 +65,7 @@ export function MultiTagInput({
                 className={cn(
                     "notched-field transition-all duration-200 cursor-text min-h-[44px] pb-1.5 pt-1",
                     "group-focus-within:border-primary group-focus-within:ring-1 group-focus-within:ring-primary/20",
-                    hasError && "border-destructive group-focus-within:border-destructive group-focus-within:ring-destructive/20",
-                    disabled && "opacity-50 cursor-not-allowed pointer-events-none"
+                    hasError && "border-destructive group-focus-within:border-destructive group-focus-within:ring-destructive/20"
                 )}
                 data-error={hasError || undefined}
                 data-disabled={disabled || undefined}
@@ -75,7 +74,6 @@ export function MultiTagInput({
                     <legend className={cn(
                         "px-1.5 text-[10px] font-black uppercase tracking-[0.15em] transition-colors duration-200",
                         hasError ? "text-destructive" : "text-muted-foreground group-focus-within:text-primary",
-                        disabled && "text-muted-foreground/50"
                     )}>
                         {label}
                         {required && (

@@ -563,6 +563,58 @@ GET    /api/treasury/bank-statements/{id}/       detail (includes lines)
 POST   /api/treasury/bank-statements/{id}/reconcile/  action
 ```
 
+### loans/ (BankLoan) — F2.11
+
+Crédito bancario (CLP o UF). `liability_account` debe ser de tipo
+`CREDIT_CARD` (única `LIABILITY` en taxonomía vigente, ADR-0031).
+
+```
+GET    /api/treasury/loans/                       list (filtros: status, currency, lender, amortization_system)
+POST   /api/treasury/loans/                       create (DRAFT)
+GET    /api/treasury/loans/{id}/                  detail
+PATCH  /api/treasury/loans/{id}/                  update (campos editables)
+DELETE /api/treasury/loans/{id}/                  delete (solo DRAFT)
+POST   /api/treasury/loans/{id}/disburse/         action — genera tabla + INBOUND al banco + ACTIVE (idempotente)
+POST   /api/treasury/loans/{id}/prepay/           action — pago total anticipado (payload: payment_account, date?, interest_expense_account?, insurance_expense_account?)
+POST   /api/treasury/loans/{id}/refinance/        action — marca REFINANCED + cancela pendientes (payload: notes?)
+GET    /api/treasury/loans/{id}/schedule/         preview de tabla sin persistir (solo si no hay tabla ya)
+GET    /api/treasury/loans/{id}/amortization_table/  tabla persistida con cuotas
+```
+
+Display IDs: `CRE-{id}` para el crédito, `CUO-{id}` para cada cuota.
+
+### loan-installments/ (LoanInstallment) — F2.11
+
+Solo lectura + pago. La creación de cuotas es interna (`generate_schedule`).
+
+```
+GET    /api/treasury/loan-installments/           list (filtros: status, loan)
+GET    /api/treasury/loan-installments/{id}/      detail
+POST   /api/treasury/loan-installments/{id}/pay/  action — paga la cuota (payload: payment_account, date?, interest_expense_account?, insurance_expense_account?)
+```
+
+Si el crédito es UF, `pay` convierte usando
+`IndicatorValue.get_value('UF', pay_date)` y persiste el valor en
+`uf_value_used`.
+
+### card-statements/ (CreditCardStatement) — F3.5
+
+Estado de cuenta mensual de la tarjeta de crédito propia. `card_account`
+debe ser de tipo `CREDIT_CARD` (LIABILITY, ADR-0031).
+
+```
+GET    /api/treasury/card-statements/                    list (filtros: status, card_account, period_year, period_month)
+POST   /api/treasury/card-statements/                    create (OPEN)
+GET    /api/treasury/card-statements/{id}/               detail
+PATCH  /api/treasury/card-statements/{id}/               update (campos editables)
+DELETE /api/treasury/card-statements/{id}/               delete
+POST   /api/treasury/card-statements/{id}/pay/           action — pagar (payload: payment_account, date?)
+POST   /api/treasury/card-statements/{id}/apply-charges/ action — imputar interés/comisiones (payload: interest_expense_account?, fees_expense_account?)
+POST   /api/treasury/card-statements/{id}/cancel/        action — anular (payload: notes?)
+```
+
+Display ID: `EST-{id}`. El pago crea una TRANSFER banco→tarjeta (ADR-0034).
+
 ---
 
 ## production
@@ -856,6 +908,30 @@ The `_cents` convention in the SaleOrder example section above is illustrative o
 ## Versioning
 
 Current: implicit v1 via URL path. Breaking change → `/api/v2/[app]/`, parallel period ≥1 release. ADR required.
+
+### PaymentOrchestrator — CHECK integration (F4.4)
+
+When `PaymentMethod.method_type == 'CHECK'`, the orchestrator branches to `CheckService`
+instead of creating a generic `TreasuryMovement`.
+
+**Orchestrator params (CHECK-specific, optional):**
+
+| Param | Type | Description |
+|-------|------|-------------|
+| `check_bank_id` | int \| None | Banco del cheque. Si None, se resuelve del settlement account. |
+| `check_number` | str \| None | Número del cheque. Si checkbook_id se provee, se auto-genera. |
+| `check_issue_date` | date \| None | Fecha de emisión. Default: hoy. |
+| `check_due_date` | date \| None | Fecha de vencimiento. Default: hoy. |
+| `checkbook_id` | int \| None | ID de la chequera para auto-folio. |
+
+**Behavior:**
+- `INBOUND` → `CheckService.receive()` → Check `IN_PORTFOLIO`
+- `OUTBOUND` → `CheckService.issue()` → Check `ISSUED`
+- Return: `Check` instance (not `TreasuryMovement`)
+
+**Purchase checkout** accepts `payment_method_id` + same check params.
+
+**Sale checkout** passes check params through orchestrator.
 
 ## Rate limits
 

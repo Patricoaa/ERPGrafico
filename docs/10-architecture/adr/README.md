@@ -94,5 +94,20 @@ Proposed → (review) → Accepted → (later) → Superseded | Deprecated
 | [0028](0028-entity-drawer-registry.md) | Global entity-drawer registry + dual-mode drawers (replaces TransactionViewModal) | Accepted |
 | [0029](0029-color-system-robustening.md) | Color system robustening — info→blue, neutral accent, fixed L1 / adaptive L2, data-viz palette | Accepted |
 | [0030](0030-datatable-compact-variant.md) | DataTable compact variant (CSS Grid for modals/drawers) | Proposed |
+| [0031](0031-treasury-account-vs-payment-method-taxonomy.md) | Treasury account vs payment method — two-layer taxonomy (wizard + auto-provision + convergence) | Accepted |
+| [0032](0032-check-portfolio-cuenta-puente.md) | Cheques recibidos — cartera con cuenta puente CHECK_PORTFOLIO | Accepted |
+| [0033](0033-bank-loans-liabilidad-y-uf.md) | Créditos bancarios — deuda como pasivo + amortización (CLP/UF) | Accepted |
+| [0034](0034-credit-card-statement-and-payment.md) | Estado de cuenta y pago de tarjeta de crédito corporativa | Accepted |
+| [0035](0035-checks-issued-endorsed.md) | Cheques girados y endosados — modelado de pasivo y circulación | Accepted |
+| [0036](0036-centro-de-bancos-y-vencimientos.md) | Centro de bancos y vencimientos — vista consolidada | Accepted |
+| [0037](0037-bank-archive-restore.md) | Eliminación de bancos — patrón Archivo | Accepted |
+| [0038](0038-check-portfolio-seed.md) | Seed del puente de Cheques en Cartera — pre-cableado de CoA y AccountingSettings | Accepted |
+| [0039](0039-removal-of-check-endorsement.md) | Remoción del endoso de cheques recibidos (supersede parcial de 0035) | Accepted |
+| [0040](0040-check-bounce-void-invoice-demotion.md) | Demover factura/orden al protestar o anular un cheque | Accepted |
+| [0041](0041-loan-treasury-account-type.md) | Loan como `TreasuryAccount` con `account_type=LOAN` y opción REFINANCED | Accepted |
+| [0042](0042-credit-card-p0-accounting-close.md) | Cierre P0 contable de tarjeta de crédito propia — cargos reales, idempotencia, reversa transaccional | Accepted |
+| [0043](0043-credit-card-purchase-installments.md) | Compras en tarjeta en cuotas (3/6/12) con interés explícito — `CardPurchaseGroup` + schedule francés | Superseded by 0046 (D-1/D-6) |
+| [0044](0044-credit-card-partial-payments-and-punitory-interest.md) | Pagos parciales e interés punitorio de tarjeta de crédito propia — `PARTIALLY_PAID` + `card_punitory_monthly_rate` + task mensual | Accepted |
+| [0046](0046-credit-card-purchase-single-use-statement-installments.md) | Compra con TC propia — uso = 1 movimiento/asiento + cuotas vía cronograma facturado en statement | Accepted |
 
 > **Lint:** este índice debe coincidir 1-a-1 con los archivos `NNNN-*.md` presentes en este directorio. Cualquier ADR nuevo o renombramiento exige actualizar también esta tabla.

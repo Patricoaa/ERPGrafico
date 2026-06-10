@@ -9,6 +9,8 @@ from simple_history.models import HistoricalRecords
 from django.conf import settings
 from django.utils import timezone
 from core.utils import get_current_date
+from decimal import Decimal
+import uuid as uuid_lib
 from django.core.validators import MinValueValidator
 from django.core.exceptions import ValidationError
 from core.validators import validate_file_size, validate_file_extension
@@ -269,6 +271,72 @@ class TreasuryMovement(models.Model):
         help_text=_("Lote al que pertenece este pago (si es terminal)")
     )
 
+    # Card purchase installments (Onda 2, ADR-0043): agrupa N
+    # movimientos como cuotas de una misma compra en tarjeta. Un
+    # grupo `CardPurchaseGroup` representa la compra; cada cuota
+    # (1..N) puede ser OUTBOUND (principal) o ADJUSTMENT (interés).
+    card_purchase_group = models.ForeignKey(
+        'CardPurchaseGroup', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='movements',
+        verbose_name=_("Grupo de Compra en Cuotas"),
+        help_text=_(
+            "Si el movimiento es una cuota de una compra con tarjeta, "
+            "FK al grupo. Permite listar y conciliar todas las cuotas "
+            "de una misma compra."
+        ),
+    )
+    installment_number = models.PositiveSmallIntegerField(
+        _("Número de Cuota"),
+        null=True, blank=True,
+        help_text=_("Posición de la cuota dentro del grupo (1..N)."),
+    )
+    is_installment_interest = models.BooleanField(
+        _("Interés de Cuota"),
+        default=False,
+        help_text=_(
+            "True si este movimiento es un ADJUSTMENT que imputa el "
+            "interés explícito de una cuota (no el interés punitorio "
+            "del emisor)."
+        ),
+    )
+    # Onda 3 (ADR-0044): FK al statement de tarjeta al que pertenece
+    # este movimiento como pago. Permite N pagos parciales — cada
+    # pago es un TreasuryMovement que apunta al statement. La FK
+    # inversa en `CreditCardStatement.payment_movements` lista
+    # todos los pagos del statement.
+    from_card_statement = models.ForeignKey(
+        'CreditCardStatement', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='payment_movements',
+        verbose_name=_("Statement de Tarjeta Pagado"),
+        help_text=_(
+            "Si este movimiento es un pago (parcial o total) de un "
+            "statement de tarjeta, FK al statement. Permite listar "
+            "todos los pagos de un statement via payment_movements.all()."
+        ),
+    )
+    # ── Billing flag (Onda 4) ────────────────────────────────────────────
+    # Marca si este cargo ya fue facturado en un CreditCardStatement.
+    # Solo aplica a movimientos OUTBOUND/ADJUSTMENT en cuentas CREDIT_CARD.
+    # Cuando se crea un statement, se marca True y se suma al billed_amount.
+    is_billed = models.BooleanField(
+        _("Facturado"),
+        default=False,
+        db_index=True,
+        help_text=_(
+            "True si este cargo ya fue incluido en un CreditCardStatement. "
+            "Movimientos no facturados aparecen en la vista de 'Cargos Pendientes'."
+        ),
+    )
+    billed_in_statement = models.ForeignKey(
+        'CreditCardStatement', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='billed_charges',
+        verbose_name=_("Facturado en Statement"),
+        help_text=_(
+            "FK al CreditCardStatement en el que se facturó este cargo. "
+            "Permite listar todos los movimientos que componen un statement."
+        ),
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -277,7 +345,7 @@ class TreasuryMovement(models.Model):
         related_name='created_movements',
         verbose_name=_("Creado Por")
     )
-    
+
     history = HistoricalRecords()
 
     class Meta:
@@ -358,6 +426,218 @@ class TreasuryMovement(models.Model):
     def delete(self, *args, **kwargs):
         super().delete(*args, **kwargs)
 
+
+class CardPurchaseGroup(models.Model):
+    """
+    Grupo de cuotas para una compra con tarjeta de crédito en N
+    cuotas (Onda 2, ADR-0043).
+
+    Representa la compra lógica y agrupa los `TreasuryMovement` que
+    son cuotas de esa compra. Cada cuota puede ser:
+
+    - 1 `OUTBOUND` por el principal de la cuota (deuda sube).
+    - 1 `ADJUSTMENT` por el interés explícito de la cuota, si
+      `monthly_rate > 0` (gasto financiero sube, deuda sube).
+
+    El schedule se calcula con la fórmula francesa (cuota fija,
+    interés decreciente, principal creciente). El redondeo se
+    aplica a 2 decimales por cuota; el residuo se asigna a la
+    última cuota para garantizar que la suma de principals
+    coincida exactamente con `total_amount`.
+
+    `client_reference` (opcional, unique) permite idempotencia
+    ante doble POST desde un cliente. La unicidad es a nivel de
+    grupo, no de movimiento: el `reference` de cada cuota
+    (`CP-<uuid>-i<N>`) puede repetirse entre los N miembros del
+    grupo, pero el `client_reference` del grupo es único.
+
+    La factura o asiento contable de cada cuota sigue la misma
+    lógica que un `OUTBOUND` normal (D=proveedor o gasto,
+    H=pasivo tarjeta). El interés, si existe, se imputa en un
+    ADJUSTMENT aparte (D=gasto_interés, H=pasivo tarjeta).
+    """
+
+    uuid = models.UUIDField(
+        _("UUID"),
+        default=uuid_lib.uuid4,
+        editable=False,
+        unique=True,
+        help_text=_("Identificador externo del grupo (idempotencia)."),
+    )
+    card_account = models.ForeignKey(
+        'TreasuryAccount', on_delete=models.PROTECT,
+        related_name='card_purchase_groups',
+        verbose_name=_("Tarjeta"),
+    )
+    partner = models.ForeignKey(
+        'contacts.Contact', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='card_purchase_groups',
+        verbose_name=_("Proveedor"),
+    )
+    total_amount = models.DecimalField(
+        _("Monto Total"),
+        max_digits=18, decimal_places=2,
+        validators=[MinValueValidator(Decimal('0.01'))],
+    )
+    installments = models.PositiveSmallIntegerField(
+        _("Cantidad de Cuotas"),
+        validators=[MinValueValidator(1)],
+    )
+    monthly_rate = models.DecimalField(
+        _("Tasa Mensual (0–1)"),
+        max_digits=8, decimal_places=6,
+        default=Decimal('0'),
+        validators=[MinValueValidator(Decimal('0'))],
+        help_text=_(
+            "Tasa de interés explícita por cuota (ej. 0.015 = 1.5% "
+            "mensual). 0 = cuotas sin interés."
+        ),
+    )
+    principal_per_installment = models.DecimalField(
+        _("Principal por Cuota (sin residuo)"),
+        max_digits=18, decimal_places=2,
+        help_text=_(
+            "Snapshot del cálculo: `total_amount / installments` "
+            "redondeado a 2 decimales. La última cuota absorbe el "
+            "residuo."
+        ),
+    )
+    first_installment_date = models.DateField(
+        _("Fecha Primera Cuota"),
+    )
+    client_reference = models.CharField(
+        _("Referencia Cliente"),
+        max_length=128, blank=True,
+        help_text=_(
+            "ID externo opcional para idempotencia. Si llega un "
+            "segundo POST con la misma `client_reference`, retorna "
+            "el grupo existente sin duplicar cuotas."
+        ),
+    )
+    notes = models.CharField(_("Notas"), max_length=255, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='card_purchase_groups',
+        verbose_name=_("Creado Por"),
+    )
+
+    class Meta:
+        verbose_name = _("Grupo de Compra en Cuotas")
+        verbose_name_plural = _("Grupos de Compra en Cuotas")
+        ordering = ['-first_installment_date', '-id']
+        indexes = [
+            models.Index(fields=['card_account', 'first_installment_date']),
+            models.Index(fields=['partner', 'first_installment_date']),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=['client_reference'],
+                condition=~models.Q(client_reference=''),
+                name='uniq_card_purchase_client_ref',
+            ),
+            models.CheckConstraint(
+                condition=models.Q(installments__gte=1) & models.Q(installments__lte=36),
+                name='ck_card_purchase_installments_range',
+            ),
+            models.CheckConstraint(
+                condition=models.Q(monthly_rate__gte=0) & models.Q(monthly_rate__lt=1),
+                name='ck_card_purchase_monthly_rate_range',
+            ),
+        ]
+
+    def __str__(self):
+        return f"CP-{self.uuid}"
+
+    @property
+    def display_id(self):
+        return f"CPG-{self.id}"
+
+    @property
+    def total_interest(self) -> Decimal:
+        """Suma de los ADJUSTMENT de interés del grupo (cached al
+        momento del cálculo; no recalcula histórico)."""
+        agg = self.movements.filter(
+            is_installment_interest=True,
+        ).aggregate(total=models.Sum('amount'))
+        return agg['total'] or Decimal('0')
+
+    @property
+    def total_payable(self) -> Decimal:
+        """Total a pagar: principal + interés."""
+        return self.total_amount + self.total_interest
+
+
+class CardPurchaseInstallment(models.Model):
+    """
+    Cuota del cronograma de una compra con TC en N cuotas (ADR-0046).
+
+    A diferencia del modelo anterior (ADR-0043), las cuotas **no** son
+    `TreasuryMovement` ni generan asiento: el uso de la tarjeta se
+    contabiliza una sola vez como un `OUTBOUND` por el total (pasivo
+    completo en la fecha de compra). Esta tabla es solo el cronograma:
+    define cuánto principal se factura en cada statement mensual.
+
+    Estado por cuota:
+    - `is_billed` / `billed_in_statement`: la cuota ya entró en el
+      `billed_amount` de un statement (cuando `due_date <= cut_off_date`).
+    El pago se hace a nivel statement (`pay_statement`), no por cuota.
+    """
+
+    card_purchase_group = models.ForeignKey(
+        'CardPurchaseGroup', on_delete=models.CASCADE,
+        related_name='schedule',
+        verbose_name=_("Grupo de Compra"),
+    )
+    number = models.PositiveSmallIntegerField(
+        _("Número de Cuota"),
+        validators=[MinValueValidator(1)],
+        help_text=_("Posición de la cuota dentro del grupo (1..N)."),
+    )
+    due_date = models.DateField(
+        _("Fecha de Vencimiento"),
+        help_text=_("Mes en que la cuota se factura en el statement."),
+    )
+    principal_amount = models.DecimalField(
+        _("Principal de la Cuota"),
+        max_digits=18, decimal_places=2,
+        validators=[MinValueValidator(Decimal('0.01'))],
+    )
+    is_billed = models.BooleanField(
+        _("Facturada"),
+        default=False, db_index=True,
+        help_text=_(
+            "True si la cuota ya fue incluida en el billed_amount de un "
+            "CreditCardStatement."
+        ),
+    )
+    billed_in_statement = models.ForeignKey(
+        'CreditCardStatement', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='installment_charges',
+        verbose_name=_("Facturada en Statement"),
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = _("Cuota de Compra TC")
+        verbose_name_plural = _("Cuotas de Compra TC")
+        ordering = ['card_purchase_group', 'number']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['card_purchase_group', 'number'],
+                name='uniq_card_purchase_installment_number',
+            ),
+        ]
+        indexes = [
+            models.Index(fields=['is_billed', 'due_date']),
+        ]
+
+    def __str__(self):
+        return f"CPI-{self.card_purchase_group_id}-{self.number}"
+
+
 class TreasuryAccountManager(models.Manager):
     """Custom manager with query helpers for filtering by payment methods."""
     
@@ -401,26 +681,29 @@ class TreasuryAccount(models.Model):
     class Type(models.TextChoices):
         CHECKING = 'CHECKING', _('Cuenta Bancaria (Corriente/Vista)')
         CREDIT_CARD = 'CREDIT_CARD', _('Tarjeta de Crédito (Cta. Propia)')
-        DEBIT_CARD = 'DEBIT_CARD', _('Tarjeta de Débito (Cta. Propia)')
-        CHECKBOOK = 'CHECKBOOK', _('Chequera / Instrumentos')
+        LOAN = 'LOAN', _('Préstamo Bancario (Pasivo)')
         CASH = 'CASH', _('Caja Física (Efectivo)')
         BRIDGE = 'BRIDGE', _('Puente')
-        MERCHANT = 'MERCHANT', _('Cuenta Recaudadora')
+        CHECK_PORTFOLIO = 'CHECK_PORTFOLIO', _('Cheques en Cartera')
+        ISSUED_CHECKS = 'ISSUED_CHECKS', _('Cheques Girados por Pagar')
 
-    # Types que NO son efectivo/banco directo — usan prefijos contables distintos.
-    _NON_CASH_EQUIVALENT_TYPES = frozenset({'BRIDGE', 'MERCHANT'})
+    # Types que NO son efectivo/banco directo — usan prefijos contables distintos
+    # y son gestionados por el sistema (no editables vía wizard).
+    _NON_CASH_EQUIVALENT_TYPES = frozenset({'BRIDGE', 'CHECK_PORTFOLIO', 'ISSUED_CHECKS'})
 
     name = models.CharField(_("Nombre"), max_length=100)
     code = models.CharField(_("Código"), max_length=20, blank=True, null=True)
     currency = models.CharField(_("Moneda"), max_length=3, default='CLP')
 
-    # Linked financial account (Asset -> Bank/Cash/Bridge)
+    # Linked financial account: Asset (Bank/Cash/Bridge) o Liability (tarjeta de crédito propia).
     account = models.ForeignKey(
         Account,
         on_delete=models.PROTECT,
-        limit_choices_to={'account_type': AccountType.ASSET},
+        limit_choices_to={'account_type__in': [AccountType.ASSET, AccountType.LIABILITY]},
         related_name='treasury_accounts',
-        verbose_name=_("Cuenta Contable")
+        verbose_name=_("Cuenta Contable"),
+        null=True,
+        blank=True,
     )
     
     account_type = models.CharField(
@@ -476,16 +759,34 @@ class TreasuryAccount(models.Model):
         5. CASH accounts cannot have bank.
         """
         from django.core.exceptions import ValidationError
-        
-        if self.account:
+
+        if self.account_id:
             # 1. Leaf account validation
             if not self.account.is_selectable:
                 raise ValidationError({
                     'account': _("La cuenta contable debe ser una cuenta auxiliar (hoja) sin subcuentas.")
                 })
             
-            # 2. Account prefix validation: 1.1.01 for cash-equivalent; BRIDGE/MERCHANT use other AR/clearing prefixes.
-            if self.account_type not in self._NON_CASH_EQUIVALENT_TYPES:
+            # 2. Account nature validation by treasury type:
+            #    - CREDIT_CARD: tarjeta propia = PASIVO (deuda rotativa), no efectivo.
+            #    - cash-equivalent (CASH/CHECKING/legacy): 'Efectivo y Equivalentes' (1.1.01).
+            #    - BRIDGE: otros activos de clearing/AR (sin check de prefijo).
+            if self.account_type == self.Type.CREDIT_CARD:
+                if self.account.account_type != AccountType.LIABILITY:
+                    raise ValidationError({
+                        'account': _("La tarjeta de crédito propia debe vincularse a una cuenta de PASIVO (deuda), no a Efectivo.")
+                    })
+            elif self.account_type == self.Type.LOAN:
+                if self.account.account_type != AccountType.LIABILITY:
+                    raise ValidationError({
+                        'account': _("La cuenta de Préstamo Bancario debe vincularse a una cuenta de PASIVO (deuda por pagar), no a Efectivo.")
+                    })
+            elif self.account_type == self.Type.CHECK_PORTFOLIO:
+                if self.account.account_type != AccountType.ASSET:
+                    raise ValidationError({
+                        'account': _("La cuenta de Cheques en Cartera debe ser una cuenta de ACTIVO (documentos por cobrar).")
+                    })
+            elif self.account_type not in self._NON_CASH_EQUIVALENT_TYPES:
                 if not self.account.code.startswith('1.1.01'):
                     raise ValidationError({
                         'account': _("La cuenta contable debe pertenecer al grupo de 'Efectivo y Equivalentes' (Prefijo 1.1.01).")
@@ -511,8 +812,8 @@ class TreasuryAccount(models.Model):
                     'account_number': _("Las cuentas corrientes requieren número de cuenta")
                 })
         
-        # Validate Credit/Debit cards
-        if self.account_type in [self.Type.CREDIT_CARD, self.Type.DEBIT_CARD]:
+        # Validate Credit cards
+        if self.account_type == self.Type.CREDIT_CARD:
             if not self.bank:
                 raise ValidationError({
                     'bank': _("Las tarjetas requieren un banco asociado")
@@ -525,7 +826,7 @@ class TreasuryAccount(models.Model):
             })
         
         # Validate account_number only for bank-related accounts
-        if self.account_number and self.account_type not in [self.Type.CHECKING, self.Type.CREDIT_CARD, self.Type.DEBIT_CARD]:
+        if self.account_number and self.account_type not in [self.Type.CHECKING, self.Type.CREDIT_CARD]:
             raise ValidationError({
                 'account_number': _("Solo las cuentas bancarias y tarjetas pueden tener número de cuenta")
             })
@@ -571,7 +872,7 @@ class POSTerminal(models.Model):
         help_text=_("Ubicación física del terminal")
     )
     is_active = models.BooleanField(_("Activo"), default=True)
-    
+
     # ManyToMany: Cuentas de tesorería permitidas para este terminal
     allowed_payment_methods = models.ManyToManyField(
         'PaymentMethod',
@@ -1114,6 +1415,7 @@ class PaymentTerminalProvider(models.Model):
     )
     bank_treasury_account = models.ForeignKey(
         'TreasuryAccount', on_delete=models.PROTECT,
+        null=True, blank=True,
         related_name='terminal_providers',
         verbose_name=_("Cuenta Destino Liquidación")
     )
@@ -1255,11 +1557,17 @@ class PaymentMethod(models.Model):
     # Mapeo de compatibilidad tipo cuenta ↔ método de pago
     TYPE_COMPATIBILITY = {
         Type.CASH: [TreasuryAccount.Type.CASH],
-        Type.DEBIT_CARD: [TreasuryAccount.Type.DEBIT_CARD, TreasuryAccount.Type.CREDIT_CARD, TreasuryAccount.Type.CHECKING],
-        Type.CREDIT_CARD: [TreasuryAccount.Type.DEBIT_CARD, TreasuryAccount.Type.CREDIT_CARD, TreasuryAccount.Type.CHECKING],
-        Type.CARD_TERMINAL: [TreasuryAccount.Type.DEBIT_CARD, TreasuryAccount.Type.CREDIT_CARD, TreasuryAccount.Type.CHECKING],
+        # DEBIT_CARD / CREDIT_CARD / CARD_TERMINAL como métodos de pago se
+        # vinculan a CHECKING (cuenta corriente) o CREDIT_CARD (línea propia).
+        # DEBIT_CARD y CHECKBOOK como tipos de cuenta están eliminados (ADR-0031):
+        # ver `converge_treasury_accounts` y docs/50-audit/bancos/fase-1-operativo.md.
+        Type.DEBIT_CARD: [TreasuryAccount.Type.CREDIT_CARD, TreasuryAccount.Type.CHECKING],
+        Type.CREDIT_CARD: [TreasuryAccount.Type.CREDIT_CARD, TreasuryAccount.Type.CHECKING],
+        Type.CARD_TERMINAL: [TreasuryAccount.Type.CREDIT_CARD, TreasuryAccount.Type.CHECKING],
         Type.TRANSFER: [TreasuryAccount.Type.CHECKING],
-        Type.CHECK: [TreasuryAccount.Type.CHECKING, TreasuryAccount.Type.CHECKBOOK],
+        # CHECK para compras: vinculado a CHECKING (cheque propio girado).
+        # CHECK para ventas: vinculado a CHECK_PORTFOLIO (cheque recibido en cartera).
+        Type.CHECK: [TreasuryAccount.Type.CHECKING, TreasuryAccount.Type.CHECK_PORTFOLIO],
     }
 
     def __str__(self):
@@ -1290,6 +1598,15 @@ class PaymentMethod(models.Model):
         # DEBIT_CARD / CREDIT_CARD → solo compras
         if self.method_type in (self.Type.DEBIT_CARD, self.Type.CREDIT_CARD):
             self.allow_for_sales = False
+
+        # CHECK vinculado a CHECKING → solo compras (cheque propio girado a proveedor).
+        # CHECK vinculado a CHECK_PORTFOLIO → solo ventas (cheque recibido de cliente).
+        if self.method_type == self.Type.CHECK and self.treasury_account_id:
+            acct_type = self.treasury_account.account_type
+            if acct_type == TreasuryAccount.Type.CHECKING:
+                self.allow_for_sales = False
+            elif acct_type == TreasuryAccount.Type.CHECK_PORTFOLIO:
+                self.allow_for_purchases = False
 
         # CARD_TERMINAL → solo ventas, requiere device vinculado
         if self.method_type == self.Type.CARD_TERMINAL:
@@ -1640,6 +1957,12 @@ class POSSession(models.Model):
         decimal_places=2,
         default=0
     )
+    total_check_sales = models.DecimalField(
+        _("Total Ventas Cheque"),
+        max_digits=12,
+        decimal_places=2,
+        default=0
+    )
     
     total_other_cash_inflow = models.DecimalField(
         _("Otros Ingresos Efectivo"),
@@ -1829,5 +2152,706 @@ class PaymentAllocation(models.Model):
         super().save(*args, **kwargs)
 
 
+# ---------------------------------------------------------------------------
+# Cheques recibidos de terceros — Cartera de cheques con cuenta puente
+# ---------------------------------------------------------------------------
 
+class Check(models.Model):
+    """
+    Cheque de tercero recibido (cliente u otro proveedor).
+    Vive en la cuenta puente "Cheques en Cartera" hasta depositarse/cobrarse.
+
+    Flujo de estados:
+      IN_PORTFOLIO → DEPOSITED → CLEARED
+                   → BOUNCED   (desde DEPOSITED: protesto)
+      IN_PORTFOLIO → VOIDED    (anulación antes de depositar)
+      ISSUED       → CLEARED   (cobrado por el proveedor)
+                   → VOIDED    (anulación del cheque girado)
+
+    El endoso (`ENDORSED`) se removió en ADR-0039: ya no se permite endosar
+    un cheque de tercero a un proveedor. Ver `CheckService` y
+    `docs/20-contracts/state-map.md` para el state machine vigente.
+    """
+
+    class Direction(models.TextChoices):
+        RECEIVED = 'RECEIVED', _('Recibido')
+        ISSUED   = 'ISSUED',   _('Girado')
+
+    class Status(models.TextChoices):
+        IN_PORTFOLIO = 'IN_PORTFOLIO', _('En Cartera')
+        DEPOSITED    = 'DEPOSITED',    _('Depositado (En Tránsito)')
+        CLEARED      = 'CLEARED',      _('Cobrado / Liquidado')
+        BOUNCED      = 'BOUNCED',      _('Protestado / Rechazado')
+        VOIDED       = 'VOIDED',       _('Anulado')
+        ISSUED       = 'ISSUED',       _('Girado (Pendiente de Cobro)')
+
+    # ── Identificación ────────────────────────────────────────────────────
+    direction = models.CharField(
+        _("Dirección"), max_length=10,
+        choices=Direction.choices, default=Direction.RECEIVED
+    )
+    status = models.CharField(
+        _("Estado"), max_length=15,
+        choices=Status.choices, default=Status.IN_PORTFOLIO
+    )
+
+    # ── Datos del cheque ─────────────────────────────────────────────────
+    bank = models.ForeignKey(
+        'Bank', on_delete=models.PROTECT,
+        related_name='checks', verbose_name=_("Banco Emisor")
+    )
+    check_number = models.CharField(_("N° de Cheque"), max_length=50)
+    amount = models.DecimalField(
+        _("Monto"), max_digits=14, decimal_places=2,
+        validators=[MinValueValidator(Decimal('0.01'))]
+    )
+    issue_date = models.DateField(_("Fecha de Emisión"))
+    due_date   = models.DateField(
+        _("Fecha de Cobro / Vencimiento"),
+        help_text=_("Para cheques a fecha: día a partir del cual es cobrable.")
+    )
+    counterparty = models.ForeignKey(
+        'contacts.Contact', on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='checks_received', verbose_name=_("Girador / Emisor")
+    )
+    drawer_name = models.CharField(
+        _("Nombre Girador"), max_length=150, blank=True,
+        help_text=_("Nombre libre si el girador no es un contacto del sistema.")
+    )
+
+    # ── Cuentas / Movimientos ────────────────────────────────────────────
+    portfolio_account = models.ForeignKey(
+        'TreasuryAccount', on_delete=models.PROTECT,
+        related_name='checks_in_portfolio',
+        verbose_name=_("Cuenta Cheques en Cartera")
+    )
+    deposit_account = models.ForeignKey(
+        'TreasuryAccount', on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='checks_deposited',
+        verbose_name=_("Cuenta Bancaria de Depósito")
+    )
+    receipt_movement = models.OneToOneField(
+        'TreasuryMovement', on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='check_receipt',
+        verbose_name=_("Movimiento de Recepción")
+    )
+    settlement_movement = models.OneToOneField(
+        'TreasuryMovement', on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='check_settlement',
+        verbose_name=_("Movimiento de Depósito / Liquidación")
+    )
+
+    # ── Documentos relacionados ──────────────────────────────────────────
+    invoice = models.ForeignKey(
+        'billing.Invoice', on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='check_payments', verbose_name=_("Factura")
+    )
+    sale_order = models.ForeignKey(
+        'sales.SaleOrder', on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='check_payments', verbose_name=_("Orden de Venta")
+    )
+
+    # ── Cheques propios girados (direction=ISSUED) ──────────────────────
+    checkbook = models.ForeignKey(
+        'Checkbook', on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='checks',
+        verbose_name=_("Chequera"),
+        help_text=_("Talonario del que se tomó el folio (solo cheques propios)."),
+    )
+    payment_account = models.ForeignKey(
+        'TreasuryAccount', on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='checks_drawn_from',
+        verbose_name=_("Cuenta de Cobro (Banco)"),
+        help_text=_("Para cheques propios: cuenta bancaria desde la que se giró."),
+    )
+    issued_check_account = models.ForeignKey(
+        'TreasuryAccount', on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='checks_issued_liability',
+        verbose_name=_("Cuenta 'Cheques Girados' (Pasivo)"),
+        help_text=_("Cuenta puente LIABILITY para cheques propios girados."),
+    )
+
+    # ── Auditoría ────────────────────────────────────────────────────────
+    notes        = models.TextField(_("Notas"), blank=True)
+    deposited_at = models.DateTimeField(_("Depositado el"), null=True, blank=True)
+    cleared_at   = models.DateTimeField(_("Cobrado el"),    null=True, blank=True)
+    bounced_at   = models.DateTimeField(_("Protestado el"), null=True, blank=True)
+    created_at   = models.DateTimeField(auto_now_add=True)
+    created_by   = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='checks_created', verbose_name=_("Creado Por")
+    )
+    history = HistoricalRecords()
+
+    class Meta:
+        verbose_name        = _("Cheque")
+        verbose_name_plural = _("Cheques")
+        ordering            = ['due_date', '-id']
+        indexes = [
+            models.Index(fields=['status']),
+            models.Index(fields=['due_date']),
+            models.Index(fields=['counterparty', 'status']),
+        ]
+
+    def __str__(self) -> str:
+        return self.display_id
+
+    @property
+    def display_id(self) -> str:
+        return f"CHQ-{self.id}"
+
+    @property
+    def is_overdue(self) -> bool:
+        from core.utils import get_current_date
+        return (
+            self.status == self.Status.IN_PORTFOLIO
+            and self.due_date < get_current_date()
+        )
+
+
+class BankLoan(models.Model):
+    """
+    Crédito / préstamo bancario (CLP o UF).
+
+    Modela la deuda como pasivo (`liability_account` con `AccountType.LIABILITY`).
+    Al desembolsar, la cuenta destino del banco se incrementa (INBOUND) y la
+    cuenta pasivo refleja la deuda. Al pagar una cuota, se debita la
+    `liability_account` (amortización de capital) y se asientan los gastos de
+    interés/seguro en cuentas de gasto configuradas en `AccountingSettings`.
+
+    Ver `docs/50-audit/bancos/fase-2-creditos-bancarios.md` (F2.2).
+    """
+
+    class Status(models.TextChoices):
+        DRAFT        = 'DRAFT',        _('Borrador')
+        ACTIVE       = 'ACTIVE',       _('Vigente')
+        PAID         = 'PAID',         _('Pagado')
+        REFINANCED   = 'REFINANCED',   _('Refinanciado')
+        DEFAULTED    = 'DEFAULTED',    _('En Mora / Incobrable')
+
+    class Currency(models.TextChoices):
+        CLP = 'CLP', _('Pesos Chilenos (CLP)')
+        UF  = 'UF',  _('Unidad de Fomento (UF)')
+
+    class AmortizationSystem(models.TextChoices):
+        FRENCH = 'FRENCH', _('Francés (cuota fija)')
+        LINEAR = 'LINEAR', _('Lineal (capital fijo)')
+
+    class RateBasis(models.TextChoices):
+        MONTHLY = 'MONTHLY', _('Mensual')
+        ANNUAL  = 'ANNUAL',  _('Anual')
+
+    lender = models.ForeignKey(
+        'Bank', on_delete=models.PROTECT,
+        related_name='loans', verbose_name=_("Banco Acreedor"),
+    )
+    loan_number = models.CharField(
+        _("N° de Operación / Crédito"), max_length=60, blank=True,
+        help_text=_("Identificador del crédito en el banco (opcional)."),
+    )
+    currency = models.CharField(
+        _("Moneda"), max_length=3,
+        choices=Currency.choices, default=Currency.CLP,
+    )
+    principal = models.DecimalField(
+        _("Capital (monto original)"),
+        max_digits=18, decimal_places=2,
+        validators=[MinValueValidator(Decimal('0.01'))],
+        help_text=_("Monto original del crédito en la moneda elegida."),
+    )
+    interest_rate = models.DecimalField(
+        _("Tasa de Interés"),
+        max_digits=8, decimal_places=4,
+        validators=[MinValueValidator(Decimal('0'))],
+        help_text=_("Tasa en % (ej. 1.2000 = 1.2%). Ver `rate_basis` para periodicidad."),
+    )
+    rate_basis = models.CharField(
+        _("Base de Tasa"), max_length=10,
+        choices=RateBasis.choices, default=RateBasis.MONTHLY,
+        help_text=_("Mensual: % directo por cuota. Anual: se divide por 12 al calcular la cuota."),
+    )
+    amortization_system = models.CharField(
+        _("Sistema de Amortización"), max_length=10,
+        choices=AmortizationSystem.choices, default=AmortizationSystem.FRENCH,
+    )
+    term_months = models.PositiveIntegerField(
+        _("Plazo (meses)"), validators=[MinValueValidator(1)],
+    )
+    start_date = models.DateField(_("Fecha de Inicio"))
+    first_due_date = models.DateField(_("Primer Vencimiento"))
+    insurance_monthly = models.DecimalField(
+        _("Seguro Mensual (opcional)"),
+        max_digits=18, decimal_places=2, default=Decimal('0'),
+        help_text=_("Seguro desgravamen/cesantía mensual. Sumado a cada cuota."),
+    )
+    opening_fee = models.DecimalField(
+        _("Comisión de Apertura"),
+        max_digits=18, decimal_places=2, default=Decimal('0'),
+        validators=[MinValueValidator(Decimal('0'))],
+        help_text=_("Comisión cobrada al desembolso (gasto). En la moneda del crédito."),
+    )
+    stamp_tax = models.DecimalField(
+        _("Impuesto de Timbres y Estampillas"),
+        max_digits=18, decimal_places=2, default=Decimal('0'),
+        validators=[MinValueValidator(Decimal('0'))],
+        help_text=_("ITE cobrado al desembolso (gasto). En la moneda del crédito."),
+    )
+    penalty_rate = models.DecimalField(
+        _("Tasa de Mora (mensual %)"),
+        max_digits=8, decimal_places=4, default=Decimal('0'),
+        validators=[MinValueValidator(Decimal('0'))],
+        help_text=_("Tasa de interés penal mensual sobre la cuota vencida (ej. 1.5 = 1.5%/mes). 0 = sin mora."),
+    )
+
+    disbursement_account = models.ForeignKey(
+        'TreasuryAccount', on_delete=models.PROTECT,
+        related_name='loans_disbursed',
+        verbose_name=_("Cuenta de Desembolso (Banco)"),
+        help_text=_("Cuenta de tesorería tipo CHECKING/CASH donde se recibe el dinero."),
+    )
+    liability_account = models.ForeignKey(
+        'TreasuryAccount', on_delete=models.PROTECT,
+        related_name='loans_as_liability',
+        verbose_name=_("Cuenta Pasivo (Préstamo por Pagar)"),
+        help_text=_("Cuenta de tesorería tipo LIABILITY que materializa la deuda."),
+    )
+
+    status = models.CharField(
+        _("Estado"), max_length=15,
+        choices=Status.choices, default=Status.DRAFT,
+    )
+    notes = models.TextField(_("Notas"), blank=True)
+    collateral_notes = models.CharField(
+        _("Garantías (notas)"), max_length=255, blank=True,
+        help_text=_("Descripción libre de garantías. Modelo dedicado queda fuera del MVP."),
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='loans_created',
+        verbose_name=_("Creado Por"),
+    )
+    history = HistoricalRecords()
+
+    class Meta:
+        verbose_name = _("Crédito Bancario")
+        verbose_name_plural = _("Créditos Bancarios")
+        ordering = ['-start_date', '-id']
+        indexes = [
+            models.Index(fields=['status']),
+            models.Index(fields=['lender', 'status']),
+            models.Index(fields=['currency']),
+        ]
+
+    def __str__(self) -> str:
+        return self.display_id
+
+    @property
+    def display_id(self) -> str:
+        return f"CRE-{self.id}"
+
+    def clean(self):
+        """
+        Validaciones:
+        1. `liability_account` debe ser tipo CREDIT_CARD (que en taxonomía
+           vigente representa PASIVO — deuda rotativa, ADR-0031).
+        2. `disbursement_account` no puede ser de tipo pasivo ni puente.
+        3. `first_due_date` no puede ser anterior a `start_date`.
+        """
+        if self.liability_account_id:
+            if self.liability_account.account_type != TreasuryAccount.Type.LOAN:
+                raise ValidationError({
+                    'liability_account': _(
+                        "La cuenta pasivo del crédito debe ser una cuenta de tesorería tipo "
+                        "Préstamo Bancario (LOAN) vinculada a una cuenta contable de PASIVO "
+                        "(ADR-0041). Cuenta actual: %(type)s."
+                    ) % {'type': self.liability_account.get_account_type_display()}
+                })
+
+        if self.disbursement_account_id and self.disbursement_account.account_type in (
+            TreasuryAccount.Type.CREDIT_CARD,
+            TreasuryAccount.Type.LOAN,
+            TreasuryAccount.Type.CHECK_PORTFOLIO,
+        ):
+            raise ValidationError({
+                'disbursement_account': _(
+                    "La cuenta de desembolso debe ser una cuenta bancaria (CHECKING) o "
+                    "caja (CASH); no puede ser de pasivo ni puente."
+                )
+            })
+
+        if self.start_date and self.first_due_date and self.first_due_date < self.start_date:
+            raise ValidationError({
+                'first_due_date': _("El primer vencimiento no puede ser anterior al inicio.")
+            })
+
+
+class LoanInstallment(models.Model):
+    """
+    Cuota de un `BankLoan`. Una fila por mes del calendario de amortización.
+
+    - `currency` heredada del préstamo (`loan.currency`).
+    - Para créditos en UF, los montos se guardan en UF y se convierten a CLP
+      al momento de pagar (F2.7) usando el valor UF vigente a la fecha de pago.
+    - `outstanding_balance` se persiste para acelerar listados/queries de
+      morosidad sin tener que recorrer el historial.
+    """
+
+    class Status(models.TextChoices):
+        PENDING  = 'PENDING',  _('Pendiente')
+        PAID     = 'PAID',     _('Pagada')
+        OVERDUE  = 'OVERDUE',  _('Vencida')
+        PARTIAL  = 'PARTIAL',  _('Pago Parcial')
+        CANCELED = 'CANCELED', _('Anulada (refinanciación)')
+
+    loan = models.ForeignKey(
+        'BankLoan', on_delete=models.CASCADE,
+        related_name='installments', verbose_name=_("Crédito"),
+    )
+    number = models.PositiveIntegerField(_("N° de Cuota"))
+    due_date = models.DateField(_("Vencimiento"))
+    principal_amount = models.DecimalField(
+        _("Capital"), max_digits=18, decimal_places=2,
+    )
+    interest_amount = models.DecimalField(
+        _("Interés"), max_digits=18, decimal_places=2,
+    )
+    insurance_amount = models.DecimalField(
+        _("Seguro"), max_digits=18, decimal_places=2, default=Decimal('0'),
+    )
+    total_amount = models.DecimalField(
+        _("Cuota Total"), max_digits=18, decimal_places=2,
+        help_text=_("principal + interest + insurance (en la moneda del crédito)."),
+    )
+    outstanding_balance = models.DecimalField(
+        _("Saldo Insoluto"), max_digits=18, decimal_places=2,
+        help_text=_("Saldo del crédito después de pagar esta cuota."),
+    )
+    status = models.CharField(
+        _("Estado"), max_length=10,
+        choices=Status.choices, default=Status.PENDING,
+    )
+    paid_at = models.DateTimeField(_("Pagada el"), null=True, blank=True)
+    payment_movement = models.OneToOneField(
+        'TreasuryMovement', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='installment_payment',
+        verbose_name=_("Movimiento de Pago"),
+    )
+    # Trazabilidad UF: si el préstamo es UF, se persiste el valor UF usado al pagar.
+    uf_value_used = models.DecimalField(
+        _("Valor UF al Pago"), max_digits=18, decimal_places=4,
+        null=True, blank=True,
+    )
+    clp_amount_paid = models.DecimalField(
+        _("CLP Pagado"), max_digits=18, decimal_places=2,
+        null=True, blank=True,
+        help_text=_("Monto efectivamente pagado en CLP (para créditos UF)."),
+    )
+    penalty_paid = models.DecimalField(
+        _("Mora Pagada (CLP)"), max_digits=18, decimal_places=2,
+        default=Decimal('0'),
+        help_text=_("Interés penal cobrado al pagar esta cuota vencida (en CLP)."),
+    )
+
+    notes = models.CharField(_("Notas"), max_length=255, blank=True)
+    history = HistoricalRecords()
+
+    class Meta:
+        verbose_name = _("Cuota de Crédito")
+        verbose_name_plural = _("Cuotas de Crédito")
+        ordering = ['loan', 'number']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['loan', 'number'],
+                name='uniq_installment_per_loan',
+            ),
+        ]
+        indexes = [
+            models.Index(fields=['loan', 'status']),
+            models.Index(fields=['status', 'due_date']),
+            models.Index(fields=['due_date']),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.loan.display_id} #{self.number}"
+
+    @property
+    def display_id(self) -> str:
+        return f"CUO-{self.id}"
+
+    @property
+    def is_overdue(self) -> bool:
+        from core.utils import get_current_date
+        return self.status == self.Status.PENDING and self.due_date < get_current_date()
+
+
+class CreditCardStatement(models.Model):
+    """
+    Estado de cuenta mensual de la tarjeta de crédito propia.
+
+    Representa el ciclo de facturación: la tarjeta cierra cada mes
+    (`cut_off_date`), informa un total facturado (`billed_amount`) y
+    un pago mínimo (`minimum_payment`), y vence (`due_date`).
+
+    - `billed_amount` puede incluir compras + interés + comisiones del
+      periodo; en su mayoría se va acumulando automáticamente desde
+      `TreasuryMovement` OUTBOUND sobre la `card_account`. Aquí se
+      carga de forma manual o al cierre del mes (los movimientos del
+      periodo se pueden importar después).
+    - Los intereses (`interest_charged`) y comisiones (`fees_charged`)
+      se imputan al gasto financiero y suben la deuda (F3.3).
+    - El pago (`payment_movement`) es un `TreasuryMovement` TRANSFER
+      desde una cuenta bancaria (CHECKING/CASH) hacia la tarjeta
+      (LIABILITY): debita el pasivo y acredita el banco (F3.4).
+
+    Ver `docs/50-audit/bancos/fase-3-tarjeta-credito.md` (F3.2–F3.4).
+    """
+
+    class Status(models.TextChoices):
+        OPEN            = 'OPEN',            _('Abierto')
+        PARTIALLY_PAID  = 'PARTIALLY_PAID',  _('Pagado Parcialmente')
+        PAID            = 'PAID',            _('Pagado')
+        OVERDUE         = 'OVERDUE',         _('Vencido')
+        CANCELED        = 'CANCELED',        _('Anulado')
+
+    card_account = models.ForeignKey(
+        'TreasuryAccount', on_delete=models.PROTECT,
+        related_name='card_statements',
+        limit_choices_to={'account_type': 'CREDIT_CARD'},
+        verbose_name=_("Cuenta Tarjeta de Crédito"),
+    )
+    period_year = models.PositiveIntegerField(_("Año del Período"))
+    period_month = models.PositiveIntegerField(_("Mes del Período"))
+    cut_off_date = models.DateField(_("Fecha de Cierre"))
+    due_date = models.DateField(_("Fecha de Vencimiento"))
+
+    billed_amount = models.DecimalField(
+        _("Monto Facturado"),
+        max_digits=18, decimal_places=2, default=Decimal('0'),
+        help_text=_("Total facturado por la tarjeta en el período (compras + cargos)."),
+    )
+    minimum_payment = models.DecimalField(
+        _("Pago Mínimo"),
+        max_digits=18, decimal_places=2, default=Decimal('0'),
+        help_text=_("Pago mínimo exigido por el banco."),
+    )
+    interest_charged = models.DecimalField(
+        _("Interés del Período"),
+        max_digits=18, decimal_places=2, default=Decimal('0'),
+        help_text=_("Intereses cargados en el estado de cuenta (gasto financiero)."),
+    )
+    fees_charged = models.DecimalField(
+        _("Comisiones del Período"),
+        max_digits=18, decimal_places=2, default=Decimal('0'),
+        help_text=_("Comisiones y otros cargos del período (gasto financiero)."),
+    )
+
+    # Cupo: copia local del `credit_limit` de la tarjeta al momento del
+    # statement. No referenciamos `card_account.credit_limit` (que no
+    # existe como campo del modelo) para mantener el statement
+    # autocontenido.
+    credit_limit = models.DecimalField(
+        _("Cupo Disponible (Snapshot)"),
+        max_digits=18, decimal_places=2, null=True, blank=True,
+        help_text=_("Cupo total de la tarjeta al cierre del período."),
+    )
+
+    status = models.CharField(
+        _("Estado"), max_length=14,
+        choices=Status.choices, default=Status.OPEN,
+    )
+    paid_at = models.DateTimeField(_("Pagado el"), null=True, blank=True)
+    amount_paid = models.DecimalField(
+        _("Monto Pagado (acumulado)"),
+        max_digits=18, decimal_places=2, default=Decimal('0'),
+        help_text=_(
+            "Suma de pagos parciales aplicados a este statement. "
+            "Cuando alcanza `outstanding_balance`, el status pasa a PAID."
+        ),
+    )
+    # FK (no OneToOne) para soportar N pagos parciales (Onda 3,
+    # ADR-0044). Cada `payment_movement` es un TRANSFER independiente.
+    # Para la reversa transaccional se itera
+    # `payment_movements.all()`.
+    payment_movement = models.ForeignKey(
+        'TreasuryMovement', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='card_statement_payments',
+        verbose_name=_("Movimiento de Pago"),
+    )
+    charges_movement = models.OneToOneField(
+        'TreasuryMovement', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='card_statement_charges',
+        verbose_name=_("Movimiento de Cargos"),
+        help_text=_(
+            "ADJUSTMENT que imputa interest_charged + fees_charged como "
+            "gasto financiero y sube la deuda. Simétrico a payment_movement."
+        ),
+    )
+    payment_account = models.ForeignKey(
+        'TreasuryAccount', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='card_statement_payments_made',
+        verbose_name=_("Cuenta desde la que se pagó"),
+        help_text=_("Cuenta bancaria origen del pago (CHECKING/CASH)."),
+    )
+
+    notes = models.TextField(_("Notas"), blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='card_statements_created',
+        verbose_name=_("Creado Por"),
+    )
+    history = HistoricalRecords()
+
+    class Meta:
+        verbose_name = _("Estado de Cuenta Tarjeta")
+        verbose_name_plural = _("Estados de Cuenta Tarjeta")
+        ordering = ['-period_year', '-period_month', '-id']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['card_account', 'period_year', 'period_month'],
+                name='uniq_card_period',
+            ),
+            models.CheckConstraint(
+                condition=models.Q(period_month__gte=1) & models.Q(period_month__lte=12),
+                name='ck_period_month_range',
+            ),
+        ]
+        indexes = [
+            models.Index(fields=['card_account', 'status']),
+            models.Index(fields=['status', 'due_date']),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.display_id} ({self.period_month:02d}/{self.period_year})"
+
+    @property
+    def display_id(self) -> str:
+        return f"EST-{self.id}"
+
+    @property
+    def is_overdue(self) -> bool:
+        from core.utils import get_current_date
+        return (
+            self.status in (self.Status.OPEN, self.Status.PARTIALLY_PAID)
+            and self.due_date < get_current_date()
+        )
+
+    @property
+    def total_to_pay(self) -> Decimal:
+        """Total que efectivamente se paga al liquidar (billed + interest + fees)."""
+        return (
+            (self.billed_amount or Decimal('0'))
+            + (self.interest_charged or Decimal('0'))
+            + (self.fees_charged or Decimal('0'))
+        )
+
+    @property
+    def outstanding_balance(self) -> Decimal:
+        """
+        Saldo impago a la fecha (Onda 3, ADR-0044).
+        `total_to_pay - amount_paid`, nunca negativo.
+        """
+        total = self.total_to_pay
+        paid = self.amount_paid or Decimal('0')
+        return max(total - paid, Decimal('0'))
+
+
+class Checkbook(models.Model):
+    """
+    Talonario de cheques propios vinculado a una cuenta bancaria (CHECKING).
+    Controla folios correlativos y previene duplicados.
+    """
+    class Status(models.TextChoices):
+        ACTIVE  = 'ACTIVE',  _('Activo')
+        CLOSED  = 'CLOSED',  _('Cerrado')
+        EXHAUSTED = 'EXHAUSTED', _('Agotado')
+
+    bank_account = models.ForeignKey(
+        TreasuryAccount, on_delete=models.PROTECT,
+        related_name='checkbooks',
+        verbose_name=_("Cuenta Bancaria"),
+        limit_choices_to={'account_type': 'CHECKING'},
+    )
+    bank = models.ForeignKey(
+        Bank, on_delete=models.PROTECT,
+        related_name='checkbooks',
+        verbose_name=_("Banco"),
+    )
+    start_folio = models.PositiveIntegerField(
+        _("Primer Folio"), help_text=_("Número de cheque inicial del talonario.")
+    )
+    end_folio = models.PositiveIntegerField(
+        _("Último Folio"), help_text=_("Número de cheque final del talonario.")
+    )
+    next_folio = models.PositiveIntegerField(
+        _("Siguiente Folio"),
+        help_text=_("Próximo número a asignar. Se incrementa automáticamente."),
+    )
+    status = models.CharField(
+        _("Estado"), max_length=12,
+        choices=Status.choices, default=Status.ACTIVE,
+    )
+    notes = models.TextField(_("Notas"), blank=True)
+
+    created_at = models.DateTimeField(_("Creado"), auto_now_add=True)
+    updated_at = models.DateTimeField(_("Actualizado"), auto_now=True)
+
+    class Meta:
+        verbose_name = _("Chequera")
+        verbose_name_plural = _("Chequeras")
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(start_folio__lte=models.F('end_folio')),
+                name='ck_checkbook_folio_range',
+            ),
+            models.UniqueConstraint(
+                fields=['bank_account', 'start_folio'],
+                name='uniq_checkbook_start',
+            ),
+        ]
+        ordering = ['bank_account', 'start_folio']
+
+    def __str__(self) -> str:
+        return f"Chequera {self.start_folio}–{self.end_folio} ({self.bank.name})"
+
+    def clean(self):
+        super().clean()
+        if self.start_folio and self.end_folio:
+            if self.start_folio > self.end_folio:
+                raise ValidationError({
+                    'end_folio': _("El último folio debe ser mayor o igual al primero.")
+                })
+        if self.next_folio and self.start_folio and self.end_folio:
+            if self.next_folio < self.start_folio or self.next_folio > self.end_folio + 1:
+                raise ValidationError({
+                    'next_folio': _("El siguiente folio debe estar dentro del rango del talonario.")
+                })
+
+    def available_folios(self) -> int:
+        """Cantidad de folios disponibles para emitir."""
+        if self.status != self.Status.ACTIVE:
+            return 0
+        return self.end_folio - self.next_folio + 1
+
+    def is_exhausted(self) -> bool:
+        return self.next_folio > self.end_folio
+
+    @property
+    def display_id(self) -> str:
+        return f"CHQ-{self.id}"
 

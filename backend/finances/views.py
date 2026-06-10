@@ -1,11 +1,14 @@
 from django.db.models import Sum, Q
 from django.http import JsonResponse
-from rest_framework.decorators import api_view
+from rest_framework import viewsets, status
+from rest_framework.decorators import api_view, action
 from rest_framework.response import Response
 from datetime import date
 from django.utils import timezone
 from accounting.models import Account, AccountType, JournalItem, BSCategory
-from .services import FinanceService
+from .services import FinanceService, IndicatorService
+from .models import IndicatorValue
+from .serializers import IndicatorValueSerializer
 from celery.result import AsyncResult
 from .tasks import generate_report_task
 
@@ -278,3 +281,59 @@ def get_bi_analytics_data(request):
         generator=lambda: FinanceService.get_bi_analytics(to_date(start_date), to_date(end_date)),
     )
     return Response(data)
+
+
+# ── IndicatorValue CRUD (Fase 2 — F2.1) ──────────────────────────────────
+
+class IndicatorValueViewSet(viewsets.ModelViewSet):
+    """CRUD de valores de indicadores económicos (UF, UTM, USD).
+
+    list filtrable por `indicator`. `lookup_value` retorna el valor
+    más reciente (o el vigente en una fecha dada vía `?on=YYYY-MM-DD`).
+    `fetch_feed` invoca el feed opcional de mindicador.cl.
+    """
+    queryset = IndicatorValue.objects.all().order_by('-date', 'indicator')
+    serializer_class = IndicatorValueSerializer
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        indicator = self.request.query_params.get('indicator')
+        if indicator:
+            qs = qs.filter(indicator=indicator)
+        date_from = self.request.query_params.get('date_from')
+        date_to = self.request.query_params.get('date_to')
+        if date_from:
+            qs = qs.filter(date__gte=date_from)
+        if date_to:
+            qs = qs.filter(date__lte=date_to)
+        return qs
+
+    @action(detail=False, methods=['get'])
+    def lookup(self, request):
+        """Retorna el valor vigente de un indicador en una fecha."""
+        indicator = request.query_params.get('indicator')
+        on_str = request.query_params.get('on')
+        if not indicator:
+            return Response({'detail': 'Parámetro "indicator" requerido.'}, status=400)
+        from datetime import datetime as _dt
+        on_date = _dt.strptime(on_str, '%Y-%m-%d').date() if on_str else timezone.now().date()
+        try:
+            value = IndicatorValue.get_value(indicator, on_date)
+        except IndicatorValue.DoesNotExist:
+            return Response({'detail': f'Sin valor cargado para {indicator}.'}, status=404)
+        return Response({
+            'indicator': indicator,
+            'date': on_date,
+            'value': str(value),
+        })
+
+    @action(detail=False, methods=['post'])
+    def fetch_feed(self, request):
+        """Intenta descargar valores desde mindicador.cl (no rompe si no hay red)."""
+        indicator = request.data.get('indicator') if hasattr(request, 'data') else None
+        if not indicator:
+            return Response({'detail': 'Parámetro "indicator" requerido.'}, status=400)
+        if indicator not in IndicatorValue.Indicator.values:
+            return Response({'detail': f'Indicador {indicator} no soportado.'}, status=400)
+        inserted = IndicatorService.fetch_from_mindicador(indicator)
+        return Response({'inserted': inserted, 'indicator': indicator})

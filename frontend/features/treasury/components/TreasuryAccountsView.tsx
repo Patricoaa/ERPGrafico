@@ -10,12 +10,13 @@ import {
 import { DataTableView } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 
-import {Landmark, Lock} from "lucide-react"
+import { Lock } from "lucide-react"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
-import { BankManagement, PaymentMethodManagement, TreasuryAccountDrawer } from "@/features/treasury"
+import { BankManagement, PaymentMethodManagement } from "@/features/treasury"
+import { TreasuryAccountWizard } from "./TreasuryAccountWizard"
 
 import { useGlobalModalActions } from "@/components/providers/GlobalModalProvider"
-import { DataCell, createActionsColumn, FadeIn } from '@/components/shared'
+import { DataCell, createActionsColumn, FadeIn, EntityBadge } from '@/components/shared'
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
@@ -103,11 +104,10 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
     const typeLabels: Record<string, string> = {
         CASH: "Caja Física (Efectivo)",
         CHECKING: "Cuenta Bancaria",
-        DEBIT_CARD: "T. Débito Empresa",
         CREDIT_CARD: "T. Crédito Empresa",
-        CHECKBOOK: "Chequera / Instr.",
+        LOAN: "Préstamo Bancario",
         BRIDGE: "Puente",
-        MERCHANT: "Cta. Recaudadora",
+        CHECK_PORTFOLIO: "Cheques en Cartera",
     }
 
     const columns: ColumnDef<TreasuryAccount>[] = [
@@ -117,16 +117,10 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
                 <DataTableColumnHeader column={column} title="Nombre de Cuenta" className="justify-center" />
             ),
             cell: ({ row }: { row: any }) => (
-                <div className="flex flex-col items-center text-center w-full">
+                <div className="flex justify-center w-full">
                     <DataCell.Text>
                         {row.original.name}
                     </DataCell.Text>
-                    {row.original.bank_name && (
-                        <DataCell.Secondary className="text-[10px] flex items-center gap-1 mt-0.5">
-                            <Landmark className="h-3 w-3" />
-                            {row.original.bank_name}
-                        </DataCell.Secondary>
-                    )}
                 </div>
             ),
         },
@@ -165,6 +159,47 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
             }
         },
         {
+            accessorKey: "bank",
+            header: ({ column }: { column: any }) => (
+                <DataTableColumnHeader column={column} title="Entidad Externa" className="justify-center" />
+            ),
+            cell: ({ row }: { row: any }) => {
+                const bankId = row.original.bank
+                const bankName = row.original.bank_name
+                const providers = row.original.terminal_providers ?? []
+                const hasBank = !!bankId
+                const hasProviders = providers.length > 0
+                if (!hasBank && !hasProviders) {
+                    return (
+                        <div className="flex justify-center w-full">
+                            <DataCell.Secondary className="italic">Sin entidad externa</DataCell.Secondary>
+                        </div>
+                    )
+                }
+                return (
+                    <div className="flex flex-col items-center justify-center gap-1 w-full">
+                        {hasBank && (
+                            <EntityBadge
+                                label="treasury.bank"
+                                data={{ id: bankId, name: bankName }}
+                                size="sm"
+                                showIcon
+                            />
+                        )}
+                        {providers.map((p: NonNullable<TreasuryAccount['terminal_providers']>[number]) => (
+                            <EntityBadge
+                                key={p.id}
+                                label="treasury.terminalprovider"
+                                data={p}
+                                size="sm"
+                                showIcon
+                            />
+                        ))}
+                    </div>
+                )
+            },
+        },
+        {
             accessorKey: "current_balance",
             header: ({ column }: { column: any }) => (
                 <DataTableColumnHeader column={column} title="Saldo" className="justify-center" />
@@ -181,21 +216,6 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
                     </div>
                 )
             },
-        },
-        {
-            accessorKey: "account_type",
-            header: "Tipo",
-            enableHiding: true,
-            cell: ({ row }: { row: any }) => {
-                const val = row.original.account_type
-                if (!val) return null
-                const upperVal = String(val).toUpperCase()
-                return (
-                    <DataCell.Text>
-                        {typeLabels[upperVal] || val}
-                    </DataCell.Text>
-                )
-            }
         },
         createActionsColumn<TreasuryAccount>({
             renderActions: (item) => (
@@ -246,11 +266,13 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
                                 },
                                 renderCard: (acc: TreasuryAccount) => {
                                     const name = acc.account_name
+                                    const providers = acc.terminal_providers ?? []
+                                    const hasBank = !!acc.bank
+                                    const hasProviders = providers.length > 0
                                     return (
                                         <EntityCard key={acc.id} onClick={() => handleEdit(acc)}>
                                             <EntityCard.Header
                                                 title={acc.name}
-                                                subtitle={acc.bank_name || 'Sin banco vinculado'}
                                                 trailing={
                                                     acc.is_system_managed ? <Lock className="h-4 w-4 text-muted-foreground opacity-50" /> : null
                                                 }
@@ -264,6 +286,31 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
                                                             <DataCell.Secondary className="truncate max-w-[140px] leading-tight">{name}</DataCell.Secondary>
                                                         </div>
                                                     ) : <DataCell.Secondary className="italic">No vinculada</DataCell.Secondary>
+                                                } />
+                                                <EntityCard.Field label="Entidad Externa" value={
+                                                    !hasBank && !hasProviders ? (
+                                                        <DataCell.Secondary className="italic">Sin entidad externa</DataCell.Secondary>
+                                                    ) : (
+                                                        <div className="flex flex-col gap-1 items-start">
+                                                            {hasBank && acc.bank_name && (
+                                                                <EntityBadge
+                                                                    label="treasury.bank"
+                                                                    data={{ id: acc.bank, name: acc.bank_name }}
+                                                                    size="sm"
+                                                                    showIcon
+                                                                />
+                                                            )}
+                                                            {providers.map((p) => (
+                                                                <EntityBadge
+                                                                    key={p.id}
+                                                                    label="treasury.terminalprovider"
+                                                                    data={p}
+                                                                    size="sm"
+                                                                    showIcon
+                                                                />
+                                                            ))}
+                                                        </div>
+                                                    )
                                                 } />
                                             </EntityCard.Body>
                                             <EntityCard.Footer className="justify-between items-center border-t bg-muted/10 py-2 px-4">
@@ -313,7 +360,7 @@ export const TreasuryAccountsView: React.FC<TreasuryAccountsViewProps> = ({ acti
 
         </Tabs>
 
-        <TreasuryAccountDrawer
+        <TreasuryAccountWizard
             open={isLocalAccountModalOpen}
             onOpenChange={(open) => {
                 if (!open) {

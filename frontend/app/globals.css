@@ -459,7 +459,7 @@
  *      docs/10-architecture/design-system.md (Radius Hierarchy)
  */
 @utility panel-surface {
-  @apply rounded-xl border! border-border/10! shadow-2xl! bg-card;
+  @apply rounded-xl border! border-border/15! shadow-2xl! bg-card;
 }
 
 /*
@@ -672,7 +672,10 @@ table [data-notched-field] {
     border: 1px solid var(--border);
     border-radius: var(--radius);
     padding: var(--notched-pad-top) var(--notched-pad-x) 0.5rem;
-    background: var(--background);
+    /* Transparent fill — fields blend into their surface; only the notched
+       border + label define them. Matches the base shadcn Input/Select
+       (already bg-transparent) so notched and non-notched controls read alike. */
+    background: transparent;
     transition:
       border-color var(--duration-fast) var(--ease-micro),
       box-shadow var(--duration-fast) var(--ease-micro);
@@ -739,12 +742,17 @@ table [data-notched-field] {
     color: var(--destructive);
   }
 
-  /* Disabled state */
+  /* Disabled state — keep text at full color, dim background instead */
   fieldset.notched-field[data-disabled="true"] {
-    opacity: 0.5;
-    cursor: not-allowed;
-    background: oklch(var(--muted-raw));
-    pointer-events: none;
+    cursor: default;
+  }
+
+  .notched-field input:disabled,
+  .notched-field select:disabled,
+  .notched-field textarea:disabled,
+  .notched-field button:disabled {
+    opacity: 1;
+    background-color: var(--muted);
   }
 
   [data-slot="badge"] button {
@@ -1288,4 +1296,12 @@ table [data-notched-field] {
 .hover\:bg-warning:hover .text-muted-foreground,
 .bg-warning .text-muted-foreground {
   color: inherit;
+}
+
+/*
+ * TEXT HIERARCHY — Secondary foreground for displayed data (not titles, not muted)
+ * Creates a third step: title (foreground) → data (foreground-secondary) → label (muted-foreground)
+ */
+.text-foreground-secondary {
+  color: oklch(var(--foreground-raw) / 0.85);
 }

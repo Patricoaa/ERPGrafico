@@ -28,7 +28,7 @@ export function FormSplitLayout({
         <div className="flex-1 flex overflow-hidden min-h-[400px]">
             {/* Main Form Area */}
             <div className={cn(
-                "flex-1 flex flex-col overflow-y-auto px-6 pb-4 pt-4 scrollbar-thin",
+                "flex-1 flex flex-col overflow-y-auto scrollbar-thin",
                 className
             )}>
                 {children}
@@ -39,7 +39,7 @@ export function FormSplitLayout({
                 <aside
                     className={cn(
                         sidebarWidth,
-                        "border-l flex flex-col pt-4 hidden lg:flex"
+                        "border-l flex flex-col hidden lg:flex bg-muted/40 shadow-elevated"
                     )}
                 >
                     {sidebar}

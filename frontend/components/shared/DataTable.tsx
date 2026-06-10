@@ -786,7 +786,7 @@ export function DataTable<TData, TValue>({
                     <Table containerClassName={cn(
                         !isInModal && "max-h-[calc(100vh-260px)] overflow-y-auto custom-scrollbar"
                     )}>
-                        <TableHeader className={cn(!isInModal ? "sticky top-0 bg-background z-10 shadow-sm border-b" : "bg-muted/30")}>
+                        <TableHeader className={cn(!isInModal ? "sticky top-0 bg-background z-10 shadow-card border-b" : "bg-muted/30")}>
                             {table.getHeaderGroups().map((headerGroup) => (
                                 <TableRow key={headerGroup.id}>
                                     {headerGroup.headers.map((header) => {

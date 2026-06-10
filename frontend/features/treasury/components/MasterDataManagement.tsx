@@ -1,12 +1,14 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { DataTable } from '@/components/shared'
 import { DataTableColumnHeader } from '@/components/shared'
 import { Button } from "@/components/ui/button"
 import {
-    Plus, CreditCard, Landmark, Lock
+    Plus, CreditCard, Landmark, Lock, ChevronDown, Eye
 } from "lucide-react"
+import { cn } from "@/lib/utils"
 import { DataCell, createActionsColumn } from '@/components/shared'
 import { ActivitySidebar } from "@/features/audit/components"
 import { useConfirmAction } from "@/hooks/useConfirmAction"
@@ -23,7 +25,9 @@ import { bankSearchDef, paymentMethodSearchDef } from "@/features/treasury/searc
 import { TreasuryAccountSelector } from "@/components/selectors/TreasuryAccountSelector"
 import { Column } from "@tanstack/react-table";
 import { useBanks, usePaymentMethods } from "@/features/treasury/hooks/useMasterData"
+import { useAllBanksOverview } from "@/features/treasury/hooks/useAllBanksOverview"
 import type { Bank, PaymentMethod } from "@/features/treasury/types"
+import { BankCreationWizard } from "./BankCreationWizard"
 
 // --- Schemas ---
 
@@ -55,26 +59,41 @@ interface BankManagementProps {
 }
 
 export function BankManagement({ externalOpen, onOpenChange, createAction }: BankManagementProps) {
-    const { banks, refetch, deleteBank } = useBanks()
+    const { banks, refetch, archiveBank, restoreBank } = useBanks()
+    const { overviews } = useAllBanksOverview()
     const { filterFn: filterBanks } = useClientSearch<Bank>(bankSearchDef)
     const [dialogOpen, setDialogOpen] = useState(false)
+    const [wizardOpen, setWizardOpen] = useState(false)
     const [selectedBank, setSelectedBank] = useState<Bank | null>(null)
+    const router = useRouter()
 
-    const deleteConfirm = useConfirmAction<number>(async (id) => {
+    const archiveConfirm = useConfirmAction<number>(async (id) => {
         try {
-            await deleteBank(id)
+            await archiveBank(id)
         } catch {
             // Error handled by hook
         }
     })
 
-    const handleDelete = (id: number) => {
-        deleteConfirm.requestConfirm(id)
+    const restoreConfirm = useConfirmAction<number>(async (id) => {
+        try {
+            await restoreBank(id)
+        } catch {
+            // Error handled by hook
+        }
+    })
+
+    const handleArchive = (id: number) => {
+        archiveConfirm.requestConfirm(id)
+    }
+
+    const handleRestore = (id: number) => {
+        restoreConfirm.requestConfirm(id)
     }
 
     const openCreate = () => {
         setSelectedBank(null)
-        setDialogOpen(true)
+        setWizardOpen(true)
     }
 
     const openEdit = (bank: Bank) => {
@@ -104,11 +123,86 @@ export function BankManagement({ externalOpen, onOpenChange, createAction }: Ban
                 </div>
             )
         },
+        {
+            id: "accounts",
+            header: ({ column }: { column: Column<Bank, unknown> }) => <DataTableColumnHeader column={column} title="Cuentas" className="justify-center" />,
+            cell: ({ row }: { row: { original: Bank } }) => {
+                const overview = overviews.find(o => o.bank.id === row.original.id)
+                return (
+                    <div className="flex justify-center w-full">
+                        <DataCell.Text>{overview?.summary.total_accounts ?? 0}</DataCell.Text>
+                    </div>
+                )
+            },
+            accessorFn: (row: Bank) => overviews.find(o => o.bank.id === row.id)?.summary.total_accounts ?? 0,
+        },
+        {
+            id: "cards",
+            header: ({ column }: { column: Column<Bank, unknown> }) => <DataTableColumnHeader column={column} title="Tarjetas" className="justify-center" />,
+            cell: ({ row }: { row: { original: Bank } }) => {
+                const overview = overviews.find(o => o.bank.id === row.original.id)
+                return (
+                    <div className="flex justify-center w-full">
+                        <DataCell.Text>{overview?.summary.card_count ?? 0}</DataCell.Text>
+                    </div>
+                )
+            },
+            accessorFn: (row: Bank) => overviews.find(o => o.bank.id === row.id)?.summary.card_count ?? 0,
+        },
+        {
+            id: "checks",
+            header: ({ column }: { column: Column<Bank, unknown> }) => <DataTableColumnHeader column={column} title="Cheques" className="justify-center" />,
+            cell: ({ row }: { row: { original: Bank } }) => {
+                const overview = overviews.find(o => o.bank.id === row.original.id)
+                return (
+                    <div className="flex justify-center w-full">
+                        <DataCell.Text>{overview?.summary.issued_checks ?? 0}</DataCell.Text>
+                    </div>
+                )
+            },
+            accessorFn: (row: Bank) => overviews.find(o => o.bank.id === row.id)?.summary.issued_checks ?? 0,
+        },
+        {
+            id: "loans",
+            header: ({ column }: { column: Column<Bank, unknown> }) => <DataTableColumnHeader column={column} title="Préstamos" className="justify-center" />,
+            cell: ({ row }: { row: { original: Bank } }) => {
+                const overview = overviews.find(o => o.bank.id === row.original.id)
+                return (
+                    <div className="flex justify-center w-full">
+                        <DataCell.Text>{overview?.summary.active_loan_count ?? 0}</DataCell.Text>
+                    </div>
+                )
+            },
+            accessorFn: (row: Bank) => overviews.find(o => o.bank.id === row.id)?.summary.active_loan_count ?? 0,
+        },
+        {
+            id: "is_active",
+            header: ({ column }: { column: Column<Bank, unknown> }) => <DataTableColumnHeader column={column} title="Estado" className="justify-center" />,
+            cell: ({ row }: { row: { original: Bank } }) => (
+                <div className="flex justify-center w-full">
+                    {row.original.is_active ? (
+                        <Chip size="xs" intent="success">Activo</Chip>
+                    ) : (
+                        <Chip size="xs" intent="neutral">Archivado</Chip>
+                    )}
+                </div>
+            ),
+            accessorFn: (row: Bank) => (row.is_active ? "Activo" : "Archivado"),
+        },
         createActionsColumn<Bank>({
             renderActions: (item) => (
                 <>
+                    <DataCell.Action
+                        icon={Eye}
+                        title="Ver detalles"
+                        onClick={() => router.push(`/treasury/centro-bancos?bank=${item.id}&tab=overview`)}
+                    />
                     <DataCell.Action action="edit" onClick={() => openEdit(item)} />
-                    <DataCell.Action action="delete" onClick={() => handleDelete(item.id)} />
+                    {item.is_active ? (
+                        <DataCell.Action action="archive" onClick={() => handleArchive(item.id)} />
+                    ) : (
+                        <DataCell.Action action="restore" onClick={() => handleRestore(item.id)} />
+                    )}
                 </>
             )
         })
@@ -135,8 +229,21 @@ export function BankManagement({ externalOpen, onOpenChange, createAction }: Ban
                 />
             </div>
 
+            <BankCreationWizard
+                open={wizardOpen || (!!externalOpen && !selectedBank)}
+                onOpenChange={(open: boolean) => {
+                    setWizardOpen(open)
+                    if (!open) {
+                        onOpenChange?.(false)
+                    }
+                }}
+                onSuccess={() => {
+                    refetch()
+                }}
+            />
+
             <BankModal
-                open={dialogOpen || !!externalOpen}
+                open={dialogOpen || (!!externalOpen && !!selectedBank)}
                 onOpenChange={(open: boolean) => {
                     setDialogOpen(open)
                     if (!open) {
@@ -155,12 +262,20 @@ export function BankManagement({ externalOpen, onOpenChange, createAction }: Ban
             />
 
             <ActionConfirmModal
-                open={deleteConfirm.isOpen}
-                onOpenChange={(open) => { if (!open) deleteConfirm.cancel() }}
-                onConfirm={deleteConfirm.confirm}
-                title="Eliminar Banco"
-                description="¿Está seguro de eliminar este banco? Esta acción no se puede deshacer."
-                variant="destructive"
+                open={archiveConfirm.isOpen}
+                onOpenChange={(open) => { if (!open) archiveConfirm.cancel() }}
+                onConfirm={archiveConfirm.confirm}
+                title="Archivar Banco"
+                description="El banco quedará inactivo y no aparecerá en los selectores. Podrá restaurarlo en cualquier momento."
+                variant="warning"
+            />
+            <ActionConfirmModal
+                open={restoreConfirm.isOpen}
+                onOpenChange={(open) => { if (!open) restoreConfirm.cancel() }}
+                onConfirm={restoreConfirm.confirm}
+                title="Restaurar Banco"
+                description="¿Desea reactivar este banco? Volverá a estar disponible en los selectores."
+                variant="info"
             />
         </div>
     )
@@ -255,7 +370,7 @@ function BankModal({ open, onOpenChange, bank, onSuccess }: BankModalProps) {
                 }
             >
                 <Form {...form}>
-                    <form id="bank-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-4 pb-4 pt-2">
+                    <form id="bank-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-6 pb-6 pt-6">
                         <div className="grid grid-cols-4 gap-4">
                             <div className="col-span-4">
                                 <FormField
@@ -484,6 +599,8 @@ function PaymentMethodModal({ open, onOpenChange, method, onSuccess }: PaymentMe
     const { createMethod, updateMethod, isCreating, isUpdating } = usePaymentMethods()
     const isSaving = isCreating || isUpdating
 
+    const [showAdvanced, setShowAdvanced] = useState(false)
+
     const form = useForm<PaymentMethodFormValues>({
         resolver: zodResolver(paymentMethodSchema) as any,
         defaultValues: {
@@ -498,6 +615,7 @@ function PaymentMethodModal({ open, onOpenChange, method, onSuccess }: PaymentMe
 
     useEffect(() => {
         if (open) {
+            setShowAdvanced(false)
             const acc = method?.treasury_account
             const accountId = acc ? (typeof acc === 'object' ? (acc as any).id.toString() : acc.toString()) : ""
 
@@ -511,6 +629,24 @@ function PaymentMethodModal({ open, onOpenChange, method, onSuccess }: PaymentMe
             })
         }
     }, [open, method, form])
+
+    // Al crear, el uso (ventas/compras) se deriva del tipo; el usuario no está obligado
+    // a configurarlo (queda en "Avanzado"). Débito/crédito empresa → solo compras;
+    // terminal → solo ventas; resto → ambos.
+    const watchedType = form.watch("method_type")
+    useEffect(() => {
+        if (method) return // editar: respetar lo guardado
+        if (watchedType === "DEBIT_CARD" || watchedType === "CREDIT_CARD") {
+            form.setValue("allow_for_sales", false)
+            form.setValue("allow_for_purchases", true)
+        } else if (watchedType === "CARD_TERMINAL") {
+            form.setValue("allow_for_sales", true)
+            form.setValue("allow_for_purchases", false)
+        } else {
+            form.setValue("allow_for_sales", true)
+            form.setValue("allow_for_purchases", true)
+        }
+    }, [watchedType, method, form])
 
     const onSubmit = async (data: PaymentMethodFormValues) => {
         try {
@@ -571,7 +707,7 @@ function PaymentMethodModal({ open, onOpenChange, method, onSuccess }: PaymentMe
                 }
             >
                 <Form {...form}>
-                    <form id="method-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-4 pb-4 pt-2">
+                    <form id="method-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-6 pb-6 pt-6">
                         <div className="grid grid-cols-4 gap-4">
                             <div className="col-span-4">
                                 <FormField
@@ -626,31 +762,48 @@ function PaymentMethodModal({ open, onOpenChange, method, onSuccess }: PaymentMe
                             </div>
 
                             <div className="col-span-4">
-                                <FormSection title="Permisos de Uso" icon={Lock} />
-                                <FormField
-                                    control={form.control}
-                                    name="allow_for_sales"
-                                    render={({ field }) => (
-                                        <div className="pt-2">
-                                            <MultiSelectTagInput
-                                                label="Habilitado para"
-                                                options={[
-                                                    { label: "Ventas", value: "sales" },
-                                                    { label: "Compras", value: "purchases" }
-                                                ]}
-                                                value={[
-                                                    ...(form.watch("allow_for_sales") ? ["sales"] : []),
-                                                    ...(form.watch("allow_for_purchases") ? ["purchases"] : [])
-                                                ]}
-                                                onChange={(vals) => {
-                                                    form.setValue("allow_for_sales", vals.includes("sales"))
-                                                    form.setValue("allow_for_purchases", vals.includes("purchases"))
-                                                }}
-                                                placeholder="Defina dónde se permite este método..."
-                                            />
-                                        </div>
-                                    )}
-                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowAdvanced((v) => !v)}
+                                    className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors"
+                                >
+                                    <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", showAdvanced && "rotate-180")} />
+                                    Avanzado · Permisos de uso
+                                </button>
+                                {!showAdvanced && (
+                                    <p className="text-[11px] text-muted-foreground mt-1 ml-5">
+                                        Por defecto se deriva del tipo. Ábrelo solo si necesitas restringir ventas/compras.
+                                    </p>
+                                )}
+                                {showAdvanced && (
+                                    <div className="pt-3">
+                                        <FormSection title="Permisos de Uso" icon={Lock} />
+                                        <FormField
+                                            control={form.control}
+                                            name="allow_for_sales"
+                                            render={() => (
+                                                <div className="pt-2">
+                                                    <MultiSelectTagInput
+                                                        label="Habilitado para"
+                                                        options={[
+                                                            { label: "Ventas", value: "sales" },
+                                                            { label: "Compras", value: "purchases" }
+                                                        ]}
+                                                        value={[
+                                                            ...(form.watch("allow_for_sales") ? ["sales"] : []),
+                                                            ...(form.watch("allow_for_purchases") ? ["purchases"] : [])
+                                                        ]}
+                                                        onChange={(vals) => {
+                                                            form.setValue("allow_for_sales", vals.includes("sales"))
+                                                            form.setValue("allow_for_purchases", vals.includes("purchases"))
+                                                        }}
+                                                        placeholder="Defina dónde se permite este método..."
+                                                    />
+                                                </div>
+                                            )}
+                                        />
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </form>

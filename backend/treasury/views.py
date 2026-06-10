@@ -1,4 +1,4 @@
-from rest_framework import viewsets, status, filters as drf_filters
+from rest_framework import viewsets, status, filters as drf_filters, serializers as drf_serializers
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend, FilterSet
@@ -18,9 +18,15 @@ from .serializers import (
     POSTerminalSerializer,
     POSSessionSerializer, POSSessionAuditSerializer,
     BankSerializer, PaymentMethodSerializer, TerminalBatchSerializer,
-    PaymentTerminalProviderSerializer, PaymentTerminalDeviceSerializer
+    PaymentTerminalProviderSerializer, PaymentTerminalDeviceSerializer,
+    BankLoanSerializer, BankLoanWriteSerializer, LoanInstallmentSerializer,
+    PayInstallmentActionSerializer, PrepayLoanActionSerializer,
+    DisburseLoanActionSerializer,
+    CreditCardStatementSerializer, CreditCardStatementWriteSerializer,
+    PayStatementActionSerializer, ApplyChargesActionSerializer,
 )
 from .services import TreasuryService, TerminalBatchService
+from .deletion_service import BankDeletionService
 from .pos_service import POSService
 from .reconciliation_service import ReconciliationService
 from .matching_service import MatchingService
@@ -37,6 +43,183 @@ from core.api.pagination import StandardResultsSetPagination
 class BankViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     queryset = Bank.objects.all().order_by('name')
     serializer_class = BankSerializer
+
+    @action(detail=True, methods=['get'])
+    def overview(self, request, pk=None):
+        """Centro de Bancos: vista unificada por banco (F5.2)."""
+        from django.db.models import Sum, Q
+        from datetime import date, timedelta
+        bank = self.get_object()
+
+        # Cuentas de tesorería del banco
+        accounts = TreasuryAccount.objects.filter(bank=bank).order_by('account_type', 'name')
+        accounts_data = []
+        for acc in accounts:
+            movements = acc.movements_from.all().aggregate(total=Sum('amount'))['total'] or 0
+            movements += acc.movements_to.all().aggregate(total=Sum('amount'))['total'] or 0
+            accounts_data.append({
+                'id': acc.id,
+                'name': acc.name,
+                'account_type': acc.account_type,
+                'account_type_display': acc.get_account_type_display(),
+                'current_balance': float(acc.current_balance),
+                'currency': acc.currency,
+            })
+
+        # Tarjetas de crédito del banco (cuentas CREDIT_CARD)
+        card_accounts = accounts.filter(account_type=TreasuryAccount.Type.CREDIT_CARD)
+        from .models import CreditCardStatement
+        open_statements = CreditCardStatement.objects.filter(
+            card_account__in=card_accounts,
+            status__in=[CreditCardStatement.Status.OPEN, CreditCardStatement.Status.OVERDUE],
+        ).order_by('due_date')
+        card_debt = sum(
+            (s.total_to_pay for s in open_statements),
+            __import__('decimal').Decimal('0'),
+        )
+
+        # Cheques en cartera y propios girados
+        from .models import Check
+        portfolio_checks = Check.objects.filter(
+            bank=bank, direction=Check.Direction.RECEIVED,
+            status=Check.Status.IN_PORTFOLIO,
+        ).aggregate(total=Sum('amount'))['total'] or 0
+        issued_checks = Check.objects.filter(
+            bank=bank, direction=Check.Direction.ISSUED,
+            status=Check.Status.ISSUED,
+        ).aggregate(total=Sum('amount'))['total'] or 0
+
+        # Créditos activos
+        from .models import BankLoan, LoanInstallment
+        active_loans = BankLoan.objects.filter(
+            lender=bank, status=BankLoan.Status.ACTIVE,
+        )
+        # `outstanding_balance` no es un campo de `BankLoan`: se computa como
+        # la suma del `principal_amount` de las cuotas no pagadas ni anuladas
+        # (mismo criterio que `BankLoanSerializer.get_outstanding_balance`).
+        # Hacemos un único aggregate para evitar N+1.
+        total_loan_debt = LoanInstallment.objects.filter(
+            loan__in=active_loans,
+        ).exclude(
+            status__in=[LoanInstallment.Status.PAID, LoanInstallment.Status.CANCELED]
+        ).aggregate(
+            s=Sum('principal_amount'),
+        )['s'] or __import__('decimal').Decimal('0')
+
+        # Próximos vencimientos (cuotas, cheques, tarjetas) — horizonte 30 días
+        today = timezone.now().date()
+        horizon = today + timedelta(days=30)
+        upcoming = []
+
+        # Cuotas de préstamo
+        upcoming_installments = LoanInstallment.objects.filter(
+            loan__lender=bank,
+            loan__status=BankLoan.Status.ACTIVE,
+            status__in=[LoanInstallment.Status.PENDING, LoanInstallment.Status.OVERDUE],
+            due_date__lte=horizon,
+        ).select_related('loan').order_by('due_date')[:20]
+        for inst in upcoming_installments:
+            upcoming.append({
+                'type': 'LOAN_INSTALLMENT',
+                'label': f"Cuota #{inst.number} — {inst.loan.display_id}",
+                'due_date': inst.due_date.isoformat(),
+                'amount': float(inst.total_amount),
+                'entity_id': inst.loan.id,
+                'display_id': inst.loan.display_id,
+            })
+
+        # Cheques recibidos por vencer
+        expiring_checks = Check.objects.filter(
+            bank=bank, direction=Check.Direction.RECEIVED,
+            status=Check.Status.IN_PORTFOLIO,
+            due_date__lte=horizon,
+        ).order_by('due_date')[:20]
+        for ch in expiring_checks:
+            upcoming.append({
+                'type': 'CHECK',
+                'label': f"Cheque {ch.check_number}",
+                'due_date': ch.due_date.isoformat(),
+                'amount': float(ch.amount),
+                'entity_id': ch.id,
+                'display_id': ch.display_id,
+            })
+
+        # Estados de cuenta de tarjeta por vencer
+        upcoming_statements = CreditCardStatement.objects.filter(
+            card_account__in=card_accounts,
+            status__in=[CreditCardStatement.Status.OPEN, CreditCardStatement.Status.OVERDUE],
+            due_date__lte=horizon,
+        ).order_by('due_date')[:20]
+        for stmt in upcoming_statements:
+            upcoming.append({
+                'type': 'CARD_STATEMENT',
+                'label': f"Estado {stmt.period_month:02d}/{stmt.period_year}",
+                'due_date': stmt.due_date.isoformat(),
+                'amount': float(stmt.total_to_pay),
+                'entity_id': stmt.id,
+                'display_id': stmt.display_id,
+            })
+
+        upcoming.sort(key=lambda x: x['due_date'])
+
+        return Response({
+            'bank': BankSerializer(bank).data,
+            'accounts': accounts_data,
+            'summary': {
+                'total_accounts': len(accounts_data),
+                'card_count': card_accounts.count(),
+                'card_debt': float(card_debt),
+                'portfolio_checks': float(portfolio_checks),
+                'issued_checks': float(issued_checks),
+                'active_loan_count': active_loans.count(),
+                'total_loan_debt': float(total_loan_debt),
+            },
+            'upcoming_maturities': upcoming,
+        })
+
+    @action(detail=True, methods=['post'])
+    def archive(self, request, pk=None):
+        """Archivo del banco: ``is_active = False`` (cf. ADR-0037).
+
+        Valida dependencias activas con :class:`BankDeletionService`. Devuelve
+        ``409 Conflict`` si el banco tiene préstamos vigentes o cheques
+        pendientes.
+        """
+        bank = self.get_object()
+        ok, reason = BankDeletionService.can_archive(bank)
+        if not ok:
+            return Response({'detail': reason}, status=status.HTTP_409_CONFLICT)
+        bank.is_active = False
+        bank.save(update_fields=['is_active', 'updated_at'])
+        return Response(BankSerializer(bank).data)
+
+    @action(detail=True, methods=['post'])
+    def restore(self, request, pk=None):
+        """Restaura un banco archivado (``is_active = True``)."""
+        bank = self.get_object()
+        bank.is_active = True
+        bank.save(update_fields=['is_active', 'updated_at'])
+        return Response(BankSerializer(bank).data)
+
+    def destroy(self, request, *args, **kwargs):
+        """Hard delete deshabilitado para usuarios finales.
+
+        Por política (cf. [deletion-policy.md](../../../docs/20-contracts/deletion-policy.md))
+        los bancos se archivan, no se borran. Este endpoint existe solo como
+        fallback administrativo: captura ``ProtectedError`` y devuelve un
+        mensaje legible en ``409 Conflict`` cuando hay dependencias.
+        """
+        bank = self.get_object()
+        ok, reason = BankDeletionService.can_destroy(bank)
+        if not ok:
+            return Response({'detail': reason}, status=status.HTTP_409_CONFLICT)
+        try:
+            return super().destroy(request, *args, **kwargs)
+        except Exception as exc:  # ProtectedError u otros
+            return Response(
+                {'detail': str(exc) or 'No se puede eliminar el banco.'},
+                status=status.HTTP_409_CONFLICT,
+            )
 
 
 class PaymentMethodViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
@@ -67,6 +250,11 @@ class PaymentMethodViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         if instance.is_integrated:
             return Response(
                 {'detail': 'Los métodos de pago integrados (CARD_TERMINAL con dispositivo) son gestionados por el sistema. Modifique el dispositivo o proveedor en su lugar.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        if instance.bank_provisioned:
+            return Response(
+                {'detail': 'Este método de pago fue creado automáticamente al provisionar el banco. Gestiónelo desde el Centro de Bancos.'},
                 status=status.HTTP_403_FORBIDDEN,
             )
 
@@ -109,7 +297,7 @@ class TreasuryAccountViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     search_fields = ['name']
 
     def get_queryset(self):
-        qs = super().get_queryset()
+        qs = super().get_queryset().select_related('bank', 'account').prefetch_related('terminal_providers')
         exclude_id = self.request.query_params.get('exclude_id')
         if exclude_id:
             qs = qs.exclude(id=exclude_id)
@@ -119,6 +307,11 @@ class TreasuryAccountViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         if instance.account_type in TreasuryAccount._NON_CASH_EQUIVALENT_TYPES:
             return Response(
                 {'detail': f'Las cuentas de tipo {instance.get_account_type_display()} son gestionadas por el sistema (vinculadas a un proveedor de terminal). Modifique el proveedor en su lugar.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        if instance.bank_provisioned:
+            return Response(
+                {'detail': 'Esta cuenta fue creada automáticamente al provisionar el banco. Gestiónela desde el Centro de Bancos.'},
                 status=status.HTTP_403_FORBIDDEN,
             )
 
@@ -136,6 +329,18 @@ class TreasuryAccountViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
         err = self._check_system_managed(self.get_object())
         if err: return err
         return super().destroy(request, *args, **kwargs)
+
+    @action(detail=False, methods=['post'])
+    def provision(self, request):
+        """Asistente de alta: crea una cuenta + sus métodos de pago (auto-provisión)."""
+        from .provisioning_service import TreasuryProvisioningService
+        try:
+            account, _methods = TreasuryProvisioningService.provision_from_payload(
+                request.data, created_by=request.user
+            )
+        except ValidationError as e:
+            return Response({'detail': e.messages}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(self.get_serializer(account).data, status=status.HTTP_201_CREATED)
 
 
 class PaymentTerminalProviderViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
@@ -204,12 +409,9 @@ class POSTerminalViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
     def allowed_payment_methods(self, request, pk=None):
         """
         Retorna métodos de pago permitidos para este terminal.
-        
+
         Query params:
         - operation: 'sales' or 'purchases' (optional) - filtra por tipo de operación
-        
-        Returns:
-            list[PaymentMethod]: Métodos de pago permitidos
         """
         terminal = self.get_object()
         operation = request.query_params.get('operation')
@@ -386,6 +588,149 @@ class TreasuryMovementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
             traceback.print_exc()
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+    @action(detail=False, methods=['post'], url_path='card-purchase')
+    def card_purchase(self, request):
+        """
+        Crea una compra con tarjeta en N cuotas con interés
+        explícito opcional (Onda 2, ADR-0043). Si el payload trae
+        `installments > 1` o `monthly_rate > 0` y
+        `from_account.account_type == CREDIT_CARD`, delega a
+        `TreasuryService.create_card_purchase`; en cualquier otro
+        caso, 400 con instrucción de usar POST regular.
+
+        Body esperado:
+          {
+            "amount": "150000.00",
+            "from_account": <id de cuenta CREDIT_CARD>,
+            "installments": 3,
+            "monthly_rate": "0.015",  # opcional
+            "date": "2026-06-15",     # opcional, default hoy
+            "partner": <id contacto>, # opcional
+            "client_reference": "...", # opcional, idempotencia
+            "notes": "..."            # opcional
+          }
+
+        Devuelve el `CardPurchaseGroup` con sus cuotas (lazy en
+        `installments`).
+        """
+        from .models import CardPurchaseGroup
+        from contacts.models import Contact
+
+        data = request.data
+        try:
+            from_account_id = data.get('from_account')
+            if not from_account_id:
+                return Response(
+                    {'error': 'from_account es requerido.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            try:
+                from_account = TreasuryAccount.objects.get(pk=from_account_id)
+            except TreasuryAccount.DoesNotExist:
+                return Response(
+                    {'error': 'from_account no existe.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            if from_account.account_type != TreasuryAccount.Type.CREDIT_CARD:
+                return Response(
+                    {'error': 'card-purchase requiere from_account de tipo CREDIT_CARD.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            partner = None
+            partner_id = data.get('partner')
+            if partner_id:
+                try:
+                    partner = Contact.objects.get(pk=partner_id)
+                except Contact.DoesNotExist:
+                    return Response(
+                        {'error': 'partner no existe.'},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+
+            installments = int(data.get('installments', 1))
+            monthly_rate = data.get('monthly_rate', '0') or '0'
+            amount = data.get('amount', '0')
+            date_value = data.get('date')
+            if date_value and isinstance(date_value, str):
+                from datetime import date as _date
+                date_value = _date.fromisoformat(date_value)
+
+            # Resolve invoice / sale_order / purchase_order for accounting entries
+            invoice = None
+            invoice_id = data.get('invoice')
+            if invoice_id:
+                from billing.models import Invoice
+                invoice = Invoice.objects.filter(pk=invoice_id).first()
+
+            sale_order = None
+            sale_order_id = data.get('sale_order')
+            if sale_order_id:
+                from sales.models import SaleOrder
+                sale_order = SaleOrder.objects.filter(pk=sale_order_id).first()
+
+            purchase_order = None
+            purchase_order_id = data.get('purchase_order')
+            if purchase_order_id:
+                from purchasing.models import PurchaseOrder
+                purchase_order = PurchaseOrder.objects.filter(pk=purchase_order_id).first()
+
+            group = TreasuryService.create_card_purchase(
+                amount=amount,
+                card_account=from_account,
+                installments=installments,
+                monthly_rate=monthly_rate,
+                date=date_value,
+                partner=partner,
+                invoice=invoice,
+                sale_order=sale_order,
+                purchase_order=purchase_order,
+                client_reference=data.get('client_reference', '') or '',
+                notes=data.get('notes', '') or '',
+                created_by=request.user,
+            )
+            # Devolver el grupo + el movimiento del uso + el cronograma
+            # de cuotas (ADR-0046). `installments` es ahora el cronograma
+            # (filas planas), no N movimientos.
+            schedule_data = [
+                {
+                    'number': inst.number,
+                    'due_date': inst.due_date.isoformat(),
+                    'principal_amount': str(inst.principal_amount),
+                    'is_billed': inst.is_billed,
+                }
+                for inst in group.schedule.all().order_by('number')
+            ]
+            use_movement = group.movements.order_by('id').first()
+            return Response(
+                {
+                    'group': {
+                        'uuid': str(group.uuid),
+                        'display_id': group.display_id,
+                        'card_account': from_account.id,
+                        'total_amount': str(group.total_amount),
+                        'installments': group.installments,
+                        'monthly_rate': str(group.monthly_rate),
+                        'first_installment_date': group.first_installment_date.isoformat(),
+                        'client_reference': group.client_reference,
+                        'total_interest': str(group.total_interest),
+                        'total_payable': str(group.total_payable),
+                    },
+                    'movement': (
+                        TreasuryMovementSerializer(use_movement).data
+                        if use_movement else None
+                    ),
+                    'installments': schedule_data,
+                },
+                status=status.HTTP_201_CREATED,
+            )
+        except ValidationError as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
     @action(detail=True, methods=['post'])
     def annul(self, request, pk=None):
         movement = self.get_object()
@@ -495,7 +840,8 @@ class TreasuryMovementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
 class BankStatementViewSet(viewsets.ModelViewSet):
     """ViewSet for managing bank statements"""
     queryset = BankStatement.objects.all().select_related('treasury_account', 'imported_by')
-    
+    filterset_fields = ['status', 'treasury_account']
+
     def get_serializer_class(self):
         if self.action == 'list':
             return BankStatementListSerializer
@@ -1247,6 +1593,100 @@ class POSSessionViewSet(viewsets.ModelViewSet):
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+class CheckViewSet(viewsets.ModelViewSet):
+    """CRUD + transiciones de estado para cheques recibidos."""
+    from .serializers import CheckSerializer
+    from .models import Check as CheckModel
+
+    serializer_class = CheckSerializer
+    filterset_fields = ['status', 'direction', 'bank', 'counterparty']
+
+    def get_queryset(self):
+        from .models import Check as CheckModel
+        qs = CheckModel.objects.select_related(
+            'bank', 'counterparty', 'portfolio_account', 'deposit_account'
+        )
+        due_before = self.request.query_params.get('due_before')
+        if due_before:
+            qs = qs.filter(due_date__lte=due_before)
+        return qs.order_by('due_date', '-id')
+
+    def perform_create(self, serializer):
+        from .check_service import CheckService
+        data = self.request.data
+        check = CheckService.receive(
+            bank_id=data['bank'],
+            check_number=data['check_number'],
+            amount=data['amount'],
+            issue_date=data['issue_date'],
+            due_date=data['due_date'],
+            counterparty_id=data.get('counterparty'),
+            drawer_name=data.get('drawer_name', ''),
+            notes=data.get('notes', ''),
+            invoice_id=data.get('invoice'),
+            sale_order_id=data.get('sale_order'),
+            created_by=self.request.user,
+        )
+        serializer.instance = check
+
+    @action(detail=True, methods=['post'])
+    def deposit(self, request, pk=None):
+        from .check_service import CheckService
+        check = self.get_object()
+        try:
+            deposit_account = TreasuryAccount.objects.get(pk=request.data['deposit_account'])
+            check = CheckService.deposit(check, deposit_account, created_by=request.user)
+        except (ValidationError, TreasuryAccount.DoesNotExist, KeyError) as e:
+            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(self.get_serializer(check).data)
+
+    @action(detail=True, methods=['post'])
+    def clear(self, request, pk=None):
+        from .check_service import CheckService
+        check = self.get_object()
+        try:
+            check = CheckService.clear(check)
+        except ValidationError as e:
+            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(self.get_serializer(check).data)
+
+    @action(detail=True, methods=['post'])
+    def bounce(self, request, pk=None):
+        from .check_service import CheckService
+        check = self.get_object()
+        try:
+            check = CheckService.bounce(check, notes=request.data.get('notes', ''), created_by=request.user)
+        except ValidationError as e:
+            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(self.get_serializer(check).data)
+
+    @action(detail=True, methods=['post'])
+    def void(self, request, pk=None):
+        from .check_service import CheckService
+        check = self.get_object()
+        try:
+            check = CheckService.void(check, notes=request.data.get('notes', ''))
+        except ValidationError as e:
+            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(self.get_serializer(check).data)
+
+    @action(detail=False, methods=['get'])
+    def portfolio(self, request):
+        from .check_service import CheckService
+        bank_id = request.query_params.get('bank')
+        summary = CheckService.get_portfolio_summary(bank_id=bank_id)
+        data = self.get_serializer(summary['checks'], many=True).data
+        return Response({'checks': data, 'total': summary['total']})
+
+    @action(detail=False, methods=['get'])
+    def in_transit(self, request):
+        from .check_service import CheckService
+        bank_id = request.query_params.get('bank')
+        summary = CheckService.get_in_transit_summary(bank_id=bank_id)
+        data = self.get_serializer(summary['checks'], many=True).data
+        return Response({'checks': data, 'total': summary['total']})
+
+
 class TreasuryDashboardViewSet(viewsets.ViewSet):
     """
     Vista consolidada de flujos de efectivo y gestión de tesorería.
@@ -1276,6 +1716,117 @@ class TreasuryDashboardViewSet(viewsets.ViewSet):
         from .serializers import TreasuryAccountSerializer
         serializer = TreasuryAccountSerializer(accounts, many=True)
         return Response(serializer.data)
+
+    @action(detail=False, methods=['get'])
+    def future_maturities(self, request):
+        """
+        Vencimientos futuros para proyección de flujo de caja (F5.3).
+        Query params: days_ahead (default 90), treasury_account (optional).
+        """
+        from datetime import timedelta
+        from django.db.models import Sum
+        days = int(request.query_params.get('days_ahead', 90))
+        today = timezone.now().date()
+        horizon = today + timedelta(days=days)
+        treasury_account_id = request.query_params.get('treasury_account')
+
+        items = []
+
+        # Cuotas de préstamo pendientes
+        installments_qs = LoanInstallment.objects.filter(
+            status__in=[LoanInstallment.Status.PENDING, LoanInstallment.Status.OVERDUE],
+            due_date__gte=today,
+            due_date__lte=horizon,
+        ).select_related('loan', 'loan__lender')
+        if treasury_account_id:
+            installments_qs = installments_qs.filter(
+                loan__disbursement_account_id=treasury_account_id
+            )
+        for inst in installments_qs:
+            items.append({
+                'type': 'LOAN_INSTALLMENT',
+                'direction': 'OUTBOUND',
+                'label': f"Cuota #{inst.number} — {inst.loan.display_id}",
+                'due_date': inst.due_date.isoformat(),
+                'amount': float(inst.total_amount),
+                'account_id': inst.loan.disbursement_account_id,
+            })
+
+        # Cheques recibidos en cartera por vencer
+        checks_qs = Check.objects.filter(
+            direction=Check.Direction.RECEIVED,
+            status=Check.Status.IN_PORTFOLIO,
+            due_date__gte=today,
+            due_date__lte=horizon,
+        )
+        if treasury_account_id:
+            checks_qs = checks_qs.filter(deposit_account_id=treasury_account_id)
+        for ch in checks_qs:
+            items.append({
+                'type': 'CHECK_RECEIVED',
+                'direction': 'INBOUND',
+                'label': f"Cheque {ch.check_number} — {ch.display_id}",
+                'due_date': ch.due_date.isoformat(),
+                'amount': float(ch.amount),
+                'account_id': ch.deposit_account_id,
+            })
+
+        # Cheques propios girados por vencer
+        issued_checks_qs = Check.objects.filter(
+            direction=Check.Direction.ISSUED,
+            status=Check.Status.ISSUED,
+            due_date__gte=today,
+            due_date__lte=horizon,
+        )
+        if treasury_account_id:
+            issued_checks_qs = issued_checks_qs.filter(payment_account_id=treasury_account_id)
+        for ch in issued_checks_qs:
+            items.append({
+                'type': 'CHECK_ISSUED',
+                'direction': 'OUTBOUND',
+                'label': f"Cheque propio {ch.check_number} — {ch.display_id}",
+                'due_date': ch.due_date.isoformat(),
+                'amount': float(ch.amount),
+                'account_id': ch.payment_account_id,
+            })
+
+        # Estados de cuenta de tarjeta por vencer
+        statements_qs = CreditCardStatement.objects.filter(
+            status__in=[CreditCardStatement.Status.OPEN, CreditCardStatement.Status.OVERDUE],
+            due_date__gte=today,
+            due_date__lte=horizon,
+        ).select_related('card_account')
+        if treasury_account_id:
+            statements_qs = statements_qs.filter(card_account_id=treasury_account_id)
+        for stmt in statements_qs:
+            items.append({
+                'type': 'CARD_STATEMENT',
+                'direction': 'OUTBOUND',
+                'label': f"Estado tarjeta {stmt.period_month:02d}/{stmt.period_year} — {stmt.display_id}",
+                'due_date': stmt.due_date.isoformat(),
+                'amount': float(stmt.total_to_pay),
+                'account_id': stmt.card_account_id,
+            })
+
+        items.sort(key=lambda x: x['due_date'])
+
+        # Aggregate by month for the projection
+        from collections import defaultdict
+        monthly = defaultdict(lambda: {'inbound': 0, 'outbound': 0})
+        for item in items:
+            month_key = item['due_date'][:7]  # YYYY-MM
+            if item['direction'] == 'INBOUND':
+                monthly[month_key]['inbound'] += item['amount']
+            else:
+                monthly[month_key]['outbound'] += item['amount']
+
+        return Response({
+            'items': items,
+            'monthly_summary': [
+                {'month': k, 'inbound': v['inbound'], 'outbound': v['outbound'], 'net': v['inbound'] - v['outbound']}
+                for k, v in sorted(monthly.items())
+            ],
+        })
 
     def list(self, request):
         """
@@ -1499,3 +2050,712 @@ class TerminalBatchViewSet(viewsets.ModelViewSet):
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
+# ── F2.11: Créditos bancarios (BankLoan + LoanInstallment) ──────────────────
+
+
+class BankLoanViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
+    """CRUD + acciones de lifecycle para créditos bancarios (Fase 2).
+
+    Acciones custom:
+      - POST /loans/{id}/disburse/  → desembolsar (idempotente si ya ACTIVE).
+      - POST /loans/{id}/prepay/    → pago total anticipado.
+      - POST /loans/{id}/refinance/ → marca REFINANCED (no paga, sólo cierra).
+      - GET  /loans/{id}/schedule/  → preview de tabla de amortización sin
+        persistir (útil al registrar el crédito).
+      - GET  /loans/{id}/amortization_table/ → tabla persistida con cuotas.
+    """
+    from .models import BankLoan
+    from .serializers import BankLoanSerializer as _BLRead
+
+    serializer_class = BankLoanSerializer
+    filterset_fields = ['status', 'currency', 'lender', 'amortization_system']
+
+    def get_queryset(self):
+        from .models import BankLoan
+        return (BankLoan.objects
+                .select_related(
+                    'lender', 'disbursement_account', 'liability_account',
+                    'created_by',
+                )
+                .prefetch_related('installments')
+                .order_by('-start_date', '-id'))
+
+    def get_serializer_class(self):
+        from .serializers import BankLoanSerializer, BankLoanWriteSerializer
+        if self.action in ('create', 'update', 'partial_update'):
+            return BankLoanWriteSerializer
+        return BankLoanSerializer
+
+    def perform_create(self, serializer):
+        from .models import BankLoan
+        from django.core.exceptions import ValidationError as DjangoValidationError
+        from .loan_provisioning import get_or_create_loan_treasury_account
+
+        # El write serializer expone `liability_account` apuntando a
+        # `Account` (cuenta contable), no a `TreasuryAccount`. Aquí
+        # resolvemos/creamos la wrapper LOAN correspondiente y la
+        # inyectamos en `validated_data` para que el `save()` del
+        # ModelSerializer asigne la FK correcta del modelo.
+        validated = serializer.validated_data
+        accounting_account = validated.get('liability_account')
+        if accounting_account is not None:
+            # Necesitamos `loan.lender` para resolver; pero todavía no
+            # tenemos `loan`. Usamos el `lender` validado directamente.
+            from .models import Bank
+            lender = validated.get('lender')
+            if not isinstance(lender, Bank):
+                lender = Bank.objects.get(pk=lender)
+            try:
+                ta = get_or_create_loan_treasury_account(
+                    bank=lender,
+                    accounting_account=accounting_account,
+                    currency=validated.get('currency', 'CLP'),
+                )
+            except DjangoValidationError as e:
+                # Si la cuenta contable ya está usada por otro tipo de TA,
+                # devolvemos 400 con detalle legible.
+                msg = e.message_dict if hasattr(e, 'message_dict') else (
+                    e.messages if hasattr(e, 'messages') else [str(e)]
+                )
+                raise drf_serializers.ValidationError({'liability_account': msg})
+            validated['liability_account'] = ta
+
+        try:
+            loan = serializer.save(created_by=self.request.user)
+        except DjangoValidationError as e:
+            raise drf_serializers.ValidationError(e.message_dict if hasattr(e, 'message_dict') else e.messages)
+
+        # Devolver el objeto hidratado al serializer de lectura.
+        self._just_created = loan
+
+    def create(self, request, *args, **kwargs):
+        write_serializer = self.get_serializer(data=request.data)
+        write_serializer.is_valid(raise_exception=True)
+        self.perform_create(write_serializer)
+        read_serializer = BankLoanSerializer(self._just_created, context={'request': request})
+        return Response(read_serializer.data, status=status.HTTP_201_CREATED)
+
+    def perform_update(self, serializer):
+        from django.core.exceptions import ValidationError as DjangoValidationError
+        try:
+            serializer.save()
+        except DjangoValidationError as e:
+            raise drf_serializers.ValidationError(e.message_dict if hasattr(e, 'message_dict') else e.messages)
+
+    @action(detail=True, methods=['post'])
+    def disburse(self, request, pk=None):
+        from .loan_service import LoanService
+        from decimal import Decimal
+        loan = self.get_object()
+        payload = DisburseLoanActionSerializer(data=request.data)
+        payload.is_valid(raise_exception=True)
+        v = payload.validated_data
+        try:
+            loan = LoanService.disburse(
+                loan,
+                date=v.get('date'),
+                opening_fee_override=(
+                    Decimal(str(v['opening_fee'])) if v.get('opening_fee') is not None else None
+                ),
+                stamp_tax_override=(
+                    Decimal(str(v['stamp_tax'])) if v.get('stamp_tax') is not None else None
+                ),
+                commission_expense_account=v.get('commission_expense_account'),
+                stamp_tax_expense_account=v.get('stamp_tax_expense_account'),
+                created_by=request.user,
+            )
+        except ValidationError as e:
+            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        # Refrescar para invalidar el prefetch de installments.
+        loan.refresh_from_db()
+        return Response(self.get_serializer(loan).data)
+
+    @action(detail=True, methods=['post'])
+    def prepay(self, request, pk=None):
+        from .loan_service import LoanService
+        from .models import TreasuryAccount
+        loan = self.get_object()
+        payload = PrepayLoanActionSerializer(data=request.data)
+        payload.is_valid(raise_exception=True)
+        v = payload.validated_data
+        try:
+            payment_account = TreasuryAccount.objects.get(pk=v['payment_account'])
+        except TreasuryAccount.DoesNotExist:
+            return Response(
+                {'detail': 'payment_account no existe.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        interest_exp = v.get('interest_expense_account')
+        insurance_exp = v.get('insurance_expense_account')
+        try:
+            loan = LoanService.prepay(
+                loan,
+                payment_account=payment_account,
+                interest_expense_account=interest_exp,
+                insurance_expense_account=insurance_exp,
+                date=v.get('date'),
+                created_by=request.user,
+                insurance_amount=v.get('insurance_amount'),
+                tax_amount=v.get('tax_amount'),
+                penalty_amount=v.get('penalty_amount'),
+            )
+        except ValidationError as e:
+            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        loan.refresh_from_db()
+        return Response(self.get_serializer(loan).data)
+
+    @action(detail=True, methods=['get'])
+    def schedule(self, request, pk=None):
+        """Preview de la tabla de amortización SIN persistir."""
+        from decimal import Decimal
+        from .loan_service import _add_months
+        loan = self.get_object()
+        if loan.installments.exists():
+            return Response(
+                {'detail': 'El crédito ya tiene una tabla generada. Use GET amortization_table.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        # Calcular in-memory (mismo algoritmo que generate_schedule).
+        if loan.rate_basis == loan.RateBasis.MONTHLY:
+            i = (loan.interest_rate / Decimal('100'))
+        else:
+            i = (loan.interest_rate / Decimal('100')) / Decimal('12')
+        if i <= 0:
+            i = Decimal('0')
+        n = loan.term_months
+        P = loan.principal
+        ins = loan.insurance_monthly or Decimal('0')
+        # Calcular cuota francesa fija.
+        if i == 0:
+            C = P / Decimal(n)
+        else:
+            C = P * i / (Decimal(1) - (Decimal(1) + i) ** (-n))
+        rows = []
+        balance = P
+        for k in range(1, n + 1):
+            interest = (balance * i).quantize(Decimal('0.01'))
+            principal = (C - interest).quantize(Decimal('0.01'))
+            if k == n:  # última cuota: ajuste de redondeo
+                principal = balance
+            total = principal + interest + ins
+            balance = (balance - principal).quantize(Decimal('0.01'))
+            rows.append({
+                'number': k,
+                'due_date': _add_months(loan.first_due_date, k - 1).isoformat(),
+                'principal_amount': str(principal),
+                'interest_amount': str(interest),
+                'insurance_amount': str(ins),
+                'total_amount': str(total),
+                'outstanding_balance': str(balance),
+            })
+        return Response({
+            'currency': loan.currency,
+            'monthly_rate': str(i),
+            'installments': rows,
+        })
+
+    @action(detail=True, methods=['get'])
+    def amortization_table(self, request, pk=None):
+        loan = self.get_object()
+        return Response(self.get_serializer(loan).data)
+
+
+class LoanInstallmentViewSet(viewsets.ModelViewSet):
+    """Listado y pago de cuotas. Creación/edición no expuestas (se generan
+    vía `BankLoan.generate_schedule` y se cierran vía acciones de pago)."""
+    from .models import LoanInstallment
+    serializer_class = LoanInstallmentSerializer
+    filterset_fields = ['status', 'loan']
+    http_method_names = ['get', 'post', 'head', 'options']  # sin PUT/DELETE
+
+    def get_queryset(self):
+        from .models import LoanInstallment
+        return (LoanInstallment.objects
+                .select_related('loan', 'loan__lender', 'payment_movement')
+                .order_by('loan', 'number'))
+
+    @action(detail=True, methods=['post'])
+    def pay(self, request, pk=None):
+        from .loan_service import LoanService
+        from .models import TreasuryAccount
+        from accounting.models import Account
+        installment = self.get_object()
+        payload = PayInstallmentActionSerializer(data=request.data)
+        payload.is_valid(raise_exception=True)
+        v = payload.validated_data
+        try:
+            payment_account = TreasuryAccount.objects.get(pk=v['payment_account'])
+        except TreasuryAccount.DoesNotExist:
+            return Response(
+                {'detail': 'payment_account no existe.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        interest_exp = None
+        insurance_exp = None
+        if v.get('interest_expense_account'):
+            try:
+                interest_exp = Account.objects.get(pk=v['interest_expense_account'])
+            except Account.DoesNotExist:
+                return Response(
+                    {'detail': 'interest_expense_account no existe.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+        if v.get('insurance_expense_account'):
+            try:
+                insurance_exp = Account.objects.get(pk=v['insurance_expense_account'])
+            except Account.DoesNotExist:
+                return Response(
+                    {'detail': 'insurance_expense_account no existe.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+        try:
+            installment = LoanService.pay_installment(
+                installment.loan,
+                installment,
+                payment_account=payment_account,
+                interest_expense_account=interest_exp,
+                insurance_expense_account=insurance_exp,
+                date=v.get('date'),
+                created_by=request.user,
+                principal_amount=v.get('principal_amount'),
+                interest_amount=v.get('interest_amount'),
+                insurance_amount=v.get('insurance_amount'),
+                tax_amount=v.get('tax_amount'),
+                penalty_amount=v.get('penalty_amount'),
+            )
+        except ValidationError as e:
+            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(self.get_serializer(installment).data)
+
+
+# ── F3.5: Tarjeta de crédito propia — estados de cuenta ─────────────────────
+
+
+class CreditCardStatementViewSet(viewsets.ModelViewSet, AuditHistoryMixin):
+    """CRUD + acciones de lifecycle para estados de cuenta de tarjeta de crédito propia.
+
+    Acciones custom:
+      - POST /card-statements/{id}/pay/          → pagar desde una cuenta bancaria.
+      - POST /card-statements/{id}/apply-charges/ → imputar interés/comisiones.
+      - POST /card-statements/{id}/cancel/       → anular un statement OPEN.
+    """
+    from .models import CreditCardStatement
+
+    serializer_class = CreditCardStatementSerializer
+    filterset_fields = ['status', 'card_account', 'period_year', 'period_month']
+
+    def get_queryset(self):
+        from .models import CreditCardStatement
+        qs = CreditCardStatement.objects.select_related(
+            'card_account', 'payment_account', 'payment_movement', 'created_by'
+        ).order_by('-period_year', '-period_month', '-id')
+        bank_id = self.request.query_params.get('bank')
+        if bank_id:
+            qs = qs.filter(card_account__bank_id=bank_id)
+        return qs
+
+    def get_serializer_class(self):
+        if self.action in ('create', 'update', 'partial_update'):
+            return CreditCardStatementWriteSerializer
+        return CreditCardStatementSerializer
+
+    def perform_create(self, serializer):
+        from django.core.exceptions import ValidationError as DjangoValidationError
+        try:
+            stmt = serializer.save(created_by=self.request.user)
+        except DjangoValidationError as e:
+            raise drf_serializers.ValidationError(e.message_dict if hasattr(e, 'message_dict') else e.messages)
+        self._just_created = stmt
+
+    def create(self, request, *args, **kwargs):
+        write_serializer = self.get_serializer(data=request.data)
+        write_serializer.is_valid(raise_exception=True)
+        self.perform_create(write_serializer)
+        read_serializer = CreditCardStatementSerializer(self._just_created, context={'request': request})
+        return Response(read_serializer.data, status=status.HTTP_201_CREATED)
+
+    def perform_update(self, serializer):
+        from django.core.exceptions import ValidationError as DjangoValidationError
+        try:
+            serializer.save()
+        except DjangoValidationError as e:
+            raise drf_serializers.ValidationError(e.message_dict if hasattr(e, 'message_dict') else e.messages)
+
+    @action(detail=True, methods=['post'])
+    def pay(self, request, pk=None):
+        from .card_service import CardService
+        from .models import TreasuryAccount
+        stmt = self.get_object()
+        payload = PayStatementActionSerializer(data=request.data)
+        payload.is_valid(raise_exception=True)
+        v = payload.validated_data
+        try:
+            payment_account = TreasuryAccount.objects.get(pk=v['payment_account'])
+        except TreasuryAccount.DoesNotExist:
+            return Response(
+                {'detail': 'payment_account no existe.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        try:
+            stmt = CardService.pay_statement(
+                stmt,
+                payment_account=payment_account,
+                amount=v.get('amount'),
+                date=v.get('date'),
+                created_by=request.user,
+            )
+        except ValidationError as e:
+            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        stmt.refresh_from_db()
+        return Response(self.get_serializer(stmt).data)
+
+    @action(detail=True, methods=['post'], url_path='apply-charges')
+    def apply_charges(self, request, pk=None):
+        from .card_service import CardService
+        from accounting.models import Account
+        stmt = self.get_object()
+        payload = ApplyChargesActionSerializer(data=request.data)
+        payload.is_valid(raise_exception=True)
+        v = payload.validated_data
+        interest_exp = None
+        fees_exp = None
+        if v.get('interest_expense_account'):
+            try:
+                interest_exp = Account.objects.get(pk=v['interest_expense_account'])
+            except Account.DoesNotExist:
+                return Response(
+                    {'detail': 'interest_expense_account no existe.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+        if v.get('fees_expense_account'):
+            try:
+                fees_exp = Account.objects.get(pk=v['fees_expense_account'])
+            except Account.DoesNotExist:
+                return Response(
+                    {'detail': 'fees_expense_account no existe.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+        try:
+            stmt = CardService.apply_charges(
+                stmt,
+                interest_expense_account=interest_exp,
+                fees_expense_account=fees_exp,
+                created_by=request.user,
+            )
+        except ValidationError as e:
+            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        stmt.refresh_from_db()
+        return Response(self.get_serializer(stmt).data)
+
+    @action(detail=True, methods=['post'])
+    def cancel(self, request, pk=None):
+        """Anula el estado de cuenta: revierte la facturación de cargos/cuotas
+        y marca como CANCELED. Solo disponible si no está pagado."""
+        from .card_service import CardService
+        stmt = self.get_object()
+        if stmt.status == 'PAID':
+            return Response(
+                {'detail': 'No se puede anular un estado de cuenta pagado.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        notes = request.data.get('notes', '')
+        try:
+            stmt = CardService.reverse_statement(stmt, notes=notes)
+        except ValidationError as e:
+            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        stmt.refresh_from_db()
+        return Response(self.get_serializer(stmt).data)
+
+    @action(detail=True, methods=['post'], url_path='recalculate')
+    def recalculate(self, request, pk=None):
+        """Recalcula `billed_amount` agregando los OUTBOUND del período (Gap 1.2)."""
+        from .card_service import CardService
+        stmt = self.get_object()
+        try:
+            new_amount = CardService.recalculate_billed_amount(stmt)
+        except ValidationError as e:
+            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        stmt.refresh_from_db()
+        return Response(self.get_serializer(stmt).data)
+
+    @action(detail=True, methods=['post'], url_path='reapply-charges')
+    def reapply_charges(self, request, pk=None):
+        """Reversa el cargo actual y vuelve a imputarlo (Gap 1.4)."""
+        from .card_service import CardService
+        from accounting.models import Account
+        stmt = self.get_object()
+        payload = ApplyChargesActionSerializer(data=request.data)
+        payload.is_valid(raise_exception=True)
+        v = payload.validated_data
+        interest_exp = None
+        fees_exp = None
+        if v.get('interest_expense_account'):
+            try:
+                interest_exp = Account.objects.get(pk=v['interest_expense_account'])
+            except Account.DoesNotExist:
+                return Response(
+                    {'detail': 'interest_expense_account no existe.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+        if v.get('fees_expense_account'):
+            try:
+                fees_exp = Account.objects.get(pk=v['fees_expense_account'])
+            except Account.DoesNotExist:
+                return Response(
+                    {'detail': 'fees_expense_account no existe.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+        try:
+            stmt = CardService.reapply_charges(
+                stmt,
+                interest_expense_account=interest_exp,
+                fees_expense_account=fees_exp,
+                created_by=request.user,
+            )
+        except ValidationError as e:
+            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        stmt.refresh_from_db()
+        return Response(self.get_serializer(stmt).data)
+
+    @action(detail=False, methods=['get'], url_path='unbilled-charges')
+    def unbilled_charges(self, request):
+        """Lista cargos no facturados de una tarjeta de crédito."""
+        from .card_service import CardService
+        from .models import TreasuryAccount, TreasuryMovement
+        from datetime import date as _date_type
+
+        card_account_id = request.query_params.get('card_account')
+        if not card_account_id:
+            return Response(
+                {'detail': 'card_account es requerido.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        try:
+            card_account = TreasuryAccount.objects.get(pk=card_account_id)
+        except TreasuryAccount.DoesNotExist:
+            return Response(
+                {'detail': 'card_account no existe.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if card_account.account_type != TreasuryAccount.Type.CREDIT_CARD:
+            return Response(
+                {'detail': 'La cuenta debe ser de tipo Tarjeta de Crédito.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        cut_off_date_str = request.query_params.get('cut_off_date')
+        cut_off_date = _date_type.fromisoformat(cut_off_date_str) if cut_off_date_str else None
+
+        charges = CardService.get_unbilled_charges(card_account, cut_off_date=cut_off_date)
+        summary = CardService.get_unbilled_summary(card_account, cut_off_date=cut_off_date)
+        installments = CardService.get_unbilled_installments(card_account, cut_off_date=cut_off_date)
+
+        # Serializar los movimientos
+        from .serializers import TreasuryMovementSerializer
+        data = TreasuryMovementSerializer(charges, many=True).data
+
+        # Próximas cuotas del cronograma (ADR-0046): filas planas.
+        installments_data = [
+            {
+                'id': inst.id,
+                'number': inst.number,
+                'due_date': inst.due_date.isoformat(),
+                'principal_amount': str(inst.principal_amount),
+                'group_uuid': str(inst.card_purchase_group.uuid),
+                'group_display_id': inst.card_purchase_group.display_id,
+                'partner_name': (
+                    inst.card_purchase_group.partner.name
+                    if inst.card_purchase_group.partner else None
+                ),
+                'total_installments': inst.card_purchase_group.installments,
+            }
+            for inst in installments
+        ]
+
+        return Response({
+            'charges': data,
+            'upcoming_installments': installments_data,
+            'summary': summary,
+        })
+
+    @action(detail=False, methods=['post'], url_path='add-charge')
+    def add_charge(self, request):
+        """Agrega un cargo no facturado a una tarjeta de crédito."""
+        from .card_service import CardService
+        from .models import TreasuryAccount
+        from datetime import date as _date
+
+        card_account_id = request.data.get('card_account')
+        amount = request.data.get('amount')
+        charge_type = request.data.get('charge_type', 'OTHER')
+        description = request.data.get('description', '')
+        date_str = request.data.get('date')
+
+        if not card_account_id:
+            return Response(
+                {'detail': 'card_account es requerido.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if not amount:
+            return Response(
+                {'detail': 'amount es requerido.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            card_account = TreasuryAccount.objects.get(pk=card_account_id)
+        except TreasuryAccount.DoesNotExist:
+            return Response(
+                {'detail': 'card_account no existe.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        charge_date = None
+        if date_str:
+            from datetime import date as _date_type
+            try:
+                charge_date = _date_type.fromisoformat(date_str)
+            except ValueError:
+                return Response(
+                    {'detail': 'Formato de fecha inválido. Use YYYY-MM-DD.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        try:
+            movement = CardService.add_unbilled_charge(
+                card_account=card_account,
+                amount=Decimal(str(amount)),
+                charge_type=charge_type,
+                description=description,
+                date=charge_date,
+                created_by=request.user,
+            )
+        except ValidationError as e:
+            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        from .serializers import TreasuryMovementSerializer
+        return Response(
+            TreasuryMovementSerializer(movement).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+    @action(detail=False, methods=['post'], url_path='bill-charges')
+    def bill_charges(self, request):
+        """Factura los cargos no facturados de una tarjeta de crédito."""
+        from .card_service import CardService
+        from .models import TreasuryAccount
+        from datetime import date as _date_type
+
+        card_account_id = request.data.get('card_account')
+        period_year = request.data.get('period_year')
+        period_month = request.data.get('period_month')
+        cut_off_date_str = request.data.get('cut_off_date')
+        due_date_str = request.data.get('due_date')
+        minimum_payment = request.data.get('minimum_payment', '0')
+        notes = request.data.get('notes', '')
+
+        if not card_account_id:
+            return Response(
+                {'detail': 'card_account es requerido.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if not period_year or not period_month:
+            return Response(
+                {'detail': 'period_year y period_month son requeridos.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if not cut_off_date_str or not due_date_str:
+            return Response(
+                {'detail': 'cut_off_date y due_date son requeridos.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            card_account = TreasuryAccount.objects.get(pk=card_account_id)
+        except TreasuryAccount.DoesNotExist:
+            return Response(
+                {'detail': 'card_account no existe.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            cut_off_date = _date_type.fromisoformat(cut_off_date_str)
+            due_date = _date_type.fromisoformat(due_date_str)
+        except ValueError:
+            return Response(
+                {'detail': 'Formato de fecha inválido. Use YYYY-MM-DD.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            statement = CardService.bill_unbilled_charges(
+                card_account=card_account,
+                period_year=int(period_year),
+                period_month=int(period_month),
+                cut_off_date=cut_off_date,
+                due_date=due_date,
+                minimum_payment=Decimal(str(minimum_payment)),
+                notes=notes,
+                created_by=request.user,
+            )
+        except ValidationError as e:
+            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        from .serializers import CreditCardStatementSerializer
+        result = CreditCardStatementSerializer(statement).data
+        # Incluir desglose por grupo de compra si está disponible
+        breakdown = getattr(statement, '_purchase_group_breakdown', None)
+        if breakdown:
+            result['purchase_group_breakdown'] = breakdown
+        return Response(
+            result,
+            status=status.HTTP_201_CREATED,
+        )
+
+    @action(detail=True, methods=['get'], url_path='charges')
+    def charges(self, request, pk=None):
+        """Retorna cargos facturados en este statement (movimientos + cuotas)."""
+        from .models import TreasuryMovement, CardPurchaseInstallment
+        from .serializers import TreasuryMovementSerializer
+        stmt = self.get_object()
+        movements = TreasuryMovement.objects.filter(
+            billed_in_statement=stmt,
+        ).select_related('card_purchase_group', 'card_purchase_group__partner').order_by('-date', '-id')
+        installments = CardPurchaseInstallment.objects.filter(
+            billed_in_statement=stmt,
+        ).select_related('card_purchase_group', 'card_purchase_group__partner').order_by('-due_date', '-id')
+        installments_data = [
+            {
+                'id': inst.id,
+                'number': inst.number,
+                'due_date': inst.due_date.isoformat(),
+                'principal_amount': str(inst.principal_amount),
+                'group_uuid': str(inst.card_purchase_group.uuid) if inst.card_purchase_group else None,
+                'group_display_id': inst.card_purchase_group.display_id if inst.card_purchase_group else None,
+                'partner_name': (
+                    inst.card_purchase_group.partner.name
+                    if inst.card_purchase_group and inst.card_purchase_group.partner else None
+                ),
+                'total_installments': inst.card_purchase_group.installments if inst.card_purchase_group else None,
+            }
+            for inst in installments
+        ]
+        return Response({
+            'movements': TreasuryMovementSerializer(movements, many=True).data,
+            'installments': installments_data,
+        })
+
+    @action(detail=True, methods=['post'], url_path='reverse')
+    def reverse(self, request, pk=None):
+        """Reversa contablemente cargos + pago y anula el statement
+        (Gap 1.6, ADR-0037). Equivalente a `cancel` con limpieza
+        contable transaccional. Refresca saldos de la tarjeta y banco."""
+        from .card_service import CardService
+        stmt = self.get_object()
+        notes = request.data.get('notes', '') or ''
+        try:
+            stmt = CardService.reverse_statement(stmt, notes=notes)
+        except ValidationError as e:
+            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        stmt.refresh_from_db()
+        return Response(self.get_serializer(stmt).data)

@@ -88,7 +88,7 @@ export function LabeledSwitch({
             disabled={disabled}
             className={cn(
                 "transition-all duration-300",
-                !checked && "border-dashed bg-background border-border hover:border-muted-foreground/30 hover:bg-muted/10 shadow-[inset_0_1px_2px_oklch(0.12_0.02_240_/_0.1)] dark:shadow-[inset_0_1px_2px_oklch(1_0_0_/_0.02)]",
+                !checked && "border-dashed bg-transparent border-border hover:border-muted-foreground/30 hover:bg-muted/10",
                 checked && colorStyles.container,
                 className
             )}

@@ -23,7 +23,7 @@ import { Badge } from "@/components/ui/badge"
 import { useProductSearch, useSingleProduct } from "@/features/inventory/hooks/useProductSearch"
 
 import { Product } from "@/types/entities"
-import { BaseModal, CardSkeleton, EmptyState, LabeledContainer } from '@/components/shared'
+import { BaseModal, CardSkeleton, EmptyState, LabeledContainer, MoneyDisplay } from '@/components/shared'
 
 interface ProductSelectorProps {
     value?: string | number | null
@@ -337,7 +337,7 @@ export function ProductSelector({
                                                     <Badge variant="outline" className="text-[9px] border-warning text-warning bg-warning/10 px-1 py-0 h-4">Precio Dinámico</Badge>
                                                 ) : (
                                                     <>
-                                                        ${(Number(product.sale_price_gross) || PricingUtils.netToGross(Number(product.sale_price))).toLocaleString()}
+                                                        <MoneyDisplay amount={Number(product.sale_price_gross) || PricingUtils.netToGross(Number(product.sale_price))} inline />
                                                         <span className="text-[9px] text-muted-foreground ml-0.5">IVA Inc.</span>
                                                     </>
                                                 )}

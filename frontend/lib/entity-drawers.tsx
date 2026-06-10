@@ -218,9 +218,8 @@ export const ENTITY_DRAWERS: Record<string, (props: EntityDrawerProps) => React.
     ),
 
     // ── Treasury ──────────────────────────────────────────────────────────────
-    "treasury.treasuryaccount": ({ id, open, onOpenChange, data, onSuccess }) => (
+    "treasury.treasuryaccount": ({ id, open, onOpenChange, onSuccess }) => (
         <TreasuryAccountDrawer
-            mode={data ? 'view' : 'create'}
             open={open}
             onOpenChange={onOpenChange}
             accountId={id}

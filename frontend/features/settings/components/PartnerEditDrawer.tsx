@@ -115,6 +115,7 @@ export function PartnerEditDrawer({ open, onOpenChange, contact, onSuccess, mode
                 onOpenChange={onOpenChange}
                 side="left"
                 defaultSize={formDrawerWidth("simple", true)}
+                mode={mode}
                 title={<><span>{drawerTitle}</span>{(mode === 'view' || mode === 'edit') && contact?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}</>}
                 subtitle={`Ajuste la participación de ${contact.name}.`}
                 footer={isView ? undefined : (

@@ -967,8 +967,10 @@ class PurchasingService:
     @staticmethod
     @transaction.atomic
     def _purchase_checkout_internal(order_data, dte_type, document_number='', document_date=None, document_attachment=None,
-                         payment_method='CREDIT', amount=None, treasury_account_id=None, transaction_number=None,
-                         payment_is_pending=False, receipt_type='IMMEDIATE', receipt_data=None, user=None):
+                         payment_method='CREDIT', amount=None, installments=1, treasury_account_id=None, transaction_number=None,
+                         payment_is_pending=False, receipt_type='IMMEDIATE', receipt_data=None, user=None,
+                         payment_method_id=None,
+                         check_number=None, check_bank_id=None, check_issue_date=None, check_due_date=None, checkbook_id=None):
         """
         Complete Purchase checkout: Create Order -> Register Bill -> Payment -> Receipt.
         
@@ -978,7 +980,7 @@ class PurchasingService:
             document_number: Supplier's invoice number (folio)
             document_date: Invoice date
             document_attachment: File attachment
-            payment_method: 'CASH', 'CARD', 'TRANSFER', 'CREDIT'
+            payment_method: 'CASH', 'CARD', 'TRANSFER', 'CHECK', 'CREDIT'
             amount: Payment amount (defaults to order total)
             treasury_account_id: Treasury account for payment
             transaction_number: Transaction reference
@@ -1033,25 +1035,82 @@ class PurchasingService:
         # 3. Register Payment (if not CREDIT)
         payment = None
         if payment_method != 'CREDIT':
+            # Map CREDIT_CARD → CARD for legacy consistency (orchestrator resolves via PaymentMethod FK)
+            if payment_method == 'CREDIT_CARD':
+                payment_method = 'CARD'
+
             payment_amount = Decimal(str(amount)) if amount is not None and str(amount) != '' else order.total
             
-            # Resolve Treasury Account
-            treasury_account = None
-            if treasury_account_id:
-                treasury_account = TreasuryAccount.objects.filter(id=treasury_account_id).first()
+            # Resolve PaymentMethod FK — required for PaymentOrchestrator path.
+            payment_method_inst = None
+            if payment_method_id:
+                from treasury.models import PaymentMethod as PM
+                payment_method_inst = PM.objects.filter(id=payment_method_id).first()
 
-            payment = TreasuryService.create_movement(
-                amount=payment_amount,
-                movement_type='OUTBOUND',
-                payment_method=payment_method,
-                reference=f"OCS-{order.number}",
-                partner=order.supplier,
-                invoice=invoice,
-                purchase_order=order,
-                from_account=treasury_account,
-                transaction_number=transaction_number,
-                is_pending_registration=payment_is_pending
-            )
+            # Asegurar que installments sea int
+            if not isinstance(installments, int):
+                try:
+                    installments = int(installments) if installments is not None else 1
+                except (ValueError, TypeError):
+                    installments = 1
+
+            if payment_method_inst is not None and installments > 1 and payment_method_inst.method_type == 'CREDIT_CARD':
+                # ── Pago en cuotas: crear CardPurchaseGroup + N movimientos ──
+                card_account = payment_method_inst.treasury_account
+                if card_account and card_account.account_type == TreasuryAccount.Type.CREDIT_CARD:
+                    TreasuryService.create_card_purchase(
+                        amount=payment_amount,
+                        card_account=card_account,
+                        installments=installments,
+                        monthly_rate=Decimal('0'),
+                        date=document_date or timezone.now().date(),
+                        partner=order.supplier,
+                        invoice=invoice,
+                        purchase_order=order,
+                        client_reference=f"OCS-{order.number}",
+                        created_by=user,
+                    )
+                else:
+                    raise ValidationError(
+                        "La forma de pago CREDIT_CARD no está asociada a una cuenta de tarjeta de crédito."
+                    )
+            elif payment_method_inst is not None:
+                from treasury.orchestrator import PaymentOrchestrator
+                payment = PaymentOrchestrator.create_movement(
+                    payment_method_obj=payment_method_inst,
+                    amount=payment_amount,
+                    movement_type='OUTBOUND',
+                    reference=f"OCS-{order.number}",
+                    partner=order.supplier,
+                    invoice=invoice,
+                    purchase_order=order,
+                    date=document_date or timezone.now().date(),
+                    created_by=user,
+                    check_number=check_number,
+                    check_bank_id=check_bank_id,
+                    check_issue_date=check_issue_date,
+                    check_due_date=check_due_date,
+                    checkbook_id=checkbook_id,
+                )
+            else:
+                # Fallback legacy path: payment_method_id not provided.
+                # Resolve Treasury Account
+                treasury_account = None
+                if treasury_account_id:
+                    treasury_account = TreasuryAccount.objects.filter(id=treasury_account_id).first()
+
+                payment = TreasuryService.create_movement(
+                    amount=payment_amount,
+                    movement_type='OUTBOUND',
+                    payment_method=payment_method,
+                    reference=f"OCS-{order.number}",
+                    partner=order.supplier,
+                    invoice=invoice,
+                    purchase_order=order,
+                    from_account=treasury_account,
+                    transaction_number=transaction_number,
+                    is_pending_registration=payment_is_pending
+                )
         
         # 4. Receive Merchandise (if not DEFERRED)
         receipt = None

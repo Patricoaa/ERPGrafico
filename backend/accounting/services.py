@@ -118,7 +118,12 @@ class AccountingService:
             ('1.1.01.02', 'Banco Principal', AccountType.ASSET, '1.1.01', None, None, None),
             ('1.1.01.03', 'Banco de Chile', AccountType.ASSET, '1.1.01', None, None, None),
             ('1.1.01.04', 'Caja Recepción', AccountType.ASSET, '1.1.01', None, None, None),
-            
+
+            # ADR-0038: Cuenta puente para Cheques en Cartera (ASSET).
+            # Sibling de 1.1.01.16 (Puente TUU); sub-cuenta 50 (reservada)
+            # para no chocar con cajas (11-15), bancos (20-22) ni 16 TUU.
+            ('1.1.01.50', 'Cheques en Cartera', AccountType.ASSET, '1.1.01', None, None, None),
+
             ('1.1.02', 'Deudores Comerciales', AccountType.ASSET, '1.1', None, CFCategory.OPERATING, None),
             ('1.1.02.01', 'Clientes Locales', AccountType.ASSET, '1.1.02', None, None, None),
             ('1.1.02.02', 'Anticipos a Proveedores', AccountType.ASSET, '1.1.02', None, None, None),
@@ -169,7 +174,18 @@ class AccountingService:
             ('2.1.03', 'Obligaciones Laborales', AccountType.LIABILITY, '2.1', None, CFCategory.OPERATING, None),
             ('2.1.03.01', 'Remuneraciones por Pagar', AccountType.LIABILITY, '2.1.03', None, None, None),
             ('2.1.03.02', 'Leyes Sociales por Pagar', AccountType.LIABILITY, '2.1.03', None, None, None),
-            
+
+            ('2.1.04', 'Pasivos Financieros', AccountType.LIABILITY, '2.1', None, CFCategory.FINANCING, None),
+            ('2.1.04.01', 'Intereses por Pagar (Devengados)', AccountType.LIABILITY, '2.1.04', None, None, None),
+            ('2.1.04.02', 'Tarjetas de Crédito por Pagar (Pasivo)', AccountType.LIABILITY, '2.1.04', None, None, None),
+
+            # ADR-0038: Grupo y cuenta puente para Cheques Girados por Pagar (LIABILITY).
+            # 2.1.05 (grupo) entre 2.1.04 (Pasivos Financieros) y 2.1.06 (Cuentas
+            # Puente Pasivo). 2.1.05.01 es la hoja operativa que AccountingSettings
+            # expone al operador.
+            ('2.1.05', 'Pasivos por Cheques Girados', AccountType.LIABILITY, '2.1', None, CFCategory.FINANCING, None),
+            ('2.1.05.01', 'Cheques Girados por Pagar', AccountType.LIABILITY, '2.1.05', None, None, None),
+
             ('2.1.06', 'Cuentas Puente Pasivo', AccountType.LIABILITY, '2.1', None, None, None),
             ('2.1.06.01', 'Entrada de Stock (Pendiente de Recibir Factura)', AccountType.LIABILITY, '2.1.06', None, None, None),
             ('2.1.07', 'Dividendos por Pagar (Pasivo)', AccountType.LIABILITY, '2.1', None, CFCategory.FINANCING, None),
@@ -359,6 +375,18 @@ class AccountingService:
             'rounding_adjustment_account': '5.2.11',
             'error_adjustment_account': '5.2.12',
             'miscellaneous_adjustment_account': '5.2.99', # Otros Gastos Varios (needs creation)
+
+            # F5.1 — Financial expense accounts (ADR-0036)
+            'interest_expense_account': '5.3.01',   # Gastos Financieros / Intereses
+            'insurance_expense_account': '5.2.09',  # Seguros
+            'interest_payable_account': '2.1.04.01',# Intereses por Pagar (needs creation)
+
+            # ADR-0038 — Check portfolio / issued checks (puente ASSET y LIABILITY).
+            # El signal post_save de AccountingSettings detecta la transición
+            # None → algo y crea las TreasuryAccount puente (CHEQUES-CARTERA /
+            # CHEQUES-GIRADOS) idempotentemente.
+            'check_portfolio_account': '1.1.01.50',
+            'issued_checks_account': '2.1.05.01',
         }
 
         for field, code in mapping.items():

@@ -129,7 +129,6 @@ export const LabeledInput = forwardRef<
                     <legend className={cn(
                         "px-1.5 text-[10px] font-black uppercase tracking-[0.15em] transition-colors duration-200",
                         hasError ? "text-destructive" : "text-muted-foreground group-focus-within:text-primary",
-                        disabled && "text-muted-foreground/50",
                         labelClassName
                     )}>
                         {label}

@@ -40,9 +40,10 @@ class Command(BaseCommand):
             print('  OK - Todas las cuentas corrientes tienen banco')
         
         # 3. Validar tarjetas sin banco
+        # Tras F1.2, DEBIT_CARD ya no es tipo de cuenta: solo CREDIT_CARD.
         print('\nVerificando tarjetas...')
         cards_no_bank = TreasuryAccount.objects.filter(
-            account_type__in=['CREDIT_CARD', 'DEBIT_CARD'],
+            account_type=TreasuryAccount.Type.CREDIT_CARD,
             bank__isnull=True
         )
         if cards_no_bank.exists():

@@ -106,7 +106,7 @@ export function EmptyState({
                 {description && (
                     <p className={cn(
                         "w-full text-center text-muted-foreground leading-relaxed",
-                        variant === 'full' ? "text-sm max-w-[320px]" : "text-[11px] max-w-[240px]"
+                        variant === 'full' ? "text-sm" : "text-[11px]"
                     )}>
                         {description}
                     </p>

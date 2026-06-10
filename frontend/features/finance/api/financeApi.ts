@@ -90,8 +90,8 @@ export const financeApi = {
         fetchStatement('finances/api/cash-flow/', params),
 
     // ── Bank Reconciliation: Statements ──
-    getStatements: () =>
-        api.get('/treasury/statements/').then(r => r.data),
+    getStatements: (params?: Record<string, string>) =>
+        api.get('/treasury/statements/', { params }).then(r => r.data),
     getStatement: (id: number) =>
         api.get(`/treasury/statements/${id}/`).then(r => r.data),
     getStatementFormats: () =>

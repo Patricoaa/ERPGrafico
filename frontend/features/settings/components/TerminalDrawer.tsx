@@ -13,7 +13,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox"
 import { settingsApi } from "../hooks"
 import { toast } from "sonner"
-import {MonitorSmartphone} from "lucide-react"
+import { MonitorSmartphone } from "lucide-react"
 import * as LucideIcons from "lucide-react"
 import { cn } from "@/lib/utils"
 import { CancelButton, LabeledInput, LabeledSelect, FormSection, FormFooter, FormSplitLayout, SkeletonShell } from "@/components/shared"
@@ -246,247 +246,247 @@ export function TerminalDrawer({ open, onOpenChange, terminal, onSuccess, mode: 
                     </div>
                 </PrintableLayout>
             )}
-        <Drawer
-            open={open}
-            onOpenChange={onOpenChange}
-            side="left"
-            defaultSize={formDrawerWidth("complex", !!terminal)}
-            contentClassName="p-0"
-            title={
-                <div className="flex items-center gap-3">
-                    <MonitorSmartphone className="h-5 w-5 text-muted-foreground" />
-                    <span>{drawerTitle}</span>
-                    {(mode === 'view' || mode === 'edit') && terminal?.id && (
-                        <Button variant="ghost" size="icon" onClick={() => handlePrint()}>
-                            <Printer className="h-4 w-4" />
-                        </Button>
-                    )}
-                </div>
-            }
-            subtitle={
-                <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                    {terminal?.code && (
-                        <>
-                            <span>{terminal.code}</span>
-                            <span className="opacity-30">|</span>
-                        </>
-                    )}
-                    <span>{form.watch("name") || "Configuración básica del TPV"}</span>
-                </div>
-            }
-            footer={isView ? undefined : (
-                <FormFooter
-                    actions={
-                        <>
-                            <CancelButton onClick={() => onOpenChange(false)} />
-                            <ActionSlideButton type="submit" form="terminal-form" loading={loading}>
-                                {terminal ? "Guardar Cambios" : "Crear Terminal"}
-                            </ActionSlideButton>
-                        </>
-                    }
-                />
-            )}
-        >
-            <SkeletonShell isLoading={isFetchingInitialData} ariaLabel="Cargando formulario de terminal" className="flex-1 flex flex-col">
-                <FormSplitLayout
-                    showSidebar={!!terminal?.id}
-                    sidebar={
-                        terminal?.id && (
-                            <ActivitySidebar
-                                entityId={terminal.id}
-                                entityType="terminal"
-                            />
-                        )
-                    }
-                >
-                    <Form {...form}>
-                        <form id="terminal-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-                            <fieldset disabled={isView} className="contents">
-                            {/* Section 1: Device Identity */}
-                            <div className="space-y-4">
-                                <FormSection title="Identificación del Dispositivo" icon={MonitorSmartphone} />
-                                <div className="grid grid-cols-2 gap-4">
-                                    <FormField
-                                        control={form.control}
-                                        name="name"
-                                        render={({ field, fieldState }) => (
-                                            <LabeledInput
-                                                label="Nombre de Terminal"
-                                                placeholder="Ej: Caja Principal"
-                                                error={fieldState.error?.message}
-                                                required
-                                                {...field}
+            <Drawer
+                open={open}
+                onOpenChange={onOpenChange}
+                side="left"
+                defaultSize={formDrawerWidth("complex", !!terminal)}
+                mode={mode}
+                title={
+                    <div className="flex items-center gap-3">
+                        <MonitorSmartphone className="h-5 w-5 text-muted-foreground" />
+                        <span>{drawerTitle}</span>
+                        {(mode === 'view' || mode === 'edit') && terminal?.id && (
+                            <Button variant="ghost" size="icon" onClick={() => handlePrint()}>
+                                <Printer className="h-4 w-4" />
+                            </Button>
+                        )}
+                    </div>
+                }
+                subtitle={
+                    <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                        {terminal?.code && (
+                            <>
+                                <span>{terminal.code}</span>
+                                <span className="opacity-30">|</span>
+                            </>
+                        )}
+                        <span>{form.watch("name") || "Configuración básica del TPV"}</span>
+                    </div>
+                }
+                footer={isView ? undefined : (
+                    <FormFooter
+                        actions={
+                            <>
+                                <CancelButton onClick={() => onOpenChange(false)} />
+                                <ActionSlideButton type="submit" form="terminal-form" loading={loading}>
+                                    {terminal ? "Guardar Cambios" : "Crear Terminal"}
+                                </ActionSlideButton>
+                            </>
+                        }
+                    />
+                )}
+            >
+                <SkeletonShell isLoading={isFetchingInitialData} ariaLabel="Cargando formulario de terminal" className="flex-1 flex flex-col">
+                    <FormSplitLayout
+                        showSidebar={!!terminal?.id}
+                        sidebar={
+                            terminal?.id && (
+                                <ActivitySidebar
+                                    entityId={terminal.id}
+                                    entityType="terminal"
+                                />
+                            )
+                        }
+                    >
+                        <Form {...form}>
+                            <form id="terminal-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-6 pb-6 pt-6">
+                                <fieldset disabled={isView} className="contents">
+                                    {/* Section 1: Device Identity */}
+                                    <div className="space-y-4">
+                                        <FormSection title="Identificación del Dispositivo" icon={MonitorSmartphone} />
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <FormField
+                                                control={form.control}
+                                                name="name"
+                                                render={({ field, fieldState }) => (
+                                                    <LabeledInput
+                                                        label="Nombre de Terminal"
+                                                        placeholder="Ej: Caja Principal"
+                                                        error={fieldState.error?.message}
+                                                        required
+                                                        {...field}
+                                                    />
+                                                )}
                                             />
-                                        )}
-                                    />
-                                    <FormField
-                                        control={form.control}
-                                        name="code"
-                                        render={({ field, fieldState }) => (
-                                            <LabeledInput
-                                                label="Código"
-                                                placeholder="TERM-01"
-                                                className="uppercase"
-                                                error={fieldState.error?.message}
-                                                required
-                                                {...field}
+                                            <FormField
+                                                control={form.control}
+                                                name="code"
+                                                render={({ field, fieldState }) => (
+                                                    <LabeledInput
+                                                        label="Código"
+                                                        placeholder="TERM-01"
+                                                        className="uppercase"
+                                                        error={fieldState.error?.message}
+                                                        required
+                                                        {...field}
+                                                    />
+                                                )}
                                             />
-                                        )}
-                                    />
-                                </div>
-                            </div>
+                                        </div>
+                                    </div>
 
-                            {/* Section 2: Connectivity & Location */}
-                            <div className="space-y-4">
-                                <FormSection title="Conectividad y Ubicación" icon={LucideIcons.Wifi || MonitorSmartphone} />
-                                <div className="grid grid-cols-2 gap-4">
-                                    <FormField
-                                        control={form.control}
-                                        name="serial_number"
-                                        render={({ field, fieldState }) => (
-                                            <LabeledInput
-                                                label="N° Serie / Hardware"
-                                                placeholder="SN-XXXX"
-                                                error={fieldState.error?.message}
-                                                {...field}
+                                    {/* Section 2: Connectivity & Location */}
+                                    <div className="space-y-4">
+                                        <FormSection title="Conectividad y Ubicación" icon={LucideIcons.Wifi || MonitorSmartphone} />
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <FormField
+                                                control={form.control}
+                                                name="serial_number"
+                                                render={({ field, fieldState }) => (
+                                                    <LabeledInput
+                                                        label="N° Serie / Hardware"
+                                                        placeholder="SN-XXXX"
+                                                        error={fieldState.error?.message}
+                                                        {...field}
+                                                    />
+                                                )}
                                             />
-                                        )}
-                                    />
-                                    <FormField
-                                        control={form.control}
-                                        name="ip_address"
-                                        render={({ field, fieldState }) => (
-                                            <LabeledInput
-                                                label="IP / Dirección de Red"
-                                                placeholder="192.168.1.XX"
-                                                error={fieldState.error?.message}
-                                                {...field}
+                                            <FormField
+                                                control={form.control}
+                                                name="ip_address"
+                                                render={({ field, fieldState }) => (
+                                                    <LabeledInput
+                                                        label="IP / Dirección de Red"
+                                                        placeholder="192.168.1.XX"
+                                                        error={fieldState.error?.message}
+                                                        {...field}
+                                                    />
+                                                )}
                                             />
-                                        )}
-                                    />
-                                    <div className="col-span-2">
+                                            <div className="col-span-2">
+                                                <FormField
+                                                    control={form.control}
+                                                    name="location"
+                                                    render={({ field, fieldState }) => (
+                                                        <LabeledInput
+                                                            label="Ubicación Física"
+                                                            placeholder="Ej: Entrada Principal, Piso 1"
+                                                            error={fieldState.error?.message}
+                                                            {...field}
+                                                        />
+                                                    )}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Section 3: Treasury Accounts */}
+                                    <div className="space-y-4">
+                                        <FormSection title="Tesorería y Cuentas" icon={LucideIcons.Library || MonitorSmartphone} />
+
                                         <FormField
                                             control={form.control}
-                                            name="location"
-                                            render={({ field, fieldState }) => (
-                                                <LabeledInput
-                                                    label="Ubicación Física"
-                                                    placeholder="Ej: Entrada Principal, Piso 1"
-                                                    error={fieldState.error?.message}
-                                                    {...field}
-                                                />
+                                            name="allowed_treasury_account_ids"
+                                            render={({ field }) => (
+                                                <div className="relative group/field border rounded-lg p-4 bg-muted/10 shadow-sm transition-all duration-200 border-dashed hover:border-primary/30">
+                                                    <div className="absolute -top-2 left-2 px-1 bg-card text-[10px] font-black uppercase tracking-widest text-muted-foreground group-hover/field:text-primary transition-colors">
+                                                        Cuentas Permitidas
+                                                    </div>
+                                                    <div className="absolute top-2 right-2 px-1.5 py-0.5 rounded-full bg-muted/50 text-[9px] font-mono font-black text-muted-foreground uppercase opacity-70">
+                                                        {field.value.length} SELECCIONADAS
+                                                    </div>
+                                                    <div className="h-40 overflow-y-auto space-y-1.5 pr-2 scrollbar-thin pt-2">
+                                                        {treasuryAccounts.length === 0 ? (
+                                                            <EmptyState context="finance" variant="minimal" description="No hay cuentas configuradas" />
+                                                        ) : (
+                                                            treasuryAccounts.map((account) => {
+                                                                const isSelected = field.value.includes(account.id)
+                                                                return (
+                                                                    <div
+                                                                        key={account.id}
+                                                                        className={cn(
+                                                                            "flex items-center space-x-3 p-2 rounded-lg cursor-pointer border transition-all duration-200",
+                                                                            isSelected ? 'bg-primary/5 border-primary/30 shadow-sm' : 'hover:bg-accent border-transparent'
+                                                                        )}
+                                                                        onClick={() => !isView && toggleAccountSelection(
+                                                                            account.id,
+                                                                            field.value,
+                                                                            field.onChange,
+                                                                            form.getValues("default_treasury_account"),
+                                                                            (val) => form.setValue("default_treasury_account", val)
+                                                                        )}
+                                                                    >
+                                                                        <Checkbox
+                                                                            checked={isSelected}
+                                                                            disabled={isView}
+                                                                            onCheckedChange={() => !isView && toggleAccountSelection(
+                                                                                account.id,
+                                                                                field.value,
+                                                                                field.onChange,
+                                                                                form.getValues("default_treasury_account"),
+                                                                                (val) => form.setValue("default_treasury_account", val)
+                                                                            )}
+                                                                            className="h-4 w-4"
+                                                                        />
+                                                                        <div className="flex-1 flex items-center justify-between">
+                                                                            <span className="font-semibold text-sm text-foreground/90">{account.name}</span>
+                                                                            <div className="flex gap-1.5">
+                                                                                {account.allows_cash && (
+                                                                                    <span className="text-[10px] font-black text-success uppercase tracking-widest">
+                                                                                        Efectivo
+                                                                                    </span>
+                                                                                )}
+                                                                                {account.allows_card && (
+                                                                                    <span className="text-[10px] font-bold text-primary uppercase tracking-tighter">
+                                                                                        Tarjeta
+                                                                                    </span>
+                                                                                )}
+                                                                                {account.allows_transfer && (
+                                                                                    <span className="text-[10px] font-bold text-primary/60 uppercase tracking-tighter">
+                                                                                        Transf
+                                                                                    </span>
+                                                                                )}
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                )
+                                                            })
+                                                        )}
+                                                    </div>
+                                                    <FormMessage />
+                                                </div>
                                             )}
                                         />
-                                    </div>
-                                </div>
-                            </div>
 
-                            {/* Section 3: Treasury Accounts */}
-                            <div className="space-y-4">
-                                <FormSection title="Tesorería y Cuentas" icon={LucideIcons.Library || MonitorSmartphone} />
-
-                                <FormField
-                                    control={form.control}
-                                    name="allowed_treasury_account_ids"
-                                    render={({ field }) => (
-                                        <div className="relative group/field border rounded-lg p-4 bg-muted/10 shadow-sm transition-all duration-200 border-dashed hover:border-primary/30">
-                                            <div className="absolute -top-2 left-2 px-1 bg-card text-[10px] font-black uppercase tracking-widest text-muted-foreground group-hover/field:text-primary transition-colors">
-                                                Cuentas Permitidas
-                                            </div>
-                                            <div className="absolute top-2 right-2 px-1.5 py-0.5 rounded-full bg-muted/50 text-[9px] font-mono font-black text-muted-foreground uppercase opacity-70">
-                                                {field.value.length} SELECCIONADAS
-                                            </div>
-                                            <div className="h-40 overflow-y-auto space-y-1.5 pr-2 scrollbar-thin pt-2">
-                                                {treasuryAccounts.length === 0 ? (
-                                                    <EmptyState context="finance" variant="minimal" description="No hay cuentas configuradas" />
-                                                ) : (
-                                                    treasuryAccounts.map((account) => {
-                                                        const isSelected = field.value.includes(account.id)
-                                                        return (
-                                                            <div
-                                                                key={account.id}
-                                                                className={cn(
-                                                                    "flex items-center space-x-3 p-2 rounded-lg cursor-pointer border transition-all duration-200",
-                                                                    isSelected ? 'bg-primary/5 border-primary/30 shadow-sm' : 'hover:bg-accent border-transparent'
-                                                                )}
-                                                                onClick={() => !isView && toggleAccountSelection(
-                                                                    account.id,
-                                                                    field.value,
-                                                                    field.onChange,
-                                                                    form.getValues("default_treasury_account"),
-                                                                    (val) => form.setValue("default_treasury_account", val)
-                                                                )}
-                                                            >
-                                                                <Checkbox
-                                                                    checked={isSelected}
-                                                                    disabled={isView}
-                                                                    onCheckedChange={() => !isView && toggleAccountSelection(
-                                                                        account.id,
-                                                                        field.value,
-                                                                        field.onChange,
-                                                                        form.getValues("default_treasury_account"),
-                                                                        (val) => form.setValue("default_treasury_account", val)
-                                                                    )}
-                                                                    className="h-4 w-4"
-                                                                />
-                                                                <div className="flex-1 flex items-center justify-between">
-                                                                    <span className="font-semibold text-sm text-foreground/90">{account.name}</span>
-                                                                    <div className="flex gap-1.5">
-                                                                        {account.allows_cash && (
-                                                                            <span className="text-[10px] font-black text-success uppercase tracking-widest">
-                                                                                Efectivo
-                                                                            </span>
-                                                                        )}
-                                                                        {account.allows_card && (
-                                                                            <span className="text-[10px] font-bold text-primary uppercase tracking-tighter">
-                                                                                Tarjeta
-                                                                            </span>
-                                                                        )}
-                                                                        {account.allows_transfer && (
-                                                                            <span className="text-[10px] font-bold text-primary/60 uppercase tracking-tighter">
-                                                                                Transf
-                                                                            </span>
-                                                                        )}
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        )
-                                                    })
+                                        {form.watch("allowed_treasury_account_ids").length > 0 && (
+                                            <FormField
+                                                control={form.control}
+                                                name="default_treasury_account"
+                                                render={({ field, fieldState }) => (
+                                                    <LabeledSelect
+                                                        label="Cuenta Predeterminada (Apertura de Sesión)"
+                                                        error={fieldState.error?.message}
+                                                        onChange={field.onChange}
+                                                        value={field.value || ""}
+                                                        placeholder="Seleccionar..."
+                                                        options={[
+                                                            { value: "__none__", label: "-- Ninguna (Solicitar al iniciar) --" },
+                                                            ...treasuryAccounts
+                                                                .filter(acc => form.watch("allowed_treasury_account_ids").includes(acc.id))
+                                                                .map(acc => ({ value: acc.id.toString(), label: acc.name })),
+                                                        ]}
+                                                    />
                                                 )}
-                                            </div>
-                                            <FormMessage />
-                                        </div>
-                                    )}
-                                />
-
-                                {form.watch("allowed_treasury_account_ids").length > 0 && (
-                                    <FormField
-                                        control={form.control}
-                                        name="default_treasury_account"
-                                        render={({ field, fieldState }) => (
-                                            <LabeledSelect
-                                                label="Cuenta Predeterminada (Apertura de Sesión)"
-                                                error={fieldState.error?.message}
-                                                onChange={field.onChange}
-                                                value={field.value || ""}
-                                                placeholder="Seleccionar..."
-                                                options={[
-                                                    { value: "__none__", label: "-- Ninguna (Solicitar al iniciar) --" },
-                                                    ...treasuryAccounts
-                                                        .filter(acc => form.watch("allowed_treasury_account_ids").includes(acc.id))
-                                                        .map(acc => ({ value: acc.id.toString(), label: acc.name })),
-                                                ]}
                                             />
                                         )}
-                                    />
-                                )}
-                            </div>
-                        </fieldset>
-                        </form>
-                    </Form>
-                </FormSplitLayout>
-            </SkeletonShell>
-        </Drawer>
+                                    </div>
+                                </fieldset>
+                            </form>
+                        </Form>
+                    </FormSplitLayout>
+                </SkeletonShell>
+            </Drawer>
         </>
     )
 }

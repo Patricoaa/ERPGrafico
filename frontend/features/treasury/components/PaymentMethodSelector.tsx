@@ -109,20 +109,23 @@ export function PaymentMethodSelector({
     useEffect(() => {
         if (!value.methodType) return
 
-        if (currentTypeMethods.length > 0) {
+        // Filtra métodos virtuales (CHECK hardcodeado sin id)
+        const realMethods = currentTypeMethods.filter(m => m.id != null && m.treasury_account != null)
+
+        if (realMethods.length > 0) {
             // Check if current selection is valid for this type
             const isCurrentValid = currentTypeMethods.some(m =>
-                m.id.toString() === value.paymentMethodId &&
-                m.treasury_account.toString() === value.treasuryAccountId
+                String(m.id) === value.paymentMethodId &&
+                String(m.treasury_account) === value.treasuryAccountId
             )
 
             if (!isCurrentValid) {
                 // Default to first available method for this type
-                const defaultMethod = currentTypeMethods[0]
+                const defaultMethod = realMethods[0]
                 onChange({
                     ...value,
-                    treasuryAccountId: defaultMethod.treasury_account.toString(),
-                    paymentMethodId: defaultMethod.id.toString()
+                    treasuryAccountId: String(defaultMethod.treasury_account),
+                    paymentMethodId: String(defaultMethod.id)
                 })
             }
         } else {
@@ -146,9 +149,10 @@ export function PaymentMethodSelector({
 
         // If there's only one method (or at least one), we'll let the useEffect above handle the specific selection
         // OR we can do it right here to be snappier
-        if (newMethods.length > 0) {
-            nextValue.treasuryAccountId = newMethods[0].treasury_account.toString()
-            nextValue.paymentMethodId = newMethods[0].id.toString()
+        const firstReal = newMethods.find(m => m.id != null && m.treasury_account != null)
+        if (firstReal) {
+            nextValue.treasuryAccountId = String(firstReal.treasury_account)
+            nextValue.paymentMethodId = String(firstReal.id)
         }
 
         onChange(nextValue)
@@ -214,18 +218,18 @@ export function PaymentMethodSelector({
             </RadioGroup>
 
             {/* Sub-selector for specific Method/Account if multiple exist */}
-            {value.methodType && currentTypeMethods.length > 1 && (
+            {value.methodType && currentTypeMethods.filter(m => m.id != null).length > 1 && (
                 <div className="animate-in fade-in slide-in-from-top-1">
                     <LabeledContainer label={`Seleccionar ${value.methodType === 'TRANSFER' ? 'Cuenta Bancaria' : 'Cuenta / Opción'}`}>
                         <Select
                             value={value.paymentMethodId || ""}
                             onValueChange={(val) => {
-                                const selected = currentTypeMethods.find(m => m.id.toString() === val)
-                                if (selected) {
+                                const selected = currentTypeMethods.find(m => String(m.id) === val)
+                                if (selected && selected.id != null && selected.treasury_account != null) {
                                     onChange({
                                         ...value,
-                                        paymentMethodId: selected.id.toString(),
-                                        treasuryAccountId: selected.treasury_account.toString()
+                                        paymentMethodId: String(selected.id),
+                                        treasuryAccountId: String(selected.treasury_account)
                                     })
                                 }
                             }}
@@ -234,8 +238,8 @@ export function PaymentMethodSelector({
                                 <SelectValue placeholder="Seleccione opción..." />
                             </SelectTrigger>
                             <SelectContent className="w-[var(--radix-select-trigger-width)]">
-                                {currentTypeMethods.map(m => (
-                                    <SelectItem key={m.id} value={m.id.toString()}>
+                                {currentTypeMethods.filter(m => m.id != null).map(m => (
+                                    <SelectItem key={m.id} value={String(m.id)}>
                                         {m.name === 'Transferencia Scotiabank' ? 'Scotiabank' : m.name}
                                         <span className="text-muted-foreground text-xs ml-2">({m.treasury_account_name})</span>
                                     </SelectItem>

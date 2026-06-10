@@ -73,7 +73,7 @@ export function FacetedFilter({
                     )}
                 </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-[200px] p-0 rounded-md border-border/80 overflow-hidden shadow-xl" align="start">
+            <PopoverContent className="w-[200px] p-0 border-border/80 overflow-hidden shadow-floating" align="start">
                 <div className="flex flex-col p-1">
                     {options.map((option) => {
                         const isSelected = selectedSet.has(option.value)

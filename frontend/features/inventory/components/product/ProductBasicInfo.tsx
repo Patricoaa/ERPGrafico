@@ -1,9 +1,8 @@
 "use client"
 
 import { FormField } from "@/components/ui/form"
-import {LabeledInput, LabeledContainer, FormSection, LabeledSwitch} from "@/components/shared"
-import { Button } from "@/components/ui/button"
-import {ShoppingCart, Truck, Barcode, Fingerprint, Layers} from "lucide-react"
+import { LabeledInput, LabeledContainer, FormSection, LabeledSwitch, NotchedButton } from "@/components/shared"
+import { ShoppingCart, Truck, Barcode, Fingerprint, Layers } from "lucide-react"
 import { UseFormReturn } from "react-hook-form"
 import { ProductFormValues } from "./schema"
 import { cn } from "@/lib/utils"
@@ -61,7 +60,7 @@ export function ProductBasicInfo({ form, isEditing, imagePreview, setImagePrevie
                         <LabeledContainer
                             label="ID"
                             disabled
-                            className="w-full opacity-80 bg-muted/30"
+                            className="w-full"
                         >
                             <div className="flex items-center gap-2 h-full px-3">
                                 <span className="text-muted-foreground text-[10px] font-mono">#</span>
@@ -95,7 +94,7 @@ export function ProductBasicInfo({ form, isEditing, imagePreview, setImagePrevie
                                         "h-full transition-all duration-300",
                                         field.value
                                             ? "bg-success/10 border-success/30 shadow-sm ring-1 ring-success/10"
-                                            : "bg-background border-border hover:border-muted-foreground/30 hover:bg-muted/10 shadow-[inset_0_1px_2px_oklch(0.12_0.02_240_/_0.1)] dark:shadow-[inset_0_1px_2px_oklch(1_0_0_/_0.02)]"
+                                            : "bg-transparent border-border hover:border-muted-foreground/30 hover:bg-muted/10 shadow-[inset_0_1px_2px_oklch(0.12_0.02_240_/_0.1)] dark:shadow-[inset_0_1px_2px_oklch(1_0_0_/_0.02)]"
                                     )}
                                 />
                             )}
@@ -121,7 +120,7 @@ export function ProductBasicInfo({ form, isEditing, imagePreview, setImagePrevie
                                         "h-full transition-all duration-300",
                                         field.value
                                             ? "bg-warning/10 border-warning/30 shadow-sm ring-1 ring-warning/10"
-                                            : "bg-background border-border hover:border-muted-foreground/30 hover:bg-muted/10 shadow-[inset_0_1px_2px_oklch(0.12_0.02_240_/_0.1)] dark:shadow-[inset_0_1px_2px_oklch(1_0_0_/_0.02)]"
+                                            : "bg-transparent border-border hover:border-muted-foreground/30 hover:bg-muted/10 shadow-[inset_0_1px_2px_oklch(0.12_0.02_240_/_0.1)] dark:shadow-[inset_0_1px_2px_oklch(1_0_0_/_0.02)]"
                                     )}
                                 />
                             )}
@@ -196,7 +195,7 @@ export function ProductBasicInfo({ form, isEditing, imagePreview, setImagePrevie
                                         "h-full transition-all duration-300",
                                         field.value
                                             ? "bg-primary/10 border-primary/30 shadow-sm ring-1 ring-primary/10"
-                                            : "bg-background border-border hover:border-muted-foreground/30 hover:bg-muted/10 shadow-[inset_0_1px_2px_oklch(0.12_0.02_240_/_0.1)] dark:shadow-[inset_0_1px_2px_oklch(1_0_0_/_0.02)]"
+                                            : "bg-transparent border-border hover:border-muted-foreground/30 hover:bg-muted/10 shadow-[inset_0_1px_2px_oklch(0.12_0.02_240_/_0.1)] dark:shadow-[inset_0_1px_2px_oklch(1_0_0_/_0.02)]"
                                     )}
                                 />
                             )}
@@ -209,26 +208,23 @@ export function ProductBasicInfo({ form, isEditing, imagePreview, setImagePrevie
                             control={form.control}
                             name="code"
                             render={({ field, fieldState }) => (
-                                <div className="flex items-start">
+                                <div className="flex items-stretch gap-2">
                                     <LabeledInput
                                         label="Código SKU / EAN / Barras"
                                         placeholder="Código"
                                         error={fieldState.error?.message}
                                         className="font-mono font-bold text-xs h-[1.5rem]"
-                                        containerClassName="flex-1"
+                                        containerClassName="flex-1 min-w-0"
                                         {...field}
                                         value={field.value || ""}
                                     />
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        size="icon"
-                                        className="shrink-0 h-[1.5rem] w-8 rounded-md border-primary/10 hover:bg-primary/5 shadow-sm transition-all self-end mb-1"
+                                    <NotchedButton
+                                        className="shrink-0 w-12"
                                         onClick={() => setIsBarcodeModalOpen(true)}
                                         title="Generador de Barras"
                                     >
-                                        <Barcode className="h-3.5 w-3.5 text-primary" />
-                                    </Button>
+                                        <Barcode className="h-4 w-4 text-primary" />
+                                    </NotchedButton>
                                     <BarcodeModal
                                         open={isBarcodeModalOpen}
                                         onOpenChange={setIsBarcodeModalOpen}

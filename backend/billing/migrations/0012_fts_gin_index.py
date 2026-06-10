@@ -1,6 +1,22 @@
 from django.db import migrations
 
 
+def create_gin_index(apps, schema_editor):
+    if schema_editor.connection.vendor != 'postgresql':
+        return
+    schema_editor.execute("""
+        CREATE INDEX CONCURRENTLY IF NOT EXISTS billing_invoice_fts_gin
+        ON billing_invoice
+        USING gin(to_tsvector('simple', coalesce(number::text, '')));
+    """)
+
+
+def drop_gin_index(apps, schema_editor):
+    if schema_editor.connection.vendor != 'postgresql':
+        return
+    schema_editor.execute("DROP INDEX IF EXISTS billing_invoice_fts_gin;")
+
+
 class Migration(migrations.Migration):
     atomic = False
 
@@ -9,12 +25,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunSQL(
-            sql="""
-            CREATE INDEX CONCURRENTLY IF NOT EXISTS billing_invoice_fts_gin
-            ON billing_invoice
-            USING gin(to_tsvector('simple', coalesce(number::text, '')));
-            """,
-            reverse_sql="DROP INDEX IF EXISTS billing_invoice_fts_gin;",
-        ),
+        migrations.RunPython(create_gin_index, drop_gin_index),
     ]

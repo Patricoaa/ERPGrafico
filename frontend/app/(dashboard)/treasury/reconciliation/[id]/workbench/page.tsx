@@ -49,44 +49,15 @@ export default function WorkbenchPage({ params }: { params: Promise<{ id: string
     }
 
     const navigation = {
+        moduleName: "Tesorería",
+        moduleHref: "/treasury",
         tabs: [
-            { value: "movements", label: "Movimientos", iconName: "banknote", href: "/treasury?view=movements" },
-            {
-                value: "accounts",
-                label: "Cuentas de tesoreria",
-                iconName: "landmark",
-                href: "/treasury?view=accounts",
-                subTabs: [
-                    { value: "accounts", label: "Cuentas", href: "/treasury?view=accounts&sub=accounts" },
-                    { value: "banks", label: "Bancos", href: "/treasury?view=accounts&sub=banks" },
-                    { value: "methods", label: "Métodos", href: "/treasury?view=accounts&sub=methods" },
-                ]
-            },
-            {
-                value: "reconciliation",
-                label: "Conciliación",
-                iconName: "history",
-                href: "/treasury?view=reconciliation",
-                subTabs: [
-                    { value: "statements", label: "Cartolas", iconName: "file-text", href: "/treasury?view=reconciliation&sub=statements" },
-                    { value: "dashboard", label: "Dashboard", iconName: "bar-chart-3", href: "/treasury?view=reconciliation&sub=dashboard" },
-                    { value: "intelligence", label: "Inteligencia", iconName: "brain", href: "/treasury?view=reconciliation&sub=intelligence" },
-                ]
-            },
-            {
-                value: "config",
-                label: "Config",
-                iconName: "settings",
-                href: "/treasury?view=config",
-                subTabs: [
-                    { value: "conciliation", label: "Conciliación", href: "/treasury?view=config&tab=conciliation", iconName: "arrow-left-right" },
-                    { value: "audit", label: "Arqueo", href: "/treasury?view=config&tab=audit", iconName: "banknote" },
-                    { value: "movements", label: "Movimientos", href: "/treasury?view=config&tab=movements", iconName: "settings-2" }
-                ]
-            },
+            { value: "operaciones", label: "Operaciones", iconName: "banknote", href: "/treasury/operaciones?tab=movements" },
+            { value: "centro-bancos", label: "Centro de Bancos", iconName: "landmark", href: "/treasury/centro-bancos?tab=all" },
+            { value: "terminal-cobro", label: "Terminal de Cobro", iconName: "cpu", href: "/treasury/terminal-cobro?tab=providers" },
+            { value: "config", label: "Configuración", iconName: "settings", href: "/treasury/settings?tab=conciliation" },
         ],
-        activeValue: "reconciliation",
-        subActiveValue: "statements",
+        activeValue: "centro-bancos",
         breadcrumbs: [
             { label: statement.display_id, href: `/treasury/reconciliation/${statement.id}` },
             { label: "Mesa de Conciliación" }

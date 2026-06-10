@@ -108,13 +108,19 @@ class Account(TimeStampedModel):
     def debit_total(self):
         if hasattr(self, 'annotated_debit_total') and self.annotated_debit_total is not None:
             return self.annotated_debit_total
-        return sum(item.debit for item in self.journal_items.filter(entry__status='POSTED'))
+        return sum(
+            item.debit for item in
+            self.journal_items.filter(entry__status__in=JournalEntry.balance_affecting_statuses())
+        )
 
     @property
     def credit_total(self):
         if hasattr(self, 'annotated_credit_total') and self.annotated_credit_total is not None:
             return self.annotated_credit_total
-        return sum(item.credit for item in self.journal_items.filter(entry__status='POSTED'))
+        return sum(
+            item.credit for item in
+            self.journal_items.filter(entry__status__in=JournalEntry.balance_affecting_statuses())
+        )
 
     @property
     def balance(self):
@@ -696,6 +702,78 @@ class AccountingSettings(TimeStampedModel):
         related_name='settings_tax_withholding',
         verbose_name=_("Cuenta de Retenciones / Impuestos"),
         help_text=_("Cuenta para ajustes de conciliación por retenciones de impuestos.")
+    )
+    check_portfolio_account = models.ForeignKey(
+        Account, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='settings_check_portfolio',
+        verbose_name=_("Cuenta Cheques en Cartera"),
+        help_text=_("Cuenta de activo (documentos por cobrar) donde se registran los cheques de terceros recibidos hasta su depósito/cobro.")
+    )
+    issued_checks_account = models.ForeignKey(
+        Account, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='settings_issued_checks',
+        verbose_name=_("Cuenta Cheques Girados por Pagar"),
+        help_text=_("Cuenta de pasivo donde se registran los cheques propios emitidos hasta su cobro efectivo.")
+    )
+
+    # Financial Expense Accounts (F5.1)
+    interest_expense_account = models.ForeignKey(
+        Account, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='settings_interest_expense',
+        verbose_name=_("Cuenta de Gasto por Intereses"),
+        help_text=_("Cuenta de gasto para intereses pagados de préstamos bancarios y tarjetas de crédito.")
+    )
+    # Onda 3 (ADR-0044): parámetros para el ciclo de pagos parciales
+    # e interés punitorio de la tarjeta de crédito.
+    card_punitory_monthly_rate = models.DecimalField(
+        _("Tasa Punitoria Mensual Tarjeta (0–1)"),
+        max_digits=8, decimal_places=6,
+        default=Decimal('0'),
+        validators=[MinValueValidator(Decimal('0'))],
+        help_text=_(
+            "Tasa mensual que cobra el emisor sobre el saldo impago "
+            "del statement después del due_date (ej. 0.05 = 5%/mes). "
+            "0 = desactiva el cálculo automático."
+        ),
+    )
+    card_minimum_payment_block = models.BooleanField(
+        _("Bloquear Pago Parcial < Mínimo"),
+        default=False,
+        help_text=_(
+            "Si True, rechaza pagos parciales menores al `minimum_payment` "
+            "del statement con ValidationError. Si False (default), "
+            "permite cualquier pago parcial positivo."
+        ),
+    )
+    insurance_expense_account = models.ForeignKey(
+        Account, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='settings_insurance_expense',
+        verbose_name=_("Cuenta de Gasto por Seguros"),
+        help_text=_("Cuenta de gasto para seguros de desgravamen/cesantía en préstamos bancarios.")
+    )
+    interest_payable_account = models.ForeignKey(
+        Account, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='settings_interest_payable',
+        verbose_name=_("Cuenta Intereses por Pagar"),
+        help_text=_("Cuenta de pasivo para intereses devengados no pagados (préstamos).")
+    )
+    loan_penalty_expense_account = models.ForeignKey(
+        Account, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='settings_loan_penalty_expense',
+        verbose_name=_("Cuenta de Gasto por Mora"),
+        help_text=_("Cuenta de gasto para el interés penal (mora) de cuotas vencidas de préstamos.")
+    )
+    loan_commission_expense_account = models.ForeignKey(
+        Account, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='settings_loan_commission_expense',
+        verbose_name=_("Cuenta de Gasto por Comisiones de Préstamo"),
+        help_text=_("Cuenta de gasto para la comisión de apertura cobrada al desembolso de un préstamo.")
+    )
+    loan_stamp_tax_expense_account = models.ForeignKey(
+        Account, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='settings_loan_stamp_tax_expense',
+        verbose_name=_("Cuenta de Gasto por Impuesto de Timbres"),
+        help_text=_("Cuenta de gasto para el impuesto de timbres y estampillas (ITE) cobrado al desembolso.")
     )
 
     # POS Cash Control Accounts

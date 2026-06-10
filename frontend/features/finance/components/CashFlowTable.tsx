@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 ;
-import {AlertCircle, CheckCircle2, Info} from "lucide-react";
+import {AlertCircle, CheckCircle2, Info, Calendar} from "lucide-react";
 ;
 import { BaseModal, Chip, MoneyDisplay, ReportNode, ReportTable } from '@/components/shared';
 import { Button } from "@/components/ui/button";
@@ -54,12 +54,21 @@ export interface CashFlowData {
     culprit_accounts: CulpritAccount[];
 }
 
+interface MaturityItem {
+    type: string
+    direction: string
+    label: string
+    due_date: string
+    amount: number
+}
+
 interface CashFlowTableProps {
     data: CashFlowData;
     embedded?: boolean;
     showComparison?: boolean;
     periodLabel?: string;
     compPeriodLabel?: string;
+    futureMaturities?: MaturityItem[];
 }
 
 const SectionHeader = ({ title, showComparison, icon: Icon }: { title: string, showComparison?: boolean, icon?: React.ElementType }) => (
@@ -95,7 +104,7 @@ const SectionTotal = ({ title, amount, amountComp, showComparison, variant = 'de
     </TableRow>
 );
 
-export const CashFlowTable: React.FC<CashFlowTableProps> = ({ data, embedded, showComparison, periodLabel, compPeriodLabel }) => {
+export const CashFlowTable: React.FC<CashFlowTableProps> = ({ data, embedded, showComparison, periodLabel, compPeriodLabel, futureMaturities }) => {
     const [auditModalOpen, setAuditModalOpen] = useState(false);
 
     const mapToNodes = (items: CashFlowItem[]): ReportNode[] => 
@@ -176,6 +185,50 @@ export const CashFlowTable: React.FC<CashFlowTableProps> = ({ data, embedded, sh
                     compPeriodLabel={compPeriodLabel}
                 />
             </div>
+
+            {/* Vencimientos Futuros (F5.3) */}
+            {futureMaturities && futureMaturities.length > 0 && (
+                <div className="pt-4 border-t-2 border-muted/30">
+                    <div className="flex items-center gap-2 mb-3">
+                        <Calendar className="h-4 w-4 text-primary" />
+                        <span className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Vencimientos Futuros (Proyectado)</span>
+                    </div>
+                    <div className="rounded-md border overflow-hidden">
+                        <Table>
+                            <TableHeader>
+                                <TableRow className="bg-muted/30">
+                                    <TableHead className="text-[10px] font-black uppercase">Tipo</TableHead>
+                                    <TableHead className="text-[10px] font-black uppercase">Descripción</TableHead>
+                                    <TableHead className="text-[10px] font-black uppercase">Vencimiento</TableHead>
+                                    <TableHead className="text-right text-[10px] font-black uppercase">Monto</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {futureMaturities.map((item, idx) => (
+                                    <TableRow key={idx}>
+                                        <TableCell>
+                                            <span className={`text-[10px] font-bold uppercase ${
+                                                item.direction === 'INBOUND' ? 'text-success' : 'text-destructive'
+                                            }`}>
+                                                {item.type === 'LOAN_INSTALLMENT' ? 'Cuota' :
+                                                 item.type === 'CHECK_RECEIVED' ? 'Cheque Recibido' :
+                                                 item.type === 'CHECK_ISSUED' ? 'Cheque Propio' : 'Tarjeta'}
+                                            </span>
+                                        </TableCell>
+                                        <TableCell className="text-xs font-medium">{item.label}</TableCell>
+                                        <TableCell className="text-xs">
+                                            {new Date(item.due_date).toLocaleDateString('es-CL')}
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                            <MoneyDisplay amount={item.amount} className={item.direction === 'INBOUND' ? 'text-success' : 'text-destructive'} />
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+                </div>
+            )}
         </div>
     );
 

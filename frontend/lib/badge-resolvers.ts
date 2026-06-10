@@ -42,6 +42,12 @@ export const STATUS_MAP: Record<string, StatusStyle> = {
     PAID:           { label: 'Pagado',       intent: 'success' },
     CANCELLED:      { label: 'Cancelado',    intent: 'destructive' },
     VOIDED:         { label: 'Anulado',      intent: 'destructive' },
+
+    // ── Cheques ──────────────────────────────────────────────────────────
+    IN_PORTFOLIO:   { label: 'En Cartera',   intent: 'info' },
+    DEPOSITED:      { label: 'Depositado',   intent: 'warning' },
+    CLEARED:        { label: 'Cobrado',      intent: 'success' },
+    BOUNCED:        { label: 'Protestado',   intent: 'destructive' },
     POSTED:         { label: 'Publicado',    intent: 'success' },
     REVERSAL:       { label: 'Reversión',    intent: 'primary' },
     PAYMENT_PENDING:{ label: 'Pago Pendiente', intent: 'warning' },
@@ -120,6 +126,10 @@ export const STATUS_MAP: Record<string, StatusStyle> = {
     OVERDUE_60:    { label: '31-60 Días', intent: 'warning' },
     OVERDUE_90:    { label: '61-90 Días', intent: 'destructive' },
     OVERDUE_90PLUS:{ label: '+90 Días',   intent: 'destructive' },
+    OVERDUE:       { label: 'Vencida',    intent: 'destructive' },
+    CANCELED:      { label: 'Anulada',    intent: 'neutral' },
+    REFINANCED:    { label: 'Refinanciado', intent: 'info' },
+    DEFAULTED:     { label: 'En Mora',    intent: 'destructive' },
 
     // ── HR ────────────────────────────────────────────────────────────────
     AUSENTISMO:        { label: 'Ausentismo',     intent: 'destructive' },

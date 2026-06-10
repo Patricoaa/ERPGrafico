@@ -8,6 +8,7 @@ const api = axios.create({
     headers: {
         'Content-Type': 'application/json',
     },
+    timeout: 15000,
 });
 
 /**
@@ -84,13 +85,14 @@ api.interceptors.response.use(
                     return api(originalRequest);
                 }
             } catch {
-                // Handle refresh token failure (e.g., logout)
+                // Handle refresh token failure — clear credentials and let
+                // AuthGuard manage the redirect via router.push (avoids the
+                // race condition that window.location.href causes with React).
                 if (isBrowser) {
                     try {
                         localStorage.removeItem('access_token');
                         localStorage.removeItem('refresh_token');
                     } catch {}
-                    window.location.href = '/login';
                 }
             }
         }

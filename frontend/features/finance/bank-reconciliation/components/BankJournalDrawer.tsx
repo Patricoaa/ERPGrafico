@@ -132,7 +132,7 @@ export function BankJournalDrawer({ auditSidebar, onSuccess, initialData, open: 
                 onOpenChange={setOpen}
                 side="left"
                 defaultSize={width}
-                contentClassName="p-0"
+                mode={mode}
                 icon={WalletCards}
                 title={<><span>{drawerTitle}</span>{(mode === 'view' || mode === 'edit') && (initialData as any)?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}</>}
                 subtitle={initialData ? `${(initialData as any).code || ""} • ${form.watch("name") || ""}` : "Tesorería • Configuración de Caja o Banco"}
@@ -149,80 +149,80 @@ export function BankJournalDrawer({ auditSidebar, onSuccess, initialData, open: 
                     />
                 )}
             >
-            <div className="flex-1 flex overflow-hidden min-h-[400px]">
-                <div className="flex-1 flex flex-col overflow-y-auto pt-4 scrollbar-thin">
-                    <Form {...form}>
-                        <form id="bank-journal-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pr-4 pl-1 pb-4">
-                            <fieldset disabled={isView} className="contents">
-                            <FormField
-                                control={form.control}
-                                name="name"
-                                render={({ field, fieldState }) => (
-                                    <LabeledInput
-                                        label="Nombre"
-                                        placeholder="Banco Estado Cta Cte"
-                                        error={fieldState.error?.message}
-                                        {...field}
+                <div className="flex-1 flex overflow-hidden min-h-[400px]">
+                    <div className="flex-1 flex flex-col overflow-y-auto pt-4 scrollbar-thin">
+                        <Form {...form}>
+                            <form id="bank-journal-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-6 pb-6 pt-6">
+                                <fieldset disabled={isView} className="contents">
+                                    <FormField
+                                        control={form.control}
+                                        name="name"
+                                        render={({ field, fieldState }) => (
+                                            <LabeledInput
+                                                label="Nombre"
+                                                placeholder="Banco Estado Cta Cte"
+                                                error={fieldState.error?.message}
+                                                {...field}
+                                            />
+                                        )}
                                     />
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="code"
-                                render={({ field, fieldState }) => (
-                                    <LabeledInput
-                                        label="Código"
-                                        placeholder="BEST-CTE"
-                                        error={fieldState.error?.message}
-                                        {...field}
+                                    <FormField
+                                        control={form.control}
+                                        name="code"
+                                        render={({ field, fieldState }) => (
+                                            <LabeledInput
+                                                label="Código"
+                                                placeholder="BEST-CTE"
+                                                error={fieldState.error?.message}
+                                                {...field}
+                                            />
+                                        )}
                                     />
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="currency"
-                                render={({ field, fieldState }) => (
-                                    <LabeledSelect
-                                        label="Moneda"
-                                        value={field.value}
-                                        onChange={field.onChange}
-                                        error={fieldState.error?.message}
-                                        options={[
-                                            { value: "CLP", label: "CLP (Peso Chileno)" },
-                                            { value: "USD", label: "USD (Dólar)" },
-                                            { value: "EUR", label: "EUR (Euro)" }
-                                        ]}
-                                        placeholder="Seleccione moneda"
+                                    <FormField
+                                        control={form.control}
+                                        name="currency"
+                                        render={({ field, fieldState }) => (
+                                            <LabeledSelect
+                                                label="Moneda"
+                                                value={field.value}
+                                                onChange={field.onChange}
+                                                error={fieldState.error?.message}
+                                                options={[
+                                                    { value: "CLP", label: "CLP (Peso Chileno)" },
+                                                    { value: "USD", label: "USD (Dólar)" },
+                                                    { value: "EUR", label: "EUR (Euro)" }
+                                                ]}
+                                                placeholder="Seleccione moneda"
+                                            />
+                                        )}
                                     />
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="account"
-                                render={({ field, fieldState }) => (
-                                    <AccountSelector
-                                        value={field.value}
-                                        onChange={field.onChange}
-                                        accountType="ASSET"
-                                        isReconcilable={true}
-                                        placeholder="Seleccionar cuenta de banco/caja"
-                                        label="Cuenta Contable"
-                                        error={fieldState.error?.message}
+                                    <FormField
+                                        control={form.control}
+                                        name="account"
+                                        render={({ field, fieldState }) => (
+                                            <AccountSelector
+                                                value={field.value}
+                                                onChange={field.onChange}
+                                                accountType="ASSET"
+                                                isReconcilable={true}
+                                                placeholder="Seleccionar cuenta de banco/caja"
+                                                label="Cuenta Contable"
+                                                error={fieldState.error?.message}
+                                            />
+                                        )}
                                     />
-                                )}
-                            />
-                        </fieldset>
-                        </form>
-                    </Form>
-                </div>
-
-                {(initialData as any)?.id && (
-                    <div className="w-72 border-l bg-muted/5 flex flex-col pt-4 hidden lg:flex">
-                        {auditSidebar}
+                                </fieldset>
+                            </form>
+                        </Form>
                     </div>
-                )}
-            </div>
-        </Drawer>
+
+                    {(initialData as any)?.id && (
+                        <div className="w-72 border-l bg-muted/5 flex flex-col pt-4 hidden lg:flex">
+                            {auditSidebar}
+                        </div>
+                    )}
+                </div>
+            </Drawer>
         </>
     )
 }

@@ -87,7 +87,7 @@ const BudgetAccountRow = React.memo(({
                 </div>
             ))}
             <div className="w-[100px] p-2 text-right font-mono text-xs font-bold text-primary">
-                <MoneyDisplay amount={accountTotal} digits={0} />
+                <MoneyDisplay amount={accountTotal} />
             </div>
         </div>
     );

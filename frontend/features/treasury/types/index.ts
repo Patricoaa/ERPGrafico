@@ -26,7 +26,12 @@ export interface TerminalCreatePayload {
 
 export type TerminalUpdatePayload = Partial<TerminalCreatePayload>
 
-export type TreasuryAccountType = 'CHECKING' | 'CREDIT_CARD' | 'DEBIT_CARD' | 'CHECKBOOK' | 'CASH' | 'BRIDGE' | 'MERCHANT'
+// Capa 1 — ubicación del dinero. F1.2 (ADR-0031): DEBIT_CARD y CHECKBOOK
+// ya NO son tipos de cuenta — son formas de pago (PaymentMethod) sobre CHECKING.
+// Ver `converge_treasury_accounts` y docs/50-audit/bancos/fase-1-operativo.md.
+// CHECK_PORTFOLIO existe a nivel DB (cuenta puente "Cheques en Cartera" auto-gestionada).
+// LOAN = cuenta-pasivo dedicada a la deuda de un crédito bancario (ADR-0041).
+export type TreasuryAccountType = 'CHECKING' | 'CREDIT_CARD' | 'LOAN' | 'CASH' | 'BRIDGE' | 'CHECK_PORTFOLIO'
 
 // Treasury Account types
 export interface TreasuryAccount {
@@ -42,13 +47,27 @@ export interface TreasuryAccount {
     allows_cash: boolean
     allows_card: boolean
     allows_transfer: boolean
-    /** true for BRIDGE/MERCHANT — managed by provider, no manual edit/delete */
+    allows_check: boolean
+    /** true for BRIDGE — managed by provider, no manual edit/delete */
     is_system_managed: boolean
     current_balance?: number
     bank?: number | null
     bank_name?: string
     account_number?: string | null
     identifier?: string
+    /** POS terminal providers (Transbank, TUU, etc.) whose destination/bridge account is this one. */
+    terminal_providers?: Array<{
+        id: number
+        name: string
+        provider_type: PaymentTerminalProvider['provider_type']
+        provider_type_display: string
+        supplier?: number | null
+        receivable_account?: number | null
+        commission_expense_account?: number | null
+        commission_iva_account?: number | null
+        bank_treasury_account?: number | null
+        bank_treasury_account_name?: string | null
+    }>
 }
 
 export interface TreasuryAccountCreatePayload {
@@ -64,6 +83,20 @@ export interface TreasuryAccountCreatePayload {
 }
 
 export type TreasuryAccountUpdatePayload = Partial<TreasuryAccountCreatePayload>
+
+/** Payload del asistente de alta: crea la cuenta + sus formas de pago en un paso. */
+export interface TreasuryAccountProvisionPayload {
+    name: string
+    code?: string | null
+    currency: string
+    account: number | null
+    account_type: TreasuryAccountType
+    bank?: number | null
+    account_number?: string | null
+    /** Tenders a auto-provisionar (PaymentMethod.method_type). Vacío = defaults del tipo. */
+    tenders: string[]
+    usage: 'sales' | 'purchases' | 'both'
+}
 
 export interface PaymentMethod {
     id: number
@@ -94,6 +127,12 @@ export interface PaymentTerminalProvider {
     commission_iva_account_name?: string
     receivable_account: number
     receivable_account_name?: string
+    /** TreasuryAccount (BRIDGE) where this provider settles funds. Auto-created. */
+    bank_treasury_account: number | null
+    bank_treasury_account_name?: string | null
+    /** Product used for commission purchase invoices (Stage 3). */
+    commission_product: number | null
+    commission_product_name?: string
     config?: Record<string, unknown>
     is_active: boolean
 }
@@ -123,6 +162,58 @@ export interface TerminalBatch {
     commission_amount: number
     net_amount: number
     transaction_count: number
+}
+
+export interface CardPurchaseGroup {
+    id: number
+    uuid: string
+    total_amount: string
+    installments: number
+    monthly_rate: string
+    principal_per_installment: string
+    first_installment_date: string | null
+    partner_name: string | null
+    partner_id: number | null
+    client_reference: string
+    notes: string
+}
+
+/** Cuota del cronograma de una compra en cuotas aún no facturada (ADR-0046). */
+export interface UpcomingInstallment {
+    id: number
+    number: number
+    due_date: string
+    principal_amount: string
+    group_uuid: string
+    group_display_id: string
+    partner_name: string | null
+    total_installments: number
+}
+
+export type UnbilledItemSource = 'charge' | 'installment'
+
+/** Fila unificada para la tabla de cargos no facturados.
+ *  Representa tanto un TreasuryMovement (cargo suelto) como una
+ *  cuota del cronograma (CardPurchaseInstallment). */
+export interface UnbilledItemRow {
+    /** Clave única: "charge-{id}" | "installment-{id}" */
+    id: string
+    source: UnbilledItemSource
+    date: string
+    reference: string | null
+    notes: string | null
+    amount: number
+    installmentNumber: number | null
+    totalInstallments: number | null
+    purchaseGroupDetail: CardPurchaseGroup | null
+    partnerName: string | null
+    movementType: string | null
+    movementTypeDisplay: string | null
+    isInstallmentInterest: boolean
+    /** Referencia al TreasuryMovement original (null si es cuota) */
+    originalCharge: TreasuryMovement | null
+    /** Referencia a la cuota original (null si es cargo) */
+    originalInstallment: UpcomingInstallment | null
 }
 
 export interface TreasuryMovement {
@@ -159,6 +250,12 @@ export interface TreasuryMovement {
         number: string | null
         label: string | null
     } | null
+    card_purchase_group?: number | null
+    card_purchase_group_detail?: CardPurchaseGroup | null
+    installment_number?: number | null
+    is_installment_interest?: boolean
+    is_billed?: boolean
+    billed_in_statement?: number | null
 }
 
 export interface TreasuryMovementFilters {
@@ -211,6 +308,8 @@ export interface PaymentTerminalProviderCreatePayload {
     commission_expense_account: number
     commission_iva_account: number
     receivable_account: number
+    /** Product used for commission purchase invoices. */
+    commission_product: number | null
     config?: Record<string, unknown>
     is_active?: boolean
 }

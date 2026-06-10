@@ -125,49 +125,49 @@ export function WarehouseDrawer({ onSuccess, initialData, open: openProp, onOpen
                 <form
                     id="warehouse-form"
                     onSubmit={form.handleSubmit(onSubmit)}
-                    className="space-y-6 px-4 pb-4 pt-2"
+                    className="space-y-6 px-4 pb-4 pt-4"
                 >
                     <fieldset disabled={isView} className="contents">
 
-                    <FormField
-                        control={form.control}
-                        name="name"
-                        render={({ field, fieldState }) => (
-                            <LabeledInput
-                                label="Nombre de Bodega"
-                                required
-                                placeholder="Ej: Bodega Central"
-                                error={fieldState.error?.message}
-                                {...field}
-                            />
-                        )}
-                    />
-                    <FormField
-                        control={form.control}
-                        name="code"
-                        render={({ field, fieldState }) => (
-                            <LabeledInput
-                                label="Código Interno"
-                                required
-                                placeholder="Ej: BOD-01"
-                                error={fieldState.error?.message}
-                                {...field}
-                            />
-                        )}
-                    />
-                    <FormField
-                        control={form.control}
-                        name="address"
-                        render={({ field, fieldState }) => (
-                            <LabeledInput
-                                label="Dirección Física"
-                                placeholder="Ej: Av. Industrial 1234, Santiago"
-                                error={fieldState.error?.message}
-                                {...field}
-                            />
-                        )}
-                    />
-                </fieldset>
+                        <FormField
+                            control={form.control}
+                            name="name"
+                            render={({ field, fieldState }) => (
+                                <LabeledInput
+                                    label="Nombre de Bodega"
+                                    required
+                                    placeholder="Ej: Bodega Central"
+                                    error={fieldState.error?.message}
+                                    {...field}
+                                />
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="code"
+                            render={({ field, fieldState }) => (
+                                <LabeledInput
+                                    label="Código Interno"
+                                    required
+                                    placeholder="Ej: BOD-01"
+                                    error={fieldState.error?.message}
+                                    {...field}
+                                />
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="address"
+                            render={({ field, fieldState }) => (
+                                <LabeledInput
+                                    label="Dirección Física"
+                                    placeholder="Ej: Av. Industrial 1234, Santiago"
+                                    error={fieldState.error?.message}
+                                    {...field}
+                                />
+                            )}
+                        />
+                    </fieldset>
                 </form>
             </Form>
         </FormSplitLayout>
@@ -211,7 +211,7 @@ export function WarehouseDrawer({ onSuccess, initialData, open: openProp, onOpen
                 onOpenChange={setOpen}
                 side="left"
                 defaultSize={width}
-                contentClassName="p-0"
+                mode={mode}
                 icon={List}
                 title={<><span>{drawerTitle}</span>{(mode === 'view' || mode === 'edit') && initialData?.id && <Button variant="ghost" size="icon" onClick={() => handlePrint()}><Printer className="h-4 w-4" /></Button>}</>}
                 subtitle={

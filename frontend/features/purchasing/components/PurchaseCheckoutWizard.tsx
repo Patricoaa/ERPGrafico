@@ -245,7 +245,7 @@ export function PurchaseCheckoutWizard({
             // Validate at least one account exists for the selected method
             const hasAccountsForMethod = (method: string) => {
                 if (method === 'CASH') return accounts.some(a => a.allows_cash)
-                if (method === 'CARD') return accounts.some(a => a.allows_card)
+                if (method === 'CARD' || method === 'CREDIT_CARD') return accounts.some(a => a.allows_card)
                 if (method === 'TRANSFER') return accounts.some(a => a.allows_transfer)
                 return false
             }
@@ -267,6 +267,16 @@ export function PurchaseCheckoutWizard({
             if (paymentData.method === 'TRANSFER' && !paymentData.isPending && !paymentData.transactionNumber) {
                 toast.error("Debe ingresar el número de transferencia o marcar como pendiente.")
                 return false
+            }
+            if (paymentData.method === 'CHECK') {
+                if (!paymentData.transactionNumber) {
+                    toast.error("Debe ingresar el número de cheque.")
+                    return false
+                }
+                if (!paymentData.checkBankId) {
+                    toast.error("Debe seleccionar el banco emisor del cheque.")
+                    return false
+                }
             }
         }
         return true
@@ -328,6 +338,12 @@ export function PurchaseCheckoutWizard({
                 formData.append('payment_is_pending', (paymentData.isPending || false).toString())
                 if (paymentData.transactionNumber) formData.append('transaction_number', paymentData.transactionNumber)
                 if (paymentData.treasuryAccountId) formData.append('treasury_account_id', paymentData.treasuryAccountId)
+                if (paymentData.paymentMethodId) formData.append('payment_method_id', paymentData.paymentMethodId.toString())
+                if (paymentData.method === 'CHECK' && paymentData.checkBankId) formData.append('check_bank_id', paymentData.checkBankId.toString())
+                if (paymentData.method === 'CHECK' && paymentData.checkDueDate) formData.append('check_due_date', paymentData.checkDueDate)
+                if (paymentData.installments && paymentData.installments > 1) {
+                    formData.append('installments', paymentData.installments.toString())
+                }
                 formData.append('payment_type', 'OUTBOUND')
             } else {
                 // Implicit credit - no payment

@@ -7,6 +7,7 @@ import type {
     TreasuryAccount,
     TreasuryAccountCreatePayload,
     TreasuryAccountUpdatePayload,
+    TreasuryAccountProvisionPayload,
     PaymentMethod,
     PaymentTerminalDevice,
     PaymentTerminalProvider,
@@ -26,6 +27,7 @@ import type {
     ContactBrief,
     PartnerCapitalInfo,
     TreasuryMovement,
+    UpcomingInstallment,
 } from '../types'
 
 export const treasuryApi = {
@@ -126,6 +128,11 @@ export const treasuryApi = {
         return data
     },
 
+    provisionAccount: async (payload: TreasuryAccountProvisionPayload): Promise<TreasuryAccount> => {
+        const { data } = await api.post<TreasuryAccount>('/treasury/accounts/provision/', payload)
+        return data
+    },
+
     updateAccount: async (id: number, payload: TreasuryAccountUpdatePayload): Promise<TreasuryAccount> => {
         const { data } = await api.patch<TreasuryAccount>(`/treasury/accounts/${id}/`, payload)
         return data
@@ -177,6 +184,21 @@ export const treasuryApi = {
         await api.delete(`/treasury/banks/${id}/`)
     },
 
+    archiveBank: async (id: number): Promise<Bank> => {
+        const { data } = await api.post<Bank>(`/treasury/banks/${id}/archive/`)
+        return data
+    },
+
+    restoreBank: async (id: number): Promise<Bank> => {
+        const { data } = await api.post<Bank>(`/treasury/banks/${id}/restore/`)
+        return data
+    },
+
+    getBankOverview: async (id: number): Promise<any> => {
+        const { data } = await api.get(`/treasury/banks/${id}/overview/`)
+        return data
+    },
+
     // ========== Movements ==========
 
     getMovements: async (
@@ -207,6 +229,23 @@ export const treasuryApi = {
         const { data } = await api.post('/treasury/payments/', payload, {
             headers: { 'Content-Type': 'multipart/form-data' },
         })
+        return data
+    },
+
+    createCardPurchase: async (payload: {
+        amount: string | number
+        from_account: number
+        installments?: number
+        monthly_rate?: number
+        date?: string
+        partner?: number
+        invoice?: number
+        sale_order?: number
+        purchase_order?: number
+        client_reference?: string
+        notes?: string
+    }): Promise<any> => {
+        const { data } = await api.post('/treasury/movements/card-purchase/', payload)
         return data
     },
 
@@ -253,5 +292,55 @@ export const treasuryApi = {
     getStatement: async (id: number): Promise<Record<string, unknown>> => {
         const response = await api.get(`/treasury/statements/${id}/`)
         return response.data
+    },
+
+    // ========== Unbilled Charges (Credit Card) ==========
+
+    getUnbilledCharges: async (
+        cardAccountId: number,
+        cutOffDate?: string,
+    ): Promise<{
+        charges: TreasuryMovement[]
+        upcoming_installments: UpcomingInstallment[]
+        summary: {
+            total: number
+            count: number
+            purchases: number
+            charges: number
+            installments: number
+        }
+    }> => {
+        const params: Record<string, string | number> = {
+            card_account: cardAccountId,
+        }
+        if (cutOffDate) {
+            params.cut_off_date = cutOffDate
+        }
+        const response = await api.get('/treasury/card-statements/unbilled-charges/', { params })
+        return response.data
+    },
+
+    addUnbilledCharge: async (payload: {
+        card_account: number
+        amount: number | string
+        charge_type?: string
+        description?: string
+        date?: string
+    }): Promise<TreasuryMovement> => {
+        const { data } = await api.post('/treasury/card-statements/add-charge/', payload)
+        return data
+    },
+
+    billUnbilledCharges: async (payload: {
+        card_account: number
+        period_year: number
+        period_month: number
+        cut_off_date: string
+        due_date: string
+        minimum_payment?: number | string
+        notes?: string
+    }): Promise<import('@/features/treasury/card-statements/types').BillChargesResponse> => {
+        const { data } = await api.post('/treasury/card-statements/bill-charges/', payload)
+        return data
     },
 }
